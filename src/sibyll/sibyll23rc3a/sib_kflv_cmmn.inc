@@ -1,0 +1,2 @@
+      INTEGER KFLV
+      COMMON /S_KFLV/ KFLV(4,34)

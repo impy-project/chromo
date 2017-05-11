@@ -1,0 +1,5 @@
+
+      INTEGER IBMRDX,ITGRDX,IHMJDX,ISMJDX,ICSTDX,IINTDX
+      COMMON /S_INDX/ IBMRDX(3),ITGRDX(NW_max,3),
+     &     IHMJDX(NW_max*NH_max),IINTDX(NW_max),
+     &     ISMJDX(NW_max*NS_max),ICSTDX(2*NW_max,3)
