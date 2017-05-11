@@ -5,22 +5,20 @@ Created on 17.03.2014
 '''
 
 import numpy as np
-from common import MCRun, MCEvent, EventKinematics, standard_particles
+from impy.common import MCRun, MCEvent, EventKinematics, standard_particles
 
 
 class SibyllMCEvent(MCEvent):
-
     def __init__(self, lib, event_config):
         s_plist = lib.s_plist
         to_pdg = np.vectorize(lib.isib_pid2pdg)
         sel = None
 
         npart = lib.s_plist.np
-        stable = np.nonzero(np.abs(
-                            s_plist.llist[:npart]) < 10000)[0]
+        stable = np.nonzero(np.abs(s_plist.llist[:npart]) < 10000)[0]
         if event_config['charged_only']:
-            sel = stable[lib.s_chp.ichp[
-                np.abs(s_plist.llist[stable]) - 1] != 0]
+            sel = stable[lib.s_chp.ichp[np.abs(s_plist.llist[stable]) - 1] !=
+                         0]
         else:
             sel = stable
 
@@ -28,7 +26,7 @@ class SibyllMCEvent(MCEvent):
             self.charge = lib.s_chp.ichp[s_plist.llist[sel] - 1]
 
         self.p_ids = to_pdg(s_plist.llist[sel])
-        self.pt2 = s_plist.p[sel, 0] ** 2 + s_plist.p[sel, 1] ** 2
+        self.pt2 = s_plist.p[sel, 0]**2 + s_plist.p[sel, 1]**2
         self.pz = s_plist.p[sel, 2]
         self.en = s_plist.p[sel, 3]
 
@@ -36,7 +34,6 @@ class SibyllMCEvent(MCEvent):
 
 
 class SibyllMCRun(MCRun):
-
     def __init__(self, libref, **kwargs):
 
         if not kwargs["event_class"]:
@@ -58,7 +55,8 @@ class SibyllMCRun(MCRun):
             sigproj = 3
         else:
             raise Exception(self.class_name + "::init_generator(): No " +
-                            "cross section available for projectile " + k.p1pdg)
+                            "cross section available for projectile " +
+                            k.p1pdg)
         return self.lib.sib_sigma_hp(sigproj, self.ecm)[2]
 
     def set_event_kinematics(self, event_kinematics):
@@ -127,11 +125,9 @@ class SibyllMCRun(MCRun):
 
 
 class SibyllCascadeEvent():
-
     def __init__(self, lib):
         npart = lib.s_plist.np
-        stable = np.nonzero(np.abs(
-                            lib.s_plist.llist[:npart]) < 10000)[0]
+        stable = np.nonzero(np.abs(lib.s_plist.llist[:npart]) < 10000)[0]
 
         self.p_ids = lib.s_plist.llist[:npart][stable]
         self.E = lib.s_plist.p[:npart, 3][stable]
@@ -139,15 +135,13 @@ class SibyllCascadeEvent():
 
 
 class SibyllCascadeEventPQCDc():
-
     def __init__(self, lib):
         npart = lib.s_plist.np
         spl = lib.s_plist
-        stable = np.where(
-            (np.abs(spl.llist[:npart]) < 10000) &
-            np.logical_not((np.abs(spl.llist[:npart]) >= 59) &
-                           ((np.abs(lib.s_parto.nporig[:npart]) < 100) |
-                            (np.abs(lib.s_parto.nporig[:npart]) > 1000))))[0]
+        stable = np.where((np.abs(spl.llist[:npart]) < 10000) & np.logical_not(
+            (np.abs(spl.llist[:npart]) >= 59) &
+            ((np.abs(lib.s_parto.nporig[:npart]) < 100) |
+             (np.abs(lib.s_parto.nporig[:npart]) > 1000))))[0]
 
         self.p_ids = spl.llist[:npart][stable]
         # if np.any(self.p_ids >= 59):
@@ -163,9 +157,13 @@ class SibyllCascadeEventPQCDc():
 
 
 class SibyllCascadeRun():
-
-    def __init__(self, lib_str, label, decay_mode, n_events,
-                 fill_subset=False, evt_class=SibyllCascadeEvent):
+    def __init__(self,
+                 lib_str,
+                 label,
+                 decay_mode,
+                 n_events,
+                 fill_subset=False,
+                 evt_class=SibyllCascadeEvent):
         from ParticleDataTool import SibyllParticleTable
         exec "import " + lib_str + " as siblib"
         self.lib = siblib  # @UndefinedVariable
@@ -178,28 +176,24 @@ class SibyllCascadeRun():
             print "Limiting decay mode to 3 for SIBYLL 2.1"
             decay_mode = 3
         if lib_str.find('sib21') != -1:
-            self.projectiles = ['p', 'n', 'K+', 'K-',
-                                'pi+', 'pi-', 'K0L',
-                                'p-bar', 'n-bar']
+            self.projectiles = [
+                'p', 'n', 'K+', 'K-', 'pi+', 'pi-', 'K0L', 'p-bar', 'n-bar'
+            ]
         elif lib_str.startswith('sib23'):
-            self.projectiles = ['p', 'n', 'K+', 'K-',
-                                'pi+', 'pi-', 'K0L',
-                                'p-bar', 'n-bar',
-                                'Sigma-', 'Sigma--bar',
-                                'Sigma+', 'Sigma+-bar',
-                                'Xi0', 'Xi0-bar', 'Xi-', 'Xi--bar',
-                                'Lambda0', 'Lambda0-bar',
-                                'D+', 'D-', 'D0', 'D0-bar',
-                                'Ds+', 'Ds-', 'XiC+', 'XiC+-bar',
-                                'XiC0', 'LambdaC+', 'OmegaC0']
+            self.projectiles = [
+                'p', 'n', 'K+', 'K-', 'pi+', 'pi-', 'K0L', 'p-bar', 'n-bar',
+                'Sigma-', 'Sigma--bar', 'Sigma+', 'Sigma+-bar', 'Xi0',
+                'Xi0-bar', 'Xi-', 'Xi--bar', 'Lambda0', 'Lambda0-bar', 'D+',
+                'D-', 'D0', 'D0-bar', 'Ds+', 'Ds-', 'XiC+', 'XiC+-bar', 'XiC0',
+                'LambdaC+', 'OmegaC0'
+            ]
             self.lib.s_debug.lun = 6
         else:
-            self.projectiles = ['p', 'n', 'K+', 'K-',
-                                'pi+', 'pi-', 'K0L',
-                                'p-bar', 'n-bar',
-                                'Sigma-', 'Sigma--bar',
-                                'Xi0', 'Xi0-bar', 'Xi-', 'Xi--bar',
-                                'Lambda0', 'Lambda0-bar']
+            self.projectiles = [
+                'p', 'n', 'K+', 'K-', 'pi+', 'pi-', 'K0L', 'p-bar', 'n-bar',
+                'Sigma-', 'Sigma--bar', 'Xi0', 'Xi0-bar', 'Xi-', 'Xi--bar',
+                'Lambda0', 'Lambda0-bar'
+            ]
             self.lib.s_debug.lun = 6
         set_stable(self.lib, decay_mode)
         self.ptab = SibyllParticleTable()
@@ -246,12 +240,12 @@ class SibyllCascadeRun():
         E_cm      : {4:5.3e} GeV
         Target    : {5}
         '''
-        print templ.format(self.label, self.nEvents, projectile,
-                           E_lab, sqs, Atarget)
+        print templ.format(self.label, self.nEvents, projectile, E_lab, sqs,
+                           Atarget)
 
         if projectile not in self.projectiles:
-            raise Exception("SibyllCascadeRun(): Projectile " +
-                            projectile + " not allowed.")
+            raise Exception("SibyllCascadeRun(): Projectile " + projectile +
+                            " not allowed.")
         projectile = self.ptab.modname2modid[projectile]
 
         hist_d = {}
@@ -296,12 +290,12 @@ class SibyllCascadeRun():
         P0[1] = 0.
         P0[2] = lab_energy
         P0[4] = lmass[asibid - 1]
-        P0[3] = np.sqrt(P0[2] ** 2 + P0[4] ** 2)
+        P0[3] = np.sqrt(P0[2]**2 + P0[4]**2)
         for i in range(self.nEvents):
             llist[0] = sibid
             p[0, :] = P0
             self.lib.s_plist.np = 1
-#             self.lib.sib_list(6)
+            #             self.lib.sib_list(6)
             self.lib.decsib()
             if not (i % 10000) and i:
                 print i, "decay events simulated."
@@ -331,7 +325,7 @@ def set_stable(lib, decay_mode):
     if decay_mode < 0:
         print "SibyllCascadeRun::set_stable(): use default stable def."
         return
-        
+
     # fast-mode particles
     if decay_mode == 0:
         # Set all instable

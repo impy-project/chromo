@@ -5,13 +5,18 @@ Created on 17.03.2014
 '''
 
 import numpy as np
-from InteractionModels.common import standard_particles
+from impy.common import standard_particles
 
 
 class SophiaCascadeRun():
-
-    def __init__(self, lib_str, label, decay_mode, n_events,
-                 fill_subset=False, p_debug=False, nucleon_Ekin=None):
+    def __init__(self,
+                 lib_str,
+                 label,
+                 decay_mode,
+                 n_events,
+                 fill_subset=False,
+                 p_debug=False,
+                 nucleon_Ekin=None):
         from ParticleDataTool import SibyllParticleTable
         exec "import " + lib_str + " as siblib"
         self.lib = siblib  # @UndefinedVariable
@@ -47,23 +52,22 @@ class SophiaCascadeRun():
             swap = False
             nucleon_id = self.ptab.pdg2modid[evkin.p1pdg]
             nucleon_mass = evkin.pmass1
-        
+
         swap = False
-        nucleon_e = nucleon_mass + self.nucleon_Ekin 
-        
+        nucleon_e = nucleon_mass + self.nucleon_Ekin
+
         hist_d = {}
         for hist in self.spectrum_hists:
             hist_d[hist.particle_id] = hist
         ngenerated = self.nEvents
 
         for i in xrange(self.nEvents):
-            self.lib.eventgen(nucleon_id, nucleon_e,
-                            evkin.elab, 180.,0)
+            self.lib.eventgen(nucleon_id, nucleon_e, evkin.elab, 180., 0)
             if not (i % 10000) and i and self.dbg:
                 print i, "events generated."
-            
-            event = SophiaCascadeEvent(self.lib,swap)
-            
+
+            event = SophiaCascadeEvent(self.lib, swap)
+
             unique_pids = np.unique(event.p_ids)
             if 0 in unique_pids:
                 self.lib.sib_list(6)
@@ -79,13 +83,11 @@ class SophiaCascadeRun():
         for hist in self.spectrum_hists:
             hist.n_events_filled = ngenerated
 
-            
-class SophiaCascadeEvent():
 
+class SophiaCascadeEvent():
     def __init__(self, lib, swap=False):
         npart = lib.s_plist.np
-        stable = np.nonzero(np.abs(
-                            lib.s_plist.llist[:npart]) < 10000)[0]
+        stable = np.nonzero(np.abs(lib.s_plist.llist[:npart]) < 10000)[0]
 
         self.p_ids = lib.s_plist.llist[:npart][stable]
         self.E = lib.s_plist.p[:npart, 3][stable]
@@ -101,14 +103,15 @@ class SophiaCascadeEvent():
 def set_stable(lib, decay_mode, dbg=True):
     idb = lib.s_csydec.idb
 
-    if dbg: print ("SophiaCascadeRun::set_stable(): Setting standard" +
-                        " particles stable.")
+    if dbg:
+        print("SophiaCascadeRun::set_stable(): Setting standard" +
+              " particles stable.")
 
     #fast-mode particles
     if decay_mode == 0:
         stab = SibyllParticleTable()
         for pdg_id in standard_particles:
-            print 'stable,' , pdg_id
+            print 'stable,', pdg_id
             idb[i - 1] = -np.abs(idb[i - 1])
         return
 
@@ -124,8 +127,9 @@ def set_stable(lib, decay_mode, dbg=True):
 
     # Decay mode 2 for generation of decay spectra (all conventional with
     # lifetime >= K0S
-    if dbg: print ("SophiaCascadeRun::set_stable(): Setting conventional " +
-                   "Sigma-, Xi0, Xi- and Lambda0 stable (decay mode).")
+    if dbg:
+        print("SophiaCascadeRun::set_stable(): Setting conventional " +
+              "Sigma-, Xi0, Xi- and Lambda0 stable (decay mode).")
     for i in range(36, 39 + 1):
         idb[i - 1] = -np.abs(idb[i - 1])
 
@@ -134,8 +138,9 @@ def set_stable(lib, decay_mode, dbg=True):
 
     # Conventional mesons and baryons
     # keep eta, eta', rho's, omega, phi, K*
-    if dbg: print ("SophiaCascadeRun::set_stable(): Setting all " + 
-                   "conventional stable.")
+    if dbg:
+        print("SophiaCascadeRun::set_stable(): Setting all " +
+              "conventional stable.")
     # pi0
     idb[6 - 1] = -np.abs(idb[6 - 1])
     for i in range(23, 33 + 1):
@@ -150,7 +155,8 @@ def set_stable(lib, decay_mode, dbg=True):
 
     # Charmed particles (only for version >= 2.2)
     # keep all charmed
-    if dbg: print ("SophiaCascadeRun::set_stable(): Setting all " + 
-                   "conventional and charmed stable.")
+    if dbg:
+        print("SophiaCascadeRun::set_stable(): Setting all " +
+              "conventional and charmed stable.")
     for i in range(59, 61) + range(71, 99 + 1):
         idb[i - 1] = -np.abs(idb[i - 1])

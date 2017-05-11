@@ -4,7 +4,7 @@ Created on 14.04.2014
 @author: afedynitch
 '''
 
-from common import MCRun, MCEvent, Settings, EventKinematics, standard_particles
+from impy.common import MCRun, MCEvent, Settings, EventKinematics, standard_particles
 import numpy as np
 
 #=========================================================================
@@ -13,22 +13,21 @@ import numpy as np
 
 
 class DpmjetIIIMCEvent(MCEvent):
-
     def __init__(self, lib, event_config):
 
         evt = lib.dtevt1
         npart = evt.nhkk
         sel = None
         if event_config['charged_only']:
-            sel = np.where((evt.isthkk[:npart] == 1) &
-                           (lib.dtpart.iich[lib.dtevt2.idbam[:npart] - 1] != 0))
+            sel = np.where((evt.isthkk[:npart] == 1) & (
+                lib.dtpart.iich[lib.dtevt2.idbam[:npart] - 1] != 0))
         else:
             sel = np.where(evt.isthkk[:npart] == 1)
             self.charge = lib.dtpart.iich[lib.dtevt2.idbam[sel] - 1]
         self.p_ids = evt.idhkk[sel]
         self.px = evt.phkk[0, sel][0]
         self.py = evt.phkk[1, sel][0]
-        self.pt2 = evt.phkk[0, sel][0] ** 2 + evt.phkk[1, sel][0] ** 2
+        self.pt2 = evt.phkk[0, sel][0]**2 + evt.phkk[1, sel][0]**2
         self.pz = evt.phkk[2, sel][0]
         self.en = evt.phkk[3, sel][0]
 
@@ -39,7 +38,6 @@ class DpmjetIIIMCEvent(MCEvent):
 # DpmjetIIIMCRun
 #=========================================================================
 class DpmjetIIIMCRun(MCRun):
-
     def __init__(self, libref, **kwargs):
 
         if not kwargs["event_class"]:
@@ -50,8 +48,9 @@ class DpmjetIIIMCRun(MCRun):
             self.param_file = kwargs.pop("param_file")
             from os import path
             if not path.isfile(self.param_file):
-                raise Exception('DpmjetIIIMCRun()::init()' +
-                                'param_file {0} not found'.format(self.param_file))
+                raise Exception(
+                    'DpmjetIIIMCRun()::init()' +
+                    'param_file {0} not found'.format(self.param_file))
         else:
             self.param_file = None
         if "Einit" in kwargs:
@@ -68,8 +67,8 @@ class DpmjetIIIMCRun(MCRun):
     def get_sigma_inel(self):
         # Calculate inelastic cross section
         k = self.evkin
-        self.lib.dt_xsglau(k.A1, k.A2, self.lib.idt_icihad(k.p1pdg),
-                           0, 0, k.ecm, 1, 1, 1)
+        self.lib.dt_xsglau(k.A1, k.A2,
+                           self.lib.idt_icihad(k.p1pdg), 0, 0, k.ecm, 1, 1, 1)
         return self.lib.dtglxs.xspro[0, 0, 0]
 
     def set_event_kinematics(self, event_kinematics):
@@ -79,8 +78,8 @@ class DpmjetIIIMCRun(MCRun):
             self.lib.idt_icihad(k.p1pdg), k.elab
 
         if hasattr(k, 'beam') and hasattr(self.lib, 'init'):
-            print (self.class_name + "::set_event_kinematics():" + 
-                "setting beam params", k.beam)
+            print(self.class_name + "::set_event_kinematics():" +
+                  "setting beam params", k.beam)
             self.lib.dt_setbm(k.A1, k.Z1, k.A2, k.Z2, k.beam[0], k.beam[1])
             print 'OK'
 
@@ -124,18 +123,18 @@ class DpmjetIIIMCRun(MCRun):
 
         if not hasattr(self.lib, 'init'):
             if self.e_init > 0:
-                self.lib.dt_init(-1, self.e_init, PM, PCH,
-                                 TM, TCH, k.p1pdg, iglau=1)
+                self.lib.dt_init(
+                    -1, self.e_init, PM, PCH, TM, TCH, k.p1pdg, iglau=1)
             else:
-                self.lib.dt_init(-1, k.elab, PM, PCH, TM,
-                                 TCH, k.p1pdg, iglau=1)
+                self.lib.dt_init(
+                    -1, k.elab, PM, PCH, TM, TCH, k.p1pdg, iglau=1)
             self.set_event_kinematics(self.evkin)
             self.lib.init = True
 
-        if ('dpmjet_frame' in self.event_config and 
-            self.event_config['dpmjet_frame'] == 'lab'):
+        if ('dpmjet_frame' in self.event_config and
+                self.event_config['dpmjet_frame'] == 'lab'):
             self.lib.dtflg1.iframe = 1
-        else:                
+        else:
             self.lib.dtflg1.iframe = 2
 
         if self.def_settings:
@@ -159,8 +158,9 @@ class DpmjetIIIMCRun(MCRun):
     def generate_event(self):
         reject = self.lib.dt_kkinc(*self.dpmevt_tup, kkmat=-1)
         self.lib.dtevno.nevent += 1
-#         print "bimpac", self.lib.dtglcp.bimpac
+        #         print "bimpac", self.lib.dtglcp.bimpac
         return reject
+
 
 #=========================================================================
 # SettDPMJETIII_DisablePythiaTune
@@ -168,7 +168,6 @@ class DpmjetIIIMCRun(MCRun):
 
 
 class SettDPMJETIII_DisablePythiaTune(Settings):
-
     def __init__(self, lib, args):
         Settings.__init__(self, lib)
 
@@ -179,15 +178,21 @@ class SettDPMJETIII_DisablePythiaTune(Settings):
     def reset(self):
         pass
 
+
 #=========================================================================
 # DpmjetIIIMCRun
 #=========================================================================
 
 
 class DpmjetIIICascadeRun():
-
-    def __init__(self, lib_str, label, decay_mode, n_events,
-                 fill_subset=True, p_debug=True, inimass=14):
+    def __init__(self,
+                 lib_str,
+                 label,
+                 decay_mode,
+                 n_events,
+                 fill_subset=True,
+                 p_debug=True,
+                 inimass=14):
 
         from ParticleDataTool import DpmJetParticleTable
         exec "import " + lib_str + " as dpmlib"
@@ -201,29 +206,29 @@ class DpmjetIIICascadeRun():
         self.inimass = inimass
         self.set_stable(decay_mode)
         self.ptab = DpmJetParticleTable()
-        self.projectiles = ['p', 'n', 'K+', 'K-',
-                            'pi+', 'pi-', 'K0L',
-                            'p-bar', 'n-bar',
-                            'Sigma-', 'Sigma--bar',
-                            'Sigma+', 'Sigma+-bar',
-                            'Xi0', 'Xi0-bar', 'Xi-', 'Xi--bar',
-                            'Lambda0', 'Lambda0-bar']
-        self.proj_allowed = [self.ptab.modname2pdg[p] for p in
-                             self.projectiles]
+        self.projectiles = [
+            'p', 'n', 'K+', 'K-', 'pi+', 'pi-', 'K0L', 'p-bar', 'n-bar',
+            'Sigma-', 'Sigma--bar', 'Sigma+', 'Sigma+-bar', 'Xi0', 'Xi0-bar',
+            'Xi-', 'Xi--bar', 'Lambda0', 'Lambda0-bar'
+        ]
+        self.proj_allowed = [
+            self.ptab.modname2pdg[p] for p in self.projectiles
+        ]
         self.init_generator()
 
     def get_hadron_air_cs(self, E_lab, projectile_id):
         ntrials = 50000
         if self.dbg:
-            print("DpmjetIIICascadeRun::get_hadron_air_cs():" +
-                  "calculating cross-section calculation for {0} @ {1:3.3g} GeV"
-                  ).format(projectile_id, E_lab)
+            print(
+                "DpmjetIIICascadeRun::get_hadron_air_cs():" +
+                "calculating cross-section calculation for {0} @ {1:3.3g} GeV"
+            ).format(projectile_id, E_lab)
         self.lib.dtglgp.jstatb = ntrials
         # Calculate inelastic cross section
         pdg = self.ptab.modname2pdg[projectile_id]
         k = EventKinematics(plab=E_lab, p1pdg=pdg, nuc2_prop=(14, 7))
-        self.lib.dt_xsglau(k.A1, k.A2, self.lib.idt_icihad(k.p1pdg),
-                           0, 0, k.ecm, 1, 1, 1)
+        self.lib.dt_xsglau(k.A1, k.A2,
+                           self.lib.idt_icihad(k.p1pdg), 0, 0, k.ecm, 1, 1, 1)
         self.lib.dtglgp.jstatb = 1000
         print self.lib.dtglxs.xspro[0, 0, 0]
         return self.lib.dtglxs.xspro[0, 0, 0]
@@ -232,8 +237,10 @@ class DpmjetIIICascadeRun():
         from random import randint
 
         # Initialize for maximum energy
-        self.evkin = EventKinematics(plab=1e11, p1pdg=2212,
-                                     nuc2_prop=(self.inimass, int(self.inimass/2)))
+        self.evkin = EventKinematics(
+            plab=1e11,
+            p1pdg=2212,
+            nuc2_prop=(self.inimass, int(self.inimass / 2)))
         k = self.evkin
         self.dpmevt_tup = k.A1, k.Z1, k.A2, k.Z2, \
             self.lib.idt_icihad(k.p1pdg), k.elab
@@ -267,8 +274,8 @@ class DpmjetIIICascadeRun():
         E_cm      : {3:5.3e} GeV
         Target    : {4}
         '''
-        print templ.format(self.label, self.nEvents, projectile,
-                           E_lab, Atarget)
+        print templ.format(self.label, self.nEvents, projectile, E_lab,
+                           Atarget)
         projectile = self.ptab.modname2pdg[projectile]
 
         if projectile not in self.proj_allowed:
@@ -278,7 +285,7 @@ class DpmjetIIICascadeRun():
             self.dpmevt_tup = 1, 1, 14, 7, \
                 self.lib.idt_icihad(projectile), E_lab
         else:
-            Z_target = int(Atarget/2) if Atarget > 1 else 1
+            Z_target = int(Atarget / 2) if Atarget > 1 else 1
             self.dpmevt_tup = 1, 1, Atarget, Z_target, \
                 self.lib.idt_icihad(projectile), E_lab
         hist_d = {}
@@ -401,7 +408,6 @@ class DpmjetIIICascadeRun():
 # DpmjetIIIMCEvent
 #=========================================================================
 class DpmjetIIICascadeEvent():
-
     def __init__(self, lib):
 
         evt = lib.dtevt1
