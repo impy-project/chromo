@@ -1,2 +1,0 @@
-      DOUBLE PRECISION FAin, FB0in
-      COMMON /S_CZDIS/ FAin, FB0in

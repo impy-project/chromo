@@ -1,2 +1,0 @@
-      INTEGER LDIFF
-      COMMON /S_CLDIF/ LDIFF

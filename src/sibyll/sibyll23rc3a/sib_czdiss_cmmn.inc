@@ -1,3 +1,0 @@
-
-      DOUBLE PRECISION FAs1, fAs2
-      COMMON /S_CZDISs/ FAs1, fAs2

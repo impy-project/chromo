@@ -1,3 +1,0 @@
-
-      CHARACTER*6 NAMP
-      COMMON /S_CNAM/ NAMP (0:99)

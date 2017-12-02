@@ -1,2 +1,0 @@
-      INTEGER ITRY, NREJ
-      COMMON /S_CNT/ ITRY(20), NREJ(20)

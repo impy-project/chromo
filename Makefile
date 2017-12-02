@@ -63,9 +63,9 @@ endif
 #
 #######################################################################
 #general version for signature file extraction and linking
-F2PY = f2py --quiet
+F2PY = $(HOME)/anaconda2/bin/f2py --quiet
 #additional flags for linker
-F2PY_L = $(F2PY) -DNPY_NO_DEPRECATED_API -DNPY_1_7_API_VERSION
+F2PY_L = $(F2PY) -D_NPY_1_7_DEPRECATED_API_H
 #######################################################################
 #
 #   Targets

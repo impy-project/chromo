@@ -1,5 +1,0 @@
-
-      PARAMETER ( NPARFIT = 22 )
-      DOUBLE PRECISION PARS
-      COMMON /XSCTN_FIT/ PARS( 50 , 2 )
-      
