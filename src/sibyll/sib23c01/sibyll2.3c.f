@@ -7,7 +7,7 @@ C         SSSSSS    IIIIIII  BBBBB       YY       LLLLLLL  LLLLLLL
 C=======================================================================
 C  Code for SIBYLL:  hadronic interaction Monte Carlo event generator
 C=======================================================================
-C   Version 2.3.3 retune (Jan-24-2017)
+C   Version 2.3c01 (Jun-01-2017, modified Sept-05-2017)
 C
 C     with CHARM production
 C
@@ -28,13 +28,16 @@ C                sein@fnal.gov
 C                ralph.engel@kit.edu
 C                gaisser@bartol.udel.edu
 C                paolo.lipari@roma1.infn.it
-C                felix.riehn@kit.edu
+C                friehn@lip.pt
 C                stanev@bartol.udel.edu
-C
-C     retune of sibyll 2.3 from CORSIKA 
-C     differences are:
-C      initialization from file and
-C      explicit hyperon production in 2-particle fireballs
+C     
+C     differences to Sibyll 2.3 include:
+C      
+C      *extend eta' and phi decay to include prompt muons
+C      *allow initialization from file
+C      *explicit hyperon production in 2-particle fireballs
+C      *forbid baryon pair production immediately next to leading baryon
+C      *adjusted string tension to help with central prod. in CMS
 C=======================================================================
 
       SUBROUTINE SIBYLL (K_beam, IATARG, Ecm)
@@ -453,7 +456,7 @@ C-----------------------------------------------------------------------
       WRITE(*,100)
  100  FORMAT(' ','====================================================',
      *     /,' ','|                                                  |',
-     *     /,' ','|                 S I B Y L L  2.3.3 dev           |',
+     *     /,' ','|                 S I B Y L L  2.3c                |',
      *     /,' ','|                                                  |',
      *     /,' ','|         HADRONIC INTERACTION MONTE CARLO         |',
      *     /,' ','|                        BY                        |',
@@ -466,12 +469,11 @@ C-----------------------------------------------------------------------
      *     /,' ','| F. RIEHN et al., Proc. 34th Int. Cosmic Ray Conf.|',
      *     /,' ','| The Hague, The Netherlands, cont. 1313 (2015)    |',
      *     /,' ','|                                                  |',
-     *     /,' ','| last modifications: F. Riehn (01/24/2017)        |',
-     *     /,' ','|    retune3 of Sibyll 2.3 from CORSIKA v76000     |',      
+     *     /,' ','| last modifications: F. Riehn (09/05/2017)        |',
      *     /,' ','====================================================',
      *     /)
 
-      CALL PAR_INI_retune3
+      CALL PAR_INI
       CALL DIFF_INI
       CALL JET_INI
       CALL PDF_INI
@@ -486,388 +488,32 @@ c...  charm frag. normalisation
 
 C=======================================================================
 
-      SUBROUTINE PAR_INI
-
-C------------------------------------------------------------
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      IMPLICIT INTEGER(I-N)
+      SUBROUTINE NO_CHARM
+      IMPLICIT NONE
       INTEGER NIPAR_max,NPAR_max
       PARAMETER (NPAR_max=200,NIPAR_max=100)
       DOUBLE PRECISION PAR
       INTEGER IPAR
       COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
-      DOUBLE PRECISION FAin, FB0in
-      COMMON /S_CZDIS/ FAin, FB0in
-
-      DOUBLE PRECISION FAs1, fAs2
-      COMMON /S_CZDISs/ FAs1, fAs2
-      DOUBLE PRECISION ZDMAX, EPSI
-      COMMON /S_CZDISc/ ZDMAX, EPSI
-
-      DOUBLE PRECISION CLEAD, FLEAD
-      COMMON /S_CZLEAD/ CLEAD, FLEAD
-      DOUBLE PRECISION CCHIK
-      COMMON /S_CPSPL/ CCHIK(4,99)
-
-      PARAMETER ( NPARFIT = 22 )
-      DOUBLE PRECISION PARS
-      COMMON /XSCTN_FIT/ PARS( 50 , 2 )
-      DOUBLE PRECISION STR_mass_val, STR_mass_val_hyp, STR_mass_sea
-      COMMON /S_CUTOFF/ STR_mass_val, STR_mass_val_hyp, STR_mass_sea
-      SAVE
-      DATA (PARS(K,1),K=    1,NPARFIT) /
-     &3.9223D+01,4.2055D+01,5.0913D-02,-4.0000D-01,2.0000D-01,
-     &5.0000D-01,0.0000D+00,6.0000D-01,9.0000D-02,1.0000D+00,
-     &2.0000D+00,3.2327D+00,2.5000D-01,5.4000D-01,1.0000D+00,
-     &-8.8000D-01,5.4000D-01,5.0000D-01,9.0000D-01,5.4000D-01,
-     &6.5000D-02,9.0000D-01/
-      DATA (PARS(K,2),K=    1,NPARFIT) /
-     &2.0590D+01,9.6579D+01,5.6069D-02,-7.6393D-01,2.0000D-01,
-     &5.0000D-01,0.0000D+00,6.0000D-01,9.0000D-02,1.0000D+00,
-     &2.0000D+00,2.9191D+00,2.5000D-01,5.4000D-01,1.0000D+00,
-     &-8.8000D-01,5.4000D-01,5.4895D-01,9.0000D-01,5.4000D-01,
-     &6.5000D-02,9.0000D-01/
-
-C..   23rc1.4.23 parameters
-      PAR(1) = 4.0000D-02
-      PAR(2) = 3.8000D-01
-      PAR(3) = 5.0000D-01
-      PAR(4) = 1.4000D-01
-      PAR(5) = 3.0000D-01
-      PAR(6) = 3.0000D-01
-      PAR(7) = 1.5000D-01
-      PAR(8) = 5.0000D-01
-      PAR(9) = 7.0000D+00
-      PAR(10) = 1.0000D+00
-      PAR(11) = 6.5000D-02
-      PAR(12) = 9.0000D-01
-      PAR(13) = 1.0000D-01
-      PAR(14) = 8.0000D-02
-      PAR(15) = 1.3000D-01
-      PAR(16) = 4.0000D-02
-      PAR(17) = 4.0000D-02
-      PAR(18) = 5.0000D-01
-      PAR(19) = 8.0000D-01
-      PAR(20) = 8.0000D-01
-      PAR(21) = 6.5000D-01
-      PAR(22) = 4.0000D+00
-      PAR(23) = 7.0000D-01
-      PAR(24) = 4.0000D-03
-      PAR(25) = 4.0000D-03
-      PAR(26) = 2.0000D+01
-      PAR(27) = 2.0000D-02
-      PAR(28) = 2.0000D+01
-      PAR(29) = 0.0000D+00
-      PAR(30) = 2.0000D+00
-      PAR(31) = 3.3000D-01
-      PAR(32) = 0.0000D+00
-      PAR(33) = 1.0000D-01
-      PAR(34) = 0.0000D+00
-      PAR(35) = 0.0000D+00
-      PAR(36) = 7.0000D-01
-      PAR(37) = 0.0000D+00
-      PAR(38) = 2.0000D+00
-      PAR(39) = 1.0000D+00
-      PAR(40) = 0.0000D+00
-      PAR(41) = 1.0000D+00
-      PAR(42) = 0.0000D+00
-      PAR(43) = 1.5000D-01
-      PAR(44) = 9.9000D-01
-      PAR(45) = 1.0000D+00
-      PAR(46) = 1.8000D-01
-      PAR(47) = 2.8000D-01
-      PAR(48) = 3.0000D-01
-      PAR(49) = 1.0000D-01
-      PAR(50) = 6.0000D-01
-      PAR(51) = 6.0000D-03
-      PAR(52) = 6.0000D-03
-      PAR(53) = 6.0000D+00
-      PAR(54) = 2.0000D-01
-      PAR(55) = 0.0000D+00
-      PAR(56) = 0.0000D+00
-      PAR(57) = 0.0000D+00
-      PAR(58) = 0.0000D+00
-      PAR(59) = 6.0000D-01
-      PAR(60) = 8.0000D-01
-      PAR(61) = 6.6000D-01
-      PAR(62) = 0.0000D+00
-      PAR(63) = 1.0000D+00
-      PAR(64) = 2.5000D-01
-      PAR(65) = 3.0000D-01
-      PAR(66) = 3.0000D-01
-      PAR(67) = 6.0000D-01
-      PAR(68) = 6.0000D-03
-      PAR(69) = 5.0000D-02
-      PAR(70) = 7.0000D-03
-      PAR(71) = 1.0000D+00
-      PAR(72) = 3.0000D-01
-      PAR(73) = 5.0000D-01
-      PAR(74) = 6.0000D-01
-      PAR(75) = 0.0000D+00
-      PAR(76) = 2.0000D-01
-      PAR(77) = 7.0000D-01
-      PAR(78) = 9.0000D-01
-      PAR(79) = 1.0000D+01
-      PAR(80) = 6.0000D-01
-      PAR(81) = 1.0000D+04
-      PAR(82) = 2.0000D-02
-      PAR(83) = 0.0000D+00
-      PAR(84) = 6.0000D+00
-      PAR(85) = 1.0000D+00
-      PAR(86) = 1.0000D+00
-      PAR(87) = 3.0000D-01
-      PAR(88) = 8.0000D-01
-      PAR(89) = 6.0000D-01
-      PAR(90) = 7.0000D+00
-      PAR(91) = -2.5000D+00
-      PAR(92) = 2.0000D-01
-      PAR(93) = 1.0000D+00
-      PAR(94) = 4.0000D+00
-      PAR(95) = 0.0000D+00
-      PAR(96) = 1.0000D+00
-      PAR(97) = 2.0000D-03
-      PAR(98) = 1.5000D+00
-      PAR(99) = 3.3000D-01
-      PAR(100) = 2.0000D+00
-      PAR(101) = 1.0000D+00
-      PAR(102) = 0.0000D+00
-      PAR(103) = 2.0000D+00
-      PAR(104) = 4.0000D-01
-      PAR(105) = 1.0000D-01
-      PAR(106) = 0.0000D+00
-      PAR(107) = 0.0000D+00
-      PAR(108) = 0.0000D+00
-      PAR(109) = 2.0000D+01
-      PAR(110) = 1.5000D+00
-      PAR(111) = 0.0000D+00
-      PAR(112) = 7.0000D-01
-      PAR(113) = 8.0000D-01
-      PAR(114) = 2.0000D+00
-      PAR(115) = 0.0000D+00
-      PAR(116) = 1.0000D+00
-      PAR(117) = 0.0000D+00
-      PAR(118) = 5.0000D-03
-      PAR(119) = 0.0000D+00
-      PAR(120) = 1.0000D+00
-      PAR(121) = 3.0000D-01
-      PAR(122) = 0.0000D+00
-      PAR(123) = 3.0000D-01
-      PAR(124) = 1.0000D+00
-      PAR(125) = 1.0000D+00
-      PAR(126) = 1.0000D+00
-      PAR(127) = 6.0000D+00
-      PAR(128) = 1.0000D+00
-      PAR(129) = 8.0000D-02
-      PAR(130) = 1.2000D+01
-      PAR(131) = 5.0000D-01
-      PAR(132) = 5.0000D-01
-      PAR(133) = 1.0000D+01
-      PAR(134) = -5.0000D+00
-      PAR(135) = 6.0000D+00
-      PAR(136) = 0.0000D+00
-      PAR(137) = 1.2000D+00
-      PAR(138) = 0.0000D+00
-      PAR(139) = 5.0000D-01
-      PAR(140) = 4.5000D-01
-      PAR(141) = 1.5000D+00
-      PAR(142) = 0.0000D+00
-      PAR(143) = 5.0000D-01
-      PAR(144) = 9.5000D-01
-      PAR(145) = 8.5000D-01
-      PAR(146) = 0.0000D+00
-      PAR(147) = 3.0000D-01
-      PAR(148) = 5.0000D-01
-      PAR(149) = 3.0000D-01
-      PAR(150) = 4.0000D-03
-      PAR(151) = 2.0000D+00
-      PAR(152) = 4.0000D+00
-      PAR(153) = 1.0000D+01
-      PAR(154) = 3.0000D-01
-      PAR(155) = 0.0000D+00
-      PAR(156) = 5.0000D-01
-      PAR(157) = 0.0000D+00
-      PAR(158) = 0.0000D+00
-      PAR(159) = 0.0000D+00
-      PAR(160) = 0.0000D+00
-      PAR(161) = 0.0000D+00
-      PAR(162) = 0.0000D+00
-      PAR(163) = 0.0000D+00
-      PAR(164) = 0.0000D+00
-      PAR(165) = 0.0000D+00
-      PAR(166) = 0.0000D+00
-      PAR(167) = 0.0000D+00
-      PAR(168) = 0.0000D+00
-      PAR(169) = 0.0000D+00
-      PAR(170) = 0.0000D+00
-      PAR(171) = 0.0000D+00
-      PAR(172) = 0.0000D+00
-      PAR(173) = 0.0000D+00
-      PAR(174) = 0.0000D+00
-      PAR(175) = 0.0000D+00
-      PAR(176) = 0.0000D+00
-      PAR(177) = 0.0000D+00
-      PAR(178) = 0.0000D+00
-      PAR(179) = 0.0000D+00
-      PAR(180) = 0.0000D+00
-      PAR(181) = 0.0000D+00
-      PAR(182) = 0.0000D+00
-      PAR(183) = 0.0000D+00
-      PAR(184) = 0.0000D+00
-      PAR(185) = 0.0000D+00
-      PAR(186) = 0.0000D+00
-      PAR(187) = 0.0000D+00
-      PAR(188) = 0.0000D+00
-      PAR(189) = 0.0000D+00
-      PAR(190) = 0.0000D+00
-      PAR(191) = 0.0000D+00
-      PAR(192) = 0.0000D+00
-      PAR(193) = 0.0000D+00
-      PAR(194) = 0.0000D+00
-      PAR(195) = 0.0000D+00
-      PAR(196) = 0.0000D+00
-      PAR(197) = 0.0000D+00
-      PAR(198) = 0.0000D+00
-      PAR(199) = 0.0000D+00
-      PAR(200) = 0.0000D+00
-      
-      IPAR(1) = 1
-      IPAR(2) = 0
-      IPAR(3) = 8
-      IPAR(4) = 0
-      IPAR(5) = 1
-      IPAR(6) = 0
-      IPAR(7) = 0
-      IPAR(8) = 1
-      IPAR(9) = 1
-      IPAR(10) = 1
-      IPAR(11) = 0
-      IPAR(12) = 2
-      IPAR(13) = 0
-      IPAR(14) = -2
-      IPAR(15) = 9
-      IPAR(16) = 8
-      IPAR(17) = 1
-      IPAR(18) = 4
-      IPAR(19) = 1
-      IPAR(20) = 0
-      IPAR(21) = 0
-      IPAR(22) = 0
-      IPAR(23) = 0
-      IPAR(24) = 0
-      IPAR(25) = 0
-      IPAR(26) = 0
-      IPAR(27) = 0
-      IPAR(28) = 4
-      IPAR(29) = 1
-      IPAR(30) = 0
-      IPAR(31) = 1
-      IPAR(32) = 0
-      IPAR(33) = 0
-      IPAR(34) = 0
-      IPAR(35) = 0
-      IPAR(36) = 1
-      IPAR(37) = 0
-      IPAR(38) = 1
-      IPAR(39) = 0
-      IPAR(40) = 0
-      IPAR(41) = 0
-      IPAR(42) = 3
-      IPAR(43) = 1
-      IPAR(44) = 0
-      IPAR(45) = 0
-      IPAR(46) = 2
-      IPAR(47) = 6
-      IPAR(48) = 1
-      IPAR(49) = 4
-      IPAR(50) = 0
-      IPAR(51) = 2
-      IPAR(52) = 0
-      IPAR(53) = 1
-      IPAR(54) = 0
-      IPAR(55) = 0
-      IPAR(56) = 0
-      IPAR(57) = 1
-      IPAR(58) = 3
-      IPAR(59) = 1
-      IPAR(60) = 0
-      IPAR(61) = 100
-      IPAR(62) = 1
-      IPAR(63) = 0
-      IPAR(64) = 0
-      IPAR(65) = 1
-      IPAR(66) = 3
-      IPAR(67) = 0
-      IPAR(68) = 0
-      IPAR(69) = 1
-      IPAR(70) = 1
-      IPAR(71) = 0
-      IPAR(72) = 0
-      IPAR(73) = 0
-      IPAR(74) = 1
-      IPAR(75) = 0
-      IPAR(76) = 0
-      IPAR(77) = 0
-      IPAR(78) = 2
-      IPAR(79) = 1
-      IPAR(80) = 1
-      IPAR(81) = 5
-      IPAR(82) = 2
-      IPAR(83) = 0
-      IPAR(84) = 2
-      IPAR(85) = 1
-      IPAR(86) = 0
-      IPAR(87) = 3
-      IPAR(88) = 0
-      IPAR(89) = 0
-      IPAR(90) = 0
-      IPAR(91) = 0
-      IPAR(92) = 0
-      IPAR(93) = 0
-      IPAR(94) = 0
-      IPAR(95) = 0
-      IPAR(96) = 0
-      IPAR(97) = 0
-      IPAR(98) = 0
-      IPAR(99) = 0
-      IPAR(100) = 0    
-       
-C...  valence quark distribution function
-c     large x suppression
-      do i=1,3                  ! quark flavors
-         CCHIK(i,13)=PAR(62)
-         CCHIK(i,14)=PAR(62)
-      enddo
-C...string fragmentation parameters
-c     effective quark mass
-      STR_mass_val = PAR(36) 
-      STR_mass_sea = PAR(41)
-
-C...energy dependence of PTmin
-c     pt_cut offset
-      PAR(10) = PARS(10 , 1)
-c     lambda
-      PAR(11) = PARS(21 , 1)
-c     c parameter
-      PAR(12) = PARS(22 , 1)
-
-C...fragmentation function
-      FAin = PAR(20)
-      FB0in = PAR(21)
-
-C...Strange fragmentation function
-      FAs1 = PAR(35)
-      FAs2 = PAR(35)
-
-C...leading baryon fragmentation function
-c     hard proton mixing
-      CLEAD = PAR(50)
-
+c     turn off charm production
+c     global charm rate
+      PAR(24) = 0.D0
+c     minijet string charm rate
+      PAR(156) = 0.D0
+c     remnant string charm rate
+      PAR(107) = 0.D0
+c     soft sea charm rate
+      PAR(97) = 0.D0
+c     valence string charm rate
+      PAR(25) = 0.D0
+c     minijet charm rate
+      PAR(27) = 0.D0
       END
+      
 C=======================================================================
 
-            SUBROUTINE PAR_INI_retune2
+      SUBROUTINE PAR_INI
 
-C------------------------------------------------------------
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       IMPLICIT INTEGER(I-N)
       INTEGER NIPAR_max,NPAR_max
@@ -906,29 +552,30 @@ C------------------------------------------------------------
      &2.0000D+00,2.9191D+00,2.5000D-01,5.4000D-01,1.0000D+00,
      &-8.8000D-01,5.4000D-01,5.4895D-01,9.0000D-01,5.4000D-01,
      &6.5000D-02,9.0000D-01/
-
-C..   23rc5.2 parameters
+c
+c     adjusted central particle production
+c     23rc5.4frgB1 aka retune5 aka Sibyll 2.3.5
       PAR(1) = 4.0000D-02
-      PAR(2) = 3.8000D-01
+      PAR(2) = 2.5000D-01
       PAR(3) = 5.0000D-01
       PAR(4) = 1.4000D-01
       PAR(5) = 3.0000D-01
       PAR(6) = 3.0000D-01
       PAR(7) = 1.5000D-01
-      PAR(8) = 5.0000D-01
+      PAR(8) = 1.3903D-02
       PAR(9) = 7.0000D+00
       PAR(10) = 1.0000D+00
       PAR(11) = 6.5000D-02
       PAR(12) = 9.0000D-01
       PAR(13) = 1.0000D-01
-      PAR(14) = 8.0000D-02
+      PAR(14) = 6.0000D-02
       PAR(15) = 1.3000D-01
       PAR(16) = 4.0000D-02
       PAR(17) = 4.0000D-02
       PAR(18) = 5.0000D-01
       PAR(19) = 8.0000D-01
       PAR(20) = 8.0000D-01
-      PAR(21) = 6.5000D-01
+      PAR(21) = 6.0000D-01
       PAR(22) = 4.0000D+00
       PAR(23) = 7.0000D-01
       PAR(24) = 4.0000D-03
@@ -950,12 +597,12 @@ C..   23rc5.2 parameters
       PAR(40) = 0.0000D+00
       PAR(41) = 1.0000D+00
       PAR(42) = 0.0000D+00
-      PAR(43) = 1.5000D-01
+      PAR(43) = 2.3564D-01
       PAR(44) = 9.9000D-01
       PAR(45) = 1.0000D+00
       PAR(46) = 1.8000D-01
       PAR(47) = 2.8000D-01
-      PAR(48) = 3.0000D-01
+      PAR(48) = 2.7000D-01
       PAR(49) = 1.0000D-01
       PAR(50) = 6.0000D-01
       PAR(51) = 6.0000D-03
@@ -966,7 +613,7 @@ C..   23rc5.2 parameters
       PAR(56) = 0.0000D+00
       PAR(57) = 0.0000D+00
       PAR(58) = 0.0000D+00
-      PAR(59) = 6.0000D-01
+      PAR(59) = 6.8345D-01
       PAR(60) = 8.0000D-01
       PAR(61) = 6.6000D-01
       PAR(62) = 0.0000D+00
@@ -979,17 +626,17 @@ C..   23rc5.2 parameters
       PAR(69) = 5.0000D-02
       PAR(70) = 7.0000D-03
       PAR(71) = 1.0000D+00
-      PAR(72) = 3.0000D-01
+      PAR(72) = 3.8000D-01
       PAR(73) = 5.0000D-01
       PAR(74) = 6.0000D-01
       PAR(75) = 0.0000D+00
-      PAR(76) = 2.0000D-01
+      PAR(76) = 3.5298D-01
       PAR(77) = 7.0000D-01
       PAR(78) = 2.0000D+00
       PAR(79) = 1.0000D+01
-      PAR(80) = 6.0000D-01
+      PAR(80) = 5.0816D-01
       PAR(81) = 1.0000D+04
-      PAR(82) = 2.0000D-02
+      PAR(82) = 1.0000D-01
       PAR(83) = 0.0000D+00
       PAR(84) = 6.0000D+00
       PAR(85) = 1.0000D+00
@@ -997,9 +644,9 @@ C..   23rc5.2 parameters
       PAR(87) = 3.0000D-01
       PAR(88) = 8.0000D-01
       PAR(89) = 6.0000D-01
-      PAR(90) = 7.0000D+00
-      PAR(91) = -2.5000D+00
-      PAR(92) = 2.0000D-01
+      PAR(90) = 1.1000D+01
+      PAR(91) = -7.2000D+00
+      PAR(92) = 3.5000D+00
       PAR(93) = 1.0000D+00
       PAR(94) = 4.0000D+00
       PAR(95) = 0.0000D+00
@@ -1199,385 +846,8 @@ C..   23rc5.2 parameters
       IPAR(89) = 0
       IPAR(90) = 1
       IPAR(91) = 0
-      IPAR(92) = 0
-      IPAR(93) = 0
-      IPAR(94) = 0
-      IPAR(95) = 0
-      IPAR(96) = 0
-      IPAR(97) = 0
-      IPAR(98) = 0
-      IPAR(99) = 0
-      IPAR(100) = 0
-
-C...  valence quark distribution function
-c     large x suppression
-      do i=1,3                  ! quark flavors
-         CCHIK(i,13)=PAR(62)
-         CCHIK(i,14)=PAR(62)
-      enddo
-C...string fragmentation parameters
-c     effective quark mass
-      STR_mass_val = PAR(36) 
-      STR_mass_sea = PAR(41)
-
-C...energy dependence of PTmin
-c     pt_cut offset
-      PAR(10) = PARS(10 , 1)
-c     lambda
-      PAR(11) = PARS(21 , 1)
-c     c parameter
-      PAR(12) = PARS(22 , 1)
-
-C...fragmentation function
-      FAin = PAR(20)
-      FB0in = PAR(21)
-
-C...Strange fragmentation function
-      FAs1 = PAR(35)
-      FAs2 = PAR(35)
-
-C...leading baryon fragmentation function
-c     hard proton mixing
-      CLEAD = PAR(50)
-
-      END
-C=======================================================================
-            SUBROUTINE PAR_INI_retune3
-
-C------------------------------------------------------------
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      IMPLICIT INTEGER(I-N)
-      INTEGER NIPAR_max,NPAR_max
-      PARAMETER (NPAR_max=200,NIPAR_max=100)
-      DOUBLE PRECISION PAR
-      INTEGER IPAR
-      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
-      DOUBLE PRECISION FAin, FB0in
-      COMMON /S_CZDIS/ FAin, FB0in
-
-      DOUBLE PRECISION FAs1, fAs2
-      COMMON /S_CZDISs/ FAs1, fAs2
-      DOUBLE PRECISION ZDMAX, EPSI
-      COMMON /S_CZDISc/ ZDMAX, EPSI
-
-      DOUBLE PRECISION CLEAD, FLEAD
-      COMMON /S_CZLEAD/ CLEAD, FLEAD
-      DOUBLE PRECISION CCHIK
-      COMMON /S_CPSPL/ CCHIK(4,99)
-
-      PARAMETER ( NPARFIT = 22 )
-      DOUBLE PRECISION PARS
-      COMMON /XSCTN_FIT/ PARS( 50 , 2 )
-      DOUBLE PRECISION STR_mass_val, STR_mass_val_hyp, STR_mass_sea
-      COMMON /S_CUTOFF/ STR_mass_val, STR_mass_val_hyp, STR_mass_sea
-      SAVE
-      DATA (PARS(K,1),K=    1,NPARFIT) /
-     &3.9223D+01,4.2055D+01,5.0913D-02,-4.0000D-01,2.0000D-01,
-     &5.0000D-01,0.0000D+00,6.0000D-01,9.0000D-02,1.0000D+00,
-     &2.0000D+00,3.2327D+00,2.5000D-01,5.4000D-01,1.0000D+00,
-     &-8.8000D-01,5.4000D-01,5.0000D-01,9.0000D-01,5.4000D-01,
-     &6.5000D-02,9.0000D-01/
-      DATA (PARS(K,2),K=    1,NPARFIT) /
-     &2.0590D+01,9.6579D+01,5.6069D-02,-7.6393D-01,2.0000D-01,
-     &5.0000D-01,0.0000D+00,6.0000D-01,9.0000D-02,1.0000D+00,
-     &2.0000D+00,2.9191D+00,2.5000D-01,5.4000D-01,1.0000D+00,
-     &-8.8000D-01,5.4000D-01,5.4895D-01,9.0000D-01,5.4000D-01,
-     &6.5000D-02,9.0000D-01/
-
-C..   23rc5.2prfTune3diq2.2 parameters
-      PAR(1) = 4.0000D-02
-      PAR(2) = 4.0185D-01
-      PAR(3) = 5.0000D-01
-      PAR(4) = 1.4000D-01
-      PAR(5) = 3.0000D-01
-      PAR(6) = 3.0000D-01
-      PAR(7) = 1.5000D-01
-      PAR(8) = 5.0000D-01
-      PAR(9) = 7.0000D+00
-      PAR(10) = 1.0000D+00
-      PAR(11) = 6.5000D-02
-      PAR(12) = 9.0000D-01
-      PAR(13) = 1.0000D-01
-      PAR(14) = 6.0000D-02
-      PAR(15) = 1.3000D-01
-      PAR(16) = 4.0000D-02
-      PAR(17) = 4.0000D-02
-      PAR(18) = 5.0000D-01
-      PAR(19) = 8.0000D-01
-      PAR(20) = 8.0000D-01
-      PAR(21) = 6.8332D-01
-      PAR(22) = 4.0000D+00
-      PAR(23) = 7.0000D-01
-      PAR(24) = 4.0000D-03
-      PAR(25) = 4.0000D-03
-      PAR(26) = 2.0000D+01
-      PAR(27) = 2.0000D-02
-      PAR(28) = 2.0000D+01
-      PAR(29) = 0.0000D+00
-      PAR(30) = 2.0000D+00
-      PAR(31) = 3.3000D-01
-      PAR(32) = 0.0000D+00
-      PAR(33) = 1.0000D-01
-      PAR(34) = 0.0000D+00
-      PAR(35) = 0.0000D+00
-      PAR(36) = 7.0000D-01
-      PAR(37) = 0.0000D+00
-      PAR(38) = 5.0000D-01
-      PAR(39) = 8.0000D-01
-      PAR(40) = 0.0000D+00
-      PAR(41) = 1.0000D+00
-      PAR(42) = 0.0000D+00
-      PAR(43) = 1.0000D-01
-      PAR(44) = 9.9000D-01
-      PAR(45) = 1.0000D+00
-      PAR(46) = 1.8000D-01
-      PAR(47) = 2.8000D-01
-      PAR(48) = 3.0000D-01
-      PAR(49) = 1.0000D-01
-      PAR(50) = 6.0000D-01
-      PAR(51) = 6.0000D-03
-      PAR(52) = 6.0000D-03
-      PAR(53) = 6.0000D+00
-      PAR(54) = 2.0000D-01
-      PAR(55) = 0.0000D+00
-      PAR(56) = 0.0000D+00
-      PAR(57) = 0.0000D+00
-      PAR(58) = 0.0000D+00
-      PAR(59) = 9.1639D-01
-      PAR(60) = 8.0000D-01
-      PAR(61) = 6.6000D-01
-      PAR(62) = 0.0000D+00
-      PAR(63) = 1.0000D+00
-      PAR(64) = 2.5000D-01
-      PAR(65) = 3.0000D-01
-      PAR(66) = 3.0000D-01
-      PAR(67) = 6.0000D-01
-      PAR(68) = 6.0000D-03
-      PAR(69) = 5.0000D-02
-      PAR(70) = 7.0000D-03
-      PAR(71) = 1.0000D+00
-      PAR(72) = 1.2000D-01
-      PAR(73) = 5.0000D-01
-      PAR(74) = 6.0000D-01
-      PAR(75) = 0.0000D+00
-      PAR(76) = 2.0000D-01
-      PAR(77) = 7.0000D-01
-      PAR(78) = 2.0000D+00
-      PAR(79) = 1.0000D+01
-      PAR(80) = 6.0000D-01
-      PAR(81) = 1.0000D+04
-      PAR(82) = 1.4047D-01
-      PAR(83) = 0.0000D+00
-      PAR(84) = 6.0000D+00
-      PAR(85) = 1.0000D+00
-      PAR(86) = 1.0000D+00
-      PAR(87) = 2.9546D-01
-      PAR(88) = 8.0000D-01
-      PAR(89) = 6.0000D-01
-      PAR(90) = 7.0000D+00
-      PAR(91) = -2.5000D+00
-      PAR(92) = 2.0000D-01
-      PAR(93) = 1.0000D+00
-      PAR(94) = 4.0000D+00
-      PAR(95) = 0.0000D+00
-      PAR(96) = 1.0000D+00
-      PAR(97) = 2.0000D-03
-      PAR(98) = 1.5000D+00
-      PAR(99) = 5.0000D-01
-      PAR(100) = 2.0000D+00
-      PAR(101) = 1.0000D+00
-      PAR(102) = 0.0000D+00
-      PAR(103) = 2.0000D+00
-      PAR(104) = 4.0000D-01
-      PAR(105) = 1.0000D-01
-      PAR(106) = 0.0000D+00
-      PAR(107) = 0.0000D+00
-      PAR(108) = 0.0000D+00
-      PAR(109) = 2.0000D+01
-      PAR(110) = 1.5000D+00
-      PAR(111) = 0.0000D+00
-      PAR(112) = 7.0000D-01
-      PAR(113) = 8.0000D-01
-      PAR(114) = 2.0000D+00
-      PAR(115) = 0.0000D+00
-      PAR(116) = 1.0000D+00
-      PAR(117) = 0.0000D+00
-      PAR(118) = 5.0000D-03
-      PAR(119) = 0.0000D+00
-      PAR(120) = 1.0000D+00
-      PAR(121) = 3.0000D-01
-      PAR(122) = 0.0000D+00
-      PAR(123) = 3.0000D-01
-      PAR(124) = 1.0000D+00
-      PAR(125) = 1.0000D+00
-      PAR(126) = 1.0000D+00
-      PAR(127) = 6.0000D+00
-      PAR(128) = 1.0000D+00
-      PAR(129) = 8.0000D-02
-      PAR(130) = 1.2000D+01
-      PAR(131) = 5.0000D-01
-      PAR(132) = 5.0000D-01
-      PAR(133) = 1.0000D+01
-      PAR(134) = -5.0000D+00
-      PAR(135) = 6.0000D+00
-      PAR(136) = 0.0000D+00
-      PAR(137) = 1.2000D+00
-      PAR(138) = 0.0000D+00
-      PAR(139) = 5.0000D-01
-      PAR(140) = 4.5000D-01
-      PAR(141) = 1.5000D+00
-      PAR(142) = 0.0000D+00
-      PAR(143) = 5.0000D-01
-      PAR(144) = 9.5000D-01
-      PAR(145) = 8.5000D-01
-      PAR(146) = 0.0000D+00
-      PAR(147) = 3.0000D-01
-      PAR(148) = 5.0000D-01
-      PAR(149) = 3.0000D-01
-      PAR(150) = 4.0000D-03
-      PAR(151) = 2.0000D+00
-      PAR(152) = 4.0000D+00
-      PAR(153) = 1.0000D+01
-      PAR(154) = 3.0000D-01
-      PAR(155) = 0.0000D+00
-      PAR(156) = 5.0000D-01
-      PAR(157) = 3.0000D-01
-      PAR(158) = 0.0000D+00
-      PAR(159) = 0.0000D+00
-      PAR(160) = 0.0000D+00
-      PAR(161) = 0.0000D+00
-      PAR(162) = 0.0000D+00
-      PAR(163) = 0.0000D+00
-      PAR(164) = 0.0000D+00
-      PAR(165) = 0.0000D+00
-      PAR(166) = 0.0000D+00
-      PAR(167) = 0.0000D+00
-      PAR(168) = 0.0000D+00
-      PAR(169) = 0.0000D+00
-      PAR(170) = 0.0000D+00
-      PAR(171) = 0.0000D+00
-      PAR(172) = 0.0000D+00
-      PAR(173) = 0.0000D+00
-      PAR(174) = 0.0000D+00
-      PAR(175) = 0.0000D+00
-      PAR(176) = 0.0000D+00
-      PAR(177) = 0.0000D+00
-      PAR(178) = 0.0000D+00
-      PAR(179) = 0.0000D+00
-      PAR(180) = 0.0000D+00
-      PAR(181) = 0.0000D+00
-      PAR(182) = 0.0000D+00
-      PAR(183) = 0.0000D+00
-      PAR(184) = 0.0000D+00
-      PAR(185) = 0.0000D+00
-      PAR(186) = 0.0000D+00
-      PAR(187) = 0.0000D+00
-      PAR(188) = 0.0000D+00
-      PAR(189) = 0.0000D+00
-      PAR(190) = 0.0000D+00
-      PAR(191) = 0.0000D+00
-      PAR(192) = 0.0000D+00
-      PAR(193) = 0.0000D+00
-      PAR(194) = 0.0000D+00
-      PAR(195) = 0.0000D+00
-      PAR(196) = 0.0000D+00
-      PAR(197) = 0.0000D+00
-      PAR(198) = 0.0000D+00
-      PAR(199) = 0.0000D+00
-      PAR(200) = 0.0000D+00
-      IPAR(1) = 1
-      IPAR(2) = 0
-      IPAR(3) = 8
-      IPAR(4) = 0
-      IPAR(5) = 1
-      IPAR(6) = 0
-      IPAR(7) = 0
-      IPAR(8) = 1
-      IPAR(9) = 1
-      IPAR(10) = 1
-      IPAR(11) = 0
-      IPAR(12) = 3
-      IPAR(13) = 0
-      IPAR(14) = -2
-      IPAR(15) = 9
-      IPAR(16) = 8
-      IPAR(17) = 1
-      IPAR(18) = 4
-      IPAR(19) = 1
-      IPAR(20) = 0
-      IPAR(21) = 0
-      IPAR(22) = 0
-      IPAR(23) = 0
-      IPAR(24) = 0
-      IPAR(25) = 1
-      IPAR(26) = 0
-      IPAR(27) = 0
-      IPAR(28) = 4
-      IPAR(29) = 1
-      IPAR(30) = 0
-      IPAR(31) = 1
-      IPAR(32) = 0
-      IPAR(33) = 0
-      IPAR(34) = 0
-      IPAR(35) = 0
-      IPAR(36) = 1
-      IPAR(37) = 0
-      IPAR(38) = 1
-      IPAR(39) = 0
-      IPAR(40) = 0
-      IPAR(41) = 0
-      IPAR(42) = 3
-      IPAR(43) = 1
-      IPAR(44) = 0
-      IPAR(45) = 0
-      IPAR(46) = 2
-      IPAR(47) = 6
-      IPAR(48) = 1
-      IPAR(49) = 4
-      IPAR(50) = 0
-      IPAR(51) = 2
-      IPAR(52) = 0
-      IPAR(53) = 1
-      IPAR(54) = 0
-      IPAR(55) = 0
-      IPAR(56) = 0
-      IPAR(57) = 1
-      IPAR(58) = 3
-      IPAR(59) = 1
-      IPAR(60) = 0
-      IPAR(61) = 100
-      IPAR(62) = 1
-      IPAR(63) = 0
-      IPAR(64) = 0
-      IPAR(65) = 1
-      IPAR(66) = 3
-      IPAR(67) = 0
-      IPAR(68) = 0
-      IPAR(69) = 1
-      IPAR(70) = 1
-      IPAR(71) = 0
-      IPAR(72) = 0
-      IPAR(73) = 0
-      IPAR(74) = 1
-      IPAR(75) = 0
-      IPAR(76) = 0
-      IPAR(77) = 0
-      IPAR(78) = 2
-      IPAR(79) = 1
-      IPAR(80) = 1
-      IPAR(81) = 5
-      IPAR(82) = 2
-      IPAR(83) = 0
-      IPAR(84) = 2
-      IPAR(85) = 1
-      IPAR(86) = 0
-      IPAR(87) = 3
-      IPAR(88) = 1
-      IPAR(89) = 0
-      IPAR(90) = 1
-      IPAR(91) = 0
-      IPAR(92) = 0
-      IPAR(93) = 0
+      IPAR(92) = 1
+      IPAR(93) = 1
       IPAR(94) = 0
       IPAR(95) = 0
       IPAR(96) = 0
@@ -1802,7 +1072,7 @@ C...  Splitting parameters
      &     24*3.D0,76*0.D0,8*2.D0,40*0.D0,12*2.D0,40*0.D0,24*3.D0,
      &     40*0.D0/
 C...Parameters of flavor formation 
-c     last in use: 157
+c     last in use: 158
       DATA PAR/0.04D0,0.3D0,0.3D0,0.14D0,0.3D0,0.3D0,0.15D0,0.D0,7.D0, ! 10
      &     2*0.D0,0.9D0,0.2D0,4*0.04D0,0.5D0,0.8D0,0.5D0,              ! 20 
      &     0.8D0,6.D0,0.5D0,0.004D0,5*0.D0,0.7D0,                      ! 30
@@ -1819,10 +1089,12 @@ c     last in use: 157
      &     0.0001D0,0.5D0,31.10362D0,-15.29012D0,6.5D0,                ! 135
      &     0.D0,4 *0.D0,                                               ! 140
      &     1.D0,0.D0,0.5D0,0.D0,0.5D0,0.D0,0.3D0,0.8D0,0.08D0,0.004D0, ! 150
-     &     2.D0,1.D0,1.D0,1.D0,1.D0,1.D0,0.D0,3*0.D0,                  ! 160      
+     &     2.D0,1.D0,1.D0,1.D0,1.D0,1.D0,0.D0,1.D0,2*0.D0,             ! 160      
      &     40*0.D0/                                                    ! 200
-c     last in use:87
-      DATA IPAR /9*0,1,0,1,8*0,20*0,9*0,0,2,9*0,100,25*0,2,13*0/     
+c     last in use:93
+      DATA IPAR /9*0,1,0,1,8*0,20*0,    ! 40
+     &     9*0,0,2,9*0,                 ! 60
+     &     100,25*0,2,1,0,0,0,1,0,7*0/  ! 100   
 
 C...Fragmentation of nuclei
       DATA KODFRAG /0/
@@ -2562,11 +1834,23 @@ c     default: 0.5, 0.0 ( phi only created from s-sbar)
       CDIAG(8+1) =  1.D0-PAR(143) ! u-flavor, Prob. I=1 vs 0
       CDIAG(8+3) =  1.D0-PAR(143) ! d-flavor, Prob. I=1 vs 0
 
+      XDIQ = 1.D0
+      
       IARNK = IABS(IRNK)
       IFLA = IABS(IFL1)
+c     check if diq production allowed?
+c     for strings with leading diquarks the immediate formation of another diquark may be forbidden
+      if(ifla.gt.100.and.mod(ifla,100).lt.10)then
+         XDIQ = PAR(158)
+         ifl1 = mod(ifl1,100)
+         IFLA = IABS(IFL1)
+      endif
+      
       IFL2A = IFL2_A
       IF (IFL2A .NE. 0)  THEN
 c     combine existing flavors to hadron
+c     three cases: input diquark (MB=2): need to sample additional quark,
+c                  input quark (MB=0,1): sample quark (0) or diquark (1)?         
          IFL2A = MOD(IFL2A,100)
          IFL2 = IFL2A
          IFLB = IABS(IFL2A)
@@ -2579,6 +1863,7 @@ c     sample new flavor
          IF (IFLA .LT. 10)   THEN
              MB = 1
              IF ((1.D0+PAR(1))*S_RNDM(0).LT. 1.D0)  MB=0
+             XDIQ = 1.D0             
 c     suppress baryons close to the string end
 c     IPAR(55) defines largest forbidden rank
 c     PAR(101) is the rejection probability
@@ -2611,11 +1896,15 @@ c     symmetric in u,d
          GOTO 100
       ENDIF
 
-C...Decide if the diquark must be split
+C...  Decide if the diquark must be split
+c     if diquark is from previous splitting (popcorn) do NOT split diquark
+c     jump to sample quark and form baryon      
       IF (MB .EQ. 2 .AND. IFLA .GT. 100)   THEN
          IFLA = MOD(IFLA,100)
            GOTO 200
       ENDIF
+c     split diquark? if yes sample single flavor and form meson
+c     diquark with any flavor combination is passed on with id+100        
       IF (MB .EQ. 2 .AND. IFL2A .EQ. 0)   THEN
           IF (S_RNDM(0) .LT. PAR(8))  THEN
              MB = 0
@@ -2632,7 +1921,8 @@ C...Decide if the diquark must be split
              IFLE = MIN(IFL11,IFL22)
              IFL2 = -IFLH*10+IFL22
              IF (S_RNDM(3) .GT. 0.5D0)  IFL2 = IFL22*10-IFLH
-             IFL2 = IFL2+ISIGN(100,IFL2)
+c     limit diquark splitting to B-M-B (default: yes)             
+             IF(IPAR(92).eq.1) IFL2 = IFL2+ISIGN(100,IFL2)
           ENDIF
       ENDIF
        
@@ -2769,6 +2059,12 @@ C...Distinguish Lambda- and Sigma- like particles
      &        +2*INT(PAR(108)+S_RNDM(4))
       ENDIF
       KF=ISIGN(KF,IFL1)
+c     if leading baryon, mark quark to supress baryon production in the next iteration
+c     i.e. forbid: Blead-Bbar-B combination
+      if(iarnk.eq.1.and.IPAR(93).eq.1.and.iabs(mod(ifl1,100)).gt.10)then
+         IFL2 = IFL2 + ISIGN(100,IFL2)
+      endif
+
       IF(NDEBUG.gt.6)
      &     WRITE(LUN,*)' SIB_FLAV: output:',IFL1, IFL2_A, IRNK, IFL2, KF
       
@@ -7452,14 +6748,25 @@ C-----------------------------------------------------------------------
       CHARACTER*6 NAMP
       COMMON /S_CNAM/ NAMP (0:99)
       SAVE
+c     CBR contains the normed sum of the branching ratios of the decay channels
+c     indexed by IDB, i.e. a particle with 4 decay channels will have the entries
+c     [B1/Btot, (B1+B2)/Btot, (B1+B2+B3)/Btot, 1.]
       DATA CBR /3*1.D0,0.D0,1.D0,1.D0,0.6354D0,0.8422D0,0.8981D0,
      + 0.9157D0,0.9492D0,1.D0,0.6354D0,0.8422D0,0.8981D0,0.9157D0,
      + 0.9492D0,1.D0,0.1965D0,0.3224D0,0.4579D0,0.5934D0,0.7967D0,1.D0,
-     + 0.6925D0,1.D0,3*0.D0,0.5D0,1.D0,0.5D0,1.D0,0.3941D0,0.7197D0,
-     + 0.9470D0,0.9930D0,1.D0,0.D0,0.4460D0,0.6530D0,0.9470D0,0.9770D0,
-     + 0.9980D0,4*1.D0,0.6670D0,1.D0,9*0.D0,0.6670D0,1.D0,0.6670D0,1.D0,
-     + 0.6670D0,1.D0,0.8940D0,0.9830D0,1.D0,0.4930D0,0.8340D0,0.9870D0,
-     + 1.D0,0.5160D0,5*1.D0,0.6410D0,2*1.D0,0.67D0,1.D0,0.33D0,2*1.D0,
+     + 0.6925D0,1.D0,3*0.D0,0.5D0,1.D0,0.5D0,1.D0,
+     + 0.3941D0,0.7197D0,0.9470D0,0.9930D0,1.D0,                     ! eta
+     + 0.4285D0,0.7193D0,0.9487D0,0.9750D0,0.9973D0,0.9999D0,1.D0,   ! eta'
+     + 3*1.D0,                                                       ! rho-mesons
+     + 0.6670D0,1.D0,                                                ! K*+
+     + 0.4894D0,0.8317D0,0.9850D0,0.9981D0,0.9994D0,0.9997D0,1.D0,   ! phi(1020)
+     + 2*0.D0,                                                       ! (empty)      
+     + 0.6670D0,1.D0,                                                ! K*-
+     + 0.6670D0,1.D0,                                                ! K*0
+     + 0.6670D0,1.D0,                                                ! K*0 bar
+     + 0.8940D0,0.9830D0,1.D0,                                       ! omega
+     + 4*0.D0,                                                       ! (empty)
+     + 0.5160D0,5*1.D0,0.6410D0,2*1.D0,0.67D0,1.D0,0.33D0,2*1.D0,
      + 0.88D0,0.94D0,1.D0,0.88D0,0.94D0,1.D0,0.88D0,0.94D0,1.D0,0.33D0,
      + 1.D0,0.67D0,1.D0,0.678D0,0.914D0,1.D0,0.217D0,0.398D0,0.506D0,
      + 0.595D0,0.684D0,0.768D0,0.852D0,0.923D0,0.976D0,1.D0,0.217D0,
@@ -7520,13 +6827,22 @@ C-----------------------------------------------------------------------
      &     0.001295D0,0.00155D0,8.281D-05,9.801D-05,0.D0,0.D0,0.09D0,
      &     0.01D0,0.09D0,0.01D0,6*0.D0,0.01D0,0.01D0,0.01D0,4*0.0729D0,
      &     32*0.D0/
+c     IDB is the index to the branching ratios (CBR) and decay channels (KDEC).
+c     always indicates the first decay channel
       DATA IDB /
-     + 0,0,0,1,2,3,5,6,7,13,19,25,8*0,30,32,34,40,46,47,48,49,60,62,
-     + 64,66,69,73,75,76,77,78,79,81,82,84,86,87,90,93,96,98,100,
-     + 0,224,228,232,239,4*0, ! < 59
-     + 103,113,246,248,250, 252,254,256,258,3*0,      
-     + 123,134,145,204,214,200,202,151,154,157,159,0,
-     + 161,164,165,166,167,175,179,4*0,189,190,191,192,194,196 /
+     +     0,0,0,1,2,                                        ! leptons
+     +     3,5,6,7,13,19,25,                                 ! pions and kaons
+     +     8*0,30,32,34,39,46,47,48,49,60,62,64,66,51, !69,       ! meson resonances
+     +     73,75,76,77,78,79,81,82,84,86,87,90,93,96,98,100, ! baryons : Sibyll 2.1
+     +     0,224,228,232,239,4*0,                            ! Nucleon resonaces
+     +     103,113,246,248,250, 252,254,256,258,3*0,      
+     +     123,134,145,204,214,200,202,151,154,157,159,0,
+     +     161,164,165,166,167,175,179,4*0,189,190,191,192,194,196 /
+c     KDEC contains decay channels, format is [ND, MAT, LL(1:4)]
+c     where ND is the number of particles in the final state (max 4)
+C     MAT is 0, 1 for semi-leptonic (weak decay) or not
+c     (adds primitive matrix element)
+c     LL(1:4) are the particle ids of the final state particles
       DATA KDEC /
      + 3,1,15,2,18,0,3,1,16,3,17,0,2,0,1,1,8*0,2,0,4,17,0,0,2,0,5,18,0,
      + 0,2,0,4,17,0,0,2,0,7,6,0,0,3,0,7,7,8,0,3,0,7,6,6,0,3,1,17,4,6,0,
@@ -7534,13 +6850,22 @@ C-----------------------------------------------------------------------
      + 1,18,5,6,0,3,1,16,3,6,0,3,0,6,6,6,0,3,0,7,8,6,0,3,1,18,5,7,0,3,
      + 1,17,4,8,0,3,1,16,3,7,0,3,1,15,2,8,0,2,0,7,8,0,0,2,0,6,6,20*0,1,
      + 0,11,3*0,1,0,12,0,0,0,1,0,11,0,0,0,1,0,12,0,0,0,2,0,1,1,0,0,3,0,
-     + 6,6,6,0,3,0,7,8,6,0,3,0,1,7,8,0,3,0,1,3,2,7*0,3,0,7,8,23,0,3,0,6
-     + ,6,23,0,2,0,1,27,0,0,2,0,1,32,0,0,2,0,1,1,0,0,3,0,6,6,6,0,2,0,7,
-     + 6,0,0,2,0,8,6,0,0,2,0,7,8,0,0,2,0,21,7,0,0,2,0,9,6,0,0,54*0,2,0,
-     + 22,8,0,0,2,0,10,6,0,0,2,0,9,8,0,0,2,0,21,6,0,0,2,0,10,7,0,0,
-     + 2,0,22,6,0,0,3,0,7,8,6,0,2,0,1,6,0,0,2,0,7,8,0,0,2,0,9,10,0,
-     + 0,2,0,11,12,0,0,3,0,7,
-     + 8,6,0,2,0,1,23,0,0,2,0,13,6,0,0,2,0,14,7,0,0,2,0,39,1,0,0,2,
+     + 6,6,6,0,3,0,7,8,6,0,3,0,1,7,8,0,3,0,1,3,2,0,
+     + 3,0,7,8,23,0, 3,0,6,6,23,0, 2,0,1,27,0,0, 2,0,1,32,0,0,           ! eta'
+     + 2,0,1,1,0,0, 3,0,6,6,6,0, 3,0,1,4,5,0,                            ! eta'
+     + 2,0,7,6,0,0,                                                      ! rho+
+     + 2,0,8,6,0,0,                                                      ! rho-
+     + 2,0,7,8,0,0,                                                      ! rho0
+     + 2,0,21,7,0,0, 2,0,9,6,0,0,                                        ! K*+
+     + 2,0,9,10,0,0, 2,0,11,12,0,0, 3,0,7,8,6,0, 2,0,1,23,0,0,           ! phi(1020)
+     + 2,0,1,6,0,0, 2,0,2,3,0,0, 2,0,4,5,0,0,                            ! phi(1020)                  
+     + 12*0,
+     + 2,0,22,8,0,0, 2,0,10,6,0,0,                                       ! K*-
+     + 2,0,9,8,0,0, 2,0,21,6,0,0,                                        ! K*0
+     + 2,0,10,7,0,0, 2,0,22,6,0,0,                                       ! K*0 bar
+     + 3,0,7,8,6,0, 2,0,1,6,0,0, 2,0,7,8,0,0,                            ! omega
+     + 24*0,
+     + 2,0,13,6,0,0,2,0,14,7,0,0,2,0,39,1,0,0,2,                         ! baryons
      + 0,14,8,0,0,2,0,39,6,0,0,2,0,39,8,0,0,2,0,13,8,0,0,2,0,
      + 14,6,0,0,2,0,13,7,0,0,2,0,13,6,
      + 0,0,2,0,14,7,0,0,2,0,13,8,0,0,2,0,14,6,0,0,2,0,14,8,0,0,2,0,
@@ -7947,8 +7272,10 @@ c     reset parameters after rejection
       PTOT (2) = PY1+PY2
       PTOT (3) = 0.D0
       PTOT (4) = E0
-      IFL(1) = IFL1
-      IFL(2) = IFL2
+c     turn on/off splitting of leading diquark
+c     (1: no splitting, 0: diq may be split, producing leading meson)
+      IFL(1) = IFL1+ISIGN(100,IFL1)*MIN(1,IABS(IFL1)/10)*IPAR(90)
+      IFL(2) = IFL2+ISIGN(100,IFL2)*MIN(1,IABS(IFL2)/10)*IPAR(90)     
       PMQ(1) = QMASS(IFL(1))
       PMQ(2) = QMASS(IFL(2))
 
@@ -8092,9 +7419,6 @@ C...  suppress rank-1 baryon through popcorn
 
 C...  leading strange/charm
       IF(ILEAD(JT).eq.1.and.IPAR(39).gt.0) PAR(2) = PAR(65)
-
-C...  turn off leading popcorn
-      IF(ILEAD(JT).eq.1.and.IPAR(90).eq.1) PAR(8) = 0.
       
 c     scale valence string end charm for assoc. prod.      
       IF(IPAR(41).eq.1)THEN
@@ -8447,6 +7771,16 @@ C...Reset pT and flavor at ends of the string
 C...Final two hadrons
  400  IAFL1 = IABS(mod(IFL(JR),100))
       IAFL2 = IABS(mod(IFL(3),100))
+      IF(NDEBUG.gt.5)
+     &     write(lun,*)'STRING_FRAG: final flavors:', IFL(JR), -IFL(3)
+      
+C..   check if flavor combination is allowed..
+      
+c     reject anti-baryon next to leading baryon
+c     remaining anti-quark from leading baryon is marked by id+100
+      IF((IABS(IFL(JR)).gt.100.and.IAFL2.gt.10).or.
+     & (IABS(IFL(3)).gt.100.and.IAFL1.gt.10)) GOTO 200
+      
       IF(IPAR(40).eq.0)THEN
 c     reject two diquarks, two anti-diquarks AND diquark anti-diquark pairs
          IF (IAFL1*IAFL2 .GT. 100)  GOTO 200 
@@ -8529,16 +7863,11 @@ c     always incr. vector rate for diff. strings independent of beam type
          ENDIF
       ENDIF
 
-C...  turn off leading popcorn
-      PAR8_def_1 = PAR(8)
-      IF(ILEAD(JR).eq.1.and.IPAR(90).eq.1) PAR(8) = ZERO     
-
       CALL SIB_I4FLAV (IFL(JR), -IFL(3), IRNK(JR), IFLA, LLIST(I+1))
 
       IPAR(82) = ipar82_def
       IPAR(83) = ipar83_def
       PAR(143) = PAR143_def
-      PAR(8) = PAR8_def_1
       
       nporig(I+1)= Ipflag*2 + KINT
       niorig(I+1)= iiflag
@@ -9107,8 +8436,10 @@ C--------------------------------------------------------------------
 
 c     internal types
       INTEGER LL,LCON,LRES,LRES1,NTRYS,NRJECT,LA,N1,IREJ,I,J,IFLA,
-     &     IFL1,IFL2,IFBAD,NPI,IRES,LA1,JQQ,JQTOT,K,JQR
-      DOUBLE PRECISION PD,BE,EMIN,EMIN2,PCHEX,PRES,DELTAE,SQS_0,
+     &     IFL1,IFL2,IFBAD,NPI,IRES,LA1,JQQ,JQTOT,K,JQR,
+     &     KB_0,IAT_0
+      DOUBLE PRECISION PD,BE,EMIN,EMIN2,PCHEX,PRES,DELTAE,
+     &     SQS_0,S_0,PTmin_0,XMIN_0,ZMIN_0,
      &     PAR1_def,PAR24_def,PAR53_def,GA,BEP,S_RNDM,AV,GASDEV,PCXG,
      &     XI1,XI2,XSMR         !,FERMI
       DIMENSION LL(10), PD(10,5), BE(3), LCON(6:99),LRES1(6:99)
@@ -9175,12 +8506,24 @@ C...  pomeron-hadron scattering (pi0 is used instead of pomeron)
  50      CONTINUE
          IPFLAG= IPFLAG*100
 c     create subevent
-         SQS_0 = SQS
+         SQS_0   = SQS
+         S_0     = S
+         PTmin_0 = PTmin 
+         XMIN_0  = XMIN
+         ZMIN_0  = ZMIN
+         KB_0    = KB
+         IAT_0   = IAT
          CALL INI_EVENT(P0(5),L0,6,0)
 c     create L0 - pi0 interaction, pi0(pid=6) target
          CALL SIB_NDIFF(L0, 1, P0(5), 0, IREJ) ! ori
 c     restore main event
-         SQS = SQS_0         
+         SQS   = SQS_0
+         S     = S_0
+         PTmin = PTmin_0         
+         XMIN  = XMIN_0
+         ZMIN  = ZMIN_0
+         KB    = KB_0
+         IAT   = IAT_0
          IF(IREJ.NE.0) THEN
             NP = N1-1
             GOTO 50
@@ -10543,8 +9886,8 @@ C--------------------------------------------------------------------
       COMMON /SIB_FAC/ FACN
       SAVE
 c     charge exchange map
-      DATA LCON(6:33) /7,6,6,21,22,9,9,14,13,4*0,20,19,9,10,23,24,27,27,
-     &     25,30,31,28,29,32,33/
+      DATA (LCON(I),I=6, 33)  /7,6,6,21,22,9,9,14,13,4*0,20,19,9,10,23,
+     &     24,27,27,25,30,31,28,29,32,33/
       DATA (LCON(I),I=34, 49) 
      &     /35,34,35,38,37,39,41,42,41,42,45,44,45,48,47,49/
       DATA (LCON(I),I=50, 83) /0,52,51,54,53,4*0,71,72,10*0,
@@ -10584,6 +9927,11 @@ c      DATA PCHEX /0.33/
 
 c     default parameter: PAR(61)
       PCHEX = PCHEXin
+
+c     split charge exchange between 2 and 3+ fireballs
+      IF(IPAR(91).eq.1.and.NPI.gt.2)THEN
+         PCHEX = 1.D0-PCHEX
+      ENDIF
 
 c     hyperon production rate
       PLAM = PAR(157)
@@ -24532,26 +23880,4 @@ C******************************************************i****************
       SS = SIB_DBFINT(NARG,XT,NA,ARRF,XSF)  * X1**7 * XS
       GL = SIB_DBFINT(NARG,XT,NA,ARRF,XGF)  * X1**5 * XS
 
-      END
-
-      FUNCTION GASDEV(Idum)
-C...Gaussian deviation
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      SAVE
-      SAVE GSET
-      DATA ISET/0/
-      IF (ISET.EQ.0) THEN
-1       V1=2.*S_RNDM(0)-1.
-        V2=2.*S_RNDM(0)-1.
-        R=V1**2+V2**2
-        IF(R.GE.1.)GO TO 1
-        FAC=SQRT(-2.*LOG(R)/R)
-        GSET=V1*FAC
-        GASDEV=V2*FAC
-        ISET=1
-      ELSE
-        GASDEV=GSET
-        ISET=0
-      ENDIF
-      RETURN
       END
