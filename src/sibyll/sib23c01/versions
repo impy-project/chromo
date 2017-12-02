@@ -1,0 +1,37 @@
+
+***** Description of the different versions of Sibyll for the different use cases *******
+
+* CORSIKA
+
+  reference model (this repository)
+  uses external random number generator and decay setup
+  no call to RND_INI and DEC_INI needed
+
+
+* CRMC
+
+  uses external random number generator and decay setup
+  no call to RND_INI and DEC_INI needed
+
+
+* CONEX
+
+  two versions, one linked to epos (.f)
+  and one linked to conex (.F)
+  .F has additional precompiler statements
+  no RND_INI and DEC_INI needed
+
+
+* MCEq
+
+  no RND_INI and DEC_INI needed
+  external decay routines (pythia), all particles stable!
+
+
+* stand-alone
+
+  define stable/unstable in DEC_INI
+  link random number generator to S_RNDM (usually from PHOJET)
+
+
+* development (separate branch)

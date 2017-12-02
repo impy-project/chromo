@@ -17,8 +17,8 @@ class SibyllMCEvent(MCEvent):
         npart = lib.s_plist.np
         stable = np.nonzero(np.abs(s_plist.llist[:npart]) < 10000)[0]
         if event_config['charged_only']:
-            sel = stable[lib.s_chp.ichp[np.abs(s_plist.llist[stable]) - 1] !=
-                         0]
+            sel = stable[
+                lib.s_chp.ichp[np.abs(s_plist.llist[stable]) - 1] != 0]
         else:
             sel = stable
 
@@ -54,9 +54,9 @@ class SibyllMCRun(MCRun):
         elif abs(k.p1pdg) == 321:
             sigproj = 3
         else:
-            raise Exception(self.class_name + "::init_generator(): No " +
-                            "cross section available for projectile " +
-                            k.p1pdg)
+            raise Exception(
+                self.class_name + "::init_generator(): No " +
+                "cross section available for projectile " + k.p1pdg)
         return self.lib.sib_sigma_hp(sigproj, self.ecm)[2]
 
     def set_event_kinematics(self, event_kinematics):
@@ -127,7 +127,7 @@ class SibyllMCRun(MCRun):
 class SibyllCascadeEvent():
     def __init__(self, lib):
         npart = lib.s_plist.np
-        stable = np.nonzero(np.abs(lib.s_plist.llist[:npart]) < 10000)[0]
+        stable = np.where(np.abs(lib.s_plist.llist[:npart]) < 10000)[0]
 
         self.p_ids = lib.s_plist.llist[:npart][stable]
         self.E = lib.s_plist.p[:npart, 3][stable]
@@ -139,9 +139,9 @@ class SibyllCascadeEventPQCDc():
         npart = lib.s_plist.np
         spl = lib.s_plist
         stable = np.where((np.abs(spl.llist[:npart]) < 10000) & np.logical_not(
-            (np.abs(spl.llist[:npart]) >= 59) &
-            ((np.abs(lib.s_parto.nporig[:npart]) < 100) |
-             (np.abs(lib.s_parto.nporig[:npart]) > 1000))))[0]
+            (np.abs(spl.llist[:npart]) >= 59) & (lib.s_chist.jdif[0] == 0) & (
+                (np.abs(lib.s_parto.nporig[:npart]) < 10) |
+                (np.abs(lib.s_parto.nporig[:npart]) > 1000))))[0]
 
         self.p_ids = spl.llist[:npart][stable]
         # if np.any(self.p_ids >= 59):

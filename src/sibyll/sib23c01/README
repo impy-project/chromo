@@ -1,0 +1,51 @@
+****************************************************
+*
+* SIBYLL hadronic interaction model -  stand alone
+*
+****************************************************
+
+see 'make help' for compilation information
+
+
+
+files:
+
+--- Interaction model ----
+
+sibyll2.3c.f  -  model source, includes nuclib and GRV98LO PDF interpolation table
+	      	 the file from CORSIKA, ready to be used.
+
+sibyll2.3c.h  -  C++ interface for Sibyll
+
+sibyll.par    -  parameter initialization file (by default not used)
+	      	 add call to subroutine PAR_INI_FROM_FILE to initialization (SIBYLL_INI) in order to user
+
+
+
+
+--- example programs ----
+
+sib_cms.f     -  FORTRAN example program, uses text-based histograms in utils/rhisto.f	      	 
+	      	 example of event configuration is in input.inp, run: './sib_cms < input.inp'
+
+sib_cms.cc    -  C++ example program
+
+sib_cms.py    -  Python example, requires compilation of the Sibyll python module 'make sib23ccrs'
+
+
+
+
+--- test programs  ----
+
+files in subdir ./test  -  assortment of fortran programs that test energy conservation, stability and sanity.
+
+
+
+
+--- utilities -----
+
+utils/rhisto.f   -  FORTRAN histogramming library, used in sib_cms.f for basic plots.
+
+utils/rndm_dbl.f -  random number generator, used in all example and test programs.
+		    needed whenever Sibyll is run stand-alone, i.e. outside of CORSIKA.
+		    other generators may be used, only double precision function s_rndm has to be provided
