@@ -67,6 +67,7 @@ class SibyllMCRun(MCRun):
         self.ecm = k.ecm
 
         self.event_config['event_kinematics'] = k
+        self.evkin = event_kinematics
 
     def init_generator(self, config):
 

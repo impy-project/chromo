@@ -70,9 +70,8 @@ class EPOSMCRun(MCRun):
         print "Set event kinematics with", k.ecm
         self.event_config['event_kinematics'] = event_kinematics
 
-    def init_generator(self, config):
+    def init_generator(self, config, datdir='./iamdata/'):
 
-        datdir = '/lustre/fs17/group/that/af/m2m/iamdata/'
         # datdir = '../../iamdata/'
         ounit = None
         try:

@@ -332,7 +332,6 @@ class MCRun():
         print self.class_name + \
         "::start_fixed(): starting generation of", self.n_events, "events"
         print self.evkin
-
         self.settings.enable()
 
         self._init_progress_bar()
@@ -345,6 +344,7 @@ class MCRun():
             if reject:
                 rej_counter += 1
                 continue
+
             event = self.event_class(self.lib, self.event_config)
             fired_triggers = self.trigger_event(event)
             if not fired_triggers:
@@ -375,7 +375,10 @@ class MCRun():
         print(r"...completed {0:3.2f}\% of the events have been rejected."
               ).format(100. * float(rej_counter) / float(self.n_events))
 
-        self.log_man.close_log()
+        try:
+            self.log_man.close_log()
+        except AttributeError:
+            print 'No logging facility defined.'
 
     def single_event(self):
         #        print "single_event()"
@@ -427,6 +430,7 @@ class MCRun():
                 if reject:
                     rej_counter += 1
                     continue
+
                 event = self.event_class(self.lib, self.event_config)
                 fired_triggers = self.trigger_event(event)
 
