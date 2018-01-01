@@ -1,0 +1,8 @@
+This is UrQMD version 3.4
+
+To run UrQMD start the runqmd.bash file,
+it uses the inputfile to generate the desired events.
+
+Output is written to the files test.f14,...
+
+See also the user guide in directory doc/.

@@ -1,0 +1,77 @@
+#!/bin/sh
+
+################################################################################
+# maketables - run UrQMD to generate spline tables                             #
+#                                                                 09. Jan 2014 #
+#                                                                Bjørn Bäuchle #
+#                                               baeuchle@fias.uni-frankfurt.de #
+################################################################################
+
+
+# this script deletes the tables.dat and starts UrQMD with a very short
+# system (proton+proton at sqrts = 2 GeV), so that it recreates the
+# tables.dat .
+
+# Set $table to $1 (first argument on command line) or "tables.dat"
+# Don't use another file name. tabinit.f still assumes uqmd.exe to exist
+# and to be found as the name of the executable, which does not happen.
+# What happens with other names is that the tables are generated - cause
+# the file does not exist - and then are written to tables.dat.
+table=${1-tables.dat}
+
+# defined the usual environment variables for UrQMD
+export ftn09=$(mktemp)
+export ftn13=test.f13
+export ftn14=test.f14
+export ftn15=test.f15
+export ftn16=test.f16
+export ftn19=test.f19
+export ftn20=test.f20
+export URQMD_TAB=$table
+
+# input file:
+cat > $ftn09 <<"END"
+pro 1 1
+tar 1 1
+ecm 2
+imp 0
+nev 1
+
+f13
+f14
+f15
+f16
+f19
+f20
+xxx
+END
+
+# remove tables.dat if it exists. -f is used to supress warnings if it
+# doesn't.
+rm -f $table
+urqmdname="urqmd.$(uname -m)"
+
+# find UrQMD executable. First, try the "usual" format:
+if [ -x $urqmdname ]; then
+        exename=./$urqmdname
+# if that doesn't exist, try the lhc version:
+elif [ -x $urqmdname.lhc ]; then
+        exename=./$urqmdname.lhc
+# if both failed, call make for the executable only and create the
+# normal executable.
+else
+        make nolhc $urqmdname
+        exename=./$urqmdname
+fi
+
+# execute UrQMD executable.
+echo "Running UrQMD once to generate tables:"
+echo $exename
+$exename
+
+# remove the input file
+rm -f $ftn09
+# return the existence of the table file (can only exist if it has been
+# created by UrQMD, since before its run, we have deleted any previous
+# files.
+[ -e $table ]

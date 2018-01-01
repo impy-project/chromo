@@ -1,0 +1,35 @@
+
+Copyright
+
+
+UrQMD source and documentation are provided freely for the purpose of
+checking and reproducing published results of the authors.
+
+The Open Standard Codes and Routines (OSCAR)-Group has established -
+for good reasons - guidelines for reproducablity, usage and quality
+control of simlulations codes for pA and AA collsions.
+
+UrQMD is a complex model. In order to ensure that it is used correctly
+that all results are reproducible and that the proper credits are
+given we ask for your agreement to the following copyright and
+safeguard mechanisms in the OSCAR spirit.
+
+The UrQMD collaboration favors cooperation and joint projects with
+outside researchers. We encourage experimental collaborations to
+compare their results to UrQMD. We support you and/or cooperate on any
+sensible project related to UrQMD
+
+If you are interested in a project, please contact us.
+
+Projects without the participation of the UrQMD-Collaboration are
+accepted, if the project is not a current thesis topic of any
+UrQMD-Collaboration member.
+
+We expect that the code authors are informed about any changes and
+modifications made to the code. Any changes to the official version
+must be documented.
+
+The code or any fragments of it shall not be given away to third
+parties.  Similarily, events generated with UrQMD shall not be given
+to third parties without consent of the code authors.
+

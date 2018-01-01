@@ -41,19 +41,28 @@ ifeq ($(CVendor),"GNU")
 		# GNU Debug
 		OPT = -C -fPIC -Wall -fbounds-check -O0 -g \
 			  -ffpe-trap=invalid,zero,overflow -Wuninitialized
+		OPTF90 = -C -fPIC -Wall -fbounds-check -O0 -g \
+			  -ffpe-trap=invalid,zero,overflow -Wuninitialized \
+			  -fno-second-underscore
 		#OPT = -C -fPIC -Wall -Wno-uninitialized -Wno-unused-variable -O3 -g -ffpe-trap=invalid,zero,overflow
 	else
 		# GNU Release
 		#OPT = -C -O0 -fPIC
 		OPT = -C -ftree-vectorize -O3 -Wno-uninitialized -fPIC
+		OPTF90 = -C -ftree-vectorize -O3 -Wno-uninitialized -fPIC \
+			 -fno-second-underscore
 	endif
 else
 	ifeq ($(Config),"Debug")
 	# Intel Debug (-gen-interfaces -warn interfaces)
 		OPT = -C -check bounds -O0 -g -check pointer -fpe0 -traceback
+		OPTF90 = -C -check bounds -O0 -g -check pointer -fpe0 -traceback \ 
+			 -cpp -ffree-form -Wobsolescent -fno-second-underscore
 	else
 		# Intel Release
-		OPT = -C -fast -fpe0
+		OPTF90 = -C -fast -fpe0 \ 
+		      -cpp -ffree-form -Wobsolescent -fno-second-underscore
+		OPT = -C -fast -fpe0	
 	endif
 endif
 
@@ -90,5 +99,8 @@ distclean:
 	rm -rf $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.pyf *.dSYM
 	$(MAKE) --directory=src distclean
 
-.f.o:
+%.o: %.f
 	$(FC) -c $(OPT) -xf77-cpp-input $<
+
+%.o: %.f90
+	$(FC) -c $(OPTF90) -xf77-cpp-input $<
