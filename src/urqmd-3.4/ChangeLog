@@ -1,0 +1,306 @@
+
+Change Log
+----------
+**********
+1.1 => 1.2
+**********
+
+Physics
+-------
+
+
+
+Usage
+-----
+
+- new environment variable URQMD_TAB to find tables.dat
+  if you use different platforms we suggest to set
+  export URQMD_TAB=tables.`uname`
+
+- complete rewrite of gnuranf. There have been some problems with
+  genranf.f on Linux machines. gnuranf.f is now default for Linux. 
+
+
+Bugs
+----
+
+- redirection of OSCAR output via was ftn19 missing
+- wrong sign for angular distributions 
+- changes to support SunOS
+
+
+**********
+1.2 => 1.3
+**********
+
+Physics
+-------
+
+Low energy (E-lab<2 GeV) strangeness production now modeled more accurately.
+For details see PhD thesis of H. Weber, Uni Frankfurt (2003).
+
+Bug fixes
+---------
+
+Nucleus initialization for cascade mode had an unphysical peak on the outer
+edges of the distribution. Now a correct Woods-Saxon shape is used.
+
+**********
+1.3 => 2.3
+**********
+
+Physics
+-------
+
+Pythia 6.409 has been implemented to allow for pQCD scatterings.
+This is influences ALL observables above SPS energies.
+Coherent scattering is important at high energies but not properly included, it is
+mimicked by a reduced leading particle cross section.	
+
+s-channel resonance formation below sqrt s=3 GeV, is not
+treated as string anymore, instead the formed object is projected onto
+a resonance state. Here the highest mass resonance is choosen and the
+decay branching are extrapolated to m=sqrt s.
+This leads to increased flow at all energies. 
+
+Slight refit of mulitplicities in pp to incorporate new data.
+	
+The intermediate versions 2.0-2.1 are described in more detail in 
+E. Bratkovskaya et al, Phys.Rev.C69:054907,2004. 
+This paper also compares UrQMD 1.3 with the UrQMD 2.0/2.1.
+UrQMD 2.3 includes only minor modifications compared to version 2.1 and 2.2.
+	
+
+!!! output format has been changed for files 13,14,16 !!!
+!!! this might create problems with analysis tools    !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+This was necessary to allow for PDG particle ID.
+PDG IDs are shifted by 1000 (OSCAR output however has the proper PDG-IDs).
+	
+Format changes:         
+old: 201  format(9e16.8,i5,2i3,i6,i5,i4)
+new: 201  format(9e16.8,i11,2i3,i9,i5,i4)
+--        
+old: 210  format(9e16.8,i5,2i3,i6,i5,i10,3e16.8,i8)
+new: 210  format(9e16.8,i11,2i3,i9,i5,i10,3e16.8,i8)
+--
+old: 213  format(9e16.8,i5,2i3,i6,i5,i4,8e16.8)
+new: 213  format(9e16.8,i11,2i3,i9,i5,i4,8e16.8)
+--
+old: 501  format(i5,9e16.8,i5,2i3,i6,i5,i3,i15)
+new: 501  format(i5,9e16.8,i11,2i3,i9,i5,i3,i15)
+--
+old: 503  format(9e15.7,i5,2i3,i6,i5,i4,2i4)
+new: 503  format(9e15.7,i11,2i3,i9,i5,i4,2i4)
+--
+old: 302  format (a7,i9,a13,i12,a9,a20,i4,a20,f7.3)
+new: 302  format (a7,i9,a13,i12,a9,a20,i7,a20,f11.3)
+	
+Replaced total cross sections from CERN-HERA by Regge cross
+sections. This changes the cross section (in line with data) 
+for ultra-high energetic interactions (E_cm>500 GeV).
+
+Includes new FAST Woods-Saxin initialisation (Switch on 
+with CTOption 24 =2). This is very important for speed-up in 
+Cosmic Ray simulations!
+	
+Some small bugfixes.
+
+**********
+2.3 => 3.3
+**********
+
+Physics
+-------
+
+Charm rescattering
+Implementation of charmed hadrons with the following itype's:
+D (133), D* (134), J/Psi (135), Psi' (136), chi_c (137)
+
+Rescattering cross sections with pions and rho's included as well, both elastic
+and inelastic D+pi -> D*, rho + J/Psi -> D+\bar{D} and rho + J/Psi -> D*+ \bar{D*}
+
+Cross sections have been parameterized from work done by Zi-Wei Lin:
+Nucl.Phys.A689:965-979,2001 and Phys.Rev.C62:034903,2000
+
+UrQMD + Hydro
+It is possible to run UrQMD with a hydrodynamic evolution for the hot and dense
+stage of the heavy ion reaction. Default calculations are still the cascade
+mode calculations. For the physics changes please refer to arXiv:0806.1695. The
+hydrodynamic evolution is calculated via the SHASTA algorithm. 
+
+* New files 1fluid.f, bessel.f, defs.f, uhmerge.f and new directory with tables
+  for the equation of state (eosfiles) have been added
+
+* output.f: new entry f15outhy is implemented to generate output in f15 if
+  hydro is called. $nin$ is set to 9 and one header line and nine particle
+  lines at the beginning and in the end of the hydrodynamic evolution is
+  printed consisting only of zeroes except of the time information.
+
+* New options and parameters:
+  - CTOption(45)=1 : hydro mode (default is cascade calculation)
+  - CTOption(47)=2 : hadron gas EoS (default)
+  - CTOption(47)=3 : Bag model EoS
+  - CTOption(47)=5 : chiral + hadron gas EoS 
+  - CTOption(48)=N : flag for only  N timesteps of hydro evolution (test case)
+  - CTOption(49): spectator switch: 0 (default)$\rightarrow$spectators are
+                  propagated seperately; 1 $\rightarrow$ spectators are also
+                  put on the hydro grid
+  - CTOption(50)=1: (additional) f14/f19-output directly after hydro evolution;
+                    time is equal to $t_{\rm hydrostart}$ because of back
+                    propagation, resonances decay immediately
+  - CTOption(52): freeze-out switch: 0 (default) $\rightarrow$ isochronous
+                  transverse slices; 1 $\rightarrow$ completely isochronous
+                  freeze-out os the whole system 
+  - CTOption(53): switch for improved momentum generation, default is zero and
+                  any other number leads to old prescription with in any case
+                  high enough maxima
+  - CTParam(61)= 0.2 fm : dx is the cell size for the hydro code
+  - CTParam(62)= 200 : ngr is the grid size of the hydro code
+  - CTParam(63)= 1. fm : is the minimal $t_{\rm hydrostart}$
+  - CTParam(64)= 5 is the factor for the freezeout criterium ($x*\epsilon_0$)
+  - CTParam(65)= 1 is multiplied with $t_{\rm hydrostart}$
+  - CTParam(66)=1.d10 is the rapidity cut for the matter that is put on the
+                      hydrodynamic grid, necessary for calculations at higher
+                      energies than $E_{\rm}=160A~$GeV. 
+* Output in timesteps according to tim statement in inputfile is not
+  consistently possible during the hydrodynmic evolution 
+
+* The option for test cases cto 48 does not work when using the bag model
+  equation of state. 
+
+* Cut in uhmerge.f to stabilize the Cooper-Frye Monte Carlo has been
+  introduced. 
+
+* f15-output has been adjusted. There is now one collision entry before the
+  hydro evolution with npart ingoing particles and no outgoing particles and
+  the opposite after the hydro evolution. Therfore the format 502 of the header
+  line has been changed from format(i1,i8,i4,i7,f8.3,4e12.4) to
+  format(i8,i8,i4,i7,f8.3,4e12.4). Since there is now an interaction with 0
+  ingoing particles which was the signal for a new event, the header-line of a
+  new event starts now with a -1.
+
+Bug Fixes
+* Completely new makefile is written. Please use "make help" for information.
+* anndec.f: New subroutine getbran which gives reasonable values back even if
+  summed cross section is very small. 
+* scatter.f: Disable elastic scattering for pp collisions now works stable
+  (CTOption(7))
+* blockres.f Branching ratios for hyperon resonances are adjusted in order to
+  ensure that they sum up to one (thanks to Pasi Huovinen).
+* CTParam(67) allows for testparticle calculations (default is one testparticle
+  per real particle). If this parameter is used with a value different from one
+  the variable ncollmax in colltab.f has to increased (by CTParam(67)/2) and
+  AAmax should be set to 300*CTParam(67) in inputs.f. After that the code has
+  to be recompiled and the file 'tables.dat' has to be removed and newly
+  generated. The output does not account for the testparticles and has to be
+  scaled accordingly. Furthermore, the computig time increases when using this
+  parameter. 
+* scatter.f: The freeze-out coordinates in position space are changed to take
+  into account the formation times of particles produced in string
+  fragmentation processes. Only formed hadrons are able to decouple from the
+  system. 
+
+
+************
+3.3 => 3.3p1
+************
+
+Bugfix in output.f, concerning file f19 and charmed particles.
+
+
+************
+3.3p1 => 3.4
+************
+
+Physics
+-------
+
+* A new, more realistic, iso-energy density particlization hypersurface
+ has been introduced (see arXiv:1206.3371).
+* Tables for Hadron-Gas and Chiral+Deconfinement EoS have been extended to accommodate for
+  energy densities up to 400 times nuclear ground state energy density. This is needed for
+  LHC calculations.
+* Charm rescattering has been reworked. The following particles are now included:
+  D(133), D* (134), J/Psi (135), Chi_c (136), Psi'(137), D_s(138), D*_s(139). Additionally
+  to elastic scattering the following processes are included: pi+D <-> rho+D*,
+  pi+D* <-> rho+D, (phi,rho,K) + (J/Psi,Chi_c,Psi') <-> (D,D*,D_s,D*_s),
+  (J/Psi,Chi_c,Psi') + Baryon -> Baryon. Cross-sections have been parametrized to fit
+  results from [arXiv:nucl-th/0006086,nucl-th/9912046,nucl-ex/0612012,nucl-ex/0609039
+  nucl-th/0301083]. Where no elastic cross-section was found, a constant 5 mb elastic
+  cross-section is assumed.
+* The meltpoint in Antibaryon + Meson collisions has been raised from 1.7~GeV to 2.18~GeV
+  to account for the cross-section of resonances above the meltpoint, accidentally being
+  lowered. Also the n + pi- meltpoint has been lowered to the p + pi+ meltpoint.
+
+ 
+ 
+* New or changed Options and Parameters:
+  -CTOption(52)=2 activates the iso-energy density particlization and is now default
+  -CTOption(54) OSCAR 2008H output during hydro evolution; 0:(default) disabled
+  -CTOption(55)=1 adjusts .f19 file for visualization output. (no longer OSCAR standard!)
+                      fluidization (see arXiv:1104.3981)
+  -CTParam(59) scaling factor for leading hadron cross section changed from 0.4 to 0.7 to
+               account for new LHC data
+  -CTParam(68) =1.d0 width 0f 3d Gaussian density calculations at fluidization
+  -CTParam(69) =0.d0 quark density cut for fluidization (core-corona separation) in units
+                     of three times the groundstate quark density (see arXiv:1104.3981)
+  -CTParam(70) =1.d10 pseudorapidity cut to calculate the core density for core-corona at
+  -CTParam(71) =2 (default) constructs the hypersurface at every second timestep
+                1: enabled (full evolution)
+                2: enabled (hyper surface)
+
+Misc
+----
+* UrQMD can now be compiled for usage at LHC energies by entering 'make LHC'. This results
+  in larger output files.
+* New process identifiers 91 and 96 have been introduced to mark fluidization and
+  particlization output to .f15
+* The number of collisions on the Standard Output now counts also collisions before the
+  Hydro phase
+* UrQMD checks for many cases of physical, as well as numerical consistency during runtime.
+  Should an inconsistency arise for any reason the code halts. In this case, UrQMD now
+  returns "137" instead of "0" which is the default return value if no error occurred. This
+  is useful to check automatically for aborted UrQMD runs.
+* The current UrQMD version tag is now consistent in all output files. In all previous
+  UrQMD versions, the string had been hard-coded to "1.2"
+* Removed some non-critical warnings that were not useful for the user
+
+
+Bug Fixes
+---------
+* In particlization, Bose-Einstein statistics instead of Boltzmann statistics is used fo K
+  (ityp=±106) and K*_{893}(ityp=±108)
+* A problem regarding isospin symmetry between meson-baryon and meson-antibaryon
+  scattering as well as a false scaling factor for meson-antibaryon scattering has been
+  fixed:
+    -Previously, reactions like antiproton + pi- would be calculated using the n + pi-
+    cross-section instead of the (proper) p + pi+ cross-section.
+    -All resonant AntiBaryon+Meson scattering cross-sections were falsely reduced by a
+    combinatorial factor of two which is needed for the scattering of strange mesons with
+    strange antimesons of different type, e.g. Kbar + K*.
+* A wrong assignment of the next collision partner happened in rare cases. Fixing this did
+  not result in any changes in physics.
+* Charmed particle are assigned correct charges now. Previously, UrQMD ostensibly did not
+  conserve electric charge in some instances. This bug only affected the output. Charge in
+  UrQMD is not a independent variable. All relevant quantum numbers have been, and
+  always are, exactly conserved in UrQMD.
+* The baryon density calculation in presence of anti-baryons is corrected. This is
+  relevant when using the .f15 output to analyze baryon densities. The baryon-current
+  restframe velocity was calculated wrongly depending on how many anti-baryons were
+  present.
+* In very rare cases of a pauli-blocked meson+baryon-string excitation, in which the
+  string creates a baryon-antibaryon pair, the program threw a segmentation fault. This
+  has been fixed.
+* All MB interactions that could not do a quark/antiquark annihilation annihilation
+  accidentally had a 12.5 mbarn cross section below the sighera meltpoint. This has been
+  fixed.
+* Xi+Kbar -> Omega violated detailed balance, since the Omega does not decay in UrQMD. Now
+  this collision is treated as a string, which results mostly in Xi+Kbar -> Xi+Kbar+pi
+* The symmetry coefficients were a factor of 2 too small for pi+pi0, pi-pi0, rho+rho0,
+  rho-rho0 channels. This has been fixed.
+* Mesons coming from the last string break got zero transverse momentum. We made the
+  changes proposed by V.Uzhinsky [arXiv:1107.0374]
+* In very rare cases nucleon resonances up to 5 GeV could be produced. This overpopulated
+  the p+p and peripheral p+Au p_T spectra at p_T > 2 GeV at low collision energies. 
+

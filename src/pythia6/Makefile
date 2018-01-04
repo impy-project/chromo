@@ -5,8 +5,8 @@
 #
 
 PYTHIA6 = pythia-6.4.28
-LHAPDF_CONFIG = /Users/afedynitch/dev/prog/lhapdf/bin/lhapdf-config
-LHAPDF_LIBS = $(shell $(LHAPDF_CONFIG) --ldflags)
+# LHAPDF_CONFIG = /Users/afedynitch/dev/prog/lhapdf/bin/lhapdf-config
+# LHAPDF_LIBS = $(shell $(LHAPDF_CONFIG) --ldflags)
 
 all:  pythia6.$(LEXT) install
 
@@ -25,7 +25,7 @@ install: pythia6.$(LEXT)
 #PYTHIA
 pythia6.$(LEXT): pythia6.pyf $(PYTHIA6).o $(LOGO) 
 	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" pythia6.pyf \
-	$(PYTHIA6).o $(LHAPDF_LIBS) $(LOGO)
+	$(PYTHIA6).o $(LOGO) #$(LHAPDF_LIBS) 
 
 pythia6.pyf: $(PYTHIA6).f $(LOGS)
 	$(F2PY) -m pythia6 -h pythia6.pyf --overwrite-signature \

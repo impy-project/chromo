@@ -84,7 +84,7 @@ C----------------------------------------------------------------
 C     prints the particles known to SIBYLL with their internal
 C     and PDG labels \FR'13
 C----------------------------------------------------------------
-      COMMON /S_CNAM/ NAMP (0:99)
+      COMMON /S_CNAM/ NAMP (0:49)
       CHARACTER NAMP*6
 
       WRITE(LUN,50)

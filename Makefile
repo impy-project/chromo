@@ -39,21 +39,30 @@ endif
 ifeq ($(CVendor),"GNU")
 	ifeq ($(Config),"Debug")
 		# GNU Debug
-		OPT = -C -fPIC -Wall -fbounds-check -O0 -g \
+		OPT = -fPIC -Wall -fbounds-check -O0 -g \
 			  -ffpe-trap=invalid,zero,overflow -Wuninitialized
-		#OPT = -C -fPIC -Wall -Wno-uninitialized -Wno-unused-variable -O3 -g -ffpe-trap=invalid,zero,overflow
+		OPTF90 = -fPIC -Wall -fbounds-check -O0 -g \
+			  -ffpe-trap=invalid,zero,overflow -Wuninitialized \
+			  -fno-second-underscore
+		#OPT = -fPIC -Wall -Wno-uninitialized -Wno-unused-variable -O3 -g -ffpe-trap=invalid,zero,overflow
 	else
 		# GNU Release
-		#OPT = -C -O0 -fPIC
-		OPT = -C -ftree-vectorize -O3 -Wno-uninitialized -fPIC
+		#OPT = -O0 -fPIC
+		OPT = -ftree-vectorize -O3 -Wno-uninitialized -fPIC
+		OPTF90 = -ftree-vectorize -O3 -Wno-uninitialized -fPIC \
+			 -fno-second-underscore
 	endif
 else
 	ifeq ($(Config),"Debug")
 	# Intel Debug (-gen-interfaces -warn interfaces)
-		OPT = -C -check bounds -O0 -g -check pointer -fpe0 -traceback
+		OPT = -check bounds -O0 -g -check pointer -fpe0 -traceback
+		OPTF90 = -check bounds -O0 -g -check pointer -fpe0 -traceback \ 
+			 -cpp -ffree-form -Wobsolescent -fno-second-underscore
 	else
 		# Intel Release
-		OPT = -C -fast -fpe0
+		OPTF90 = -fast -fpe0 \ 
+		      -cpp -ffree-form -Wobsolescent -fno-second-underscore
+		OPT = -fast -fpe0	
 	endif
 endif
 
@@ -84,11 +93,14 @@ src:
 clean:
 	rm -f $(TARGET) *.o *.prj *.chk core  *.pyf
 	$(MAKE) --directory=src clean
-#*.$(LEXT)
+
 .PHONY: distclean
 distclean:
 	rm -rf $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.pyf *.dSYM
 	$(MAKE) --directory=src distclean
 
-.f.o:
-	$(FC) -c $(OPT) -xf77-cpp-input $<
+%.o: %.f
+	$(FC) -c $(OPT) -cpp $<
+
+%.o: %.f90
+	$(FC) -c $(OPTF90) -cpp $<
