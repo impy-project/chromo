@@ -267,10 +267,10 @@ class UrQMDCascadeRun():
             if not (i % 10000) and i and self.dbg:
                 print i, "events generated."
 
-            event = UrQMDCascadeEvent(self.lib)
+            event = UrQMDCascadeEvent(self.lib, self.ptab)
 
             unique_pids = np.unique(event.p_ids)
-            print unique_pids
+            
             if 0 in unique_pids:
                 ngenerated = ngenerated - 1
                 continue
@@ -286,13 +286,13 @@ class UrQMDCascadeRun():
 
 
 class UrQMDCascadeEvent():
-    def __init__(self, lib, swap=False):
+    def __init__(self, lib, ptab, swap=False):
         npart = lib.sys.npart
         self.p_ids = np.zeros((npart,))
-        list_particle_ids = np.concatenate((np.atleast_2d(lib.isys.ityp), np.atleast_2d(lib.isys.iso3)), axis = 0)[:npart].transpose()
-        stable = ([i for i, p in enumerate(list_particle_ids) if p[0] in lib.stables.stabvec])
-        stab = UrQMDParticleTable()
-        self.p_ids = np.array([ stab.modid2pdg[tuple(l)] 
+        list_particle_ids = np.vstack((lib.isys.ityp, lib.isys.iso3)).T[:npart]
+
+        stable = np.isin(lib.isys.ityp[:npart], lib.stables.stabvec)
+        self.p_ids = np.array([ ptab.modid2pdg[tuple(l)] 
                             for l in list_particle_ids[stable]])
         self.E = lib.coor.p0[:npart][stable]
         if swap:

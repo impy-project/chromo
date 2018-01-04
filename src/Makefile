@@ -10,8 +10,7 @@ export RND = $(CURDIR)/rangen.o
 export LOGS = $(CURDIR)/logging.f
 export LOGO = $(CURDIR)/logging.o
 
-SUBDIRS = urqmd-3.4
-# SUBDIRS = EPOS-LHC pythia6 qgsjet sophia sibyll urqmd
+SUBDIRS = urqmd-3.4 EPOS-LHC pythia6 qgsjet sophia sibyll
 
 all: $(SUBDIRS)
 
@@ -23,10 +22,10 @@ $(SUBDIRS): $(RND) $(LOGO)
 	$(MAKE) -C $@
 
 %.o: %.f
-	$(FC) -c $(OPT) -xf77-cpp-input $<
+	$(FC) -c $(OPT) -cpp $<
 
 %.o: %.f90
-	$(FC) -c $(OPTF90) -xf77-cpp-input $<
+	$(FC) -c $(OPTF90) -cpp $<
 
 .PHONY: clean
 clean:
