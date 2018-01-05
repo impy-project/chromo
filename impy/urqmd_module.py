@@ -24,7 +24,7 @@ class UrQMDMCEvent(MCEvent):
         if 'charge_info' in event_config and event_config['charge_info']:
             self.charge = lib.isys.charge[sel]
 
-        self.p_ids = np.array([ stab.modid2pdg[tuple(l)] 
+        self.p_ids = np.array([ stab.modid2pdg[tuple(l)]
                             for l in list_particle_ids[stable]])
         self.en = lib.coor.p0[sel]
         self.pz = lib.coor.pz[sel]
@@ -264,13 +264,13 @@ class UrQMDCascadeRun():
 
         for i in xrange(self.nEvents):
             self.lib.urqmd(iflbmax)
-            if not (i % 10000) and i and self.dbg:
+            if not (i % 1000) and i and self.dbg:
                 print i, "events generated."
 
             event = UrQMDCascadeEvent(self.lib, self.ptab)
 
             unique_pids = np.unique(event.p_ids)
-            
+
             if 0 in unique_pids:
                 ngenerated = ngenerated - 1
                 continue
@@ -288,12 +288,10 @@ class UrQMDCascadeRun():
 class UrQMDCascadeEvent():
     def __init__(self, lib, ptab, swap=False):
         npart = lib.sys.npart
-        self.p_ids = np.zeros((npart,))
         list_particle_ids = np.vstack((lib.isys.ityp, lib.isys.iso3)).T[:npart]
-
         stable = np.isin(lib.isys.ityp[:npart], lib.stables.stabvec)
-        self.p_ids = np.array([ ptab.modid2pdg[tuple(l)] 
-                            for l in list_particle_ids[stable]])
+        self.p_ids = np.array(
+            [ptab.modid2pdg[tuple(l)] for l in list_particle_ids[stable]])
         self.E = lib.coor.p0[:npart][stable]
         if swap:
             self.pz = -lib.coor.pz[:npart][stable]
@@ -330,66 +328,66 @@ def set_stable(lib, decay_mode, dbg=True):
 
     # # keep muons pions, kaons
     # for i in range(4, 5 + 1):
-        # idb[i - 1] = -np.abs(idb[i - 1])
+    # idb[i - 1] = -np.abs(idb[i - 1])
     # for i in range(7, 18 + 1):
-        # idb[i - 1] = -np.abs(idb[i - 1])
+    # idb[i - 1] = -np.abs(idb[i - 1])
     # # K0 and K0-bar have to remain unstable to form K0S/L
 
     # if decay_mode <= 1:
-        # self.stables.nstable = (idb != 0).sum()
-        # return
+    # self.stables.nstable = (idb != 0).sum()
+    # return
 
     # # Decay mode 2 for generation of decay spectra (all conventional with
     # # lifetime >= K0S
     # if dbg:
-        # print("UrQMDCascadeRun::set_stable(): Setting conventional " +
-              # "Sigma-, Xi0, Xi- and Lambda0 stable (decay mode).")
+    # print("UrQMDCascadeRun::set_stable(): Setting conventional " +
+    # "Sigma-, Xi0, Xi- and Lambda0 stable (decay mode).")
     # for i in range(36, 39 + 1):
-        # idb[i - 1] = -np.abs(idb[i - 1])
+    # idb[i - 1] = -np.abs(idb[i - 1])
 
     # if decay_mode <= 2:
-        # self.stables.nstable = (idb != 0).sum()
-        # return
+    # self.stables.nstable = (idb != 0).sum()
+    # return
 
     # # Conventional mesons and baryons
     # # keep eta, eta', rho's, omega, phi, K*
     # if dbg:
-        # print("UrQMDCascadeRun::set_stable(): Setting all " +
-              # "conventional stable.")
+    # print("UrQMDCascadeRun::set_stable(): Setting all " +
+    # "conventional stable.")
     # # pi0
     # idb[6 - 1] = -np.abs(idb[6 - 1])
     # for i in range(23, 33 + 1):
-        # idb[i - 1] = -np.abs(idb[i - 1])
+    # idb[i - 1] = -np.abs(idb[i - 1])
 
     # # keep SIGMA, XI, LAMBDA
     # for i in range(34, 49 + 1):
-        # idb[i - 1] = -np.abs(idb[i - 1])
+    # idb[i - 1] = -np.abs(idb[i - 1])
 
     # if decay_mode <= 3:
-        # self.stables.nstable = (idb != 0).sum()
-        # return
+    # self.stables.nstable = (idb != 0).sum()
+    # return
 
     # # Charmed particles (only for version >= 2.2)
     # # keep all charmed
     # if dbg:
-        # print("UrQMDCascadeRun::set_stable(): Setting all " +
-              # "conventional and charmed stable.")
+    # print("UrQMDCascadeRun::set_stable(): Setting all " +
+    # "conventional and charmed stable.")
     # for i in range(59, 61) + range(71, 99 + 1):
-        # idb[i - 1] = -np.abs(idb[i - 1])
+    # idb[i - 1] = -np.abs(idb[i - 1])
     # self.stables.nstable = (idb != 0).sum()
 
 
 def nucrad(AA, ctopt):
-      A=abs(AA)
-      nucrad = 0
-      rho0 = 0.16
-    # root mean square radius of nucleus of mass A 
+    A=abs(AA)
+    nucrad = 0
+    rho0 = 0.16
+    # root mean square radius of nucleus of mass A
     # r_0 corresponding to rho0
-      if ctopt >= 1:
-    # root mean square radius of nucleus of mass A (Mayer-Kuckuck)
-         nucrad = 1.128 * A**(1./3.) - 0.89 * A**(-(1./3.))
-      else:
-         r_0 = (0.75/np.pi/rho0)**(1./3.) 
-    # subtract gaussian tails, for distributing centroids correctly
-         nucrad = r_0*(0.5*(A + (A**(1./3.)-1.)**3.))**(1./3.)
-      return nucrad
+    if ctopt >= 1:
+        # root mean square radius of nucleus of mass A (Mayer-Kuckuck)
+        nucrad = 1.128 * A**(1./3.) - 0.89 * A**(-(1./3.))
+    else:
+        r_0 = (0.75/np.pi/rho0)**(1./3.)
+        # subtract gaussian tails, for distributing centroids correctly
+        nucrad = r_0*(0.5*(A + (A**(1./3.)-1.)**3.))**(1./3.)
+    return nucrad
