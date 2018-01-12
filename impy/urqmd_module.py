@@ -239,7 +239,7 @@ class UrQMDCascadeRun():
 
         # Set impact parameter (to be revisited)
         self.lib.rsys.bmin = 0
-        self.lib.options.ctoption[4] = 1
+        self.lib.options.ctoption[4] = 1 # impact parameter from circle surface
         self.lib.rsys.bdist = nucrad(self.lib.sys.ap, self.lib.options.ctoption[23]) + nucrad(self.lib.sys.at, self.lib.options.ctoption[23]) + 2 * self.lib.options.ctparam[29]
 
         # Set calculation time (can be introduced as arguments later)
