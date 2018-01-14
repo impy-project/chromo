@@ -43,7 +43,7 @@ qgs01.$(LEXT): qgs01.pyf $(RND) qgsjet01_init.o qgsjet01d.o
 	
 qgs01.pyf: qgsjet01d.f qgsjet01_init.f
 	$(F2PY) -m qgs01 -h qgs01.pyf --overwrite-signature \
-	only: cqgsini sectnu xxaini psconf xxreg $(LOGF) : qgsjet01d.f \
+	only: cqgsini sectnu xxaini psconf xxreg psaini $(LOGF) : qgsjet01d.f \
 	qgsjet01_init.f $(LOGS)
 
 .f.o:

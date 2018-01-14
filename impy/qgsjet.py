@@ -38,8 +38,54 @@ class QGSJet01Run():
         print self.__class__.__name__ + '::init_generator(): seed=', seed
         self.lib.cqgsini(seed, datdir)
 
-    def get_hadron_air_cs(self, E_lab, projectile=1):
-        return self.lib.sectnu(E_lab / 14., 14, 1)
+    def get_hadron_air_cs(self, E_lab, projectile=2):
+        from scipy.interpolate import UnivariateSpline
+
+        if projectile == 'K+' or projectile == 'K-' or projectile == 'K0L':
+            icz = 3 - 1  # -1 for python -> fortran idx
+        elif projectile == 'pi+' or projectile == 'pi-':
+            icz = 1 - 1
+        elif projectile in ['p', 'n']:
+            icz = 2 - 1
+        elif projectile < 4:
+            # Assume qgsjet prjectile index if < 4
+            icz = projectile - 1
+        elif abs(projectile) > 1000:
+            icz = 1  #nucleon
+        elif abs(projectile) == 211:
+            icz = 0  #pion
+        elif abs(projectile) == 321:
+            icz = 2  #kaon
+        else:
+            raise Exception('Other projectiles not supported by QGSJET01')
+
+        qgsgrid = 10**np.arange(1, 11)
+        cross_section = np.zeros(10)
+        frac_air = [(0.78479, 14), (0.21052, 16), (0.00469, 40)]
+        wa = np.zeros(3)
+        for frac, iat in frac_air:
+            for je in range(10):
+                sectn = 0.
+
+                ya = iat
+
+                ya = np.log(ya) / 1.38629 + 1.
+                ja = min(int(ya), 2)
+                wa[1] = (ya - ja)
+                wa[2] = wa[1] * (wa[1] - 1) * .5
+                wa[0] = 1. - wa[1] + wa[2]
+                wa[1] = wa[1] - 2. * wa[2]
+                for m in range(3):
+                    sectn += self.lib.xsect.gsect[je, icz, ja + m - 1] * wa[m]
+
+                cross_section[je] += frac * np.exp(sectn)
+        spl = UnivariateSpline(
+            np.log(qgsgrid),
+            np.log(cross_section),
+            ext='extrapolate',
+            s=0,
+            k=1)
+        return np.exp(spl(np.log(E_lab)))
 
     def start(self, projectile, E_lab, sqs, Atarget=14):
         if Atarget == 0:
@@ -225,7 +271,12 @@ class QGSJetIIRun():
             projectile = 1
         else:
             projectile = 2
-        return self.lib.qgsect(E_lab, projectile, 1, 14)
+        # Mass composition of air (Nitrogen, Oxygen, Argon)
+        frac_air = [(0.78479, 14), (0.21052, 16), (0.00469, 40)]
+        return np.sum([
+            f * self.lib.qgsect(E_lab, projectile, 1, iat)
+            for f, iat in frac_air
+        ], axis=0)
 
     def start(self, projectile, E_lab, E_cm, Atarget=14):
         if Atarget == 0:
