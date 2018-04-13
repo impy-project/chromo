@@ -70,12 +70,7 @@ class SibyllMCRun(MCRun):
         self.evkin = event_kinematics
 
     def init_generator(self, config):
-
-        try:
-            print self.init
-            raise Exception('adasd')
-        except AttributeError:
-            self.init = True
+        self.abort_if_already_initialized()
 
         self.set_event_kinematics(self.evkin)
 

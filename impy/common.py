@@ -4,6 +4,7 @@ Created on 14.04.2014
 @author: afedynitch
 '''
 import numpy as np
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 #===============================================================================
 # Standard stable particles for for fast air shower cascade calculation
@@ -172,7 +173,8 @@ class EventKinematics():
 #===============================================================================
 # MCEvent
 #===============================================================================
-class MCEvent():
+class MCEvent:
+    __metaclass__ = ABCMeta
     def __init__(self, event_config):
         kin = event_config['event_kinematics']
         # the classes which inherit from this base class have to define the following
@@ -191,11 +193,27 @@ class MCEvent():
 
         self.y = 0.5 * np.log((self.en + self.pz) / (self.en - self.pz))
 
+    @abstractproperty
+    def p_ids(self): pass
+
+    @abstractproperty
+    def px(self): pass
+
+    @abstractproperty
+    def py(self): pass
+
+    @abstractproperty
+    def pz(self): pass
+
+    @abstractproperty
+    def en(self): pass
+
 
 #=========================================================================
 # Settings
 #=========================================================================
 class Settings():
+    __metaclass__ = ABCMeta
     def __init__(self, lib):
         self.lib = lib
         self.override_projectile = None
@@ -203,9 +221,11 @@ class Settings():
     def get_label(self):
         return self.__class__.__name__
 
+    @abstractmethod
     def enable(self):
         pass
 
+    @abstractmethod
     def reset(self):
         pass
 
@@ -233,15 +253,16 @@ class Settings():
 # ScanSettings
 #=========================================================================
 class ScanSettings(Settings):
+    @abstractmethod
     def set_current_value(self, value):
-        raise Exception(
-            "ScanSettings:set_current_value() in base class called.")
+        pass
 
 
 #=========================================================================
 # MCRun
 #=========================================================================
 class MCRun():
+    __metaclass__ = ABCMeta
     def __init__(self, libref, label, n_events, DEBUG, event_class,
                  event_config, event_kinematics, default_settings, settings):
         self.lib = libref
@@ -256,6 +277,7 @@ class MCRun():
         self.event_config = event_config
         self.evkin = event_kinematics
         self.class_name = self.__class__.__name__
+        self._is_initialized = False
 
         def_settings_class, def_settings_args = default_settings
         if def_settings_class:
@@ -283,6 +305,30 @@ class MCRun():
                 np.abs(np.array(self.event_config['stable'])))
         self.event_config['event_kinematics'] = self.evkin
 
+    @abstractmethod
+    def init_generator(self, config):
+        pass
+
+    @abstractmethod
+    def generate_event(self):
+        pass
+
+    @abstractmethod
+    def set_event_kinematics(self, evtkin):
+        pass
+
+    @abstractmethod
+    def set_stable(self, pdgid):
+        pass
+
+    @abstractmethod
+    def get_sigma_inel(self):
+        pass
+
+    def abort_if_already_initialized(self):
+        assert not self._is_initialized
+        self._is_initialized = True
+
     def get_model_label(self):
         return self.label
 
@@ -291,10 +337,6 @@ class MCRun():
 
     def deattach_log(self):
         pass
-
-    def generate_event(self):
-        raise Exception(self.class_name + '::generate_event():' +
-                        'Base function called!')
 
     def trigger_event(self, event):
         return [

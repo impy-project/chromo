@@ -4,7 +4,7 @@ Created on 03.05.2016
 @author: afedynitch
 '''
 
-from impy.common import MCRun, MCEvent, EventKinematics, standard_particles
+from impy.common import MCRun, MCEvent, EventGenerator, EventKinematics, standard_particles
 import numpy as np
 
 #=========================================================================
@@ -71,6 +71,7 @@ class EPOSMCRun(MCRun):
         self.event_config['event_kinematics'] = event_kinematics
 
     def init_generator(self, config, datdir='./iamdata/'):
+        self.abort_if_already_initialized()
 
         # datdir = '../../iamdata/'
         ounit = None
@@ -94,14 +95,10 @@ class EPOSMCRun(MCRun):
             print self.class_name + "::init_generator(): calling init with:", \
                 (1., 1e6, datdir, len(datdir), 1, 2212, 2212, 1, 1, 1, 1, 0, ounit)
 
-        try:
-            self.lib.init
-        except:
-            self.lib.aaset(0)
-            self.lib.initializeepos(1., 1e6, datdir,
-                                    len(datdir), 1, 2212, 2212, 1, 1, 1, 1, 0,
-                                    ounit)
-            self.lib.init = True
+        self.lib.aaset(0)
+        self.lib.initializeepos(1., 1e6, datdir,
+                                len(datdir), 1, 2212, 2212, 1, 1, 1, 1, 0,
+                                ounit)
 
         # Set default stable
         for pid in [2112, 111, 211, -211, 321, -321, 310, 13, -13]:

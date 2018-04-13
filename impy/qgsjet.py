@@ -155,6 +155,8 @@ class QGSJetIIMCRun(MCRun):
         self.lib.qgini(k.elab, self.qgsproj, k.A1, k.A2)
 
     def init_generator(self, config):
+        self.abort_if_already_initialized()
+
         from random import randint
         datdir = '/lustre/fs17/group/that/af/m2m/iamdata/'
 
