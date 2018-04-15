@@ -175,37 +175,64 @@ class EventKinematics():
 #===============================================================================
 class MCEvent(object):
     """The basis of interaction between user and all the event generators.
+
+    The derived classes are expected to interact with the particle stack
+    and derive the base variables from which everything else can be defined.
+
+    Args:
+        event_config (dict): Parameters passed from above
+        lib (object)       : Reference to the FORTRAN library in use
+        px (np.array)      : x-momentum in GeV/c
+        px (np.array)      : y-momentum in GeV/c
+        px (np.array)      : z-momentum in GeV/c
+        en (np.array)      : Energy in GeV
+        p_ids (np.array)   : particle ID according to PDG scheme
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, event_config, lib):
+    def __init__(self, event_config, lib, px, py, pz, en, p_ids, npart):
         self.kin = event_config['event_kinematics']
         self.lib = lib
 
-    @abstractproperty
-    def p_ids(self):
-        """Particle IDs in PDG numbering scheme"""
-        pass
+        self.px = px
+        self.py = py
+        self.pz = pz
+        self.en = en
+        self.p_ids = p_ids
+        self.npart = npart
 
-    @abstractproperty
-    def px(self):
-        """x-momentum in GeV/c"""
-        pass
+    # AF: Since these variables are easy to extract and there is 
+    # significant overhead using properties for trivial attributes
+    # the definition of these variables has to be enforced by style
+    # and abc should be avoided here. However, all derived attributes that
+    # involve computations have to be defined either via enforcing
+    # abstractproperty or, generic attributes should be in the base class.
 
-    @abstractproperty
-    def py(self):
-        """y-momentum in GeV/c"""
-        pass
 
-    @abstractproperty
-    def pz(self):
-        """z-momentum in GeV/c"""
-        pass
+    # @abstractproperty
+    # def p_ids(self):
+    #     """Particle IDs in PDG numbering scheme"""
+    #     pass
 
-    @abstractproperty
-    def en(self):
-        """Energy in GeV"""
-        pass
+    # @abstractproperty
+    # def px(self):
+    #     """x-momentum in GeV/c"""
+    #     pass
+
+    # @abstractproperty
+    # def py(self):
+    #     """y-momentum in GeV/c"""
+    #     pass
+
+    # @abstractproperty
+    # def pz(self):
+    #     """z-momentum in GeV/c"""
+    #     pass
+
+    # @abstractproperty
+    # def en(self):
+    #     """Energy in GeV"""
+    #     pass
 
     @abstractproperty
     def charge(self):

@@ -6,107 +6,114 @@ Created on 15.05.2012
 import numpy as np
 from impy.common import MCRun, MCEvent
 
-
-#=========================================================================
-# PhoEvent
-#=========================================================================
 class PhoEvent(MCEvent):
+    """Wrapper class around (pure) PHOJET particle stack."""
     def __init__(self, lib, event_config):
 
+        # The stack common block
         evt = lib.poevt1
-        nhep = evt.nhep
-        sel = None
-
+        # Number of entries on stack
+        npart = evt.nhep
+        # Filter stack for charged particles if selected
         if event_config['charged_only']:
-            sel = np.where((evt.isthep[:nhep] == 1) & \
-                (np.abs(lib.poevt2.icolor[0, :nhep]) == 3))
+            sel = np.where((evt.isthep[:npart] == 1) & \
+                (np.abs(lib.poevt2.icolor[0, :npart]) == 3))
         else:
-            sel = np.where(evt.isthep[:nhep] == 1)
+            sel = np.where(evt.isthep[:npart] == 1)
 
-#         print lib.podebg.kspom, lib.podebg.khpom, lib.podebg.ksoft, lib.podebg.khard
-
-        self.p_ids = evt.idhep[sel]
-        self.pt2 = evt.phep[0, sel][0]**2 + evt.phep[1, sel][0]**2
-        self.px = evt.phep[0, sel][0]
-        self.py = evt.phep[1, sel][0]
-        self.pz = evt.phep[2, sel][0]
-        self.en = evt.phep[3, sel][0]
-
-        # Save for later processing steps
+        # Save selector for implementation of on-demand properties
         self.sel = sel
-        self.lib = lib
 
-        MCEvent.__init__(self, event_config)
+        MCEvent.__init__(
+            self,
+            event_config,
+            lib,
+            px=evt.phep[0, sel][0],
+            py=evt.phep[1, sel][0],
+            pz=evt.phep[2, sel][0],
+            en=evt.phep[3, sel][0],
+            p_ids=evt.idhep[sel],
+            npart=npart)
 
-        @property
-        def charge():
-            return self.lib.poevt2.icolor[0, sel[0]] / 3
+    @property
+    def charge(self):
+        return self.lib.poevt2.icolor[0, self.sel[0]] / 3
 
-        def gen_cut_info():
-            """Init variables tracking the number of soft and hard cuts"""
+    def gen_cut_info(self):
+        """Init variables tracking the number of soft and hard cuts"""
 
-            self._mpi = self.lib.podebg.kspom + self.lib.podebg.khpom
-            self._kspom = self.lib.podebg.kspom
-            self._khpom = self.lib.podebg.khpom
-            self._ksoft = self.lib.podebg.ksoft
-            self._khard = self.lib.podebg.khard
-        
-        @property
-        def mpi():
-            """Total number of cuts"""
-            if not hasattr(self, 'mpi'):
-                self.gen_cut_info()
-                return self._mpi
+        self._mpi = self.lib.podebg.kspom + self.lib.podebg.khpom
+        self._kspom = self.lib.podebg.kspom
+        self._khpom = self.lib.podebg.khpom
+        self._ksoft = self.lib.podebg.ksoft
+        self._khard = self.lib.podebg.khard
+
+    @property
+    def mpi(self):
+        """Total number of cuts"""
+        if not hasattr(self, 'mpi'):
+            self.gen_cut_info()
             return self._mpi
-        
-        @property
-        def kspom():
-            """Total number of soft cuts"""
-            if not hasattr(self, 'kspom'):
-                self.gen_cut_info()
-                return self._kspom
+        return self._mpi
+
+    @property
+    def kspom(self):
+        """Total number of soft cuts"""
+        if not hasattr(self, 'kspom'):
+            self.gen_cut_info()
             return self._kspom
-        
-        @property
-        def khpom():
-            """Total number of hard cuts"""
-            if not hasattr(self, 'khpom'):
-                self.gen_cut_info()
-                return self._khpom
+        return self._kspom
+
+    @property
+    def khpom(self):
+        """Total number of hard cuts"""
+        if not hasattr(self, 'khpom'):
+            self.gen_cut_info()
             return self._khpom
+        return self._khpom
 
-        @property
-        def ksoft():
-            """Total number of realized soft cuts"""
-            if not hasattr(self, 'ksoft'):
-                self.gen_cut_info()
-                return self._ksoft
+    @property
+    def ksoft(self):
+        """Total number of realized soft cuts"""
+        if not hasattr(self, 'ksoft'):
+            self.gen_cut_info()
             return self._ksoft
-        
-        @property
-        def khard():
-            """Total number of realized hard cuts"""
-            if not hasattr(self, 'khard'):
-                self.gen_cut_info()
-                return self._khard
+        return self._ksoft
+
+    @property
+    def khard(self):
+        """Total number of realized hard cuts"""
+        if not hasattr(self, 'khard'):
+            self.gen_cut_info()
             return self._khard
-            
+        return self._khard
 
+    @property
+    def mother(self):
+        """The mother particle IDs.
 
-#=========================================================================
-# PhoEventCentralDiffractionInfo
-#=========================================================================
-class PhoEventCentralDiffractionInfo(PhoEvent):
-    def __init__(self, lib, event_config):
-        PhoEvent.__init__(self, lib, event_config)
-        self.mother = lib.poevt1.jmohep[0, self.sel]
-        self.all_p_ids = lib.poevt1.idhep[:lib.poevt1.nhep]
+        Mother particles are those with either decay or
+        hadronize to the final state particle.
+        """
+        return self.lib.poevt1.jmohep[0, self.sel]
 
+    @property
+    def all_p_ids(self):
+        """Unfiltered access to all particle IDs.
 
-class PhoEventElastic(PhoEvent):
-    def __init__(self, lib):
-        p = lib.poevt1.phep
-        self.t = np.sum(np.square(p[0:4, 0] - p[0:4, 5]))
+        Those include the initial state, quarks, gluons, FSR, ISR, etc.
+        """
+        return self.lib.poevt1.idhep[:self.npart]
+
+    def elastic_t(self):
+        """Squared momentum transfer t for elastic interaction.
+
+        This only makes sense if the interaction is indeed elastic
+        and only 4 particles are on the stack. The initial 2 and
+        the final 2. Handle with care!!
+        """
+        return np.sum(
+            np.square(lib.poevt1.phep[0:4, 0] - lib.poevt1.phep[0:4, 5]))
 
 
 #=========================================================================

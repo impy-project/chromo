@@ -13,7 +13,7 @@ RND = $(CURDIR)/src/rangen.o
 LEXT = so
 
 # For f2py
-LOGF = pho_openlogfile pho_closelogfile
+LOGF = impy_openlogfile impy_closelogfile
 
 #######################################################################
 #

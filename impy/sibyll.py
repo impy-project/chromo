@@ -9,13 +9,15 @@ from impy.common import MCRun, MCEvent, EventKinematics, standard_particles
 
 
 class SibyllMCEvent(MCEvent):
-    def __init__(self, lib, event_config):
-        s_plist = lib.s_plist
-        
-        to_pdg = np.vectorize(lib.isib_pid2pdg)
-        sel = None
+    """Wrapper class around SIBYLL 2.1 & 2.3 particle stack."""
 
+    def __init__(self, lib, event_config):
+        # The stack common block
+        s_plist = lib.s_plist
+        # Number of entries on stack
         npart = lib.s_plist.np
+        # Conversion to PDG ids from SIBYLL routine
+        to_pdg = np.vectorize(lib.isib_pid2pdg)
 
         # Filter stack for charged particles if selected
         stable = np.nonzero(np.abs(s_plist.llist[:npart]) < 10000)[0]
@@ -25,18 +27,23 @@ class SibyllMCEvent(MCEvent):
         else:
             sel = stable
 
-        if 'charge_info' in event_config and event_config['charge_info']:
-            self.charge = lib.s_chp.ichp[s_plist.llist[sel] - 1]
+        # Save selector for implementation of charge-on-demand
+        self.sel = sel
 
-        self.p_ids = to_pdg(s_plist.llist[sel])
-        self.pt2 = s_plist.p[sel, 0]**2 + s_plist.p[sel, 1]**2
-        self.px = s_plist.p[sel, 2]
-        self.py = s_plist.p[sel, 2]
-        self.pz = s_plist.p[sel, 2]
-        self.en = s_plist.p[sel, 3]
-        self.npart = npart
+        MCEvent.__init__(
+            self,
+            event_config=event_config,
+            lib=lib,
+            px=s_plist.p[sel, 0],
+            py=s_plist.p[sel, 1],
+            pz=s_plist.p[sel, 2],
+            en=s_plist.p[sel, 3],
+            p_ids=to_pdg(s_plist.llist[sel]),
+            npart=npart)
 
-        MCEvent.__init__(self, event_config)
+    @property
+    def charge(self):
+        return self.lib.s_chp.ichp[self.lib.s_plist.llist[self.sel] - 1]
 
 
 class SibyllMCRun(MCRun):
@@ -126,36 +133,36 @@ class SibyllMCRun(MCRun):
         return 0  # SIBYLL never rejects
 
 
-class SibyllCascadeEvent():
-    def __init__(self, lib):
-        npart = lib.s_plist.np
-        stable = np.where(np.abs(lib.s_plist.llist[:npart]) < 10000)[0]
+# class SibyllCascadeEvent():
+#     def __init__(self, lib):
+#         npart = lib.s_plist.np
+#         stable = np.where(np.abs(lib.s_plist.llist[:npart]) < 10000)[0]
 
-        self.p_ids = lib.s_plist.llist[:npart][stable]
-        self.E = lib.s_plist.p[:npart, 3][stable]
-        self.pz = lib.s_plist.p[:npart, 2][stable]
+#         self.p_ids = lib.s_plist.llist[:npart][stable]
+#         self.E = lib.s_plist.p[:npart, 3][stable]
+#         self.pz = lib.s_plist.p[:npart, 2][stable]
 
 
-class SibyllCascadeEventPQCDc():
-    def __init__(self, lib):
-        npart = lib.s_plist.np
-        spl = lib.s_plist
-        stable = np.where((np.abs(spl.llist[:npart]) < 10000) & np.logical_not(
-            (np.abs(spl.llist[:npart]) >= 59) & (lib.s_chist.jdif[0] == 0) & (
-                (np.abs(lib.s_parto.nporig[:npart]) < 10) |
-                (np.abs(lib.s_parto.nporig[:npart]) > 1000))))[0]
+# class SibyllCascadeEventPQCDc():
+#     def __init__(self, lib):
+#         npart = lib.s_plist.np
+#         spl = lib.s_plist
+#         stable = np.where((np.abs(spl.llist[:npart]) < 10000) & np.logical_not(
+#             (np.abs(spl.llist[:npart]) >= 59) & (lib.s_chist.jdif[0] == 0) & (
+#                 (np.abs(lib.s_parto.nporig[:npart]) < 10) |
+#                 (np.abs(lib.s_parto.nporig[:npart]) > 1000))))[0]
 
-        self.p_ids = spl.llist[:npart][stable]
-        # if np.any(self.p_ids >= 59):
+#         self.p_ids = spl.llist[:npart][stable]
+#         # if np.any(self.p_ids >= 59):
 
-        #     for pid, co in zip(self.p_ids, lib.s_parto.nporig[:npart][stable]):
-        #         if abs(pid) < 59:
-        #             continue
+#         #     for pid, co in zip(self.p_ids, lib.s_parto.nporig[:npart][stable]):
+#         #         if abs(pid) < 59:
+#         #             continue
 
-        #         print pid, co
-        #     print self.p_ids
-        self.E = spl.p[:npart, 3][stable]
-        self.pz = spl.p[:npart, 2][stable]
+#         #         print pid, co
+#         #     print self.p_ids
+#         self.E = spl.p[:npart, 3][stable]
+#         self.pz = spl.p[:npart, 2][stable]
 
 
 class SibyllCascadeRun():
