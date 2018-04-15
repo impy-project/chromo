@@ -27,7 +27,7 @@ class SibyllMCEvent(MCEvent):
         else:
             sel = stable
 
-        # Save selector for implementation of charge-on-demand
+        # Save selector for implementation of on-demand properties
         self.sel = sel
 
         MCEvent.__init__(
