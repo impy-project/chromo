@@ -11,6 +11,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 import numpy as np
 
+
 class MCEvent(object):
     """The basis of interaction between user and all the event generators.
 
@@ -40,7 +41,7 @@ class MCEvent(object):
         self.p_ids = p_ids
         self.npart = npart
 
-    # @Hans: Since these variables are easy to extract, and, there is 
+    # @Hans: Since these variables are easy to extract, and, there is
     # significant overhead using properties for trivial attributes,
     # the definition of these variables has to be enforced by style
     # and abc should be avoided here. However, all derived attributes that
@@ -48,7 +49,6 @@ class MCEvent(object):
     # abstractproperty or, defined as generic methods below.
     # You can delete this and stuff below after reading, if you agree.
     # Feel free to extend the docstring clarifying this.
-
 
     # @abstractproperty
     # def p_ids(self):
@@ -79,7 +79,6 @@ class MCEvent(object):
     def charge(self):
         """Electrical charge"""
         pass
-
 
     @property
     def pt(self):
@@ -145,13 +144,22 @@ class Settings():
 
     def get_label(self):
         return self.__class__.__name__
-
     @abstractmethod
     def enable(self):
+        """Code, acting on the FORTRAN library :attr:`self.lib` that
+        activates some sort of setting."""
         pass
 
     @abstractmethod
     def reset(self):
+        """Code, acting on the FORTRAN library :attr:`self.lib` that
+        removes the effect of the activation. 'Reset to default'"""
+        pass
+
+    @abstractmethod
+    def set_current_value(self, value):
+        """Define if you inted to vary some parameter in between
+        events."""
         pass
 
     def __eq__(self, other_instance):
@@ -172,15 +180,6 @@ class Settings():
             elif value != other_attr[attr]:
                 return True
         return False
-
-
-#=========================================================================
-# ScanSettings
-#=========================================================================
-class ScanSettings(Settings):
-    @abstractmethod
-    def set_current_value(self, value):
-        pass
 
 
 #=========================================================================
