@@ -5,6 +5,17 @@ import inspect
 # variables. Should be changed at some point.
 import scipy.constants as spc
 
+
+#===============================================================================
+# Standard stable particles for for fast air shower cascade calculation
+#===============================================================================
+# Particles having an anti-partner
+standard_particles = [11, 13, 15, 211, 321, 2212, 2112, 3122, 411, 421, 431]
+standard_particles += [-pid for pid in standard_particles]
+
+#unflavored particles
+standard_particles = tuple(standard_particles + [111, 130, 310, 221, 223, 333])
+
 def convert_to_namedtuple(dictionary, name='GenericNamedTuple'):
     """Converts a dictionary to a named tuple."""
     from collections import namedtuple
