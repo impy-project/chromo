@@ -11,10 +11,13 @@ from impy.common import MCRun, MCEvent, EventKinematics, standard_particles
 class SibyllMCEvent(MCEvent):
     def __init__(self, lib, event_config):
         s_plist = lib.s_plist
+        
         to_pdg = np.vectorize(lib.isib_pid2pdg)
         sel = None
 
         npart = lib.s_plist.np
+
+        # Filter stack for charged particles if selected
         stable = np.nonzero(np.abs(s_plist.llist[:npart]) < 10000)[0]
         if event_config['charged_only']:
             sel = stable[
@@ -27,15 +30,18 @@ class SibyllMCEvent(MCEvent):
 
         self.p_ids = to_pdg(s_plist.llist[sel])
         self.pt2 = s_plist.p[sel, 0]**2 + s_plist.p[sel, 1]**2
+        self.px = s_plist.p[sel, 2]
+        self.py = s_plist.p[sel, 2]
         self.pz = s_plist.p[sel, 2]
         self.en = s_plist.p[sel, 3]
+        self.npart = npart
 
         MCEvent.__init__(self, event_config)
 
 
 class SibyllMCRun(MCRun):
-    def __init__(self, libref, **kwargs):
 
+    def __init__(self, libref, **kwargs):
         if not kwargs["event_class"]:
             kwargs["event_class"] = SibyllMCEvent
 

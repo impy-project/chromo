@@ -173,40 +173,86 @@ class EventKinematics():
 #===============================================================================
 # MCEvent
 #===============================================================================
-class MCEvent:
+class MCEvent(object):
+    """The basis of interaction between user and all the event generators.
+    """
     __metaclass__ = ABCMeta
-    def __init__(self, event_config):
-        kin = event_config['event_kinematics']
-        # the classes which inherit from this base class have to define the following
-        # attributes
-        # self.p_ids - particle IDs accordng to PDG naming scheme
-        # self.px/py/pz/en
-        self.pt = np.sqrt(self.pt2)
-        self.p_tot = np.sqrt(self.pt2 + self.pz**2)
-        self.xf = 2. * self.pz / kin.ecm
-        self.fw = self.en / kin.pcm
-        if 'calc_xl' in event_config and event_config['calc_xl']:
-            self.xl = (kin.gamma_cm * self.en + \
-                        kin.betagamma_cm * self.pz) / \
-                        kin.elab
-        self.eta = np.log((self.p_tot + self.pz) / self.pt)
 
-        self.y = 0.5 * np.log((self.en + self.pz) / (self.en - self.pz))
+    def __init__(self, event_config, lib):
+        self.kin = event_config['event_kinematics']
+        self.lib = lib
 
     @abstractproperty
-    def p_ids(self): pass
+    def p_ids(self):
+        """Particle IDs in PDG numbering scheme"""
+        pass
 
     @abstractproperty
-    def px(self): pass
+    def px(self):
+        """x-momentum in GeV/c"""
+        pass
 
     @abstractproperty
-    def py(self): pass
+    def py(self):
+        """y-momentum in GeV/c"""
+        pass
 
     @abstractproperty
-    def pz(self): pass
+    def pz(self):
+        """z-momentum in GeV/c"""
+        pass
 
     @abstractproperty
-    def en(self): pass
+    def en(self):
+        """Energy in GeV"""
+        pass
+
+    @abstractproperty
+    def charge(self):
+        """Electrical charge"""
+        pass
+
+
+    @property
+    def pt(self):
+        """Transverse momentum in GeV/c"""
+        return np.sqrt(self.px**2 + self.py**2)
+
+    @property
+    def pt2(self):
+        """Transverse momentum squared in (GeV/c)**2"""
+        return self.px**2 + self.py**2
+
+    @property
+    def p_tot(self):
+        """Total momentum in GeV/c"""
+        return np.sqrt(self.pt2 + self.pz**2)
+
+    @property
+    def eta(self):
+        """Pseudo-rapidity"""
+        return np.log((self.p_tot + self.pz) / self.pt)
+
+    @property
+    def y(self):
+        """True rapidity"""
+        return 0.5 * np.log((self.en + self.pz) / (self.en - self.pz))
+
+    @property
+    def xf(self):
+        """Feynman x_F"""
+        return 2. * self.pz / self.kin.ecm
+
+    @property
+    def xlab(self):
+        """Energy fraction E/E_beam in lab. frame"""
+        kin = self.kin
+        return (kin.gamma_cm * self.en + kin.betagamma_cm * self.pz) / kin.elab
+
+    @property
+    def fw(self):
+        """I don't remember what this was for..."""
+        return self.en / self.kin.pcm
 
 
 #=========================================================================

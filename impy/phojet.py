@@ -23,20 +23,12 @@ class PhoEvent(MCEvent):
         else:
             sel = np.where(evt.isthep[:nhep] == 1)
 
-        if 'charge_info' in event_config and event_config['charge_info']:
-            self.charge = lib.poevt2.icolor[0, sel[0]] / 3
-
-        if 'mpi_info' in event_config and event_config['mpi_info']:
-            self.mpi = lib.podebg.kspom + lib.podebg.khpom
-            self.kspom = lib.podebg.kspom
-            self.khpom = lib.podebg.khpom
-            self.ksoft = lib.podebg.ksoft
-            self.khard = lib.podebg.khard
-
 #         print lib.podebg.kspom, lib.podebg.khpom, lib.podebg.ksoft, lib.podebg.khard
 
         self.p_ids = evt.idhep[sel]
         self.pt2 = evt.phep[0, sel][0]**2 + evt.phep[1, sel][0]**2
+        self.px = evt.phep[0, sel][0]
+        self.py = evt.phep[1, sel][0]
         self.pz = evt.phep[2, sel][0]
         self.en = evt.phep[3, sel][0]
 
@@ -45,6 +37,60 @@ class PhoEvent(MCEvent):
         self.lib = lib
 
         MCEvent.__init__(self, event_config)
+
+        @property
+        def charge():
+            return self.lib.poevt2.icolor[0, sel[0]] / 3
+
+        def gen_cut_info():
+            """Init variables tracking the number of soft and hard cuts"""
+
+            self._mpi = self.lib.podebg.kspom + self.lib.podebg.khpom
+            self._kspom = self.lib.podebg.kspom
+            self._khpom = self.lib.podebg.khpom
+            self._ksoft = self.lib.podebg.ksoft
+            self._khard = self.lib.podebg.khard
+        
+        @property
+        def mpi():
+            """Total number of cuts"""
+            if not hasattr(self, 'mpi'):
+                self.gen_cut_info()
+                return self._mpi
+            return self._mpi
+        
+        @property
+        def kspom():
+            """Total number of soft cuts"""
+            if not hasattr(self, 'kspom'):
+                self.gen_cut_info()
+                return self._kspom
+            return self._kspom
+        
+        @property
+        def khpom():
+            """Total number of hard cuts"""
+            if not hasattr(self, 'khpom'):
+                self.gen_cut_info()
+                return self._khpom
+            return self._khpom
+
+        @property
+        def ksoft():
+            """Total number of realized soft cuts"""
+            if not hasattr(self, 'ksoft'):
+                self.gen_cut_info()
+                return self._ksoft
+            return self._ksoft
+        
+        @property
+        def khard():
+            """Total number of realized hard cuts"""
+            if not hasattr(self, 'khard'):
+                self.gen_cut_info()
+                return self._khard
+            return self._khard
+            
 
 
 #=========================================================================
