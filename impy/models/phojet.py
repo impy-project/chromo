@@ -116,34 +116,31 @@ class PhoEvent(MCEvent):
             np.square(lib.poevt1.phep[0:4, 0] - lib.poevt1.phep[0:4, 5]))
 
 
-#=========================================================================
-# PhoEventJets
-#=========================================================================
-class PhoEventJets(PhoEvent):
-    def find_jets(self, dR, psrapcut):
-        # charged anti-kt jets
-        lib = self.lib
-        lib.pho_findjets(1, 1, dR, psrapcut)
-        njets = lib.pojets.njets
+# No idea, yet, what to do with this one. It uses some link to
+# the fastjet library to do more fancy computations
 
-        self.njets = njets
-        self.j_E = lib.pojets.jets[3, :njets]
-        self.j_p_t = np.sqrt(lib.pojets.jets[0, :njets]**2 +
-                             lib.pojets.jets[1, :njets]**2)
-        self.j_pz = lib.pojets.jets[1, :njets]
-        self.j_p_tot = np.sqrt(lib.pojets.jets[0, :njets]**2 +
-                               lib.pojets.jets[1, :njets]**2 +
-                               lib.pojets.jets[2, :njets]**2)
+# class PhoEventJets(PhoEvent):
+#     def find_jets(self, dR, psrapcut):
+#         # charged anti-kt jets
+#         lib = self.lib
+#         lib.pho_findjets(1, 1, dR, psrapcut)
+#         njets = lib.pojets.njets
 
-        self.j_eta = np.log((self.j_p_tot + self.j_pz) / self.j_p_t)
-        self.j_y = 0.5 * \
-            np.log((self.j_E + self.j_pz) / (self.j_E - self.j_pz))
+#         self.njets = njets
+#         self.j_E = lib.pojets.jets[3, :njets]
+#         self.j_p_t = np.sqrt(lib.pojets.jets[0, :njets]**2 +
+#                              lib.pojets.jets[1, :njets]**2)
+#         self.j_pz = lib.pojets.jets[1, :njets]
+#         self.j_p_tot = np.sqrt(lib.pojets.jets[0, :njets]**2 +
+#                                lib.pojets.jets[1, :njets]**2 +
+#                                lib.pojets.jets[2, :njets]**2)
+
+#         self.j_eta = np.log((self.j_p_tot + self.j_pz) / self.j_p_t)
+#         self.j_y = 0.5 * \
+#             np.log((self.j_E + self.j_pz) / (self.j_E - self.j_pz))
 
 
-#=========================================================================
-# PhoRun
-#=========================================================================
-class PhoMCRun(MCRun):
+class PHOJETRun(MCRun):
     def __init__(self, libref, **kwargs):
 
         if not kwargs["event_class"]:

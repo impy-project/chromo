@@ -85,8 +85,7 @@ class EventKinematics():
             try:
                 pmass2 = masses[p2pdg]
             except KeyError:
-                self.load_pdata_tool()
-                pmass2 = self.pdata.mass(p2pdg)
+                pmass2 = __pdata__.mass(p1pdg)
 
             self.p2pdg = p2pdg
             if p2pdg > 0:

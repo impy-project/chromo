@@ -1,58 +1,22 @@
 """Utility module for auxiliary methods and classes."""
 
+from __future__ import print_function
+
 import inspect
-# This dependency might be overkill for just reading a few
-# variables. Should be changed at some point.
-import scipy.constants as spc
 
+# Global debug flags that would be nice to have in some sort
+# of config or other ideas?
+global_debug = 1
+print_module = True
 
-#===============================================================================
 # Standard stable particles for for fast air shower cascade calculation
-#===============================================================================
-# Particles having an anti-partner
-standard_particles = [11, 13, 15, 211, 321, 2212, 2112, 3122, 411, 421, 431]
+# Particles with an anti-partner
+standard_particles = [
+    11, 13, 15, 211, 321, 2212, 2112, 3122, 411, 421, 431]
 standard_particles += [-pid for pid in standard_particles]
-
 #unflavored particles
-standard_particles = tuple(standard_particles + [111, 130, 310, 221, 223, 333])
-
-def convert_to_namedtuple(dictionary, name='GenericNamedTuple'):
-    """Converts a dictionary to a named tuple."""
-    from collections import namedtuple
-    return namedtuple(name, dictionary.keys())(**dictionary)
-
-
-# The stuff below is from an astrophysical code that I write,
-# and most are not needed for particle physics. But since
-# Hans added some unit module here we go.
-
-# Default units in impy are ***cm, s, GeV***
-# Define here all constants and unit conversions and use
-# throughout the code. Don't write c=2.99.. whatever.
-# Write clearly the units returned by a function.
-# Convert them if not standard unit.
-# Accept only arguments in the units above.
-
-UNITS_AND_CONVERSIONS_DEF = dict(
-    c=1e2 * spc.c,
-    cm2Mpc=1. / (spc.parsec * spc.mega * 1e2),
-    Mpc2cm=spc.mega * spc.parsec * 1e2,
-    m_proton=spc.physical_constants['proton mass energy equivalent in MeV'][0]
-    * 1e-3,
-    m_electron=spc.physical_constants[
-        'electron mass energy equivalent in MeV'][0] * 1e-3,
-    r_electron=spc.physical_constants['classical electron radius'][0] * 1e2,
-    fine_structure=spc.fine_structure,
-    GeV2erg=1. / 624.15,
-    erg2GeV=624.15,
-    km2cm=1e5,
-    yr2sec=spc.year,
-    Gyr2sec=spc.giga * spc.year,
-    cm2sec=1e-2 / spc.c,
-    sec2cm=spc.c * 1e2)
-
-# This is the immutable unit object to be imported throughout the code
-IMPY_UNITS = convert_to_namedtuple(UNITS_AND_CONVERSIONS_DEF, "ImpyUnits")
+standard_particles = tuple(
+    standard_particles + [111, 130, 310, 221, 223, 333])
 
 
 def caller_name(skip=2):
@@ -75,7 +39,7 @@ def caller_name(skip=2):
 
     name = []
 
-    if config["print_module"]:
+    if print_module:
         module = inspect.getmodule(parentframe)
         # `modname` can be None when frame is executed directly in console
         if module:
@@ -109,6 +73,8 @@ def info(min_dbg_level, *message):
         message (tuple): Any argument or list of arguments that casts to str
     """
 
-    if min_dbg_level <= config["debug_level"]:
+    # Would prefer here a global debug
+    # if min_dbg_level <= config["debug_level"]:
+    if min_dbg_level <= global_debug:
         message = [str(m) for m in message]
         print(caller_name() + " ".join(message))
