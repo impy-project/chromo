@@ -11,9 +11,6 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 import numpy as np
 
-#===============================================================================
-# MCEvent
-#===============================================================================
 class MCEvent(object):
     """The basis of interaction between user and all the event generators.
 
@@ -28,6 +25,7 @@ class MCEvent(object):
         px (np.array)      : z-momentum in GeV/c
         en (np.array)      : Energy in GeV
         p_ids (np.array)   : particle ID according to PDG scheme
+        npart (np.array)   : Number of particle entries on the stack
     """
     __metaclass__ = ABCMeta
 
@@ -42,12 +40,14 @@ class MCEvent(object):
         self.p_ids = p_ids
         self.npart = npart
 
-    # AF: Since these variables are easy to extract and there is 
-    # significant overhead using properties for trivial attributes
+    # @Hans: Since these variables are easy to extract, and, there is 
+    # significant overhead using properties for trivial attributes,
     # the definition of these variables has to be enforced by style
     # and abc should be avoided here. However, all derived attributes that
     # involve computations have to be defined either via enforcing
-    # abstractproperty or, generic attributes should be in the base class.
+    # abstractproperty or, defined as generic methods below.
+    # You can delete this and stuff below after reading, if you agree.
+    # Feel free to extend the docstring clarifying this.
 
 
     # @abstractproperty
@@ -127,10 +127,21 @@ class MCEvent(object):
 # Settings
 #=========================================================================
 class Settings():
+    """Custom classes derived from this template allow to set certain low
+    level variables in the generators before or after initialization, or for
+    each event.
+
+    Note::
+
+        This is only relevant for model developers rather than end users.
+
+    """
     __metaclass__ = ABCMeta
+
     def __init__(self, lib):
         self.lib = lib
-        self.override_projectile = None
+        # No idea what this was..
+        # self.override_projectile = None
 
     def get_label(self):
         return self.__class__.__name__
