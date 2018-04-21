@@ -20,13 +20,10 @@ the implementation is very "cooked up". We have to discuss this.
 # accessing a locally cached database. The XML parsing time was often a
 # problem in the past and this is a serious performance concern.
 
-# from somewhere_in_impy import __pdata__
+# from somewhere_in_impy import pdata
 # For now:
 import numpy as np
-
-from particletools.tables import PYTHIAParticleData
-__pdata__ = PYTHIAParticleData()
-
+from impy.common import pdata, impy_config
 
 class EventKinematics():
     def __init__(self,
@@ -36,8 +33,7 @@ class EventKinematics():
                  p2pdg=None,
                  beam=None,
                  nuc1_prop=None,
-                 nuc2_prop=None,
-                 pdata=None):
+                 nuc2_prop=None):
 
         if ecm and plab:
             raise Exception(self.__class__.__name__ +
@@ -73,7 +69,7 @@ class EventKinematics():
             try:
                 pmass1 = masses[p1pdg]
             except KeyError:
-                pmass1 = __pdata__.mass(p1pdg)
+                pmass1 = pdata.mass(p1pdg)
             self.A1, self.Z1 = 1, 1
             self.p1pdg = p1pdg
         else:
@@ -85,7 +81,7 @@ class EventKinematics():
             try:
                 pmass2 = masses[p2pdg]
             except KeyError:
-                pmass2 = __pdata__.mass(p1pdg)
+                pmass2 = pdata.mass(p1pdg)
 
             self.p2pdg = p2pdg
             if p2pdg > 0:

@@ -5,32 +5,8 @@ Created on 17.03.2014
 '''
 
 import numpy as np
-from impy.common import MCRun, MCEvent
+from impy.common import MCRun, MCEvent, impy_config
 from impy.util import standard_particles, info
-
-# @Hans , @Sonia
-# Allowed projectiles in different SIBYLL versions.
-# Shouldn't this be defined in PDG-IDs?
-# Or somewhere else?
-# But it should be exposed somehow what kind of projectiles
-# are allowed. The old codes in particular SIBYLL do not
-# throw many exceptions, so it's up to us to check if input
-# makes sense.
-
-__sib21_projectiles__ = [
-    'p', 'n', 'K+', 'K-', 'pi+', 'pi-', 'K0L', 'p-bar', 'n-bar'
-]
-__sib23c_projectiles__ = [
-    'p', 'n', 'K+', 'K-', 'pi+', 'pi-', 'K0L', 'p-bar', 'n-bar', 'Sigma-',
-    'Sigma--bar', 'Sigma+', 'Sigma+-bar', 'Xi0', 'Xi0-bar', 'Xi-', 'Xi--bar',
-    'Lambda0', 'Lambda0-bar', 'D+', 'D-', 'D0', 'D0-bar', 'Ds+', 'Ds-', 'XiC+',
-    'XiC+-bar', 'XiC0', 'LambdaC+', 'OmegaC0'
-]
-__sib23_projectiles__ = [
-    'p', 'n', 'K+', 'K-', 'pi+', 'pi-', 'K0L', 'p-bar', 'n-bar', 'Sigma-',
-    'Sigma--bar', 'Xi0', 'Xi0-bar', 'Xi-', 'Xi--bar', 'Lambda0', 'Lambda0-bar'
-]
-
 
 class SibyllMCEvent(MCEvent):
     """Wrapper class around SIBYLL 2.1 & 2.3 particle stack."""
@@ -45,11 +21,13 @@ class SibyllMCEvent(MCEvent):
 
         # Filter stack for charged particles if selected
         stable = np.nonzero(np.abs(s_plist.llist[:npart]) < 10000)[0]
-        if event_config['charged_only']:
+        if impy_config["event_scope"] == 'charged':
             sel = stable[
                 lib.s_chp.ichp[np.abs(s_plist.llist[stable]) - 1] != 0]
-        else:
+        elif impy_config["event_scope"] == 'stable':
             sel = stable
+        else:
+            raise Exception("not implemented, yet")
 
         # Save selector for implementation of on-demand properties
         self.sel = sel

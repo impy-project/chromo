@@ -3,11 +3,15 @@ import sys
 import os
 import numpy as np
 
+sys.path.append(os.path.dirname(__file__) + "/..")
+
 from impy.constants import *
 from impy.kinematics import EventKinematics
 from impy.models.sibyll import SIBYLLRun
 
-sys.path.append(os.path.dirname(__file__) + "/..")
+from impy.common import impy_config, pdata
+
+
 
 
 # AF: This is what the user interaction has to yield.

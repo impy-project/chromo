@@ -7,11 +7,19 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 '''
+import os
 from abc import ABCMeta, abstractmethod, abstractproperty
 import numpy as np
+import yaml
 
 from impy.util import info
+from particletools.tables import PYTHIAParticleData
 
+root_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..")
+impy_config = yaml.load(open(
+    os.path.join(root_dir, 'impy_config.yaml')))
+pdata = PYTHIAParticleData(
+    cache_file=open(os.path.join(root_dir, impy_config["pdata_cachefile"]), 'wb'))
 
 class MCEvent(object):
     """The basis of interaction between user and all the event generators.
@@ -310,7 +318,7 @@ class MCRun():
         while nremaining > 0:
             if self.generate_event():
                 yield self.event_class(self.lib, self.event_config)
-                nevents -= 1
+                nremaining -= 1
                 ntrials += 1
             elif self.continue_on_reject:
                 ntrials += 1

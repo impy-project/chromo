@@ -11,6 +11,13 @@ pdata_cachefile : 'impy_pdata_cache.cch'
 # False: return if event not successful and set event_successful flag
 retry_rejected : True
 
+# Scope of event stack. Parse all "stable", only stable "charged" are the
+# entire event stack containing "all" particles including partons and decayed
+event_scope : "charged"
+
+# AF: Comment on stuff below
+# All hidden arguments shall go into this one, in particular for UrQMD.
+# They must not be trivial or user-readable. 
 epos:
     input_frame  : laboratory
     output_frame : ['laboratory', 'center-of-mass']
@@ -62,22 +69,24 @@ dpmjet:
                          3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
                          3122, -3122, 22]
     }
+    # Advanced params:
+    dtglgp.jstatb : 1000 # Number of trials for glauber hA, AA cross section calc.
+    dtglgp.jstatb : 1000 # Number of trials for glauber hA, AA cross section calc.
+
 
 qgsjet:
     input_frame  : laboratory
     output_frame : ['laboratory']
-    sqs_min_GeV  : 1.
-    has_boosts   : True
-    has_hepevt   : True
-    int_support  : [ 'hh', 'hA', 'AA', 'gg', 'gh', 'gA']
+    sqs_min_GeV  : 10.
+    has_boosts   : False
+    has_hepevt   : False
+    int_support  : [ 'hh', 'hA', 'AA' ]
     projectiles: {
-        'III-2017.1' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
-                         3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
-                         3122, -3122, 22]
+        'III-2017.1' : [ 2212, 2112, 321, -321, 211, -211 ]
     }
 
 sibyll:
-    input_frame : center-of-mass
+    input_frame  : center-of-mass
     output_frame : ['center-of-mass']
     sqs_min_GeV  : 9.
     has_boosts   : False
