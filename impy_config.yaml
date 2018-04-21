@@ -1,0 +1,94 @@
+# Impy configuration file
+
+# Level of verbosity
+debug_level: 10
+
+# Location for cache file for particledata.tables objects
+pdata_cachefile : 'impy_pdata_cache.cch'
+
+# For generators which return not successful events:
+# True: retry rejected events until desired number of events reached
+# False: return if event not successful and set event_successful flag
+retry_rejected : True
+
+epos:
+    input_frame  : laboratory
+    output_frame : ['laboratory', 'center-of-mass']
+    sqs_min_GeV  : 5.
+    has_boosts   : True
+    has_hepevt   : True
+    int_support  : [ 'hh', 'hA', 'AA', 'gg', 'gh', 'gA']
+    projectiles: {
+        'LHC' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
+                  3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
+                  3122, -3122, 22]
+    }
+
+phojet:
+    input_frame  : 4-vectors
+    output_frame : ['4-vectors']
+    output_frame :
+    sqs_min_GeV  : 5.
+    has_hepevt   : True
+    has_boosts   : True
+    int_support  : [ 'hh', 'gg', 'gh']
+    projectiles: {
+        'last' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
+                   3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
+                   3122, -3122, 22]
+    }
+
+pythia:
+    input_frame  : center-of-mass
+    output_frame : [center-of-mass]
+    sqs_min_GeV  : 5.
+    has_hepevt   : True
+    has_boosts   : False
+    int_support  : [ 'hh']
+    projectiles: {
+        '6' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112]
+    }
+
+
+dpmjet:
+    input_frame  : laboratory
+    output_frame : ['laboratory', 'center-of-mass']
+    sqs_min_GeV  : 1.
+    has_boosts   : True
+    has_hepevt   : True
+    int_support  : [ 'hh', 'hA', 'AA', 'gg', 'gh', 'gA']
+    projectiles: {
+        'III-2017.1' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
+                         3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
+                         3122, -3122, 22]
+    }
+
+qgsjet:
+    input_frame  : laboratory
+    output_frame : ['laboratory']
+    sqs_min_GeV  : 1.
+    has_boosts   : True
+    has_hepevt   : True
+    int_support  : [ 'hh', 'hA', 'AA', 'gg', 'gh', 'gA']
+    projectiles: {
+        'III-2017.1' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
+                         3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
+                         3122, -3122, 22]
+    }
+
+sibyll:
+    input_frame : center-of-mass
+    output_frame : ['center-of-mass']
+    sqs_min_GeV  : 9.
+    has_boosts   : False
+    has_hepevt   : False
+    int_support  : [ 'hh', 'hA']
+    projectiles: { 
+        '2.1'  : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112 ],
+        '2.3'  : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112, 
+                   3112, -3112, 3322, -3322, 3312, -3312, 3122, -3122 ],
+        '2.3c' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112, 
+                   3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312, 
+                   3122, -3122, 411, -411, 421, -421, 431, -431, 4232, 
+                   -4232, 4132, 4122, 4332]
+    }
