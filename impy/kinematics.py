@@ -106,7 +106,7 @@ class EventKinematics():
         elif beam and not (ecm or plab):
             self.beam = beam
             p1 = np.array([0, 0, self.e2p(beam[0], pmass1), beam[0]])
-            p2 = np.array([0, 0, -self.e2p(beam[1], pmass1), beam[1]])
+            p2 = np.array([0, 0, -self.e2p(beam[1], pmass2), beam[1]])
             s = p1 + p2
             self.ecm = np.sqrt(s[3]**2 - np.sum(s[:3]**2))
             self.elab = 0.5 * (self.ecm**2 - pmass1**2 + pmass2**2) / pmass2

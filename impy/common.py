@@ -89,6 +89,11 @@ class MCEvent(object):
         """Electrical charge"""
         pass
 
+    @abstractproperty
+    def mass(self):
+        """Particle mass in GeV as provided by model."""
+        pass
+
     @property
     def pt(self):
         """Transverse momentum in GeV/c"""
@@ -203,9 +208,9 @@ class MCRun():
     def __init__(
             self,
             libref,
-            label,
             event_kinematics,
             event_config,
+            label = None,
             settings_dict=dict(),
             output_file='stdout',
     ):
@@ -227,6 +232,18 @@ class MCRun():
         # The event class has to know the kinematics, since
         # some derived attributes need the frame variables
         self.event_config['event_kinematics'] = self.evkin
+
+    def __enter__(self):
+        """It would be good to actually use the with construct to
+        open and close logfiles on init."""
+        self.attach_log()
+        return self
+
+    # ...
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """This needs to be tested in more complex scenarios..."""
+        self.close_fortran_logfile()
 
     @abstractproperty
     def name(self):
@@ -277,7 +294,7 @@ class MCRun():
         pass
 
     @abstractmethod
-    def attach_log(self, fname):
+    def attach_log(self):
         """Routes the output to a file or the stdout."""
         pass
 
@@ -285,11 +302,14 @@ class MCRun():
         assert not self._is_initialized
         self._is_initialized = True
 
-    def attach_fortran_logfile(self, fname):
+    def _attach_fortran_logfile(self, fname):
         from os import path
         if path.isfile(fname):
             raise Exception('Attempts to overwrite log :' + fname)
         else:
+            if hasattr(self, 'outunit'):
+                raise Exception('Log already attached to LUN', 
+                    self.outunit)
             from random import randint
             path.abspath(fname)
             # Create a random fortran output unit
@@ -302,6 +322,7 @@ class MCRun():
             info(2, 'Output went not to file.')
         else:
             self.lib.impy_closelogfile(self.outunit)
+            del self.outunit
 
     def event_generator(self, evkin, nevents):
         """This is some kind of equivalent to Hans'

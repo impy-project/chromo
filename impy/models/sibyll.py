@@ -47,10 +47,14 @@ class SibyllMCEvent(MCEvent):
     def charge(self):
         return self.lib.s_chp.ichp[self.lib.s_plist.llist[self.sel] - 1]
 
+    @property
+    def mass(self):
+        return self.lib.s_plist.p[self.sel, 4]
+
 
 class SIBYLLRun(MCRun):
-    """This class implements all abstract attributes of MCRun
-    for the SIBYLL 2.1, 2.3 and 2.3c event generators."""
+    """Implements all abstract attributes of MCRun for the 
+    SIBYLL 2.1, 2.3 and 2.3c event generators."""
         
     def __init__(self, libref, event_class=None, **kwargs):
         if event_class is None:
@@ -71,7 +75,9 @@ class SIBYLLRun(MCRun):
         return "2.3"
 
     def sigma_inel(self):
-        k = self.event_config['event_kinematics']
+        """Inelastic cross section according to current
+        event setup (energy, projectile, target)"""
+        k = self.evkin
         sigproj = None
         if abs(k.p1pdg) in [2212, 3112]:
             sigproj = 1
@@ -80,12 +86,15 @@ class SIBYLLRun(MCRun):
         elif abs(k.p1pdg) == 321:
             sigproj = 3
         else:
-            raise Exception(
-                self.class_name + "::init_generator(): No " +
-                "cross section available for projectile " + k.p1pdg)
+            info(0, "No cross section available for projectile", k.p1pdg)
+            raise Exception('Input error')
+
         return self.lib.sib_sigma_hp(sigproj, self.ecm)[2]
 
     def set_event_kinematics(self, event_kinematics):
+        """Set new combination of energy, momentum, projectile
+        and target combination for next event."""
+
         k = event_kinematics
 
         self.sibproj = self.lib.isib_pdg2pid(k.p1pdg)
@@ -95,12 +104,16 @@ class SIBYLLRun(MCRun):
         self.event_config['event_kinematics'] = k
         self.evkin = event_kinematics
 
-    def attach_log(self, fname):
+    def attach_log(self):
         """Routes the output to a file or the stdout."""
+        fname = impy_config['output_log']
         if fname == 'stdout':
             self.lib.s_debug.lun = 6
+            info(5, 'Output is routed to stdout.')
         else:
-            self.lib.s_debug.lun = self.attach_fortran_logfile(fname)
+            lun = self._attach_fortran_logfile(fname)
+            self.lib.s_debug.lun = lun
+            info(5, 'Output is routed to', fname, 'via LUN', lun)
 
     def init_generator(self):
         from random import randint

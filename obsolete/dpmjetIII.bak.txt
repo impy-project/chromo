@@ -4,159 +4,143 @@ Created on 14.04.2014
 @author: afedynitch
 '''
 
+from impy.common import MCRun, MCEvent, Settings, EventKinematics, standard_particles
 import numpy as np
-from impy.common import MCRun, MCEvent, impy_config
-from impy.util import standard_particles, info
+
+#=========================================================================
+# DpmjetIIIMCEvent
+#=========================================================================
 
 
 class DpmjetIIIMCEvent(MCEvent):
-    """Wrapper class around DPMJET-III particle stack."""
-
     def __init__(self, lib, event_config):
-        # HEPEVT (style) common block
-        evt = lib.dtevt1
-        # Number of entries on stack
-        npart = evt.nhkk
 
-        # Filter stack for charged particles if selected
-        if impy_config["event_scope"] == 'charged':
+        evt = lib.dtevt1
+        npart = evt.nhkk
+        sel = None
+        if event_config['charged_only']:
             sel = np.where((evt.isthkk[:npart] == 1) & (
                 lib.dtpart.iich[lib.dtevt2.idbam[:npart] - 1] != 0))
-        elif impy_config["event_scope"] == 'stable':
-            sel = np.where(evt.isthkk[:npart] == 1)
         else:
-            raise Exception("not implemented, yet")
+            sel = np.where(evt.isthkk[:npart] == 1)
+            self.charge = lib.dtpart.iich[lib.dtevt2.idbam[sel] - 1]
+        self.p_ids = evt.idhkk[sel]
+        self.px = evt.phkk[0, sel][0]
+        self.py = evt.phkk[1, sel][0]
+        self.pt2 = evt.phkk[0, sel][0]**2 + evt.phkk[1, sel][0]**2
+        self.pz = evt.phkk[2, sel][0]
+        self.en = evt.phkk[3, sel][0]
 
-        # Save selector for implementation of on-demand properties
-        self.sel = sel
-
-        MCEvent.__init__(
-            self,
-            event_config=event_config,
-            lib=lib,
-            px=evt.phkk[0, sel][0],
-            py=evt.phkk[1, sel][0],
-            pz=evt.phkk[2, sel][0],
-            en=evt.phkk[3, sel][0],
-            p_ids=evt.idhkk[sel],
-            npart=npart)
-
-    @property
-    def charge(self):
-        return self.lib.dtpart.iich[lib.dtevt2.idbam[sel] - 1]
-
-    @property
-    def mass(self):
-        return self.lib.dtevt1.phkk[4, self.sel][0]
+        MCEvent.__init__(self, event_config)
 
 
 #=========================================================================
 # DpmjetIIIMCRun
 #=========================================================================
 class DpmjetIIIMCRun(MCRun):
-    """Implements all abstract attributes of MCRun for the 
-    DPMJET-III series of event generators.
-    
-    It should work identically for the new 'dpmjet3' module and the legacy
-    dpmjet306.
-    """
+    def __init__(self, libref, **kwargs):
 
-    def __init__(self, libref, event_class=None, **kwargs):
+        if not kwargs["event_class"]:
+            kwargs["event_class"] = DpmjetIIIMCEvent
 
-        if event_class is None:
-            self.event_class = DpmjetIIIMCEvent
+        # Set the path to the parameter file
+        if "param_file" in kwargs:
+            self.param_file = kwargs.pop("param_file")
+            from os import path
+            if not path.isfile(self.param_file):
+                raise Exception(
+                    'DpmjetIIIMCRun()::init()' +
+                    'param_file {0} not found'.format(self.param_file))
         else:
-            self.event_class = event_class
+            self.param_file = None
+        if "Einit" in kwargs:
+            self.e_init = kwargs.pop('Einit')
+        else:
+            self.e_init = -1
 
         MCRun.__init__(self, libref, **kwargs)
 
-    @property
-    def name(self):
-        """Event generator name"""
-        return "DPMJET"
-
-    @property
-    def version(self):
-        """Event generator version"""
-        # Needs some sort of smart handling here
-        return "III-2018.1"
+        self.generator = "DPMJET"
+        self.version = "III-2017.1"
+        self.needs_init = True
 
     def get_sigma_inel(self):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
+        # Calculate inelastic cross section
         k = self.evkin
-        self.lib.dt_xsglau(k.A1, k.A2, self.lib.idt_icihad(k.p1pdg), 0, 0,
-                           k.ecm, 1, 1, 1)
+        self.lib.dt_xsglau(k.A1, k.A2,
+                           self.lib.idt_icihad(k.p1pdg), 0, 0, k.ecm, 1, 1, 1)
         return self.lib.dtglxs.xspro[0, 0, 0]
 
-    def _dpmjet_tup(self, event_kinematics):
-        """Constructs an tuple of arguments for calls to event generator
-        from given event kinematics object."""
-        k = event_kinematics
-        return k.A1, k.Z1, k.A2, k.Z2, self.lib.idt_icihad(k.p1pdg), k.elab
-
     def set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
         k = event_kinematics
 
-        # AF: No idea yet, but apparently this functionality was around?!
-        # if hasattr(k, 'beam') and hasattr(self.lib, 'init'):
-        #     print(self.class_name + "::set_event_kinematics():" +
-        #           "setting beam params", k.beam)
-        #     self.lib.dt_setbm(k.A1, k.Z1, k.A2, k.Z2, k.beam[0], k.beam[1])
-        #     print 'OK'
-        self.event_config['event_kinematics'] = event_kinematics
+        self.dpmevt_tup = k.A1, k.Z1, k.A2, k.Z2, \
+            self.lib.idt_icihad(k.p1pdg), k.elab
 
-    def attach_log(self):
-        """Routes the output to a file or the stdout."""
-        fname = impy_config['output_log']
-        if fname == 'stdout':
-            self.lib.dtflka.lout = 6
-            self.lib.dtflka.lpri = 50
-            self.lib.pydat1.mstu[10] = 6
-            info(5, 'Output is routed to stdout.')
-        else:
-            lun = self._attach_fortran_logfile(fname)
-            self.lib.dtiont.lout = lun
-            self.lib.pydat1.mstu[10] = lun
-            info(5, 'Output is routed to', fname, 'via LUN', lun)
+        if hasattr(k, 'beam') and hasattr(self.lib, 'init'):
+            print(self.class_name + "::set_event_kinematics():" +
+                  "setting beam params", k.beam)
+            self.lib.dt_setbm(k.A1, k.Z1, k.A2, k.Z2, k.beam[0], k.beam[1])
+            print 'OK'
+
+        self.event_config['event_kinematics'] = event_kinematics
 
     def init_generator(self, config):
 
         # Comprise DPMJET input from the event kinematics object
+        self.set_event_kinematics(self.evkin)
         k = self.evkin
+        PM, PCH, TM, TCH = self.dpmevt_tup[:-2]
 
-        dpm_conf = impy_config['dpmjet']
+        ounit = None
+        try:
+            from MCVD.management import LogManager  # @UnresolvedImport
+            self.log_man = LogManager(config, self)
+            self.log_man.create_log('{0}_{1}_{2}'.format(PM, PCH, k.p1pdg),
+                                    '{0}_{1}'.format(TM, TCH), k.ecm)
+            ounit = 66
+        except ImportError:
+            print self.class_name + "::init_generator(): Running outside of MCVD,", \
+                "the log will be printed to STDOUT."
+            ounit = 6
+        try:
+            self.lib.dtflka.lout = ounit
+            self.lib.dtflka.lpri = 50
+            self.lib.pydat1.mstu[10] = ounit
+        except AttributeError:
+            self.lib.dtiont.lout = ounit
+            self.lib.pydat1.mstu[10] = ounit
 
-        # print self.class_name + "::init_generator(): calling init with:", \
-        #     - 1, k.elab, PM, PCH, TM, TCH, k.p1pdg
+        if self.debug:
+            print self.class_name + "::init_generator(): output_unit set to", \
+                ounit
+            print self.class_name + "::init_generator(): calling init with:", \
+                - 1, k.elab, PM, PCH, TM, TCH, k.p1pdg
 
         # Set the dpmjpar.dat file
-        pfile = dpm_conf['param_file']['III-2018.1']
-        self.lib.pomdls.parfn[0:len(pfile)] = pfile
+        if self.param_file:
+            self.lib.pomdls.parfn[0:len(self.param_file)] = self.param_file
 
-        self.lib.dt_init(
-            -1,
-            dpm_conf['e_max'],
-            k.A1, 
-            k.Z1, 
-            k.A2, 
-            k.Z2,
-            k.p1pdg,
-            iglau=1)
-        # Put protection to not run this stuff again
-        self.lib.init = True
+        if not hasattr(self.lib, 'init'):
+            if self.e_init > 0:
+                self.lib.dt_init(
+                    -1, self.e_init, PM, PCH, TM, TCH, k.p1pdg, iglau=1)
+            else:
+                self.lib.dt_init(
+                    -1, k.elab, PM, PCH, TM, TCH, k.p1pdg, iglau=1)
+            self.set_event_kinematics(self.evkin)
+            self.lib.init = True
 
-        if dpm_conf['user_frame'] == 'center-of-mass':
-            self.lib.dtflg1.iframe = 2
-        elif dpm_conf['user_frame'] == 'laboratory':
+        if ('dpmjet_frame' in self.event_config and
+                self.event_config['dpmjet_frame'] == 'lab'):
             self.lib.dtflg1.iframe = 1
+        else:
+            self.lib.dtflg1.iframe = 2
 
-        # if self.def_settings:
-        #     print self.class_name + "::init_generator(): Using default settings:", \
-        #         self.def_settings.__class__.__name__
-        #     self.def_settings.enable()
+        if self.def_settings:
+            print self.class_name + "::init_generator(): Using default settings:", \
+                self.def_settings.__class__.__name__
+            self.def_settings.enable()
 
         # Set pi0 stable
         self.set_stable(111)
@@ -168,7 +152,8 @@ class DpmjetIIIMCRun(MCRun):
     def set_stable(self, pdgid):
         kc = self.lib.pycomp(pdgid)
         self.lib.pydat3.mdcy[kc - 1, 0] = 0
-        info(5, 'defining', pdgid, 'as stable particle')
+        print self.class_name + "::set_stable(): defining ", \
+            pdgid, "as stable particle"
 
     def generate_event(self):
         reject = self.lib.dt_kkinc(*self.dpmevt_tup, kkmat=-1)
@@ -242,8 +227,8 @@ class DpmjetIIICascadeRun():
         # Calculate inelastic cross section
         pdg = self.ptab.modname2pdg[projectile_id]
         k = EventKinematics(plab=E_lab, p1pdg=pdg, nuc2_prop=(14, 7))
-        self.lib.dt_xsglau(k.A1, k.A2, self.lib.idt_icihad(k.p1pdg), 0, 0,
-                           k.ecm, 1, 1, 1)
+        self.lib.dt_xsglau(k.A1, k.A2,
+                           self.lib.idt_icihad(k.p1pdg), 0, 0, k.ecm, 1, 1, 1)
         self.lib.dtglgp.jstatb = 1000
         print self.lib.dtglxs.xspro[0, 0, 0]
         return self.lib.dtglxs.xspro[0, 0, 0]
