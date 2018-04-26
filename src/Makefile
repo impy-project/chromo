@@ -10,7 +10,7 @@ export RND = $(CURDIR)/rangen.o
 export LOGS = $(CURDIR)/logging.f
 export LOGO = $(CURDIR)/logging.o
 
-SUBDIRS = urqmd-3.4 EPOS-LHC pythia6 qgsjet sophia sibyll
+SUBDIRS = urqmd-3.4 EPOS-LHC pythia6 qgsjet sophia sibyll dpmjet3.0-6
 
 all: $(SUBDIRS)
 

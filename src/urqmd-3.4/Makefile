@@ -22,27 +22,28 @@ URQMD_OBJS := $(URQMD_SRCS:.f=.o) $(URQMD_90SRCS:.f90=.o)
 
 SFUNCS=urqmd init uinit set0 params uounit strini loginit loadwtab norm_init output cascinit urqini pdgid pdgid partname
 
-all:  urqmd.$(LEXT) install
+all:  urqmd34.$(LEXT) install
 
 .PHONY: clean
 clean:
-	rm -rf $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.dSYM
+	rm -rf $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.dSYM *.f2l
 
 .PHONY: distclean
 distclean: clean
 	rm -f *.pyf
 
 .PHONY: install
-install: urqmd.$(LEXT)
+install: urqmd34.$(LEXT)
 	cp *.$(LEXT) $(WORK_DIR)
 
-urqmd.$(LEXT): urqmd.pyf $(URQMD_OBJS) $(LOGO)
-	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" urqmd.pyf \
-	$(LOGO) $(URQMD_OBJS)
+urqmd34.$(LEXT): urqmd34.pyf $(URQMD_OBJS) $(LOGO)
+	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" urqmd34.pyf \
+	$(LOGO) $(URQMD_OBJS) >> urqmd34.f2l 2>&1
 
-urqmd.pyf:
-	$(F2PY) -m urqmd -h urqmd.pyf --overwrite-signature \
-	only: $(SFUNCS) $(LOGF) : $(URQMD_SRCS) $(URQMD_90SRCS) $(LOGS)
+urqmd34.pyf: $(URQMD_SRCS) $(URQMD_90SRCS) Makefile
+	$(F2PY) -m urqmd34 -h urqmd34.pyf --overwrite-signature \
+	only: $(SFUNCS) $(LOGF) : $(URQMD_SRCS) $(URQMD_90SRCS) \
+	$(LOGS) > urqmd34.f2l 2>&1
 
 %.o: %.f
 	$(FC) -c $(OPT) $<
