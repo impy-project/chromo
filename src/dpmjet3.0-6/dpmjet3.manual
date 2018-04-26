@@ -1,0 +1,944 @@
+ 
+     +-------------------------------------------------------------+
+     |                                                             |
+     |                                                             |
+     |                        DPMJET 3.0                           |
+     |                                                             |
+     |                                                             |
+     |         S. Roesler+), R. Engel#), J. Ranft*)                |
+     |                                                             |
+     |         +) CERN, DGS-RP                                     |
+     |            CH-1211 Geneva 23, Switzerland                   |
+     |            Email: Stefan.Roesler@cern.ch                    |
+     |                                                             |
+     |         #) Institut fuer Kernphysik                         |
+     |            Forschungszentrum Karlsruhe                      |
+     |            D-76021 Karlsruhe, Germany                       |
+     |                                                             |
+     |         *) University of Siegen, Dept. of Physics           |
+     |            D-57068 Siegen, Germany                          |
+     |                                                             |
+     |                                                             |
+     |       http://home.cern.ch/sroesler/dpmjet3.html             |
+     |                                                             |
+     |                                                             |
+     |       Monte Carlo models used for event generation:         |
+     |          PHOJET 1.12, JETSET 7.4 and LEPTO 6.5.1            |
+     |                                                             |
+     +-------------------------------------------------------------+
+
+ 
+            
+                            INPUT OPTIONS
+                           _______________
+
+
+ The input of DPMJET consists of option cards. Option cards have all the
+ same structure and have to be given in fixed format except for the
+ section enclosed by PHOINPUT and ENDINPUT which can be given in free format.
+
+      CODEWD, (WHAT(I),I=1,6), SDUM   (default fixed format is
+                                       A10,6E10.0,A8)
+
+   where:
+
+   - CODEWD is the option keyword
+   - The WHAT-parameters are numerical data
+   - SDUM may contain literal data
+
+ The order of the input cards is free, with the exception of the START card
+ which initiates event generation and the BEAM card (see below).
+
+ Most definitions have some default values. If these are acceptable,
+ it is not compulsory that the corresponding option card appear
+ explicitly in the input sequence. Similarly, for most WHAT and/or SDUM
+ parameters a default value is applied if the corresponding field is left 
+ blank (or set = 0.0) in the input card.
+
+ Several option cards may appear more than once in the input sequence.
+ In most cases, each of such additional cards obviously adds more
+ definitions to those already given, provided they are different and not
+ contradictory. In case of conflict, the last given generally overrides
+ the previous one(s).
+
+ Any line starting with "*" is treated as a comment line.
+
+
+ 1) List of input options
+ ------------------------
+
+ *** general options ***
+
+ TITLE       title of run    
+ START       start of event generation
+ STOP        stop of the event generation                      
+ RNDMINIT    initialization of random number generator         
+
+ *** interacting particles ***
+
+ PROJPAR     projectile parameters
+ TARPAR      target parameters
+ EMULSION    definition of nuclear target emulsions or composite targets 
+
+ *** collision energy ***
+
+ ENERGY      interaction energy (per nucleon, lab)
+ MOMENTUM    interaction momentum (per nucleon, lab)
+ CMENERGY    interaction energy (nucleon-nucleon cms)
+ BEAM        definition of beam parameters
+
+ *** model for hadron / lepton / photon - nucleon interactions ***
+
+ MODEL       model to be used to treat nucleon-nucleon interactions        
+ PHOINPUT    start of PHOJET-specific input
+ ENDINPUT    end of PHOJET-specific input
+ HADRIN      HADRIN module                             
+ LEPTO-CUT   parameter CUT in LEPTO-common /LEPTOU/
+ LEPTO-LST   parameter LST in LEPTO-common /LEPTOU/
+ LEPTO-PARL  parameter PARL in LEPTO-common /LEPTOU/
+
+ *** Glauber formalism - cross sections ***
+
+ GLAUB-PAR   parameters in Glauber-formalism                    
+ GLAUB-INI   pre-initialization of profile function
+ FLUCTUAT    treatment of cross section fluctuations            
+ VDM-PAR1    parameters in gamma-nucleus cross section calculation     
+ VDM-PAR2    parameters in gamma-nucleus cross section calculation       
+ XS-TABLE    output of cross section table for requested interaction      
+ CENTRAL     biasing in impact parameter                       
+
+ *** parameters in DPM two-chain approximation ***
+
+ RECOMBIN    chain recombination                        
+ COMBIJET    chain fusion
+ CRONINPT    Cronin multiple scattering of partons
+ DIQUARKS    sea-diquark/antidiquark-pairs
+
+ *** hadronization and JETSET-parameters ***
+
+ LUND-MSTU   set parameter MSTU in JETSET-common /LUDAT1/          
+ LUND-PARJ   set parameter PARJ in JETSET-common /LUDAT1/           
+ LUND-PARU   set parameter PARJ in JETSET-common /LUDAT1/         
+ POPCORN     Popcorn-effect in fragmentation                   
+ PARDECAY    decay of Sigma0, Asigma0, pion^0
+
+ *** nuclear fragmentation ***
+
+ FERMI       Fermi momentum of nucleons
+ TAUFOR      formation time suppressed intranuclear cascade            
+ PAULI       treatment of Pauli's principle
+ COULOMB     treatment of Coulomb force
+ EVAP        evaporation / fragmentation module                             
+
+ *** output and checks ***
+
+ FRAME       Lorentz-frame in which final state is given in DTEVT1         
+ HISTOGRAM   activate different classes of histograms         
+ EMCCHECK    extended energy-momentum / quantum-number conservation check   
+
+ *** lepton tagger ***
+
+ L-TAG       lepton tagger (lepton-nucleus interactions only)            
+ L-ETAG      lepton tagger (lepton-nucleus interactions only)
+ ECMS-CUT    lepton tagger (lepton-nucleus interactions only)
+
+ *** for code development only ***
+
+ INTPT       intrinsic transverse momenta of partons
+ OUTLEVEL    output control switches                     
+ RESONANC    treatment of low mass chains                      
+ SEASU3      treatment of strange-quarks at chain ends             
+ XCUTS       thresholds for x-sampling                        
+
+
+ 2) Description of input options
+ -------------------------------
+            
+
+ *** general options ***
+
+______________________________________________________________________
+
+                control card:  codewd = TITLE
+
+   what (1..6), sdum   no meaning
+
+   Note:  The control-card following this card must consist of
+          a string of characters usually giving the title of
+          the run.
+______________________________________________________________________
+
+                control card:  codewd = START
+
+   what (1) =   number of events                default: 100.
+______________________________________________________________________
+
+                control card:  codewd = STOP
+
+                stop of the event generation
+
+   what (1..6)  no meaning
+______________________________________________________________________
+
+                control card:  RNDMINIT
+
+            initialization of random number generator
+
+   what (1..4)    values for initialization (= 1..168)
+   what (5..6), sdum    no meaning
+______________________________________________________________________
+
+
+ *** interacting particles ***
+
+______________________________________________________________________
+
+                control card:  codewd = PROJPAR
+
+              definition of projectile properties
+
+   what (1) =  (nucleus)   mass number 
+               (photon)    virtuality Q^2
+               (lepton, PHOJET)  
+                           maximum virtuality Q^2 of emitted photon
+               (otherwise) no meaning
+   what (2) =  (nucleus)   charge number
+               (otherwise) no meaning
+   what (3..6) no meaning
+   sdum        (hadrons,photons,leptons) particle code word
+
+   Note: In general, projectile nuclei are defined by what (1) and 
+         what (2). All other projectiles are defined by sdum.
+______________________________________________________________________
+
+                control card:  codewd = TARPAR
+
+                definition of target properties
+
+   what (1) =  (nucleus)   mass number
+               (otherwise) no meaning
+   what (2) =  (nucleus)   charge number
+               (otherwise) no meaning
+   what (3..6)   no meaning
+   sdum        (hadrons) particle code word
+
+   Note: In general, target nuclei are defined by what (1) and
+         what (2). Target hadrons are defined by sdum.
+______________________________________________________________________
+
+
+                control card:  codewd = EMULSION
+
+      definition of nuclear target emulsions or composite targets
+
+   what(1)      mass number of emulsion component
+   what(2)      charge of emulsion component
+   what(3)      fraction of events with this target
+   what(4,5,6)  as what(1,2,3) but for a further component
+                                           default: no emulsion
+   sdum         no meaning
+
+   Note: If this input-card is once used with valid parameters
+         TARPAR is obsolete. Not the absolute values of the fractions 
+         are important but only relative values.
+         This control card can be repeatedly used to define
+         emulsions / composite targets consisting of up to 10
+         elements.
+______________________________________________________________________
+
+
+ *** collision energy ***
+
+______________________________________________________________________
+
+                control card:  codewd = ENERGY
+
+                definition of laboratory energy
+
+   what (1) >  0:  what (1)  = total energy per nucleon (GeV)                
+            <  0:  |what(1)| = kinetic energy per nucleon (GeV)
+                                            default: 200 GeV
+               if |what(2)| > 0: min. total/kinetic energy per nucleon 
+                                 for variable energy runs
+   what (2)    max. energy per nucleon for variable energy runs
+            >  0:  what (2) = total energy per nucleon (GeV)
+            <  0:  |what(1)| = kinetic energy per nucleon (GeV)
+______________________________________________________________________
+
+                control card:  codewd = MOMENTUM
+
+                definition of laboratory momentum
+
+   what (1) =  momentum per nucleon (GeV/c) of projectile in Lab.
+                                            default: 200 GeV/c
+   what (2..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = CMENERGY
+
+   what (1) =  nucleon-nucleon c.m. energy           default: none
+   what (2..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = BEAM
+
+                definition of beam parameters
+              
+   what (1/2)  > 0 : energy per nucleon of beam 1/2 (GeV)           
+               < 0 : |what(1/2)| = energy per charge of 
+                     beam 1/2 (GeV)                      
+               (beam 1 is directed into positive z-direction)
+   what (3)    beam crossing angle, defined as 2x angle between
+               one beam and the z-axis (micro rad)            
+   what (4)    angle with x-axis defining the collision plane 
+   what (5..6), sdum   no meaning                            
+                                                             
+   Note: This card requires previously defined projectile and
+         target identities (PROJPAR, TARPAR) !              
+______________________________________________________________________
+
+
+ *** model for hadron / lepton / photon - nucleon interactions ***
+
+______________________________________________________________________
+
+                control card:  codewd = MODEL
+
+   Model used to describe nucleon(hadron,photon,lepton)-nucleon 
+                                                   interactions
+
+   what (1)    (only if sdum = LEPTO) 
+               variable INTER (see LEPTO-manual)
+                    = 1  gamma exchange                         
+                    = 2  W+-   exchange                         
+                    = 3  Z0    exchange                         
+                    = 4  gamma/Z0 exchange                      
+
+   sdum = DTUNUC    two-chain model as for versions 1.xx
+                    (nucleon/hadron-nucleon interactions only)
+        = PHOJET    multiple chains including minijets
+        = LEPTO     DIS
+                                                   default: PHOJET
+   what (2..6)      no meaning
+______________________________________________________________________
+
+                control card:  codewd = PHOINPUT
+
+   Start of PHOJET-specific input.
+   For details and a list of PHOJET input cards see the PHOJET-manual 
+   available at
+       http://www-ik.fzk.de/~engel/phojet.html
+   Note:  This part of the input has to be closed by the ENDINPUT-card
+
+   what (1..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = ENDINPUT
+
+   End of PHOJET-specific input.
+   what (1..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = HADRIN
+
+                        HADRIN module
+
+   what (1) = 0. elastic/inelastic interactions with probab.
+                 as defined by cross-sections
+            = 1. inelastic interactions forced
+            = 2. elastic interactions forced               default: 1
+   what (2)      upper threshold in total energy (GeV) below
+                 which interactions are sampled by HADRIN
+                    default: steady transition btw. HADRIN and
+                             DPM in the range 4-7 GeV
+   what (3..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = LEPTO-CUT                   
+                                                                    
+           set parameter CUT in LEPTO-common /LEPTOU/               
+                                                                    
+   what (1) =  index in CUT-array                            
+   what (2) =  new value of CUT( int(what(1)) )            
+   what (3), what(4) and what (5), what(6) further        
+               parameter in the same way as what (1) and what (2) 
+                         default: default-LEPTO parameters  
+
+   Note: see LEPTO-manual.
+______________________________________________________________________
+                                                            
+                control card:  codewd = LEPTO-LST           
+                                                            
+           set parameter LST in LEPTO-common /LEPTOU/       
+                                                            
+   what (1) =  index in LST-array                           
+   what (2) =  new value of LST( int(what(1)) )             
+   what (3), what(4) and what (5), what(6) further          
+               parameter in the same way as what (1) and  what (2)
+                         default: default-LEPTO parameters       
+                                                                
+   Note: see LEPTO-manual.
+______________________________________________________________________
+                                                       
+                control card:  codewd = LEPTO-PARL     
+                                                       
+           set parameter PARL in LEPTO-common /LEPTOU/ 
+                                                       
+   what (1) =  index in PARL-array                
+   what (2) =  new value of PARL( int(what(1)) )  
+   what (3), what(4) and what (5), what(6) further     
+               parameter in the same way as what (1) and what (2) 
+                         default: default-LEPTO parameters    
+
+   Note: see LEPTO-manual.
+______________________________________________________________________
+
+
+ *** Glauber formalism - cross sections ***
+
+______________________________________________________________________
+
+                control card:  codewd = GLAUB-PAR
+
+                 parameters in Glauber-formalism
+
+   what (1)  number of nucleon configurations sampled in integration
+             over nuclear density                      default: 1000
+   what (2)  number of bins for integration over impact-parameter and
+             for profile-function calculation          default: 49
+   what (3)  = 1 calculation of tot., el. and qel. cross sections
+             otherwise calculation of production cross sections only
+                                                       default: 0
+   what (4)  = 1   read pre-calculated impact-parameter distribution
+                   from "sdum".glb for fixed projectile/target/energy 
+                   runs
+             = -1  dump calculated impact-parameter distribution
+                   into "sdum".glb for fixed or variable projectile/
+                   target/energy runs
+             = 100 read pre-calculated impact-parameter distribution
+                   from "sdum".glb for variable projectile/target/
+                   energy runs
+                                                       default: 0
+   what (5..6)   no meaning
+   sdum      if |what (4)| = 1 name of in/output-file (sdum.glb)
+______________________________________________________________________
+
+                control card:  codewd = GLAUB-INI
+
+             pre-initialization of profile function
+
+   what (1)      lower energy limit for initialization
+            > 0  Lab. frame
+            < 0  nucleon-nucleon cms
+   what (2)      upper energy limit for initialization
+            > 0  Lab. frame
+            < 0  nucleon-nucleon cms
+   what (3) > 0  # of equidistant lin. bins in E
+            < 0  # of equidistant log. bins in E
+   what (4)      maximum projectile mass number for which the Glauber
+                 data are initialized for each projectile mass number
+                 (if <= mass given with the PROJPAR-card)
+                                          default: 18
+   what (5)      steps in mass number starting from what (4)
+                 up to mass number defined with PROJPAR-card
+                 for which Glauber data are initialized
+                                          default: 5 
+   what (6)      no meaning
+   sdum          no meaning
+______________________________________________________________________
+
+                control card:  codewd = FLUCTUAT
+
+            Treatment of cross section fluctuations
+
+   what (1) = 1  cross section fluctuations treated    default: 0.
+   what (2..6), sdum   no meaning
+______________________________________________________________________
+
+
+                control card:  codewd = VDM-PAR1
+
+       parameters in gamma-nucleus cross section calculation
+
+   what (1) =  Lambda^2                       default: 2.
+   what (2)    lower limit in M^2 integration
+            =  1  (3m_pi)^2
+            =  2  (m_rho0)^2
+            =  3  (m_phi)^2                   default: 1
+   what (3)    upper limit in M^2 integration
+            =  1   s/2
+            =  2   s/4
+            =  3   s                          default: 3
+   what (4)    CKMT F_2 structure function
+            =  2212  proton
+            =  100   deuteron                 default: 2212
+   what (5)    calculation of gamma-nucleon xsections
+            =  1  according to CKMT-parametrization of F_2
+            =  2  integrating SIGVP over M^2
+            =  3  using SIGGA
+            =  4  PHOJET cross sections       default:  4
+
+   what (6), sdum    no meaning
+______________________________________________________________________
+
+                control card:  codewd = VDM-PAR2
+
+       parameters in gamma-nucleus cross section calculation
+
+   what (1) = 0 no suppression of shadowing by direct photon
+                processes
+            = 1 suppression ..                   default: 1
+   what (2) = 0 no suppression of shadowing by anomalous
+                component if photon-F_2
+            = 1 suppression ..                   default: 1
+   what (3) = 0 no suppression of shadowing by coherence
+                length of the photon
+            = 1 suppression ..                   default: 1
+   what (4) = 1 longitudinal polarized photons are taken into
+                account
+                eps*R*Q^2/M^2 = what(4)*Q^2/M^2  default: 0
+   what (5..6), sdum    no meaning
+______________________________________________________________________
+
+                control card:  codewd = XS-TABLE
+
+     output of cross section table for requested interaction
+               - particle production deactivated ! -
+
+   what (1)      lower energy limit for tabulation
+            > 0  Lab. frame
+            < 0  nucleon-nucleon cms
+   what (2)      upper energy limit for tabulation
+            > 0  Lab. frame
+            < 0  nucleon-nucleon cms
+   what (3) > 0  # of equidistant lin. bins in E
+            < 0  # of equidistant log. bins in E
+   what (4)      lower limit of particle virtuality (photons)
+   what (5)      upper limit of particle virtuality (photons)
+   what (6) > 0  # of equidistant lin. bins in Q^2
+            < 0  # of equidistant log. bins in Q^2
+______________________________________________________________________
+
+                control card:  codewd = CENTRAL
+
+                  Biasing in impact parameter
+
+   what (1) = 1.  central production
+                  (not recommended, has to be updated)
+   what (1) < 0  and > -100
+         what (2) = min. impact parameter                     
+         what (3) = max. impact parameter                       
+   what (1) < -99
+         what (2) = fraction of cross section
+   what (4..6), sdum   no meaning
+
+   Note: if what (1) = -1 : evaporation is suppressed
+         if what (1) < -1 : evaporation is allowed
+______________________________________________________________________
+
+
+ *** parameters in DPM two-chain approximation ***
+
+______________________________________________________________________
+
+                control card:  codewd = RECOMBIN
+
+                      Chain recombination
+         (recombine S-S and V-V chains to V-S chains)
+
+   what (1) = -1. recombination switched off    default: 1
+   what (2..6), sdum   no meaning
+
+   Note: Limited applicability for MODEL = PHOJET.
+______________________________________________________________________
+
+                control card:  codewd = COMBIJET
+
+                chain fusion (2 q-aq --> qq-aqaq)
+
+   what (1) = 1   fusion treated                     default: 0.
+   what (2)       minimum number of uncombined chains from
+                  single projectile or target nucleons
+                                                     default: 0.
+   what (3..6), sdum   no meaning
+
+   Note: Limited applicability for MODEL = PHOJET.
+______________________________________________________________________
+
+                control card:  codewd = CRONINPT
+
+     Cronin effect (multiple scattering of partons at chain ends)
+
+   what (1) = -1  Cronin effect not treated
+                  default (h+A): 1   (A+A): 0
+   what (2)       scattering parameter          default: 0.64
+   what (3..6), sdum   no meaning
+
+   Note: The Cronin-treatment should not be invoked for A+A int.
+______________________________________________________________________
+
+                control card:  codewd = DIQUARKS
+
+   what (1) = -1.  sea-diquark/antidiquark-pairs not treated
+                                                     default: -1.
+   what (2..6), sdum   no meaning
+
+   Note: Limited applicability for MODEL = PHOJET.
+______________________________________________________________________
+
+
+ *** hadronization and JETSET-parameters ***
+
+______________________________________________________________________
+
+                control card:  codewd = LUND-MSTU
+
+            parameter MSTU in JETSET-common /LUDAT1/
+
+   what (1) =  index according to LUND-common block
+   what (2) =  new value of MSTU( int(what(1)) )
+   what (3), what(4) and what (5), what(6) further
+   parameter used in the same way as what (1) and  what (2)
+
+   Note: The use of this card is not recommended. Some parameters
+         can presently not be changed with this card anyway. 
+         Limited applicability for MODEL = PHOJET.
+______________________________________________________________________
+
+                control card:  codewd = LUND-PARJ
+
+            parameter PARJ in JETSET-common /LUDAT1/
+
+   what (1) =  index according to LUND-common block
+   what (2) =  new value of PARJ( int(what(1)) )
+   what (3), what(4) and what (5), what(6) further
+   parameter used in the same way as what (1) and what (2)
+
+   Note: The use of this card is not recommended. Some parameters
+         can presently not be changed with this card anyway. 
+         Limited applicability for MODEL = PHOJET.
+______________________________________________________________________
+
+                control card:  codewd = LUND-PARU
+
+            parameter PARJ in JETSET-common /LUDAT1/
+
+   what (1) =  index according to LUND-common block
+   what (2) =  new value of PARU( int(what(1)) )
+   what (3), what(4) and what (5), what(6) further
+   parameter used in the same way as what (1) and what (2)
+
+   Note: The use of this card is not recommended. Some parameters
+         can presently not be changed with this card anyway. 
+         Limited applicability for MODEL = PHOJET.
+______________________________________________________________________
+
+                control card:  codewd = POPCORN
+
+               "Popcorn-effect" in fragmentation
+
+   what (1) < 0  Popcorn-effect switched off (MSTJ(12) = 1)
+            >=0  Popcorn-effect treated (PARJ(5) = what (1))
+                                                    default: 0.15
+   what (2..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = PARDECAY
+
+   what (1) = 1.  Sigma0/Asigma0 decay treated by JETSET
+            = 2.  pion^0 decay after intranucl. cascade
+                                        default: 0 (no such decays)
+   what (2..6), sdum   no meaning
+______________________________________________________________________
+
+
+ *** nuclear fragmentation ***
+
+______________________________________________________________________
+
+                control card:  codewd = FERMI
+
+   what (1) = -1 Fermi-motion of nucleons not treated    default: 1
+   what (2) =    scale factor for Fermi-momentum         default: 0.68
+   what (3..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = TAUFOR
+
+           formation time suppressed intranuclear cascade
+
+   what (1)      formation time (in fm/c)             default: 3.1 fm/c
+   what (2)      number of generations followed       default: 25
+   what (3) = 1. p_t-dependent formation zone
+            = 2. constant formation zone              default: 1
+   what (4)      modus of selection of nucleus where the
+                 cascade if followed first
+            = 1.  proj./target-nucleus with probab. 1/2
+            = 2.  nucleus with highest mass
+            = 3.  proj. nucleus if particle is moving in pos. z
+                  targ. nucleus if particle is moving in neg. z
+                                                      default: 1
+   what (5..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = PAULI
+
+   what (1) =  -1  Pauli's principle for secondary
+                   interactions not treated           default: 1
+   what (2..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = COULOMB
+
+   what (1) = -1. Coulomb-energy treatment switched off   default: 1
+   what (2..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = EVAP
+
+                 evaporation module of FLUKA
+
+   The following options and defaults apply only if the code is linked
+   to the FLUKA-library (see README file).
+
+   what (1) =< -1 ==> evaporation is switched off
+            >=  1 ==> evaporation is performed
+
+          what (1) = i1 + i2*10 + i3*100 + i4*10000
+                     (i1, i2, i3, i4 >= 0 )
+
+    i1 is the flag for selecting the T=0 level density option used
+       =  1: standard EVAP level densities with Cook pairing
+             energies
+       =  2: Z,N-dependent Gilbert & Cameron level densities
+                                                         (default)
+       =  3: Julich A-dependent level densities
+       =  4: Z,N-dependent Brancazio & Cameron level densities
+
+    i2 >= 1: high energy fission activated
+             (default high energy fission is activated)
+
+    i3 =  0: No energy dependence for level densities
+       =  1: Standard Ignyatuk (1975, 1st) energy dependence
+             for level densities (default)
+       =  2: Standard Ignyatuk (1975, 1st) energy dependence
+             for level densities with NOT used set of parameters
+       =  3: Standard Ignyatuk (1975, 1st) energy dependence
+             for level densities with NOT used set of parameters
+       =  4: Second   Ignyatuk (1975, 2nd) energy dependence
+             for level densities
+       =  5: Second   Ignyatuk (1975, 2nd) energy dependence
+             for level densities with fit 1 Iljinov & Mebel set of
+             parameters
+       =  6: Second   Ignyatuk (1975, 2nd) energy dependence
+             for level densities with fit 2 Iljinov & Mebel set of
+             parameters
+       =  7: Second   Ignyatuk (1975, 2nd) energy dependence
+             for level densities with fit 3 Iljinov & Mebel set of
+             parameters
+       =  8: Second   Ignyatuk (1975, 2nd) energy dependence
+             for level densities with fit 4 Iljinov & Mebel set of
+             parameters
+
+    i4 >= 1: Original Gilbert and Cameron pairing energies used
+             (default Cook's modified pairing energies)
+
+   what (2) = ig + 10 * if   (ig and if must have the same sign)
+
+    ig =< -1 ==> deexcitation gammas are not produced
+                 (if the evaporation step is not performed
+                  they are never produced)
+    if =< -1 ==> Fermi Break Up is not invoked
+                 (if the evaporation step is not performed
+                  it is never invoked)
+    The default is: deexcitation gamma are produced and
+                    Fermi break up is activated
+   what (3..6), sdum   no meaning
+______________________________________________________________________
+
+
+ *** output and checks ***
+
+______________________________________________________________________
+
+                control card:  codewd = FRAME
+
+           frame in which final state is given in DTEVT1
+
+   what (1) = 1  target rest frame (laboratory)
+            = 2  nucleon-nucleon cms                     default: 1
+______________________________________________________________________
+
+
+                control card:  codewd = HISTOGRAM
+
+            activate different classes of histograms
+
+                                 default: no histograms
+______________________________________________________________________
+
+                control card:  codewd = EMCCHECK
+
+     extended energy-momentum / quantum-number conservation check
+
+   what (1) = -1   extended check not performed        default: -1.
+   what (2..6), sdum   no meaning
+______________________________________________________________________
+
+
+ *** lepton tagger ***
+
+______________________________________________________________________
+
+                control card:  codewd = L-TAG
+        (lepton-nucleus interactions with MODEL=PHOJET only)
+
+                         lepton tagger:
+    definition of kinematic cuts for radiated photon and
+    outgoing lepton detection in lepton-nucleus interactions
+
+   what (1) = y_min
+   what (2) = y_max
+   what (3) = Q^2_min
+   what (4) = Q^2_max
+   what (5) = theta_min  (Lab)
+   what (6) = theta_max  (Lab)                        default: no cuts
+   sdum    no meaning
+______________________________________________________________________
+
+
+                control card:  codewd = L-ETAG
+        (lepton-nucleus interactions with MODEL=PHOJET only)
+
+                         lepton tagger:
+   what (1) = min. outgoing lepton energy  (in Lab)
+   what (2) = min. photon energy           (in Lab)
+   what (3) = max. photon energy           (in Lab)   default: no cuts
+   what (2..6), sdum    no meaning 
+______________________________________________________________________
+
+                control card:  codewd = ECMS-CUT
+        (lepton-nucleus interactions with MODEL=PHOJET only)
+
+   what (1) = min. c.m. energy to be sampled
+   what (2) = max. c.m. energy to be sampled
+   what (3) = min x_Bj         to be sampled          default: no cuts
+   what (3..6), sdum    no meaning
+______________________________________________________________________
+
+
+ *** for code development only ***
+
+______________________________________________________________________
+
+                control card:  codewd = INTPT
+
+   what (1) = -1   intrinsic transverse momenta of partons
+                   not treated                default: 1
+   what (2..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = OUTLEVEL
+
+                     output control switches
+
+   what (1) =  internal rejection informations             default: 0
+   what (2) =  energy-momentum conservation check output   default: 0
+   what (3..6) internal warning messages                   default: 0
+______________________________________________________________________
+
+                control card:  codewd = RESONANC
+
+                  treatment of low mass chains
+
+   what (1) = -1 low chain masses are not corrected for resonance
+                 masses                                    default: 1.
+   what (2) = -1 massless partons                 default: 1. (massive)
+   what (3) = -1 chain-system containing chain of too small
+                 mass is rejected (note: this does not fully
+                 apply to S-S chains)                      default: 0.
+   what (4..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = SEASU3
+
+           Treatment of strange-quarks at chain ends
+
+   what (1)   (SEASQ)  strange-quark suppression factor
+              iflav = 1.+rndm*(2.+SEASQ)                   default: 1.
+   what (2..6), sdum   no meaning
+______________________________________________________________________
+
+                control card:  codewd = XCUTS
+
+                  thresholds for x-sampling
+
+   what (1)    defines lower threshold for val.-q x-value (CVQ)
+                                                       default: 1.
+   what (2)    defines lower threshold for val.-qq x-value (CDQ)
+                                                       default: 2.
+   what (3)    defines lower threshold for sea-q x-value (CSEA)
+                                                       default: 0.2
+   what (4)    sea-q x-values in S-S chains (SSMIMA)   default: 0.14
+   what (5)    not used                                default: 2.
+   what (6), sdum   no meaning
+
+   Note: Lower thresholds (what(1..3)) are def. as x_thr=CXXX/ECM
+______________________________________________________________________
+
+
+
+                     EVENT HISTORY - COMMON /DTEVT1/
+                    _________________________________
+
+
+ 1) Common block DTEVT1
+ ----------------------
+
+ The complete history of each event can be found in COMMON /DTEVT1/ 
+ and COMMON /EXTEVT/.
+
+ COMMON /DTEVT1/ :
+         NHKK         number of entries in common block
+         NEVHKK       number of the event
+         ISTHKK(i)    status code for entry i
+         IDHKK(i)     identifier for the entry
+                      (for particles: identifier according to the PDG scheme)
+         JMOHKK(1,i)  pointer to the entry of the first mother of entry i
+         JMOHKK(2,i)  pointer to the entry of the second mother of entry i
+         JDAHKK(1,i)  pointer to the entry of the first daughter of entry i
+         JDAHKK(2,i)  pointer to the entry of the second daughter of entry i
+         PHKK(1..3,i) 3-momentum
+         PHKK(4,i)    energy
+         PHKK(5,i)    mass
+         VHKK / WHKK  spatial position of particle in target / projectile
+                      rest frame
+
+ 2) Final state particles
+ ------------------------
+
+ The final state particles from the actual event (number NEVHKK)
+ can be found in DTEVT1 and identified by their status:
+
+    ISTHKK(i) = 1    final state particle produced in
+                     photon-/hadron-/nucleon-nucleon collisions or
+                     in intranuclear cascade processes
+               -1    nucleons, deuterons, H-3, He-3, He-4 evaporated
+                     from excited nucleus, fragmentation and fission
+                     products (A > 4) and photons produced in nuclear 
+                     deexcitation processes
+               1001  residual nucleus (ground state)
+
+ The types of these particles/nuclei are given in IDHKK as follows
+
+    all final state particles except nuclei :
+      IDHKK(i)=particle identifier according to PDG numbering scheme
+    nuclei (A > 1: evaporation / fragmentation / fission products, and 
+            residual nuclei) :
+      IDHKK(i)=80000, IDRES(i)=mass number, IDXRES(i)=charge number
+
+ The 4-momenta and masses can be found in PHKK (target nucleus rest frame
+ unless defined by the FRAME-card):
+                  PHKK(1..3,i) 3-momentum (p_x,p_y,p_z)
+                  PHKK(4,i)    energy
+                  PHKK(5,i)    mass
