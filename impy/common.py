@@ -12,14 +12,17 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import numpy as np
 import yaml
 
-from impy.util import info
-from particletools.tables import PYTHIAParticleData
+from particletools.tables import PYTHIAParticleData, make_stable_list
 
+# Globals
 root_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..")
-impy_config = yaml.load(open(
-    os.path.join(root_dir, 'impy_config.yaml')))
+impy_config = yaml.load(open(os.path.join(root_dir, 'impy_config.yaml')))
 pdata = PYTHIAParticleData(
-    cache_file=open(os.path.join(root_dir, impy_config["pdata_cachefile"]), 'wb'))
+    cache_file=open(
+        os.path.join(root_dir, impy_config["pdata_cachefile"]), 'wb'))
+
+from impy.util import info
+
 
 class MCEvent(object):
     """The basis of interaction between user and all the event generators.
@@ -39,8 +42,8 @@ class MCEvent(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, event_config, lib, px, py, pz, en, p_ids, npart):
-        self.kin = event_config['event_kinematics']
+    def __init__(self, event_kinematics, lib, px, py, pz, en, p_ids, npart):
+        self.kin = event_kinematics
         self.lib = lib
 
         self.px = px
@@ -208,33 +211,22 @@ class MCRun():
     def __init__(
             self,
             libref,
-            event_kinematics,
-            event_config,
-            label = None,
+            label=None,
             settings_dict=dict(),
-            output_file='stdout',
     ):
 
         self.lib = libref
         self._label = label
-
-        self.output_file = output_file
-        self.event_config = event_config
-        self.evkin = event_kinematics
         self._is_initialized = False
 
+        # Not yet clear how to handle these
         self.setting_dict = settings_dict
 
-        # Define what to do if rejections occur
-        # (must be globally defined)
-        self.continue_on_reject = True
-
-        # The event class has to know the kinematics, since
-        # some derived attributes need the frame variables
-        self.event_config['event_kinematics'] = self.evkin
+        # FORTRAN LUN that keeps logfile handle
+        self.output_lun = None
 
     def __enter__(self):
-        """It would be good to actually use the with construct to
+        """TEMP: It would be good to actually use the with construct to
         open and close logfiles on init."""
         self.attach_log()
         return self
@@ -298,33 +290,52 @@ class MCRun():
         """Routes the output to a file or the stdout."""
         pass
 
-    def abort_if_already_initialized(self):
+    def _abort_if_already_initialized(self):
+        """The first initialization should not be run more than
+        once. This method should be called in the beginning of each
+        init_generator() implementation."""
+
         assert not self._is_initialized
         self._is_initialized = True
 
     def _attach_fortran_logfile(self, fname):
+        """Chooses a random LUN between 20 - 100 and returns a FORTRAN
+        file handle (LUN number) to an open file."""
         from os import path
+        from random import randint
+
         if path.isfile(fname):
             raise Exception('Attempts to overwrite log :' + fname)
-        else:
-            if hasattr(self, 'outunit'):
-                raise Exception('Log already attached to LUN', 
-                    self.outunit)
-            from random import randint
-            path.abspath(fname)
-            # Create a random fortran output unit
-            self.outunit = randint(20, 100)
-            self.lib.impy_openlogfile(path.abspath(fname), self.outunit)
-            return self.outunit
+        elif self.output_lun is not None:
+            raise Exception('Log already attached to LUN', self.output_lun)
+        
+        path.abspath(fname)
+        # Create a random fortran output unit
+        self.output_lun = randint(20, 100)
+        self.lib.impy_openlogfile(path.abspath(fname), self.output_lun)
+        return self.output_lun
 
     def close_fortran_logfile(self):
-        if not hasattr(self, 'outunit'):
+        """FORTRAN LUN has to be released when finished to flush buffers."""
+        if self.output_lun is None:
             info(2, 'Output went not to file.')
         else:
-            self.lib.impy_closelogfile(self.outunit)
-            del self.outunit
+            self.lib.impy_closelogfile( self.output_lun)
+            self.output_lun = None
 
-    def event_generator(self, evkin, nevents):
+    def _define_default_fs_particles(self):
+        """Defines particles as stable for the default 'tau_stable'
+        value in the config."""
+        info(5, 'Setting default particles stable with lifetime <',
+             impy_config['tau_stable'], 'ps')
+
+        for pdgid in make_stable_list(impy_config['tau_stable'], pdata):
+            self.set_stable(pdgid)
+            
+        if impy_config['pi0_stable']:
+            self.set_stable(111)
+
+    def event_generator(self, event_kinematics, nevents):
         """This is some kind of equivalent to Hans'
         generator concept.
 
@@ -333,15 +344,17 @@ class MCRun():
         initialization issue something has to keep track of ownership
         and history. And classes seem to just this.
         """
-        self.set_event_kinematics(evkin)
+        self.set_event_kinematics(event_kinematics)
+        retry_on_rejection = impy_config['retry_on_rejection']
+        # Initialize counters to prevent infinite loops in rejections
         ntrials = 0
         nremaining = nevents
         while nremaining > 0:
             if self.generate_event():
-                yield self.event_class(self.lib, self.event_config)
+                yield self._event_class(self.lib, self._curr_event_kin)
                 nremaining -= 1
                 ntrials += 1
-            elif self.continue_on_reject:
+            elif retry_on_rejection:
                 ntrials += 1
                 continue
             elif ntrials > 2 * nevents:

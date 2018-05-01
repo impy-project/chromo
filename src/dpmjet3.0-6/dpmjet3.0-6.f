@@ -180,6 +180,14 @@
       COMMON /QNEUTO/ DSIGSU,DSIGMC,NDSIG,NEUTYP,NEUDEC
 * event flag
       COMMON /DTEVNO/ NEVENT,ICASCA
+**anfe Nuclear properties file location
+      CHARACTER*1024 FNEVAP
+      CHARACTER*1024 FNPARA
+      CHARACTER*5 VERSION
+      COMMON /DTIMPY/ FNEVAP, FNPARA, VERSION
+      DATA FNEVAP /'dpmjet.dat'/
+      DATA FNPARA /'fitpar.dat'/
+      DATA VERSION /'3.0-6'/
 
       INTEGER PYCOMP
 
@@ -2195,6 +2203,9 @@ C     ENDIF
       LOGICAL LPROD
       CHARACTER*8 CGLB
       COMMON /DTGLGP/ JSTATB,JBINSB,CGLB,IOGLB,LPROD
+
+**anfe IREJ is output variable
+Cf2py intent(out) IREJ
 
       DIMENSION WHAT(6)
 
@@ -20286,6 +20297,7 @@ C    &      ZSTLIN (2,IA) = MAX ( SQRT (ZSTLIN(2,IA)-ZSTLIN(1,IA)**2),
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       SAVE
 
+
       PARAMETER ( CSNNRM = 2.0D-15 )
       PARAMETER ( ZERZER = 0.D+00 )
       PARAMETER ( ONEONE = 1.D+00 )
@@ -20530,6 +20542,12 @@ C     --------------------------------- EVAPORATION DATA
      &                DDPXSE (100), EEPXSE (100), FFPXSE (100),
      &                ZZPXSE (100), EMPXSE (100), XMPXSE (100)
 
+**anfe Nuclear properties file location
+      CHARACTER*1024 FNEVAP
+      CHARACTER*1024 FNPARA
+      CHARACTER*5 VERSION
+      COMMON /DTIMPY/ FNEVAP, FNPARA, VERSION
+
 C---------------------------------------------------------------------
 **sr 17.5.95
 * modified for use in DPMJET
@@ -20540,7 +20558,9 @@ C     REWIND NBERTP
  1000 FORMAT(/,1X,'BERTTP:',4X,'Initialization of evaporation module',
      &       /,12X,'------------------------------------',/)
       NBERNW = 23
-      OPEN (UNIT=NBERNW,FILE='dpmjet.dat',STATUS='UNKNOWN')
+**anfe Support for different location of files
+
+      OPEN (UNIT=NBERNW,FILE=FNEVAP,STATUS='UNKNOWN')
 
 **sr 17.5.
 *!!!! changed to be able to read the ASCII !!!!

@@ -9,7 +9,7 @@ pdata_cachefile : 'impy_pdata_cache.cch'
 # For generators which return not successful events:
 # True: retry rejected events until desired number of events reached
 # False: return if event not successful and set event_successful flag
-retry_rejected : True
+retry_on_rejection : True
 
 # Scope of event stack. Parse all "stable", only stable "charged" are the
 # entire event stack containing "all" particles including partons and decayed
@@ -20,6 +20,12 @@ output_log : stdout
 
 # User frame (in what frame to output)
 user_frame : center-of-mass
+
+# Default definition of final state particle
+tau_stable : 10.0e-12 # [ps] typical value at LHC.
+
+# Set pi0 to stable by default (often used as default)
+pi0_stable : True
 
 # AF: Comment on stuff below
 # All hidden arguments shall go into this one, in particular for UrQMD.
@@ -71,10 +77,14 @@ dpmjet:
     has_hepevt   : True
     int_support  : [ 'hh', 'hA', 'AA', 'gg', 'gh', 'gA']
     # maximal energy for cross section table initialization
-    e_max        : 1e10
+    e_max        : 1.0e+10
     param_file   : {
-        '3.0-6'      : ./src/dpmjet3.0-6/dpmjetpar.dat,
+        '3.0-6'      : ./src/dpmjet3.0-6/fitpar.dat,
         'III-2018.1' : ./src/dpmjetIII-2018.1/dpmjetpar.dat
+    }
+    evap_file    : {
+        '3.0-6'      : ./src/dpmjet3.0-6/dpmjet.dat,
+        'III-2018.1' : ./src/dpmjetIII-2018.1/dpmjet.dat
     }
 
     projectiles  : {
@@ -84,7 +94,8 @@ dpmjet:
                          3122, -3122, 22]
     }
     # Advanced params:
-    dtglgp.jstatb : 1000 # Number of trials for glauber hA, AA cross section calc.
+    # Number of trials for glauber hA, AA cross section calc.
+    dtglgp.jstatb : 1000
 
 
 qgsjet:

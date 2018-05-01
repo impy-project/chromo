@@ -8,10 +8,10 @@ import numpy as np
 from impy.common import MCRun, MCEvent, impy_config
 from impy.util import standard_particles, info
 
-class SibyllMCEvent(MCEvent):
+class SibyllEvent(MCEvent):
     """Wrapper class around SIBYLL 2.1 & 2.3 particle stack."""
 
-    def __init__(self, lib, event_config):
+    def __init__(self, lib, event_kinematics):
         # The stack common block
         s_plist = lib.s_plist
         # Number of entries on stack
@@ -34,7 +34,7 @@ class SibyllMCEvent(MCEvent):
 
         MCEvent.__init__(
             self,
-            event_config=event_config,
+            event_kinematics=event_kinematics,
             lib=lib,
             px=s_plist.p[sel, 0],
             py=s_plist.p[sel, 1],
@@ -58,9 +58,9 @@ class SIBYLLRun(MCRun):
         
     def __init__(self, libref, event_class=None, **kwargs):
         if event_class is None:
-            self.event_class = SibyllMCEvent
+            self._event_class = SibyllEvent
         else:
-            self.event_class = event_class
+            self._event_class = event_class
 
         MCRun.__init__(self, libref, **kwargs)
 
@@ -77,7 +77,7 @@ class SIBYLLRun(MCRun):
     def sigma_inel(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        k = self.evkin
+        k = self._curr_event_kin
         sigproj = None
         if abs(k.p1pdg) in [2212, 3112]:
             sigproj = 1
@@ -95,14 +95,13 @@ class SIBYLLRun(MCRun):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
 
+        info(5, 'Setting event kinematics.')
         k = event_kinematics
 
         self.sibproj = self.lib.isib_pdg2pid(k.p1pdg)
         self.eatarg = k.A2
         self.ecm = k.ecm
-
-        self.event_config['event_kinematics'] = k
-        self.evkin = event_kinematics
+        self._curr_event_kin = event_kinematics
 
     def attach_log(self):
         """Routes the output to a file or the stdout."""
@@ -115,30 +114,30 @@ class SIBYLLRun(MCRun):
             self.lib.s_debug.lun = lun
             info(5, 'Output is routed to', fname, 'via LUN', lun)
 
-    def init_generator(self):
+    def init_generator(self, event_kinematics):
         from random import randint
-        self.set_event_kinematics(self.evkin)
 
-        self.abort_if_already_initialized()
+        self._abort_if_already_initialized()
+        
+        self.set_event_kinematics(event_kinematics)
 
-        self.attach_log(self.output_file)
+        self.attach_log()
 
         self.lib.sibini(randint(1000000, 10000000))
         set_stable(self.lib, 2)
         self.lib.pdg_ini()
 
-        self.set_stable(111)
-
-        if 'stable' in self.event_config:
-            for pdgid in self.event_config['stable']:
-                self.set_stable(pdgid)
+        self._define_default_fs_particles()
 
     def set_stable(self, pdgid):
         sid = abs(self.lib.isib_pdg2pid(pdgid))
+        if abs(pdgid) == 311:
+            info(1, 'Ignores K0. Use K0L/S 130/310 in final state definition.')
+            return
         idb = self.lib.s_csydec.idb
         if sid == 0 or sid > idb.size - 1:
             return
-        info(1, 'defining as stable particle',
+        info(5, 'defining as stable particle',
              'pdgid/sid = {0}/{1}'.format(pdgid, sid))
         idb[sid - 1] = -np.abs(idb[sid - 1])
 
