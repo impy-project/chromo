@@ -69,7 +69,7 @@ pythia:
     }
 
 
-dpmjet:
+dpmjetIII:
     input_frame  : laboratory
     output_frame : [ laboratory, center-of-mass ]
     sqs_min_GeV  : 1.

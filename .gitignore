@@ -10,4 +10,5 @@ output_urtest.txt
 tables.dat
 impy_pdata_cache.cch
 *.f2l
-.vscode/settings.json
+.vscode/*
+src/dpmjet3.0-6/dpm3usr

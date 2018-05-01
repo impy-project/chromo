@@ -221,6 +221,9 @@ C     DIMENSION XPARA(5)
       DATA BLANK /'        '/
 
       DATA LSTART,LXSTAB,IFIRST /.TRUE.,.FALSE.,1/
+**anfe patch for external input
+      LOGICAL LEXT
+      DATA LEXT /.FALSE./
       DATA CMEOLD /0.0D0/
 
 *---------------------------------------------------------------------
@@ -268,6 +271,7 @@ C     DIMENSION XPARA(5)
          WHAT(2) = 0
          CODEWD  = 'START     '
          LEVPRT = .TRUE.
+         LEXT = .TRUE.
          GOTO 900
       ENDIF
 
@@ -2062,6 +2066,7 @@ C     IF (IDP.EQ.27) IDP = 6
       LFRMBK = .FALSE.
       IFISS  = 0
       IEVFSS = 0
+
       CALL DT_BERTTP
       CALL DT_INCINI
 * save the default JETSET-parameter
@@ -2113,14 +2118,18 @@ C     IF (IDP.EQ.27) IDP = 6
          MKCRON = 0
       ENDIF
 
-* initialization of Glauber-formalism (moved to xAEVT, sr 26.3.96)
-C     IF (NCOMPO.LE.0) THEN
-C        CALL DT_SHMAKI(IP,IPZ,IT,ITZ,IDP,PPN,IGLAU)
-C     ELSE
-C        DO 493 I=1,NCOMPO
-C           CALL DT_SHMAKI(IP,IPZ,IEMUMA(I),IEMUCH(I),IDP,PPN,0)
-C 493    CONTINUE
-C     ENDIF
+* initialization of Glauber-formalism (moved to DT_DTUINI, sr 26.3.96)
+**anfe remove dependence on DTUINI when used within impy and run nuclear
+*      initilization here
+      IF (LEXT) THEN
+         IF (NCOMPO.LE.0) THEN
+               CALL DT_SHMAKI(IP,IPZ,IT,ITZ,IDP,PPN,IGLAU)
+         ELSE
+               DO I=1,NCOMPO
+                  CALL DT_SHMAKI(IP,IPZ,IEMUMA(I),IEMUCH(I),IDP,PPN,0)
+               END DO
+         ENDIF
+      ENDIF
 
 * pre-tabulation of elastic cross-sections
       CALL DT_SIGTBL(JDUM,JDUM,DUM,DUM,-1)
@@ -11134,7 +11143,6 @@ C           WRITE(6,*) ' new impact parameter required (old= ',B,')'
          RA = RASH(NTARG)
          RB = RBSH(1)
       ENDIF
-
       IF (ICENTR.EQ.2) THEN
          IF (RA.EQ.RB) THEN
             BB = DT_RNDM(B)*(0.3D0*RA)**2

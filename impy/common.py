@@ -42,7 +42,8 @@ class MCEvent(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, event_kinematics, lib, px, py, pz, en, p_ids, npart):
+    def __init__(self, event_kinematics, lib, px, py, pz, en, p_ids, npart,
+                 frame):
         self.kin = event_kinematics
         self.lib = lib
 
@@ -52,40 +53,8 @@ class MCEvent(object):
         self.en = en
         self.p_ids = p_ids
         self.npart = npart
-
-    # @Hans: Since these variables are easy to extract, and, there is
-    # significant overhead using properties for trivial attributes,
-    # the definition of these variables has to be enforced by style
-    # and abc should be avoided here. However, all derived attributes that
-    # involve computations have to be defined either via enforcing
-    # abstractproperty or, defined as generic methods below.
-    # You can delete this and stuff below after reading, if you agree.
-    # Feel free to extend the docstring clarifying this.
-
-    # @abstractproperty
-    # def p_ids(self):
-    #     """Particle IDs in PDG numbering scheme"""
-    #     pass
-
-    # @abstractproperty
-    # def px(self):
-    #     """x-momentum in GeV/c"""
-    #     pass
-
-    # @abstractproperty
-    # def py(self):
-    #     """y-momentum in GeV/c"""
-    #     pass
-
-    # @abstractproperty
-    # def pz(self):
-    #     """z-momentum in GeV/c"""
-    #     pass
-
-    # @abstractproperty
-    # def en(self):
-    #     """Energy in GeV"""
-    #     pass
+        self.frame = frame
+        self.kin.apply_boost(self, frame, impy_config["user_frame"])
 
     @abstractproperty
     def charge(self):
@@ -131,6 +100,8 @@ class MCEvent(object):
     def xlab(self):
         """Energy fraction E/E_beam in lab. frame"""
         kin = self.kin
+        if self.frame == 'laboratory':
+            return self.en / kin.elab
         return (kin.gamma_cm * self.en + kin.betagamma_cm * self.pz) / kin.elab
 
     @property
@@ -238,6 +209,11 @@ class MCRun():
         self.close_fortran_logfile()
 
     @abstractproperty
+    def frame(self):
+        """Returns frame of the final state"""
+        pass
+
+    @abstractproperty
     def name(self):
         """Event generator name"""
         pass
@@ -258,7 +234,11 @@ class MCRun():
 
     @abstractmethod
     def generate_event(self):
-        """The method to generate a new event"""
+        """The method to generate a new event.
+        
+        Returns:
+            (int) : Rejection flag = 0 if everything is ok.
+        """
         pass
 
     @abstractmethod
@@ -293,7 +273,8 @@ class MCRun():
     def _abort_if_already_initialized(self):
         """The first initialization should not be run more than
         once. This method should be called in the beginning of each
-        init_generator() implementation."""
+        init_generator() implementation.
+        """
 
         assert not self._is_initialized
         self._is_initialized = True
@@ -308,7 +289,7 @@ class MCRun():
             raise Exception('Attempts to overwrite log :' + fname)
         elif self.output_lun is not None:
             raise Exception('Log already attached to LUN', self.output_lun)
-        
+
         path.abspath(fname)
         # Create a random fortran output unit
         self.output_lun = randint(20, 100)
@@ -320,7 +301,7 @@ class MCRun():
         if self.output_lun is None:
             info(2, 'Output went not to file.')
         else:
-            self.lib.impy_closelogfile( self.output_lun)
+            self.lib.impy_closelogfile(self.output_lun)
             self.output_lun = None
 
     def _define_default_fs_particles(self):
@@ -331,7 +312,7 @@ class MCRun():
 
         for pdgid in make_stable_list(impy_config['tau_stable'], pdata):
             self.set_stable(pdgid)
-            
+
         if impy_config['pi0_stable']:
             self.set_stable(111)
 
@@ -350,11 +331,13 @@ class MCRun():
         ntrials = 0
         nremaining = nevents
         while nremaining > 0:
-            if self.generate_event():
-                yield self._event_class(self.lib, self._curr_event_kin)
+            if self.generate_event() == 0:
+                yield self._event_class(self.lib, self._curr_event_kin,
+                                        self.frame)
                 nremaining -= 1
                 ntrials += 1
             elif retry_on_rejection:
+                info(10, 'Rejection occured. Retrying..')
                 ntrials += 1
                 continue
             elif ntrials > 2 * nevents:

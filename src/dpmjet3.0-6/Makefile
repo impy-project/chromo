@@ -10,11 +10,13 @@ DPM_OBJS := $(DPM_SRCS:.f=.o)
 
 # Options for native compilation
 #Debug/Safe-mode
-FOPT_USR = -fPIC -fbounds-check -Og -g -Wno-unused \
-			-Wno-conversion -Wno-compare-reals \
-			-ffpe-trap=invalid,zero,overflow -std=legacy
+# FOPT_USR = -fPIC -fbounds-check -Og -g -Wno-unused \
+# 			-Wno-conversion -Wno-compare-reals \
+# 			-ffpe-trap=invalid,zero,overflow -std=legacy
 # Optimized mode
-# FOPT_USR = -mtune=native -O3 -Wno-uninitialized -fPIC -std=legacy
+FOPT_USR = -mtune=native -O3 -Wno-uninitialized -fPIC -std=legacy -Wno-argument-mismatch
+
+OPT += -Wno-argument-mismatch
 
 ifndef OPT
 	OPT = $(FOPT_USR)

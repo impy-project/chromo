@@ -12,7 +12,7 @@ from impy.util import standard_particles, info
 class DpmjetIIIEvent(MCEvent):
     """Wrapper class around DPMJET-III particle stack."""
 
-    def __init__(self, lib, event_config):
+    def __init__(self, lib, event_kinematics, frame):
         # HEPEVT (style) common block
         evt = lib.dtevt1
         # Number of entries on stack
@@ -32,22 +32,47 @@ class DpmjetIIIEvent(MCEvent):
 
         MCEvent.__init__(
             self,
-            event_config=event_config,
+            event_kinematics=event_kinematics,
             lib=lib,
             px=evt.phkk[0, sel][0],
             py=evt.phkk[1, sel][0],
             pz=evt.phkk[2, sel][0],
             en=evt.phkk[3, sel][0],
             p_ids=evt.idhkk[sel],
-            npart=npart)
+            npart=npart,
+            frame=frame)
 
     @property
     def charge(self):
-        return self.lib.dtpart.iich[lib.dtevt2.idbam[sel] - 1]
+        return self.lib.dtpart.iich[self.lib.dtevt2.idbam[self.sel] - 1]
 
     @property
     def mass(self):
         return self.lib.dtevt1.phkk[4, self.sel][0]
+
+    # Nuclear collision parameters
+
+    @property
+    def impact_parameter(self):
+        """Returns impact parameter for nuclear collisions."""
+        return self.lib.dtglcp.bimpac
+
+    @property
+    def n_wounded_A(self):
+        """Number of wounded nucleons side A"""
+        return self.lib.dtglcp.nwasam
+    
+    @property
+    def n_wounded_B(self):
+        """Number of wounded nucleons side B"""
+        return self.lib.dtglcp.nwbsam
+
+    # Unfortunately not that simple since this is bounced through
+    # entire code as argument not in COMMON
+    # @property
+    # def n_inel_NN_interactions(self):
+    #     """Number of inelastic nucleon-nucleon interactions"""
+    #     return self.lib.dtglcp.nwtsum
 
 
 #=========================================================================
@@ -68,7 +93,13 @@ class DpmjetIIIRun(MCRun):
         else:
             self._event_class = event_class
 
+        self._frame = 'center-of-mass'
+
         MCRun.__init__(self, libref, **kwargs)
+    
+    @property
+    def frame(self):
+        return self._frame
 
     @property
     def name(self):
@@ -93,8 +124,9 @@ class DpmjetIIIRun(MCRun):
     def _dpmjet_tup(self):
         """Constructs an tuple of arguments for calls to event generator
         from given event kinematics object."""
-        info(10, 'Request DPMJET ARGs tuple.')
         k = self._curr_event_kin
+        info(20, 'Request DPMJET ARGs tuple:\n', 
+            (k.A1, k.Z1, k.A2, k.Z2, self.lib.idt_icihad(k.p1pdg), k.elab))
         return (k.A1, k.Z1, k.A2, k.Z2, self.lib.idt_icihad(k.p1pdg), k.elab)
 
     def set_event_kinematics(self, event_kinematics):
@@ -140,7 +172,7 @@ class DpmjetIIIRun(MCRun):
         self.set_event_kinematics(event_kinematics)
         k = self._curr_event_kin
 
-        dpm_conf = impy_config['dpmjet']
+        dpm_conf = impy_config['dpmjetIII']
         info(1, 'First initialization')
         # print self.class_name + "::init_generator(): calling init with:", \
         #     - 1, k.elab, PM, PCH, TM, TCH, k.p1pdg
@@ -157,14 +189,16 @@ class DpmjetIIIRun(MCRun):
             clear_and_set_fortran_chars(self.lib.dtimpy.fnevap, evap_file)
 
         self.lib.dt_init(
-            -1, dpm_conf['e_max'], k.A1, k.Z1, k.A2, k.Z2, k.p1pdg, iglau=1)
+            -1, dpm_conf['e_max'], k.A1, k.Z1, k.A2, k.Z2, k.p1pdg, iglau=0)
         # Put protection to not run this stuff again
         self.lib.init = True
 
         if impy_config['user_frame'] == 'center-of-mass':
             self.lib.dtflg1.iframe = 2
+            self._frame = 'center-of-mass'
         elif impy_config['user_frame'] == 'laboratory':
             self.lib.dtflg1.iframe = 1
+            self._frame = 'laboratory'
 
         # if self.def_settings:
         #     print self.class_name + "::init_generator(): Using default settings:", \
@@ -181,6 +215,5 @@ class DpmjetIIIRun(MCRun):
     def generate_event(self):
         reject = self.lib.dt_kkinc(*self._dpmjet_tup(), kkmat=-1)
         self.lib.dtevno.nevent += 1
-        #         print "bimpac", self.lib.dtglcp.bimpac
         return reject
 

@@ -11,7 +11,7 @@ from impy.util import standard_particles, info
 class SibyllEvent(MCEvent):
     """Wrapper class around SIBYLL 2.1 & 2.3 particle stack."""
 
-    def __init__(self, lib, event_kinematics):
+    def __init__(self, lib, event_kinematics, frame):
         # The stack common block
         s_plist = lib.s_plist
         # Number of entries on stack
@@ -41,7 +41,8 @@ class SibyllEvent(MCEvent):
             pz=s_plist.p[sel, 2],
             en=s_plist.p[sel, 3],
             p_ids=to_pdg(s_plist.llist[sel]),
-            npart=npart)
+            npart=npart,
+            frame=frame)
 
     @property
     def charge(self):
@@ -50,6 +51,28 @@ class SibyllEvent(MCEvent):
     @property
     def mass(self):
         return self.lib.s_plist.p[self.sel, 4]
+
+    # Nuclear collision parameters
+
+    @property
+    def impact_parameter(self):
+        """Impact parameter for nuclear collisions."""
+        return self.lib.cnucms.b
+
+    @property
+    def n_wounded_A(self):
+        """Number of wounded nucleons side A"""
+        return self.lib.cnucms.na
+    
+    @property
+    def n_wounded_B(self):
+        """Number of wounded nucleons side B"""
+        return self.lib.cnucms.nb
+
+    @property
+    def n_NN_interactions(self):
+        """Number of inelastic nucleon-nucleon interactions"""
+        return self.lib.cnucms.ni
 
 
 class SIBYLLRun(MCRun):
@@ -62,7 +85,13 @@ class SIBYLLRun(MCRun):
         else:
             self._event_class = event_class
 
+        self._frame = 'center-of-mass'
+
         MCRun.__init__(self, libref, **kwargs)
+    
+    @property
+    def frame(self):
+        return self._frame
 
     @property
     def name(self):
@@ -89,18 +118,19 @@ class SIBYLLRun(MCRun):
             info(0, "No cross section available for projectile", k.p1pdg)
             raise Exception('Input error')
 
-        return self.lib.sib_sigma_hp(sigproj, self.ecm)[2]
+        return self.lib.sib_sigma_hp(sigproj, self._ecm)[2]
 
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
 
         info(5, 'Setting event kinematics.')
+        info(10, event_kinematics)
         k = event_kinematics
 
-        self.sibproj = self.lib.isib_pdg2pid(k.p1pdg)
-        self.eatarg = k.A2
-        self.ecm = k.ecm
+        self._sibproj = self.lib.isib_pdg2pid(k.p1pdg)
+        self._iatarg = k.A2
+        self._ecm = k.ecm
         self._curr_event_kin = event_kinematics
 
     def attach_log(self):
@@ -142,9 +172,9 @@ class SIBYLLRun(MCRun):
         idb[sid - 1] = -np.abs(idb[sid - 1])
 
     def generate_event(self):
-        self.lib.sibyll(self.sibproj, self.eatarg, self.ecm)
+        self.lib.sibyll(self._sibproj, self._iatarg, self._ecm)
         self.lib.decsib()
-        return True  # SIBYLL never rejects
+        return 0  # SIBYLL never rejects
 
 
 #=========================================================================
