@@ -13,7 +13,6 @@ class UrQMDMCEvent(MCEvent):
         # Number of entries on stack
         npart = lib.sys.npart
         # Particle IDs for UrQMD
-        self.p_ids = np.zeros((npart,))
         list_particle_ids = np.column_stack((lib.isys.ityp, lib.isys.iso3))[:npart]
         # UrQMD to PDG conversion (using table)
         stab = UrQMDParticleTable()
@@ -22,11 +21,12 @@ class UrQMDMCEvent(MCEvent):
         # Filter stack for stable and/or charged particles if selected
         stable = ([i for i, p in enumerate(list_particle_ids) 
                    if p[0] in lib.stables.stabvec])
-        sel = None
-        if event_config['charged_only']:
+        if impy_config["event_scope"] == 'charged':
             sel = stable[lib.isys.charge[stable] != 0]
-        else:
+        elif impy_config["event_scope"] == 'stable':
             sel = stable
+        else:
+            raise Exception("not implemented, yet")
 
         # Save selector for implementation of on-demand properties
         self.sel = sel
@@ -46,15 +46,35 @@ class UrQMDMCEvent(MCEvent):
     def charge(self):
         self.charge = self.lib.isys.charge[self.sel]
 
+    @property
+    def mass(self):
+        return self.lib.coor.fmass
+
+    # Nuclear collision parameters
+
+    @property
+    def impact_parameter(self):
+        """Impact parameter for nuclear collisions."""
+        return self.lib.rsys.bimp
+
 
 class UrQMDMCRun(MCRun):
+    """Implements all abstract attributes of MCRun for 
+    UrQMD 3.4."""
+
     def __init__(self, libref, event_class=None, **kwargs):
         if event_class is None:
             self.event_class = UrQMDMCEvent
         else:
             self.event_class = event_class
 
+        self._frame = 'center-of-mass'
+
         MCRun.__init__(self, libref, **kwargs)
+    
+    @property
+    def frame(self):
+        return self._frame
 
     @property
     def name(self):
@@ -114,13 +134,14 @@ class UrQMDMCRun(MCRun):
         else:
             pass
 
-    def init_generator(self, config):
+    def init_generator(self, event_kinematics):
         from random import randint
-        self.set_event_kinematics(self.evkin)
 
         self.abort_if_already_initialized()
 
-        self.attach_log(self.output_file)
+        self.set_event_kinematics(event_kinematics)
+
+        self.attach_log()
 
         set_stable(self.lib, 2)
 
@@ -133,18 +154,19 @@ class UrQMDMCRun(MCRun):
         # Set pi0 stable
         self.set_stable(111)
 
-        if 'stable' in self.event_config:
-            for pdgid in self.event_config['stable']:
+        if impy_config['stable']:
+            for pdgid in impy_config['stable']:
                 self.set_stable(pdgid)
 
         self.lib.urqini(file_output, 2)
+
         # Change CTParams and/or CTOptions if needed
-        if hasattr(self, 'CTParams'):
-            for ctp in self.CTParams:
+        if impy_config['CTParams']:
+            for ctp in impy_config['CTParams']:
                 self.lib.options.ctparams[ctp[0]] = ctp[1]
                 print self.__class__.__name__ + '::init_generator(): CTParams[{}] changed to {}'.format(ctp[0], ctp[1])
-        if hasattr(self, 'CTOptions'):
-            for ctp in self.CTOptions:
+        if impy_config['CTOptions']:
+            for ctp in impy_config['CTOptions']:
                 self.lib.options.ctoptions[ctp[0]] = ctp[1]
                 print self.__class__.__name__ + '::init_generator(): CTOptions[{}] changed to {}'.format(ctp[0], ctp[1])
         print self.__class__.__name__ + '::init_generator(): Done'
