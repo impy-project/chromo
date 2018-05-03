@@ -209,7 +209,7 @@ class PHOJETRun(MCRun):
                 self.log_man.create_log(self.p1_type, self.p2_type, self.ecm)
 
             rejection = self.lib.pho_init(
-                -2 if self.lib.__name__.find('dpmjet') != -1 else -1, 66)
+                -2 if self.lib.__name__.find('dpmjetIII') != -1 else -1, 66)
             self.lib.pydat1.mstu[10] = 66
             # initialize PHOJET
         except ImportError:

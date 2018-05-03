@@ -1,12 +1,12 @@
 """Utility module for auxiliary methods and classes."""
 
 from __future__ import print_function
-
 import inspect
+
+from impy.common import impy_config
 
 # Global debug flags that would be nice to have in some sort
 # of config or other ideas?
-global_debug = 1
 print_module = True
 
 # Standard stable particles for for fast air shower cascade calculation
@@ -18,6 +18,13 @@ standard_particles += [-pid for pid in standard_particles]
 standard_particles = tuple(
     standard_particles + [111, 130, 310, 221, 223, 333])
 
+
+def clear_and_set_fortran_chars(array_ref, char_seq):
+    """Helper to set fortran character arrays with python strings"""
+    info(10, 'Setting fortran array with', char_seq)
+    # Reset
+    array_ref.data[:] = len(array_ref.data) * ' '
+    array_ref.data[:len(char_seq)] = char_seq
 
 def caller_name(skip=2):
     """Get a name of a caller in the format module.class.method
@@ -75,6 +82,6 @@ def info(min_dbg_level, *message):
 
     # Would prefer here a global debug
     # if min_dbg_level <= config["debug_level"]:
-    if min_dbg_level <= global_debug:
+    if min_dbg_level <= impy_config['debug_level']:
         message = [str(m) for m in message]
         print(caller_name() + " ".join(message))

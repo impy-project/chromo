@@ -7,8 +7,19 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 '''
+import os
 from abc import ABCMeta, abstractmethod, abstractproperty
 import numpy as np
+import yaml
+
+from particletools.tables import PYTHIAParticleData, make_stable_list
+
+# Globals
+root_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..")
+impy_config = yaml.load(open(os.path.join(root_dir, 'impy_config.yaml')))
+pdata = PYTHIAParticleData(
+    cache_file=open(
+        os.path.join(root_dir, impy_config["pdata_cachefile"]), 'wb'))
 
 from impy.util import info
 
@@ -31,8 +42,9 @@ class MCEvent(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, event_config, lib, px, py, pz, en, p_ids, npart):
-        self.kin = event_config['event_kinematics']
+    def __init__(self, event_kinematics, lib, px, py, pz, en, p_ids, npart,
+                 frame):
+        self.kin = event_kinematics
         self.lib = lib
 
         self.px = px
@@ -41,44 +53,17 @@ class MCEvent(object):
         self.en = en
         self.p_ids = p_ids
         self.npart = npart
-
-    # @Hans: Since these variables are easy to extract, and, there is
-    # significant overhead using properties for trivial attributes,
-    # the definition of these variables has to be enforced by style
-    # and abc should be avoided here. However, all derived attributes that
-    # involve computations have to be defined either via enforcing
-    # abstractproperty or, defined as generic methods below.
-    # You can delete this and stuff below after reading, if you agree.
-    # Feel free to extend the docstring clarifying this.
-
-    # @abstractproperty
-    # def p_ids(self):
-    #     """Particle IDs in PDG numbering scheme"""
-    #     pass
-
-    # @abstractproperty
-    # def px(self):
-    #     """x-momentum in GeV/c"""
-    #     pass
-
-    # @abstractproperty
-    # def py(self):
-    #     """y-momentum in GeV/c"""
-    #     pass
-
-    # @abstractproperty
-    # def pz(self):
-    #     """z-momentum in GeV/c"""
-    #     pass
-
-    # @abstractproperty
-    # def en(self):
-    #     """Energy in GeV"""
-    #     pass
+        self.frame = frame
+        self.kin.apply_boost(self, frame, impy_config["user_frame"])
 
     @abstractproperty
     def charge(self):
         """Electrical charge"""
+        pass
+
+    @abstractproperty
+    def mass(self):
+        """Particle mass in GeV as provided by model."""
         pass
 
     @property
@@ -115,6 +100,8 @@ class MCEvent(object):
     def xlab(self):
         """Energy fraction E/E_beam in lab. frame"""
         kin = self.kin
+        if self.frame == 'laboratory':
+            return self.en / kin.elab
         return (kin.gamma_cm * self.en + kin.betagamma_cm * self.pz) / kin.elab
 
     @property
@@ -195,30 +182,36 @@ class MCRun():
     def __init__(
             self,
             libref,
-            label,
-            event_kinematics,
-            event_config,
+            label=None,
             settings_dict=dict(),
-            output_file='stdout',
     ):
 
         self.lib = libref
         self._label = label
-
-        self.output_file = output_file
-        self.event_config = event_config
-        self.evkin = event_kinematics
         self._is_initialized = False
 
+        # Not yet clear how to handle these
         self.setting_dict = settings_dict
 
-        # Define what to do if rejections occur
-        # (must be globally defined)
-        self.continue_on_reject = True
+        # FORTRAN LUN that keeps logfile handle
+        self.output_lun = None
 
-        # The event class has to know the kinematics, since
-        # some derived attributes need the frame variables
-        self.event_config['event_kinematics'] = self.evkin
+    def __enter__(self):
+        """TEMP: It would be good to actually use the with construct to
+        open and close logfiles on init."""
+        self.attach_log()
+        return self
+
+    # ...
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """This needs to be tested in more complex scenarios..."""
+        self.close_fortran_logfile()
+
+    @abstractproperty
+    def frame(self):
+        """Returns frame of the final state"""
+        pass
 
     @abstractproperty
     def name(self):
@@ -241,7 +234,11 @@ class MCRun():
 
     @abstractmethod
     def generate_event(self):
-        """The method to generate a new event"""
+        """The method to generate a new event.
+        
+        Returns:
+            (int) : Rejection flag = 0 if everything is ok.
+        """
         pass
 
     @abstractmethod
@@ -269,33 +266,57 @@ class MCRun():
         pass
 
     @abstractmethod
-    def attach_log(self, fname):
+    def attach_log(self):
         """Routes the output to a file or the stdout."""
         pass
 
-    def abort_if_already_initialized(self):
+    def _abort_if_already_initialized(self):
+        """The first initialization should not be run more than
+        once. This method should be called in the beginning of each
+        init_generator() implementation.
+        """
+
         assert not self._is_initialized
         self._is_initialized = True
 
-    def attach_fortran_logfile(self, fname):
+    def _attach_fortran_logfile(self, fname):
+        """Chooses a random LUN between 20 - 100 and returns a FORTRAN
+        file handle (LUN number) to an open file."""
         from os import path
+        from random import randint
+
         if path.isfile(fname):
             raise Exception('Attempts to overwrite log :' + fname)
-        else:
-            from random import randint
-            path.abspath(fname)
-            # Create a random fortran output unit
-            self.outunit = randint(20, 100)
-            self.lib.impy_openlogfile(path.abspath(fname), self.outunit)
-            return self.outunit
+        elif self.output_lun is not None:
+            raise Exception('Log already attached to LUN', self.output_lun)
+
+        path.abspath(fname)
+        # Create a random fortran output unit
+        self.output_lun = randint(20, 100)
+        self.lib.impy_openlogfile(path.abspath(fname), self.output_lun)
+        return self.output_lun
 
     def close_fortran_logfile(self):
-        if not hasattr(self, 'outunit'):
+        """FORTRAN LUN has to be released when finished to flush buffers."""
+        if self.output_lun is None:
             info(2, 'Output went not to file.')
         else:
-            self.lib.impy_closelogfile(self.outunit)
+            self.lib.impy_closelogfile(self.output_lun)
+            self.output_lun = None
 
-    def event_generator(self, evkin, nevents):
+    def _define_default_fs_particles(self):
+        """Defines particles as stable for the default 'tau_stable'
+        value in the config."""
+        info(5, 'Setting default particles stable with lifetime <',
+             impy_config['tau_stable'], 'ps')
+
+        for pdgid in make_stable_list(impy_config['tau_stable'], pdata):
+            self.set_stable(pdgid)
+
+        if impy_config['pi0_stable']:
+            self.set_stable(111)
+
+    def event_generator(self, event_kinematics, nevents):
         """This is some kind of equivalent to Hans'
         generator concept.
 
@@ -304,15 +325,19 @@ class MCRun():
         initialization issue something has to keep track of ownership
         and history. And classes seem to just this.
         """
-        self.set_event_kinematics(evkin)
+        self.set_event_kinematics(event_kinematics)
+        retry_on_rejection = impy_config['retry_on_rejection']
+        # Initialize counters to prevent infinite loops in rejections
         ntrials = 0
         nremaining = nevents
         while nremaining > 0:
-            if self.generate_event():
-                yield self.event_class(self.lib, self.event_config)
-                nevents -= 1
+            if self.generate_event() == 0:
+                yield self._event_class(self.lib, self._curr_event_kin,
+                                        self.frame)
+                nremaining -= 1
                 ntrials += 1
-            elif self.continue_on_reject:
+            elif retry_on_rejection:
+                info(10, 'Rejection occured. Retrying..')
                 ntrials += 1
                 continue
             elif ntrials > 2 * nevents:

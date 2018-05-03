@@ -1,0 +1,127 @@
+# Impy configuration file
+
+# Level of verbosity
+debug_level: 10
+
+# Location for cache file for particledata.tables objects
+pdata_cachefile : 'impy_pdata_cache.cch'
+
+# For generators which return not successful events:
+# True: retry rejected events until desired number of events reached
+# False: return if event not successful and set event_successful flag
+retry_on_rejection : True
+
+# Scope of event stack. Parse all "stable", only stable "charged" are the
+# entire event stack containing "all" particles including partons and decayed
+event_scope : charged
+
+# If to write output to a logfile or 'stdout'
+output_log : stdout
+
+# User frame (in what frame to output)
+user_frame : center-of-mass
+
+# Default definition of final state particle
+tau_stable : 10.0e-12 # [ps] typical value at LHC.
+
+# Set pi0 to stable by default (often used as default)
+pi0_stable : True
+
+# AF: Comment on stuff below
+# All hidden arguments shall go into this one, in particular for UrQMD.
+# They must not be trivial or user-readable. 
+epos:
+    input_frame  : laboratory
+    output_frame : [ laboratory, center-of-mass ]
+    sqs_min_GeV  : 5.
+    has_boosts   : True
+    has_hepevt   : True
+    int_support  : [ 'hh', 'hA', 'AA', 'gg', 'gh', 'gA']
+    projectiles  : {
+        'LHC' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
+                  3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
+                  3122, -3122, 22]
+    }
+
+phojet:
+    input_frame  : 4-vectors
+    output_frame : ['4-vectors']
+    output_frame :
+    sqs_min_GeV  : 5.
+    has_hepevt   : True
+    has_boosts   : True
+    int_support  : [ 'hh', 'gg', 'gh']
+    projectiles  : {
+        'last' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
+                   3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
+                   3122, -3122, 22]
+    }
+
+pythia:
+    input_frame  : center-of-mass
+    output_frame : [center-of-mass]
+    sqs_min_GeV  : 5.
+    has_hepevt   : True
+    has_boosts   : False
+    int_support  : [ 'hh']
+    projectiles  : {
+        '6' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112]
+    }
+
+
+dpmjetIII:
+    input_frame  : laboratory
+    output_frame : [ laboratory, center-of-mass ]
+    sqs_min_GeV  : 1.
+    has_boosts   : True
+    has_hepevt   : True
+    int_support  : [ 'hh', 'hA', 'AA', 'gg', 'gh', 'gA']
+    # maximal energy for cross section table initialization
+    e_max        : 1.0e+10
+    param_file   : {
+        '3.0-6'      : ./src/dpmjet3.0-6/fitpar.dat,
+        'III-2018.1' : ./src/dpmjetIII-2018.1/dpmjetpar.dat
+    }
+    evap_file    : {
+        '3.0-6'      : ./src/dpmjet3.0-6/dpmjet.dat,
+        'III-2018.1' : ./src/dpmjetIII-2018.1/dpmjet.dat
+    }
+
+    projectiles  : {
+        '3.0-6'      : [ 2212, 2112, 321, -321, 211, -211, -2212 ],
+        'III-2018.1' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
+                         3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
+                         3122, -3122, 22]
+    }
+    # Advanced params:
+    # Number of trials for glauber hA, AA cross section calc.
+    dtglgp.jstatb : 1000
+
+
+qgsjet:
+    input_frame  : laboratory
+    output_frame : [ laboratory]
+    sqs_min_GeV  : 10.
+    has_boosts   : False
+    has_hepevt   : False
+    int_support  : [ 'hh', 'hA', 'AA' ]
+    projectiles  : {
+        'III-2017.1' : [ 2212, 2112, 321, -321, 211, -211 ]
+    }
+
+sibyll:
+    input_frame  : center-of-mass
+    output_frame : [center-of-mass ]
+    sqs_min_GeV  : 9.
+    has_boosts   : False
+    has_hepevt   : False
+    int_support  : [ 'hh', 'hA']
+    projectiles  : { 
+        '2.1'  : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112 ],
+        '2.3'  : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112, 
+                   3112, -3112, 3322, -3322, 3312, -3312, 3122, -3122 ],
+        '2.3c' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112, 
+                   3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312, 
+                   3122, -3122, 411, -411, 421, -421, 431, -431, 4232, 
+                   -4232, 4132, 4122, 4332]
+    }

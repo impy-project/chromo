@@ -15,7 +15,7 @@ all:  sophia.$(LEXT) install
 
 .PHONY: clean
 clean:
-	rm -rf $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.dSYM
+	rm -rf $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.dSYM *.f2l
 
 .PHONY: distclean
 distclean: clean
@@ -27,11 +27,11 @@ install: sophia.$(LEXT)
 
 sophia.$(LEXT): sophia.pyf $(RND) $(OBJS) $(LOGO)
 	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" sophia.pyf \
-	$(RND) $(LOGO) $(OBJS)
+	$(RND) $(LOGO) $(OBJS) >> sophia.f2l 2>&1
 
 sophia.pyf:
 	$(F2PY) -m sophia -h sophia.pyf --overwrite-signature \
-	only: $(SFUNCS) $(LOGF) : $(SRCS) $(LOGS)
+	only: $(SFUNCS) $(LOGF) : $(SRCS) $(LOGS) > sophia.f2l 2>&1
 
 .f.o:
 	$(FC) -c $(OPT) $<
