@@ -1,3 +1,6 @@
 [submodule "src/hepmc3"]
 	path = src/hepmc3
 	url = https://gitlab.cern.ch/hepmc/HepMC3.git
+[submodule "src/pybind11"]
+	path = src/pybind11
+	url = https://github.com/pybind/pybind11.git
