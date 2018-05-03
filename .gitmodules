@@ -1,0 +1,3 @@
+[submodule "src/hepmc3"]
+	path = src/hepmc3
+	url = https://gitlab.cern.ch/hepmc/HepMC3.git
