@@ -24,6 +24,14 @@ pdata = PYTHIAParticleData(
 from impy.util import info
 
 
+# TODO: need full HEPEVT record, something equivalent to
+#    int        n;               //!< Number of entries in the event
+#    int        ist[n];     //!< Status code
+#    int        id [n];     //!< PDG ID
+#    int        jmo[n][2];  //!< Pointer to position of 1st and 2nd (or last!) mother
+#    int        jda[n][2];  //!< Pointer to position of 1nd and 2nd (or last!) daughter
+#    momentum_t p  [n][5];  //!< Momentum: px, py, pz, e, m
+#    momentum_t v  [n][4];  //!< Time-space position: x, y, z, t
 class MCEvent(object):
     """The basis of interaction between user and all the event generators.
 
