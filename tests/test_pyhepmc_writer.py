@@ -43,9 +43,19 @@ def test_hepmc_writer():
     generator = DpmjetIIIRun(dpmjet306)
     generator.init_generator(event_kinematics)
 
-    with HepMCWriter("testfile.dat") as w:
+    test_file = "test_hepmc_writer_file.dat"
+    with HepMCWriter(test_file) as w:
         for event in generator.event_generator(event_kinematics, 1):
             w.write(event)
+
+    with open(test_file) as f:
+        content = f.read()
+        assert content.startswith("HepMC::Version 3.0.0\nHepMC::IO_GenEvent-START_EVENT_LISTING")
+        assert content.endswith("HepMC::IO_GenEvent-END_EVENT_LISTING\n\n")
+
+    # delete test_file if test is successful
+    import os
+    os.unlink(test_file)
 
 
 if __name__ == '__main__':
