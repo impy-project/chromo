@@ -47,17 +47,16 @@ class DpmjetIIIEvent(MCEvent):
         self.selection = np.where((self.status == 1) & (self.charge != 0))
         self._apply_slicing()
 
-    @property
-    def charge(self):
-        return self.lib.dtpart.iich[self.lib.dtevt2.idbam[self.selection] - 1]
 
-    @property
     def mothers(self, p_idx):
         return self.lib.dtevt1.jmohkk[:, p_idx]
 
-    @property
     def daughters(self, p_idx):
         return self.lib.dtevt1.jdahkk[:, p_idx]
+
+    @property
+    def charge(self):
+        return self.lib.dtpart.iich[self.lib.dtevt2.idbam[self.selection] - 1]
 
     # Nuclear collision parameters
     @property

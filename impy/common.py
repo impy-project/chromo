@@ -23,16 +23,6 @@ pdata = PYTHIAParticleData(
 
 from impy.util import info
 
-# TODO: need full HEPEVT record, something equivalent to
-#    int        n;               //!< Number of entries in the event
-#    int        ist[n];     //!< Status code
-#    int        id [n];     //!< PDG ID
-#    int        jmo[n][2];  //!< Pointer to position of 1st and 2nd (or last!) mother
-#    int        jda[n][2];  //!< Pointer to position of 1nd and 2nd (or last!) daughter
-#    momentum_t p  [n][5];  //!< Momentum: px, py, pz, e, m
-#    momentum_t v  [n][4];  //!< Time-space position: x, y, z, t
-
-
 class MCEvent(object):
     """The basis of interaction between user and all the event generators.
 
@@ -87,12 +77,15 @@ class MCEvent(object):
         self.vy = vy
         self.vz = vz
         self.vt = vt
-        
+
         # Initialize current selection to all entries up to npart
         self.selection = slice(None, self.npart)
         self._apply_slicing()
 
-        # Shall we do this?
+        # TODO: Shall we do this below? Or do you 'insist' on the user
+        # calling the flters externally? I can see the design advantage
+        # but the docs have to be clear about this..
+
         # if impy_config['event_scope'] == 'all':
         #     pass
         # elif impy_config['event_scope'] == 'stable':
@@ -129,7 +122,7 @@ class MCEvent(object):
         """Electrical charge"""
         pass
 
-    @abstractproperty
+    @abstractmethod
     def mothers(self, p_idx):
         """Range of indices pointing to mother particles.
 
@@ -139,13 +132,13 @@ class MCEvent(object):
 
         Args:
             p_idx (int) : Integer index of particle in the variables
-        
+
         Returns:
             (tuple)     : (Index of first mother, index of last mother)
         """
         pass
-    
-    @abstractproperty
+
+    @abstractmethod
     def daughters(self, p_idx):
         """Range of indices pointing to daughter particles.
 
@@ -155,19 +148,19 @@ class MCEvent(object):
 
         Args:
             p_idx (int) : Integer index of particle in the variables
-        
+
         Returns:
             (tuple)     : (Index of first daughter, index of last daughter)
         """
         pass
-    
+
     @abstractproperty
     def mothers(self):
         """Mother particles.
-        
+
         Note::
             This doesn't work if event is fltered for stable or charged
-            particles only. 
+            particles only.
         """
         pass
 
@@ -340,7 +333,7 @@ class MCRun():
     @abstractmethod
     def generate_event(self):
         """The method to generate a new event.
-        
+
         Returns:
             (int) : Rejection flag = 0 if everything is ok.
         """
