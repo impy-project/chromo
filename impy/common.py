@@ -23,6 +23,15 @@ pdata = PYTHIAParticleData(
 
 from impy.util import info
 
+# TODO: need full HEPEVT record, something equivalent to
+#    int        n;               //!< Number of entries in the event
+#    int        ist[n];     //!< Status code
+#    int        id [n];     //!< PDG ID
+#    int        jmo[n][2];  //!< Pointer to position of 1st and 2nd (or last!) mother
+#    int        jda[n][2];  //!< Pointer to position of 1nd and 2nd (or last!) daughter
+#    momentum_t p  [n][5];  //!< Momentum: px, py, pz, e, m
+#    momentum_t v  [n][4];  //!< Time-space position: x, y, z, t
+
 
 class MCEvent(object):
     """The basis of interaction between user and all the event generators.
@@ -30,31 +39,90 @@ class MCEvent(object):
     The derived classes are expected to interact with the particle stack
     and derive the base variables from which everything else can be defined.
 
+    The class attribute __sliced_params__ lists the names to parameters
+    which are views on the fortran arrays, and that needs to be changed
+    when applying the filter functions.
+
     Args:
-        event_config (dict): Parameters passed from above
         lib (object)       : Reference to the FORTRAN library in use
-        px (np.array)      : x-momentum in GeV/c
-        px (np.array)      : y-momentum in GeV/c
-        px (np.array)      : z-momentum in GeV/c
-        en (np.array)      : Energy in GeV
+        event_kinematics   : Reference to current event kinematics object
+        event_frame (str)  : The frame in which the generator returned the variables
+        nevent (int)       : Number of current event
+        npart (int)        : Number of particles on the stack & length of px, py...
         p_ids (np.array)   : particle ID according to PDG scheme
-        npart (np.array)   : Number of particle entries on the stack
+        status (np.array)  : HEPEVT status flag 1=final state
+        px (np.array)      : x-momentum in GeV/c
+        py (np.array)      : y-momentum in GeV/c
+        pz (np.array)      : z-momentum in GeV/c
+        en (np.array)      : Energy in GeV
+        m (np.array)       : Mass in GeV
+        vx (np.array)      : x-vertex in fm, mm?
+        vy (np.array)      : y-vertex in fm, mm?
+        vz (np.array)      : z-vertex in fm, mm?
+        vt (np.array)      : temporal order of vertex in ps, fs?
     """
     __metaclass__ = ABCMeta
+    __sliced_params__ = [
+        'p_ids', 'status', 'px', 'py', 'pz', 'en', 'm', 'vx', 'vy', 'vz', 'vt'
+    ]
 
-    def __init__(self, event_kinematics, lib, px, py, pz, en, p_ids, npart,
-                 frame):
-        self.kin = event_kinematics
+    def __init__(self, lib, event_kinematics, event_frame, nevent, npart,
+                 p_ids, status, px, py, pz, en, m, vx, vy, vz, vt):
+
+        # Store the variables for further filtering/access
         self.lib = lib
+        self.kin = event_kinematics
+        self.event_frame = event_frame
 
+        self.nevent = nevent
+        self.npart = npart
+        self.p_ids = p_ids
+        self.status = status
         self.px = px
         self.py = py
         self.pz = pz
         self.en = en
-        self.p_ids = p_ids
-        self.npart = npart
-        self.frame = frame
-        self.kin.apply_boost(self, frame, impy_config["user_frame"])
+        self.m = m
+        self.vx = vx
+        self.vy = vy
+        self.vz = vz
+        self.vt = vt
+        
+        # Initialize current selection to all entries up to npart
+        self.selection = slice(None, self.npart)
+        self._apply_slicing()
+
+        # Shall we do this?
+        # if impy_config['event_scope'] == 'all':
+        #     pass
+        # elif impy_config['event_scope'] == 'stable':
+        #     self.filter_final_state()
+        # elif impy_config['event_scope'] == 'charged':
+        #     self.filter_final_state_charged()
+        # else:
+        #     raise Exception('Unknown event scope')
+
+        # Apply boosts into frame required by user
+        self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
+
+    def _apply_slicing(self):
+        """Slices/copies the all varaibles according to filter criteria"""
+        for var in self.__sliced_params__:
+            setattr(self, var, getattr(self, var)[self.selection])
+
+    @abstractmethod
+    def filter_final_state(self):
+        """After calling this method, the variables will only contain
+        "stable" final state particles.
+        """
+        pass
+
+    @abstractmethod
+    def filter_final_state_charged(self):
+        """After calling this method, the variables will only contain
+        "stable" and charged final state particles.
+        """
+        pass
 
     @abstractproperty
     def charge(self):
@@ -62,8 +130,45 @@ class MCEvent(object):
         pass
 
     @abstractproperty
-    def mass(self):
-        """Particle mass in GeV as provided by model."""
+    def mothers(self, p_idx):
+        """Range of indices pointing to mother particles.
+
+        Note::
+            This doesn't work if event is fltered for stable or charged
+            particles only.
+
+        Args:
+            p_idx (int) : Integer index of particle in the variables
+        
+        Returns:
+            (tuple)     : (Index of first mother, index of last mother)
+        """
+        pass
+    
+    @abstractproperty
+    def daughters(self, p_idx):
+        """Range of indices pointing to daughter particles.
+
+        Note::
+            This doesn't work if event is fltered for stable or charged
+            particles only.
+
+        Args:
+            p_idx (int) : Integer index of particle in the variables
+        
+        Returns:
+            (tuple)     : (Index of first daughter, index of last daughter)
+        """
+        pass
+    
+    @abstractproperty
+    def mothers(self):
+        """Mother particles.
+        
+        Note::
+            This doesn't work if event is fltered for stable or charged
+            particles only. 
+        """
         pass
 
     @property

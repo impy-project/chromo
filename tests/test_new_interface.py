@@ -37,6 +37,8 @@ generator = DpmjetIIIRun(libhandle)
 
 # If init remains without args, it should go to the contructor.
 generator.init_generator(event_kinematics)
+# import IPython
+# IPython.embed()
 
 # This  
 for event in generator.event_generator(event_kinematics, 50):
