@@ -10,48 +10,55 @@ from impy.util import standard_particles, info
 
 
 class DpmjetIIIEvent(MCEvent):
-    """Wrapper class around DPMJET-III particle stack."""
+    """Wrapper class around DPMJET-III HEPEVT-style particle stack."""
 
-    def __init__(self, lib, event_kinematics, frame):
+    def __init__(self, lib, event_kinematics, event_frame):
         # HEPEVT (style) common block
         evt = lib.dtevt1
-        # Number of entries on stack
-        npart = evt.nhkk
-
-        # Filter stack for charged particles if selected
-        if impy_config["event_scope"] == 'charged':
-            sel = np.where((evt.isthkk[:npart] == 1) & (
-                lib.dtpart.iich[lib.dtevt2.idbam[:npart] - 1] != 0))
-        elif impy_config["event_scope"] == 'stable':
-            sel = np.where(evt.isthkk[:npart] == 1)
-        else:
-            raise Exception("not implemented, yet")
 
         # Save selector for implementation of on-demand properties
-        self.sel = sel
+        px, py, pz, en, m = evt.phkk
+        vx, vy, vz, vt = evt.vhkk
 
         MCEvent.__init__(
             self,
-            event_kinematics=event_kinematics,
             lib=lib,
-            px=evt.phkk[0, sel][0],
-            py=evt.phkk[1, sel][0],
-            pz=evt.phkk[2, sel][0],
-            en=evt.phkk[3, sel][0],
-            p_ids=evt.idhkk[sel],
-            npart=npart,
-            frame=frame)
+            event_kinematics=event_kinematics,
+            event_frame=event_frame,
+            nevent=evt.nevhkk,
+            npart=evt.nhkk,
+            p_ids=evt.idhkk,
+            status=evt.isthkk,
+            px=px,
+            py=py,
+            pz=pz,
+            en=en,
+            m=m,
+            vx=vx,
+            vy=vy,
+            vz=vz,
+            vt=vt)
+
+    def filter_final_state(self):
+        self.selection = np.where(self.status == 1)
+        self._apply_slicing()
+
+    def filter_final_state_charged(self):
+        self.selection = np.where((self.status == 1) & (self.charge != 0))
+        self._apply_slicing()
+
+
+    def mothers(self, p_idx):
+        return self.lib.dtevt1.jmohkk[:, p_idx]
+
+    def daughters(self, p_idx):
+        return self.lib.dtevt1.jdahkk[:, p_idx]
 
     @property
     def charge(self):
-        return self.lib.dtpart.iich[self.lib.dtevt2.idbam[self.sel] - 1]
-
-    @property
-    def mass(self):
-        return self.lib.dtevt1.phkk[4, self.sel][0]
+        return self.lib.dtpart.iich[self.lib.dtevt2.idbam[self.selection] - 1]
 
     # Nuclear collision parameters
-
     @property
     def impact_parameter(self):
         """Returns impact parameter for nuclear collisions."""
@@ -61,7 +68,7 @@ class DpmjetIIIEvent(MCEvent):
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
         return self.lib.dtglcp.nwasam
-    
+
     @property
     def n_wounded_B(self):
         """Number of wounded nucleons side B"""
@@ -79,9 +86,9 @@ class DpmjetIIIEvent(MCEvent):
 # DpmjetIIIMCRun
 #=========================================================================
 class DpmjetIIIRun(MCRun):
-    """Implements all abstract attributes of MCRun for the 
+    """Implements all abstract attributes of MCRun for the
     DPMJET-III series of event generators.
-    
+
     It should work identically for the new 'dpmjet3' module and the legacy
     dpmjet306.
     """
@@ -96,7 +103,7 @@ class DpmjetIIIRun(MCRun):
         self._frame = 'center-of-mass'
 
         MCRun.__init__(self, libref, **kwargs)
-    
+
     @property
     def frame(self):
         return self._frame
@@ -125,8 +132,8 @@ class DpmjetIIIRun(MCRun):
         """Constructs an tuple of arguments for calls to event generator
         from given event kinematics object."""
         k = self._curr_event_kin
-        info(20, 'Request DPMJET ARGs tuple:\n', 
-            (k.A1, k.Z1, k.A2, k.Z2, self.lib.idt_icihad(k.p1pdg), k.elab))
+        info(20, 'Request DPMJET ARGs tuple:\n',
+             (k.A1, k.Z1, k.A2, k.Z2, self.lib.idt_icihad(k.p1pdg), k.elab))
         return (k.A1, k.Z1, k.A2, k.Z2, self.lib.idt_icihad(k.p1pdg), k.elab)
 
     def set_event_kinematics(self, event_kinematics):
@@ -182,7 +189,7 @@ class DpmjetIIIRun(MCRun):
             pfile = dpm_conf['param_file']['III-2018.1']
             info(10, 'Using PHOJET parameter file at', pfile)
             clear_and_set_fortran_chars(self.lib.pomdls.parfn, pfile)
-        
+
         if hasattr(self.lib, 'dtimpy'):
             evap_file = dpm_conf['evap_file']['3.0-6']
             info(10, 'Using DPMJET evap file at', evap_file)
@@ -216,4 +223,3 @@ class DpmjetIIIRun(MCRun):
         reject = self.lib.dt_kkinc(*self._dpmjet_tup(), kkmat=-1)
         self.lib.dtevno.nevent += 1
         return reject
-
