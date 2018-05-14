@@ -5,8 +5,9 @@ Created on 17.03.2014
 '''
 
 import numpy as np
-from impy.common import MCRun, MCEvent, EventKinematics, standard_particles
-from ParticleDataTool import UrQMDParticleTable
+from impy.common import MCRun, MCEvent, impy_config 
+from impy.util import standard_particles, info
+from particletools.tables import UrQMDParticleTable
 
 class UrQMDMCEvent(MCEvent):
     def __init__(self, lib, event_config):
@@ -87,16 +88,17 @@ class UrQMDMCRun(MCRun):
         return "3.4"
 
     def sigma_inel(self):
-        raise Exception(self.class_name + "::init_generator(): not implemented yet")
+        raise Exception("Inelastic cross section not implemented yet")
 
     def set_event_kinematics(self, event_kinematics):
+        stab = UrQMDParticleTable()
         # Define projectile
         if event_kinematics.A1 == 1:
             # Special projectile
             self.lib.inputs.prspflg = 1
             self.lib.sys.ap = 1
-            self.lib.inputs.spityp[0] = self.ptab.pdg2modid[event_kinematics.p1pdg][0]
-            self.lib.inputs.spiso3[0] = self.ptab.pdg2modid[event_kinematics.p1pdg][1]
+            self.lib.inputs.spityp[0] = stab.pdg2modid[event_kinematics.p1pdg][0]
+            self.lib.inputs.spiso3[0] = stab.pdg2modid[event_kinematics.p1pdg][1]
         else:
             # Nucleus
             self.lib.inputs.prspflg = 0
@@ -108,8 +110,8 @@ class UrQMDMCRun(MCRun):
             # Special target
             self.lib.inputs.trspflg = 1
             self.lib.sys.at = 1
-            self.lib.inputs.spityp[1] = self.ptab.pdg2modid[event_kinematics.p2pdg][0]
-            self.lib.inputs.spiso3[1] = self.ptab.pdg2modid[event_kinematics.p2pdg][1]
+            self.lib.inputs.spityp[1] = stab.pdg2modid[event_kinematics.p2pdg][0]
+            self.lib.inputs.spiso3[1] = stab.pdg2modid[event_kinematics.p2pdg][1]
         else:
             # Nucleus
             self.lib.inputs.trspflg = 0
@@ -124,10 +126,11 @@ class UrQMDMCRun(MCRun):
         self.lib.rsys.bmin = 0
         self.lib.options.ctoption[4] = 1
         self.lib.rsys.bdist = nucrad(self.lib.sys.ap, self.lib.options.ctoption[23]) + nucrad(self.lib.sys.at, self.lib.options.ctoption[23]) + 2 * self.lib.options.ctparam[29]
-        self.event_config['event_kinematics'] = event_kinematics
+        self._curr_event_kin = event_kinematics
 
     def attach_log(self, fname):
         """Routes the output to a file or the stdout."""
+        info(5, "Not implemented yet!")
         # TO BE IMPLEMENTED!!!
         if fname == 'stdout':
             pass
@@ -137,45 +140,46 @@ class UrQMDMCRun(MCRun):
     def init_generator(self, event_kinematics):
         from random import randint
 
-        self.abort_if_already_initialized()
+        self._abort_if_already_initialized()
 
         self.set_event_kinematics(event_kinematics)
 
-        self.attach_log()
+        self.attach_log('stdout')
 
         set_stable(self.lib, 2)
 
 
-        if self.def_settings:
-            print self.class_name + "::init_generator(): Using default settings:", \
-                self.def_settings.__class__.__name__
-            self.def_settings.enable()
+        # if self.def_settings:
+            # print(self.class_name + "::init_generator(): Using default settings:", \
+                # self.def_settings.__class__.__name__)
+            # self.def_settings.enable()
+
+        # REVISIT HERE!!
+        # self._define_default_fs_particles()
 
         # Set pi0 stable
         self.set_stable(111)
 
-        if impy_config['stable']:
-            for pdgid in impy_config['stable']:
-                self.set_stable(pdgid)
+        # if impy_config['stable']:
+            # for pdgid in impy_config['stable']:
+                # self.set_stable(pdgid)
 
-        self.lib.urqini(file_output, 2)
+        self.lib.urqini('stdout', 2)
 
         # Change CTParams and/or CTOptions if needed
-        if impy_config['CTParams']:
+        if 'CTParams' in impy_config:
             for ctp in impy_config['CTParams']:
                 self.lib.options.ctparams[ctp[0]] = ctp[1]
-                print self.__class__.__name__ + '::init_generator(): CTParams[{}] changed to {}'.format(ctp[0], ctp[1])
-        if impy_config['CTOptions']:
+                info(5, 'CTParams[{}] changed to {}'.format(ctp[0], ctp[1]))
+        if 'CTOptions' in impy_config:
             for ctp in impy_config['CTOptions']:
                 self.lib.options.ctoptions[ctp[0]] = ctp[1]
-                print self.__class__.__name__ + '::init_generator(): CTOptions[{}] changed to {}'.format(ctp[0], ctp[1])
-        print self.__class__.__name__ + '::init_generator(): Done'
+                info(5, 'CTOptions[{}] changed to {}'.format(ctp[0], ctp[1]))
 
     def set_stable(self, pdgid):
         if pdgid == 0:
             return
-        print self.class_name + "::set_stable(): defining ", \
-            pdgid, "as stable particle, sid =", pdgid
+        info(5, 'defining', pdgid, 'as stable particle')
         stab = UrQMDParticleTable()
         stable_count = np.where(self.lib.stables.stabvec == 0)[0][0]
         self.lib.stables.stabvec[stable_count] = stab.pdg2modid[pdgid][0]
@@ -219,7 +223,7 @@ def set_stable(lib, decay_mode, dbg=True):
         for pdg_id in standard_particles:
             try:
                 lib.stables.stabvec[stable_count] = stab.pdg2modid[pdg_id][0]
-                print 'stable,', pdg_id
+                info(5, 'stable,', pdg_id)
                 stable_count += 1
             except KeyError:
                 pass
@@ -276,7 +280,6 @@ def set_stable(lib, decay_mode, dbg=True):
     # for i in range(59, 61) + range(71, 99 + 1):
     # idb[i - 1] = -np.abs(idb[i - 1])
     # self.stables.nstable = (idb != 0).sum()
-
 
 def nucrad(AA, ctopt):
     A=abs(AA)
