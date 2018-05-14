@@ -4,8 +4,9 @@ Created on 03.05.2016
 @author: afedynitch
 '''
 
-from impy.common import MCRun, MCEvent, EventGenerator, EventKinematics, standard_particles
 import numpy as np
+from impy.common import MCRun, MCEvent, impy_config
+from impy.util import standard_particles, info
 
 #=========================================================================
 # EPOSMCEvent
@@ -116,9 +117,9 @@ class EPOSMCRun(MCRun):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
         k = event_kinematics
+        self._curr_event_kin = k
         self.lib.initeposevt(*self._epos_tup())
         info(5, 'Setting event kinematics')
-        self._curr_event_kin = event_kinematics
 
     def attach_log(self):
         """Routes the output to a file or the stdout."""
@@ -133,7 +134,7 @@ class EPOSMCRun(MCRun):
         self.lib.files.ifch = lun
 
     def init_generator(self, event_kinematics, datdir='./iamdata/'):
-        self.abort_if_already_initialized()
+        self._abort_if_already_initialized()
 
         self.lib.aaset(0)
         self.lib.initializeepos(1., 1e6, datdir,
@@ -145,17 +146,15 @@ class EPOSMCRun(MCRun):
         for pid in [2112, 111, 211, -211, 321, -321, 310, 13, -13]:
             self.set_stable(pid)
 
-        if 'stable' in self.impy_config:
-            for pdgid in self.impy_config['stable']:
-                self.set_stable(pdgid)
+        if 'stable' in impy_config:
+            for pdgid in impy_config['stable']:
+                self.lib.setstable(pdgid)
 
         # Comprise DPMJET input from the event kinematics object
         self.set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid):
-        if pdgid not in self.stable_list:
-            self.lib.setstable(pdgid)
-            self.stable_list.append(pdgid)
+        self.lib.setstable(pdgid)
         info(5, 'defining', pdgid, 'as stable particle')
 
     def generate_event(self):
