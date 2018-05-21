@@ -58,7 +58,6 @@ class MCEvent(object):
 
     def __init__(self, lib, event_kinematics, event_frame, nevent, npart,
                  p_ids, status, px, py, pz, en, m, vx, vy, vz, vt):
-
         # Store the variables for further filtering/access
         self.lib = lib
         self.kin = event_kinematics
@@ -81,6 +80,9 @@ class MCEvent(object):
         # Initialize current selection to all entries up to npart
         self.selection = slice(None, self.npart)
         self._apply_slicing()
+        # The default slice only cuts limits the view to the array to
+        # to the current number of entries
+        self._is_filtered = False
 
         # TODO: Shall we do this below? Or do you 'insist' on the user
         # calling the flters externally? I can see the design advantage
@@ -102,6 +104,7 @@ class MCEvent(object):
         """Slices/copies the all varaibles according to filter criteria"""
         for var in self.__sliced_params__:
             setattr(self, var, getattr(self, var)[self.selection])
+        self._is_filtered = True
 
     @abstractmethod
     def filter_final_state(self):
@@ -123,44 +126,42 @@ class MCEvent(object):
         pass
 
     @abstractmethod
-    def mothers(self, p_idx):
+    def mothers(self):
         """Range of indices pointing to mother particles.
 
-        Note::
-            This doesn't work if event is fltered for stable or charged
-            particles only.
+        The range of daughters particles is given by two the two
+        indices of the 0th axis.
 
-        Args:
-            p_idx (int) : Integer index of particle in the variables
+        Note::
+            This property has to raise an exception of filtering
+            has been applied, otherwise the indices do not point to
+            the right positions on the particle stack.
 
         Returns:
-            (tuple)     : (Index of first mother, index of last mother)
+            (array)     : [2, npart] array
+            
+        Raises:
+            (Exception) : if filtering has been applied.
         """
         pass
 
     @abstractmethod
     def daughters(self, p_idx):
         """Range of indices pointing to daughter particles.
+        
+        The range of daughters particles is given by two the two
+        indices of the 0th axis.
 
         Note::
-            This doesn't work if event is fltered for stable or charged
-            particles only.
-
-        Args:
-            p_idx (int) : Integer index of particle in the variables
+            This property has to raise an exception of filtering
+            has been applied, otherwise the indices do not point to
+            the right positions on the particle stack.
 
         Returns:
-            (tuple)     : (Index of first daughter, index of last daughter)
-        """
-        pass
+            (array)     : [2, npart] array
 
-    @abstractproperty
-    def mothers(self):
-        """Mother particles.
-
-        Note::
-            This doesn't work if event is fltered for stable or charged
-            particles only.
+        Raises:
+            (Exception) : if filtering has been applied.
         """
         pass
 
@@ -198,7 +199,7 @@ class MCEvent(object):
     def xlab(self):
         """Energy fraction E/E_beam in lab. frame"""
         kin = self.kin
-        if self.frame == 'laboratory':
+        if self.event_frame == 'laboratory':
             return self.en / kin.elab
         return (kin.gamma_cm * self.en + kin.betagamma_cm * self.pz) / kin.elab
 
@@ -279,13 +280,21 @@ class MCRun():
 
     def __init__(
             self,
-            libref,
-            label=None,
+            interaction_model_def,
             settings_dict=dict(),
-    ):
+    ): 
+        import importlib
 
-        self.lib = libref
-        self._label = label
+        # Import library from library name
+        self.lib = importlib.import_module(interaction_model_def.library_name)
+        
+        # Save definitions from namedtuple into attributes
+        self._event_class = interaction_model_def.EventClass
+        self._name = interaction_model_def.name
+        self._version = interaction_model_def.version
+        self._output_frame = interaction_model_def.output_frame
+
+        # Flag to control if initialization has been already executed
         self._is_initialized = False
 
         # Not yet clear how to handle these
@@ -300,31 +309,29 @@ class MCRun():
         self.attach_log()
         return self
 
-    # ...
-
     def __exit__(self, exc_type, exc_value, traceback):
         """This needs to be tested in more complex scenarios..."""
         self.close_fortran_logfile()
 
-    @abstractproperty
-    def frame(self):
-        """Returns frame of the final state"""
-        pass
-
-    @abstractproperty
-    def name(self):
-        """Event generator name"""
-        pass
-
-    @abstractproperty
-    def version(self):
-        """Event generator version"""
-        pass
+    @property
+    def output_frame(self):
+        """Default frame of the output particle stack."""
+        return self._output_frame
 
     @property
-    def label(self):
-        """Any tag or label describing the setup"""
-        return self._label
+    def name(self):
+        """Event generator name"""
+        return self._name
+
+    @property
+    def version(self):
+        """Event generator version"""
+        self._version
+
+    # @property
+    # def label(self):
+    #     """Any tag or label describing the setup"""
+    #     return self._label
 
     @abstractmethod
     def init_generator(self):
@@ -431,7 +438,7 @@ class MCRun():
         while nremaining > 0:
             if self.generate_event() == 0:
                 yield self._event_class(self.lib, self._curr_event_kin,
-                                        self.frame)
+                                        self._output_frame)
                 nremaining -= 1
                 ntrials += 1
             elif retry_on_rejection:

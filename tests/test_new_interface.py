@@ -4,10 +4,9 @@ import numpy as np
 
 sys.path.append(os.path.dirname(__file__) + "/..")
 
+from impy.definitions import *
 from impy.constants import *
 from impy.kinematics import EventKinematics
-from impy.models.sibyll import SIBYLLRun
-from impy.models.dpmjetIII import DpmjetIIIRun
 from impy.common import impy_config, pdata
 
 # AF: This is what the user interaction has to yield.
@@ -24,14 +23,7 @@ event_kinematics = EventKinematics(
 
 impy_config["user_frame"] = 'laboratory'
 
-libhandle = None
-# Run legacy DPMJET
-exec 'import {0} as libhandle'.format('dpmjet306')
-generator = DpmjetIIIRun(libhandle)
-# exec 'import {0} as libhandle'.format('sib23c')
-# generator = SIBYLLRun(libhandle)
-
-# If init remains without args, it should go to the contructor.
+generator = make_generator_instance(interaction_model_by_tag['SIBYLL23C'])
 generator.init_generator(event_kinematics)
 # import IPython
 # IPython.embed()

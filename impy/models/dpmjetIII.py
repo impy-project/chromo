@@ -15,7 +15,7 @@ class DpmjetIIIEvent(MCEvent):
     def __init__(self, lib, event_kinematics, event_frame):
         # HEPEVT (style) common block
         evt = lib.dtevt1
-
+        
         # Save selector for implementation of on-demand properties
         px, py, pz, en, m = evt.phkk
         vx, vy, vz, vt = evt.vhkk
@@ -44,15 +44,17 @@ class DpmjetIIIEvent(MCEvent):
         self._apply_slicing()
 
     def filter_final_state_charged(self):
+
         self.selection = np.where((self.status == 1) & (self.charge != 0))
         self._apply_slicing()
-
-
-    def mothers(self, p_idx):
-        return self.lib.dtevt1.jmohkk[:, p_idx]
-
-    def daughters(self, p_idx):
-        return self.lib.dtevt1.jdahkk[:, p_idx]
+    
+    @property
+    def mothers(self):
+        return self.lib.dtevt1.jmohkk
+    
+    @property
+    def daughters(self):
+        return self.lib.dtevt1.jdahkk
 
     @property
     def charge(self):
@@ -90,34 +92,9 @@ class DpmjetIIIRun(MCRun):
     DPMJET-III series of event generators.
 
     It should work identically for the new 'dpmjet3' module and the legacy
-    dpmjet306.
+    dpmjet306. No special constructor is necessary and everything is
+    handled by the default constructor of the base class.
     """
-
-    def __init__(self, libref, event_class=None, **kwargs):
-
-        if event_class is None:
-            self._event_class = DpmjetIIIEvent
-        else:
-            self._event_class = event_class
-
-        self._frame = 'center-of-mass'
-
-        MCRun.__init__(self, libref, **kwargs)
-
-    @property
-    def frame(self):
-        return self._frame
-
-    @property
-    def name(self):
-        """Event generator name"""
-        return "DPMJET"
-
-    @property
-    def version(self):
-        """Event generator version"""
-        # Needs some sort of smart handling here
-        return self.lib.dtimpy.version
 
     def sigma_inel(self):
         """Inelastic cross section according to current
@@ -215,6 +192,8 @@ class DpmjetIIIRun(MCRun):
         self._define_default_fs_particles()
 
     def set_stable(self, pdgid):
+        if abs(pdgid) == 2212:
+            return
         kc = self.lib.pycomp(pdgid)
         self.lib.pydat3.mdcy[kc - 1, 0] = 0
         info(5, 'defining', pdgid, 'as stable particle')
