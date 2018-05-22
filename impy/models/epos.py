@@ -113,12 +113,10 @@ class EPOSRun(MCRun):
         
         
         self._abort_if_already_initialized()
-        self.set_event_kinematics(event_kinematics)
 
-        epos_conf = impy_config['eposlhc']
-        epos_conf['datdir'] ='./iamdata/'
+        epos_conf = impy_config['epos']
+        datdir = epos_conf['datdir']
         info(1, 'First initialization')
-
         self.lib.aaset(0)
         self.lib.initializeepos(1., 1e6, datdir, len(datdir), 1, 2212, 2212, 1,
                                 1, 1, 1, 0, 6)
@@ -126,6 +124,7 @@ class EPOSRun(MCRun):
 
         # Set default stable
         self._define_default_fs_particles()
+        self.set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid):
         self.lib.setstable(pdgid)

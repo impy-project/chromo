@@ -23,7 +23,7 @@ event_kinematics = EventKinematics(
 
 impy_config["user_frame"] = 'laboratory'
 
-generator = make_generator_instance(interaction_model_by_tag['SIBYLL23C'])
+generator = make_generator_instance(interaction_model_by_tag['EPOSLHC'])
 generator.init_generator(event_kinematics)
 # import IPython
 # IPython.embed()

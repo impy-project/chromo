@@ -20,20 +20,22 @@ from particletools.tables import PYTHIAParticleData, make_stable_list
 root_dir = abspath(join(dirname(__file__), ".."))
 impy_config = yaml.load(open(join(root_dir, 'impy_config.yaml')))
 
+# This is not nice, but the paths in the config should become absolute
+# in case impy is used outside of the folder
 for version_key in impy_config['dpmjetIII']['param_file']:
     impy_config['dpmjetIII']['param_file'][version_key] = join(
-        root_dir, impy_config['dpmjetIII']['param_file'][version_key]
-    )
+        root_dir, impy_config['dpmjetIII']['param_file'][version_key])
 for version_key in impy_config['dpmjetIII']['evap_file']:
     impy_config['dpmjetIII']['evap_file'][version_key] = join(
-        root_dir, impy_config['dpmjetIII']['evap_file'][version_key]
-    )
+        root_dir, impy_config['dpmjetIII']['evap_file'][version_key])
+impy_config['epos']['datdir'] = join(root_dir, impy_config['epos']['datdir'])
 
 pdata = PYTHIAParticleData(
     cache_file=open(
         os.path.join(root_dir, impy_config["pdata_cachefile"]), 'wb'))
 
 from impy.util import info
+
 
 class MCEvent(object):
     """The basis of interaction between user and all the event generators.

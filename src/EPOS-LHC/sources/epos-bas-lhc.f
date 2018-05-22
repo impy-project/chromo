@@ -88,7 +88,7 @@ c  file names and units
 
       hydt='---'
 
-      producetables=.true.
+      producetables=.false.
 
 c  initial seed
 
@@ -142,7 +142,7 @@ c  printout options
       idensi=0   !must be 1 when subr xjden1 is used
       ishevt=0   !minimum event number for certain print options
       iwseed=1   !print out seed (1) or not
-      jwseed=1   !print out seed in see file (1) or not
+      jwseed=0   !print out seed in see file (1) or not
 
 c  fragmentation and decay parameters
 

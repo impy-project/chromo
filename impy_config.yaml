@@ -37,6 +37,7 @@ epos:
     has_boosts   : True
     has_hepevt   : True
     int_support  : [ 'hh', 'hA', 'AA', 'gg', 'gh', 'gA']
+    datdir       : src/EPOS-LHC/data/
     projectiles  : {
         'LHC' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
                   3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
@@ -79,17 +80,17 @@ dpmjetIII:
     # maximal energy for cross section table initialization
     e_max        : 1.0e+10
     param_file   : {
-        '3.0-6'      : src/dpmjet3.0-6/fitpar.dat,
-        'III-2018.1' : src/dpmjetIII-2018.1/dpmjetpar.dat
+        '3.0-6'      : src/dpmjet3.0-6/data/fitpar.dat,
+        'III-2017.1' : src/dpmjetIII-17.1/data/dpmjetpar.dat
     }
     evap_file    : {
-        '3.0-6'      : src/dpmjet3.0-6/dpmjet.dat,
-        'III-2018.1' : src/dpmjetIII-2018.1/dpmjet.dat
+        '3.0-6'      : src/dpmjet3.0-6/data/dpmjet.dat,
+        'III-2017.1' : src/dpmjetIII-17.1/data/dpmjet.dat
     }
 
     projectiles  : {
         '3.0-6'      : [ 2212, 2112, 321, -321, 211, -211, -2212 ],
-        'III-2018.1' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
+        'III-2017.1' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
                          3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
                          3122, -3122, 22]
     }
