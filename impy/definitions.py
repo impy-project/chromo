@@ -3,7 +3,7 @@ of models and their various versions to the existing wrapper classes.
 '''
 
 from collections import namedtuple
-from impy.models import (sibyll, dpmjetIII, phojet)
+from impy.models import (sibyll, dpmjetIII, epos, phojet)
 
 # Objects of this type contain all default initialization directions
 # for each interaction model and create dictionaries that link the
@@ -31,6 +31,9 @@ interaction_model_nt_init = [[
     'DPMJETIII306', 'DPMJET-III', '3.0.6', -1, 'dpmjet306',
     dpmjetIII.DpmjetIIIRun, dpmjetIII.DpmjetIIIEvent, 'center-of-mass'
 ], [
+    'EPOSLHC', 'EPOS', 'LHC', -1, 'eposlhc',
+    epos.EPOSRun, epos.EPOSEvent, 'center-of-mass'
+],[
     'PHOJET112', 'PHOJET', '1.12-35', -1, 'dpmjet306', dpmjetIII.DpmjetIIIRun,
     dpmjetIII.DpmjetIIIEvent, 'center-of-mass'
 ], [

@@ -13,91 +13,67 @@ from impy.util import standard_particles, info
 #=========================================================================
 
 
-class EPOSMCEvent(MCEvent):
+class EPOSEvent(MCEvent):
     """Wrapper class around EPOS particle stack."""
 
-    def __init__(self, lib, event_kinematics, frame):
+    def __init__(self, lib, event_kinematics, event_frame):
         # HEPEVT (style) common block
         evt = lib.hepevt
-        # Number of entries on stack
-        npart = evt.nhep
-        sel = None
-
-        # Filter stack for charged particles if selected
-        if impy_config["event_scope"] == 'charged':
-            sel = np.where((evt.isthep[:nhep] == 1) & (
-                np.abs(lib.charge_vect(evt.idhep[:nhep])) == 1))
-        elif impy_config["event_scope"] == 'stable':
-            sel = np.where(evt.isthep[:evt.nhep] == 1)
-        else:
-            raise Exception("not implemented, yet")
-
-        if 'charge_info' in impy_config and impy_config['charge_info']:
-            self.charge = lib.charge_vect(evt.idhep[sel])
 
         # Save selector for implementation of on-demand properties
-        self.sel = sel
+        px, py, pz, en, m = evt.phep
+        vx, vy, vz, vt = evt.vhep
 
         MCEvent.__init__(
             self,
-            event_kinematics=event_kinematics,
             lib=lib,
-            px=evt.phep[0, sel][0],
-            py=evt.phep[1, sel][0],
-            pz=evt.phep[2, sel][0],
-            en=evt.phep[3, sel][0],
-            p_ids=evt.idhep[sel],
-            npart=npart,
-            frame=frame)
+            event_kinematics=event_kinematics,
+            event_frame=event_frame,
+            nevent=evt.nevhep,
+            npart=evt.nhep,
+            p_ids=evt.idhep,
+            status=evt.isthep,
+            px=px,
+            py=py,
+            pz=pz,
+            en=en,
+            m=m,
+            vx=vx,
+            vy=vy,
+            vz=vz,
+            vt=vt)
+
+    def filter_final_state(self):
+        self.selection = np.where(self.status == 1)
+        self._apply_slicing()
+
+    def filter_final_state_charged(self):
+
+        self.selection = np.where((self.status == 1) & (self.charge != 0))
+        self._apply_slicing()
+
+    @property
+    def parents(self):
+        return self.lib.hepevt.jmohep
+
+    @property
+    def children(self):
+        return self.lib.hepevt.jdahep
 
     @property
     def charge(self):
-        return lib.charge_vect(evt.idhep[sel])
-
-    @property
-    def mass(self):
-        return self.lib.hepevt.phep[4, self.sel][0]
+        return self.lib.charge_vect(self.lib.hepevt.idhep[self.selection])
 
     # Nuclear collision parameters
-
     @property
     def impact_parameter(self):
         """Returns impact parameter for nuclear collisions."""
         return self.lib.nuc3.bimp
 
 
-#=========================================================================
-# EPOSMCRun
-#=========================================================================
-class EPOSMCRun(MCRun):
+class EPOSRun(MCRun):
     """Implements all abstract attributes of MCRun for the 
     EPOS-LHC series of event generators."""
-
-    def __init__(self, libref, event_class=None, **kwargs):
-
-        if event_class is None:
-            self._event_class = EPOSMCEvent
-        else:
-            self._event_class = event_class
-
-        self._frame = 'center-of-mass'
-
-        MCRun.__init__(self, libref, **kwargs)
-    
-    @property
-    def frame(self):
-        return self._frame
-
-    @property
-    def name(self):
-        """Event generator name"""
-        return "EPOS"
-
-    @property
-    def version(self):
-        """Event generator version"""
-        # Needs some sort of smart handling here
-        return "LHC"
 
     def sigma_inel(self):
         """Inelastic cross section according to current
@@ -109,8 +85,8 @@ class EPOSMCRun(MCRun):
         """Constructs an tuple of arguments for calls to event generator
         from given event kinematics object."""
         k = self._curr_event_kin
-        info(20, 'Request EPOS ARGs tuple:\n', 
-            (k.ecm, -1., k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2))
+        info(20, 'Request EPOS ARGs tuple:\n',
+             (k.ecm, -1., k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2))
         return (k.ecm, -1., k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2)
 
     def set_event_kinematics(self, event_kinematics):
@@ -133,25 +109,23 @@ class EPOSMCRun(MCRun):
 
         self.lib.files.ifch = lun
 
-    def init_generator(self, event_kinematics, datdir='./iamdata/'):
+    def init_generator(self, event_kinematics):
+        
+        
         self._abort_if_already_initialized()
+        self.set_event_kinematics(event_kinematics)
+
+        epos_conf = impy_config['eposlhc']
+        epos_conf['datdir'] ='./iamdata/'
+        info(1, 'First initialization')
 
         self.lib.aaset(0)
-        self.lib.initializeepos(1., 1e6, datdir,
-                                len(datdir), 1, 2212, 2212, 1, 1, 1, 1, 0,
-                                6)
+        self.lib.initializeepos(1., 1e6, datdir, len(datdir), 1, 2212, 2212, 1,
+                                1, 1, 1, 0, 6)
         self.lib.init = True
 
         # Set default stable
-        for pid in [2112, 111, 211, -211, 321, -321, 310, 13, -13]:
-            self.set_stable(pid)
-
-        if 'stable' in impy_config:
-            for pdgid in impy_config['stable']:
-                self.lib.setstable(pdgid)
-
-        # Comprise DPMJET input from the event kinematics object
-        self.set_event_kinematics(event_kinematics)
+        self._define_default_fs_particles()
 
     def set_stable(self, pdgid):
         self.lib.setstable(pdgid)

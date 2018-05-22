@@ -4,7 +4,7 @@
 #                                        (A.F. 08/12)
 #
 
-DPM_SRCS :=$(wildcard ./*.f)
+DPM_SRCS :=$(wildcard sources/*.f)
 # DPM_SRCS := $(filter-out ./user3.0-6.f, $(DPM_SRCS))
 DPM_OBJS := $(DPM_SRCS:.f=.o)
 
@@ -36,7 +36,7 @@ all: install
 
 .PHONY: clean
 clean:
-	rm -rf *.o *.prj *.chk core *.dSYM *.$(LEXT) *.f2l
+	rm -rf sources/*.o *.prj *.chk core *.dSYM *.$(LEXT) *.f2l
 
 .PHONY: distclean
 distclean: clean
@@ -46,7 +46,7 @@ distclean: clean
 install: dpmjet306.$(LEXT)
 	cp *.$(LEXT) ../../
 
-dpm3usr: ./user3.0-6.o $(DPM_OBJS)
+dpm3usr: sources/user3.0-6.o $(DPM_OBJS)
 	gfortran $(DPM_OBJS) -o dpm3usr
 
 dpmjet306.$(LEXT): dpmjet306.pyf $(DPM_OBJS) Makefile
@@ -57,5 +57,5 @@ dpmjet306.pyf: $(DPM_SRCS) Makefile
 	$(F2PY) -m dpmjet306 -h dpmjet306.pyf --overwrite-signature \
 	only: $(DPMJET_FUNCS) : $(DPM_SRCS) $(LOGS) > dpmjet306.f2l 2>&1
 
-.f.o:
-	$(FC) -c $(FOPT) $<
+sources/%.o: sources/%.f
+	$(FC) -c $(FOPT) -o $@ $<

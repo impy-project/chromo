@@ -14,19 +14,22 @@ uhmerge urqinit
 
 #$(filter-out ${NOT_NEEDED:=.f}, $(wildcard ./*.f))
 
-URQMD_SRCS := ${URQMD_FILES:=.f}
-URQMD_90SRCS := CFmax.f90 quadri.f90 cornelius.f90
+# URQMD_SRCS := ${URQMD_FILES:=.f}
+URQMD_SRCS := $(addprefix sources/,${URQMD_FILES:=.f})
+# URQMD_90SRCS := CFmax.f90 quadri.f90 cornelius.f90
+URQMD_90SRCS := $(addprefix sources/, CFmax.f90 quadri.f90 cornelius.f90)
 URQMD_OBJS := $(URQMD_SRCS:.f=.o) $(URQMD_90SRCS:.f90=.o)
 
 
 
-SFUNCS=urqmd init uinit set0 params uounit strini loginit loadwtab norm_init output cascinit urqini pdgid pdgid partname
+SFUNCS=urqmd init uinit set0 params uounit strini loginit loadwtab \
+norm_init output cascinit urqini pdgid pdgid partname
 
 all:  urqmd34.$(LEXT) install
 
 .PHONY: clean
 clean:
-	rm -rf $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.dSYM *.f2l
+	rm -rf $(TARGET) sources/*.o *.prj *.chk core *.$(LEXT) *.dSYM *.f2l
 
 .PHONY: distclean
 distclean: clean
@@ -45,8 +48,8 @@ urqmd34.pyf: $(URQMD_SRCS) $(URQMD_90SRCS) Makefile
 	only: $(SFUNCS) $(LOGF) : $(URQMD_SRCS) $(URQMD_90SRCS) \
 	$(LOGS) > urqmd34.f2l 2>&1
 
-%.o: %.f
-	$(FC) -c $(OPT) $<
+sources/%.o: sources/%.f
+	$(FC) -c $(OPT) -o $@ $<
 
-%.o: %.f90
-	$(FC) -c $(OPTF90) $<
+sources/%.o: sources/%.f90
+	$(FC) -c $(OPTF90) -o $@ $<
