@@ -5,77 +5,120 @@ Created on 17.03.2014
 '''
 
 import numpy as np
-from impy.common import MCRun, MCEvent, EventKinematics, standard_particles
-from ParticleDataTool import UrQMDParticleTable
+from impy.common import MCRun, MCEvent, impy_config 
+from impy.util import standard_particles, info
+from particletools.tables import UrQMDParticleTable
 
 class UrQMDMCEvent(MCEvent):
     def __init__(self, lib, event_config):
+        # Number of entries on stack
         npart = lib.sys.npart
-        self.p_ids = np.zeros((npart,))
-        list_particle_ids = np.concatenate((np.atleast_2d(lib.isys.ityp), np.atleast_2d(lib.isys.iso3)), axis = 0)[:npart].transpose()
-        stable = ([i for i, p in enumerate(list_particle_ids) if p[0] in lib.stables.stabvec])
+        # Particle IDs for UrQMD
+        list_particle_ids = np.column_stack((lib.isys.ityp, lib.isys.iso3))[:npart]
+        # UrQMD to PDG conversion (using table)
         stab = UrQMDParticleTable()
-        sel = None
-        if event_config['charged_only']:
+        to_pdg = np.vectorize(lambda x: stab.modid2pdg(tuple(x)))
+
+        # Filter stack for stable and/or charged particles if selected
+        stable = ([i for i, p in enumerate(list_particle_ids) 
+                   if p[0] in lib.stables.stabvec])
+        if impy_config["event_scope"] == 'charged':
             sel = stable[lib.isys.charge[stable] != 0]
-        else:
+        elif impy_config["event_scope"] == 'stable':
             sel = stable
+        else:
+            raise Exception("not implemented, yet")
 
-        if 'charge_info' in event_config and event_config['charge_info']:
-            self.charge = lib.isys.charge[sel]
+        # Save selector for implementation of on-demand properties
+        self.sel = sel
 
-        self.p_ids = np.array([ stab.modid2pdg[tuple(l)]
-                            for l in list_particle_ids[stable]])
-        self.en = lib.coor.p0[sel]
-        self.pz = lib.coor.pz[sel]
-        self.pt2 = lib.coor.py[sel]**2 + lib.coor.px[sel]**2
+        MCEvent.__init__(
+            self,
+            event_config=event_config,
+            lib=lib,
+            px=lib.coor.px[sel],
+            py=lib.coor.py[sel],
+            pz=lib.coor.pz[sel],
+            en=lib.coor.p0[sel],
+            p_ids=to_pdg(list_particle_ids[sel]),
+            npart=npart)
 
-        MCEvent.__init__(self, event_config)
+    @property
+    def charge(self):
+        self.charge = self.lib.isys.charge[self.sel]
+
+    @property
+    def mass(self):
+        return self.lib.coor.fmass
+
+    # Nuclear collision parameters
+
+    @property
+    def impact_parameter(self):
+        """Impact parameter for nuclear collisions."""
+        return self.lib.rsys.bimp
 
 
 class UrQMDMCRun(MCRun):
-    def __init__(self, libref, **kwargs):
+    """Implements all abstract attributes of MCRun for 
+    UrQMD 3.4."""
 
-        if "event_class" not in kwargs.keys():
-            kwargs["event_class"] = UrQMDMCEvent
+    def __init__(self, libref, event_class=None, **kwargs):
+        if event_class is None:
+            self.event_class = UrQMDMCEvent
+        else:
+            self.event_class = event_class
+
+        self._frame = 'center-of-mass'
 
         MCRun.__init__(self, libref, **kwargs)
+    
+    @property
+    def frame(self):
+        return self._frame
 
-        self.generator = "UrQMD"
-        self.version = "3.4"
-        self.ptab = UrQMDParticleTable()
+    @property
+    def name(self):
+        """Event generator name"""
+        return "UrQMD"
 
-    def get_sigma_inel(self):
-        raise Exception(self.class_name + "::init_generator(): not implemented yet")
+    @property
+    def version(self):
+        """Event generator version"""
+        return "3.4"
 
-    def set_event_kinematics(self):
+    def sigma_inel(self):
+        raise Exception("Inelastic cross section not implemented yet")
+
+    def set_event_kinematics(self, event_kinematics):
+        stab = UrQMDParticleTable()
         # Define projectile
-        if self.evkin.A1 == 1:
+        if event_kinematics.A1 == 1:
             # Special projectile
             self.lib.inputs.prspflg = 1
             self.lib.sys.ap = 1
-            self.lib.inputs.spityp[0] = self.ptab.pdg2modid[self.evkin.p1pdg][0]
-            self.lib.inputs.spiso3[0] = self.ptab.pdg2modid[self.evkin.p1pdg][1]
+            self.lib.inputs.spityp[0] = stab.pdg2modid[event_kinematics.p1pdg][0]
+            self.lib.inputs.spiso3[0] = stab.pdg2modid[event_kinematics.p1pdg][1]
         else:
             # Nucleus
             self.lib.inputs.prspflg = 0
-            self.lib.sys.ap = self.evkin.A1
-            self.lib.sys.zp = self.evkin.Z1
+            self.lib.sys.ap = event_kinematics.A1
+            self.lib.sys.zp = event_kinematics.Z1
 
         # Define target
-        if self.evkin.A2 == 1:
+        if event_kinematics.A2 == 1:
             # Special target
             self.lib.inputs.trspflg = 1
             self.lib.sys.at = 1
-            self.lib.inputs.spityp[1] = self.ptab.pdg2modid[self.evkin.p2pdg][0]
-            self.lib.inputs.spiso3[1] = self.ptab.pdg2modid[self.evkin.p2pdg][1]
+            self.lib.inputs.spityp[1] = stab.pdg2modid[event_kinematics.p2pdg][0]
+            self.lib.inputs.spiso3[1] = stab.pdg2modid[event_kinematics.p2pdg][1]
         else:
             # Nucleus
             self.lib.inputs.trspflg = 0
-            self.lib.sys.at = self.evkin.A2
-            self.lib.sys.zt = self.evkin.Z2
+            self.lib.sys.at = event_kinematics.A2
+            self.lib.sys.zt = event_kinematics.Z2
         # Set ebeam, eos = 0, nevents
-        self.lib.rsys.ebeam = self.evkin.elab # Needs to be fixed!!
+        self.lib.rsys.ebeam = event_kinematics.elab # Needs to be fixed!!
         self.lib.sys.eos = 0
         self.lib.inputs.nevents = 1
 
@@ -83,64 +126,60 @@ class UrQMDMCRun(MCRun):
         self.lib.rsys.bmin = 0
         self.lib.options.ctoption[4] = 1
         self.lib.rsys.bdist = nucrad(self.lib.sys.ap, self.lib.options.ctoption[23]) + nucrad(self.lib.sys.at, self.lib.options.ctoption[23]) + 2 * self.lib.options.ctparam[29]
-        self.event_config['event_kinematics'] = self.evkin
+        self._curr_event_kin = event_kinematics
 
-    def init_generator(self, config):
+    def attach_log(self, fname):
+        """Routes the output to a file or the stdout."""
+        info(5, "Not implemented yet!")
+        # TO BE IMPLEMENTED!!!
+        if fname == 'stdout':
+            pass
+        else:
+            pass
 
-        try:
-            print self.init
-            raise Exception('adasd')
-        except AttributeError:
-            self.init = True
-
-        self.set_event_kinematics()
-
+    def init_generator(self, event_kinematics):
         from random import randint
 
-        file_output = ''
-        try:
-            from MCVD.management import LogManager
-            # initialize log manager
-            self.log_man = LogManager(config, self)
-            self.log_man.create_log(self.sibproj, self.eatarg, self.ecm)
-            # Still need to determine where the file is outputted
-        except ImportError:
-            print self.class_name + "::init_generator(): Running outside of MCVD,", \
-                "the log will be printed to STDOUT."
-        except AttributeError:
-            print self.class_name + "::init_generator(): Logging not supported."
-        set_stable(self.lib, 2)
-        self.set_event_kinematics()
+        self._abort_if_already_initialized()
 
-        if self.def_settings:
-            print self.class_name + "::init_generator(): Using default settings:", \
-                self.def_settings.__class__.__name__
-            self.def_settings.enable()
+        self.set_event_kinematics(event_kinematics)
+
+        self.attach_log('stdout')
+
+        set_stable(self.lib, 2)
+
+
+        # if self.def_settings:
+            # print(self.class_name + "::init_generator(): Using default settings:", \
+                # self.def_settings.__class__.__name__)
+            # self.def_settings.enable()
+
+        # REVISIT HERE!!
+        # self._define_default_fs_particles()
 
         # Set pi0 stable
         self.set_stable(111)
 
-        if 'stable' in self.event_config:
-            for pdgid in self.event_config['stable']:
-                self.set_stable(pdgid)
+        # if impy_config['stable']:
+            # for pdgid in impy_config['stable']:
+                # self.set_stable(pdgid)
 
-        self.lib.urqini(file_output, 2)
+        self.lib.urqini('stdout', 2)
+
         # Change CTParams and/or CTOptions if needed
-        if hasattr(self, 'CTParams'):
-            for ctp in self.CTParams:
+        if 'CTParams' in impy_config:
+            for ctp in impy_config['CTParams']:
                 self.lib.options.ctparams[ctp[0]] = ctp[1]
-                print self.__class__.__name__ + '::init_generator(): CTParams[{}] changed to {}'.format(ctp[0], ctp[1])
-        if hasattr(self, 'CTOptions'):
-            for ctp in self.CTOptions:
+                info(5, 'CTParams[{}] changed to {}'.format(ctp[0], ctp[1]))
+        if 'CTOptions' in impy_config:
+            for ctp in impy_config['CTOptions']:
                 self.lib.options.ctoptions[ctp[0]] = ctp[1]
-                print self.__class__.__name__ + '::init_generator(): CTOptions[{}] changed to {}'.format(ctp[0], ctp[1])
-        print self.__class__.__name__ + '::init_generator(): Done'
+                info(5, 'CTOptions[{}] changed to {}'.format(ctp[0], ctp[1]))
 
     def set_stable(self, pdgid):
         if pdgid == 0:
             return
-        print self.class_name + "::set_stable(): defining ", \
-            pdgid, "as stable particle, sid =", pdgid
+        info(5, 'defining', pdgid, 'as stable particle')
         stab = UrQMDParticleTable()
         stable_count = np.where(self.lib.stables.stabvec == 0)[0][0]
         self.lib.stables.stabvec[stable_count] = stab.pdg2modid[pdgid][0]
@@ -165,140 +204,6 @@ class UrQMDMCRun(MCRun):
         self.lib.urqmd(iflbmax)
         return 0
 
-class UrQMDCascadeRun():
-    def __init__(self,
-                 lib_str,
-                 label,
-                 decay_mode,
-                 n_events,
-                 fill_subset=False,
-                 p_debug=False,
-                 nucleon_Ekin=None,
-                 CTParams = None,
-                 CTOptions = None):
-        exec "import " + lib_str + " as urlib"
-        self.lib = urlib
-        self.label = label
-        self.nEvents = n_events
-        self.fill_subset = fill_subset
-        self.spectrum_hists = []
-        self.dbg = p_debug
-        self.nucleon_Ekin = nucleon_Ekin
-        set_stable(self.lib, decay_mode, self.dbg)
-        self.ptab = UrQMDParticleTable()
-        self.CTParams = CTParams
-        self.CTOptions = CTOptions
-        self.init_generator()
-
-    def init_generator(self):
-        self.lib.urqini('output_urtest.txt', 2)
-        # Change CTParams and/or CTOptions if needed
-        if self.CTParams:
-            for ctp in self.CTParams:
-                self.lib.options.ctparams[ctp[0]] = ctp[1]
-                print self.__class__.__name__ + '::init_generator(): CTParams[{}] changed to {}'.format(ctp[0], ctp[1])
-        if self.CTOptions:
-            for ctp in self.CTOptions:
-                self.lib.options.ctoptions[ctp[0]] = ctp[1]
-                print self.__class__.__name__ + '::init_generator(): CTOptions[{}] changed to {}'.format(ctp[0], ctp[1])
-        print self.__class__.__name__ + '::init_generator(): Done'
-
-    def get_hadron_air_cs(self, E_lab, projectile_sibid):
-        raise Exception('Not implemented, yet')
-
-    def start(self, evkin, iflbmax):
-        # Define projectile
-        if evkin.A1 == 1:
-            # Special projectile
-            self.lib.inputs.prspflg = 1
-            self.lib.sys.ap = 1
-            self.lib.inputs.spityp[0] = self.ptab.pdg2modid[evkin.p1pdg][0]
-            self.lib.inputs.spiso3[0] = self.ptab.pdg2modid[evkin.p1pdg][1]
-        else:
-            # Nucleus
-            self.lib.inputs.prspflg = 0
-            self.lib.sys.ap = evkin.A1
-            self.lib.sys.zp = evkin.Z1
-
-        # Define target
-        if evkin.A2 == 1:
-            # Special target
-            self.lib.inputs.trspflg = 1
-            self.lib.sys.at = 1
-            self.lib.inputs.spityp[1] = self.ptab.pdg2modid[evkin.p2pdg][0]
-            self.lib.inputs.spiso3[1] = self.ptab.pdg2modid[evkin.p2pdg][1]
-        else:
-            # Nucleus
-            self.lib.inputs.trspflg = 0
-            self.lib.sys.at = evkin.A2
-            self.lib.sys.zt = evkin.Z2
-        # Set ebeam, eos = 0, nevents
-        self.lib.rsys.ebeam = evkin.elab
-        self.lib.sys.eos = 0
-        self.lib.inputs.nevents = 1
-
-        # Set impact parameter (to be revisited)
-        self.lib.rsys.bmin = 0
-        self.lib.options.ctoption[4] = 1 # impact parameter from circle surface
-        self.lib.rsys.bdist = nucrad(self.lib.sys.ap, self.lib.options.ctoption[23]) + nucrad(self.lib.sys.at, self.lib.options.ctoption[23]) + 2 * self.lib.options.ctparam[29]
-
-        # Set calculation time (can be introduced as arguments later)
-        # Just copied CORSIKA here
-        caltim = 200.0
-        outtim = 200.0
-        self.lib.pots.dtimestep = outtim
-        self.lib.sys.nsteps = int(0.01 + caltim/self.lib.pots.dtimestep)
-        self.lib.sys.outsteps = int(0.01 + outtim/self.lib.pots.dtimestep)
-
-        # If new event, initialize projectile and target
-        if self.lib.options.ctoption[39] == 0:
-            if self.lib.inputs.prspflg == 0:
-                self.lib.cascinit(self.lib.sys.zp, self.lib.sys.ap, 1)
-            if self.lib.inputs.trspflg == 0:
-                self.lib.cascinit(self.lib.sys.zt, self.lib.sys.at, 2)
-
-        hist_d = {}
-        for hist in self.spectrum_hists:
-            hist_d[hist.particle_id] = hist
-        ngenerated = self.nEvents
-
-        for i in xrange(self.nEvents):
-            self.lib.urqmd(iflbmax)
-            if not (i % 1000) and i and self.dbg:
-                print i, "events generated."
-
-            event = UrQMDCascadeEvent(self.lib, self.ptab)
-
-            unique_pids = np.unique(event.p_ids)
-
-            if 0 in unique_pids:
-                ngenerated = ngenerated - 1
-                continue
-            if not self.fill_subset:
-                [hist_d[pid].fill_event(event) for pid in unique_pids]
-            else:
-                for pid in unique_pids:
-                    if pid in hist_d.keys():
-                        hist_d[pid].fill_event(event)
-        # Correct for selective filling of histograms
-        for hist in self.spectrum_hists:
-            hist.n_events_filled = ngenerated
-
-
-class UrQMDCascadeEvent():
-    def __init__(self, lib, ptab, swap=False):
-        npart = lib.sys.npart
-        list_particle_ids = np.vstack((lib.isys.ityp, lib.isys.iso3)).T[:npart]
-        stable = np.isin(lib.isys.ityp[:npart], lib.stables.stabvec)
-        self.p_ids = np.array(
-            [ptab.modid2pdg[tuple(l)] for l in list_particle_ids[stable]])
-        self.E = lib.coor.p0[:npart][stable]
-        if swap:
-            self.pz = -lib.coor.pz[:npart][stable]
-        else:
-            self.pz = lib.coor.pz[:npart][stable]
-
-
 #=========================================================================
 # set_stable
 #=========================================================================
@@ -318,7 +223,7 @@ def set_stable(lib, decay_mode, dbg=True):
         for pdg_id in standard_particles:
             try:
                 lib.stables.stabvec[stable_count] = stab.pdg2modid[pdg_id][0]
-                print 'stable,', pdg_id
+                info(5, 'stable,', pdg_id)
                 stable_count += 1
             except KeyError:
                 pass
@@ -375,7 +280,6 @@ def set_stable(lib, decay_mode, dbg=True):
     # for i in range(59, 61) + range(71, 99 + 1):
     # idb[i - 1] = -np.abs(idb[i - 1])
     # self.stables.nstable = (idb != 0).sum()
-
 
 def nucrad(AA, ctopt):
     A=abs(AA)
