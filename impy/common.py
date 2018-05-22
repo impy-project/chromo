@@ -8,15 +8,27 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 '''
 import os
+from os.path import abspath, join, dirname
 from abc import ABCMeta, abstractmethod, abstractproperty
+
 import numpy as np
 import yaml
 
 from particletools.tables import PYTHIAParticleData, make_stable_list
 
 # Globals
-root_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..")
-impy_config = yaml.load(open(os.path.join(root_dir, 'impy_config.yaml')))
+root_dir = abspath(join(dirname(__file__), ".."))
+impy_config = yaml.load(open(join(root_dir, 'impy_config.yaml')))
+
+for version_key in impy_config['dpmjetIII']['param_file']:
+    impy_config['dpmjetIII']['param_file'][version_key] = join(
+        root_dir, impy_config['dpmjetIII']['param_file'][version_key]
+    )
+for version_key in impy_config['dpmjetIII']['evap_file']:
+    impy_config['dpmjetIII']['evap_file'][version_key] = join(
+        root_dir, impy_config['dpmjetIII']['evap_file'][version_key]
+    )
+
 pdata = PYTHIAParticleData(
     cache_file=open(
         os.path.join(root_dir, impy_config["pdata_cachefile"]), 'wb'))
@@ -126,10 +138,10 @@ class MCEvent(object):
         pass
 
     @abstractmethod
-    def mothers(self):
+    def parents(self):
         """Range of indices pointing to mother particles.
 
-        The range of daughters particles is given by two the two
+        The range of children particles is given by two the two
         indices of the 0th axis.
 
         Note::
@@ -146,10 +158,10 @@ class MCEvent(object):
         pass
 
     @abstractmethod
-    def daughters(self, p_idx):
+    def children(self):
         """Range of indices pointing to daughter particles.
         
-        The range of daughters particles is given by two the two
+        The range of children particles is given by two the two
         indices of the 0th axis.
 
         Note::
@@ -278,21 +290,21 @@ class Settings():
 class MCRun():
     __metaclass__ = ABCMeta
 
-    def __init__(
-            self,
-            interaction_model_def,
-            settings_dict=dict(),
-    ): 
+    def __init__(self, interaction_model_def, settings_dict=dict(), **kwargs):
         import importlib
 
         # Import library from library name
         self.lib = importlib.import_module(interaction_model_def.library_name)
-        
+
         # Save definitions from namedtuple into attributes
         self._event_class = interaction_model_def.EventClass
         self._name = interaction_model_def.name
         self._version = interaction_model_def.version
         self._output_frame = interaction_model_def.output_frame
+        if 'label' not in kwargs:
+            self._label = self._name + " " + self._version
+        else:
+            self._label = kwargs['label']
 
         # Flag to control if initialization has been already executed
         self._is_initialized = False
@@ -314,6 +326,11 @@ class MCRun():
         self.close_fortran_logfile()
 
     @property
+    def label(self):
+        """Name + version or custom via keyword arg"""
+        return self._label
+
+    @property
     def output_frame(self):
         """Default frame of the output particle stack."""
         return self._output_frame
@@ -327,11 +344,6 @@ class MCRun():
     def version(self):
         """Event generator version"""
         self._version
-
-    # @property
-    # def label(self):
-    #     """Any tag or label describing the setup"""
-    #     return self._label
 
     @abstractmethod
     def init_generator(self):

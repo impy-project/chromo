@@ -49,11 +49,11 @@ class DpmjetIIIEvent(MCEvent):
         self._apply_slicing()
     
     @property
-    def mothers(self):
+    def parents(self):
         return self.lib.dtevt1.jmohkk
     
     @property
-    def daughters(self):
+    def children(self):
         return self.lib.dtevt1.jdahkk
 
     @property

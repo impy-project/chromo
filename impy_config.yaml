@@ -79,12 +79,12 @@ dpmjetIII:
     # maximal energy for cross section table initialization
     e_max        : 1.0e+10
     param_file   : {
-        '3.0-6'      : ./src/dpmjet3.0-6/fitpar.dat,
-        'III-2018.1' : ./src/dpmjetIII-2018.1/dpmjetpar.dat
+        '3.0-6'      : src/dpmjet3.0-6/fitpar.dat,
+        'III-2018.1' : src/dpmjetIII-2018.1/dpmjetpar.dat
     }
     evap_file    : {
-        '3.0-6'      : ./src/dpmjet3.0-6/dpmjet.dat,
-        'III-2018.1' : ./src/dpmjetIII-2018.1/dpmjet.dat
+        '3.0-6'      : src/dpmjet3.0-6/dpmjet.dat,
+        'III-2018.1' : src/dpmjetIII-2018.1/dpmjet.dat
     }
 
     projectiles  : {

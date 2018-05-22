@@ -66,12 +66,12 @@ class SibyllEvent(MCEvent):
         return self.lib.s_plist.p[self.sel, 4]
 
     @property
-    def mothers(self):
+    def parents(self):
         #Ask Felix!!!
         pass
 
     @property
-    def daughters(self):
+    def children(self):
         pass
 
     # Nuclear collision parameters

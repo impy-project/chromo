@@ -236,11 +236,28 @@ class EventKinematics(object):
     def _e2p(self, E, m):
         return np.sqrt((E + m) * (E - m))
 
+    def __getstate__(self):
+        _ = self.__dict__.pop('boost_def')
+        return self.__dict__
+    
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.boost_def = {
+            ("center-of-mass", "laboratory") : self.boost_cms_to_lab,
+            ("laboratory", "center-of-mass") : self.boost_lab_to_cms
+        }
+
     def __ne__(self, other):
-        return self.__dict__ != other.__dict__
+        for key, value in other.__dict__.iteritems():
+            if key == 'boost_def':
+                continue
+            if value != self.__dict__[key]:
+                return True
+            
+        return False
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        return not self.__ne__(other)
 
     def __hash__(self):
         return hash('_'.join([
