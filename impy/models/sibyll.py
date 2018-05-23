@@ -59,11 +59,11 @@ class SibyllEvent(MCEvent):
 
     @property
     def charge(self):
-        return self.lib.s_chp.ichp[self.lib.s_plist.llist[self.sel] - 1]
+        return self.lib.s_chp.ichp[self.lib.s_plist.llist[self.selection] - 1]
 
     @property
     def mass(self):
-        return self.lib.s_plist.p[self.sel, 4]
+        return self.lib.s_plist.p[self.selection, 4]
 
     @property
     def parents(self):

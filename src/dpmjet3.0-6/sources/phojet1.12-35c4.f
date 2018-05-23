@@ -7653,6 +7653,11 @@ C  parameters of 2x2 channel model
       DIMENSION XDPtab(27,Max_tab),IDPtab(8,Max_tab)
       REAL XDPtab
       INTEGER IDPtab
+C**anfe common block for file handling
+      CHARACTER*1024 FNEVAP
+      CHARACTER*1024 FNPARA
+      CHARACTER*5 VERSION
+      COMMON /DTIMPY/ FNEVAP, FNPARA, VERSION
 
 C  parameter set for   2212 (GRV94 LO)     2212 (GRV94 LO)
       DATA (IDPtab(k,  1),k=1,8) /
@@ -7967,8 +7972,8 @@ C  get parameters of soft cross sections from fitpar.dat
       IF(IPAMDL(99).GT.IFOUND) THEN
 
         WRITE(LO,'(/1X,A)')
-     &    'PHO_FITPAR: loading parameter set from file fitpar.dat'
-        OPEN(12,FILE='fitpar.dat',ERR=1010,STATUS='OLD')
+     &    'PHO_FITPAR: loading parameter set from file ',FNPARA
+        OPEN(12,FILE=FNPARA,ERR=1010,STATUS='OLD')
 
  100    CONTINUE
           READ(12,'(A8)',ERR=1020,END=1010) CNAME8

@@ -20,7 +20,7 @@ from impy.common import impy_config, pdata
 
 event_kinematics = EventKinematics(
     ecm=7 * TeV,
-    p1pdg=2212,
+    p1pdg=321,
     # nuc1_prop=(12,6),
     nuc2_prop=(16, 8))
 

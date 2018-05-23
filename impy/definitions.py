@@ -28,7 +28,7 @@ interaction_model_nt_init = [[
     'DPMJETIII171', 'DPMJET-III', '17.1', -1, 'dpmjetIII171',
     dpmjetIII.DpmjetIIIRun, dpmjetIII.DpmjetIIIEvent, 'center-of-mass'
 ], [
-    'DPMJETIII306', 'DPMJET-III', '3.0.6', -1, 'dpmjet306',
+    'DPMJETIII306', 'DPMJET-III', '3.0-6', -1, 'dpmjet306',
     dpmjetIII.DpmjetIIIRun, dpmjetIII.DpmjetIIIEvent, 'center-of-mass'
 ], [
     'EPOSLHC', 'EPOS', 'LHC', -1, 'eposlhc', epos.EPOSRun, epos.EPOSEvent,
