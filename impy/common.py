@@ -25,9 +25,10 @@ impy_config = yaml.load(open(join(root_dir, 'impy_config.yaml')))
 for version_key in impy_config['dpmjetIII']['param_file']:
     impy_config['dpmjetIII']['param_file'][version_key] = join(
         root_dir, impy_config['dpmjetIII']['param_file'][version_key])
-for version_key in impy_config['dpmjetIII']['evap_file']:
     impy_config['dpmjetIII']['evap_file'][version_key] = join(
         root_dir, impy_config['dpmjetIII']['evap_file'][version_key])
+    impy_config['dpmjetIII']['dat_dir'][version_key] = join(
+        root_dir, impy_config['dpmjetIII']['dat_dir'][version_key])
 impy_config['epos']['datdir'] = join(root_dir, impy_config['epos']['datdir'])
 
 pdata = PYTHIAParticleData(
@@ -345,7 +346,7 @@ class MCRun():
     @property
     def version(self):
         """Event generator version"""
-        self._version
+        return self._version
 
     @abstractmethod
     def init_generator(self):

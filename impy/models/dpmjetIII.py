@@ -158,19 +158,29 @@ class DpmjetIIIRun(MCRun):
 
         dpm_conf = impy_config['dpmjetIII']
         info(1, 'First initialization')
-        # print self.class_name + "::init_generator(): calling init with:", \
-        #     - 1, k.elab, PM, PCH, TM, TCH, k.p1pdg
 
         # Set the dpmjpar.dat file
-        if hasattr(self.lib, 'pomdls.parfn'):
-            pfile = dpm_conf['param_file']['III-2018.1']
-            info(10, 'Using PHOJET parameter file at', pfile)
+        if hasattr(self.lib, 'pomdls') and hasattr(self.lib.pomdls, 'parfn'):
+            pfile = dpm_conf['param_file'][self.version]
+            info(10, 'DPMJET parameter file at', pfile)
             clear_and_set_fortran_chars(self.lib.pomdls.parfn, pfile)
 
+        # import IPython
+        # IPython.embed()
+        # Set the data directory for the other files
+        if hasattr(self.lib, 'poinou') and hasattr(self.lib.poinou, 'datdir'):
+            pfile = dpm_conf['dat_dir'][self.version]
+            info(10, 'DPMJET data dir is at', pfile)
+            clear_and_set_fortran_chars(self.lib.poinou.datdir, pfile)
+            self.lib.poinou.lendir = len(pfile)
+            
         if hasattr(self.lib, 'dtimpy'):
-            evap_file = dpm_conf['evap_file']['3.0-6']
-            info(10, 'Using DPMJET evap file at', evap_file)
+            print self.version, self._version
+            evap_file = dpm_conf['evap_file'][self.version]
+            info(10, 'DPMJET evap file at', evap_file)
             clear_and_set_fortran_chars(self.lib.dtimpy.fnevap, evap_file)
+
+        self.attach_log()
 
         self.lib.dt_init(
             -1, dpm_conf['e_max'], k.A1, k.Z1, k.A2, k.Z2, k.p1pdg, iglau=0)

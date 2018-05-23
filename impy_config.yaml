@@ -79,18 +79,22 @@ dpmjetIII:
     int_support  : [ 'hh', 'hA', 'AA', 'gg', 'gh', 'gA']
     # maximal energy for cross section table initialization
     e_max        : 1.0e+10
+    dat_dir      : {
+        '3.0-6'  : src/dpmjet3.0-6/data/,
+        '17.1'   : src/dpmjetIII-17.1/dpmdata/
+    }
     param_file   : {
         '3.0-6'      : src/dpmjet3.0-6/data/fitpar.dat,
-        'III-2017.1' : src/dpmjetIII-17.1/data/dpmjetpar.dat
+        '17.1'   : src/dpmjetIII-17.1/dpmdata/dpmjpar.dat
     }
     evap_file    : {
         '3.0-6'      : src/dpmjet3.0-6/data/dpmjet.dat,
-        'III-2017.1' : src/dpmjetIII-17.1/data/dpmjet.dat
+        '17.1'   : src/dpmjetIII-17.1/dpmdata/dpmjet.dat
     }
 
     projectiles  : {
         '3.0-6'      : [ 2212, 2112, 321, -321, 211, -211, -2212 ],
-        'III-2017.1' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
+        '17.1'   : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
                          3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
                          3122, -3122, 22]
     }
@@ -107,7 +111,7 @@ qgsjet:
     has_hepevt   : False
     int_support  : [ 'hh', 'hA', 'AA' ]
     projectiles  : {
-        'III-2017.1' : [ 2212, 2112, 321, -321, 211, -211 ]
+        'III-17.1' : [ 2212, 2112, 321, -321, 211, -211 ]
     }
 
 sibyll:

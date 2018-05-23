@@ -2,7 +2,10 @@ import sys
 import os
 import numpy as np
 
-sys.path.append(os.path.dirname(__file__) + "/..")
+root_dir = os.path.abspath(os.path.dirname(__file__) + "/..")
+sys.path.append(root_dir)
+sys.path.append(os.path.join(root_dir,'../DPMJET-III-gitlab'))
+
 
 from impy.definitions import *
 from impy.constants import *
@@ -23,13 +26,14 @@ event_kinematics = EventKinematics(
 
 impy_config["user_frame"] = 'laboratory'
 
-generator = make_generator_instance(interaction_model_by_tag['EPOSLHC'])
+generator = make_generator_instance(interaction_model_by_tag['DPMJETIII171'])
 generator.init_generator(event_kinematics)
 # import IPython
 # IPython.embed()
 
 # This
 for event in generator.event_generator(event_kinematics, 1):
+    event.filter_final_state()
     # print 'px', event.px
     # print 'py', event.py
     print 'pz', event.pz
