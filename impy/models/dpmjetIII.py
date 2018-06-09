@@ -189,10 +189,10 @@ class DpmjetIIIRun(MCRun):
 
         if impy_config['user_frame'] == 'center-of-mass':
             self.lib.dtflg1.iframe = 2
-            self._frame = 'center-of-mass'
+            self._output_frame = 'center-of-mass'
         elif impy_config['user_frame'] == 'laboratory':
             self.lib.dtflg1.iframe = 1
-            self._frame = 'laboratory'
+            self._output_frame = 'laboratory'
 
         # if self.def_settings:
         #     print self.class_name + "::init_generator(): Using default settings:", \

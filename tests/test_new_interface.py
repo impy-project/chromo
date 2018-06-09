@@ -20,9 +20,9 @@ from impy.common import impy_config, pdata
 
 event_kinematics = EventKinematics(
     ecm=7 * TeV,
-    p1pdg=321,
+    p1pdg=-211,
     # nuc1_prop=(12,6),
-    nuc2_prop=(16, 8))
+    nuc2_prop=(12, 6))
 
 impy_config["user_frame"] = 'laboratory'
 
@@ -32,13 +32,14 @@ generator.init_generator(event_kinematics)
 # IPython.embed()
 
 # This
-for event in generator.event_generator(event_kinematics, 1):
+for event in generator.event_generator(event_kinematics, 10):
     event.filter_final_state()
     # print 'px', event.px
     # print 'py', event.py
-    print 'pz', event.pz
-    print 'en', event.en
+    # print 'pz', event.pz
+    # print 'en', event.en
     print 'p_ids', event.p_ids
+    print 'impact param', event.impact_parameter
     # import IPython
     # IPython.embed()
     # print event.impact_parameter, event.n_wounded_A, event.n_wounded_B#, event.n_NN_interactions
