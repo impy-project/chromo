@@ -4,3 +4,4 @@
 
 ParticleDataTools
 iamdata
+pyhepmc
