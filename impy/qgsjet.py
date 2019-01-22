@@ -40,13 +40,14 @@ class QGSJet01Run():
 
     def get_hadron_air_cs(self, E_lab, projectile=2):
         from scipy.interpolate import UnivariateSpline
-
-        if projectile == 'K+' or projectile == 'K-' or projectile == 'K0L':
+        if projectile in ['K+', 'K-', 'K0L']:
             icz = 3 - 1  # -1 for python -> fortran idx
-        elif projectile == 'pi+' or projectile == 'pi-':
+        elif projectile in ['pi+', 'pi-']:
             icz = 1 - 1
         elif projectile in ['p', 'n']:
             icz = 2 - 1
+	elif isinstance(projectile, basestring):
+	    icz = 2 - 1 # assume nucleon
         elif projectile < 4:
             # Assume qgsjet prjectile index if < 4
             icz = projectile - 1

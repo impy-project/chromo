@@ -184,8 +184,8 @@ class EPOSCascadeRun():
     def init_generator(self):
         from random import randint
 
-        #         datdir = '/lustre/fs17/group/that/af/m2m/iamdata/'
-        datdir = '../../iamdata/'
+        datdir = '/lustre/fs17/group/that/af/m2m/iamdata/'
+        #datdir = '../../iamdata/'
         # Initialize for maximum energy
         self.evkin = EventKinematics(
             plab=1e10,
