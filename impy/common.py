@@ -1,212 +1,270 @@
-'''
-Created on 14.04.2014
+'''The :mod:`common`module contains the classes that expose the
+interaction model interface to the front-end and/or the user.
 
-@author: afedynitch
+Classes derived from :class:`MCEvent` in (for example :mod:`impy.models.sibyll`)
+cast the data from the event generators' particle stacks to numpy arrays.
+The basic variables are sufficient to compute all derived attributes,
+such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
+:func:`MCEvent.xlab`.
 '''
+import os
+from os.path import abspath, join, dirname
+from abc import ABCMeta, abstractmethod, abstractproperty
+
 import numpy as np
+import yaml
 
-#===============================================================================
-# Standard stable particles for for fast air shower cascade calculation
-#===============================================================================
-# Particles having an anti-partner
-standard_particles = [11, 13, 15, 211, 321, 2212, 2112, 3122, 411, 421, 431]
-standard_particles += [-pid for pid in standard_particles]
+from particletools.tables import PYTHIAParticleData, make_stable_list
 
-#unflavored particles
-standard_particles += [111, 130, 310, 221, 223, 333]
+# Globals
+root_dir = abspath(join(dirname(__file__), ".."))
+impy_config = yaml.load(open(join(root_dir, 'impy_config.yaml')))
 
+# This is not nice, but the paths in the config should become absolute
+# in case impy is used outside of the folder
+for version_key in impy_config['dpmjetIII']['param_file']:
+    impy_config['dpmjetIII']['param_file'][version_key] = join(
+        root_dir, impy_config['dpmjetIII']['param_file'][version_key])
+    impy_config['dpmjetIII']['evap_file'][version_key] = join(
+        root_dir, impy_config['dpmjetIII']['evap_file'][version_key])
+    impy_config['dpmjetIII']['dat_dir'][version_key] = join(
+        root_dir, impy_config['dpmjetIII']['dat_dir'][version_key])
+impy_config['epos']['datdir'] = join(root_dir, impy_config['epos']['datdir'])
 
-#===============================================================================
-# EventKinematics
-#===============================================================================
-class EventKinematics():
-    def __init__(self,
-                 ecm=None,
-                 plab=None,
-                 p1pdg=None,
-                 p2pdg=None,
-                 beam=None,
-                 nuc1_prop=None,
-                 nuc2_prop=None,
-                 pdata=None):
+pdata = PYTHIAParticleData(
+    cache_file=open(
+        os.path.join(root_dir, impy_config["pdata_cachefile"]), 'wb'))
 
-        if ecm and plab:
-            raise Exception(self.__class__.__name__ +
-                            '::init(): Define either ecm or plab')
-
-        if p1pdg and nuc1_prop:
-            raise Exception(self.__class__.__name__ +
-                            '::init(): Define either particle id or ' +
-                            'nuclear protperties for side 1.')
-
-        if p2pdg and nuc2_prop:
-            raise Exception(self.__class__.__name__ +
-                            '::init(): Define either particle id or ' +
-                            'nuclear protperties for side 2.')
-
-        masses = {
-            2212: 0.93827,
-            2112: 0.93957,
-            211: 0.13957,
-            321: 0.49368,
-            3122: 1.11568,
-            22: 0.
-        }
-        # In case the list is not sufficient load ParticleDataTool
-        # on demand
-        self.pdata = None
-        # Store masses of particles on side 1 and 2
-        pmass1, pmass2 = None, None
-        # Store average nucleon mass
-        mnuc = 0.5 * (masses[2212] + masses[2112])
-
-        if p1pdg:
-            try:
-                pmass1 = masses[p1pdg]
-            except:
-                self.load_pdata_tool()
-                pmass1 = self.pdata.mass(p1pdg)
-            self.A1, self.Z1 = 1, 1
-            self.p1pdg = p1pdg
-        else:
-            pmass1 = mnuc
-            self.p1pdg = 2212
-            self.A1, self.Z1 = nuc1_prop
-
-        if p2pdg:
-            try:
-                pmass2 = masses[p2pdg]
-            except:
-                self.load_pdata_tool()
-                pmass2 = self.pdata.mass(p2pdg)
-
-            self.p2pdg = p2pdg
-            if p2pdg > 0:
-                self.A2, self.Z2 = 1, 1
-            else:
-                self.A2, self.Z2 = 1, -1
-        else:
-            pmass2 = mnuc
-            self.p2pdg = 2212
-            self.A2, self.Z2 = nuc2_prop
-
-        if ecm and not (plab or beam):
-            self.ecm = ecm
-            self.elab = 0.5 * (ecm**2 - pmass1**2 + pmass2**2) / pmass2
-            self.plab = self.e2p(self.elab, pmass1)
-
-        elif plab and not (ecm or beam):
-            self.plab = plab
-            self.elab = np.sqrt(plab**2 + pmass1**2)
-            self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
-
-        elif beam and not (ecm or plab):
-            self.beam = beam
-            p1 = np.array([0, 0, self.e2p(beam[0], pmass1), beam[0]])
-            p2 = np.array([0, 0, -self.e2p(beam[1], pmass1), beam[1]])
-            s = p1 + p2
-            self.ecm = np.sqrt(s[3]**2 - np.sum(s[:3]**2))
-            self.elab = 0.5 * (self.ecm**2 - pmass1**2 + pmass2**2) / pmass2
-            self.plab = self.e2p(self.elab, pmass1)
-            print('EventKinematics: beam, ecms, elab, plab', self.beam,
-                  self.ecm, self.elab, self.plab)
-        else:
-            raise Exception(self.__class__.__name__ +
-                            '::init(): Define at least ecm or plab')
-
-        self.pmass1 = pmass1
-        self.pmass2 = pmass2
-
-        # compute pcm
-        s = self.ecm**2
-        self.s = s
-        self.pcm = np.sqrt(s**2 - 2 * (s * (pmass1 + pmass2) + pmass1 * pmass2)
-                           + pmass1**2 + pmass2**2) / (2 * self.ecm)
-        self.gamma_cm = (self.elab + pmass2) / self.ecm
-        self.betagamma_cm = self.plab / self.ecm
-
-        self.e_range = []
-
-    def e2p(self, E, m):
-        return np.sqrt((E + m) * (E - m))
-
-    def load_pdata_tool(self):
-        import ParticleDataTool
-        if not self.pdata:
-            self.pdata = ParticleDataTool.PYTHIAParticleData()
-
-    def __ne__(self, other):
-        return self.__dict__ != other.__dict__
-
-    def __eq__(self, other):
-        return self.__dict__ == other.__dict__
-
-    def __hash__(self):
-        return hash('_'.join([
-            '{0}_{1}'.format(key, self.__dict__[key])
-            for key in sorted(self.__dict__.keys())
-        ]))
-
-    def __le__(self, other):
-        return self.ecm < other.ecm
-
-    def __ge__(self, other):
-        return self.ecm > other.ecm
-
-    def __repr__(self):
-        ostr = 'Event kinematics:\n'
-        ostr += '\tecm      : {0:10.5f}\n'.format(self.ecm)
-        ostr += '\tpcm      : {0:10.5f}\n'.format(self.pcm)
-        ostr += '\telab     : {0:10.5f}\n'.format(self.elab)
-        ostr += '\tplab     : {0:10.5f}\n'.format(self.plab)
-        ostr += '\tgamma_cm : {0:10.5f}\n'.format(self.gamma_cm)
-        ostr += '\tbgamm_cm : {0:10.5f}\n'.format(self.betagamma_cm)
-        ostr += '\tpdgid 1  : {0:10}\n'.format(self.p1pdg)
-        ostr += '\tnucprop 1: {0}/{1}\n'.format(self.A1, self.Z1)
-        ostr += '\tpdgid 2  : {0:10}\n'.format(self.p2pdg)
-        ostr += '\tnucprop 2: {0}/{1}\n'.format(self.A2, self.Z2)
-
-        return ostr
+from impy.util import info
 
 
-#===============================================================================
-# MCEvent
-#===============================================================================
-class MCEvent():
-    def __init__(self, event_config):
-        kin = event_config['event_kinematics']
-        # the classes which inherit from this base class have to define the following
-        # attributes
-        # self.p_ids - particle IDs accordng to PDG naming scheme
-        # self.px/py/pz/en
-        self.pt = np.sqrt(self.pt2)
-        self.p_tot = np.sqrt(self.pt2 + self.pz**2)
-        self.xf = 2. * self.pz / kin.ecm
-        self.fw = self.en / kin.pcm
-        if 'calc_xl' in event_config and event_config['calc_xl']:
-            self.xl = (kin.gamma_cm * self.en + \
-                        kin.betagamma_cm * self.pz) / \
-                        kin.elab
-        self.eta = np.log((self.p_tot + self.pz) / self.pt)
+class MCEvent(object):
+    """The basis of interaction between user and all the event generators.
 
-        self.y = 0.5 * np.log((self.en + self.pz) / (self.en - self.pz))
+    The derived classes are expected to interact with the particle stack
+    and derive the base variables from which everything else can be defined.
+
+    The class attribute __sliced_params__ lists the names to parameters
+    which are views on the fortran arrays, and that needs to be changed
+    when applying the filter functions.
+
+    Args:
+        lib (object)       : Reference to the FORTRAN library in use
+        event_kinematics   : Reference to current event kinematics object
+        event_frame (str)  : The frame in which the generator returned the variables
+        nevent (int)       : Number of current event
+        npart (int)        : Number of particles on the stack & length of px, py...
+        p_ids (np.array)   : particle ID according to PDG scheme
+        status (np.array)  : HEPEVT status flag 1=final state
+        px (np.array)      : x-momentum in GeV/c
+        py (np.array)      : y-momentum in GeV/c
+        pz (np.array)      : z-momentum in GeV/c
+        en (np.array)      : Energy in GeV
+        m (np.array)       : Mass in GeV
+        vx (np.array)      : x-vertex in fm, mm?
+        vy (np.array)      : y-vertex in fm, mm?
+        vz (np.array)      : z-vertex in fm, mm?
+        vt (np.array)      : temporal order of vertex in ps, fs?
+    """
+    __metaclass__ = ABCMeta
+    __sliced_params__ = [
+        'p_ids', 'status', 'px', 'py', 'pz', 'en', 'm', 'vx', 'vy', 'vz', 'vt'
+    ]
+
+    def __init__(self, lib, event_kinematics, event_frame, nevent, npart,
+                 p_ids, status, px, py, pz, en, m, vx, vy, vz, vt):
+        # Store the variables for further filtering/access
+        self.lib = lib
+        self.kin = event_kinematics
+        self.event_frame = event_frame
+
+        self.nevent = nevent
+        self.npart = npart
+        self.p_ids = p_ids
+        self.status = status
+        self.px = px
+        self.py = py
+        self.pz = pz
+        self.en = en
+        self.m = m
+        self.vx = vx
+        self.vy = vy
+        self.vz = vz
+        self.vt = vt
+
+        # Initialize current selection to all entries up to npart
+        self.selection = slice(None, self.npart)
+        self._apply_slicing()
+        # The default slice only cuts limits the view to the array to
+        # to the current number of entries
+        self._is_filtered = False
+
+        # TODO: Shall we do this below? Or do you 'insist' on the user
+        # calling the flters externally? I can see the design advantage
+        # but the docs have to be clear about this..
+
+        # if impy_config['event_scope'] == 'all':
+        #     pass
+        # elif impy_config['event_scope'] == 'stable':
+        #     self.filter_final_state()
+        # elif impy_config['event_scope'] == 'charged':
+        #     self.filter_final_state_charged()
+        # else:
+        #     raise Exception('Unknown event scope')
+
+        # Apply boosts into frame required by user
+        self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
+
+    def _apply_slicing(self):
+        """Slices/copies the all varaibles according to filter criteria"""
+        for var in self.__sliced_params__:
+            setattr(self, var, getattr(self, var)[self.selection])
+        self._is_filtered = True
+
+    @abstractmethod
+    def filter_final_state(self):
+        """After calling this method, the variables will only contain
+        "stable" final state particles.
+        """
+        pass
+
+    @abstractmethod
+    def filter_final_state_charged(self):
+        """After calling this method, the variables will only contain
+        "stable" and charged final state particles.
+        """
+        pass
+
+    @abstractproperty
+    def charge(self):
+        """Electrical charge"""
+        pass
+
+    @abstractmethod
+    def parents(self):
+        """Range of indices pointing to mother particles.
+
+        The range of children particles is given by two the two
+        indices of the 0th axis.
+
+        Note::
+            This property has to raise an exception of filtering
+            has been applied, otherwise the indices do not point to
+            the right positions on the particle stack.
+
+        Returns:
+            (array)     : [2, npart] array
+            
+        Raises:
+            (Exception) : if filtering has been applied.
+        """
+        pass
+
+    @abstractmethod
+    def children(self):
+        """Range of indices pointing to daughter particles.
+        
+        The range of children particles is given by two the two
+        indices of the 0th axis.
+
+        Note::
+            This property has to raise an exception of filtering
+            has been applied, otherwise the indices do not point to
+            the right positions on the particle stack.
+
+        Returns:
+            (array)     : [2, npart] array
+
+        Raises:
+            (Exception) : if filtering has been applied.
+        """
+        pass
+
+    @property
+    def pt(self):
+        """Transverse momentum in GeV/c"""
+        return np.sqrt(self.px**2 + self.py**2)
+
+    @property
+    def pt2(self):
+        """Transverse momentum squared in (GeV/c)**2"""
+        return self.px**2 + self.py**2
+
+    @property
+    def p_tot(self):
+        """Total momentum in GeV/c"""
+        return np.sqrt(self.pt2 + self.pz**2)
+
+    @property
+    def eta(self):
+        """Pseudo-rapidity"""
+        return np.log((self.p_tot + self.pz) / self.pt)
+
+    @property
+    def y(self):
+        """True rapidity"""
+        return 0.5 * np.log((self.en + self.pz) / (self.en - self.pz))
+
+    @property
+    def xf(self):
+        """Feynman x_F"""
+        return 2. * self.pz / self.kin.ecm
+
+    @property
+    def xlab(self):
+        """Energy fraction E/E_beam in lab. frame"""
+        kin = self.kin
+        if self.event_frame == 'laboratory':
+            return self.en / kin.elab
+        return (kin.gamma_cm * self.en + kin.betagamma_cm * self.pz) / kin.elab
+
+    @property
+    def fw(self):
+        """I don't remember what this was for..."""
+        return self.en / self.kin.pcm
 
 
 #=========================================================================
 # Settings
 #=========================================================================
 class Settings():
+    """Custom classes derived from this template allow to set certain low
+    level variables in the generators before or after initialization, or for
+    each event.
+
+    Note::
+
+        This is only relevant for model developers rather than end users.
+
+    """
+    __metaclass__ = ABCMeta
+
     def __init__(self, lib):
         self.lib = lib
-        self.override_projectile = None
+        # No idea what this was..
+        # self.override_projectile = None
 
-    def get_label(self):
+    @property
+    def label(self):
+        """String of the class name for logging."""
         return self.__class__.__name__
 
+    @abstractmethod
     def enable(self):
+        """Code, acting on the FORTRAN library :attr:`self.lib` that
+        activates some sort of setting."""
         pass
 
+    @abstractmethod
     def reset(self):
+        """Code, acting on the FORTRAN library :attr:`self.lib` that
+        removes the effect of the activation. 'Reset to default'"""
+        pass
+
+    @abstractmethod
+    def set_current_value(self, value):
+        """Define if you inted to vary some parameter in between
+        events."""
         pass
 
     def __eq__(self, other_instance):
@@ -230,235 +288,179 @@ class Settings():
 
 
 #=========================================================================
-# ScanSettings
-#=========================================================================
-class ScanSettings(Settings):
-    def set_current_value(self, value):
-        raise Exception(
-            "ScanSettings:set_current_value() in base class called.")
-
-
-#=========================================================================
 # MCRun
 #=========================================================================
 class MCRun():
-    def __init__(self, libref, label, n_events, DEBUG, event_class,
-                 event_config, event_kinematics, default_settings, settings):
-        self.lib = libref
-        self.label = label
-        self.n_events = n_events
-        self.triggers = {}
-        self.generator = None
-        self.version = None
-        self.debug = DEBUG
-        self.output_unit = -1
-        self.event_class = event_class
-        self.event_config = event_config
-        self.evkin = event_kinematics
-        self.class_name = self.__class__.__name__
+    __metaclass__ = ABCMeta
 
-        def_settings_class, def_settings_args = default_settings
-        if def_settings_class:
-            self.def_settings = def_settings_class(self.lib, def_settings_args)
+    def __init__(self, interaction_model_def, settings_dict=dict(), **kwargs):
+        import importlib
+
+        # Import library from library name
+        self.lib = importlib.import_module(interaction_model_def.library_name)
+
+        # Save definitions from namedtuple into attributes
+        self._event_class = interaction_model_def.EventClass
+        self._name = interaction_model_def.name
+        self._version = interaction_model_def.version
+        self._output_frame = interaction_model_def.output_frame
+        if 'label' not in kwargs:
+            self._label = self._name + " " + self._version
         else:
-            self.def_settings = Settings(self.lib)
+            self._label = kwargs['label']
 
-        settings_class, settings_args = settings
-        if settings_class:
-            self.settings = settings_class(self.lib, settings_args)
-            print self.class_name + "::__init__(): Attaching custom settings", \
-                  self.settings.get_label()
-        else:
-            self.settings = Settings(self.lib)
+        # Flag to control if initialization has been already executed
+        self._is_initialized = False
 
-        # Make sure that only charged particles are kept
-        if not self.event_config:
-            self.event_config = {'charged_only': True}
-        if 'charged_only' not in self.event_config:
-            self.event_config['charged_only'] = True
+        # Not yet clear how to handle these
+        self.setting_dict = settings_dict
 
-        self.nondef_stable = None
-        if 'stable' in self.event_config.keys():
-            self.nondef_stable = np.sum(
-                np.abs(np.array(self.event_config['stable'])))
-        self.event_config['event_kinematics'] = self.evkin
+        # FORTRAN LUN that keeps logfile handle
+        self.output_lun = None
 
-    def get_model_label(self):
-        return self.label
+    def __enter__(self):
+        """TEMP: It would be good to actually use the with construct to
+        open and close logfiles on init."""
+        self.attach_log()
+        return self
 
-    def attach_log(self, log_fname):
+    def __exit__(self, exc_type, exc_value, traceback):
+        """This needs to be tested in more complex scenarios..."""
+        self.close_fortran_logfile()
+
+    @property
+    def label(self):
+        """Name + version or custom via keyword arg"""
+        return self._label
+
+    @property
+    def output_frame(self):
+        """Default frame of the output particle stack."""
+        return self._output_frame
+
+    @property
+    def name(self):
+        """Event generator name"""
+        return self._name
+
+    @property
+    def version(self):
+        """Event generator version"""
+        return self._version
+
+    @abstractmethod
+    def init_generator(self):
         pass
 
-    def deattach_log(self):
-        pass
-
+    @abstractmethod
     def generate_event(self):
-        raise Exception(self.class_name + '::generate_event():' +
-                        'Base function called!')
+        """The method to generate a new event.
 
-    def trigger_event(self, event):
-        return [
-            trigger for trigger in self.triggers.itervalues()
-            if trigger.trigger_event(event)
-        ]
+        Returns:
+            (int) : Rejection flag = 0 if everything is ok.
+        """
+        pass
 
-    def _init_progress_bar(self, maxval=None):
-        if maxval == None:
-            maxval = self.n_events + 1
-        try:
-            from progressbar import ProgressBar, Percentage, Bar, ETA
-        except ImportError:
-            print "Failed to import 'progressbar' -- disabling progress indicator."
-            print "Install the module with 'easy_install progressbar', or",
-            print "get it from http://qubit.ic.unicamp.br/~nilton"
-            raise Exception("It's easy do do this...")
-        self.progressBar = ProgressBar(
-            maxval=maxval, widgets=[Percentage(), ' ', Bar(), ' ', ETA()])
+    @abstractmethod
+    def set_event_kinematics(self, evtkin):
+        """Set new combination of energy, momentum, projectile
+        and target combination for next event.
 
-    def start(self):
-        print "running start()"
-        # Look for a definition of energy sweep the event kinematics object
-        if self.evkin.e_range:
-            self.start_variable()
+        Either, this method defines some derived variables
+        that generate_event() can use to generate new events
+        without additional arguments, or, it can also set
+        internal variables of the model. In both cases the
+        important thing is that generate_event remains argument-free.
+        """
+        pass
+
+    @abstractmethod
+    def set_stable(self, pdgid):
+        """Prevent decay of unstable particles"""
+        pass
+
+    @abstractmethod
+    def sigma_inel(self):
+        """Inelastic cross section according to current
+        event setup (energy, projectile, target)"""
+        pass
+
+    @abstractmethod
+    def attach_log(self):
+        """Routes the output to a file or the stdout."""
+        pass
+
+    def _abort_if_already_initialized(self):
+        """The first initialization should not be run more than
+        once. This method should be called in the beginning of each
+        init_generator() implementation.
+        """
+
+        assert not self._is_initialized
+        self._is_initialized = True
+
+    def _attach_fortran_logfile(self, fname):
+        """Chooses a random LUN between 20 - 100 and returns a FORTRAN
+        file handle (LUN number) to an open file."""
+        from os import path
+        from random import randint
+
+        if path.isfile(fname):
+            raise Exception('Attempts to overwrite log :' + fname)
+        elif self.output_lun is not None:
+            raise Exception('Log already attached to LUN', self.output_lun)
+
+        path.abspath(fname)
+        # Create a random fortran output unit
+        self.output_lun = randint(20, 100)
+        self.lib.impy_openlogfile(path.abspath(fname), self.output_lun)
+        return self.output_lun
+
+    def close_fortran_logfile(self):
+        """FORTRAN LUN has to be released when finished to flush buffers."""
+        if self.output_lun is None:
+            info(2, 'Output went not to file.')
         else:
-            # Start fixed energy run
-            self.start_fixed()
+            self.lib.impy_closelogfile(self.output_lun)
+            self.output_lun = None
 
-    def start_fixed(self):
-        print "running start_fixed()"
-        if not len(self.triggers):
-            raise Exception('No trigger defined in ' + self.class_name + "!")
+    def _define_default_fs_particles(self):
+        """Defines particles as stable for the default 'tau_stable'
+        value in the config."""
+        info(5, 'Setting default particles stable with lifetime <',
+             impy_config['tau_stable'], 'ps')
 
-        print self.class_name + \
-        "::start_fixed(): starting generation of", self.n_events, "events"
-        print self.evkin
-        self.settings.enable()
+        for pdgid in make_stable_list(impy_config['tau_stable'], pdata):
+            self.set_stable(pdgid)
 
-        self._init_progress_bar()
-        self.progressBar.start()
+        if impy_config['pi0_stable']:
+            self.set_stable(111)
 
-        rej_counter = 0
-        for i in xrange(self.n_events):  # @UnusedVariable
-            reject = self.generate_event()
-            self.progressBar.update(self.progressBar.currval + 1)
-            if reject:
-                rej_counter += 1
+    def event_generator(self, event_kinematics, nevents):
+        """This is some kind of equivalent to Hans'
+        generator concept.
+
+        I don't see a good reason to define them as module
+        level functions. Due to this fortran library and double
+        initialization issue something has to keep track of ownership
+        and history. And classes seem to just this.
+        """
+        self.set_event_kinematics(event_kinematics)
+        retry_on_rejection = impy_config['retry_on_rejection']
+        # Initialize counters to prevent infinite loops in rejections
+        ntrials = 0
+        nremaining = nevents
+        while nremaining > 0:
+            if self.generate_event() == 0:
+                yield self._event_class(self.lib, self._curr_event_kin,
+                                        self._output_frame)
+                nremaining -= 1
+                ntrials += 1
+            elif retry_on_rejection:
+                info(10, 'Rejection occured. Retrying..')
+                ntrials += 1
                 continue
-
-            event = self.event_class(self.lib, self.event_config)
-            fired_triggers = self.trigger_event(event)
-            if not fired_triggers:
-                continue
-
-            active_histograms = [
-                hist
-                for trigger in fired_triggers
-                for hist in trigger.histogram_list.values()
-            ]
-            [hist.fill_event(event) for hist in active_histograms]
-
-        # Finalize run
-        sigmax = self.get_sigma_inel()
-        sigma_gen = sigmax * (float(self.n_events - rej_counter)) / \
-            float(self.n_events)
-
-        for trigger in self.triggers.itervalues():
-            for hist in trigger.histogram_list.itervalues():
-                hist.finalize_run(sigma_gen)
-
-        self.progressBar.finish()
-        self.settings.reset()
-        try:
-            self.lib.pho_event(-2, self.p1, self.p2)[1]
-        except:
-            pass
-        print(r"...completed {0:3.2f}\% of the events have been rejected."
-              ).format(100. * float(rej_counter) / float(self.n_events))
-
-        try:
-            self.log_man.close_log()
-        except AttributeError:
-            print 'No logging facility defined.'
-
-    def single_event(self):
-        #        print "single_event()"
-        if not len(self.triggers):
-            raise Exception('No trigger defined in ' + self.class_name + "!")
-
-#        print self.evkin
-
-#        self.settings.enable()
-
-        self.generate_event()
-        event = self.event_class(self.lib, self.event_config)
-
-        fired_triggers = self.trigger_event(event)
-        if not fired_triggers:
-            return
-
-        active_histograms = [
-            hist
-            for trigger in fired_triggers
-            for hist in trigger.histogram_list.values()
-        ]
-        [hist.fill_event(event) for hist in active_histograms]
-
-        # Finalize run
-
-    #        sigmax = self.get_sigma_inel()
-    #        print sigmax
-
-    def start_variable(self):
-        if not len(self.triggers):
-            raise Exception('No trigger defined in ' + self.class_name + "!")
-
-        print self.class_name + \
-        "::start_variable(): starting generation of", self.n_events, "events"
-        print self.evkin
-
-        self.settings.enable()
-
-        maxval = self.n_events * len(self.evkin.e_range)
-        self._init_progress_bar(maxval)
-        self.progressBar.start()
-        for evkin in self.evkin.e_range:
-            self.set_event_kinematics(evkin)
-            rej_counter = 0
-            for i in xrange(self.n_events):  # @UnusedVariable
-                reject = self.generate_event()
-                self.progressBar.update(self.progressBar.currval + 1)
-                if reject:
-                    rej_counter += 1
-                    continue
-
-                event = self.event_class(self.lib, self.event_config)
-                fired_triggers = self.trigger_event(event)
-
-                if not fired_triggers:
-                    continue
-
-                active_histograms = [
-                    hist
-                    for trigger in fired_triggers
-                    for hist in trigger.histogram_list.values()
-                ]
-                [
-                    hist.fill_event(event, evkin.ecm)
-                    for hist in active_histograms
-                ]
-
-            # Finalize run
-            sigmax = self.get_sigma_inel()
-            sigma_gen = sigmax * (float(self.n_events - rej_counter)) / \
-                float(self.n_events)
-
-            for trigger in self.triggers.itervalues():
-                for hist in trigger.histogram_list.itervalues():
-                    hist.finalize_run(sigma_gen, evkin.ecm)
-            print "...completed. " + str(100 * float(rej_counter) / float(self.n_events)) + \
-                  "% of the events have been rejected."
-
-        self.progressBar.finish()
-        self.settings.reset()
-        self.log_man.close_log()
-        del self.lib
+            elif ntrials > 2 * nevents:
+                raise Exception('Things run bad. Check your input.')
+            else:
+                info(0, 'Rejection occured')

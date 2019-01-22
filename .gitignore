@@ -1,3 +1,4 @@
+*.dSYM
 **.o
 **.so
 **.pyf
@@ -7,3 +8,7 @@ iamdata
 fort.7
 output_urtest.txt
 tables.dat
+impy_pdata_cache.cch
+*.f2l
+.vscode/*
+src/dpmjet3.0-6/dpm3usr

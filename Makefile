@@ -13,7 +13,7 @@ RND = $(CURDIR)/src/rangen.o
 LEXT = so
 
 # For f2py
-LOGF = pho_openlogfile pho_closelogfile
+LOGF = impy_openlogfile impy_closelogfile
 
 #######################################################################
 #
@@ -48,9 +48,8 @@ ifeq ($(CVendor),"GNU")
 	else
 		# GNU Release
 		#OPT = -O0 -fPIC
-		OPT = -ftree-vectorize -O3 -Wno-uninitialized -fPIC
-		OPTF90 = -ftree-vectorize -O3 -Wno-uninitialized -fPIC \
-			 -fno-second-underscore
+		OPT = -O3 -Wno-uninitialized -fPIC
+		OPTF90 = -O3 -Wno-uninitialized -fPIC -fno-second-underscore
 	endif
 else
 	ifeq ($(Config),"Debug")
