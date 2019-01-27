@@ -8,6 +8,7 @@ import numpy as np
 from impy.common import MCRun, MCEvent, impy_config
 from impy.util import standard_particles, info
 
+
 class SibyllEvent(MCEvent):
     """Wrapper class around SIBYLL 2.1 & 2.3 particle stack."""
     # Workaround for no data on vertext positions in SIBYLL
@@ -23,7 +24,7 @@ class SibyllEvent(MCEvent):
         # Save selector for implementation of on-demand properties
         px, py, pz, en, m = lib.s_plist.p.T
         if self._no_vertex_data is None:
-           self. _no_vertex_data = np.zeros((4,lib.s_plist.p.shape[0]))
+            self._no_vertex_data = np.zeros((4, lib.s_plist.p.shape[0]))
         vx, vy, vz, vt = self._no_vertex_data
 
         MCEvent.__init__(
@@ -53,8 +54,8 @@ class SibyllEvent(MCEvent):
     def filter_final_state_charged(self):
         stable = np.nonzero(
             np.abs(self.lib.s_plist.llist[:self.npart]) < 10000)[0]
-        self.selection = stable[self.lib.s_chp.ichp[np.abs(
-            self.lib.s_plist.llist[stable]) - 1] != 0]
+        self.selection = stable[self.lib.s_chp.ichp[
+            np.abs(self.lib.s_plist.llist[stable]) - 1] != 0]
         self._apply_slicing()
 
     @property
@@ -155,7 +156,7 @@ class SIBYLLRun(MCRun):
 
         self._define_default_fs_particles()
 
-    def set_stable(self, pdgid):
+    def set_stable(self, pdgid, stable=True):
         sid = abs(self.lib.isib_pdg2pid(pdgid))
         if abs(pdgid) == 311:
             info(1, 'Ignores K0. Use K0L/S 130/310 in final state definition.')
@@ -163,9 +164,14 @@ class SIBYLLRun(MCRun):
         idb = self.lib.s_csydec.idb
         if sid == 0 or sid > idb.size - 1:
             return
-        info(5, 'defining as stable particle', 'pdgid/sid = {0}/{1}'.format(
-            pdgid, sid))
-        idb[sid - 1] = -np.abs(idb[sid - 1])
+        if stable:
+            info(
+                5, 'defining as stable particle pdgid/sid = {0}/{1}'.format(
+                    pdgid, sid))
+            idb[sid - 1] = -np.abs(idb[sid - 1])
+        else:
+            info(5, 'pdgid/sid = {0}/{1} allowed to decay'.format(pdgid, sid))
+            idb[sid - 1] = np.abs(idb[sid - 1])
 
     def generate_event(self):
         self.lib.sibyll(self._sibproj, self._iatarg, self._ecm)

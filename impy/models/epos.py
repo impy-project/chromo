@@ -128,10 +128,14 @@ class EPOSRun(MCRun):
 
         self.lib.charge_vect = np.vectorize(self.lib.getcharge)
 
-    def set_stable(self, pdgid):
-        self.lib.setstable(pdgid)
-        info(5, 'defining', pdgid, 'as stable particle')
-
+    def set_stable(self, pdgid, stable=True):
+        if stable:
+            self.lib.setstable(pdgid)
+            info(5, 'defining', pdgid, 'as stable particle')
+        else:
+            self.lib.setunstable(pdgid)
+            info(5, pdgid, 'allowed to decay')
+            
     def generate_event(self):
         self.lib.aepos(-1)
         self.lib.afinal()

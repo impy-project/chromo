@@ -375,8 +375,13 @@ class MCRun():
         pass
 
     @abstractmethod
-    def set_stable(self, pdgid):
-        """Prevent decay of unstable particles"""
+    def set_stable(self, pdgid, stable=True):
+        """Prevent decay of unstable particles
+        
+        Args:
+            pdgid (int)        : PDG ID of the particle
+            stable (bool)      : If `False`, particle is allowed to decay
+        """
         pass
 
     @abstractmethod
@@ -428,7 +433,7 @@ class MCRun():
         """Defines particles as stable for the default 'tau_stable'
         value in the config."""
         info(5, 'Setting default particles stable with lifetime <',
-             impy_config['tau_stable'], 'ps')
+             impy_config['tau_stable'], 's')
 
         for pdgid in make_stable_list(impy_config['tau_stable'], pdata):
             self.set_stable(pdgid)

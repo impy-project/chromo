@@ -149,7 +149,7 @@ class DpmjetIIIRun(MCRun):
 
     def init_generator(self, event_kinematics):
         from impy.util import clear_and_set_fortran_chars
-
+        from impy.constants import c
         self._abort_if_already_initialized()
 
         # Comprise DPMJET input from the event kinematics object
@@ -200,13 +200,25 @@ class DpmjetIIIRun(MCRun):
         #     self.def_settings.enable()
 
         self._define_default_fs_particles()
+        # Prevent DPMJET from overwriting decay settings
+        self.lib.dtfrpa.ovwtdc = False
+        # Set PYTHIA decay flags to follow all changes to MDCY
+        self.lib.pydat1.mstj[21 -1] = 1
+        self.lib.pydat1.mstj[22 -1] = 2
+        # Set ctau threshold in PYTHIA for the default stable list
+        self.lib.pydat1.parj[70] = impy_config['tau_stable']*c*1e-3 #mm
 
-    def set_stable(self, pdgid):
+    def set_stable(self, pdgid, stable=True):
         if abs(pdgid) == 2212:
             return
         kc = self.lib.pycomp(pdgid)
-        self.lib.pydat3.mdcy[kc - 1, 0] = 0
-        info(5, 'defining', pdgid, 'as stable particle')
+        if stable:
+            print 'before stable',pdgid,self.lib.pydat3.mdcy[kc - 1, 0]
+            self.lib.pydat3.mdcy[kc - 1, 0] = 0
+            info(5, 'defining', pdgid, 'as stable particle')
+        else:
+            self.lib.pydat3.mdcy[kc - 1, 0] = 1
+            info(5, 'forcing decay of', pdgid)
 
     def generate_event(self):
         reject = self.lib.dt_kkinc(*self._dpmjet_tup(), kkmat=-1)

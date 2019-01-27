@@ -125,6 +125,25 @@ c-----------------------------------------------------------------------
 
       End
 
+      subroutine SetUnstable(idpdg)
+c-----------------------------------------------------------------------
+c Sets particles as stable
+c-----------------------------------------------------------------------
+
+      include "epos.inc"
+      
+      newcount = 1
+      do i = 1, nrnody
+C        print *, 'i=',i, idtrafo("nxs","pdg", nody(i))
+        if (abs(idtrafo("nxs","pdg", nody(i))).ne.abs(idpdg)) then
+          nody(newcount) = nody(i)
+          newcount = newcount + 1
+        end if
+      end do
+      nrnody = newcount
+
+      End
+
       real function GetCharge(idpdg)
 c-----------------------------------------------------------------------
 c Returns charge for partile with PDG ID

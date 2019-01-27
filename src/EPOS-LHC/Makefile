@@ -10,7 +10,7 @@ EPOS_OBJS := $(EPOS_SRCS:.f=.o)
 EX_OBJS := $(filter-out sources/epos_interface.o, $(EPOS_OBJS))
 EPOS_FUNC = aaset ainit aepos afinal hepmcstore \
 			getcharge idtrafo initializeepos initeposevt \
-			setstable xsection $(LOGF)
+			setstable setunstable xsection $(LOGF)
 
 all: install
 
