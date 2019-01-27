@@ -26,6 +26,7 @@ import numpy as np
 from impy.common import pdata, impy_config
 from impy.util import info
 
+
 class CompositeTarget(object):
     """Definition of composite targets made of multiple (atomic) nuclei.
 
@@ -221,17 +222,34 @@ class EventKinematics(object):
         # compute center-of-mass variables
         s = self.ecm**2
         self.s = s
-        self.pcm = np.sqrt(s**2 - 2 * (s * (pmass1 + pmass2) + pmass1 * pmass2)
-                           + pmass1**2 + pmass2**2) / (2 * self.ecm)
+        self.pcm = np.sqrt(s**2 - 2 * (s *
+                                       (pmass1 + pmass2) + pmass1 * pmass2) +
+                           pmass1**2 + pmass2**2) / (2 * self.ecm)
         self.gamma_cm = (self.elab + pmass2) / self.ecm
         self.betagamma_z_cm = self.plab / self.ecm
 
         self.boost_def = {
-            ("center-of-mass", "laboratory") : self.boost_cms_to_lab,
-            ("laboratory", "center-of-mass") : self.boost_lab_to_cms
+            ("center-of-mass", "laboratory"): self.boost_cms_to_lab,
+            ("laboratory", "center-of-mass"): self.boost_lab_to_cms
         }
 
         # self.e_range = []
+        
+    @property
+    def beam_as_4vec():
+        p1, p2 = np.array(
+            np.zeros(4), dtype='d'), np.array(
+                np.zeros(4), dtype='d')
+        p1[0] = 0.0
+        p1[1] = 0.0
+        p1[2] = self.pcm
+        p1[3] = self.ecm / 2.
+        p2[0] = 0.0
+        p2[1] = 0.0
+        p2[2] = -self.pcm
+        p2[3] = self.ecm / 2.
+
+        return p1, p2
 
     def _e2p(self, E, m):
         return np.sqrt((E + m) * (E - m))
@@ -239,12 +257,12 @@ class EventKinematics(object):
     def __getstate__(self):
         _ = self.__dict__.pop('boost_def')
         return self.__dict__
-    
+
     def __setstate__(self, state):
         self.__dict__ = state
         self.boost_def = {
-            ("center-of-mass", "laboratory") : self.boost_cms_to_lab,
-            ("laboratory", "center-of-mass") : self.boost_lab_to_cms
+            ("center-of-mass", "laboratory"): self.boost_cms_to_lab,
+            ("laboratory", "center-of-mass"): self.boost_lab_to_cms
         }
 
     def __ne__(self, other):
@@ -253,7 +271,7 @@ class EventKinematics(object):
                 continue
             if value != self.__dict__[key]:
                 return True
-            
+
         return False
 
     def __eq__(self, other):
@@ -288,7 +306,7 @@ class EventKinematics(object):
 
     def apply_boost(self, event, gen_frame, user_frame):
         if (gen_frame, user_frame) not in self.boost_def:
-            info(20, 'FS boost not applicable',gen_frame, '->', user_frame)
+            info(20, 'FS boost not applicable', gen_frame, '->', user_frame)
             return
         info(20, 'Boosting FS', gen_frame, '->', user_frame)
         self.boost_def[(gen_frame, user_frame)](event)

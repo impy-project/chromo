@@ -37,7 +37,9 @@ class DpmjetIIIEvent(MCEvent):
             vx=vx,
             vy=vy,
             vz=vz,
-            vt=vt)
+            vt=vt,
+            pem_arr=evt.phkk,
+            vt_arr=evt.vhkk)
 
     def filter_final_state(self):
         self.selection = np.where(self.status == 1)
@@ -50,10 +52,16 @@ class DpmjetIIIEvent(MCEvent):
     
     @property
     def parents(self):
+        if self._is_filtered:
+            raise Exception('Parent indices do not point to the' +
+            ' proper particles if any slicing/filtering is applied.')
         return self.lib.dtevt1.jmohkk
     
     @property
     def children(self):
+        if self._is_filtered:
+            raise Exception('Parent indices do not point to the' +
+            ' proper particles if any slicing/filtering is applied.')
         return self.lib.dtevt1.jdahkk
 
     @property
@@ -146,6 +154,7 @@ class DpmjetIIIRun(MCRun):
                 'Unknown DPMJET version, IO common block not detected.')
 
         self.lib.pydat1.mstu[10] = lun
+        
 
     def init_generator(self, event_kinematics):
         from impy.util import clear_and_set_fortran_chars
@@ -184,8 +193,6 @@ class DpmjetIIIRun(MCRun):
 
         self.lib.dt_init(
             -1, dpm_conf['e_max'], k.A1, k.Z1, k.A2, k.Z2, k.p1pdg, iglau=0)
-        # Put protection to not run this stuff again
-        self.lib.init = True
 
         if impy_config['user_frame'] == 'center-of-mass':
             self.lib.dtflg1.iframe = 2

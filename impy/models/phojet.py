@@ -4,44 +4,55 @@ Created on 15.05.2012
 @author: afedynitch
 '''
 import numpy as np
-from impy.common import MCRun, MCEvent
+from impy.common import MCRun, MCEvent, impy_config, pdata
+from impy.util import standard_particles, info
 
 
 class PhojetEvent(MCEvent):
     """Wrapper class around (pure) PHOJET particle stack."""
 
-    def __init__(self, lib, event_config):
-
-        # The stack common block
+    def __init__(self, lib, event_kinematics, event_frame):
+        # HEPEVT (style) common block
         evt = lib.poevt1
-        # Number of entries on stack
-        npart = evt.nhep
-        # Filter stack for charged particles if selected
-        if event_config['charged_only']:
-            sel = np.where((evt.isthep[:npart] == 1) & \
-                (np.abs(lib.poevt2.icolor[0, :npart]) == 3))
-        else:
-            sel = np.where(evt.isthep[:npart] == 1)
 
         # Save selector for implementation of on-demand properties
-        self.sel = sel
+        px, py, pz, en, m = evt.phep
+        vx, vy, vz, vt = evt.vhep
 
         MCEvent.__init__(
             self,
-            event_config,
-            lib,
-            px=evt.phep[0, sel][0],
-            py=evt.phep[1, sel][0],
-            pz=evt.phep[2, sel][0],
-            en=evt.phep[3, sel][0],
-            p_ids=evt.idhep[sel],
-            npart=npart)
+            lib=lib,
+            event_kinematics=event_kinematics,
+            event_frame=event_frame,
+            nevent=evt.nevhep,
+            npart=evt.nhep,
+            p_ids=evt.idhep,
+            status=evt.isthep,
+            px=px,
+            py=py,
+            pz=pz,
+            en=en,
+            m=m,
+            vx=vx,
+            vy=vy,
+            vz=vz,
+            vt=vt,
+            pem_arr=evt.phep,
+            vt_arr=evt.vhep)
+
+    def filter_final_state(self):
+        self.selection = np.where(self.status == 1)
+        self._apply_slicing()
+
+    def filter_final_state_charged(self):
+        self.selection = np.where((self.status == 1) & (self.charge != 0))
+        self._apply_slicing()
 
     @property
     def charge(self):
-        return self.lib.poevt2.icolor[0, self.sel[0]] / 3
+        return self.lib.poevt2.icolor[0, self.selection] / 3
 
-    def gen_cut_info(self):
+    def _gen_cut_info(self):
         """Init variables tracking the number of soft and hard cuts"""
 
         self._mpi = self.lib.podebg.kspom + self.lib.podebg.khpom
@@ -54,7 +65,7 @@ class PhojetEvent(MCEvent):
     def mpi(self):
         """Total number of cuts"""
         if not hasattr(self, 'mpi'):
-            self.gen_cut_info()
+            self._gen_cut_info()
             return self._mpi
         return self._mpi
 
@@ -62,7 +73,7 @@ class PhojetEvent(MCEvent):
     def kspom(self):
         """Total number of soft cuts"""
         if not hasattr(self, 'kspom'):
-            self.gen_cut_info()
+            self._gen_cut_info()
             return self._kspom
         return self._kspom
 
@@ -70,7 +81,7 @@ class PhojetEvent(MCEvent):
     def khpom(self):
         """Total number of hard cuts"""
         if not hasattr(self, 'khpom'):
-            self.gen_cut_info()
+            self._gen_cut_info()
             return self._khpom
         return self._khpom
 
@@ -78,7 +89,7 @@ class PhojetEvent(MCEvent):
     def ksoft(self):
         """Total number of realized soft cuts"""
         if not hasattr(self, 'ksoft'):
-            self.gen_cut_info()
+            self._gen_cut_info()
             return self._ksoft
         return self._ksoft
 
@@ -86,26 +97,33 @@ class PhojetEvent(MCEvent):
     def khard(self):
         """Total number of realized hard cuts"""
         if not hasattr(self, 'khard'):
-            self.gen_cut_info()
+            self._gen_cut_info()
             return self._khard
         return self._khard
 
     @property
-    def mother(self):
-        """The mother particle IDs.
-
-        Mother particles are those with either decay or
-        hadronize to the final state particle.
-        """
-        return self.lib.poevt1.jmohep[0, self.sel]
+    def parents(self):
+        if self._is_filtered:
+            raise Exception(
+                'Parent indices do not point to the' +
+                ' proper particles if any slicing/filtering is applied.')
+        return self.lib.poevt1.jmohep
 
     @property
-    def all_p_ids(self):
-        """Unfiltered access to all particle IDs.
+    def children(self):
+        if self._is_filtered:
+            raise Exception(
+                'Parent indices do not point to the' +
+                ' proper particles if any slicing/filtering is applied.')
+        return self.lib.poevt1.jdahep
 
-        Those include the initial state, quarks, gluons, FSR, ISR, etc.
-        """
-        return self.lib.poevt1.idhep[:self.npart]
+    # @property
+    # def all_p_ids(self):
+    #     """Unfiltered access to all particle IDs.
+
+    #     Those include the initial state, quarks, gluons, FSR, ISR, etc.
+    #     """
+    #     return self.lib.poevt1.idhep[:self.npart]
 
     def elastic_t(self):
         """Squared momentum transfer t for elastic interaction.
@@ -115,92 +133,94 @@ class PhojetEvent(MCEvent):
         the final 2. Handle with care!!
         """
         return np.sum(
-            np.square(
-                self.lib.poevt1.phep[0:4, 0] - self.lib.poevt1.phep[0:4, 5]))
+            np.square(self.lib.poevt1.phep[0:4, 0] -
+                      self.lib.poevt1.phep[0:4, 5]))
 
 
 class PHOJETRun(MCRun):
-    def __init__(self, libref, **kwargs):
-
-        if not kwargs["event_class"]:
-            kwargs["event_class"] = PhojetEvent
-
-        MCRun.__init__(self, libref, **kwargs)
-
-        self.generator = "PHOJET"
-        self.version = "1.12-35"
-        self.sigmax = 0.0
-        # The threshold defines the log(E) distance between the initialization
-        # energy and current energy.
-
     def get_sigma_inel(self):
-        print "PHOJET workaround for cross-section"
-        self.lib.pho_event(1, self.p1, self.p2)[1]
+        """Inelastic cross section according to current
+        event setup (energy, projectile, target)"""
+
+        info(3, "PHOJET workaround for cross-section",
+             "(need to generate dummy event)")
+        self.lib.pho_event(1, self._curr_event_kin.p1pdg,
+                           self._curr_event_kin.p2pdg)
         return self.lib.powght.siggen[3]
 
-    def set_stable(self, pdgid):
+    def set_stable(self, pdgid, stable=True):
         if abs(pdgid) == 2212:
             return
         kc = self.lib.pycomp(pdgid)
-        self.lib.pydat3.mdcy[kc - 1, 0] = 0
-        info(5, 'defining', pdgid, 'as stable particle')
+        if stable:
+            print 'before stable', pdgid, self.lib.pydat3.mdcy[kc - 1, 0]
+            self.lib.pydat3.mdcy[kc - 1, 0] = 0
+            info(5, 'defining', pdgid, 'as stable particle')
+        else:
+            self.lib.pydat3.mdcy[kc - 1, 0] = 1
+            info(5, 'forcing decay of', pdgid)
 
     def set_event_kinematics(self, event_kinematics):
+        """Set new combination of energy, momentum, projectile
+        and target combination for next event."""
+        info(5, 'Setting event kinematics')
+        self._curr_event_kin = event_kinematics
+
         k = event_kinematics
-        self.event_config['event_kinematics'] = k
-        self.p1_type, self.p2_type, self.ecm, self.pcm = \
-                            k.p1pdg, k.p2pdg, k.ecm, k.pcm
-        if self.def_settings.override_projectile != None:
-            print 'Overriding projectile', self.p1_type, self.def_settings.override_projectile
-            self.lib.pho_setpar(1, self.def_settings.override_projectile, 0,
-                                0.0)
+        # self.p1_type, self.p2_type, self.ecm, self.pcm = \
+        #                     k.p1pdg, k.p2pdg, k.ecm, k.pcm
+
+        # TODO: Some functionality was around to "override projectile"?!
+        # if self.def_settings.override_projectile != None:
+        #     print 'Overriding projectile', self.p1_type, self.def_settings.override_projectile
+        #     self.lib.pho_setpar(1, self.def_settings.override_projectile, 0,
+        #                         0.0)
+        # else:
+
+        self.lib.pho_setpar(1, k.p1pdg, 0, 0.0)
+        self.lib.pho_setpar(2, k.p2pdg, 0, 0.0)
+        self.p1, self.p2 = k.beam_as_4vec()
+
+    def attach_log(self):
+        """Routes the output to a file or the stdout."""
+        fname = impy_config['output_log']
+        if fname == 'stdout':
+            lun = 6
+            info(5, 'Output is routed to stdout.')
         else:
-            self.lib.pho_setpar(1, self.p1_type, 0, 0.0)
-        self.lib.pho_setpar(2, self.p2_type, 0, 0.0)
-        p1, p2 = np.array(
-            np.zeros(4), dtype='d'), np.array(
-                np.zeros(4), dtype='d')
-        p1[0] = 0.0
-        p1[1] = 0.0
-        p1[2] = k.pcm
-        p1[3] = k.ecm / 2.
-        p2[0] = 0.0
-        p2[1] = 0.0
-        p2[2] = -k.pcm
-        p2[3] = k.ecm / 2.
+            lun = self._attach_fortran_logfile(fname)
+            info(5, 'Output is routed to', fname, 'via LUN', lun)
 
-        self.p1, self.p2 = p1, p2
+        if hasattr(self.lib, 'dtflka'):
+            self.lib.dtflka.lout = lun
+            self.lib.dtflka.lpri = 50
+        elif hasattr(self.lib, 'dtiont'):
+            self.lib.dtiont.lout = lun
+        else:
+            raise Exception(
+                'Unknown PHOJET (DPMJET) version, IO common block not detected.'
+            )
 
-    def init_generator(self, config):
-        self.set_event_kinematics(self.evkin)
-        try:
-            from MCVD.management import LogManager
-            # initialize log manager
-            self.log_man = LogManager(config, self)
-            if self.nondef_stable != None:
-                self.log_man.create_log(
-                    self.p1_type,
-                    self.p2_type,
-                    self.ecm,
-                    suffix=self.nondef_stable)
-            else:
-                self.log_man.create_log(self.p1_type, self.p2_type, self.ecm)
+        self.lib.pydat1.mstu[10] = lun
 
-            rejection = self.lib.pho_init(
-                -2 if self.lib.__name__.find('dpmjetIII') != -1 else -1, 66)
-            self.lib.pydat1.mstu[10] = 66
-            # initialize PHOJET
-        except ImportError:
-            print self.class_name + "::init_generator(): Running outside of MCVD,", \
-                "the log will be printed to STDOUT."
-            rejection = self.lib.pho_init(-1, 6)
-            self.lib.pydat1.mstu[10] = 6
-        except (TypeError, AttributeError):
-            rejection = self.lib.pho_init(-1)
+        return lun
 
-        if rejection:
-            raise Exception(self.class_name + "::init_generator():" +
-                            "PHOJET rejected the initialization!")
+    def init_generator(self, event_kinematics):
+        from impy.constants import c
+
+        # Protection against multiple runs
+        self._abort_if_already_initialized()
+
+        # Define where output will go
+        lun = self.attach_log()
+
+        # Detect what kind of PHOJET interface is attached. If PHOJET
+        # is run through DPMJET, initial init needs -2 else -1
+        init_flag = -2 if 'dpmjetIII' in self.lib.__name__ else -1
+
+        #Initialize PHOJET's parameters
+        if self.lib.pho_init(init_flag, lun):
+            raise Exception('PHOJET unable to initialize or set LUN')
 
         process_switch = self.lib.poprcs.ipron
         # non-diffractive elastic scattering (1 - on, 0 - off)
@@ -220,26 +240,28 @@ class PHOJETRun(MCRun):
         # direct photon interaction (for incoming photons only)
         process_switch[7, 0] = 1
 
-        self.set_event_kinematics(self.evkin)
+        self.set_event_kinematics(event_kinematics)
 
-        rejection = self.lib.pho_event(-1, self.p1, self.p2)[1]
+        if self.lib.pho_event(-1, self._curr_event_kin.p1,
+                              self._curr_event_kin.p2)[1]:
 
-        if rejection:
-            raise Exception(self.class_name + "::init_generator():" +
-                            "PHOJET rejected the event initialization!")
+            print self._curr_event_kin
+            raise Exception('PHOJET failed to initialize with for the',
+                            'given event kinematics')
 
-        if self.def_settings:
-            print self.class_name + \
-                "::init_generator(): Using default settings:", \
-                self.def_settings.__class__.__name__
-            self.def_settings.enable()
+        # if self.def_settings:
+        #     print self.class_name + \
+        #         "::init_generator(): Using default settings:", \
+        #         self.def_settings.__class__.__name__
+        #     self.def_settings.enable()
 
-        # Set pi0 stable
-        self.set_stable(111)
-
-        if 'stable' in self.event_config:
-            for pdgid in self.event_config['stable']:
-                self.set_stable(pdgid)
+        self._define_default_fs_particles()
+        # Set PYTHIA decay flags to follow all changes to MDCY
+        self.lib.pydat1.mstj[21 - 1] = 1
+        self.lib.pydat1.mstj[22 - 1] = 2
+        # Set ctau threshold in PYTHIA for the default stable list
+        self.lib.pydat1.parj[70] = impy_config['tau_stable'] * c * 1e-3  #mm
 
     def generate_event(self):
-        return self.lib.pho_event(1, self.p1, self.p2)[1]
+        return self.lib.pho_event(1, self._curr_event_kin.p1,
+                                  self._curr_event_kin.p2)[1]

@@ -41,23 +41,30 @@ class EPOSEvent(MCEvent):
             vx=vx,
             vy=vy,
             vz=vz,
-            vt=vt)
+            vt=vt,
+            pem_arr=evt.phep,
+            vt_arr=evt.vhep)
 
     def filter_final_state(self):
         self.selection = np.where(self.status == 1)
         self._apply_slicing()
 
     def filter_final_state_charged(self):
-
         self.selection = np.where((self.status == 1) & (self.charge != 0))
         self._apply_slicing()
 
     @property
     def parents(self):
+        if self._is_filtered:
+            raise Exception('Parent indices do not point to the' +
+            ' proper particles if any slicing/filtering is applied.')
         return self.lib.hepevt.jmohep
 
     @property
     def children(self):
+        if self._is_filtered:
+            raise Exception('Parent indices do not point to the' +
+            ' proper particles if any slicing/filtering is applied.')
         return self.lib.hepevt.jdahep
 
     @property

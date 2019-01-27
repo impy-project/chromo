@@ -44,7 +44,9 @@ class SibyllEvent(MCEvent):
             vx=vx,
             vy=vy,
             vz=vz,
-            vt=vt)
+            vt=vt,
+            pem_arr=lib.s_plist.p.T,
+            vt_arr=self._no_vertex_data)
 
     def filter_final_state(self):
         self.selection = np.nonzero(

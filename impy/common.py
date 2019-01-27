@@ -68,11 +68,13 @@ class MCEvent(object):
     """
     __metaclass__ = ABCMeta
     __sliced_params__ = [
-        'p_ids', 'status', 'px', 'py', 'pz', 'en', 'm', 'vx', 'vy', 'vz', 'vt'
+        'p_ids', 'status', 'px', 'py', 'pz', 'en', 'm', 'vx', 'vy', 'vz', 'vt',
+        'pem_arr', 'vt_arr'
     ]
 
     def __init__(self, lib, event_kinematics, event_frame, nevent, npart,
-                 p_ids, status, px, py, pz, en, m, vx, vy, vz, vt):
+                 p_ids, status, px, py, pz, en, m, vx, vy, vz, vt, pem_arr,
+                 vt_arr):
         # Store the variables for further filtering/access
         self.lib = lib
         self.kin = event_kinematics
@@ -91,6 +93,10 @@ class MCEvent(object):
         self.vy = vy
         self.vz = vz
         self.vt = vt
+
+        # Full arrays of kinematical vectors
+        self.pem_arr = pem_arr  # (px, py, pz, E, m)
+        self.vt_arr = vt_arr  # (vx, vy, vz, t)
 
         # Initialize current selection to all entries up to npart
         self.selection = slice(None, self.npart)
