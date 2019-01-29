@@ -104,13 +104,22 @@ class DpmjetIIIRun(MCRun):
     handled by the default constructor of the base class.
     """
 
-    def sigma_inel(self):
+    def sigma_inel(self, precision='default'):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
         k = self._curr_event_kin
         info(10, 'Cross section for', k.A1, k.A2, self.lib.idt_icihad(k.p1pdg))
-        self.lib.dt_xsglau(k.A1, k.A2, self.lib.idt_icihad(k.p1pdg), 0, 0,
-                           k.ecm, 1, 1, 1)
+        if precision == 'default':
+            self.lib.dt_xsglau(k.A1, k.A2, self.lib.idt_icihad(k.p1pdg), 0, 0,
+                            k.ecm, 1, 1, 1)
+        else:
+            prev_precision = self.lib.dtglgp.jstatb
+            # Set number of trials for Glauber model integration
+            self.lib.dtglgp.jstatb = int(precision)
+            self.lib.dt_xsglau(k.A1, k.A2, self.lib.idt_icihad(k.p1pdg), 0, 0,
+                            k.ecm, 1, 1, 1)
+            self.lib.dtglgp.jstatb = prev_precision
+
         return self.lib.dtglxs.xspro[0, 0, 0]
 
     def _dpmjet_tup(self):
@@ -220,7 +229,6 @@ class DpmjetIIIRun(MCRun):
             return
         kc = self.lib.pycomp(pdgid)
         if stable:
-            print 'before stable',pdgid,self.lib.pydat3.mdcy[kc - 1, 0]
             self.lib.pydat3.mdcy[kc - 1, 0] = 0
             info(5, 'defining', pdgid, 'as stable particle')
         else:

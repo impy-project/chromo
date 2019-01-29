@@ -124,7 +124,13 @@ class MCEvent(object):
     def _apply_slicing(self):
         """Slices/copies the all varaibles according to filter criteria"""
         for var in self.__sliced_params__:
-            setattr(self, var, getattr(self, var)[self.selection])
+            # TODO: AF: Not clear if the kinematical arrays should be
+            # exposed to the user and sliced at all. If not remove the braching
+            # and delete *_arr from sliced params class variable.
+            if var[-4:] == '_arr':
+                setattr(self, var, getattr(self, var)[:,self.selection])
+            else:
+                setattr(self, var, getattr(self, var)[self.selection])
         self._is_filtered = True
 
     @abstractmethod
