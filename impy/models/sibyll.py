@@ -144,18 +144,21 @@ class SIBYLLRun(MCRun):
             self.lib.s_debug.lun = lun
             info(5, 'Output is routed to', fname, 'via LUN', lun)
 
-    def init_generator(self, event_kinematics):
+    def init_generator(self, event_kinematics, seed='random'):
         from random import randint
 
         self._abort_if_already_initialized()
 
+        if seed == 'random':
+            seed = randint(1000000, 10000000)
+        else:
+            seed = int(seed)
+        info(5, 'Using seed:', seed)
+
         self.set_event_kinematics(event_kinematics)
-
         self.attach_log()
-
-        self.lib.sibini(randint(1000000, 10000000))
+        self.lib.sibini(int(seed))
         self.lib.pdg_ini()
-
         self._define_default_fs_particles()
 
     def set_stable(self, pdgid, stable=True):

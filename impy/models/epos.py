@@ -56,15 +56,17 @@ class EPOSEvent(MCEvent):
     @property
     def parents(self):
         if self._is_filtered:
-            raise Exception('Parent indices do not point to the' +
-            ' proper particles if any slicing/filtering is applied.')
+            raise Exception(
+                'Parent indices do not point to the' +
+                ' proper particles if any slicing/filtering is applied.')
         return self.lib.hepevt.jmohep
 
     @property
     def children(self):
         if self._is_filtered:
-            raise Exception('Parent indices do not point to the' +
-            ' proper particles if any slicing/filtering is applied.')
+            raise Exception(
+                'Parent indices do not point to the' +
+                ' proper particles if any slicing/filtering is applied.')
         return self.lib.hepevt.jdahep
 
     @property
@@ -116,17 +118,24 @@ class EPOSRun(MCRun):
 
         self.lib.files.ifch = lun
 
-    def init_generator(self, event_kinematics):
-        
-        
+    def init_generator(self, event_kinematics, seed='random'):
+        from random import randint
+
         self._abort_if_already_initialized()
 
+        if seed == 'random':
+            seed = randint(1000000, 10000000)
+        else:
+            seed = int(seed)
+        info(5, 'Using seed:', seed)
+        
         epos_conf = impy_config['epos']
         datdir = epos_conf['datdir']
         info(1, 'First initialization')
         self.lib.aaset(0)
-        self.lib.initializeepos(1., 1e6, datdir, len(datdir), 1, 2212, 2212, 1,
-                                1, 1, 1, 0, 6)
+        self.lib.initializeepos(
+            float(seed), 1e6, datdir, len(datdir), 1, 2212, 2212, 1, 1, 1, 1,
+            0, 6)
         self.lib.init = True
 
         # Set default stable
@@ -142,7 +151,7 @@ class EPOSRun(MCRun):
         else:
             self.lib.setunstable(pdgid)
             info(5, pdgid, 'allowed to decay')
-            
+
     def generate_event(self):
         self.lib.aepos(-1)
         self.lib.afinal()

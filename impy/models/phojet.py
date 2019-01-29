@@ -205,11 +205,17 @@ class PHOJETRun(MCRun):
 
         return lun
 
-    def init_generator(self, event_kinematics):
+    def init_generator(self, event_kinematics, seed='random'):
         from impy.constants import c
+        from random import randint
 
-        # Protection against multiple runs
         self._abort_if_already_initialized()
+
+        if seed == 'random':
+            seed = randint(1000000, 10000000)
+        else:
+            seed = int(seed)
+        info(5, 'Using seed:', seed)
 
         # Define where output will go
         lun = self.attach_log()
@@ -241,13 +247,17 @@ class PHOJETRun(MCRun):
         process_switch[7, 0] = 1
 
         self.set_event_kinematics(event_kinematics)
-
-        if self.lib.pho_event(-1, self._curr_event_kin.p1,
-                              self._curr_event_kin.p2)[1]:
-
+        
+        if self.lib.pho_event(-1, self._curr_event_kin.p1, self._curr_event_kin.p2)[1]:
             print self._curr_event_kin
             raise Exception('PHOJET failed to initialize with for the',
                             'given event kinematics')
+        
+        # Set seed of random number generator
+        sseed = str(seed)
+        n1, n2, n3, n4 = int(sseed[0:2]), int(sseed[2:4]), \
+            int(sseed[4:6]), int(sseed[6:])
+        self.lib.dt_rndmst(n1, n2, n3, n4)
 
         # if self.def_settings:
         #     print self.class_name + \

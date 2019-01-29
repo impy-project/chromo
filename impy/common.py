@@ -361,7 +361,18 @@ class MCRun():
         return self._version
 
     @abstractmethod
-    def init_generator(self):
+    def init_generator(self, event_kinematics, seed='random'):
+        """Initializes event generator.
+        
+        The maximal energy and particle masses from the event_kinematics
+        object define the maximal range, i.e. the energy requested in subsequent
+        `set_event_kinematics` calls should not exceed the one provided here.
+
+        Args:
+            event_kinematics (object): maximal energy and masses for subsequent runs
+            seed (int)               : random seed, at least 8 digit int
+
+        """ 
         pass
 
     @abstractmethod

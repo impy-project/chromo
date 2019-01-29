@@ -165,26 +165,30 @@ class DpmjetIIIRun(MCRun):
         self.lib.pydat1.mstu[10] = lun
         
 
-    def init_generator(self, event_kinematics):
+    def init_generator(self, event_kinematics, seed='random'):
         from impy.util import clear_and_set_fortran_chars
         from impy.constants import c
+        from random import randint
+
         self._abort_if_already_initialized()
 
-        # Comprise DPMJET input from the event kinematics object
+        if seed == 'random':
+            seed = randint(1000000, 10000000)
+        else:
+            seed = int(seed)
+        info(5, 'Using seed:', seed)
+        
         self.set_event_kinematics(event_kinematics)
         k = self._curr_event_kin
-
         dpm_conf = impy_config['dpmjetIII']
-        info(1, 'First initialization')
 
+        info(1, 'First initialization')
         # Set the dpmjpar.dat file
         if hasattr(self.lib, 'pomdls') and hasattr(self.lib.pomdls, 'parfn'):
             pfile = dpm_conf['param_file'][self.version]
             info(10, 'DPMJET parameter file at', pfile)
             clear_and_set_fortran_chars(self.lib.pomdls.parfn, pfile)
 
-        # import IPython
-        # IPython.embed()
         # Set the data directory for the other files
         if hasattr(self.lib, 'poinou') and hasattr(self.lib.poinou, 'datdir'):
             pfile = dpm_conf['dat_dir'][self.version]
@@ -199,9 +203,14 @@ class DpmjetIIIRun(MCRun):
             clear_and_set_fortran_chars(self.lib.dtimpy.fnevap, evap_file)
 
         self.attach_log()
-
         self.lib.dt_init(
             -1, dpm_conf['e_max'], k.A1, k.Z1, k.A2, k.Z2, k.p1pdg, iglau=0)
+
+        # Set seed of random number generator
+        sseed = str(seed)
+        n1, n2, n3, n4 = int(sseed[0:2]), int(sseed[2:4]), \
+            int(sseed[4:6]), int(sseed[6:])
+        self.lib.dt_rndmst(n1, n2, n3, n4)
 
         if impy_config['user_frame'] == 'center-of-mass':
             self.lib.dtflg1.iframe = 2
