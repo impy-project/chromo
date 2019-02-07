@@ -3,6 +3,7 @@
 **.so
 **.pyf
 **.pyc
+**.mod
 .ipynb*
 iamdata
 fort.7
