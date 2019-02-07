@@ -236,7 +236,7 @@ class EventKinematics(object):
         # self.e_range = []
         
     @property
-    def beam_as_4vec():
+    def beam_as_4vec(self):
         p1, p2 = np.array(
             np.zeros(4), dtype='d'), np.array(
                 np.zeros(4), dtype='d')

@@ -120,6 +120,7 @@ class MCEvent(object):
 
         # Apply boosts into frame required by user
         self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
+        self.event_frame = impy_config["user_frame"]
 
     def _apply_slicing(self):
         """Slices/copies the all varaibles according to filter criteria"""
@@ -228,7 +229,7 @@ class MCEvent(object):
         kin = self.kin
         if self.event_frame == 'laboratory':
             return self.en / kin.elab
-        return (kin.gamma_cm * self.en + kin.betagamma_cm * self.pz) / kin.elab
+        return (kin.gamma_cm * self.en + kin.betagamma_z_cm * self.pz) / kin.elab
 
     @property
     def fw(self):
