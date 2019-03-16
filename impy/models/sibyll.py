@@ -119,6 +119,23 @@ class SIBYLLRun(MCRun):
             raise Exception('Input error')
 
         return self.lib.sib_sigma_hp(sigproj, self._ecm)[2]
+    
+    def sigma_inel_air(self):
+        """Inelastic cross section according to current
+        event setup (energy, projectile, target)"""
+        k = self._curr_event_kin
+        sigproj = None
+        if abs(k.p1pdg) in [2212, 2112, 3112]:
+            sigproj = 1
+        elif abs(k.p1pdg) == 211:
+            sigproj = 2
+        elif abs(k.p1pdg) == 321:
+            sigproj = 3
+        else:
+            info(0, "No cross section available for projectile", k.p1pdg)
+            raise Exception('Input error')
+
+        return self.lib.sib_sigma_hair(sigproj, self._ecm)[0]
 
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
