@@ -136,7 +136,6 @@ class EPOSRun(MCRun):
         self.lib.initializeepos(
             float(seed), 1e6, datdir, len(datdir), 1, 2212, 2212, 1, 1, 1, 1,
             0, 6)
-        self.lib.init = True
 
         # Set default stable
         self._define_default_fs_particles()

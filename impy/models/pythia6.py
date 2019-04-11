@@ -5,120 +5,148 @@ Created on 19.01.2015
 '''
 
 import numpy as np
-from impy.common import MCRun, MCEvent
+from impy.common import MCRun, MCEvent, impy_config, pdata
+from impy.util import standard_particles, info
 
 
-#=========================================================================
-# PhoEvent
-#=========================================================================
 class PYTHIAEvent(MCEvent):
-    def __init__(self, lib, event_config):
+    """Wrapper class around HEPEVT particle stack."""
 
-        evt = lib.pyjets
-        nhep = evt.n
-        sel = None
+    def __init__(self, lib, event_kinematics, event_frame):
+        # HEPEVT (style) common block
+        evt = lib.hepevt
 
-        if event_config['charged_only']:
-            lib.pyedit(3)
-        else:
-            lib.pyedit(2)
+        # Save selector for implementation of on-demand properties
+        px, py, pz, en, m = evt.phep
+        vx, vy, vz, vt = evt.vhep
 
-        if 'charge_info' in event_config and event_config['charge_info']:
-            self.charge = [lib.pychge(evt.k[i, 1]) for i in xrange(nhep)]
+        self.charge_vec = None
 
-        self.p_ids = evt.k[:nhep, 1]
-        self.pt2 = evt.p[:nhep, 0]**2 + evt.p[:nhep, 1]**2
-        self.pz = evt.p[:nhep, 2]
-        self.en = evt.p[:nhep, 3]
+        MCEvent.__init__(
+            self,
+            lib=lib,
+            event_kinematics=event_kinematics,
+            event_frame=event_frame,
+            nevent=evt.nevhep,
+            npart=evt.nhep,
+            p_ids=evt.idhep,
+            status=evt.isthep,
+            px=px,
+            py=py,
+            pz=pz,
+            en=en,
+            m=m,
+            vx=vx,
+            vy=vy,
+            vz=vz,
+            vt=vt,
+            pem_arr=evt.phep,
+            vt_arr=evt.vhep)
 
-        # Save for later processing steps
-        self.sel = sel
-        self.lib = lib
+    def filter_final_state(self):
+        self.selection = np.where(self.status == 1)
+        self._apply_slicing()
 
-        MCEvent.__init__(self, event_config)
+    def filter_final_state_charged(self):
+        self.selection = np.where((self.status == 1) & (self.charge != 0))
+        self._apply_slicing()
 
+    @property
+    def parents(self):
+        if self._is_filtered:
+            raise Exception(
+                'Parent indices do not point to the' +
+                ' proper particles if any slicing/filtering is applied.')
+        return self.lib.hepevt.jmohep
 
-#=========================================================================
-# PhoRun
-#=========================================================================
-class PYTHIAMCRun(MCRun):
-    def __init__(self, libref, **kwargs):
-        from ParticleDataTool import PYTHIAParticleData
-        if not kwargs["event_class"]:
-            kwargs["event_class"] = PYTHIAEvent
+    @property
+    def children(self):
+        if self._is_filtered:
+            raise Exception(
+                'Parent indices do not point to the' +
+                ' proper particles if any slicing/filtering is applied.')
+        return self.lib.hepevt.jdahep
 
-        MCRun.__init__(self, libref, **kwargs)
+    @property
+    def charge(self):
+        if self.charge_vec is None:
+            self.charge_vec = [
+                self.lib.pychge(self.lib.pyjets.k[i, 1]) / 3
+                for i in xrange(self.npart)
+            ]
+        return self.charge_vec[self.selection]
 
-        self.generator = "PYTHIA"
-        self.version = "6.4.28"
-        self.sigmax = 0.0
-        self.ptab = PYTHIAParticleData()
-        # The threshold defines the log(E) distance between the initialization
-        # energy and current energy.
+class PYTHIA6Run(MCRun):
+    """Implements all abstract attributes of MCRun for the 
+    EPOS-LHC series of event generators."""
 
-    def get_sigma_inel(self):
+    def sigma_inel(self):
+        """Inelastic cross section according to current
+        event setup (energy, projectile, target)"""
         return self.lib.pyint7.sigt[0, 0, 5]
 
-    def set_stable(self, pdgid):
-        kc = self.lib.pycomp(pdgid)
-        self.lib.pydat3.mdcy[kc - 1, 0] = 0
-        print self.class_name + "::set_stable(): defining ", \
-            pdgid, "as stable particle"
-
     def set_event_kinematics(self, event_kinematics):
+        """Set new combination of energy, momentum, projectile
+        and target combination for next event."""
         k = event_kinematics
-        self.event_config['event_kinematics'] = k
-        self.p1_type = self.ptab.name(k.p1pdg)
-        self.p2_type = self.ptab.name(k.p2pdg)
+        self._curr_event_kin = k
+        self.p1_type = pdata.name(k.p1pdg)
+        self.p2_type = pdata.name(k.p2pdg)
         self.ecm = k.ecm
-
-    def init_generator(self, config):
-        self.set_event_kinematics(self.evkin)
-
-        try:
-            from MCVD.management import LogManager
-            # initialize log manager
-            self.log_man = LogManager(config, self)
-            if self.nondef_stable != None:
-                self.log_man.create_log(
-                    self.p1_type,
-                    self.p2_type,
-                    self.ecm,
-                    suffix=self.nondef_stable)
-            else:
-                self.log_man.create_log(self.p1_type, self.p2_type, self.ecm)
-            self.lib.pydat1.mstu[10] = 66
-        except:
-            print self.class_name + "::init_generator(): Running outside of MCVD,", \
-                "the log will be printed to STDOUT."
-            self.lib.pydat1.mstu[10] = 6
-
-        self.lib.pysubs.msel = 2
         self.lib.pyinit('CMS', self.p1_type, self.p2_type, self.ecm)
+        info(5, 'Setting event kinematics')
 
-        if self.def_settings:
-            print self.class_name + \
-                "::init_generator(): Using default settings:", \
-                self.def_settings.__class__.__name__
-            self.def_settings.enable()
+    def attach_log(self):
+        """Routes the output to a file or the stdout."""
+        fname = impy_config['output_log']
+        if fname == 'stdout':
+            lun = 6
+            info(5, 'Output is routed to stdout.')
+        else:
+            lun = self._attach_fortran_logfile(fname)
+            info(5, 'Output is routed to', fname, 'via LUN', lun)
 
-        # Set pi0 stable
-        self.set_stable(111)
+        self.lib.pydat1.mstu[10] = lun
 
-        if 'stable' in self.event_config:
-            for pdgid in self.event_config['stable']:
-                self.set_stable(pdgid)
+    def init_generator(self, event_kinematics, seed='random'):
+        from random import randint
+
+        self._abort_if_already_initialized()
+
+        if seed == 'random':
+            seed = randint(1000000, 10000000)
+            sseed = str(seed)
+            self.lib.pydatr.mrpy[:4] = int(sseed[0:2]), int(sseed[2:4]), \
+                int(sseed[4:6]), int(sseed[6:])
+        else:
+            seed = int(seed)
+        info(5, 'Using seed:', seed)
+        
+        
+        if impy_config['pythia6']['new_mpi']:
+            # Latest Pythia 6 is tune 383
+            self.lib.pytune(383)
+            self.event_call = self.lib.pyevnw
+        else:
+            self.event_call = self.lib.pyevnt
+        
+        self.lib.pysubs.msel = 2
+        self.set_event_kinematics(event_kinematics)
+
+        # Set default stable
+        self._define_default_fs_particles()
+        self.set_event_kinematics(event_kinematics)
+
+
+    def set_stable(self, pdgid, stable=True):
+        kc = self.lib.pycomp(pdgid)
+        if stable:
+            self.lib.pydat3.mdcy[kc - 1, 0] = 0
+            info(5, 'defining', pdgid, 'as stable particle')
+        else:
+            self.lib.pydat3.mdcy[kc - 1, 0] = 1
+            info(5, pdgid, 'allowed to decay')
 
     def generate_event(self):
-        self.lib.pyevnt()
-        return 0
-
-
-class PYTHIAnewMCRun(PYTHIAMCRun):
-    def init_generator(self, config):
-        self.lib.pytune(383)
-        PYTHIAMCRun.init_generator(self, config)
-
-    def generate_event(self):
-        self.lib.pyevnw()
-        return 0
+        self.event_call()
+        return False

@@ -13,3 +13,4 @@ impy_pdata_cache.cch
 *.f2l
 .vscode/*
 src/dpmjet3.0-6/dpm3usr
+src/urqmd-3.4/terms.mod

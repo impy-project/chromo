@@ -250,8 +250,8 @@ class PHOJETRun(MCRun):
         
         if self.lib.pho_event(-1, self._curr_event_kin.p1, self._curr_event_kin.p2)[1]:
             print self._curr_event_kin
-            raise Exception('PHOJET failed to initialize with for the',
-                            'given event kinematics')
+            raise Exception('PHOJET failed to initialize with the current',
+                            'event kinematics')
         
         # Set seed of random number generator
         sseed = str(seed)

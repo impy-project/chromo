@@ -29,7 +29,7 @@ pythia6.$(LEXT): pythia6.pyf $(PYTHIA6).o $(LOGO)
 
 pythia6.pyf: $(PYTHIA6).f $(LOGS)
 	$(F2PY) -m pythia6 -h pythia6.pyf --overwrite-signature \
-	only: pyinit pyexec pytune pylist pyevnt pyevnw pystat pyedit \
+	only: pyinit pyexec pytune pylist pyevnt pyevnw pystat pyedit pyhepc \
 	pychge pycomp pyk $(LOGF) : $(PYTHIA6).f $(LOGS) > pythia6.f2l 2>&1
 
 
