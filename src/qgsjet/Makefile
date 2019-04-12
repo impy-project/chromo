@@ -25,7 +25,7 @@ qgsII03.$(LEXT): qgsII-03.pyf $(RND) qgsjet-II-03.o qgsjet-II_init.o
 
 qgsII-03.pyf: qgsjet-II-03.f qgsjet-II_init.f
 	$(F2PY) -m qgsII03 -h qgsII-03.pyf --overwrite-signature \
-	only: cqgsini qgsect qgini qgconf qgreg $(LOGF) : qgsjet-II-03.f \
+	only: cqgsini qgsect qgini qgconf qgreg chepevt $(LOGF) : qgsjet-II-03.f \
 	qgsjet-II_init.f $(LOGS) > qgsII03.f2l 2>&1
 
 qgsII04.$(LEXT): qgsII-04.pyf $(RND) qgsjet-II_init.o qgsjet-II-04.o 
@@ -34,7 +34,7 @@ qgsII04.$(LEXT): qgsII-04.pyf $(RND) qgsjet-II_init.o qgsjet-II-04.o
 
 qgsII-04.pyf: qgsjet-II-04.f qgsjet-II_init.f
 	$(F2PY) -m qgsII04 -h qgsII-04.pyf --overwrite-signature \
-	only: cqgsini qgsect qgini qgconf qgreg $(LOGF) : qgsjet-II-04.f \
+	only: cqgsini qgsect qgini qgconf qgreg chepevt $(LOGF) : qgsjet-II-04.f \
 	qgsjet-II_init.f $(LOGS) > qgsII04.f2l 2>&1
 
 qgs01.$(LEXT): qgs01.pyf $(RND) qgsjet01_init.o qgsjet01d.o

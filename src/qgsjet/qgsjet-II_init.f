@@ -35,7 +35,75 @@ C  Call global initialization subroutine
 C  Call cross-section initialization subroutine
 C      CALL QGSSIGINI
 
-      END       
+      END
+
+      SUBROUTINE CHEPEVT
+C-----------------------------------------------------------------------
+C  Convert to HEPEVT common block
+C
+C-----------------------------------------------------------------------
+      implicit double precision (a-h,o-z)
+      parameter(nptmax=95000)
+      common /qgarr12/ nsp
+      common /qgarr14/ esp(4,nptmax),ich(nptmax)
+
+      PARAMETER (NMXHEP=nptmax)
+
+      INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
+      DOUBLE PRECISION PHEP,VHEP
+      COMMON /HEPEVT/ NEVHEP,NHEP,ISTHEP(NMXHEP),IDHEP(NMXHEP),
+     &                JMOHEP(2,NMXHEP),JDAHEP(2,NMXHEP),PHEP(5,NMXHEP),
+     &                VHEP(4,NMXHEP)
+      COMMON /QGCHG/  ichg(NMXHEP)
+
+C     Particle tables start with the ID -10(rho0) going through 0 (pi0).
+      character*12 NAME
+      DIMENSION NAME(21)
+      DATA NAME(21) /
+     &'rho0        ','Lambda_cbar-','Dbar0       ','D-          ',
+     &'Lambdabar0  ','K_L0        ','K-          ','nbar0       ',
+     &'pbar-       ','pi-         ','pi0         ','pi+         ',
+     &'p+          ','n0          ','K+          ','K_S0        ',
+     &'Lambda0     ','D+          ','D0          ','Lambda_c+   ',
+     &'eta         '/
+      
+      DIMENSION IPDGID(21)
+      DATA IPDGID(21) /
+     &   113, -4122,  -421,  -411, -3122,   130,  -321, -2112, -2212,
+     &  -211,   111,   211,  2212,  2112,   321,   310,  3122,   411,
+     &   421,  4122,   221/
+      
+      DIMENSION QMASS(21)
+      DATA QMASS(21) /
+     &.548d0,2.27d0,1.868d0,1.868d0,1.116d0,.496d0,.496d0,0.93827999,
+     &0.93827999,.14d0,.14d0,.14d0,0.93827999,0.93827999,.496d0,.496d0,
+     &1.116d0,1.868d0,1.868d0,2.27d0,.548d0/
+
+      DIMENSION ICHRG(21)
+      DATA ICHRG(21) /
+     &     0,    -1,     0,    -1,     0,     0,    -1,     0,
+     &    -1,    -1,     0,     1,     1,     0,     1,     0,
+     &     0,     1,     0,     1,     0/
+
+     NHEP = nsp
+
+     DO I=1,nsp
+        ISTHEP(I) = 1
+        IDHEP(I) = IPDGID(ich(I) + 11)
+        PHEP(1,I) = esp(2,I)
+        PHEP(2,I) = esp(3,I)
+        PHEP(3,I) = esp(1,I)
+        PHEP(4,I) = esp(4,I)
+        PHEP(5,I) = QMASS(ich(I) + 11)
+        ICHG(I) = ICHRG(ich(I) + 11)
+     END DO
+
+     END
+
+
+
+
+
 
 *-- Author :    D. HECK IK FZK KARLSRUHE       12/01/1996
 C=======================================================================
