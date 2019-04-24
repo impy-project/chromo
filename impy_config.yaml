@@ -111,8 +111,11 @@ qgsjet:
     has_boosts   : False
     has_hepevt   : False
     int_support  : [ 'hh', 'hA', 'AA' ]
+    datdir       : src/qgsjet/data/
     projectiles  : {
-        'III-17.1' : [ 2212, 2112, 321, -321, 211, -211 ]
+        'II-03' : [ 2212, 2112, 321, -321, 211, -211 ],
+        'II-04' : [ 2212, 2112, 321, -321, 211, -211 ],
+        '01c'   : [ 2212, 2112, 321, -321, 211, -211 ]
     }
 
 sibyll:

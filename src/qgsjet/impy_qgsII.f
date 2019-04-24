@@ -1,7 +1,7 @@
 C This file are aux functions for stand-alone use
 C of CORSIKA interaction models
 
-      SUBROUTINE CQGSINI( SEEDIN, DATDIR )
+      SUBROUTINE CQGSINI( SEEDIN, DATDIR, LUN )
 C-----------------------------------------------------------------------
 C  C(ompact) Q(UARK) G(LUON) S(TRING JET MODEL) INI(TIALZATION)
 C
@@ -10,10 +10,11 @@ C  THIS SUBROUTINE IS CALLED FROM START.
 C-----------------------------------------------------------------------
       IMPLICIT NONE
       CHARACTER DATDIR*(256)
-
       COMMON /AREA40/  JDIFR
       INTEGER          JDIFR
       INTEGER        VERSION
+      INTEGER    LUN, moniou
+      common /qgarr43/ moniou
 
       INTEGER          ASEED(3)
       INTEGER          SEEDIN
@@ -30,6 +31,7 @@ C  init the random number generator
 
 C  COMMON MODEL PARAMETERS SETTING
       CALL QGSET
+      moniou = LUN
 C  Call global initialization subroutine
       CALL QGAINI( DATDIR )
 C  Call cross-section initialization subroutine
@@ -42,24 +44,26 @@ C-----------------------------------------------------------------------
 C  Convert to HEPEVT common block
 C
 C-----------------------------------------------------------------------
-      implicit double precision (a-h,o-z)
-      parameter(nptmax=95000)
-      common /qgarr12/ nsp
-      common /qgarr14/ esp(4,nptmax),ich(nptmax)
+      IMPLICIT NONE
 
-      PARAMETER (NMXHEP=nptmax)
+      INTEGER NPTMAX, ICH, NSP
+      DOUBLE PRECISION ESP
+      PARAMETER(NPTMAX=95000)
+      COMMON /QGARR12/ NSP
+      COMMON /QGARR14/ ESP(4,NPTMAX),ICH(NPTMAX)
 
-      INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
+
+      INTEGER NEVHEP,NMXHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
+      PARAMETER (NMXHEP=NPTMAX)
       COMMON /HEPEVT/ NEVHEP,NHEP,ISTHEP(NMXHEP),IDHEP(NMXHEP),
      &                JMOHEP(2,NMXHEP),JDAHEP(2,NMXHEP),PHEP(5,NMXHEP),
      &                VHEP(4,NMXHEP)
-      COMMON /QGCHG/  ichg(NMXHEP)
-
+      INTEGER ICHG
+      COMMON /QGCHG/  ICHG(NMXHEP)
 C     Particle tables start with the ID -10(rho0) going through 0 (pi0).
-      character*12 NAME
-      DIMENSION NAME(21)
-      DATA NAME(21) /
+      character*12 NAME(-10:10)
+      DATA NAME /
      &'rho0        ','Lambda_cbar-','Dbar0       ','D-          ',
      &'Lambdabar0  ','K_L0        ','K-          ','nbar0       ',
      &'pbar-       ','pi-         ','pi0         ','pi+         ',
@@ -67,43 +71,43 @@ C     Particle tables start with the ID -10(rho0) going through 0 (pi0).
      &'Lambda0     ','D+          ','D0          ','Lambda_c+   ',
      &'eta         '/
       
-      DIMENSION IPDGID(21)
-      DATA IPDGID(21) /
+      INTEGER IPDGID(-10:10)
+      DATA IPDGID /
      &   113, -4122,  -421,  -411, -3122,   130,  -321, -2112, -2212,
      &  -211,   111,   211,  2212,  2112,   321,   310,  3122,   411,
      &   421,  4122,   221/
       
-      DIMENSION QMASS(21)
-      DATA QMASS(21) /
+      DOUBLE PRECISION QMASS(-10:10)
+      DATA QMASS /
      &.548d0,2.27d0,1.868d0,1.868d0,1.116d0,.496d0,.496d0,0.93827999,
      &0.93827999,.14d0,.14d0,.14d0,0.93827999,0.93827999,.496d0,.496d0,
      &1.116d0,1.868d0,1.868d0,2.27d0,.548d0/
 
-      DIMENSION ICHRG(21)
-      DATA ICHRG(21) /
+      INTEGER ICHRG(-10:10)
+      DATA ICHRG /
      &     0,    -1,     0,    -1,     0,     0,    -1,     0,
      &    -1,    -1,     0,     1,     1,     0,     1,     0,
      &     0,     1,     0,     1,     0/
 
-     NHEP = nsp
+      INTEGER I
 
-     DO I=1,nsp
-        ISTHEP(I) = 1
-        IDHEP(I) = IPDGID(ich(I) + 11)
-        PHEP(1,I) = esp(2,I)
-        PHEP(2,I) = esp(3,I)
-        PHEP(3,I) = esp(1,I)
-        PHEP(4,I) = esp(4,I)
-        PHEP(5,I) = QMASS(ich(I) + 11)
-        ICHG(I) = ICHRG(ich(I) + 11)
-     END DO
+      NHEP = nsp
 
-     END
+      DO I=1,nsp
+C         WRITE(6,*) I, ich(I), esp(:,I)
+         NHEP = NSP
+         ISTHEP(I) = 1
+         IDHEP(I) = IPDGID(ich(I))
+         PHEP(1,I) = esp(2,I)
+         PHEP(2,I) = esp(3,I)
+         PHEP(3,I) = esp(1,I)
+         PHEP(4,I) = esp(4,I)
+         PHEP(5,I) = QMASS(ich(I))
+         ICHG(I) = ICHRG(ich(I))
+      END DO
 
 
-
-
-
+      END
 
 *-- Author :    D. HECK IK FZK KARLSRUHE       12/01/1996
 C=======================================================================

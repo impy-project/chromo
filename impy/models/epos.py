@@ -116,7 +116,8 @@ class EPOSRun(MCRun):
             lun = self._attach_fortran_logfile(fname)
             info(5, 'Output is routed to', fname, 'via LUN', lun)
 
-        self.lib.files.ifch = lun
+        self._lun = lun
+
 
     def init_generator(self, event_kinematics, seed='random'):
         from random import randint
@@ -131,11 +132,12 @@ class EPOSRun(MCRun):
         
         epos_conf = impy_config['epos']
         datdir = epos_conf['datdir']
+        self.attach_log()
         info(1, 'First initialization')
         self.lib.aaset(0)
         self.lib.initializeepos(
             float(seed), 1e6, datdir, len(datdir), 1, 2212, 2212, 1, 1, 1, 1,
-            0, 6)
+            0, self._lun)
 
         # Set default stable
         self._define_default_fs_particles()
