@@ -10,7 +10,7 @@ siglookup upmerge addpart blockres coload detbal getspin \
 hepnam ityp2pdg output string urqmd angdis boxprg dwidth \
 gnuranf init jdecay2 paulibl saveinfo tabinit whichres anndec \
 cascinit dectim error hepchg input make22 proppot scatter \
-uhmerge urqinit
+uhmerge urqinit 
 
 #$(filter-out ${NOT_NEEDED:=.f}, $(wildcard ./*.f))
 
@@ -23,7 +23,7 @@ URQMD_OBJS := $(URQMD_SRCS:.f=.o) $(URQMD_90SRCS:.f90=.o)
 
 
 SFUNCS=urqmd init uinit set0 params uounit strini loginit loadwtab \
-norm_init output cascinit urqini partname chepevt
+norm_init output cascinit urqini partname chepevt ptsigtot
 
 all:  urqmd34.$(LEXT) install
 
@@ -43,7 +43,7 @@ urqmd34.$(LEXT): urqmd34.pyf $(URQMD_OBJS) impy_urqmd.o $(LOGO)
 	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" urqmd34.pyf \
 	$(LOGO) $(URQMD_OBJS) impy_urqmd.o >> urqmd34.f2l 2>&1
 
-urqmd34.pyf: $(URQMD_SRCS) $(URQMD_90SRCS) impy_urqmd.f Makefile
+urqmd34.pyf: $(URQMD_SRCS) $(URQMD_90SRCS) Makefile
 	$(F2PY) -m urqmd34 -h urqmd34.pyf --overwrite-signature \
 	only: $(SFUNCS) $(LOGF) : $(URQMD_SRCS) $(URQMD_90SRCS) \
 	$(LOGS) impy_urqmd.f > urqmd34.f2l 2>&1

@@ -1,10 +1,11 @@
 *-- Author :    J. Wentz  IK FZK KARLSRUHE     10/05/1999
 C=======================================================================
 
-      SUBROUTINE URQINI(debug_output, iudebug)
+      SUBROUTINE URQINI(MDEBUG, iudebug)
 
 C-----------------------------------------------------------------------
 C  URQ(MD) INI(TIALIZATION)
+C**anfe Modified to accept the LUN directly via MDEBUG
 C
 C  FIRST INITIALIZATION
 C  THIS SUBROUTINE IS CALLED FROM START.
@@ -21,13 +22,14 @@ C-----------------------------------------------------------------------
       CHARACTER        debug_output*60
 C-----------------------------------------------------------------------
 
-c Open debug output unit
-      if (debug_output.eq.'') then
-          MDEBUG = 6
-      else
-          MDEBUG = 42
-          open(unit=MDEBUG, file = debug_output, status = 'UNKNOWN')
-      endif
+c c Open debug output unit
+c       if (debug_output.eq.'') then
+c           MDEBUG = 6
+c       else
+c           MDEBUG = 42
+c           open(unit=MDEBUG, file = debug_output, status = 'UNKNOWN')
+c       endif
+
 
 C  SET NMAX TO DEFAULT VALUE
       call set0

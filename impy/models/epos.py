@@ -8,11 +8,6 @@ import numpy as np
 from impy.common import MCRun, MCEvent, impy_config
 from impy.util import standard_particles, info
 
-#=========================================================================
-# EPOSMCEvent
-#=========================================================================
-
-
 class EPOSEvent(MCEvent):
     """Wrapper class around EPOS particle stack."""
 

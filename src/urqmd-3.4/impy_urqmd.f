@@ -33,6 +33,11 @@ C The common blocks are copied from coms.f in URQMD
      +     dectime(nmax), tform(nmax), xtotfac(nmax)
       common /coor/ r0, rx, ry, rz, p0, px, py, pz, fmass, rww, dectime
       
+      integer nstable, maxstables
+      parameter(maxstables=20)
+      integer stabvec(maxstables)
+      common /stables/nstable,stabvec
+      
       INTEGER NEVHEP,NMXHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
       PARAMETER (NMXHEP=nmax)
@@ -42,14 +47,22 @@ C The common blocks are copied from coms.f in URQMD
       INTEGER ICHG
       COMMON /UQCHG/  ICHG(NMXHEP)
       
-      INTEGER I, PDGID, IPDG
+      INTEGER I, PDGID, IPDG, ISTIDX
 
       DO I=1,npart
 C         WRITE(6,*) I, ich(I), esp(:,I)
          NEVHEP = event
          NHEP = NPART
          ISTHEP(I) = 1
+c DO ISTIDX=1,NSTABLE
+c    IF (ITYP(I).EQ.STABVEC(ISTIDX)) THEN
+c       ISTHEP(I) = 1
+c    ELSE
+c       ISTHEP(I) = 2
+c    ENDIF
+c ENDDO
          IDHEP(I) = pdgid(ityp(I),iso3(I))
+c         WRITE(6,*) I,'/',npart, ityp(I),iso3(I), IDHEP(I)
          PHEP(1,I) = px(I)
          PHEP(2,I) = py(I)
          PHEP(3,I) = pz(I)
