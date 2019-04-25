@@ -354,6 +354,21 @@ C-----------------------------------------------------------------------
       RETURN
       END
 
+      DOUBLE PRECISION FUNCTION RANF()
+
+C-----------------------------------------------------------------------
+C  RAN(DOM GENERATOR FOR URQMD
+C-----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      DOUBLE PRECISION SIMRND
+
+      RANF = SIMRND()
+
+      RETURN
+      END
+
       SUBROUTINE INIT_RMMARD(ISEEDIN)
 
 C-----------------------------------------------------------------------

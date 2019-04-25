@@ -6,6 +6,7 @@
 #
 
 # Global variables for all recipes
+export RNDS = $(CURDIR)/rangen.f
 export RND = $(CURDIR)/rangen.o
 export LOGS = $(CURDIR)/logging.f
 export LOGO = $(CURDIR)/logging.o

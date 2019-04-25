@@ -68482,84 +68482,85 @@ C...Commonblocks.
       END
  
 C*********************************************************************
+
+c**anfe Centralized random number generator used
+c C...PYR
+c C...Generates random numbers uniformly distributed between
+c C...0 and 1, excluding the endpoints.
  
-C...PYR
-C...Generates random numbers uniformly distributed between
-C...0 and 1, excluding the endpoints.
+c       FUNCTION PYR(IDUMMY)
  
-      FUNCTION PYR(IDUMMY)
+c C...Double precision and integer declarations.
+c       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
+c       IMPLICIT INTEGER(I-N)
+c       INTEGER PYK,PYCHGE,PYCOMP
+c C...Commonblocks.
+c       COMMON/PYDATR/MRPY(6),RRPY(100)
+c       SAVE /PYDATR/
+c C...Equivalence between commonblock and local variables.
+c       EQUIVALENCE (MRPY1,MRPY(1)),(MRPY2,MRPY(2)),(MRPY3,MRPY(3)),
+c      &(MRPY4,MRPY(4)),(MRPY5,MRPY(5)),(MRPY6,MRPY(6)),
+c      &(RRPY98,RRPY(98)),(RRPY99,RRPY(99)),(RRPY00,RRPY(100))
  
-C...Double precision and integer declarations.
-      IMPLICIT DOUBLE PRECISION(A-H, O-Z)
-      IMPLICIT INTEGER(I-N)
-      INTEGER PYK,PYCHGE,PYCOMP
-C...Commonblocks.
-      COMMON/PYDATR/MRPY(6),RRPY(100)
-      SAVE /PYDATR/
-C...Equivalence between commonblock and local variables.
-      EQUIVALENCE (MRPY1,MRPY(1)),(MRPY2,MRPY(2)),(MRPY3,MRPY(3)),
-     &(MRPY4,MRPY(4)),(MRPY5,MRPY(5)),(MRPY6,MRPY(6)),
-     &(RRPY98,RRPY(98)),(RRPY99,RRPY(99)),(RRPY00,RRPY(100))
+c C...Initialize generation from given seed.
+c       IF(MRPY2.EQ.0) THEN
+c         IJ=MOD(MRPY1/30082,31329)
+c         KL=MOD(MRPY1,30082)
+c         I=MOD(IJ/177,177)+2
+c         J=MOD(IJ,177)+2
+c         K=MOD(KL/169,178)+1
+c         L=MOD(KL,169)
+c         DO 110 II=1,97
+c           S=0D0
+c           T=0.5D0
+c           DO 100 JJ=1,48
+c             M=MOD(MOD(I*J,179)*K,179)
+c             I=J
+c             J=K
+c             K=M
+c             L=MOD(53*L+1,169)
+c             IF(MOD(L*M,64).GE.32) S=S+T
+c             T=0.5D0*T
+c   100     CONTINUE
+c           RRPY(II)=S
+c   110   CONTINUE
+c         TWOM24=1D0
+c         DO 120 I24=1,24
+c           TWOM24=0.5D0*TWOM24
+c   120   CONTINUE
+c         RRPY98=362436D0*TWOM24
+c         RRPY99=7654321D0*TWOM24
+c         RRPY00=16777213D0*TWOM24
+c         MRPY2=1
+c         MRPY3=0
+c         MRPY4=97
+c         MRPY5=33
+c       ENDIF
  
-C...Initialize generation from given seed.
-      IF(MRPY2.EQ.0) THEN
-        IJ=MOD(MRPY1/30082,31329)
-        KL=MOD(MRPY1,30082)
-        I=MOD(IJ/177,177)+2
-        J=MOD(IJ,177)+2
-        K=MOD(KL/169,178)+1
-        L=MOD(KL,169)
-        DO 110 II=1,97
-          S=0D0
-          T=0.5D0
-          DO 100 JJ=1,48
-            M=MOD(MOD(I*J,179)*K,179)
-            I=J
-            J=K
-            K=M
-            L=MOD(53*L+1,169)
-            IF(MOD(L*M,64).GE.32) S=S+T
-            T=0.5D0*T
-  100     CONTINUE
-          RRPY(II)=S
-  110   CONTINUE
-        TWOM24=1D0
-        DO 120 I24=1,24
-          TWOM24=0.5D0*TWOM24
-  120   CONTINUE
-        RRPY98=362436D0*TWOM24
-        RRPY99=7654321D0*TWOM24
-        RRPY00=16777213D0*TWOM24
-        MRPY2=1
-        MRPY3=0
-        MRPY4=97
-        MRPY5=33
-      ENDIF
+c C...Generate next random number.
+c   130 RUNI=RRPY(MRPY4)-RRPY(MRPY5)
+c       IF(RUNI.LT.0D0) RUNI=RUNI+1D0
+c       RRPY(MRPY4)=RUNI
+c       MRPY4=MRPY4-1
+c       IF(MRPY4.EQ.0) MRPY4=97
+c       MRPY5=MRPY5-1
+c       IF(MRPY5.EQ.0) MRPY5=97
+c       RRPY98=RRPY98-RRPY99
+c       IF(RRPY98.LT.0D0) RRPY98=RRPY98+RRPY00
+c       RUNI=RUNI-RRPY98
+c       IF(RUNI.LT.0D0) RUNI=RUNI+1D0
+c       IF(RUNI.LE.0D0.OR.RUNI.GE.1D0) GOTO 130
  
-C...Generate next random number.
-  130 RUNI=RRPY(MRPY4)-RRPY(MRPY5)
-      IF(RUNI.LT.0D0) RUNI=RUNI+1D0
-      RRPY(MRPY4)=RUNI
-      MRPY4=MRPY4-1
-      IF(MRPY4.EQ.0) MRPY4=97
-      MRPY5=MRPY5-1
-      IF(MRPY5.EQ.0) MRPY5=97
-      RRPY98=RRPY98-RRPY99
-      IF(RRPY98.LT.0D0) RRPY98=RRPY98+RRPY00
-      RUNI=RUNI-RRPY98
-      IF(RUNI.LT.0D0) RUNI=RUNI+1D0
-      IF(RUNI.LE.0D0.OR.RUNI.GE.1D0) GOTO 130
+c C...Update counters. Random number to output.
+c       MRPY3=MRPY3+1
+c       IF(MRPY3.EQ.1000000000) THEN
+c         MRPY2=MRPY2+1
+c         MRPY3=0
+c       ENDIF
+c       PYR=RUNI
  
-C...Update counters. Random number to output.
-      MRPY3=MRPY3+1
-      IF(MRPY3.EQ.1000000000) THEN
-        MRPY2=MRPY2+1
-        MRPY3=0
-      ENDIF
-      PYR=RUNI
- 
-      RETURN
-      END
+c       RETURN
+c       END
  
 C*********************************************************************
  

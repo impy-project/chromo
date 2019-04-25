@@ -106,8 +106,8 @@ class UrQMDRun(MCRun):
             # Special projectile
             self.lib.inputs.prspflg = 1
             self.lib.sys.ap = 1
-            self.lib.inputs.spityp[0] = self.stab.pdg2modid[pdgid][0]
-            self.lib.inputs.spiso3[0] = self.stab.pdg2modid[pdgid][1]
+            self.lib.inputs.spityp[0] = self.stab.pdg2modid[k.p1pdg][0]
+            self.lib.inputs.spiso3[0] = self.stab.pdg2modid[k.p1pdg][1]
         else:
             self.lib.inputs.prspflg = 0
             self.lib.sys.ap = k.A1
@@ -117,8 +117,8 @@ class UrQMDRun(MCRun):
             # Special projectile
             self.lib.inputs.trspflg = 1
             self.lib.sys.at = 1
-            self.lib.inputs.spityp[1] = self.stab.pdg2modid[pdgid][0]
-            self.lib.inputs.spiso3[1] = self.stab.pdg2modid[pdgid][1]
+            self.lib.inputs.spityp[1] = self.stab.pdg2modid[k.p2pdg][0]
+            self.lib.inputs.spiso3[1] = self.stab.pdg2modid[k.p2pdg][1]
         else:
             self.lib.inputs.trspflg = 0
             self.lib.sys.at = k.A2
@@ -180,6 +180,8 @@ class UrQMDRun(MCRun):
         else:
             seed = int(seed)
         info(5, 'Using seed:', seed)
+
+        self.lib.init_rmmard(seed)
 
         self.attach_log()
         info(1, 'First initialization')
