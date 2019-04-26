@@ -19,6 +19,43 @@ standard_particles = tuple(
     standard_particles + [111, 130, 310, 221, 223, 333])
 
 
+def getAZN(pdgid):
+    """Returns mass number :math:`A`, charge :math:`Z` and neutron
+    number :math:`N` of ``pdgid``.
+
+    Note::
+    
+        PDG ID for nuclei is coded according to 10LZZZAAAI. For iron-52 it is 1000260520.
+
+    Args:
+        pdgid (int): PDG ID of nucleus/mass group
+    Returns:
+        (int,int,int): (Z,A) tuple
+    """
+    Z, A = 1, 1
+    if pdgid < 2000:
+        return 0,0,0
+    elif pdgid == 2112:
+        return 1,0,1
+    elif pdgid == 2212:
+        return 1,1,0
+    elif pdgid > 1000000000:
+        A = pdgid % 1000 / 10
+        Z = pdgid % 1000000 / 10000
+        return A, Z, A - Z
+    else:
+        return 1, 0, 0
+
+def AZ2pdg(A, Z):
+    """Conversion of nucleus with mass A and chage Z
+    to PDG nuclear code"""
+    # 10LZZZAAAI
+    pdg_id = 1000000000
+    pdg_id += 10*A
+    pdg_id += 10000*Z
+    return pdg_id
+
+
 def clear_and_set_fortran_chars(array_ref, char_seq):
     """Helper to set fortran character arrays with python strings"""
     info(10, 'Setting fortran array with', char_seq)

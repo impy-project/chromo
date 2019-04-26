@@ -9,7 +9,7 @@ from impy.common import MCRun, MCEvent, impy_config, pdata
 from impy.util import standard_particles, info
 
 
-class PYTHIAEvent(MCEvent):
+class PYTHIA6Event(MCEvent):
     """Wrapper class around HEPEVT particle stack."""
 
     def __init__(self, lib, event_kinematics, event_frame):
