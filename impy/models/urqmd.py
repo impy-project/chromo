@@ -4,10 +4,15 @@ Created on 17.03.2014
 @author: afedynitch
 '''
 
-# import numpy as np
-# from impy.common import MCRun, MCEvent, impy_config
-# from impy.util import standard_particles, info
-# from particletools.tables import UrQMDParticleTable
+# Some notes on UrQMD. The model works quite well now. It is slower than anything else,
+# except EPOS maybe. It describes quite okaish the fixed target results and some LHC results.
+# What is a strange feature is that decays of pions, kaons or neutrinos are not supported
+# in the model and can not be disabled by flags.
+
+# The current settings are taken from CORSIKA and they are optimized for speed aparently.
+# The license of UrQMD is quite restrictive, they won't probably permit distributing it.
+
+
 
 import numpy as np
 from impy.common import MCRun, MCEvent, impy_config
@@ -134,7 +139,7 @@ class UrQMDRun(MCRun):
         # Set ebeam, eos = 0, nevents
         self.lib.input2.pbeam = k.plab
         self.lib.inputs.srtflag = 2
-        # Unclear what this thing does
+        # Unclear what this thing does but should be required for very low energy
         # if k.plab > 4.9:
         #     self.lib.inputs.eos = 0
         # else:
@@ -195,6 +200,9 @@ class UrQMDRun(MCRun):
         self.lib.inputs.nevents = 1
         self.lib.rsys.bmin = 0
         self.lib.options.ctoption[4] = 1
+        # Disable elastic collision
+        self.lib.options.ctoption[6] = 1
+        
 
         # Change CTParams and/or CTOptions if needed
         if 'CTParams' in impy_config['urqmd']:
@@ -244,6 +252,6 @@ class UrQMDRun(MCRun):
                 self.lib.cascinit(self.lib.sys.zt, self.lib.sys.at, 2)
 
         self.lib.urqmd(0)
-        # Convert QGSJET to HEPEVT
+        # Convert URQMD event to HEPEVT
         self.lib.chepevt()
         return 0
