@@ -19,9 +19,11 @@ event_scope : charged
 output_log : stdout
 
 # User frame (in what frame to output)
-user_frame : center-of-mass
+user_frame : 'center-of-mass'
 
 # Default definition of final state particle
+# All particles with proper lifetime shorter than this
+# will decay
 tau_stable : 10.0e-12 # [ps] typical value at LHC.
 
 # Set pi0 to stable by default (often used as default)
@@ -31,8 +33,7 @@ pi0_stable : True
 # All hidden arguments shall go into this one, in particular for UrQMD.
 # They must not be trivial or user-readable. 
 epos:
-    input_frame  : laboratory
-    output_frame : [ laboratory, center-of-mass ]
+    output_frame : [ 'laboratory', 'center-of-mass' ]
     sqs_min_GeV  : 5.
     has_boosts   : True
     has_hepevt   : True
@@ -45,9 +46,7 @@ epos:
     }
 
 phojet:
-    input_frame  : 4-vectors
     output_frame : ['4-vectors']
-    output_frame :
     sqs_min_GeV  : 5.
     has_hepevt   : True
     has_boosts   : True
@@ -59,24 +58,21 @@ phojet:
     }
 
 pythia6:
-    input_frame  : center-of-mass
-    output_frame : [center-of-mass]
+    output_frame : ['center-of-mass']
     sqs_min_GeV  : 5.
     has_hepevt   : True
     has_boosts   : False
-    new_mpi      : True
+    new_mpi      : False
     int_support  : [ 'hh']
     projectiles  : {
         '6' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112]
     }
 
 pythia8:
-    input_frame  : center-of-mass
-    output_frame : [center-of-mass]
+    output_frame : ['center-of-mass']
     sqs_min_GeV  : 5.
     has_hepevt   : False
     has_boosts   : False
-    new_mpi      : True
     int_support  : [ 'hh', 'hA', 'AA', 'gh', 'gg']
     projectiles  : {
         '8.2'    : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112]
@@ -87,8 +83,7 @@ pythia8:
     ]
 
 urqmd:
-    input_frame  : center-of-mass
-    output_frame : [laboratory]
+    output_frame : ['laboratory']
     sqs_min_GeV  : 0.
     has_hepevt   : True
     has_boosts   : False
@@ -104,8 +99,7 @@ urqmd:
 
 
 dpmjetIII:
-    input_frame  : laboratory
-    output_frame : [ laboratory, center-of-mass ]
+    output_frame : [ 'laboratory', 'center-of-mass' ]
     sqs_min_GeV  : 1.
     has_boosts   : True
     has_hepevt   : True
@@ -117,11 +111,11 @@ dpmjetIII:
         '17.1'   : src/dpmjetIII-17.1/dpmdata/
     }
     param_file   : {
-        '3.0-6'      : src/dpmjet3.0-6/data/fitpar.dat,
+        '3.0-6'  : src/dpmjet3.0-6/data/fitpar.dat,
         '17.1'   : src/dpmjetIII-17.1/dpmdata/dpmjpar.dat
     }
     evap_file    : {
-        '3.0-6'      : src/dpmjet3.0-6/data/dpmjet.dat,
+        '3.0-6'  : src/dpmjet3.0-6/data/dpmjet.dat,
         '17.1'   : src/dpmjetIII-17.1/dpmdata/dpmjet.dat
     }
 
@@ -137,8 +131,7 @@ dpmjetIII:
 
 
 qgsjet:
-    input_frame  : laboratory
-    output_frame : [ laboratory]
+    output_frame : ['laboratory']
     sqs_min_GeV  : 10.
     has_boosts   : False
     has_hepevt   : True
@@ -151,8 +144,7 @@ qgsjet:
     }
 
 sibyll:
-    input_frame  : center-of-mass
-    output_frame : [center-of-mass ]
+    output_frame : ['center-of-mass']
     sqs_min_GeV  : 9.
     has_boosts   : False
     has_hepevt   : True
