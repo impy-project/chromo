@@ -110,6 +110,7 @@ class PYTHIA6Run(MCRun):
 
     def init_generator(self, event_kinematics, seed='random'):
         from random import randint
+        from impy.constants import sec2cm
 
         self._abort_if_already_initialized()
 
@@ -130,12 +131,18 @@ class PYTHIA6Run(MCRun):
         else:
             self.event_call = self.lib.pyevnt
         
-        self.lib.pysubs.msel = 2
-        self.set_event_kinematics(event_kinematics)
+        # self.mstp[51]
+
+        # self.lib.pysubs.msel = 2
+        # self.set_event_kinematics(event_kinematics)
 
         # Set default stable
         self._define_default_fs_particles()
-        self.set_event_kinematics(event_kinematics)
+        # Set PYTHIA decay flags to follow all changes to MDCY
+        self.lib.pydat1.mstj[21 -1] = 1
+        self.lib.pydat1.mstj[22 -1] = 2
+        # # Set ctau threshold in PYTHIA for the default stable list
+        self.lib.pydat1.parj[70] = impy_config['tau_stable']*sec2cm*10. #mm
 
 
     def set_stable(self, pdgid, stable=True):
