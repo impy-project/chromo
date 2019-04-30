@@ -96,7 +96,8 @@ class PYTHIA8Run(MCRun):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
         # Cross section and energy (in mb and GeV)
-        return self.lib.info.hiinfo.sigmaTot()
+        return self.lib.info.sigmaGen()
+        
 
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
