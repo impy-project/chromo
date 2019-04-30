@@ -4,7 +4,7 @@ Created on 17.03.2014
 @author: afedynitch
 '''
 import numpy as np
-from impy.common import MCRun, MCEvent, impy_config
+from impy.common import MCRun, MCEvent, impy_config, root_dir
 from impy.util import standard_particles, info
 
 class QGSJETEvent(MCEvent):
@@ -65,11 +65,16 @@ class QGSJETEvent(MCEvent):
 
     @property
     def charge(self):
-        return self.lib.qgchg[self.selection]
+        return self.lib.qgchg.ichg[self.selection]
 
 class QGSJetIIRun(MCRun):
     """Implements all abstract attributes of MCRun for the 
        QGSJET-II-xx series of event generators."""
+
+    def __init__(self, *args, **kwargs):
+        from particletools.tables import QGSJetParticleTable
+        self.stab = QGSJetParticleTable()
+        MCRun.__init__(self, *args, **kwargs)
 
     def sigma_inel(self):
         """Inelastic cross section according to current
@@ -95,7 +100,7 @@ class QGSJetIIRun(MCRun):
         info(5, 'Setting event kinematics')
         k = event_kinematics
         self._curr_event_kin = k
-        self._qgsproj = abs(self.ptab.pdg2modid[k.p1pdg])
+        self._qgsproj = abs(self.stab.pdg2modid[k.p1pdg])
         # if k.p1pdg not in self.impy_config['qgsjet']
 
         if not 0 < self._qgsproj < 4:
@@ -117,6 +122,7 @@ class QGSJetIIRun(MCRun):
 
     def init_generator(self, event_kinematics, seed='random'):
         from random import randint
+        from os import path
 
         self._abort_if_already_initialized()
 
@@ -127,14 +133,16 @@ class QGSJetIIRun(MCRun):
         info(5, 'Using seed:', seed)
 
         info(5, 'Initializing QGSJET-II')
-        datdir = impy_config['qgsjet']['datdir']
-        info(1, 'First initialization')
-
-        self.lib.cqgsini(randint(1000000, 10000000), datdir, self._lun)
+        datdir = path.join(root_dir, impy_config['qgsjet']['datdir'])
+        self.attach_log()
+        self.lib.cqgsini(seed, datdir, self._lun)
 
         # Set default stable
         info(10, 'All particles stable in QGSJET-II')
         self.set_event_kinematics(event_kinematics)
+    
+    def set_stable(self, stable):
+        info(10, "All particles stable in QGSJet-II.")
 
     def generate_event(self):
         self.lib.qgconf()
@@ -146,12 +154,24 @@ class QGSJet01Run(MCRun):
     """Implements all abstract attributes of MCRun for the 
        QGSJET-01c legacy event generators."""
 
+    def __init__(self, *args, **kwargs):
+        from particletools.tables import QGSJetParticleTable
+        self.stab = QGSJetParticleTable()
+        MCRun.__init__(self, *args, **kwargs)
+
     # def sigma_inel(self):
     #     """Inelastic cross section according to current
     #     event setup (energy, projectile, target)"""
     #     k = self._curr_event_kin
     #     return self.lib.qgsect(self._curr_event_kin.elab, self._qgsproj, k.A1,
     #                            k.A2)
+
+    def sigma_inel(self):
+        """Inelastic cross section according to current
+        event setup (energy, projectile, target)"""
+        k = self._curr_event_kin
+        info(2,'Sigma inel not implemented for QGSJet01c')
+        return 0.
 
     def hadron_air_cs(self):
         """Hadron-air production cross sections according to current
@@ -198,7 +218,7 @@ class QGSJet01Run(MCRun):
         info(5, 'Setting event kinematics')
         k = event_kinematics
         self._curr_event_kin = k
-        self._qgsproj = abs(self.ptab.pdg2modid[k.p1pdg])
+        self._qgsproj = abs(self.stab.pdg2modid[k.p1pdg])
 
         if not 0 < self._qgsproj < 4:
             raise Exception(
@@ -219,6 +239,7 @@ class QGSJet01Run(MCRun):
 
     def init_generator(self, event_kinematics, seed='random'):
         from random import randint
+        from os import path
 
         self._abort_if_already_initialized()
 
@@ -228,15 +249,17 @@ class QGSJet01Run(MCRun):
             seed = int(seed)
         info(5, 'Using seed:', seed)
 
-        info(5, 'Initializing QGSJET-II')
-        datdir = impy_config['qgsjet']['datdir']
-        info(1, 'First initialization')
-
-        self.lib.cqgsini(randint(1000000, 10000000), datdir, self._lun)
+        info(5, 'Initializing QGSJET01c')
+        self.attach_log()
+        datdir = path.join(root_dir, impy_config['qgsjet']['datdir'])
+        self.lib.cqgsini(seed, datdir, self._lun)
 
         # Set default stable
         info(10, 'All particles stable in QGSJET-01')
         self.set_event_kinematics(event_kinematics)
+
+    def set_stable(self, stable):
+        info(10, "All particles stable in QGSJet.")
 
     def generate_event(self):
         self.lib.psconf()

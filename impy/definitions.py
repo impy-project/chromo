@@ -4,7 +4,7 @@ of models and their various versions to the existing wrapper classes.
 
 from collections import namedtuple
 from impy.models import (sibyll, dpmjetIII, epos, phojet, urqmd, pythia6,
-                         pythia8)
+                         pythia8, qgsjet)
 
 # Objects of this type contain all default initialization directions
 # for each interaction model and create dictionaries that link the
@@ -60,6 +60,18 @@ interaction_model_nt_init = [
     [
         'PYTHIA8', 'Pythia', '8.240', -1, 'pythia8', pythia8.PYTHIA8Run,
         pythia8.PYTHIA8Event, 'center-of-mass'
+    ],
+    [
+        'QGSJET01C', 'QGSJet', '01c', -1, 'qgs01', qgsjet.QGSJet01Run,
+        qgsjet.QGSJETEvent, 'laboratory'
+    ],
+    [
+        'QGSJETII03', 'QGSJet', 'II-03', -1, 'qgsII03', qgsjet.QGSJetIIRun,
+        qgsjet.QGSJETEvent, 'laboratory'
+    ],
+    [
+        'QGSJETII04', 'QGSJet', 'II-04', -1, 'qgsII04', qgsjet.QGSJetIIRun,
+        qgsjet.QGSJETEvent, 'laboratory'
     ]
 ]
 
