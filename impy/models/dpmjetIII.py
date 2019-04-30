@@ -167,7 +167,7 @@ class DpmjetIIIRun(MCRun):
 
     def init_generator(self, event_kinematics, seed='random'):
         from impy.util import clear_and_set_fortran_chars
-        from impy.constants import c
+        from impy.constants import sec2cm
         from random import randint
 
         self._abort_if_already_initialized()
@@ -182,7 +182,7 @@ class DpmjetIIIRun(MCRun):
         k = self._curr_event_kin
         dpm_conf = impy_config['dpmjetIII']
 
-        info(1, 'First initialization')
+        info(1, 'Initializing DPMJET-III')
         # Set the dpmjpar.dat file
         if hasattr(self.lib, 'pomdls') and hasattr(self.lib.pomdls, 'parfn'):
             pfile = dpm_conf['param_file'][self.version]
@@ -226,12 +226,12 @@ class DpmjetIIIRun(MCRun):
 
         self._define_default_fs_particles()
         # Prevent DPMJET from overwriting decay settings
-        self.lib.dtfrpa.ovwtdc = False
+        # self.lib.dtfrpa.ovwtdc = False
         # Set PYTHIA decay flags to follow all changes to MDCY
         self.lib.pydat1.mstj[21 -1] = 1
         self.lib.pydat1.mstj[22 -1] = 2
-        # Set ctau threshold in PYTHIA for the default stable list
-        self.lib.pydat1.parj[70] = impy_config['tau_stable']*c*1e-3 #mm
+        # # Set ctau threshold in PYTHIA for the default stable list
+        self.lib.pydat1.parj[70] = impy_config['tau_stable']*sec2cm*10. #mm
 
     def set_stable(self, pdgid, stable=True):
         if abs(pdgid) == 2212:
