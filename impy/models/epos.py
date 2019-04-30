@@ -5,7 +5,7 @@ Created on 03.05.2016
 '''
 
 import numpy as np
-from impy.common import MCRun, MCEvent, impy_config
+from impy.common import MCRun, MCEvent, impy_config, root_dir
 from impy.util import standard_particles, info
 
 class EPOSEvent(MCEvent):
@@ -116,6 +116,7 @@ class EPOSRun(MCRun):
 
     def init_generator(self, event_kinematics, seed='random'):
         from random import randint
+        from os import path
 
         self._abort_if_already_initialized()
 
@@ -126,7 +127,7 @@ class EPOSRun(MCRun):
         info(5, 'Using seed:', seed)
         
         epos_conf = impy_config['epos']
-        datdir = epos_conf['datdir']
+        datdir = path.join(root_dir, epos_conf['datdir'])
         self.attach_log()
         info(1, 'First initialization')
         self.lib.aaset(0)
