@@ -43,12 +43,3 @@ for event in generator.event_generator(event_kinematics, 10):
     # import IPython
     # IPython.embed()
     # print event.impact_parameter, event.n_wounded_A, event.n_wounded_B#, event.n_NN_interactions
-
-# AF: Maybe it would be better, or a good alternative
-# to make a Particle class and the MCEvent provides an iterator
-# to it's contents as objects of this Particle class. This would
-# be Pythia 8 style but probably slow in PYTHON.
-
-# for event in ....:
-#     for particle in event:
-#         print particle.p_id, particle.en...
