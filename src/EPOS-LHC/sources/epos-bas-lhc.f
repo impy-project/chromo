@@ -13,7 +13,7 @@ c-----------------------------------------------------------------------
       common /ems12/iodiba,bidiba  ! defaut iodiba=0. if iodiba=1, study H-Dibaryon
       character*500 fndat,fnncs,fnIIdat,fnIIncs,fnII03dat,fnII03ncs                 !qgs-II????????
       common/qgsfname/  fndat, fnncs, ifdat, ifncs
-      common/qgsIIfname/fnIIdat, fnIIncs, ifIIdat, ifIIncs     !qgs-II????????
+      common/qgsIIfname/fnIIdat, fnIIncs, ifIIdat, ifIIncs   
       common/qgsII03fname/fnII03dat, fnII03ncs, ifII03dat, ifII03ncs     !qgs-II????????
       common/ghecsquel/anquasiel,iquasiel
       common/cbincond/nozero,ibmin,ibmax

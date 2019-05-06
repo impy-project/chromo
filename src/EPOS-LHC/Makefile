@@ -3,6 +3,9 @@
 #
 #                                        (A.F. 08/12)
 #
+# If f2py fails, try with --verbose output. It is very likely
+# that inline comments starting with ! after an expression cause problems
+
 
 EPOS_SRCS :=$(wildcard sources/*.f)
 EPOS_SRCS := $(filter-out sources/epos_example.f, $(EPOS_SRCS))
