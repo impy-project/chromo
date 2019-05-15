@@ -22,11 +22,11 @@ class SibyllEvent(MCEvent):
         to_pdg = np.vectorize(lib.isib_pid2pdg)
 
         # Save selector for implementation of on-demand properties
-        px, py, pz, en, m = lib.s_plist.p.T
+        px, py, pz, en, m = evt.p.T
         if self._no_vertex_data is None:
-            self._no_vertex_data = np.zeros((4, lib.s_plist.p.shape[0]))
+            self._no_vertex_data = np.zeros((4, evt.p.shape[0]))
         vx, vy, vz, vt = self._no_vertex_data
-
+        status = np.where(np.abs(evt.llist[:evt.np]) < 10000,1,2)
         MCEvent.__init__(
             self,
             lib=lib,
@@ -34,8 +34,8 @@ class SibyllEvent(MCEvent):
             event_frame=event_frame,
             nevent=lib.s_debug.ncall,
             npart=evt.np,
-            p_ids=to_pdg(evt.llist[:lib.s_plist.np]),
-            status=evt.llist[:lib.s_plist.np],
+            p_ids=to_pdg(evt.llist[:evt.np]),
+            status=status,
             px=px,
             py=py,
             pz=pz,
@@ -45,19 +45,15 @@ class SibyllEvent(MCEvent):
             vy=vy,
             vz=vz,
             vt=vt,
-            pem_arr=lib.s_plist.p.T,
+            pem_arr=evt.p.T,
             vt_arr=self._no_vertex_data)
 
     def filter_final_state(self):
-        self.selection = np.nonzero(
-            np.abs(self.lib.s_plist.llist[:self.npart]) < 10000)[0]
+        self.selection = np.where(self.status == 1)
         self._apply_slicing()
 
     def filter_final_state_charged(self):
-        stable = np.nonzero(
-            np.abs(self.lib.s_plist.llist[:self.npart]) < 10000)[0]
-        self.selection = stable[self.lib.s_chp.ichp[
-            np.abs(self.lib.s_plist.llist[stable]) - 1] != 0]
+        self.selection = np.where((self.status == 1) & (self.charge != 0))
         self._apply_slicing()
 
     @property
