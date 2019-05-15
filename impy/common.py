@@ -99,8 +99,11 @@ class MCEvent(object):
         self.vt_arr = vt_arr  # (vx, vy, vz, t)
 
         # Initialize current selection to all entries up to npart
-        self.selection = slice(None, self.npart)
-        self._apply_slicing()
+        if impy_config['pre_slice']:
+            self.selection = slice(None, self.npart)
+            self._apply_slicing()
+        else: 
+            self.selection = slice(None, None)
         # The default slice only cuts limits the view to the array to
         # to the current number of entries
         self._is_filtered = False

@@ -29,6 +29,11 @@ tau_stable : 10.0e-12 # [ps] typical value at LHC.
 # Set pi0 to stable by default (often used as default)
 pi0_stable : True
 
+# Apply initial array slicing (Advanced option)
+# True (default): Expose the event variables as truncated views, i.e. event.en[0:npart]
+# False: Expose full particle arrays, large performance impact (you should know what you are doing here)  
+pre_slice : True
+
 # AF: Comment on stuff below
 # All hidden arguments shall go into this one, in particular for UrQMD.
 # They must not be trivial or user-readable. 
