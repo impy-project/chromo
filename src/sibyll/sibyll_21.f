@@ -6968,7 +6968,7 @@ C.           DSIGQE   "    = error
 C.           additional output is in the common block  /CPROBAB/
 C..........................................................................
       PARAMETER (IAMAX=56)
-      PARAMETER (IAMAX2=3136)          ! IAMAX*IAMAX
+      PARAMETER (IAMAX2=3136)          
       COMMON  /CPROBAB/ PROBA(IAMAX), DPROBA(IAMAX), 
      +   PROBB(IAMAX), DPROBB(IAMAX), PROBI(IAMAX2), DPROBI(IAMAX2),
      +   P1AEL(0:IAMAX),DP1AEL(0:IAMAX),P1BEL(0:IAMAX), DP1BEL(0:IAMAX),
@@ -7069,7 +7069,7 @@ C.           Prob(n_A), Prob(n_B), Prob(n_int)
 C..........................................................................
 
       PARAMETER (IAMAX=56)
-      PARAMETER (IAMAX2=3136)          ! IAMAX*IAMAX
+      PARAMETER (IAMAX2=3136)          
       COMMON  /CPROBAB/ PROBA(IAMAX), DPROBA(IAMAX), 
      +   PROBB(IAMAX), DPROBB(IAMAX), PROBI(IAMAX2), DPROBI(IAMAX2),
      +   P1AEL(0:IAMAX),DP1AEL(0:IAMAX),P1BEL(0:IAMAX), DP1BEL(0:IAMAX),

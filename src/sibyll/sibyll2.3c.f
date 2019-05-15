@@ -19919,7 +19919,7 @@ C..........................................................................
       IMPLICIT INTEGER(I-N)
 
       PARAMETER (IAMAX=56)
-      PARAMETER (IAMAX2=3136)          ! IAMAX*IAMAX
+      PARAMETER (IAMAX2=3136)          
       COMMON  /CPROBAB/ PROBA(IAMAX), DPROBA(IAMAX), 
      +   PROBB(IAMAX), DPROBB(IAMAX), PROBI(IAMAX2), DPROBI(IAMAX2),
      +   P1AEL(0:IAMAX),DP1AEL(0:IAMAX),P1BEL(0:IAMAX), DP1BEL(0:IAMAX),
@@ -20032,7 +20032,7 @@ C..........................................................................
       IMPLICIT INTEGER(I-N)
 
       PARAMETER (IAMAX=56)
-      PARAMETER (IAMAX2=3136)          ! IAMAX*IAMAX
+      PARAMETER (IAMAX2=3136)          
       COMMON  /CPROBAB/ PROBA(IAMAX), DPROBA(IAMAX), 
      +   PROBB(IAMAX), DPROBB(IAMAX), PROBI(IAMAX2), DPROBI(IAMAX2),
      +   P1AEL(0:IAMAX),DP1AEL(0:IAMAX),P1BEL(0:IAMAX), DP1BEL(0:IAMAX),
