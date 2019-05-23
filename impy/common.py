@@ -18,7 +18,7 @@ from particletools.tables import PYTHIAParticleData, make_stable_list
 
 # Globals
 root_dir = abspath(join(dirname(__file__), ".."))
-impy_config = yaml.load(open(join(root_dir, 'impy_config.yaml')))
+impy_config = yaml.load(open(join(root_dir, 'impy_config.yaml')),Loader=yaml.FullLoader)
 
 # This is not nice, but the paths in the config should become absolute
 # in case impy is used outside of the folder
