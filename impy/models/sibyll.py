@@ -15,38 +15,32 @@ class SibyllEvent(MCEvent):
     _no_vertex_data = None
 
     def __init__(self, lib, event_kinematics, event_frame):
-
-        #Event common block
-        evt = lib.s_plist
-        # Conversion to PDG ids from SIBYLL routine
-        to_pdg = np.vectorize(lib.isib_pid2pdg)
+        # HEPEVT (style) common block
+        evt = lib.hepevt
 
         # Save selector for implementation of on-demand properties
-        px, py, pz, en, m = evt.p.T
-        if self._no_vertex_data is None:
-            self._no_vertex_data = np.zeros((4, evt.p.shape[0]))
-        vx, vy, vz, vt = self._no_vertex_data
-        status = np.where(np.abs(evt.llist[:evt.np]) < 10000,1,2)
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=lib.s_debug.ncall,
-            npart=evt.np,
-            p_ids=to_pdg(evt.llist[:evt.np]),
-            status=status,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.p.T,
-            vt_arr=self._no_vertex_data)
+        px, py, pz, en, m = evt.phep
+        vx, vy, vz, vt = evt.vhep
+
+        MCEvent.__init__(self,
+                         lib=lib,
+                         event_kinematics=event_kinematics,
+                         event_frame=event_frame,
+                         nevent=evt.nevhep,
+                         npart=evt.nhep,
+                         p_ids=evt.idhep,
+                         status=evt.isthep,
+                         px=px,
+                         py=py,
+                         pz=pz,
+                         en=en,
+                         m=m,
+                         vx=vx,
+                         vy=vy,
+                         vz=vz,
+                         vt=vt,
+                         pem_arr=evt.phep,
+                         vt_arr=evt.vhep)
 
     def filter_final_state(self):
         self.selection = np.where(self.status == 1)
@@ -58,11 +52,7 @@ class SibyllEvent(MCEvent):
 
     @property
     def charge(self):
-        return self.lib.s_chp.ichp[self.lib.s_plist.llist[self.selection] - 1]
-
-    @property
-    def mass(self):
-        return self.lib.s_plist.p[self.selection, 4]
+        return self.lib.schg.ichg[self.selection]
 
     @property
     def parents(self):
@@ -115,7 +105,7 @@ class SIBYLLRun(MCRun):
             raise Exception('Input error')
 
         return self.lib.sib_sigma_hp(sigproj, self._ecm)[2]
-    
+
     def sigma_inel_air(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
@@ -172,6 +162,8 @@ class SIBYLLRun(MCRun):
         self.attach_log()
         self.lib.sibini(int(seed))
         self.lib.pdg_ini()
+        self.conv_hepevt = (self.lib.sibhep1
+                            if '21' in self.lib.__name__ else self.lib.sibhep3)
         self._define_default_fs_particles()
 
     def set_stable(self, pdgid, stable=True):
@@ -194,4 +186,5 @@ class SIBYLLRun(MCRun):
     def generate_event(self):
         self.lib.sibyll(self._sibproj, self._iatarg, self._ecm)
         self.lib.decsib()
+        self.conv_hepevt()
         return 0  # SIBYLL never rejects
