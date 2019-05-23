@@ -14,6 +14,8 @@ LEXT = so
 
 # For f2py
 LOGF = impy_openlogfile impy_closelogfile
+export NPY_DISTUTILS_APPEND_FLAGS=0
+
 
 #######################################################################
 #
@@ -48,8 +50,8 @@ ifeq ($(CVendor),"GNU")
 	else
 		# GNU Release
 		#OPT = -O0 -fPIC
-		OPT = -O3 -Wno-uninitialized -fPIC
-		OPTF90 = -O3 -Wno-uninitialized -fPIC -fno-second-underscore
+		OPT = -O3 -Wno-uninitialized -fPIC -mtune=native
+		OPTF90 = -O3 -Wno-uninitialized -fPIC -fno-second-underscore 
 	endif
 else
 	ifeq ($(Config),"Debug")
@@ -73,7 +75,8 @@ endif
 #general version for signature file extraction and linking
 F2PY = f2py --quiet
 #additional flags for linker
-F2PY_L = $(F2PY) -D_NPY_1_7_DEPRECATED_API_H
+F2PY_L = $(F2PY)
+
 #######################################################################
 #
 #   Targets
