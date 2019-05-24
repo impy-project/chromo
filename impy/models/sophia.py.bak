@@ -33,7 +33,7 @@ class SophiaCascadeRun():
     def init_generator(self):
         from random import randint
         seed = randint(1000000, 10000000)
-        print((self.__class__.__name__ + '::init_generator(): seed=', seed))
+        print(self.__class__.__name__ + '::init_generator(): seed=', seed)
         self.lib.init_rmmard(seed)
 
     def get_hadron_air_cs(self, E_lab, projectile_sibid):
@@ -64,7 +64,7 @@ class SophiaCascadeRun():
         for i in range(self.nEvents):
             self.lib.eventgen(nucleon_id, nucleon_e, evkin.elab, 180., 0)
             if not (i % 10000) and i and self.dbg:
-                print((i, "events generated."))
+                print(i, "events generated.")
 
             event = SophiaCascadeEvent(self.lib, swap)
 
@@ -111,7 +111,7 @@ def set_stable(lib, decay_mode, dbg=True):
     if decay_mode == 0:
         stab = SibyllParticleTable()
         for pdg_id in standard_particles:
-            print(('stable,', pdg_id))
+            print('stable,', pdg_id)
             idb[i - 1] = -np.abs(idb[i - 1])
         return
 

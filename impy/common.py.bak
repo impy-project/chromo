@@ -291,7 +291,7 @@ class Settings(metaclass=ABCMeta):
 
         other_attr = other_instance.__dict__
 
-        for attr, value in list(self.__dict__.items()):
+        for attr, value in self.__dict__.items():
             if attr == 'lib':
                 continue
             elif attr not in list(other_attr.keys()):

@@ -266,7 +266,7 @@ class EventKinematics(object):
         }
 
     def __ne__(self, other):
-        for key, value in list(other.__dict__.items()):
+        for key, value in other.__dict__.items():
             if key == 'boost_def':
                 continue
             if value != self.__dict__[key]:

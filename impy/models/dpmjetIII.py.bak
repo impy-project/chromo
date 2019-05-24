@@ -197,7 +197,7 @@ class DpmjetIIIRun(MCRun):
             self.lib.poinou.lendir = len(pfile)
             
         if hasattr(self.lib, 'dtimpy'):
-            print((self.version, self._version))
+            print(self.version, self._version)
             evap_file = dpm_conf['evap_file'][self.version]
             info(10, 'DPMJET evap file at', evap_file)
             clear_and_set_fortran_chars(self.lib.dtimpy.fnevap, evap_file)

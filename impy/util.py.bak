@@ -121,4 +121,4 @@ def info(min_dbg_level, *message):
     # if min_dbg_level <= config["debug_level"]:
     if min_dbg_level <= impy_config['debug_level']:
         message = [str(m) for m in message]
-        print((caller_name() + " ".join(message)))
+        print(caller_name() + " ".join(message))

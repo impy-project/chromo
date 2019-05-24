@@ -195,4 +195,4 @@ class PYTHIA8Run(MCRun):
             info(5, pdgid, 'allowed to decay')
 
     def generate_event(self):
-        return not next(self.lib)
+        return not self.lib.next()
