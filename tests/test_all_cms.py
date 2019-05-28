@@ -1,17 +1,19 @@
+from __future__ import print_function
+
 import sys
 import os
 import numpy as np
 
-root_dir = os.path.abspath(os.path.dirname(__file__))
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
 sys.path.append(root_dir)
 sys.path.append(os.path.join(root_dir, '../DPMJET-III-gitlab'))
 sys.path.append(os.path.join(root_dir, '../../apps/pythia8240/lib'))
-print root_dir
 
 from impy.definitions import *
 from impy.constants import *
 from impy.kinematics import EventKinematics
 from impy.common import impy_config, pdata
+from impy.util import info
 
 # AF: This is what the user interaction has to yield.
 # It is the typical expected configuration that one
@@ -51,6 +53,14 @@ for gen in gen_list:
         continue
         
     passed.append(gen)
-    
-import IPython
-IPython.embed()
+  
+info(0, 'Test results for 7 TeV pp collisions in cms frame:\n')
+info(0, 'Passed:', '\n', '\n '.join(passed))
+info(0, '\nFailed:', '\n', '\n '.join(failed))
+
+import pickle
+pickle.dump((eta_range, psrap),
+            open(os.path.splitext(__file__)[0] + '.pkl','wb'), protocol=-1)
+
+# import IPython
+# IPython.embed()
