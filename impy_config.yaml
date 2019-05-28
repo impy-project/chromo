@@ -11,10 +11,6 @@ pdata_cachefile : 'impy_pdata_cache.cch'
 # False: return if event not successful and set event_successful flag
 retry_on_rejection : True
 
-# Scope of event stack. Parse all "stable", only stable "charged" are the
-# entire event stack containing "all" particles including partons and decayed
-event_scope : charged
-
 # If to write output to a logfile or 'stdout'
 output_log : stdout
 
