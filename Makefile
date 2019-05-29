@@ -73,7 +73,7 @@ endif
 #
 #######################################################################
 #general version for signature file extraction and linking
-F2PY = f2py --quiet
+F2PY = python -m numpy.f2py --quiet
 #additional flags for linker
 F2PY_L = $(F2PY)
 
