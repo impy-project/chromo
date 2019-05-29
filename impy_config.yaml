@@ -11,10 +11,6 @@ pdata_cachefile : 'impy_pdata_cache.cch'
 # False: return if event not successful and set event_successful flag
 retry_on_rejection : True
 
-# Scope of event stack. Parse all "stable", only stable "charged" are the
-# entire event stack containing "all" particles including partons and decayed
-event_scope : charged
-
 # If to write output to a logfile or 'stdout'
 output_log : stdout
 
@@ -56,6 +52,14 @@ phojet:
     has_hepevt   : True
     has_boosts   : True
     int_support  : [ 'hh', 'gg', 'gh']
+    dat_dir      : {
+      '1.12-35'  : src/dpmjet3.0-6/data/,
+        '17.1'   : src/dpmjetIII-17.1/dpmdata/
+    }
+    param_file   : {
+      '1.12-35'  : src/dpmjet3.0-6/data/fitpar.dat,
+        '17.1'   : src/dpmjetIII-17.1/dpmdata/dpmjpar.dat
+    }
     projectiles  : {
         'last' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
                    3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,

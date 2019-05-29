@@ -5,7 +5,7 @@ Created on 15.05.2012
 '''
 import numpy as np
 from impy.common import MCRun, MCEvent, impy_config, pdata
-from impy.util import standard_particles, info
+from impy.util import standard_particles, info, clear_and_set_fortran_chars
 
 
 class PhojetEvent(MCEvent):
@@ -138,7 +138,7 @@ class PhojetEvent(MCEvent):
 
 
 class PHOJETRun(MCRun):
-    def get_sigma_inel(self):
+    def sigma_inel(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
 
@@ -153,7 +153,6 @@ class PHOJETRun(MCRun):
             return
         kc = self.lib.pycomp(pdgid)
         if stable:
-            print(('before stable', pdgid, self.lib.pydat3.mdcy[kc - 1, 0]))
             self.lib.pydat3.mdcy[kc - 1, 0] = 0
             info(5, 'defining', pdgid, 'as stable particle')
         else:
@@ -179,7 +178,7 @@ class PHOJETRun(MCRun):
 
         self.lib.pho_setpar(1, k.p1pdg, 0, 0.0)
         self.lib.pho_setpar(2, k.p2pdg, 0, 0.0)
-        self.p1, self.p2 = k.beam_as_4vec()
+        self.p1, self.p2 = k.beam_as_4vec
 
     def attach_log(self):
         """Routes the output to a file or the stdout."""
@@ -208,6 +207,9 @@ class PHOJETRun(MCRun):
     def init_generator(self, event_kinematics, seed='random'):
         from impy.constants import c
         from random import randint
+        from os.path import join
+        from impy.common import root_dir
+        
 
         self._abort_if_already_initialized()
 
@@ -223,7 +225,22 @@ class PHOJETRun(MCRun):
         # Detect what kind of PHOJET interface is attached. If PHOJET
         # is run through DPMJET, initial init needs -2 else -1
         init_flag = -2 if 'dpmjetIII' in self.lib.__name__ else -1
+        
+        pho_conf = impy_config['phojet']
+        # Set the dpmjpar.dat file
+        if hasattr(self.lib, 'pomdls') and hasattr(self.lib.pomdls, 'parfn'):
+            pfile = join(root_dir,pho_conf['param_file'][self.version])
+            info(10, 'PHOJET parameter file at', pfile)
+            clear_and_set_fortran_chars(self.lib.pomdls.parfn, pfile)
 
+        # Set the data directory for the other files
+        if hasattr(self.lib, 'poinou') and hasattr(self.lib.poinou, 'datdir'):
+            pfile = str(join(root_dir,pho_conf['dat_dir'][self.version],'')) + '/'
+            info(10, 'PHOJET data dir is at', pfile)
+            clear_and_set_fortran_chars(self.lib.poinou.datdir, pfile)
+            self.lib.poinou.lendir = len(pfile)
+        
+        self.attach_log()
         #Initialize PHOJET's parameters
         if self.lib.pho_init(init_flag, lun):
             raise Exception('PHOJET unable to initialize or set LUN')
@@ -248,8 +265,7 @@ class PHOJETRun(MCRun):
 
         self.set_event_kinematics(event_kinematics)
         
-        if self.lib.pho_event(-1, self._curr_event_kin.p1, self._curr_event_kin.p2)[1]:
-            print((self._curr_event_kin))
+        if self.lib.pho_event(-1, self.p1, self.p2)[1]:
             raise Exception('PHOJET failed to initialize with the current',
                             'event kinematics')
         
@@ -273,5 +289,5 @@ class PHOJETRun(MCRun):
         self.lib.pydat1.parj[70] = impy_config['tau_stable'] * c * 1e-3  #mm
 
     def generate_event(self):
-        return self.lib.pho_event(1, self._curr_event_kin.p1,
-                                  self._curr_event_kin.p2)[1]
+        return self.lib.pho_event(1, self.p1,
+                                  self.p2)[1]

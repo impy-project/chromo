@@ -103,22 +103,10 @@ class MCEvent(object, metaclass=ABCMeta):
             self._apply_slicing()
         else: 
             self.selection = slice(None, None)
+        
         # The default slice only cuts limits the view to the array to
         # to the current number of entries
         self._is_filtered = False
-
-        # TODO: Shall we do this below? Or do you 'insist' on the user
-        # calling the flters externally? I can see the design advantage
-        # but the docs have to be clear about this..
-
-        # if impy_config['event_scope'] == 'all':
-        #     pass
-        # elif impy_config['event_scope'] == 'stable':
-        #     self.filter_final_state()
-        # elif impy_config['event_scope'] == 'charged':
-        #     self.filter_final_state_charged()
-        # else:
-        #     raise Exception('Unknown event scope')
 
         # Apply boosts into frame required by user
         self.kin.apply_boost(self, event_frame, impy_config["user_frame"])

@@ -43,7 +43,7 @@ interaction_model_nt_init = [
     ],
     [
         'PHOJET112', 'PHOJET', '1.12-35', -1, 'dpmjet306',
-        dpmjetIII.DpmjetIIIRun, dpmjetIII.DpmjetIIIEvent, 'center-of-mass'
+        phojet.PHOJETRun, phojet.PhojetEvent, 'center-of-mass'
     ],
     [
         'PHOJET171', 'PHOJET', '17.1', -1, 'dpmjetIII171', phojet.PHOJETRun,

@@ -108,10 +108,10 @@ C         WRITE(6,*) I, ich(I), esp(:,I)
          ISTHEP(I) = 1
          NHEP = NSP
          IDHEP(I) = IPDGID(ich(I))
-         PHEP(1,I) = esp(2,I)
-         PHEP(2,I) = esp(3,I)
-         PHEP(3,I) = esp(1,I)
-         PHEP(4,I) = esp(4,I)
+         PHEP(1,I) = esp(3,I)
+         PHEP(2,I) = esp(4,I)
+         PHEP(3,I) = esp(2,I)
+         PHEP(4,I) = esp(1,I)
          PHEP(5,I) = QMASS(ich(I))
          ICHG(I) = ICHRG(ich(I))
       END DO
