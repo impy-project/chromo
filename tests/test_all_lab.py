@@ -35,22 +35,38 @@ gen_list = ['SIBYLL23C', 'SIBYLL23', 'SIBYLL21', 'DPMJETIII306', 'DPMJETIII171',
 failed = []
 passed = []
 
-xlab_hist = {}
-xlab_range = np.linspace(0,1,21)
+xlab_protons = {}
+xlab_piplus = {}
+
+xlab_bins = np.linspace(0,1,21)
+xlab_widths = xlab_bins[1:] - xlab_bins[:-1]
+xlab_centers = 0.5*(xlab_bins[1:] + xlab_bins[:-1])
 nevents = 5000
+
+norm = 1./float(nevents)/xlab_widths
+
 for gen in gen_list:
-    hist = np.zeros(len(xlab_range) - 1) 
-    try:
-        generator = make_generator_instance(interaction_model_by_tag[gen])
-        generator.init_generator(event_kinematics)
-        for event in generator.event_generator(event_kinematics, nevents):
-            event.filter_final_state_charged()
-            hist += 1/float(nevents)*np.histogram(event.xlab,bins=xlab_range,
-                                                  weights=event.xlab**1.7)[0]
-        xlab_hist[gen] = hist
-    except:
-        failed.append(gen)
-        continue
+    hist_p = np.zeros(len(xlab_centers))
+    hist_pi = np.zeros(len(xlab_centers)) 
+#     try:
+    generator = make_generator_instance(interaction_model_by_tag[gen])
+    generator.init_generator(event_kinematics)
+    for event in generator.event_generator(event_kinematics, nevents):
+        event.filter_final_state_charged()
+
+        hist_p += np.histogram(event.xlab[event.p_ids == 2212],
+                               bins=xlab_bins,
+                               weights=event.xlab[event.p_ids == 2212]**1.7)[0]
+
+        hist_pi += np.histogram(event.xlab[np.abs(event.p_ids) == 211],
+                                bins=xlab_bins,
+                                weights=event.xlab[np.abs(event.p_ids) == 211]**1.7)[0]
+    xlab_protons[gen] = hist_p
+    xlab_piplus[gen] = hist_pi
+        
+#     except:
+#         failed.append(gen)
+#         continue
         
     passed.append(gen)
   
@@ -59,7 +75,7 @@ info(0, 'Passed:', '\n', '\n '.join(passed))
 info(0, '\nFailed:', '\n', '\n '.join(failed))
 
 import pickle
-pickle.dump((xlab_range, xlab_hist),
+pickle.dump((xlab_bins, xlab_protons, xlab_piplus),
             open(os.path.splitext(__file__)[0] + '.pkl','wb'), protocol=-1)
 
 # import IPython
