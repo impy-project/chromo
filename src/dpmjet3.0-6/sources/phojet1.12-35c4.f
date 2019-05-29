@@ -511,6 +511,8 @@ C  hard cross sections and MC selection weights
       DOUBLE PRECISION  BRAT
       COMMON/PYDAT3/MDCY(500,3),MDME(4000,2),BRAT(4000),KFDP(4000,5)
 
+Cf2py intent(out) irej
+
       INTEGER PYCOMP
 
       DIMENSION ITMP(0:11)
@@ -11746,6 +11748,8 @@ C  table of particle indices for recursive PHOJET calls
 
       DIMENSION IPRSAM(10),IPRACC(10),IENACC(10),IDNS(4),IDNA(4)
 
+Cf2py intent(out) irej, fac
+
       IREJ = 0
 
 C  initializations
@@ -11891,21 +11895,23 @@ C  rejection?
             IF(ITRY2.LT.5) GOTO 60
             GOTO 50
           ENDIF
+
+C**anfe Backported routine from newer DPMJET (2017)
 C  fragmentation of strings
-
-C  FSR and string fragmentation is done separately by DPMJET routines
-C         CALL PHO_STRFRA(IREJ)
-
-C  rejection?
-          IF(IREJ.NE.0) THEN
-            IFAIL(23) = IFAIL(23)+1
-            IF(IDEB(68).GE.4)  THEN
-              WRITE(LO,'(/1X,A,2I5)')
-     &          'PHO_EVENT: rejection by PHO_STRFRA',ITRY2,IREJ
-              CALL PHO_PREVNT(-1)
-            ENDIF
-            GOTO 50
-          ENDIF
+C  In DPMJET case FSR and string fragmentation is done separately
+         IF ( IPAmdl(13).EQ.0 ) THEN
+            CALL PHO_STRFRA(Irej)
+            IF ( Irej.NE.0 ) THEN
+               IFAil(23) = IFAil(23) + 1
+               IF ( (LPRi.GT.4) .AND. (IDEb(68).GE.4) ) THEN
+                  WRITE (LO,'(/1X,A,2I5)')
+     &                    'PHO_EVENT: rejection by PHO_STRFRA' , itry2 , 
+     &                   Irej
+                  CALL PHO_PREVNT(-1)
+               END IF
+               GOTO 50
+            END IF
+         END IF
 C  check of conservation of quantum numbers
           IF(IDEB(68).GE.-5) THEN
             CALL PHO_CHECK(-1,IREJ)
