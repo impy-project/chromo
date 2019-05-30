@@ -61,7 +61,7 @@ for evt in range(Nevt):
         rap_pos = \
             np.log( ( np.sqrt( pz[ id_pos ]**2 + mts[ id_pos ] ) + pz[ id_pos ] ) / np.sqrt(mts)[ id_pos ] )
     except FloatingPointError:
-        print(('calculation of rapidity failed!! (pz,mts):',pz[ id_pos ],mts[ id_pos ]))
+        print('calculation of rapidity failed!! (pz,mts):',pz[ id_pos ],mts[ id_pos ])
 
     try:
         rap_neg = \
@@ -69,7 +69,7 @@ for evt in range(Nevt):
                          / (np.sqrt(pz[ id_neg ]**2 \
                                         + mts[ id_neg ]) - pz[ id_neg ]))
     except FloatingPointError:
-        print(('calculation of rapidity failed!! (pz,mts):',pz[ id_pos ],mts[ id_pos ]))
+        print('calculation of rapidity failed!! (pz,mts):',pz[ id_pos ],mts[ id_pos ])
 
     rap[ id_pos ] = rap_pos
     rap[ id_neg ] = rap_neg

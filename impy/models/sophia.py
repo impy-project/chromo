@@ -33,7 +33,7 @@ class SophiaCascadeRun():
     def init_generator(self):
         from random import randint
         seed = randint(1000000, 10000000)
-        print((self.__class__.__name__ + '::init_generator(): seed=', seed))
+        print(self.__class__.__name__ + '::init_generator(): seed=', seed)
         self.lib.init_rmmard(seed)
 
     def get_hadron_air_cs(self, E_lab, projectile_sibid):
@@ -64,7 +64,7 @@ class SophiaCascadeRun():
         for i in range(self.nEvents):
             self.lib.eventgen(nucleon_id, nucleon_e, evkin.elab, 180., 0)
             if not (i % 10000) and i and self.dbg:
-                print((i, "events generated."))
+                print(i, "events generated.")
 
             event = SophiaCascadeEvent(self.lib, swap)
 
@@ -104,14 +104,14 @@ def set_stable(lib, decay_mode, dbg=True):
     idb = lib.s_csydec.idb
 
     if dbg:
-        print(("SophiaCascadeRun::set_stable(): Setting standard" +
-              " particles stable."))
+        print("SophiaCascadeRun::set_stable(): Setting standard" +
+              " particles stable.")
 
     #fast-mode particles
     if decay_mode == 0:
         stab = SibyllParticleTable()
         for pdg_id in standard_particles:
-            print(('stable,', pdg_id))
+            print('stable,', pdg_id)
             idb[i - 1] = -np.abs(idb[i - 1])
         return
 
@@ -128,8 +128,8 @@ def set_stable(lib, decay_mode, dbg=True):
     # Decay mode 2 for generation of decay spectra (all conventional with
     # lifetime >= K0S
     if dbg:
-        print(("SophiaCascadeRun::set_stable(): Setting conventional " +
-              "Sigma-, Xi0, Xi- and Lambda0 stable (decay mode)."))
+        print("SophiaCascadeRun::set_stable(): Setting conventional " +
+              "Sigma-, Xi0, Xi- and Lambda0 stable (decay mode).")
     for i in range(36, 39 + 1):
         idb[i - 1] = -np.abs(idb[i - 1])
 
@@ -139,8 +139,8 @@ def set_stable(lib, decay_mode, dbg=True):
     # Conventional mesons and baryons
     # keep eta, eta', rho's, omega, phi, K*
     if dbg:
-        print(("SophiaCascadeRun::set_stable(): Setting all " +
-              "conventional stable."))
+        print("SophiaCascadeRun::set_stable(): Setting all " +
+              "conventional stable.")
     # pi0
     idb[6 - 1] = -np.abs(idb[6 - 1])
     for i in range(23, 33 + 1):
@@ -156,7 +156,7 @@ def set_stable(lib, decay_mode, dbg=True):
     # Charmed particles (only for version >= 2.2)
     # keep all charmed
     if dbg:
-        print(("SophiaCascadeRun::set_stable(): Setting all " +
-              "conventional and charmed stable."))
+        print("SophiaCascadeRun::set_stable(): Setting all " +
+              "conventional and charmed stable.")
     for i in list(range(59, 61)) + list(range(71, 99 + 1)):
         idb[i - 1] = -np.abs(idb[i - 1])
