@@ -22,26 +22,25 @@ class PYTHIA6Event(MCEvent):
 
         self.charge_vec = None
 
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhep,
-            npart=evt.nhep,
-            p_ids=evt.idhep,
-            status=evt.isthep,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phep,
-            vt_arr=evt.vhep)
+        MCEvent.__init__(self,
+                         lib=lib,
+                         event_kinematics=event_kinematics,
+                         event_frame=event_frame,
+                         nevent=evt.nevhep,
+                         npart=evt.nhep,
+                         p_ids=evt.idhep,
+                         status=evt.isthep,
+                         px=px,
+                         py=py,
+                         pz=pz,
+                         en=en,
+                         m=m,
+                         vx=vx,
+                         vy=vy,
+                         vz=vz,
+                         vt=vt,
+                         pem_arr=evt.phep,
+                         vt_arr=evt.vhep)
 
     def filter_final_state(self):
         self.selection = np.where(self.status == 1)
@@ -76,6 +75,7 @@ class PYTHIA6Event(MCEvent):
             ]
         return self.charge_vec[self.selection]
 
+
 class PYTHIA6Run(MCRun):
     """Implements all abstract attributes of MCRun for the 
     EPOS-LHC series of event generators."""
@@ -96,9 +96,9 @@ class PYTHIA6Run(MCRun):
         self.lib.pyinit('CMS', self.p1_type, self.p2_type, self.ecm)
         info(5, 'Setting event kinematics')
 
-    def attach_log(self):
+    def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
-        fname = impy_config['output_log']
+        fname = impy_config['output_log'] if fname is None else fname
         if fname == 'stdout':
             lun = 6
             info(5, 'Output is routed to stdout.')
@@ -108,7 +108,7 @@ class PYTHIA6Run(MCRun):
 
         self.lib.pydat1.mstu[10] = lun
 
-    def init_generator(self, event_kinematics, seed='random'):
+    def init_generator(self, event_kinematics, seed='random', logfname=None):
         from random import randint
         from impy.constants import sec2cm
 
@@ -122,15 +122,16 @@ class PYTHIA6Run(MCRun):
         else:
             seed = int(seed)
         info(5, 'Using seed:', seed)
-        
-        
+
+        self.attach_log(fname=logfname)
+
         if impy_config['pythia6']['new_mpi']:
             # Latest Pythia 6 is tune 383
             self.lib.pytune(383)
             self.event_call = self.lib.pyevnw
         else:
             self.event_call = self.lib.pyevnt
-        
+
         # self.mstp[51]
 
         # self.lib.pysubs.msel = 2
@@ -139,11 +140,11 @@ class PYTHIA6Run(MCRun):
         # Set default stable
         self._define_default_fs_particles()
         # Set PYTHIA decay flags to follow all changes to MDCY
-        self.lib.pydat1.mstj[21 -1] = 1
-        self.lib.pydat1.mstj[22 -1] = 2
+        self.lib.pydat1.mstj[21 - 1] = 1
+        self.lib.pydat1.mstj[22 - 1] = 2
         # # Set ctau threshold in PYTHIA for the default stable list
-        self.lib.pydat1.parj[70] = impy_config['tau_stable']*sec2cm*10. #mm
-
+        self.lib.pydat1.parj[
+            70] = impy_config['tau_stable'] * sec2cm * 10.  #mm
 
     def set_stable(self, pdgid, stable=True):
         kc = self.lib.pycomp(pdgid)

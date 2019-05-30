@@ -12,8 +12,6 @@ Created on 17.03.2014
 # The current settings are taken from CORSIKA and they are optimized for speed aparently.
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
-
-
 import numpy as np
 from impy.common import MCRun, MCEvent, impy_config
 from impy.util import standard_particles, info
@@ -30,26 +28,25 @@ class UrQMDEvent(MCEvent):
         px, py, pz, en, m = evt.phep
         vx, vy, vz, vt = evt.vhep
 
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhep,
-            npart=evt.nhep,
-            p_ids=evt.idhep,
-            status=evt.isthep,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phep,
-            vt_arr=evt.vhep)
+        MCEvent.__init__(self,
+                         lib=lib,
+                         event_kinematics=event_kinematics,
+                         event_frame=event_frame,
+                         nevent=evt.nevhep,
+                         npart=evt.nhep,
+                         p_ids=evt.idhep,
+                         status=evt.isthep,
+                         px=px,
+                         py=py,
+                         pz=pz,
+                         en=en,
+                         m=m,
+                         vx=vx,
+                         vy=vy,
+                         vz=vz,
+                         vt=vt,
+                         pem_arr=evt.phep,
+                         vt_arr=evt.vhep)
 
     def filter_final_state(self):
         self.selection = np.where(self.status == 1)
@@ -117,7 +114,7 @@ class UrQMDRun(MCRun):
             self.lib.inputs.prspflg = 0
             self.lib.sys.ap = k.A1
             self.lib.sys.zp = k.Z1
-        
+
         if k.A2 == 1:
             # Special projectile
             self.lib.inputs.trspflg = 1
@@ -130,11 +127,10 @@ class UrQMDRun(MCRun):
             self.lib.sys.zt = k.Z2
 
         # Set impact parameter (to be revisited)
-        self.lib.rsys.bdist = (self._nucrad(
-            self.lib.sys.ap,
-            self.lib.options.ctoption[23]) + self._nucrad(
-                self.lib.sys.at, self.lib.options.ctoption[23]) +
-                                2 * self.lib.options.ctparam[29])
+        self.lib.rsys.bdist = (
+            self._nucrad(self.lib.sys.ap, self.lib.options.ctoption[23]) +
+            self._nucrad(self.lib.sys.at, self.lib.options.ctoption[23]) +
+            2 * self.lib.options.ctparam[29])
 
         # Set ebeam, eos = 0, nevents
         self.lib.input2.pbeam = k.plab
@@ -163,9 +159,9 @@ class UrQMDRun(MCRun):
             nucrad = r_0 * (0.5 * (A + (A**(1. / 3.) - 1.)**3.))**(1. / 3.)
         return nucrad
 
-    def attach_log(self):
+    def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
-        fname = impy_config['output_log']
+        fname = impy_config['output_log'] if fname is None else fname
         if fname == 'stdout':
             lun = 6
             info(5, 'Output is routed to stdout.')
@@ -175,7 +171,7 @@ class UrQMDRun(MCRun):
 
         self._lun = lun
 
-    def init_generator(self, event_kinematics, seed='random'):
+    def init_generator(self, event_kinematics, seed='random', logfname=None):
         from random import randint
 
         self._abort_if_already_initialized()
@@ -188,7 +184,7 @@ class UrQMDRun(MCRun):
 
         self.lib.init_rmmard(seed)
 
-        self.attach_log()
+        self.attach_log(fname=logfname)
         info(1, 'First initialization')
         self.lib.urqini(self._lun, impy_config['urqmd']['verbosity'])
 
@@ -202,7 +198,6 @@ class UrQMDRun(MCRun):
         self.lib.options.ctoption[4] = 1
         # Disable elastic collision
         self.lib.options.ctoption[6] = 1
-        
 
         # Change CTParams and/or CTOptions if needed
         if 'CTParams' in impy_config['urqmd']:

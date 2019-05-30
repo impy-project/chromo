@@ -10,17 +10,19 @@ from impy.util import standard_particles, info, AZ2pdg
 
 _len_evt = 10000
 
+
 class PYTHIA8Event(MCEvent):
     """Wrapper class around HEPEVT particle stack."""
 
-    phep = np.zeros((5,_len_evt))
-    vhep = np.zeros((4,_len_evt))
-    jmohep = np.zeros((2,_len_evt))
-    jdahep = np.zeros((2,_len_evt))
-    status = np.zeros(_len_evt,dtype='int')
-    p_ids = np.zeros(_len_evt,dtype='int')
-    p_charge = np.zeros(_len_evt,dtype='int')
+    phep = np.zeros((5, _len_evt))
+    vhep = np.zeros((4, _len_evt))
+    jmohep = np.zeros((2, _len_evt))
+    jdahep = np.zeros((2, _len_evt))
+    status = np.zeros(_len_evt, dtype='int')
+    p_ids = np.zeros(_len_evt, dtype='int')
+    p_charge = np.zeros(_len_evt, dtype='int')
     n_events = 0
+
     def __init__(self, lib, event_kinematics, event_frame):
         # The following implementation is horrible and just a prototype
         # should move to fortran or C++ if performance issue
@@ -30,8 +32,8 @@ class PYTHIA8Event(MCEvent):
             self.status[nhep] = p.status()
             self.p_ids[nhep] = p.id()
             self.p_charge[nhep] = p.charge()
-            self.vhep[:, nhep] = (p.xProd(),p.yProd(),p.zProd(), p.tProd())
-            self.phep[:, nhep] = (p.px(),p.py(),p.pz(), p.e(), p.m())
+            self.vhep[:, nhep] = (p.xProd(), p.yProd(), p.zProd(), p.tProd())
+            self.phep[:, nhep] = (p.px(), p.py(), p.pz(), p.e(), p.m())
             self.jmohep[:, nhep] = p.mother1(), p.mother2()
             self.jdahep[:, nhep] = p.daughter1(), p.daughter2()
             nhep += 1
@@ -39,26 +41,25 @@ class PYTHIA8Event(MCEvent):
         px, py, pz, en, m = self.phep
         vx, vy, vz, vt = self.vhep
 
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=self.n_events,
-            npart=nhep,
-            p_ids=self.p_ids,
-            status=self.status,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=self.phep,
-            vt_arr=self.vhep)
+        MCEvent.__init__(self,
+                         lib=lib,
+                         event_kinematics=event_kinematics,
+                         event_frame=event_frame,
+                         nevent=self.n_events,
+                         npart=nhep,
+                         p_ids=self.p_ids,
+                         status=self.status,
+                         px=px,
+                         py=py,
+                         pz=pz,
+                         en=en,
+                         m=m,
+                         vx=vx,
+                         vy=vy,
+                         vz=vz,
+                         vt=vt,
+                         pem_arr=self.phep,
+                         vt_arr=self.vhep)
 
     def filter_final_state(self):
         self.selection = np.where(self.status > 0)
@@ -88,6 +89,7 @@ class PYTHIA8Event(MCEvent):
     def charge(self):
         return self.p_charge[self.selection]
 
+
 class PYTHIA8Run(MCRun):
     """Implements all abstract attributes of MCRun for the 
     EPOS-LHC series of event generators."""
@@ -97,7 +99,6 @@ class PYTHIA8Run(MCRun):
         event setup (energy, projectile, target)"""
         # Cross section and energy (in mb and GeV)
         return self.lib.info.sigmaGen()
-        
 
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
@@ -106,7 +107,7 @@ class PYTHIA8Run(MCRun):
         self._curr_event_kin = k
 
         # create new object
-        self.lib = self.cpp_lib.Pythia() 
+        self.lib = self.cpp_lib.Pythia()
         # Replay initialization strings
         for param_string in self.save_init_strings:
             self.lib.readString(param_string)
@@ -118,15 +119,15 @@ class PYTHIA8Run(MCRun):
         if k.A1 > 1:
             k.p1pdg = AZ2pdg(k.A1, k.A2)
             # pdgid, p name, ap name, spin, 3*charge, color, mass
-            self.lib.particleData.addParticle(
-                k.p1pdg, str(k.A1 * 100 + k.Z1),
-                str(k.A1 * 100 + k.Z1) + 'bar', 1, 3 * k.Z1, 0, float(k.A1))
+            self.lib.particleData.addParticle(k.p1pdg, str(k.A1 * 100 + k.Z1),
+                                              str(k.A1 * 100 + k.Z1) + 'bar',
+                                              1, 3 * k.Z1, 0, float(k.A1))
         if k.A2 > 1:
             k.p2pdg = AZ2pdg(k.A2, k.Z2)
             # pdgid, p name, ap name, spin, 3*charge, color, mass
-            self.lib.particleData.addParticle(
-                k.p2pdg, str(k.A2 * 100 + k.Z2),
-                str(k.A2 * 100 + k.Z2) + 'bar', 1, 3 * k.Z2, 0, float(k.A2))
+            self.lib.particleData.addParticle(k.p2pdg, str(k.A2 * 100 + k.Z2),
+                                              str(k.A2 * 100 + k.Z2) + 'bar',
+                                              1, 3 * k.Z2, 0, float(k.A2))
 
         self.lib.readString("Beams:idA = {0}".format(k.p1pdg))
         self.lib.readString("Beams:idB = {0}".format(k.p2pdg))
@@ -138,9 +139,9 @@ class PYTHIA8Run(MCRun):
 
         info(5, 'Setting event kinematics')
 
-    def attach_log(self):
+    def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
-        # fname = impy_config['output_log']
+        fname = impy_config['output_log'] if fname is None else fname
         info(1, 'Not implemented at this stage')
         # if fname == 'stdout':
         #     lun = 6
@@ -151,7 +152,7 @@ class PYTHIA8Run(MCRun):
 
         # self.lib.pydat1.mstu[10] = lun
 
-    def init_generator(self, event_kinematics, seed='random'):
+    def init_generator(self, event_kinematics, seed='random', logfname=None):
         from random import randint
 
         self._abort_if_already_initialized()
@@ -181,7 +182,7 @@ class PYTHIA8Run(MCRun):
 
         # Add more options from config file
         for param_string in impy_config['pythia8']['options']:
-            info(5, "Using Pythia 8 parameter:",param_string)
+            info(5, "Using Pythia 8 parameter:", param_string)
             self.save_init_strings.append(param_string)
 
         # self.set_event_kinematics(event_kinematics)

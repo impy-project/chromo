@@ -19,26 +19,25 @@ class PhojetEvent(MCEvent):
         px, py, pz, en, m = evt.phep
         vx, vy, vz, vt = evt.vhep
 
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhep,
-            npart=evt.nhep,
-            p_ids=evt.idhep,
-            status=evt.isthep,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phep,
-            vt_arr=evt.vhep)
+        MCEvent.__init__(self,
+                         lib=lib,
+                         event_kinematics=event_kinematics,
+                         event_frame=event_frame,
+                         nevent=evt.nevhep,
+                         npart=evt.nhep,
+                         p_ids=evt.idhep,
+                         status=evt.isthep,
+                         px=px,
+                         py=py,
+                         pz=pz,
+                         en=en,
+                         m=m,
+                         vx=vx,
+                         vy=vy,
+                         vz=vz,
+                         vt=vt,
+                         pem_arr=evt.phep,
+                         vt_arr=evt.vhep)
 
     def filter_final_state(self):
         self.selection = np.where(self.status == 1)
@@ -180,9 +179,9 @@ class PHOJETRun(MCRun):
         self.lib.pho_setpar(2, k.p2pdg, 0, 0.0)
         self.p1, self.p2 = k.beam_as_4vec
 
-    def attach_log(self):
+    def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
-        fname = impy_config['output_log']
+        fname = impy_config['output_log'] if fname is None else fname
         if fname == 'stdout':
             lun = 6
             info(5, 'Output is routed to stdout.')
@@ -204,12 +203,11 @@ class PHOJETRun(MCRun):
 
         return lun
 
-    def init_generator(self, event_kinematics, seed='random'):
+    def init_generator(self, event_kinematics, seed='random', logfname=None):
         from impy.constants import c
         from random import randint
         from os.path import join
         from impy.common import root_dir
-        
 
         self._abort_if_already_initialized()
 
@@ -220,26 +218,27 @@ class PHOJETRun(MCRun):
         info(5, 'Using seed:', seed)
 
         # Define where output will go
-        lun = self.attach_log()
+        lun = self.attach_log(fname=logfname)
 
         # Detect what kind of PHOJET interface is attached. If PHOJET
         # is run through DPMJET, initial init needs -2 else -1
         init_flag = -2 if 'dpmjetIII' in self.lib.__name__ else -1
-        
+
         pho_conf = impy_config['phojet']
         # Set the dpmjpar.dat file
         if hasattr(self.lib, 'pomdls') and hasattr(self.lib.pomdls, 'parfn'):
-            pfile = join(root_dir,pho_conf['param_file'][self.version])
+            pfile = join(root_dir, pho_conf['param_file'][self.version])
             info(10, 'PHOJET parameter file at', pfile)
             clear_and_set_fortran_chars(self.lib.pomdls.parfn, pfile)
 
         # Set the data directory for the other files
         if hasattr(self.lib, 'poinou') and hasattr(self.lib.poinou, 'datdir'):
-            pfile = str(join(root_dir,pho_conf['dat_dir'][self.version],'')) + '/'
+            pfile = str(join(root_dir, pho_conf['dat_dir'][self.version],
+                             '')) + '/'
             info(10, 'PHOJET data dir is at', pfile)
             clear_and_set_fortran_chars(self.lib.poinou.datdir, pfile)
             self.lib.poinou.lendir = len(pfile)
-        
+
         self.attach_log()
         #Initialize PHOJET's parameters
         if self.lib.pho_init(init_flag, lun):
@@ -264,12 +263,12 @@ class PHOJETRun(MCRun):
         process_switch[7, 0] = 1
 
         self.set_event_kinematics(event_kinematics)
-        
+
         if self.lib.pho_event(-1, self.p1, self.p2)[1]:
             print self._curr_event_kin
             raise Exception('PHOJET failed to initialize with the current',
                             'event kinematics')
-        
+
         # Set seed of random number generator
         sseed = str(seed)
         n1, n2, n3, n4 = int(sseed[0:2]), int(sseed[2:4]), \
@@ -290,5 +289,4 @@ class PHOJETRun(MCRun):
         self.lib.pydat1.parj[70] = impy_config['tau_stable'] * c * 1e-3  #mm
 
     def generate_event(self):
-        return self.lib.pho_event(1, self.p1,
-                                  self.p2)[1]
+        return self.lib.pho_event(1, self.p1, self.p2)[1]
