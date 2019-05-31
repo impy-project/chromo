@@ -74,7 +74,6 @@ class QGSJetIIRun(MCRun):
 
     def __init__(self, *args, **kwargs):
         from particletools.tables import QGSJetParticleTable
-        self.stab = QGSJetParticleTable()
         MCRun.__init__(self, *args, **kwargs)
 
     def sigma_inel(self):
@@ -103,10 +102,13 @@ class QGSJetIIRun(MCRun):
         info(5, 'Setting event kinematics')
         k = event_kinematics
         self._curr_event_kin = k
-        self._qgsproj = abs(self.stab.pdg2modid[k.p1pdg])
-        # if k.p1pdg not in self.impy_config['qgsjet']
-
-        if not 0 < self._qgsproj < 4:
+        if abs(k.p1pdg) in [2212, 2112]:
+            self._qgsproj = 1
+        elif abs(k.p1pdg) in [211, 111]:
+            self._qgsproj = 2
+        elif abs(k.p1pdg) in [321, 130, 310]:
+            self._qgsproj = 3
+        else:
             raise Exception(
                 'QGSJET only supports p, pi+- and K+- as projectile.')
         self.lib.qgini(k.elab, self._qgsproj, k.A1, k.A2)
@@ -161,7 +163,6 @@ class QGSJet01Run(MCRun):
 
     def __init__(self, *args, **kwargs):
         from particletools.tables import QGSJetParticleTable
-        self.stab = QGSJetParticleTable()
         MCRun.__init__(self, *args, **kwargs)
 
     # def sigma_inel(self):
@@ -222,9 +223,13 @@ class QGSJet01Run(MCRun):
         info(5, 'Setting event kinematics')
         k = event_kinematics
         self._curr_event_kin = k
-        self._qgsproj = abs(self.stab.pdg2modid[k.p1pdg])
-
-        if not 0 < self._qgsproj < 4:
+        if abs(k.p1pdg) in [2212, 2112]:
+            self._qgsproj = 1
+        elif abs(k.p1pdg) in [211, 111]:
+            self._qgsproj = 2
+        elif abs(k.p1pdg) in [321, 130, 310]:
+            self._qgsproj = 3
+        else:
             raise Exception(
                 'QGSJET only supports p, pi+- and K+- as projectile.')
         self.lib.xxaini(k.elab, self._qgsproj, k.A1, k.A2)
