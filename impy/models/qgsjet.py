@@ -83,7 +83,7 @@ class QGSJetIIRun(MCRun):
         return self.lib.qgsect(self._curr_event_kin.elab, self._qgsproj, k.A1,
                                k.A2)
 
-    def hadron_air_cs(self):
+    def sigma_inel_air(self):
         """Hadron-air production cross sections according to current
         event setup (energy, projectile)."""
         # Mass composition of air (Nitrogen, Oxygen, Argon)
@@ -179,7 +179,7 @@ class QGSJet01Run(MCRun):
         info(2, 'Sigma inel not implemented for QGSJet01c')
         return 0.
 
-    def hadron_air_cs(self):
+    def sigma_inel_air(self):
         """Hadron-air production cross sections according to current
         event setup (energy, projectile)."""
         # Mass composition of air (Nitrogen, Oxygen, Argon)

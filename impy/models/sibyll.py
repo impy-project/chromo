@@ -120,8 +120,11 @@ class SIBYLLRun(MCRun):
         else:
             info(0, "No cross section available for projectile", k.p1pdg)
             raise Exception('Input error')
-
-        return self.lib.sib_sigma_hair(sigproj, self._ecm)[0]
+        sigma = self.lib.sib_sigma_hair(sigproj, self._ecm)
+        if not isinstance(sigma, tuple):
+            return sigma
+        else:
+            return sigma[0]
 
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
