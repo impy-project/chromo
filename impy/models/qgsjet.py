@@ -103,9 +103,9 @@ class QGSJetIIRun(MCRun):
         k = event_kinematics
         self._curr_event_kin = k
         if abs(k.p1pdg) in [2212, 2112]:
-            self._qgsproj = 1
-        elif abs(k.p1pdg) in [211, 111]:
             self._qgsproj = 2
+        elif abs(k.p1pdg) in [211, 111]:
+            self._qgsproj = 1
         elif abs(k.p1pdg) in [321, 130, 310]:
             self._qgsproj = 3
         else:
@@ -224,9 +224,9 @@ class QGSJet01Run(MCRun):
         k = event_kinematics
         self._curr_event_kin = k
         if abs(k.p1pdg) in [2212, 2112]:
-            self._qgsproj = 1
-        elif abs(k.p1pdg) in [211, 111]:
             self._qgsproj = 2
+        elif abs(k.p1pdg) in [211, 111]:
+            self._qgsproj = 1
         elif abs(k.p1pdg) in [321, 130, 310]:
             self._qgsproj = 3
         else:
