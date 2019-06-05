@@ -66,7 +66,7 @@ class DpmjetIIMCRun(MCRun):
         k = self.evkin
 
         try:
-            from MCVD.management import LogManager  # @UnresolvedImport
+            from mcvd.management import LogManager  # @UnresolvedImport
             self.log_man = LogManager(config, self)
             self.log_man.create_log('{0}_{1}_{2}'.format(
                 k.A1, k.Z1, self.lib.mcihad(k.p1pdg)), '{0}_{1}'.format(
