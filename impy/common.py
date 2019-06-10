@@ -7,6 +7,7 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 '''
+from six import with_metaclass
 import os
 from os.path import abspath, join, dirname
 from abc import ABCMeta, abstractmethod, abstractproperty
@@ -38,7 +39,7 @@ pdata = PYTHIAParticleData(
 from impy.util import info
 
 
-class MCEvent(object, metaclass=ABCMeta):
+class MCEvent(object, with_metaclass(ABCMeta)):
     """The basis of interaction between user and all the event generators.
 
     The derived classes are expected to interact with the particle stack
@@ -230,7 +231,7 @@ class MCEvent(object, metaclass=ABCMeta):
 #=========================================================================
 # Settings
 #=========================================================================
-class Settings(metaclass=ABCMeta):
+class Settings(with_metaclass(ABCMeta)):
     """Custom classes derived from this template allow to set certain low
     level variables in the generators before or after initialization, or for
     each event.
@@ -292,7 +293,7 @@ class Settings(metaclass=ABCMeta):
 #=========================================================================
 # MCRun
 #=========================================================================
-class MCRun(metaclass=ABCMeta):
+class MCRun(with_metaclass(ABCMeta)):
     def __init__(self, interaction_model_def, settings_dict=dict(), **kwargs):
         import importlib
 
