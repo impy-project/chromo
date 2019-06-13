@@ -50,12 +50,12 @@ class DpmjetIIIEvent(MCEvent):
         self.selection = np.where((self.status == 1) & (self.charge != 0))
         self._apply_slicing()
 
-    def filter_final_state_centrality(self, centrality_range):
+    def filter_final_state_centrality(self, event_kinematics, centrality_range):
         '''Filters all events within the selected centrality bins, defined by the impact parameter and the radius of the nucleus (R = 1.2*A^(1/3)fm; works with error < 1%). This calculation works for all except for peripheral centrality bins (> 50%). 
         Source: https://www.hindawi.com/journals/ahep/2013/908046/
         This only works for MC models that support NN collisions (that have impact parameter calculations). 
         '''
-        centrality_val = (self.impact_parameter)**2 / (2*1.2*(self.event_kinematics.nuc1_prop[0]**(1/3)))**2
+        centrality_val = (self.impact_parameter)**2 / (2*1.2*(event_kinematics.A1**(1/3)))**2
 
         self.selection = np.where((self.status == 1) &
          (self.charge != 0) & (centrality_val > centrality_range[0]) &(centrality_val < centrality_range[1]))
