@@ -103,7 +103,7 @@ class QGSJetIIRun(MCRun):
         self._qgsproj = abs(self.stab.pdg2modid[k.p1pdg])
         # if k.p1pdg not in self.impy_config['qgsjet']
 
-        if not 0 < self._qgsproj < 4:
+        if not 0 < self._qgsproj <= 4:
             raise Exception(
                 'QGSJET only supports p, pi+- and K+- as projectile.')
         self.lib.qgini(k.elab, self._qgsproj, k.A1, k.A2)
