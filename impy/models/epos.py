@@ -74,6 +74,26 @@ class EPOSEvent(MCEvent):
         """Returns impact parameter for nuclear collisions."""
         return self.lib.nuc3.bimp
 
+    @property
+    def n_part_A(self):
+        """Number of wounded nucleons side A"""
+        return self.lib.c2evt.npjevt
+
+    @property
+    def n_part_B(self):
+        """Number of wounded nucleons (target) side B"""
+        return self.lib.c2evt.ntjevt
+
+    @property
+    def n_spectator_A(self):
+        """Number of wounded nucleons side A"""
+        return self.lib.c2evt.npnevt + self.lib.c2evt.nppevt
+
+    @property
+    def n_spectator_B(self):
+        """Number of wounded nucleons (target) side B"""
+        return self.lib.c2evt.ntnevt + self.lib.c2evt.ntpevt
+
 
 class EPOSRun(MCRun):
     """Implements all abstract attributes of MCRun for the 
