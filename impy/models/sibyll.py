@@ -131,8 +131,11 @@ class SIBYLLRun(MCRun):
         else:
             info(0, "No cross section available for projectile", k.p1pdg)
             raise Exception('Input error')
-
-        return self.lib.sib_sigma_hair(sigproj, self._ecm)[0]
+        sigma = self.lib.sib_sigma_hair(sigproj, self._ecm)
+        if not isinstance(sigma, tuple):
+            return sigma
+        else:
+            return sigma[0]
 
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
@@ -147,9 +150,9 @@ class SIBYLLRun(MCRun):
         self._ecm = k.ecm
         self._curr_event_kin = event_kinematics
 
-    def attach_log(self):
+    def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
-        fname = impy_config['output_log']
+        fname = impy_config['output_log'] if fname is None else fname
         if fname == 'stdout':
             self.lib.s_debug.lun = 6
             info(5, 'Output is routed to stdout.')
@@ -158,7 +161,7 @@ class SIBYLLRun(MCRun):
             self.lib.s_debug.lun = lun
             info(5, 'Output is routed to', fname, 'via LUN', lun)
 
-    def init_generator(self, event_kinematics, seed='random'):
+    def init_generator(self, event_kinematics, seed='random', logfname=None):
         from random import randint
 
         self._abort_if_already_initialized()
@@ -170,7 +173,7 @@ class SIBYLLRun(MCRun):
         info(5, 'Using seed:', seed)
 
         self.set_event_kinematics(event_kinematics)
-        self.attach_log()
+        self.attach_log(fname=logfname)
         self.lib.sibini(int(seed))
         self.lib.pdg_ini()
         self.conv_hepevt = (self.lib.sibhep1

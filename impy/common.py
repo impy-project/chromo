@@ -403,7 +403,7 @@ class MCRun(with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def attach_log(self):
+    def attach_log(self, fname):
         """Routes the output to a file or the stdout."""
         pass
 
@@ -419,10 +419,11 @@ class MCRun(with_metaclass(ABCMeta)):
     def _attach_fortran_logfile(self, fname):
         """Chooses a random LUN between 20 - 100 and returns a FORTRAN
         file handle (LUN number) to an open file."""
+        import os
         from os import path
         from random import randint
 
-        if path.isfile(fname):
+        if path.isfile(fname) and os.stat(fname).st_size != 0:
             raise Exception('Attempts to overwrite log :' + fname)
         elif self.output_lun is not None:
             raise Exception('Log already attached to LUN', self.output_lun)

@@ -25375,7 +25375,7 @@ C  initialize scales with defaults
 
 C  write out all settings
       IF((IDEB(66).GE.15).OR.(MODE.GT.0)) THEN
-        WRITE(NOUT,1050) IP,IDPDG1,IDPDG2,PTCUT(IP),RFLAG,
+        WRITE(LO,1050) IP,IDPDG1,IDPDG2,PTCUT(IP),RFLAG,
      &    PDFNAM(1),IGRP(1),ISET(1),IEXT(1),
      &    PDFNAM(2),IGRP(2),ISET(2),IEXT(2),
      &    PDFLAM,NF,NQQAL,AQQAL,NQQPD,AQQPD

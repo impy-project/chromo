@@ -15,31 +15,30 @@ class DpmjetIIIEvent(MCEvent):
     def __init__(self, lib, event_kinematics, event_frame):
         # HEPEVT (style) common block
         evt = lib.dtevt1
-        
+
         # Save selector for implementation of on-demand properties
         px, py, pz, en, m = evt.phkk
         vx, vy, vz, vt = evt.vhkk
 
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhkk,
-            npart=evt.nhkk,
-            p_ids=evt.idhkk,
-            status=evt.isthkk,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phkk,
-            vt_arr=evt.vhkk)
+        MCEvent.__init__(self,
+                         lib=lib,
+                         event_kinematics=event_kinematics,
+                         event_frame=event_frame,
+                         nevent=evt.nevhkk,
+                         npart=evt.nhkk,
+                         p_ids=evt.idhkk,
+                         status=evt.isthkk,
+                         px=px,
+                         py=py,
+                         pz=pz,
+                         en=en,
+                         m=m,
+                         vx=vx,
+                         vy=vy,
+                         vz=vz,
+                         vt=vt,
+                         pem_arr=evt.phkk,
+                         vt_arr=evt.vhkk)
 
     def filter_final_state(self):
         self.selection = np.where(self.status == 1)
@@ -64,15 +63,17 @@ class DpmjetIIIEvent(MCEvent):
     @property
     def parents(self):
         if self._is_filtered:
-            raise Exception('Parent indices do not point to the' +
-            ' proper particles if any slicing/filtering is applied.')
+            raise Exception(
+                'Parent indices do not point to the' +
+                ' proper particles if any slicing/filtering is applied.')
         return self.lib.dtevt1.jmohkk
-    
+
     @property
     def children(self):
         if self._is_filtered:
-            raise Exception('Parent indices do not point to the' +
-            ' proper particles if any slicing/filtering is applied.')
+            raise Exception(
+                'Parent indices do not point to the' +
+                ' proper particles if any slicing/filtering is applied.')
         return self.lib.dtevt1.jdahkk
 
     @property
@@ -122,16 +123,38 @@ class DpmjetIIIRun(MCRun):
         info(10, 'Cross section for', k.A1, k.A2, self.lib.idt_icihad(k.p1pdg))
         if precision == 'default':
             self.lib.dt_xsglau(k.A1, k.A2, self.lib.idt_icihad(k.p1pdg), 0, 0,
-                            k.ecm, 1, 1, 1)
+                               k.ecm, 1, 1, 1)
         else:
             prev_precision = self.lib.dtglgp.jstatb
             # Set number of trials for Glauber model integration
             self.lib.dtglgp.jstatb = int(precision)
             self.lib.dt_xsglau(k.A1, k.A2, self.lib.idt_icihad(k.p1pdg), 0, 0,
-                            k.ecm, 1, 1, 1)
+                               k.ecm, 1, 1, 1)
             self.lib.dtglgp.jstatb = prev_precision
 
         return self.lib.dtglxs.xspro[0, 0, 0]
+
+    def sigma_inel_air(self, precision='default'):
+        """Hadron-air production cross sections according to current
+        event setup (energy, projectile)."""
+        # Mass composition of air (Nitrogen, Oxygen, Argon)
+        k = self._curr_event_kin
+        frac_air = [(0.78479, 14), (0.21052, 16), (0.00469, 40)]
+        if precision != 'default':
+            prev_precision = self.lib.dtglgp.jstatb
+            # Set number of trials for Glauber model integration
+            self.lib.dtglgp.jstatb = int(precision)
+
+        cs = 0.
+        for f, iat in frac_air:
+            self.lib.dt_xsglau(k.A1, iat, self.lib.idt_icihad(k.p1pdg), 0, 0,
+                               k.ecm, 1, 1, 1)
+            cs += f * self.lib.dtglxs.xspro[0, 0, 0]
+
+        if precision != 'default':
+            self.lib.dtglgp.jstatb = prev_precision
+
+        return cs
 
     def _dpmjet_tup(self):
         """Constructs an tuple of arguments for calls to event generator
@@ -154,9 +177,9 @@ class DpmjetIIIRun(MCRun):
         #     self.lib.dt_setbm(k.A1, k.Z1, k.A2, k.Z2, k.beam[0], k.beam[1])
         #     print 'OK'
 
-    def attach_log(self):
+    def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
-        fname = impy_config['output_log']
+        fname = impy_config['output_log'] if fname is None else fname
         if fname == 'stdout':
             lun = 6
             info(5, 'Output is routed to stdout.')
@@ -165,7 +188,7 @@ class DpmjetIIIRun(MCRun):
             info(5, 'Output is routed to', fname, 'via LUN', lun)
 
         if hasattr(self.lib, 'dtflka'):
-            self.lib.dtflka.lout = 6
+            self.lib.dtflka.lout = lun
             self.lib.dtflka.lpri = 50
         elif hasattr(self.lib, 'dtiont'):
             self.lib.dtiont.lout = lun
@@ -174,9 +197,8 @@ class DpmjetIIIRun(MCRun):
                 'Unknown DPMJET version, IO common block not detected.')
 
         self.lib.pydat1.mstu[10] = lun
-        
 
-    def init_generator(self, event_kinematics, seed='random'):
+    def init_generator(self, event_kinematics, seed='random', logfname=None):
         from impy.util import clear_and_set_fortran_chars
         from impy.constants import sec2cm
         from random import randint
@@ -188,7 +210,7 @@ class DpmjetIIIRun(MCRun):
         else:
             seed = int(seed)
         info(5, 'Using seed:', seed)
-        
+
         self.set_event_kinematics(event_kinematics)
         k = self._curr_event_kin
         dpm_conf = impy_config['dpmjetIII']
@@ -206,15 +228,21 @@ class DpmjetIIIRun(MCRun):
             info(10, 'DPMJET data dir is at', pfile)
             clear_and_set_fortran_chars(self.lib.poinou.datdir, pfile)
             self.lib.poinou.lendir = len(pfile)
-            
+
         if hasattr(self.lib, 'dtimpy'):
             evap_file = dpm_conf['evap_file'][self.version]
             info(10, 'DPMJET evap file at', evap_file)
             clear_and_set_fortran_chars(self.lib.dtimpy.fnevap, evap_file)
 
-        self.attach_log()
-        self.lib.dt_init(
-            -1, dpm_conf['e_max'], k.A1, k.Z1, k.A2, k.Z2, k.p1pdg, iglau=0)
+        self.attach_log(logfname)
+        self.lib.dt_init(-1,
+                         dpm_conf['e_max'],
+                         k.A1,
+                         k.Z1,
+                         k.A2,
+                         k.Z2,
+                         k.p1pdg,
+                         iglau=0)
 
         # Set seed of random number generator
         sseed = str(seed)
@@ -238,10 +266,11 @@ class DpmjetIIIRun(MCRun):
         # Prevent DPMJET from overwriting decay settings
         # self.lib.dtfrpa.ovwtdc = False
         # Set PYTHIA decay flags to follow all changes to MDCY
-        self.lib.pydat1.mstj[21 -1] = 1
-        self.lib.pydat1.mstj[22 -1] = 2
+        self.lib.pydat1.mstj[21 - 1] = 1
+        self.lib.pydat1.mstj[22 - 1] = 2
         # # Set ctau threshold in PYTHIA for the default stable list
-        self.lib.pydat1.parj[70] = impy_config['tau_stable']*sec2cm*10. #mm
+        self.lib.pydat1.parj[
+            70] = impy_config['tau_stable'] * sec2cm * 10.  #mm
 
     def set_stable(self, pdgid, stable=True):
         if abs(pdgid) == 2212:

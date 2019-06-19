@@ -68,7 +68,8 @@ C----------------------------------------------------------------------
 
       COMMON /S_PLIST/ P(8000,5), LLIST(8000), NP
       COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, kb ,kt
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       PARAMETER (NW_max = 20)
       PARAMETER (NS_max = 20, NH_max = 50)
       PARAMETER (NJ_max = (NS_max+NH_max)*NW_max)
@@ -150,14 +151,14 @@ cdh
          if ( Ndebug.gt.0 ) then
            WRITE(*,*) ' SIBYLL: energy not conserved (L,call): ',L,Ncall
            WRITE(*,*) ' sqs_inp = ', Ecm, ' sqs_out = ', Esum
-           CALL SIB_LIST(6)
+           CALL SIB_LIST
            WRITE(*,*) ' SIBYLL: event rejected'
          endif
          goto 100
       ENDIF
 
 C...list final state particles
-      if(Ndebug.gt.10) call sib_list(6)
+      if(Ndebug.gt.10) call sib_list
 
       RETURN
       END
@@ -172,7 +173,8 @@ C----------------------------------------------------------------------
 
       COMMON /S_PLIST/ P(8000,5), LLIST(8000), NP
       COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, kb ,kt
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       COMMON /S_CFLAFR/ PAR(20), IPAR(10)
 
       PARAMETER (NW_max = 20)
@@ -519,7 +521,7 @@ C...Spectator fragments
       DO J=1,NF
          NPA = NPA+1
          if(NPA.gt.40000) then
-           write(6,'(1x,a,2i8)') 
+           write(LUN,'(1x,a,2i8)') 
      &       'SIBNUC: no space left in S_PLNUC (NPA,NF)',NPA,NF
            NPA = NPA-1
            return
@@ -536,7 +538,7 @@ C...Elastically scattered fragments
       DO J=1,NBEL
          NPA = NPA+1
          if(NPA.gt.40000) then
-           write(6,'(1x,a,2i8)') 
+           write(LUN,'(1x,a,2i8)') 
      &       'SIBNUC: no space left in S_PLNUC (NPA,NBEL)',NPA,NBEL
            NPA = NPA-1
            return
@@ -558,7 +560,7 @@ C...Superimpose NB  nucleon interactions
              IF (LA .LT. 10000)   THEN
                 NPA = NPA + 1
                 if(NPA.gt.40000) then
-                  write(6,'(1x,a,2i8)') 
+                  write(LUN,'(1x,a,2i8)') 
      &              'SIBNUC: no space left in S_PLNUC (NPA,NP)',NPA,NP
                   NPA = NPA-1
                   return
@@ -583,7 +585,8 @@ C.  INPUT KPART = code of particle
 C.        IFL1, IFL2 = codes of partons (3, 3bar of color)
 C.........................................................
       COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, kb ,kt
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       COMMON /S_CPSPL/ CCHIK(3,6:14)
       COMMON /S_CUTOFF/ STR_mass_val, STR_mass_sea
       SAVE
@@ -618,7 +621,7 @@ C-------------------------------------------------
       L = IABS(KF)-5
 C...Test for good input
       IF ( (L .LE. 0) .OR. (L.GT. 9) ) THEN
-         WRITE(6,*)
+         write(LUN,*)
      &      'HSPLI : Routine entered with illegal particle code ',KF
       ENDIF
       GOTO (50,100,200,300,400,500,500,600,700), L
@@ -698,7 +701,8 @@ C-----------------------------------------------------------------------
       REAL*8 DX1J, DX2J, DBETJ
       COMMON /S_PLIST/ P(8000,5), LLIST(8000), NP
       COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, kb ,kt
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       PARAMETER (NW_max = 20)
       PARAMETER (NS_max = 20, NH_max = 50)
       PARAMETER (NJ_max = (NS_max+NH_max)*NW_max)
@@ -759,7 +763,8 @@ c      Change- Dec. 92  RSF.  call to ptdis moved- to use flavor
 c      of NEW quark in fragmentation.
 C-----------------------------------------------------------------------
 
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       COMMON /S_PLIST/ P(8000,5), LLIST(8000), NP
       COMMON /S_MASS1/ AM(49), AM2(49)
       DIMENSION WW(2,2), PTOT(4), PX(3),PY(3),IFL(3)
@@ -827,7 +832,7 @@ C...produce new particle: side, pT
 300   continue
       I=I+1
       if(i.gt.8000) then
-        write(6,'(1x,a,i8)') 
+        write(LUN,'(1x,a,i8)') 
      &    'STRING_FRAG: no space left in S_PLIST:',I
         stop   
       endif
@@ -970,7 +975,8 @@ C...z distribution
       COMMON /S_CZDIS/ FAin, FB0in
       COMMON /S_CZDISs/ FAs1, fAs2
       COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, kb ,kt
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       SAVE
 
       fa=fain
@@ -1156,7 +1162,7 @@ C...Fragment the two remaning strings
 C...produce new particle: side, pT
 300      I=I+1
       if(i.gt.8000) then
-        write(6,'(1x,a,i8)') 
+        write(LUN,'(1x,a,i8)') 
      &    'GG_FRAG: no space left in S_PLIST:',I
         stop   
       endif
@@ -1493,7 +1499,8 @@ C---------------------------------------------------------------------
       DIMENSION XX(2*NW_max), IFL(2*NW_max)
 
       COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, kb ,kt
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       SAVE
 
       DATA AC /-0.2761856692/             ! log(2) - gamma(Eulero)
@@ -1511,8 +1518,9 @@ cdh
          if ( Ndebug .gt. 0 ) then
            NBAD = NBAD + 1
            IF (NBAD .LE. 20) THEN
-             WRITE(6, *) 'BEAM_SPLIT: kinematically forbidden situation'
-             WRITE(6, 5)  NBAD, SQS, XJET, NW
+             write(LUN, *) 
+     &         'BEAM_SPLIT: kinematically forbidden situation'
+             write(LUN, 5)  NBAD, SQS, XJET, NW
            ENDIF
          endif
  5       FORMAT(1X,'NBAD = ',I3,3X,'sqs = ',E10.3,
@@ -1634,7 +1642,7 @@ C..................................................
       END
 
 
-      SUBROUTINE SIB_LIST(LUN)
+      SUBROUTINE SIB_LIST
 C-----------------------------------------------------------------------
 C...This routine prints the event record for the
 C.  current event on unit LUN
@@ -1643,7 +1651,8 @@ C-----------------------------------------------------------------------
       COMMON /S_PLIST/ P(8000,5), LLIST(8000), NP
       COMMON /S_PLIST1/ LLIST1(8000)
       COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, kb ,kt
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       PARAMETER (NW_max = 20)
       PARAMETER (NS_max = 20, NH_max = 50)
       PARAMETER (NJ_max = (NS_max+NH_max)*NW_max)
@@ -1693,7 +1702,7 @@ C...Print particle list
 140      FORMAT(1X,'Tot = ',24X,2(F9.3,2X),G9.3,2X,E9.3)
       write(LUN,'(1x,a,i3,3x,a,i3))') 'Total charge:',ichar,
      &  'baryon number:',ibary
-
+     
       RETURN
       END
 
@@ -1751,7 +1760,8 @@ C.  OUTPUT:  X1, X2, PT (GeV)
 C-----------------------------------------------------------------------
 
       COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, kb ,kt
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       COMMON /S_CQDIS/ PPT0(33),ptflag
       SAVE
 
@@ -1783,7 +1793,8 @@ C.  OUTPUT:  X1, X2, PT (GeV)
 C-----------------------------------------------------------------------
 
       COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, kb ,kt
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       SAVE
 
 100   Z1=ZSAMPLE (ZMIN,L)
@@ -1977,7 +1988,8 @@ C....This block data contains default values
 C.   of the parameters used in fragmentation
 C-----------------------------------------------------------------------
 
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       COMMON /S_CZDIS/ FA, FB0
       COMMON /S_CZDISs/ FAs1, fAs2
       COMMON /S_CZLEAD/ CLEAD, FLEAD
@@ -2011,18 +2023,20 @@ C...Fragmentation of nuclei
 C...Debug label and event counter
       DATA Ndebug /0/
       DATA Ncall /0/
+      DATA LUN /6/
 
       END
 
 
 
-      SUBROUTINE PARAM_PRINT(LUN)
+      SUBROUTINE PARAM_PRINT
 
       COMMON /S_CZDIS/ FA, FB0
       COMMON /S_CZLEAD/ CLEAD, FLEAD
       COMMON /S_CPSPL/ CCHIK(3,6:14)
       COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, kb ,kt
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       COMMON /S_CQDIS/ PPT0 (33),ptflag
       COMMON /S_CFLAFR/ PAR(20), IPAR(10)
       SAVE
@@ -2090,7 +2104,8 @@ C-----------------------------------------------------------------------
 
       COMMON /S_PLIST/ P(8000,5), LLIST(8000), NP
       COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, kb ,kt
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       COMMON /S_MASS1/ AM(49), AM2(49)
       COMMON /S_CFLAFR/ PAR(20), IPAR(10)
       DIMENSION XM2MIN(3), ALXMIN(3)
@@ -2319,7 +2334,8 @@ C...Generate a number of soft/hard (jet-)pairs for a 'projectile'
 C.  (K=1:p),(K=2:pi) interacting with a nucleon at sqrt(s)=SQS(GeV)
 C-----------------------------------------------------------------------
 
-      COMMON /S_DEBUG/ Ncall, Ndebug
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       COMMON /S_CFLAFR/ PAR(20), IPAR(10)
       PARAMETER (NS_max = 20, NH_max = 50)
       COMMON /S_CCSIG/ SSIG(61,3), PJETC(0:NS_max,0:NH_max,61,2),
@@ -2503,7 +2519,8 @@ C-----------------------------------------------------------------------
      &    SSIGN(61,3), ALINT(61,3), ASQSMIN, ASQSMAX, DASQS, NSQS
       COMMON /S_CCSIG2/ SSIG_TOT(61,3),SSIG_SD1(61,3),SSIG_SD2(61,3),
      &    SSIG_DD(61,3),SSIG_B(61,3),SSIG_RHO(61,3)
-
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       DIMENSION Pjet(0:NS_max,0:NH_max)
       DIMENSION SIG_df(3),SIGDIF(3),SIGDIF_pi(3),
      &          PS_tab(61),PH_tab(61),PT_tab(61)
@@ -2521,7 +2538,7 @@ C...initialization of proton and pion tables
 
       DO KK=1,2
 
-         WRITE(6,'(2(/,1X,A,A))') 
+         write(LUN,'(2(/,1X,A,A))') 
      &     'Table: J, sqs,  PT_cut,  SIG_tot,  SIG_inel,  B_el,  ',
      &     'rho,  <n_s>,  <n_h>',
      &     '-----------------------------------------------------',
@@ -2575,7 +2592,7 @@ C...low-energy interpolation with data-parametrizations
            PH_tab(J) = PH
            PT_tab(J) = PTmin
 
-           WRITE(6,'(3X,I2,1P,E12.3,0P,4F8.2,3F8.3)') 
+           write(LUN,'(3X,I2,1P,E12.3,0P,4F8.2,3F8.3)') 
      &       JINT,SQS,PTmin,SIG_tot,SIG_inel,B_el,RHO,PS,PH
 
          ENDDO
@@ -2585,7 +2602,7 @@ C...initialization of kaon tables
 
       JINT = 3
 
-      WRITE(6,'(2(/,1X,A,A))') 
+      write(LUN,'(2(/,1X,A,A))') 
      &  'Table: J, sqs,  PT_cut,  SIG_tot,  SIG_inel,  B_el,  ',
      &  'rho,  <n_s>,  <n_h>',
      &  '-----------------------------------------------------',
@@ -2632,7 +2649,7 @@ C...low-energy interpolation with data-parametrizations
         SSIG_B(J,3)   = B_EL
         SSIG_RHO(J,3) = RHO
 
-        WRITE(6,'(3X,I2,1P,E12.3,0P,4F8.2,3F8.3)') 
+        write(LUN,'(3X,I2,1P,E12.3,0P,4F8.2,3F8.3)') 
      &    JINT,SQS,PTmin,SIG_tot,SIG_inel,B_el,RHO,PS,PH
 
       ENDDO
@@ -2642,7 +2659,7 @@ C...low-energy interpolation with data-parametrizations
       END
 
 
-      SUBROUTINE INI_WRITE (LUN)
+      SUBROUTINE INI_WRITE
 C-----------------------------------------------------------------------
 C   This subroutine prints on unit LUN
 C   a table of the cross sections  used in the program
@@ -2653,6 +2670,8 @@ C-----------------------------------------------------------------------
       PARAMETER (NS_max = 20, NH_max = 50)
       COMMON /S_CCSIG/ SSIG(61,3), PJETC(0:NS_max,0:NH_max,61,2),
      &    SSIGN(61,3), ALINT(61,3), ASQSMIN, ASQSMAX, DASQS, NSQS
+      INTEGER NCALL, NDEBUG, LUN 
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       DIMENSION PJ(2),PS(2),PW(2)
       SAVE
 
@@ -2898,7 +2917,7 @@ Cf2py intent(out) SIGT,SIGEL,SIGINEL,SIGDIF,SLOPE,RHO
       SAVE
 
       IF(NSQS.LE.0) THEN
-        WRITE(6,'(//,1X,A)') 
+        write(LUN,'(//,1X,A)') 
      &    'SIB_SIGMA_HP: interpolation table not initialized.'
         STOP
       ENDIF
@@ -2945,7 +2964,7 @@ Cf2py intent(out) SIGprod
       SAVE
 
       IF(NSQS.LE.0) THEN
-        WRITE(6,'(//,1X,A)') 
+        write(LUN,'(//,1X,A)') 
      &    'SIB_SIGMA_HAIR: interpolation table not initialized.'
         STOP
       ENDIF
@@ -3136,12 +3155,12 @@ C  select energy range and interpolation method
       RETURN
 
  100  CONTINUE
-        WRITE(6,'(1X,2A,2I7)') 'SIB_HADCSL: ',
+        write(LUN,'(1X,2A,2I7)') 'SIB_HADCSL: ',
      &    'invalid beam particle: ',L
         RETURN
 
  200  CONTINUE
-        WRITE(6,'(1X,2A,1P,E12.4)') 'SIB_HADCSL: ',
+        write(LUN,'(1X,2A,1P,E12.4)') 'SIB_HADCSL: ',
      &    'energy too small (Ecm): ',ECM
 
       RETURN
@@ -3279,7 +3298,7 @@ C  single diffraction diss. cross section
 
       CSdiff = CSdiff*fac*GEV2MB/MAX(1.,Xnorm)
 
-*     write(6,'(1x,1p,4e14.3)') 
+*     write(LUN,'(1x,1p,4e14.3)') 
 *    &  sqrt(SS),Xnorm,2.*CSdiff*MAX(1.,Xnorm),2.*CSdiff
 
       SIGDIF(1) = CSdiff
@@ -3325,7 +3344,7 @@ C-----------------------------------------------------------------------
               DO J=1,ND
                 NP = NP+1
                 if(NP.gt.8000) then
-                  write(6,'(1x,a,2i8)') 
+                  write(LUN,'(1x,a,2i8)') 
      &              'DECSIB: no space left in S_PLIST (NP,ND):',NP,ND
                   NP = NP-1
                   return
@@ -3599,11 +3618,13 @@ C-----------------------------------------------------------------------
      +     'SIG*+ ','SIG*0','SIG*-', 'XI*0', 'XI*-', 'OME*-'/
       END
 C->
-      SUBROUTINE DECPR (LUN)
+      SUBROUTINE DECPR
 C...Print on unit LUN the list of particles and decay channels
       COMMON /S_CSYDEC/ CBR(102), KDEC(612), LBARP(49), IDB(49)
       COMMON /S_MASS1/ AM(49), AM2(49)
       COMMON /S_CNAM/ NAMP (0:49)
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       CHARACTER*6 NAMP
       DIMENSION LL(3)
       SAVE
@@ -8095,11 +8116,11 @@ C...K-air
          ALINT(J,3) = 1./(AVOG*SSIGA(J,3)/ATARGET)
       ENDDO
 
-*     WRITE(6,'(1X,A)') 
+*     write(LUN,'(1X,A)') 
 *    &  'SIGMA_INI: NUCLIB interaction lengths (p-air, pi-air, K-air)'
 *     DO J=1,NSQS
 *        SQS = 10.**(ASQSMIN + DASQS*FLOAT(J-1))
-*        WRITE(6,'(1X,1P,4E12.3)') SQS,ALINT(J,1),ALINT(J,2),ALINT(J,3)
+*        write(LUN,'(1X,1P,4E12.3)') SQS,ALINT(J,1),ALINT(J,2),ALINT(J,3)
 *     ENDDO
 
       RETURN
