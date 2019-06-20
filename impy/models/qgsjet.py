@@ -84,12 +84,12 @@ class QGSJETEvent(MCEvent):
     
     @property
     def n_spectator_A(self):
-        """Number of wounded nucleons side A"""
+        """Number of spectator nucleons side A"""
         return self.lib.qgarr56.nspec
 
     @property
     def n_spectator_B(self):
-        """Number of wounded nucleons (target) side B"""
+        """Number of spectator nucleons (target) side B"""
         return self.lib.qgarr56.nspect
     
     @property
@@ -146,7 +146,6 @@ class QGSJetIIRun(MCRun):
     def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
         fname = impy_config['output_log'] if fname is None else fname
-        
         if fname == 'stdout':
             lun = 6
             info(5, 'Output is routed to stdout.')
@@ -154,6 +153,7 @@ class QGSJetIIRun(MCRun):
             lun = self._attach_fortran_logfile(fname)
             info(5, 'Output is routed to', fname, 'via LUN', lun)
         self._lun = lun
+        self._debug = 1
 
     def init_generator(self, event_kinematics, seed='random', logfname=None):
         from random import randint
@@ -170,7 +170,7 @@ class QGSJetIIRun(MCRun):
         info(5, 'Initializing QGSJET-II')
         datdir = path.join(root_dir, impy_config['qgsjet']['datdir'])
         self.attach_log(fname=logfname)
-        self.lib.cqgsini(seed, datdir, self._lun)
+        self.lib.cqgsini(seed, datdir, self._lun, self._debug)
 
         # Set default stable
         info(10, 'All particles stable in QGSJET-II')
@@ -266,6 +266,7 @@ class QGSJet01Run(MCRun):
     def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
         fname = impy_config['output_log'] if fname is None else fname
+        self._debug = 1
         if fname == 'stdout':
             lun = 6
             info(5, 'Output is routed to stdout.')
@@ -290,7 +291,7 @@ class QGSJet01Run(MCRun):
         info(5, 'Initializing QGSJET01c')
         self.attach_log(fname=logfname)
         datdir = path.join(root_dir, impy_config['qgsjet']['datdir'])
-        self.lib.cqgsini(seed, datdir, self._lun)
+        self.lib.cqgsini(seed, datdir, self._lun, self._debug)
 
         # Set default stable
         info(10, 'All particles stable in QGSJET-01')

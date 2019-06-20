@@ -45,7 +45,6 @@ class DpmjetIIIEvent(MCEvent):
         self._apply_slicing()
 
     def filter_final_state_charged(self):
-
         self.selection = np.where((self.status == 1) & (self.charge != 0))
         self._apply_slicing()
 
@@ -54,10 +53,9 @@ class DpmjetIIIEvent(MCEvent):
         Source: https://www.hindawi.com/journals/ahep/2013/908046/
         This only works for MC models that support NN collisions (that have impact parameter calculations). 
         '''
-        centrality_val = (self.impact_parameter)**2 / (2*1.2*(event_kinematics.A1**(1/3)))**2
+        centrality_val = (self.impact_parameter)**2. / (2.*1.2*(event_kinematics.A1**(1./3.)))**2.
 
-        self.selection = np.where((self.status == 1) &
-         (self.charge != 0) & (centrality_val > centrality_range[0]) &(centrality_val < centrality_range[1]))
+        self.selection = np.where((self.status == 1) & (self.charge != 0)&(centrality_val > centrality_range[0]) &(centrality_val < centrality_range[1]))
         self._apply_slicing()
     
     @property

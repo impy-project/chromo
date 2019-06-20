@@ -173,6 +173,7 @@ class UrQMDRun(MCRun):
     def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
         fname = impy_config['output_log'] if fname is None else fname
+        self._debug = impy_config['urqmd']['verbosity']
         if fname == 'stdout':
             lun = 6
             info(5, 'Output is routed to stdout.')
@@ -197,7 +198,7 @@ class UrQMDRun(MCRun):
 
         self.attach_log(fname=logfname)
         info(1, 'First initialization')
-        self.lib.urqini(self._lun, impy_config['urqmd']['verbosity'])
+        self.lib.urqini(self._lun, self._debug)
 
         # Set default stable
         self._define_default_fs_particles()

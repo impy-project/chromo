@@ -153,6 +153,7 @@ class SIBYLLRun(MCRun):
     def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
         fname = impy_config['output_log'] if fname is None else fname
+        self.lib.s_debug.ndebug = 1
         if fname == 'stdout':
             self.lib.s_debug.lun = 6
             info(5, 'Output is routed to stdout.')

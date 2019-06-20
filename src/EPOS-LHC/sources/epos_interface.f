@@ -59,7 +59,7 @@ c      ionudi=3              !count diffraction without excitation as elastic
       fncs=fnnx(1:nfnnx) // "epos.inics"       !'.lhc' is added a the end of the file name in ainit if LHCparameters is called
 
 c Debug
-      ish=0       !debug level
+      ish=idebug       !debug level
       ifch=iou      !debug output (screen)
 c      ifch=31    !debug output (file)
 c      fnch="epos.debug"

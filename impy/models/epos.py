@@ -97,12 +97,12 @@ class EPOSEvent(MCEvent):
 
     @property
     def n_spectator_A(self):
-        """Number of wounded nucleons side A"""
+        """Number of spectator nucleons side A"""
         return self.lib.c2evt.npnevt + self.lib.c2evt.nppevt
 
     @property
     def n_spectator_B(self):
-        """Number of wounded nucleons (target) side B"""
+        """Number of spectator nucleons (target) side B"""
         return self.lib.c2evt.ntnevt + self.lib.c2evt.ntpevt
 
 
@@ -135,6 +135,7 @@ class EPOSRun(MCRun):
     def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
         fname = impy_config['output_log'] if fname is None else fname
+        self._debug = 2
         if fname == 'stdout':
             lun = 6
             info(5, 'Output is routed to stdout.')
@@ -162,7 +163,7 @@ class EPOSRun(MCRun):
         info(1, 'First initialization')
         self.lib.aaset(0)
         self.lib.initializeepos(float(seed), 1e6, datdir, len(datdir), 1, 2212,
-                                2212, 1, 1, 1, 1, 0, self._lun)
+                                2212, 1, 1, 1, 1, self._debug, self._lun)
 
         # Set default stable
         self._define_default_fs_particles()

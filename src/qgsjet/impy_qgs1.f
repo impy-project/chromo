@@ -1,7 +1,7 @@
 C This file are aux functions for stand-alone use
 C of CORSIKA interaction models
 
-      SUBROUTINE CQGSINI( ISEEDIN, DATDIR, LUN )
+      SUBROUTINE CQGSINI( ISEEDIN, DATDIR, LUN, DEBUGNUM )
 C-----------------------------------------------------------------------
 C  C(ompact) Q(UARK) G(LUON) S(TRING JET MODEL) INI(TIALZATION)
 C
@@ -17,7 +17,9 @@ C-----------------------------------------------------------------------
       COMMON /AREA40/  JDIFR
       INTEGER          JDIFR
       INTEGER    LUN, MONIOU
+      INTEGER DEBUGNUM, DEBUG
       COMMON /AREA43/ MONIOU
+      COMMON /DEBUG/  DEBUG
 
       INTEGER          ISEEDIN
 
@@ -26,6 +28,9 @@ C  init the random number generator
 
 C  Set output LUN
       MONIOU = LUN
+
+C  Set debug level
+      DEBUG = DEBUGNUM
 
 C  TO DISTINGISH QGSJET01c FROM QGSJET01 WE USE DIFFERENT NAMES FOR PSASET
       CALL PSASETC

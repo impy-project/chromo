@@ -49,7 +49,7 @@ gen_list = [
 eta_bins = np.linspace(-5,5,21)
 eta_widths = eta_bins[1:] - eta_bins[:-1]
 eta_centers = 0.5*(eta_bins[1:] + eta_bins[:-1])
-nevents = 5000
+nevents = 10
 norm = 1./float(nevents)/eta_widths
 
 def run_generator(gen,*args):

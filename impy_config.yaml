@@ -104,7 +104,7 @@ urqmd:
     CTParams     : {}
     caltim       : 200.0
     outtim       : 200.0
-    verbosity    : 0
+    verbosity    : 1
 
 
 dpmjetIII:
