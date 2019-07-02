@@ -81,6 +81,11 @@ class QGSJETEvent(MCEvent):
     def n_wounded_B(self):
         """Number of wounded nucleons (target) side B"""
         return self.lib.qgarr55.nwt
+
+    @property
+    def n_wounded(self):
+        """Number of total wounded nucleons"""
+        return self.lib.qgarr55.nwp + self.lib.qgarr55.nwt
     
     @property
     def n_spectator_A(self):

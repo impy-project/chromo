@@ -86,14 +86,19 @@ class EPOSEvent(MCEvent):
         return self.lib.nuc3.bimp
 
     @property
-    def n_part_A(self):
+    def n_wounded_A(self):
         """Number of wounded nucleons side A"""
         return self.lib.c2evt.npjevt
 
     @property
-    def n_part_B(self):
+    def n_wounded_B(self):
         """Number of wounded nucleons (target) side B"""
         return self.lib.c2evt.ntjevt
+
+    @property
+    def n_wounded(self):
+        """Number of total wounded nucleons"""
+        return self.lib.c2evt.npjevt + self.lib.c2evt.ntjevt
 
     @property
     def n_spectator_A(self):
