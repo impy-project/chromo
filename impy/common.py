@@ -296,6 +296,7 @@ class Settings(with_metaclass(ABCMeta)):
 class MCRun(with_metaclass(ABCMeta)):
     def __init__(self, interaction_model_def, settings_dict=dict(), **kwargs):
         import importlib
+        from util import OutputGrabber
 
         # Import library from library name
         self.lib = importlib.import_module(interaction_model_def.library_name)
@@ -319,6 +320,11 @@ class MCRun(with_metaclass(ABCMeta)):
         # FORTRAN LUN that keeps logfile handle
         self.output_lun = None
 
+        
+
+        
+
+
     def __enter__(self):
         """TEMP: It would be good to actually use the with construct to
         open and close logfiles on init."""
@@ -327,7 +333,7 @@ class MCRun(with_metaclass(ABCMeta)):
 
     def __exit__(self, exc_type, exc_value, traceback):
         """This needs to be tested in more complex scenarios..."""
-        self.close_fortran_logfile()
+        self.close_logfile()
 
     @property
     def label(self):
@@ -433,6 +439,15 @@ class MCRun(with_metaclass(ABCMeta)):
         self.output_lun = randint(20, 100)
         self.lib.impy_openlogfile(path.abspath(fname), self.output_lun)
         return self.output_lun
+
+    def close_logfile(self):
+        """Constructed for closing C++ and FORTRAN log files
+        """
+        if 'pythia8' not in self._label:
+            self.close_fortran_logfile()
+        else:
+            # self.close_cc_logfile()
+            pass
 
     def close_fortran_logfile(self):
         """FORTRAN LUN has to be released when finished to flush buffers."""
