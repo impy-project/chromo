@@ -1,7 +1,7 @@
 C This file are aux functions for stand-alone use
 C of CORSIKA interaction models
 
-      SUBROUTINE CQGSINI( SEEDIN, DATDIR, LUN )
+      SUBROUTINE CQGSINI( SEEDIN, DATDIR, LUN, DEBUGNUM )
 C-----------------------------------------------------------------------
 C  C(ompact) Q(UARK) G(LUON) S(TRING JET MODEL) INI(TIALZATION)
 C
@@ -14,7 +14,9 @@ C-----------------------------------------------------------------------
       INTEGER          JDIFR
       INTEGER        VERSION
       INTEGER    LUN, moniou
+      INTEGER    DEBUGNUM, debug 
       common /qgarr43/ moniou
+      common /qgdebug/ debug
 
       INTEGER          ASEED(3)
       INTEGER          SEEDIN
@@ -32,6 +34,7 @@ C  init the random number generator
 C  COMMON MODEL PARAMETERS SETTING
       CALL QGSET
       moniou = LUN
+      debug = DEBUGNUM
 C  Call global initialization subroutine
       CALL QGAINI( DATDIR )
 C  Call cross-section initialization subroutine

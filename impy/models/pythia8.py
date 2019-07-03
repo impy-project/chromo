@@ -139,18 +139,63 @@ class PYTHIA8Run(MCRun):
 
         info(5, 'Setting event kinematics')
 
-    def attach_log(self, fname=None):
-        """Routes the output to a file or the stdout."""
-        fname = impy_config['output_log'] if fname is None else fname
-        info(1, 'Not implemented at this stage')
-        # if fname == 'stdout':
-        #     lun = 6
-        #     info(5, 'Output is routed to stdout.')
-        # else:
-        #     lun = self._attach_fortran_logfile(fname)
-        #     info(5, 'Output is routed to', fname, 'via LUN', lun)
+    # def attach_log(self, fname):
+    #     """Routes the output to a file or the stdout."""
 
-        # self.lib.pydat1.mstu[10] = lun
+    #     import os, sys, threading
+
+    #     fname = impy_config['output_log'] if fname is None else fname
+    #     # info(1, 'Not implemented at this stage')
+
+    #     os.dup2(self.stdout_pipe[1], self.stdout_fileno)
+    #     os.close(self.stdout_pipe[1])
+
+    #     captured_stdout = ''
+
+    #     t = threading.Thread(target=self.drain_pipe(captured_stdout))
+    #     t.start()
+
+    #     print 'Captured stdout \n{:s}'.format(captured_stdout)
+    #     print len(captured_stdout)
+
+    #     self._attach_cc_logfile(captured_stdout, fname)
+
+    # def drain_pipe(self, captured_stdout):
+    #     import os
+    #     while True:
+    #         data = os.read(self.stdout_pipe[0], 1024)
+    #         if not data:
+    #             break
+    #         captured_stdout += data
+
+    # def _attach_cc_logfile(self, captured_stdout, fname):
+    #     """Writes captured stdout into the file given"""
+    #     with open(fname, 'w') as f:
+    #         f.write(captured_stdout)
+
+    # def close_cc_logfile(self):
+    #     """Properly close duplicates and correctly restore stdout"""
+    #     import os, threading
+    #     os.close(self.stdout_fileno)
+
+    #     os.close(self.stdout_pipe[0])
+    #     os.dup2(self.stdout_save, self.stdout_fileno)
+    #     os.close(self.stdout_save)
+
+    def attach_log(self, fname):
+        from impy.util import OutputGrabber
+        fname = impy_config['output_log'] if fname is None else fname
+        # info(1, 'Not implemented at this stage')
+
+        # out = OutputGrabber()
+
+        # out.start()
+        # print out.capturedtext
+        # with open(fname, 'w') as f:
+        #     f.write(out.capturedtext)
+        
+        # out.stop()
+
 
     def init_generator(self, event_kinematics, seed='random', logfname=None):
         from random import randint
@@ -162,6 +207,7 @@ class PYTHIA8Run(MCRun):
         else:
             seed = int(seed)
         info(5, 'Using seed:', seed)
+        
         # Since a Pythia 8 instance is an object unlike in the case
         # of the Fortran stuff where the import of self.lib generates
         # the object, we will backup the library
@@ -170,7 +216,7 @@ class PYTHIA8Run(MCRun):
         # set, since Pythia8 ATM does not support changing beams or
         # energies at runtime.
         # Super cool workaround but not very performant!
-
+        
         self.save_init_strings = [
             "Random:setSeed = on",
             "Random:seed = " + str(seed),
@@ -185,6 +231,8 @@ class PYTHIA8Run(MCRun):
             info(5, "Using Pythia 8 parameter:", param_string)
             self.save_init_strings.append(param_string)
 
+        self.attach_log(fname=logfname)
+
         # self.set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
@@ -196,4 +244,4 @@ class PYTHIA8Run(MCRun):
             info(5, pdgid, 'allowed to decay')
 
     def generate_event(self):
-        return not self.lib.next()
+        return not next(self.lib)

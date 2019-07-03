@@ -48,6 +48,17 @@ class EPOSEvent(MCEvent):
         self.selection = np.where((self.status == 1) & (self.charge != 0))
         self._apply_slicing()
 
+    def filter_final_state_centrality(self, event_kinematics, centrality_range):
+        '''Filters all events within the selected centrality bins, defined by the impact parameter and the radius of the nucleus (R = 1.2*A^(1/3)fm; works with error < 1%). This calculation works for all except for peripheral centrality bins (> 50%). 
+        Source: https://www.hindawi.com/journals/ahep/2013/908046/
+        This only works for MC models that support NN collisions (that have impact parameter calculations). 
+        '''
+        centrality_val = (self.impact_parameter)**2 / (2*1.2*(event_kinematics.A1**(1/3)))**2
+
+        self.selection = np.where((self.status == 1) &
+         (self.charge != 0) & (centrality_val > centrality_range[0]) &(centrality_val < centrality_range[1]))
+        self._apply_slicing()
+
     @property
     def parents(self):
         if self._is_filtered:
@@ -75,23 +86,28 @@ class EPOSEvent(MCEvent):
         return self.lib.nuc3.bimp
 
     @property
-    def n_part_A(self):
+    def n_wounded_A(self):
         """Number of wounded nucleons side A"""
         return self.lib.c2evt.npjevt
 
     @property
-    def n_part_B(self):
+    def n_wounded_B(self):
         """Number of wounded nucleons (target) side B"""
         return self.lib.c2evt.ntjevt
 
     @property
+    def n_wounded(self):
+        """Number of total wounded nucleons"""
+        return self.lib.c2evt.npjevt + self.lib.c2evt.ntjevt
+
+    @property
     def n_spectator_A(self):
-        """Number of wounded nucleons side A"""
+        """Number of spectator nucleons side A"""
         return self.lib.c2evt.npnevt + self.lib.c2evt.nppevt
 
     @property
     def n_spectator_B(self):
-        """Number of wounded nucleons (target) side B"""
+        """Number of spectator nucleons (target) side B"""
         return self.lib.c2evt.ntnevt + self.lib.c2evt.ntpevt
 
 
@@ -144,6 +160,7 @@ class EPOSRun(MCRun):
     def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
         fname = impy_config['output_log'] if fname is None else fname
+        self._debug = 2
         if fname == 'stdout':
             lun = 6
             info(5, 'Output is routed to stdout.')
@@ -171,7 +188,7 @@ class EPOSRun(MCRun):
         info(1, 'First initialization')
         self.lib.aaset(0)
         self.lib.initializeepos(float(seed), 1e6, datdir, len(datdir), 1, 2212,
-                                2212, 1, 1, 1, 1, 0, self._lun)
+                                2212, 1, 1, 1, 1, self._debug, self._lun)
 
         # Set default stable
         self._define_default_fs_particles()

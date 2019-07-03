@@ -7,6 +7,7 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 '''
+from six import with_metaclass
 import os
 from os.path import abspath, join, dirname
 from abc import ABCMeta, abstractmethod, abstractproperty
@@ -38,7 +39,7 @@ pdata = PYTHIAParticleData(
 from impy.util import info
 
 
-class MCEvent(object):
+class MCEvent(object, with_metaclass(ABCMeta)):
     """The basis of interaction between user and all the event generators.
 
     The derived classes are expected to interact with the particle stack
@@ -66,7 +67,6 @@ class MCEvent(object):
         vz (np.array)      : z-vertex in fm, mm?
         vt (np.array)      : temporal order of vertex in ps, fs?
     """
-    __metaclass__ = ABCMeta
     __sliced_params__ = [
         'p_ids', 'status', 'px', 'py', 'pz', 'en', 'm', 'vx', 'vy', 'vz', 'vt',
         'pem_arr', 'vt_arr'
@@ -231,7 +231,7 @@ class MCEvent(object):
 #=========================================================================
 # Settings
 #=========================================================================
-class Settings():
+class Settings(with_metaclass(ABCMeta)):
     """Custom classes derived from this template allow to set certain low
     level variables in the generators before or after initialization, or for
     each event.
@@ -241,7 +241,6 @@ class Settings():
         This is only relevant for model developers rather than end users.
 
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self, lib):
         self.lib = lib
@@ -281,10 +280,10 @@ class Settings():
 
         other_attr = other_instance.__dict__
 
-        for attr, value in self.__dict__.iteritems():
+        for attr, value in list(self.__dict__.items()):
             if attr == 'lib':
                 continue
-            elif attr not in other_attr.keys():
+            elif attr not in list(other_attr.keys()):
                 return True
             elif value != other_attr[attr]:
                 return True
@@ -294,11 +293,10 @@ class Settings():
 #=========================================================================
 # MCRun
 #=========================================================================
-class MCRun():
-    __metaclass__ = ABCMeta
-
+class MCRun(with_metaclass(ABCMeta)):
     def __init__(self, interaction_model_def, settings_dict=dict(), **kwargs):
         import importlib
+        from util import OutputGrabber
 
         # Import library from library name
         self.lib = importlib.import_module(interaction_model_def.library_name)
@@ -322,6 +320,11 @@ class MCRun():
         # FORTRAN LUN that keeps logfile handle
         self.output_lun = None
 
+        
+
+        
+
+
     def __enter__(self):
         """TEMP: It would be good to actually use the with construct to
         open and close logfiles on init."""
@@ -330,7 +333,7 @@ class MCRun():
 
     def __exit__(self, exc_type, exc_value, traceback):
         """This needs to be tested in more complex scenarios..."""
-        self.close_fortran_logfile()
+        self.close_logfile()
 
     @property
     def label(self):
@@ -436,6 +439,15 @@ class MCRun():
         self.output_lun = randint(20, 100)
         self.lib.impy_openlogfile(path.abspath(fname), self.output_lun)
         return self.output_lun
+
+    def close_logfile(self):
+        """Constructed for closing C++ and FORTRAN log files
+        """
+        if 'pythia8' not in self._label:
+            self.close_fortran_logfile()
+        else:
+            # self.close_cc_logfile()
+            pass
 
     def close_fortran_logfile(self):
         """FORTRAN LUN has to be released when finished to flush buffers."""

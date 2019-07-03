@@ -265,7 +265,6 @@ class PHOJETRun(MCRun):
         self.set_event_kinematics(event_kinematics)
 
         if self.lib.pho_event(-1, self.p1, self.p2)[1]:
-            print self._curr_event_kin
             raise Exception('PHOJET failed to initialize with the current',
                             'event kinematics')
 

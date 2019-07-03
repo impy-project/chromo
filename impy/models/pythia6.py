@@ -71,7 +71,7 @@ class PYTHIA6Event(MCEvent):
         if self.charge_vec is None:
             self.charge_vec = [
                 self.lib.pychge(self.lib.pyjets.k[i, 1]) / 3
-                for i in xrange(self.npart)
+                for i in range(self.npart)
             ]
         return self.charge_vec[self.selection]
 

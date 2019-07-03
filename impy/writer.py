@@ -1,8 +1,7 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
+from six import with_metaclass
 
-class Writer(object):
-    __metaclass__ = ABCMeta
-
+class Writer(object, with_metaclass(ABCMeta)):
     @abstractmethod
     def write(self, event): pass
 

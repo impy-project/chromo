@@ -72,10 +72,10 @@ class DpmjetIIMCRun(MCRun):
                 k.A1, k.Z1, self.lib.mcihad(k.p1pdg)), '{0}_{1}'.format(
                     k.A2, k.Z2), k.ecm)
         except ImportError:
-            print self.class_name + "::init_generator(): Running outside of MCVD,", \
-                "the log will be printed to STDOUT."
+            print(self.class_name + "::init_generator(): Running outside of MCVD,", \
+                "the log will be printed to STDOUT.")
         except AttributeError:
-            print self.class_name + "::init_generator(): Logging not supported."
+            print(self.class_name + "::init_generator(): Logging not supported.")
 
         datdir = '/lustre/fs17/group/that/af/m2m/iamdata/'
         from random import randint
@@ -86,12 +86,12 @@ class DpmjetIIMCRun(MCRun):
         except:
             pass
         seed = randint(1000000, 10000000)
-        print self.__class__.__name__ + '::init_generator(): seed=', seed
+        print(self.__class__.__name__ + '::init_generator(): seed=', seed)
         self.lib.dpmjin(seed, datdir)
 
         if self.def_settings:
-            print self.class_name + "::init_generator(): Using default settings:", \
-            self.def_settings.__class__.__name__
+            print(self.class_name + "::init_generator(): Using default settings:", \
+            self.def_settings.__class__.__name__)
             self.def_settings.enable()
         self.init_done = True
 
@@ -105,8 +105,8 @@ class DpmjetIIMCRun(MCRun):
     def set_stable(self, pdgid):
         kc = self.lib.pycomp(pdgid)
         self.lib.pydat3.mdcy[kc - 1, 0] = 0
-        print self.class_name + "::set_stable(): defining ", \
-            pdgid, "as stable particle"
+        print(self.class_name + "::set_stable(): defining ", \
+            pdgid, "as stable particle")
 
     def generate_event(self):
         self.lib.dpmjet2_event(*self.dpmevt_tup, ievframe=2)
@@ -119,7 +119,7 @@ class DpmjetIIMCRun(MCRun):
 class DpmjetIICascadeRun():
     def __init__(self, lib_str, label, decay_mode, n_events, datdir=None):
         from ParticleDataTool import DpmJetParticleTable
-        exec "import " + lib_str + " as dpmlib"
+        exec("import " + lib_str + " as dpmlib")
         self.lib = dpmlib  # @UndefinedVariable
         self.label = label
         self.nEvents = n_events
@@ -143,7 +143,7 @@ class DpmjetIICascadeRun():
     def set_stable(self, decay_mode=1):
         from ParticleDataTool import SibyllParticleTable
         sibtab = SibyllParticleTable()
-        print "DpmjetIICascadeRun::set_stable(): Setting standard particles stable."
+        print("DpmjetIICascadeRun::set_stable(): Setting standard particles stable.")
         # Define PYTHIA behavior to follow the switches below
         self.lib.pypars.mstp[40] = 2
         # keep muons pions, kaons
@@ -160,8 +160,8 @@ class DpmjetIICascadeRun():
 
         # Decay mode 2 for generation of decay spectra (all conventional with
         # lifetime >= K0S
-        print "SibRun::set_stable(): Setting conventional Sigma-, Xi0,", \
-                "Xi- and Lambda0 stable (decay mode)."
+        print("SibRun::set_stable(): Setting conventional Sigma-, Xi0,", \
+                "Xi- and Lambda0 stable (decay mode).")
         for i in range(36, 39 + 1):
             kc = self.lib.pycomp(sibtab.modid2pdg[i])
             self.lib.pydat3.mdcy[kc - 1, 0] = 0
@@ -171,7 +171,7 @@ class DpmjetIICascadeRun():
 
         # Conventional mesons and baryons
         # keep eta, eta', rho's, omega, phi, K*
-        print "SibRun::set_stable(): Setting all conventional stable."
+        print("SibRun::set_stable(): Setting all conventional stable.")
         # pi0
         kc = self.lib.pycomp(111)
         self.lib.pydat3.mdcy[kc - 1, 0] = 0
@@ -189,7 +189,7 @@ class DpmjetIICascadeRun():
 
         # Charmed particles (only for version >= 2.2)   
         # keep all charmed
-        print "SibRun::set_stable(): Setting all conventional and charmed stable."
+        print("SibRun::set_stable(): Setting all conventional and charmed stable.")
         for i in range(59, 99 + 1):
             try:
                 kc = self.lib.pycomp(sibtab.modid2pdg[i])
@@ -208,17 +208,17 @@ class DpmjetIICascadeRun():
 
     def start(self, projectile, E_lab, sqs, Atarget=0):
 
-        print self.label, self.nEvents, projectile, "events", E_lab, sqs
+        print(self.label, self.nEvents, projectile, "events", E_lab, sqs)
         projectile = self.lib.mcihad(self.ptab.modname2pdg[projectile])
         hist_d = {}
         for hist in self.spectrum_hists:
             hist_d[hist.particle_id] = hist
-        avail_pid = hist_d.keys()
-        for i in xrange(self.nEvents):
+        avail_pid = list(hist_d.keys())
+        for i in range(self.nEvents):
             self.lib.dpmjet2_event(E_lab, projectile)
 
             if not (i % 10000) and i:
-                print i, "events generated."
+                print(i, "events generated.")
             event = DpmjetIICascadeEvent(self.lib)
             #             try:
             [
@@ -260,8 +260,8 @@ class StableCharm(Settings):
         if bool(self.prev_settings):
             raise Exception(self.__class__.__name__ +
                             '::enable(): Settings have been already applied')
-        print self.__class__.__name__ + "::enable(): " + \
-            "Setting normal D-Mesons stable"
+        print(self.__class__.__name__ + "::enable(): " + \
+            "Setting normal D-Mesons stable")
         for pdgid in [421, 411, -411, -421]:
             try:
                 kc = self.lib.pycomp(pdgid)
@@ -271,8 +271,8 @@ class StableCharm(Settings):
                 pass
 
         if self.mode <= 1: return
-        print self.__class__.__name__ + "::enable(): " + \
-            "Setting Ds and D(s) resonances stable"
+        print(self.__class__.__name__ + "::enable(): " + \
+            "Setting Ds and D(s) resonances stable")
         for pdgid in [431, -431, 433, -433, 423, 413, -413, -423]:
             try:
                 kc = self.lib.pycomp(pdgid)
@@ -282,8 +282,8 @@ class StableCharm(Settings):
                 pass
 
         if self.mode <= 2: return
-        print self.__class__.__name__ + "::enable(): " + \
-            "Setting LambdaC and etaC stable"
+        print(self.__class__.__name__ + "::enable(): " + \
+            "Setting LambdaC and etaC stable")
         for pdgid in [4122, -4122, 441]:
             try:
                 kc = self.lib.pycomp(pdgid)
@@ -293,7 +293,7 @@ class StableCharm(Settings):
                 pass
 
     def reset(self):
-        print self.__class__.__name__ + "::reset(): " + \
-            "Restoring charm decay settings."
-        for key, value in self.prev_settings.iteritems():
+        print(self.__class__.__name__ + "::reset(): " + \
+            "Restoring charm decay settings.")
+        for key, value in list(self.prev_settings.items()):
             self.lib.pydat3.mdcy[key, 0] = value
