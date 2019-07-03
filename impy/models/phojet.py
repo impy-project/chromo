@@ -238,6 +238,10 @@ class PHOJETRun(MCRun):
             info(10, 'PHOJET data dir is at', pfile)
             clear_and_set_fortran_chars(self.lib.poinou.datdir, pfile)
             self.lib.poinou.lendir = len(pfile)
+        
+        # Set debug level of the generator
+        for i in range(self.lib.podbg.ideb.size):
+            self.lib.podbg.ideb[i] = pho_conf['debug_level']
 
         self.attach_log()
         #Initialize PHOJET's parameters

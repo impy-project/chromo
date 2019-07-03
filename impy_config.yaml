@@ -40,6 +40,7 @@ epos:
     has_hepevt   : True
     int_support  : [ 'hh', 'hA', 'AA', 'gg', 'gh', 'gA']
     datdir       : src/EPOS-LHC/data/
+    debug_level  : 1
     projectiles  : {
         'LHC' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
                   3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
@@ -52,6 +53,7 @@ phojet:
     has_hepevt   : True
     has_boosts   : True
     int_support  : [ 'hh', 'gg', 'gh']
+    debug_level  : 1
     dat_dir      : {
       '1.12-35'  : src/dpmjet3.0-6/data/,
         '17.1'   : src/dpmjetIII-17.1/dpmdata/
@@ -73,6 +75,7 @@ pythia6:
     has_boosts   : False
     new_mpi      : False
     int_support  : [ 'hh']
+    debug_level  : 1
     projectiles  : {
         '6' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112]
     }
@@ -83,6 +86,7 @@ pythia8:
     has_hepevt   : False
     has_boosts   : False
     int_support  : [ 'hh', 'hA', 'AA', 'gh', 'gg']
+    debug_level  : 1
     projectiles  : {
         '8.2'    : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112]
     }
@@ -97,6 +101,7 @@ urqmd:
     has_hepevt   : True
     has_boosts   : False
     int_support  : [ 'hh', 'hA', 'AA']
+    debug_level  : 1
     projectiles  : {
         '3.4' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112]
     }
@@ -104,7 +109,7 @@ urqmd:
     CTParams     : {}
     caltim       : 200.0
     outtim       : 200.0
-    verbosity    : 1
+    debug_level  : 1
 
 
 dpmjetIII:
@@ -114,7 +119,7 @@ dpmjetIII:
     has_hepevt   : True
     int_support  : [ 'hh', 'hA', 'AA', 'gg', 'gh', 'gA']
     # maximal energy for cross section table initialization
-    e_max        : 1.0e+10
+    debug_level  : 1
     dat_dir      : {
         '3.0-6'  : src/dpmjet3.0-6/data/,
         '17.1'   : src/dpmjetIII-17.1/dpmdata/
@@ -146,6 +151,7 @@ qgsjet:
     has_hepevt   : True
     int_support  : [ 'hh', 'hA', 'AA' ]
     datdir       : src/qgsjet/data/
+    debug_level  : 1
     projectiles  : {
         'II-03' : [ 2212, 2112, 321, -321, 211, -211 ],
         'II-04' : [ 2212, 2112, 321, -321, 211, -211 ],
@@ -158,6 +164,7 @@ sibyll:
     has_boosts   : False
     has_hepevt   : True
     int_support  : [ 'hh', 'hA']
+    debug_level  : 1
     projectiles  : { 
         '2.1'  : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112 ],
         '2.3'  : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112, 

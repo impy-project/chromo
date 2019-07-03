@@ -22,6 +22,7 @@ the implementation is very "cooked up". We have to discuss this.
 
 # from somewhere_in_impy import pdata
 # For now:
+import six
 import numpy as np
 from impy.common import pdata, impy_config
 from impy.util import info
@@ -266,7 +267,7 @@ class EventKinematics(object):
         }
 
     def __ne__(self, other):
-        for key, value in list(other.__dict__.items()):
+        for key, value in six.iteritems(other.__dict__):
             if key == 'boost_def':
                 continue
             if value != self.__dict__[key]:

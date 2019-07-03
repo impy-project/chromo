@@ -48,17 +48,6 @@ class EPOSEvent(MCEvent):
         self.selection = np.where((self.status == 1) & (self.charge != 0))
         self._apply_slicing()
 
-    def filter_final_state_centrality(self, event_kinematics, centrality_range):
-        '''Filters all events within the selected centrality bins, defined by the impact parameter and the radius of the nucleus (R = 1.2*A^(1/3)fm; works with error < 1%). This calculation works for all except for peripheral centrality bins (> 50%). 
-        Source: https://www.hindawi.com/journals/ahep/2013/908046/
-        This only works for MC models that support NN collisions (that have impact parameter calculations). 
-        '''
-        centrality_val = (self.impact_parameter)**2 / (2*1.2*(event_kinematics.A1**(1/3)))**2
-
-        self.selection = np.where((self.status == 1) &
-         (self.charge != 0) & (centrality_val > centrality_range[0]) &(centrality_val < centrality_range[1]))
-        self._apply_slicing()
-
     @property
     def parents(self):
         if self._is_filtered:
@@ -120,24 +109,24 @@ class EPOSRun(MCRun):
         event setup (energy, projectile, target)"""
         k = self._curr_event_kin
         return self.lib.xsection()[1]
-    
+
     def sigma_inel_air(self, precision='default'):
         """Hadron-air production cross sections according to current
         event setup (energy, projectile)."""
         t = self._epos_tup()
-        
+
         # Mass composition of air (Nitrogen, Oxygen, Argon)
         frac_air = [(0.78479, 14), (0.21052, 16), (0.00469, 40)]
         cs = 0.
         for f, iat in frac_air:
-            custom_tup = tuple(list(t[:6]) + [iat, int(iat/2)])
+            custom_tup = tuple(list(t[:6]) + [iat, int(iat / 2)])
             self.set_event_kinematics(self._curr_event_kin, custom_tup)
             cs += f * self.lib.xsection()[1]
-        
+
         # Restore original kinematics
         self.set_event_kinematics(self._curr_event_kin)
         return cs
-        
+
     def _epos_tup(self):
         """Constructs an tuple of arguments for calls to event generator
         from given event kinematics object."""
@@ -160,7 +149,6 @@ class EPOSRun(MCRun):
     def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
         fname = impy_config['output_log'] if fname is None else fname
-        self._debug = 2
         if fname == 'stdout':
             lun = 6
             info(5, 'Output is routed to stdout.')
@@ -175,7 +163,7 @@ class EPOSRun(MCRun):
         from os import path
 
         self._abort_if_already_initialized()
-
+        k = event_kinematics
         if seed == 'random':
             seed = randint(1000000, 10000000)
         else:
@@ -187,8 +175,18 @@ class EPOSRun(MCRun):
         self.attach_log(fname=logfname)
         info(1, 'First initialization')
         self.lib.aaset(0)
-        self.lib.initializeepos(float(seed), 1e6, datdir, len(datdir), 1, 2212,
-                                2212, 1, 1, 1, 1, self._debug, self._lun)
+        
+        if impy_config['user_frame'] == 'center-of-mass':
+            iframe = 1
+            self._output_frame = 'center-of-mass'
+        elif impy_config['user_frame'] == 'laboratory':
+            iframe = 2
+            self._output_frame = 'laboratory'
+
+        self.lib.initializeepos(float(seed), k.ecm, datdir, len(datdir),
+                                iframe, k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2,
+                                l.Z2, impy_config['epos']['debug_level'],
+                                self._lun)
 
         # Set default stable
         self._define_default_fs_particles()

@@ -1,8 +1,8 @@
 """Utility module for auxiliary methods and classes."""
 
-
+from __future__ import print_function
 import inspect
-
+import os
 from impy.common import impy_config
 
 # Global debug flags that would be nice to have in some sort
@@ -123,24 +123,17 @@ def info(min_dbg_level, *message):
         message = [str(m) for m in message]
         print(caller_name() + " ".join(message))
 
-
-"""
-Class to capture the output produced by the console and store it as a string variable. This is provided for utlity to event generators written in C++.
-Source: https://stackoverflow.com/questions/24277488/in-python-how-to-capture-the-stdout-from-a-c-shared-library-to-a-variable 
-"""
-
-import os
-import sys
-import threading
-import time
-
 class OutputGrabber(object):
     """
-    Class used to grab standard output or another stream.
+    Class to capture the output produced by the console and
+    store it as a string variable. This is provided for utlity
+    to event generators written in C++.
+    Source: https://stackoverflow.com/questions/24277488/in-python-how-to-capture-the-stdout-from-a-c-shared-library-to-a-variable 
     """
     escape_char = "\c"
 
     def __init__(self, stream=None, threaded=False):
+        import sys
         self.origstream = stream
         self.threaded = threaded
         if self.origstream is None:
@@ -161,6 +154,8 @@ class OutputGrabber(object):
         """
         Start capturing the stream data.
         """
+        import threading
+        import time
         self.capturedtext = ""
         # Save a copy of the stream:
         self.streamfd = os.dup(self.origstreamfd)

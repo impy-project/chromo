@@ -7,7 +7,7 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 '''
-from six import with_metaclass
+import six
 import os
 from os.path import abspath, join, dirname
 from abc import ABCMeta, abstractmethod, abstractproperty
@@ -39,7 +39,7 @@ pdata = PYTHIAParticleData(
 from impy.util import info
 
 
-class MCEvent(object, with_metaclass(ABCMeta)):
+class MCEvent(object, six.with_metaclass(ABCMeta)):
     """The basis of interaction between user and all the event generators.
 
     The derived classes are expected to interact with the particle stack
@@ -231,7 +231,7 @@ class MCEvent(object, with_metaclass(ABCMeta)):
 #=========================================================================
 # Settings
 #=========================================================================
-class Settings(with_metaclass(ABCMeta)):
+class Settings(six.with_metaclass(ABCMeta)):
     """Custom classes derived from this template allow to set certain low
     level variables in the generators before or after initialization, or for
     each event.
@@ -280,10 +280,10 @@ class Settings(with_metaclass(ABCMeta)):
 
         other_attr = other_instance.__dict__
 
-        for attr, value in list(self.__dict__.items()):
+        for attr, value in six.iteritems(self.__dict__):
             if attr == 'lib':
                 continue
-            elif attr not in list(other_attr.keys()):
+            elif attr not in other_attr.keys():
                 return True
             elif value != other_attr[attr]:
                 return True
@@ -293,7 +293,7 @@ class Settings(with_metaclass(ABCMeta)):
 #=========================================================================
 # MCRun
 #=========================================================================
-class MCRun(with_metaclass(ABCMeta)):
+class MCRun(six.with_metaclass(ABCMeta)):
     def __init__(self, interaction_model_def, settings_dict=dict(), **kwargs):
         import importlib
         from util import OutputGrabber
