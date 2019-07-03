@@ -229,7 +229,7 @@ class DpmjetIIIRun(MCRun):
 
         self.attach_log(logfname)
         self.lib.dt_init(-1,
-                         dpm_conf['e_max'],
+                         k.plab,
                          k.A1,
                          k.Z1,
                          k.A2,
