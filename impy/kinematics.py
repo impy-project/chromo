@@ -256,7 +256,8 @@ class EventKinematics(object):
         return np.sqrt((E + m) * (E - m))
 
     def __getstate__(self):
-        _ = self.__dict__.pop('boost_def')
+        if 'boost_def' in self.__dict__:
+            _ = self.__dict__.pop('boost_def')
         return self.__dict__
 
     def __setstate__(self, state):
