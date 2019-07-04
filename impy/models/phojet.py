@@ -240,8 +240,8 @@ class PHOJETRun(MCRun):
             self.lib.poinou.lendir = len(pfile)
         
         # Set debug level of the generator
-        for i in range(self.lib.podbg.ideb.size):
-            self.lib.podbg.ideb[i] = pho_conf['debug_level']
+        for i in range(self.lib.podebg.ideb.size):
+            self.lib.podebg.ideb[i] = pho_conf['debug_level']
 
         self.attach_log()
         #Initialize PHOJET's parameters

@@ -185,7 +185,7 @@ class EPOSRun(MCRun):
 
         self.lib.initializeepos(float(seed), k.ecm, datdir, len(datdir),
                                 iframe, k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2,
-                                l.Z2, impy_config['epos']['debug_level'],
+                                k.Z2, impy_config['epos']['debug_level'],
                                 self._lun)
 
         # Set default stable
