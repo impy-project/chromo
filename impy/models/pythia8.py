@@ -89,6 +89,27 @@ class PYTHIA8Event(MCEvent):
     def charge(self):
         return self.p_charge[self.selection]
 
+    # Nuclear collision parameters
+    @property
+    def impact_parameter(self):
+        """Returns impact parameter for nuclear collisions."""
+        return self.lib.info.hiinfo.b()
+    
+    @property
+    def n_wounded_A(self):
+        """Number of wounded nucleons side A"""
+        return self.lib.info.hiinfo.nPartProj()
+
+    @property
+    def n_wounded_B(self):
+        """Number of wounded nucleons (target) side B"""
+        return self.lib.info.hiinfo.nPartTarg()
+
+    @property
+    def n_wounded(self):
+        """Number of total wounded nucleons"""
+        return self.lib.info.hiinfo.nPartProj() + self.lib.info.hiinfo.nPartTarg()
+
 
 class PYTHIA8Run(MCRun):
     """Implements all abstract attributes of MCRun for the 
