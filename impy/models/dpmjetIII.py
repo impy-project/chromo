@@ -250,6 +250,13 @@ class DpmjetIIIRun(MCRun):
             self.lib.dtflg1.iframe = 1
             self._output_frame = 'laboratory'
 
+        # Relax momentum and energy conservation checks at very high energies
+        if k.ecm > 5e4:
+            # Relative allowed deviation
+            self.lib.pomdls.parmdl[76] = 0.05
+            # Absolute allowed deviation
+            self.lib.pomdls.parmdl[77] = 0.05
+
         # if self.def_settings:
         #     print self.class_name + "::init_generator(): Using default settings:", \
         #         self.def_settings.__class__.__name__
