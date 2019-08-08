@@ -72,32 +72,33 @@ class EPOSEvent(MCEvent):
     @property
     def impact_parameter(self):
         """Returns impact parameter for nuclear collisions."""
-        return self.lib.nuc3.bimp
+        # return self.lib.nuc3.bimp
+        return self.lib.cevt.bimevt
 
     @property
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
-        return self.lib.c2evt.npjevt
+        return self.lib.cevt.npjevt
 
     @property
     def n_wounded_B(self):
         """Number of wounded nucleons (target) side B"""
-        return self.lib.c2evt.ntjevt
+        return self.lib.cevt.ntgevt
 
     @property
     def n_wounded(self):
         """Number of total wounded nucleons"""
-        return self.lib.c2evt.npjevt + self.lib.c2evt.ntjevt
+        return self.lib.cevt.npjevt + self.lib.cevt.ntgevt
 
     @property
     def n_spectator_A(self):
         """Number of spectator nucleons side A"""
-        return self.lib.c2evt.npnevt + self.lib.c2evt.nppevt
+        return self.lib.cevt.npnevt + self.lib.cevt.nppevt
 
     @property
     def n_spectator_B(self):
         """Number of spectator nucleons (target) side B"""
-        return self.lib.c2evt.ntnevt + self.lib.c2evt.ntpevt
+        return self.lib.cevt.ntnevt + self.lib.cevt.ntpevt
 
 
 class EPOSRun(MCRun):
@@ -192,7 +193,7 @@ class EPOSRun(MCRun):
         self._define_default_fs_particles()
         self.set_event_kinematics(event_kinematics)
 
-        self.lib.charge_vect = np.vectorize(self.lib.getcharge)
+        self.lib.charge_vect = np.vectorize(self.lib.getcharge, otypes=[np.int])
 
     def set_stable(self, pdgid, stable=True):
         if stable:
