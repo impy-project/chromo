@@ -44,6 +44,6 @@ class HepMCWriter(Writer):
                                impy_event.py[i],
                                impy_event.pz[i],
                                impy_event.en[i]),
-                              impy_event.p_ids[i],
-                              3)
+                               impy_event.p_ids[i],
+                               3)
             hepmc_event.add_particle(p)
