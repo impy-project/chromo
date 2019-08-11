@@ -67,9 +67,7 @@ and of course
 
 ## Requirements
 
-- particletools
-- pyhepmc
-
+See requirements.txt.
 
 ## Contributers:
 

@@ -1,0 +1,5 @@
+numpy
+scipy
+particletools
+pyyaml
+pyhepmc-ng
