@@ -22,6 +22,14 @@ user_frame : 'center-of-mass'
 # will decay
 tau_stable : 10.0e-12 # [ps] typical value at LHC.
 
+#List of stable particles
+#All particles in this list will remain stable and will not decay.
+#This is preferred over setting tau_stable due to the per-event 
+#instantiation behaviour of Pythia8.
+stable_list : [13, 2112,  130, 211, 310, 321, -3334, -3322, -3312, 
+-3222, -3122, -3112, 3112, 3122, 3222, 3312, 3322, 3334, -321, 
+-211, -2112, -13]  #default stable list with stable lifetime = 10e-12
+
 # Set pi0 to stable by default (often used as default)
 pi0_stable : True
 
