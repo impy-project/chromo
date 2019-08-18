@@ -14,6 +14,7 @@ from impy.kinematics import EventKinematics
 from impy.common import impy_config, pdata
 from impy.util import info
 from impy.writer import HepMCWriter
+import pytest
 
 event_kinematics = EventKinematics(ecm=7000 * GeV,
                                    p1pdg=2212,
@@ -22,37 +23,10 @@ event_kinematics = EventKinematics(ecm=7000 * GeV,
 impy_config["user_frame"] = 'laboratory'
 
 
-def test_hepmc_writer():
-    from impy.writer import HepMCWriter
-
-    generator_n = make_generator_instance(interaction_model_by_tag['SIBYLL23C'])
-    generator.init_generator(event_kinematics)
-
-    test_file = "test_hepmc_writer_file.dat"
-
-    pem = []
-    pid = []
-    with HepMCWriter(test_file) as w:
-        for event in generator.event_generator(event_kinematics, 3):
-            
-            pem.append(event.pem_arr.T)
-            
-            w.write(event)
-            
-
-    with open(test_file) as f:
-        content = f.read()
-        assert content.startswith("HepMC::Version")
-        assert content.endswith("END_EVENT_LISTING\n\n")
-
-    # delete test_file if test is successful
-    # import os
-    # os.unlink(test_file)
-
-
+@pytest.mark.parametrize("model_tag", ["SIBYLL23C", "DPMJETIII306"])
 def test_hepmc_writer(model_tag):
     ## TODO check particle history:
-    # Cannot check this right now, because reading the DPMJet event from ascii 
+    # Cannot check this right now, because reading the DPMJet event from ascii
     # randomly fails with a parsing error in HepMC3.
 
     ## TODO check vertices
@@ -63,12 +37,12 @@ def test_hepmc_writer(model_tag):
     generator = make_generator_instance(interaction_model_by_tag[model_tag])
     generator.init_generator(event_kinematics)
 
-    test_file = "test_hepmc_writer_file.dat"
+    test_file = "test_hepmc_writer_file_%s.dat" % model_tag
 
     event_data = []
     with HepMCWriter(test_file) as w:
         for event in generator.event_generator(event_kinematics, 3):
-            event_data.append((event.pem_arr.T.copy(), event.p_ids.copy(), event.status.copy(), event.parents.T if event.parents is not None else np.empty((0, 2), dtype=int)))
+            event_data.append((event.pem_arr.T.copy(), event.p_ids.copy(), event.status.copy(), event.parents.T.copy() if event.parents is not None else 0))
             w.write(event)
 
     import pyhepmc_ng
@@ -89,7 +63,7 @@ def test_hepmc_writer(model_tag):
                 pem[i] = p.momentum.px, p.momentum.py, p.momentum.pz, p.momentum.e, p.generated_mass
                 pid[i] = p.pid
                 status[i] = p.status
-            
+
             # parents = event.vertices
             # vt = np.empty((len(vertices), 4))
             # for i, v in enumerate(vertices):
@@ -104,9 +78,3 @@ def test_hepmc_writer(model_tag):
     # delete test_file if test is successful
     import os
     os.unlink(test_file)
-
-
-if __name__ == '__main__':
-    test_hepmc_writer('SIBYLL23C')
-    ## DPMJet produces events that cannot be read in again with HepMC3
-    # test_hepmc_writer('DPMJETIII306')

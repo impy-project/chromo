@@ -19,7 +19,7 @@ class Writer(object, with_metaclass(ABCMeta)):
         self.close()
 
 
-class HepMCWriter(Writer):    
+class HepMCWriter(Writer):
     def __init__(self, filename):
         self._hep = __import__('pyhepmc_ng') # delay import till instantiation
         self._writer = self._hep.WriterAscii(filename)
@@ -43,23 +43,17 @@ class HepMCWriter(Writer):
         vt = impy_event.vt_arr.T # the need to transpose this is bad
         n = pem.shape[0]
         if impy_event.parents is None:
-            parents = np.zeros((n, 2), dtype=int)
+            parents = 0
         else:
-            parents = impy_event.parents.T
-        # HD: how to get the following array from the impy event structure?
-        vertex_status = np.zeros(n, dtype=int)
+            parents = impy_event.parents.T[:n]
         self._hep.fill_genevent_from_hepevt(
             self._genevent,
-            self._event_number,
-            pem[:,:4],
-            impy_event.m,
-            vt,
-            impy_event.p_ids,
-            parents,
-            0, # dummy entry, not used
-            impy_event.status, # particle status
-            vertex_status,
-            1, # momentum scaling
-            1, # length scaling
+            event_number=self._event_number,
+            p=pem[:, :4],
+            m=impy_event.m,
+            v=vt,
+            pid=impy_event.p_ids,
+            parents=parents,
+            status=impy_event.status, # particle status
         )
         self._event_number += 1
