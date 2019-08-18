@@ -249,6 +249,14 @@ class DpmjetIIIRun(MCRun):
         elif impy_config['user_frame'] == 'laboratory':
             self.lib.dtflg1.iframe = 1
             self._output_frame = 'laboratory'
+        
+        if k.ecm > 5e4:
+            # Relative allowed deviation
+            self.lib.pomdls.parmdl[76] = 0.045
+            # Absolute allowed deviation
+            self.lib.pomdls.parmdl[77] = 0.395
+            # Relax threshhold of rejected events for variable energy runs
+            self.lib.pomdls.ipamdl[178] = 5000
 
         # if self.def_settings:
         #     print self.class_name + "::init_generator(): Using default settings:", \
