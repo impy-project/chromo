@@ -25,15 +25,10 @@ impy_config["user_frame"] = 'laboratory'
 
 @pytest.mark.parametrize("model_tag", ["SIBYLL23C", "DPMJETIII306"])
 def test_hepmc_writer(model_tag):
-    ## TODO check particle history:
-    # Cannot check this right now, because reading the DPMJet event from ascii
-    # randomly fails with a parsing error in HepMC3.
-
-    ## TODO check vertices
-    # Again, cannot check this right now, because it requires DPMJet events.
-    # The situation is complicated by the fact that HepMC3 doesn't store vertices
-    # of particles which do not have parents.
-
+    # To run this test do `pytest tests/test_hepmc_writer.py`
+    # This test fails because the event record written by HepMC3 C++ is bad,
+    # a lot of particles are missing. Either a bug in the original impy record or a bug in the
+    # HepMC3 C++ code (not the pyhepmc_ng code). 
     generator = make_generator_instance(interaction_model_by_tag[model_tag])
     generator.init_generator(event_kinematics)
 
@@ -42,38 +37,55 @@ def test_hepmc_writer(model_tag):
     event_data = []
     with HepMCWriter(test_file) as w:
         for event in generator.event_generator(event_kinematics, 3):
-            event_data.append((event.pem_arr.T.copy(), event.p_ids.copy(), event.status.copy(), event.parents.T.copy() if event.parents is not None else 0))
+            n = event.p_ids.shape[0]
+            pem = event.pem_arr.T
+            vt = event.vt_arr.T
+            pid = event.p_ids
+            parents = {}
+            if event.parents is not None:
+                for i, (a, b) in enumerate(event.parents.T[:n]):
+                    par = set()
+                    for j in range(a, b):
+                        par.add((pid[j], pem[j, 3]))
+                    if par:
+                        parents[(pid[i], pem[i, 3])] = vt[i], par
+            event_data.append((
+                pem.copy(),
+                vt.copy(),
+                pid.copy(),
+                event.status.copy(),
+                parents
+            ))
             w.write(event)
 
     import pyhepmc_ng
-    with pyhepmc_ng.open(test_file) as f:
-        for ievent in range(3):
-            event = f.read()
-            assert event is not None
-            assert event.event_number == ievent
+    for ievent, event in enumerate(pyhepmc_ng.open(test_file)):
+        assert event is not None
+        assert event.event_number == ievent
 
-            pem_ref, pid_ref, status_ref, parents_ref = event_data[ievent]
+        pem_ref, vt_ref, pid_ref, status_ref, parents_ref = event_data[ievent]
 
-            particles = event.particles
-            pem = np.empty((len(particles), 5))
-            pid = np.empty(pem.shape[0], dtype=int)
-            status = np.empty(pem.shape[0], dtype=int)
-            for i, p in enumerate(particles):
-                assert i + 1 == p.id
-                pem[i] = p.momentum.px, p.momentum.py, p.momentum.pz, p.momentum.e, p.generated_mass
-                pid[i] = p.pid
-                status[i] = p.status
+        particles = event.particles
+        n = len(particles)
+        pem = np.empty((n, 5))
+        pid = np.empty(n, dtype=int)
+        status = np.empty(n, dtype=int)
+        parents = {}
+        for i, p in enumerate(particles):
+            assert i + 1 == p.id
+            pem[i] = p.momentum.px, p.momentum.py, p.momentum.pz, p.momentum.e, p.generated_mass
+            pid[i] = p.pid
+            status[i] = p.status
+            par = set()
+            for q in p.parents:
+                par.add((q.pid, q.momentum.e))
+            if par:
+                parents[(p.pid, p.momentum.e)] = p.production_vertex.position, par
 
-            # parents = event.vertices
-            # vt = np.empty((len(vertices), 4))
-            # for i, v in enumerate(vertices):
-            #     vt[i] = v.position.x, v.position.y, v.position.z, v.position.t
-
-            assert_allclose(pem_ref, pem)
-            assert_array_equal(pid_ref, pid)
-            assert_array_equal(status_ref, status)
-            # assert_array_equal(parents_ref, parents)
-            # assert_allclose(vt_ref, vt)
+        assert_allclose(pem_ref, pem)
+        assert_array_equal(pid_ref, pid)
+        assert_array_equal(status_ref, status)
+        assert parents == parents_ref
 
     # delete test_file if test is successful
     import os
