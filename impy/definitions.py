@@ -30,7 +30,7 @@ interaction_model_nt_init = [
         sibyll.SibyllEvent, 'center-of-mass'
     ],
     [
-        'DPMJETIII171', 'DPMJET-III', '17.1', -1, 'dpmjetIII171',
+        'DPMJETIII191', 'DPMJET-III', '19.1', -1, 'dpmjetIII191',
         dpmjetIII.DpmjetIIIRun, dpmjetIII.DpmjetIIIEvent, 'center-of-mass'
     ],
     [
@@ -46,7 +46,7 @@ interaction_model_nt_init = [
         phojet.PHOJETRun, phojet.PhojetEvent, 'center-of-mass'
     ],
     [
-        'PHOJET171', 'PHOJET', '17.1', -1, 'dpmjetIII171', phojet.PHOJETRun,
+        'PHOJET171', 'PHOJET', '19.1', -1, 'dpmjetIII191', phojet.PHOJETRun,
         phojet.PhojetEvent, 'center-of-mass'
     ],
     [

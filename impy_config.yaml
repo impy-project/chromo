@@ -64,11 +64,11 @@ phojet:
     debug_level  : 0
     dat_dir      : {
       '1.12-35'  : src/dpmjet3.0-6/data/,
-        '17.1'   : src/dpmjetIII-17.1/dpmdata/
+        '19.1'   : src/dpmjetIII-19.1/dpmdata/
     }
     param_file   : {
       '1.12-35'  : src/dpmjet3.0-6/data/fitpar.dat,
-        '17.1'   : src/dpmjetIII-17.1/dpmdata/dpmjpar.dat
+        '19.1'   : src/dpmjetIII-19.1/dpmdata/dpmjpar.dat
     }
     projectiles  : {
         'last' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
@@ -130,20 +130,20 @@ dpmjetIII:
     debug_level  : 0
     dat_dir      : {
         '3.0-6'  : src/dpmjet3.0-6/data/,
-        '17.1'   : src/dpmjetIII-17.1/dpmdata/
+        '19.1'   : src/dpmjetIII-19.1/dpmdata/
     }
     param_file   : {
         '3.0-6'  : src/dpmjet3.0-6/data/fitpar.dat,
-        '17.1'   : src/dpmjetIII-17.1/dpmdata/dpmjpar.dat
+        '19.1'   : src/dpmjetIII-19.1/dpmdata/dpmjpar.dat
     }
     evap_file    : {
         '3.0-6'  : src/dpmjet3.0-6/data/dpmjet.dat,
-        '17.1'   : src/dpmjetIII-17.1/dpmdata/dpmjet.dat
+        '19.1'   : src/dpmjetIII-19.1/dpmdata/dpmjet.dat
     }
 
     projectiles  : {
         '3.0-6'      : [ 2212, 2112, 321, -321, 211, -211, -2212 ],
-        '17.1'   : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
+        '19.1'   : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
                          3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
                          3122, -3122, 22]
     }
