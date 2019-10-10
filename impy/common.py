@@ -296,7 +296,7 @@ class Settings(six.with_metaclass(ABCMeta)):
 class MCRun(six.with_metaclass(ABCMeta)):
     def __init__(self, interaction_model_def, settings_dict=dict(), **kwargs):
         import importlib
-        from util import OutputGrabber
+        from impy.util import OutputGrabber
 
         # Import library from library name
         self.lib = importlib.import_module(interaction_model_def.library_name)

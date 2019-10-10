@@ -56,12 +56,15 @@ def AZ2pdg(A, Z):
     return pdg_id
 
 
-def clear_and_set_fortran_chars(array_ref, char_seq):
+def fortran_chars(array_ref, char_seq):
     """Helper to set fortran character arrays with python strings"""
     info(10, 'Setting fortran array with', char_seq)
     # Reset
-    array_ref.data[:] = len(array_ref.data) * ' '
-    array_ref.data[:len(char_seq)] = char_seq
+    import numpy as np
+    len_arr = int(str(array_ref.dtype)[2:])
+    len_seq = len(char_seq)
+    return np.array([c for c in char_seq + 
+        (len_arr-len_seq)*' '], dtype='S' + str(len_arr))
 
 def caller_name(skip=2):
     """Get a name of a caller in the format module.class.method

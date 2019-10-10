@@ -5,7 +5,7 @@ Created on 15.05.2012
 '''
 import numpy as np
 from impy.common import MCRun, MCEvent, impy_config, pdata
-from impy.util import standard_particles, info, clear_and_set_fortran_chars
+from impy.util import standard_particles, info, fortran_chars
 
 
 class PhojetEvent(MCEvent):
@@ -229,14 +229,14 @@ class PHOJETRun(MCRun):
         if hasattr(self.lib, 'pomdls') and hasattr(self.lib.pomdls, 'parfn'):
             pfile = join(root_dir, pho_conf['param_file'][self.version])
             info(10, 'PHOJET parameter file at', pfile)
-            clear_and_set_fortran_chars(self.lib.pomdls.parfn, pfile)
+            self.lib.pomdls.parfn = fortran_chars(self.lib.pomdls.parfn, pfile)
 
         # Set the data directory for the other files
         if hasattr(self.lib, 'poinou') and hasattr(self.lib.poinou, 'datdir'):
             pfile = str(join(root_dir, pho_conf['dat_dir'][self.version],
                              '')) + '/'
             info(10, 'PHOJET data dir is at', pfile)
-            clear_and_set_fortran_chars(self.lib.poinou.datdir, pfile)
+            self.lib.poinou.datdir = fortran_chars(self.lib.poinou.datdir, pfile)
             self.lib.poinou.lendir = len(pfile)
         
         # Set debug level of the generator
