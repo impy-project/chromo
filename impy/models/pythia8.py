@@ -132,6 +132,9 @@ class PYTHIA8Run(MCRun):
         # Replay initialization strings
         for param_string in self.save_init_strings:
             self.lib.readString(param_string)
+        # Replay stable history
+        for stable_sett in self.stable_history:
+            self.set_stable(*stable_sett)
 
         if k.A1 > 1 or k.A2 > 1:
             self.lib.readString("HeavyIon:SigFitNGen = 0")
@@ -254,14 +257,22 @@ class PYTHIA8Run(MCRun):
 
         self.attach_log(fname=logfname)
 
+        # Create history for particle decay settings
+        # since changing energy changes resets the stable settings
+        self.stable_history = []
+
         # self.set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
         if stable:
-            self.lib.particleData.mayDecay(pdgid, False)
+            self.cpp_lib.particleData.mayDecay(pdgid, False)
+            if (pdgid, False) not in self.stable_history:
+                self.stable_history.append((pdgid, False))
             info(5, 'defining', pdgid, 'as stable particle')
         else:
-            self.lib.particleData.mayDecay(pdgid, True)
+            self.cpp_lib.particleData.mayDecay(pdgid, True)
+            if (pdgid, True) not in self.stable_history:                                                                                      self.stable_history.append((pdgid, False))
+                self.stable_history.append((pdgid, True))
             info(5, pdgid, 'allowed to decay')
 
     def generate_event(self):
