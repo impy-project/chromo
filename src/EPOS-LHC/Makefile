@@ -19,20 +19,20 @@ all: install
 
 .PHONY: clean
 clean:
-	rm -rf sources/*.o *.prj *.chk core *.dSYM *.$(LEXT) *.f2l
+	rm -rf sources/*.o *.prj *.chk core *.dSYM *$(LEXT) *.f2l
 
 .PHONY: distclean
 distclean: clean
 	rm -f *.pyf
 
 .PHONY: install
-install: eposlhc.$(LEXT)
-	cp *.$(LEXT) ../../
+install: eposlhc$(LEXT)
+	cp *$(LEXT) ../../lib
 
 example: sources/epos_example.f $(EX_OBJS)
 	gfortran sources/epos_example.f $(EX_OBJS) -o epos_example.exe
 
-eposlhc.$(LEXT): eposlhc.pyf $(EPOS_OBJS)
+eposlhc$(LEXT): eposlhc.pyf $(EPOS_OBJS)
 	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" \
 	eposlhc.pyf $(EPOS_OBJS) $(LOGO) >> epos-lhc.f2l 2>&1
 

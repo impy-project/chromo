@@ -25,21 +25,21 @@ URQMD_OBJS := $(URQMD_SRCS:.f=.o) $(URQMD_90SRCS:.f90=.o)
 SFUNCS=urqmd init uinit set0 params uounit strini loginit loadwtab \
 norm_init output cascinit urqini partname chepevt ptsigtot init_rmmard
 
-all:  urqmd34.$(LEXT) install
+all: install
 
 .PHONY: clean
 clean:
-	rm -rf $(TARGET) *.o sources/*.o *.prj *.chk core *.$(LEXT) *.dSYM *.f2l
+	rm -rf $(TARGET) *.o sources/*.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l
 
 .PHONY: distclean
 distclean: clean
 	rm -f *.pyf
 
 .PHONY: install
-install: urqmd34.$(LEXT)
-	cp *.$(LEXT) $(WORK_DIR)
+install: urqmd34$(LEXT)
+	cp *$(LEXT) $(WORK_DIR)/lib
 
-urqmd34.$(LEXT): urqmd34.pyf $(URQMD_OBJS) impy_urqmd.o $(LOGO) $(RND)
+urqmd34$(LEXT): urqmd34.pyf $(URQMD_OBJS) impy_urqmd.o $(LOGO) $(RND)
 	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" urqmd34.pyf \
 	$(LOGO) $(RND) $(URQMD_OBJS) impy_urqmd.o >> urqmd34.f2l 2>&1
 

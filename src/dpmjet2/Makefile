@@ -8,21 +8,21 @@ DPMJET_O = dpmjet253c.o dpmjet254.o dpmjet255.o dpmjet256.o testdpmjetII.o dummy
 DPM2FUNCS = dpjsig dpmjin dpmjlk dpmjet2_event mcihad mpdgha \
 	dpmjet2_lt2lab pycomp pylist dechkk xshn siinel
 
-all: dpmjet2.$(LEXT) install
+all: dpmjet2$(LEXT) install
 
 .PHONY: clean
 clean:
-	rm -rf $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.dSYM *.f2l
+	rm -rf $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l
 
 .PHONY: distclean
 distclean: clean
 	rm -f *.pyf
 
 .PHONY: install
-install: dpmjet2.$(LEXT)
-	cp *.$(LEXT) $(WORK_DIR)
+install: dpmjet2$(LEXT)
+	cp *$(LEXT) $(WORK_DIR)
 
-dpmjet2.$(LEXT): dpmjet2.pyf $(LOGO) $(RND) $(DPMJET_O) dpmjet_iface.o
+dpmjet2$(LEXT): dpmjet2.pyf $(LOGO) $(RND) $(DPMJET_O) dpmjet_iface.o
 	@echo "RND is " $(RND) $(WORK_DIR)
 	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" dpmjet2.pyf \
 	$(LOGS) $(DPMJET_O) $(RND) dpmjet_iface.o >> dpmjet2.f2l 2>&1

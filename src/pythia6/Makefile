@@ -8,22 +8,22 @@ PYTHIA6 = pythia-6.4.28
 # LHAPDF_CONFIG = /Users/afedynitch/dev/prog/lhapdf/bin/lhapdf-config
 # LHAPDF_LIBS = $(shell $(LHAPDF_CONFIG) --ldflags)
 
-all:  pythia6.$(LEXT) install
+all:  install
 
 .PHONY: clean
 clean:
-	rm -rf $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.dSYM *.f2l
+	rm -rf $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l
 
 .PHONY: distclean
 distclean: clean
 	rm -f *.pyf
 
 .PHONY: install
-install: pythia6.$(LEXT)
-	cp *.$(LEXT) $(WORK_DIR)
+install: pythia6$(LEXT)
+	cp *$(LEXT) $(WORK_DIR)/lib
 
 #PYTHIA
-pythia6.$(LEXT): pythia6.pyf $(PYTHIA6).o $(LOGO) 
+pythia6$(LEXT): pythia6.pyf $(PYTHIA6).o $(LOGO) 
 	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" pythia6.pyf \
 	$(PYTHIA6).o $(LOGO) >> pythia6.f2l 2>&1
 

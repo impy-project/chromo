@@ -11,21 +11,21 @@ OBJS= SOPHIA20.o eventgen.o sampling.o inpoutput.o\
       
 SFUNCS=eventgen print_event crossection
 
-all:  sophia.$(LEXT) install
+all:  install
 
 .PHONY: clean
 clean:
-	rm -rf $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.dSYM *.f2l
+	rm -rf $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l
 
 .PHONY: distclean
 distclean: clean
 	rm -f *.pyf
 
 .PHONY: install
-install: sophia.$(LEXT)
-	cp *.$(LEXT) $(WORK_DIR)
+install: sophia$(LEXT)
+	cp *$(LEXT) $(WORK_DIR)/lib
 
-sophia.$(LEXT): sophia.pyf $(RND) $(OBJS) $(LOGO)
+sophia$(LEXT): sophia.pyf $(RND) $(OBJS) $(LOGO)
 	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" sophia.pyf \
 	$(RND) $(LOGO) $(OBJS) >> sophia.f2l 2>&1
 

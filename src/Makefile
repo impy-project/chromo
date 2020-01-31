@@ -30,7 +30,7 @@ $(SUBDIRS): $(RND) $(LOGO)
 
 .PHONY: clean
 clean:
-	rm -f $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.dSYM
+	rm -f $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM
 	for d in $(SUBDIRS); \
 	do \
 	$(MAKE) --directory=$$d clean; \
@@ -38,7 +38,7 @@ clean:
 
 .PHONY: distclean
 distclean:
-	rm -rf $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.pyf *.dSYM
+	rm -rf $(TARGET) *.o *.prj *.chk core *$(LEXT) *.pyf *.dSYM
 	for d in $(SUBDIRS); \
 	do \
 	$(MAKE) --directory=$$d distclean; \

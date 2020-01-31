@@ -8,9 +8,10 @@ CVendor = "GNU"
 Config = "Release"
 
 WORK_DIR = $(CURDIR)
+LIB_DIR = $(WORK_DIR)/lib
 RND = $(CURDIR)/src/rangen.o
 # Shared library suffix
-LEXT = so
+LEXT = $(shell python -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')
 
 # For f2py
 LOGF = impy_openlogfile impy_closelogfile
@@ -98,7 +99,7 @@ clean:
 
 .PHONY: distclean
 distclean:
-	rm -rf $(TARGET) *.o *.prj *.chk core *.$(LEXT) *.pyf *.dSYM
+	rm -rf $(TARGET) *.o *.prj *.chk core *$(LEXT) *.pyf *.dSYM
 	$(MAKE) --directory=src distclean
 
 %.o: %.f
