@@ -250,6 +250,15 @@ class DpmjetIIIRun(MCRun):
         elif impy_config['user_frame'] == 'laboratory':
             self.lib.dtflg1.iframe = 1
             self._output_frame = 'laboratory'
+        
+        # Relax momentum and energy conservation checks at very high energies
+        if k.ecm > 5e4:
+            # Relative allowed deviation
+            self.lib.pomdls.parmdl[76] = 0.045
+            # Absolute allowed deviation
+            self.lib.pomdls.parmdl[77] = 0.395
+            # Relax threshhold of rejected events for variable energy runs
+            self.lib.pomdls.ipamdl[178] = 5000
 
         # Relax momentum and energy conservation checks at very high energies
         if k.ecm > 5e4:

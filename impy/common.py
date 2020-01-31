@@ -460,10 +460,16 @@ class MCRun(six.with_metaclass(ABCMeta)):
     def _define_default_fs_particles(self):
         """Defines particles as stable for the default 'tau_stable'
         value in the config."""
-        info(5, 'Setting default particles stable with lifetime <',
-             impy_config['tau_stable'], 's')
+        # info(5, 'Setting default particles stable with lifetime <',
+        #      impy_config['tau_stable'], 's')
 
-        for pdgid in make_stable_list(impy_config['tau_stable'], pdata):
+        # for pdgid in make_stable_list(impy_config['tau_stable'], pdata):
+        #     self.set_stable(pdgid)
+
+        info(5, 'Setting following particles to be stable:',
+             impy_config['stable_list'])
+
+        for pdgid in impy_config['stable_list']:
             self.set_stable(pdgid)
 
         if impy_config['pi0_stable']:

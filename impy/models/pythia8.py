@@ -8,7 +8,7 @@ import numpy as np
 from impy.common import MCRun, MCEvent, impy_config, pdata
 from impy.util import standard_particles, info, AZ2pdg
 
-_len_evt = 200000
+_len_evt = 300000
 
 
 class PYTHIA8Event(MCEvent):
@@ -109,7 +109,6 @@ class PYTHIA8Event(MCEvent):
     def n_wounded(self):
         """Number of total wounded nucleons"""
         return self.lib.info.hiinfo.nPartProj() + self.lib.info.hiinfo.nPartTarg()
-
 
 class PYTHIA8Run(MCRun):
     """Implements all abstract attributes of MCRun for the 
