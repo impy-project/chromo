@@ -23,7 +23,11 @@ event_kinematics = EventKinematics(ecm=7000 * GeV,
 impy_config["user_frame"] = 'laboratory'
 
 
-@pytest.mark.parametrize("model_tag", ["SIBYLL23C", "DPMJETIII306"])
+@pytest.mark.parametrize("model_tag", [
+    # "SIBYLL23C",
+    "DPMJETIII306",
+    # "EPOSLHC"
+    ])
 def test_hepmc_writer(model_tag):
     # To run this test do `pytest tests/test_hepmc_writer.py`
     # This test fails because the event record written by HepMC3 C++ is bad,
@@ -37,13 +41,14 @@ def test_hepmc_writer(model_tag):
     event_data = []
     with HepMCWriter(test_file) as w:
         for event in generator.event_generator(event_kinematics, 3):
-            n = event.p_ids.shape[0]
+            n = event.npart
             pem = event.pem_arr.T
             vt = event.vt_arr.T
             pid = event.p_ids
+            status = event.status
             parents = {}
             if event.parents is not None:
-                for i, (a, b) in enumerate(event.parents.T[:n]):
+                for i, (a, b) in enumerate(event.parents.T):
                     par = set()
                     for j in range(a, b):
                         par.add((pid[j], pem[j, 3]))
@@ -53,8 +58,8 @@ def test_hepmc_writer(model_tag):
                 pem.copy(),
                 vt.copy(),
                 pid.copy(),
-                event.status.copy(),
-                parents
+                status.copy(),
+                parents.copy()
             ))
             w.write(event)
 

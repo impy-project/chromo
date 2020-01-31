@@ -42,6 +42,7 @@ class HepMCWriter(Writer):
         pem = impy_event.pem_arr.T # the need to transpose this is bad
         vt = impy_event.vt_arr.T # the need to transpose this is bad
         n = pem.shape[0]
+
         if impy_event.parents is None:
             parents = 0
         else:
