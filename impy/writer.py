@@ -43,10 +43,7 @@ class HepMCWriter(Writer):
         vt = impy_event.vt_arr.T # the need to transpose this is bad
         n = pem.shape[0]
 
-        if impy_event.parents is None:
-            parents = 0
-        else:
-            parents = impy_event.parents.T[:n]
+        parents = impy_event.parents.T[:n]
         self._hep.fill_genevent_from_hepevt(
             self._genevent,
             event_number=self._event_number,
@@ -54,7 +51,8 @@ class HepMCWriter(Writer):
             m=impy_event.m,
             v=vt,
             pid=impy_event.p_ids,
-            parents=parents,
+            parents=impy_event.parents.T[:n],
+            children=impy_event.children.T[:n],
             status=impy_event.status, # particle status
         )
         self._event_number += 1
