@@ -56,12 +56,13 @@ class SibyllEvent(MCEvent):
 
     @property
     def parents(self):
-        #Ask Felix!!!
-        pass
+        """In SIBYLL parents are difficult to obtain. This function returns 0."""
+        return self.lib.hepevt.jmohep
 
     @property
     def children(self):
-        pass
+        """In SIBYLL daughters are difficult to obtain. This function returns 0."""
+        return self.lib.hepevt.jdahep
 
     # Nuclear collision parameters
     @property
@@ -94,7 +95,7 @@ class SIBYLLRun(MCRun):
         event setup (energy, projectile, target)"""
         k = self._curr_event_kin
         sigproj = None
-        if abs(k.p1pdg) in [2212, 3112]:
+        if abs(k.p1pdg) in [2212, 2112, 3112]:
             sigproj = 1
         elif abs(k.p1pdg) == 211:
             sigproj = 2
