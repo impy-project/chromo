@@ -1,15 +1,14 @@
-# impy
+# impy - (hadronic) interaction models in python
 
-This package implements are generic user interface to hadronic Interaction Models in PYthon, hence the name *impy*.
-The purpose of the package is to liberate particle physicists from Fortran style interfaces to event generators via 'input cards' and ASCII files. 
+This package implements are generic user interface to popular event generators used in cosmic ray and high-energy particle physics. The purpose of the package is to simplify working with simulations of particle interactions without the need to use Fortran style interfaces to event generators, 'ASCII input cards' and files or C++ dependencies.  
 
-To generate some interactions with any of the supported models, it is enough to
+Producing interactions with any of the supported event generators requires simply 
 
 ```python
 from impy.definitions import *
 from impy.constants import *
 from impy.kinematics import EventKinematics
-from impy.common import impy_config, pdata
+from impy.common import impy_config
 
 # Define the parameters of the collisions
 event_kinematics = EventKinematics(
@@ -31,17 +30,34 @@ for event in generator.event_generator(event_kinematics, nevents):
     # do something with event.p_ids, event.eta, event.en, event.pt, etc.
     # these variables are numpy arrays, that can be histogrammed or counted like
     average_pt = np.mean(event.pt[np.abs(event.p_ids) == 211])
+    print(average_pt)
     # This will calculate the average transverse momentum for charged pions
 
 ```
 
+## Installation
+
+The package is available including the pre-compiled binaries. The installation in that case simplifies to:
+
+    pip install impy
+
+To build from source (the **recursive** flag is important to checkout the sub-modules):
+
+    git clone --recursive https://github.com/afedynitch/impy
+    cd impy
+    make -j<insert number of CPU cores>
+
 ## Requirements
 
 - Python 2.7 - 3.8
+- Linux or Mac OS X
 - pip
 - particletools
-- Linux or Mac OS X
-- Windows support planned for future release
+- numpy
+- scipy
+- pyyaml
+- pyhepmc-ng
+- Windows support planned in a future release (needs MinGW build because of Fortran)
 
 ## User interface
 
@@ -51,27 +67,23 @@ There are two ways to interact with the code.
 
 2. Via a HEPMC output that can be piped in Rivet or other tools supporting the format.
 
-
 ## Supported models
 
+- DPMJET-III 3.0.6
+- DPMJET-III 19.1
+- EPOS-LHC
+- PHOJET 1.12-35
+- PHOJET 19.1
+- PYTHIA 6
+- PYTHIA 8
+- QGSJet-01
+- QGSJet-II-03
+- QGSJet-II-04
 - SIBYLL-2.1
 - SIBYLL-2.3
 - SIBYLL-2.3c
-- EPOS-LHC
-- QGSJet-II-03
-- QGSJet-II-04
-- QGSJet-01
-- DPMJET-III 3.0.6
-- DPMJET-III 19.1
-- PHOJET 1.12-35
-- PHOJET 19.1
+- SOPHIA
 - UrQMD 3.4
-- PYTHIA 6
-- PYTHIA 8
-
-## Requirements
-
-See requirements.txt.
 
 ## Contributers:
 

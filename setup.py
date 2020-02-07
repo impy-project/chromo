@@ -22,7 +22,7 @@ class MakeBuild(build_ext):
         try:
             out = subprocess.check_output(['make', '--version'])
         except OSError:
-            raise RuntimeError("CMake must be installed to build the following extensions: " +
+            raise RuntimeError("Make must be installed to build the following extensions: " +
                                ", ".join(e.name for e in self.extensions))
 
         if platform.system() == "Windows":
@@ -40,13 +40,13 @@ class MakeBuild(build_ext):
 
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         libext = sysconfig.get_config_var("EXT_SUFFIX")
-        make_args = ['LIB_DIR=' + extdir,
+        build_args = ['LIB_DIR=' + extdir,
                      'LEXT=' + libext]
         n_parallel_builds = multiprocessing.cpu_count()
 
-        # cfg = 'Debug' if self.debug else 'Release'
-        # build_args = ['--config', cfg]
-        build_args = []
+        cfg = 'Debug' if self.debug else 'Release'
+        build_args += ['Config=' + cfg]
+        make_args = []
 
         if platform.system() == "Windows":
             # cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir)]
@@ -56,22 +56,19 @@ class MakeBuild(build_ext):
             raise RuntimeError("impy does not support builds on Windows, yet.")
         else:
             # cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-            build_args += ['-j' + str(n_parallel_builds)]
+            make_args += ['-j' + str(n_parallel_builds)]
 
-        env = os.environ.copy()
+        # env = os.environ.copy()
         # env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
         #                                                       self.distribution.get_version())
         print(extdir, make_args, build_args)
         if not os.path.exists(extdir):
             os.makedirs(extdir)
         # subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
-        subprocess.check_call(['make'] + make_args + build_args)
+        subprocess.check_call(['make'] + build_args + make_args)
         # subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
 # This method is adopted from iMinuit https://github.com/scikit-hep/iminuit
-# Getting the version number at this point is a bit tricky in Python:
-# https://packaging.python.org/en/latest/development.html#single-sourcing-the-version-across-setup-py-and-your-project
-# This is one of the recommended methods that works in Python 2 and 3:
 def get_version():
     version = {}
     with open("impy/version.py") as fp:
@@ -96,7 +93,7 @@ skip_marker = "# impy"
 long_description = long_description[long_description.index(skip_marker) :].lstrip()
 
 # Data files for interaction models
-iamfiles = glob.glob('iamdata/*')
+iamfiles = glob.glob('impy/iamdata/*')
 
 setup(
     name='impy',
@@ -110,9 +107,10 @@ setup(
     url='https://github.com/afedynitch/impy',
     setup_requires=[] + pytest_runner,
     packages=['impy', 'impy.models'],
-    package_data={
-        'impy': ['impy/impy_config.yaml'] + iamfiles
-    },
+    # data_files={'impy': ['LICENSE', 'impy/impy_config.yaml', 'impy/iamdata/*']},
+    data_files=[('', ['LICENSE', 'impy/impy_config.yaml']),
+                ('iamdata', iamfiles)],
+    include_package_data=True,
     install_requires=[
         'six',
         'particletools',
@@ -121,7 +119,7 @@ setup(
         'pyhepmc-ng'
     ],
     # ext_modules=[libnrlmsise00, libcorsikaatm],
-    ext_modules=[MakeExtension('cmake_example')],
+    ext_modules=[MakeExtension('impy_libs')],
     cmdclass=dict(build_ext=MakeBuild),
     zip_safe=False,
     classifiers=[

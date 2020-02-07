@@ -17,3 +17,6 @@ src/urqmd-3.4/terms.mod
 tests/*.pkl
 dev
 .cache
+build/*
+dist/*
+*.egg-info
