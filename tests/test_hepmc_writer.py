@@ -41,7 +41,7 @@ def test_hepmc_writer(model_tag):
     event_data = []
     with HepMCWriter(test_file) as w:
         for event in generator.event_generator(event_kinematics, 3):
-            event.filter_final_state()
+            # event.filter_final_state()
             n = event.npart
             pem = event.pem_arr.T
             vt = event.vt_arr.T

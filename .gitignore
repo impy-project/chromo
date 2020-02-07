@@ -20,3 +20,4 @@ dev
 build/*
 dist/*
 *.egg-info
+test_hepmc_writer_*.dat
