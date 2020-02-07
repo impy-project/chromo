@@ -44,7 +44,7 @@ distclean: clean
 
 .PHONY: install
 install: dpmjet306$(LEXT)
-	cp *$(LEXT) $(WORK_DIR)/lib
+	cp *$(LEXT) $(LIB_DIR)
 
 dpm3usr: sources/user3.0-6.o $(DPM_OBJS)
 	gfortran $(DPM_OBJS) -o dpm3usr

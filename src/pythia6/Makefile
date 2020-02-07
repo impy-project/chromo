@@ -20,7 +20,7 @@ distclean: clean
 
 .PHONY: install
 install: pythia6$(LEXT)
-	cp *$(LEXT) $(WORK_DIR)/lib
+	cp *$(LEXT) $(LIB_DIR)
 
 #PYTHIA
 pythia6$(LEXT): pythia6.pyf $(PYTHIA6).o $(LOGO) 

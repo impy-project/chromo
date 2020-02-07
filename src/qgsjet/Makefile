@@ -16,7 +16,7 @@ distclean: clean
 
 .PHONY: install
 install: qgsII03$(LEXT) qgsII04$(LEXT) qgs01$(LEXT)
-	cp *$(LEXT) $(WORK_DIR)/lib
+	cp *$(LEXT) $(LIB_DIR)
 
 #QGSJET
 qgsII03$(LEXT): qgsII-03.pyf $(RND) qgsjet-II-03.o impy_qgsII.o

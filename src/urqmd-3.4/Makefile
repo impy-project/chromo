@@ -37,7 +37,7 @@ distclean: clean
 
 .PHONY: install
 install: urqmd34$(LEXT)
-	cp *$(LEXT) $(WORK_DIR)/lib
+	cp *$(LEXT) $(LIB_DIR)
 
 urqmd34$(LEXT): urqmd34.pyf $(URQMD_OBJS) impy_urqmd.o $(LOGO) $(RND)
 	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" urqmd34.pyf \

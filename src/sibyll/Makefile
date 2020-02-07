@@ -27,7 +27,7 @@ distclean: clean
 
 .PHONY: install
 install: sib21$(LEXT) sib23$(LEXT) sib23c$(LEXT)
-	cp *$(LEXT) $(WORK_DIR)/lib
+	cp *$(LEXT) $(LIB_DIR)
 
 sib21$(LEXT): sib21.pyf $(SIBMISC_21_O) $(PIM_FUNCS_O) sibyll_21.o
 	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" sib21.pyf \

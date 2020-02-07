@@ -27,7 +27,7 @@ distclean: clean
 
 .PHONY: install
 install: eposlhc$(LEXT)
-	cp *$(LEXT) ../../lib
+	cp *$(LEXT) $(LIB_DIR)
 
 example: sources/epos_example.f $(EX_OBJS)
 	gfortran sources/epos_example.f $(EX_OBJS) -o epos_example.exe
