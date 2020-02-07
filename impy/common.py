@@ -19,7 +19,8 @@ from particletools.tables import PYTHIAParticleData, make_stable_list
 
 # Globals
 root_dir = abspath(join(dirname(__file__), ".."))
-impy_config = yaml.load(open(join(root_dir, 'impy_config.yaml')),Loader=yaml.FullLoader)
+impy_config = yaml.load(open(join(root_dir, 'impy', 'impy_config.yaml')),
+    Loader=yaml.FullLoader)
 
 # This is not nice, but the paths in the config should become absolute
 # in case impy is used outside of the folder
@@ -326,14 +327,10 @@ class MCRun(six.with_metaclass(ABCMeta)):
         # FORTRAN LUN that keeps logfile handle
         self.output_lun = None
 
-        
-
-        
-
-
     def __enter__(self):
         """TEMP: It would be good to actually use the with construct to
         open and close logfiles on init."""
+        # TODO: this is a bug.
         self.attach_log()
         return self
 
