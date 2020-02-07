@@ -1,8 +1,7 @@
 # impy
 
 This package implements are generic user interface to hadronic Interaction Models in PYthon, hence the name *impy*.
-The purpose of the package is to liberate particle physicists from Fortran style interfaces to event generators via 'input cards' and
-ASCII files. As an open-source project, it is independent of any experimental frameworks or closed-source projects that might restrict your few-author ideas.
+The purpose of the package is to liberate particle physicists from Fortran style interfaces to event generators via 'input cards' and ASCII files. 
 
 To generate some interactions with any of the supported models, it is enough to
 
@@ -36,6 +35,14 @@ for event in generator.event_generator(event_kinematics, nevents):
 
 ```
 
+## Requirements
+
+- Python 2.7 - 3.8
+- pip
+- particletools
+- Linux or Mac OS X
+- Windows support planned for future release
+
 ## User interface
 
 There are two ways to interact with the code.
@@ -43,7 +50,6 @@ There are two ways to interact with the code.
 1. As in the example above, via plain python in scripts or jupyter notebooks. Look at this [insert link] example.
 
 2. Via a HEPMC output that can be piped in Rivet or other tools supporting the format.
-
 
 
 ## Supported models
@@ -60,9 +66,7 @@ There are two ways to interact with the code.
 - PHOJET 1.12-35
 - PHOJET 19.1
 - UrQMD 3.4
-
-and of course
-
+- PYTHIA 6
 - PYTHIA 8
 
 ## Requirements
@@ -77,4 +81,4 @@ Keito Watanabe
 
 ## LICENSE
 
-[BSD 3-clause license](LICENSE)
+The source code of impy is licensed under the [BSD 3-clause license (see LICENSE for detail)](LICENSE). The source codes of the event generators are individually licensed under different conditions (see the COPYING files located in the subdirectories). 
