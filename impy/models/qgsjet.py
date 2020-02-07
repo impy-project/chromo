@@ -203,7 +203,7 @@ class QGSJet01Run(MCRun):
     def sigma_inel(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        k = self._curr_event_kin
+        # k = self._curr_event_kin
         info(2, 'Sigma inel not implemented for QGSJet01c')
         return 0.
 
