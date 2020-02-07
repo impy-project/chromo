@@ -63,7 +63,7 @@ class SibyllEvent(MCEvent):
     @property
     def children(self):
         """In SIBYLL daughters are difficult to obtain. This function returns 0."""
-        MCEvent.daughters(self)
+        MCEvent.children(self)
         return self.lib.hepevt.jdahep
 
     # Nuclear collision parameters
