@@ -5,7 +5,7 @@
 #
 
 CVendor = "GNU"
-Config = "Release"
+Config?="Release"
 
 WORK_DIR = $(CURDIR)
 LIB_DIR?=$(WORK_DIR)/lib
