@@ -58,20 +58,13 @@ class UrQMDEvent(MCEvent):
 
     @property
     def parents(self):
-        if self._is_filtered:
-            raise Exception(
-                'Parent indices do not point to the' +
-                ' proper particles if any slicing/filtering is applied.')
+        MCEvent.parents(self)
         return self.lib.hepevt.jmohep
 
     @property
     def children(self):
-        raise Exception('Children info not available.')
-        # if self._is_filtered:
-        #     raise Exception(
-        #         'Parent indices do not point to the' +
-        #         ' proper particles if any slicing/filtering is applied.')
-        # return self.lib.hepevt.jdahep
+        MCEvent.children(self)
+        return self.lib.hepevt.jdahep
 
     @property
     def charge(self):

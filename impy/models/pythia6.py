@@ -52,18 +52,12 @@ class PYTHIA6Event(MCEvent):
 
     @property
     def parents(self):
-        if self._is_filtered:
-            raise Exception(
-                'Parent indices do not point to the' +
-                ' proper particles if any slicing/filtering is applied.')
+        MCEvent.parents(self)
         return self.lib.hepevt.jmohep
 
     @property
     def children(self):
-        if self._is_filtered:
-            raise Exception(
-                'Parent indices do not point to the' +
-                ' proper particles if any slicing/filtering is applied.')
+        MCEvent.children(self)
         return self.lib.hepevt.jdahep
 
     @property

@@ -63,77 +63,48 @@ class PhojetEvent(MCEvent):
     @property
     def mpi(self):
         """Total number of cuts"""
-        if not hasattr(self, 'mpi'):
-            self._gen_cut_info()
-            return self._mpi
-        return self._mpi
+        return self.lib.podebg.kspom + self.lib.podebg.khpom
 
     @property
     def kspom(self):
         """Total number of soft cuts"""
-        if not hasattr(self, 'kspom'):
-            self._gen_cut_info()
-            return self._kspom
-        return self._kspom
+        return self.lib.podebg.kspom
 
     @property
     def khpom(self):
         """Total number of hard cuts"""
-        if not hasattr(self, 'khpom'):
-            self._gen_cut_info()
-            return self._khpom
-        return self._khpom
+        return self.lib.podebg.khpom
 
     @property
     def ksoft(self):
         """Total number of realized soft cuts"""
-        if not hasattr(self, 'ksoft'):
-            self._gen_cut_info()
-            return self._ksoft
-        return self._ksoft
+        return self.lib.podebg.ksoft
 
     @property
     def khard(self):
         """Total number of realized hard cuts"""
-        if not hasattr(self, 'khard'):
-            self._gen_cut_info()
-            return self._khard
-        return self._khard
+        return self.lib.podebg.khard
 
     @property
     def parents(self):
-        if self._is_filtered:
-            raise Exception(
-                'Parent indices do not point to the' +
-                ' proper particles if any slicing/filtering is applied.')
+        MCEvent.parents(self)
         return self.lib.poevt1.jmohep
 
     @property
     def children(self):
-        if self._is_filtered:
-            raise Exception(
-                'Parent indices do not point to the' +
-                ' proper particles if any slicing/filtering is applied.')
+        MCEvent.children(self)
         return self.lib.poevt1.jdahep
 
-    # @property
-    # def all_p_ids(self):
-    #     """Unfiltered access to all particle IDs.
+    # def elastic_t(self):
+    #     """Squared momentum transfer t for elastic interaction.
 
-    #     Those include the initial state, quarks, gluons, FSR, ISR, etc.
+    #     This only makes sense if the interaction is indeed elastic
+    #     and only 4 particles are on the stack. The initial 2 and
+    #     the final 2. Handle with care!!
     #     """
-    #     return self.lib.poevt1.idhep[:self.npart]
-
-    def elastic_t(self):
-        """Squared momentum transfer t for elastic interaction.
-
-        This only makes sense if the interaction is indeed elastic
-        and only 4 particles are on the stack. The initial 2 and
-        the final 2. Handle with care!!
-        """
-        return np.sum(
-            np.square(self.lib.poevt1.phep[0:4, 0] -
-                      self.lib.poevt1.phep[0:4, 5]))
+    #     return np.sum(
+    #         np.square(self.lib.poevt1.phep[0:4, 0] -
+    #                   self.lib.poevt1.phep[0:4, 5]))
 
 
 class PHOJETRun(MCRun):

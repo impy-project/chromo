@@ -162,7 +162,10 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         Raises:
             (Exception) : if filtering has been applied.
         """
-        pass
+        if self._is_filtered:
+            raise Exception(
+                'Parent indices do not point to the' +
+                'correct particle indices if slicing/filtering is applied.')
 
     @abstractmethod
     def children(self):
@@ -182,7 +185,10 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         Raises:
             (Exception) : if filtering has been applied.
         """
-        pass
+        if self._is_filtered:
+            raise Exception(
+                'Child indices do not point to the' +
+                'correct particle indices if slicing/filtering is applied.')
 
     @property
     def pt(self):
