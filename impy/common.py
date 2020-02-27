@@ -228,6 +228,11 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         if self.event_frame == 'laboratory':
             return self.en / kin.elab
         return (kin.gamma_cm * self.en + kin.betagamma_z_cm * self.pz) / kin.elab
+    
+    @property
+    def ekin(self):
+        """Kinetic energy"""
+        return self.en - self.m
 
     @property
     def fw(self):
@@ -301,6 +306,9 @@ class Settings(six.with_metaclass(ABCMeta)):
 # MCRun
 #=========================================================================
 class MCRun(six.with_metaclass(ABCMeta)):
+    #: Prevent creating multiple classes within same python scope
+    _is_initialized = False
+
     def __init__(self, interaction_model_def, settings_dict=dict(), **kwargs):
         import importlib
         from impy.util import OutputGrabber
