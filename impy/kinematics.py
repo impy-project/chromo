@@ -15,16 +15,9 @@ the implementation is very "cooked up". We have to discuss this.
 
 """
 
-# I'm used to global configs, but I understand that this is often not good.
-# It's a must, though, to have one global instance of the particle tables
-# accessing a locally cached database. The XML parsing time was often a
-# problem in the past and this is a serious performance concern.
-
-# from somewhere_in_impy import pdata
-# For now:
 import six
 import numpy as np
-from impy.common import pdata, impy_config
+from impy import pdata, impy_config
 from impy.util import info
 
 
@@ -241,6 +234,9 @@ class EventKinematics(object):
 
     @property
     def beam_as_4vec(self):
+        """Return the projectile target kinematics as 4-vectors. Can be used
+        for PHOJET and PYTHIA."""
+        
         p1, p2 = np.array(
             np.zeros(4), dtype='d'), np.array(
                 np.zeros(4), dtype='d')

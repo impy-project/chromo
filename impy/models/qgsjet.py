@@ -4,7 +4,8 @@ Created on 17.03.2014
 @author: afedynitch
 '''
 import numpy as np
-from impy.common import MCRun, MCEvent, impy_config, root_dir
+from impy.common import MCRun, MCEvent
+from impy import impy_config, base_path
 from impy.util import standard_particles, info
 
 
@@ -166,7 +167,7 @@ class QGSJetIIRun(MCRun):
         info(5, 'Using seed:', seed)
 
         info(5, 'Initializing QGSJET-II')
-        datdir = path.join(root_dir, impy_config['qgsjet']['datdir'])
+        datdir = path.join(base_path, impy_config['qgsjet']['datdir'])
         self.attach_log(fname=logfname)
         self.lib.cqgsini(seed, datdir, self._lun,
                          impy_config['qgsjet']['debug_level'])
@@ -175,7 +176,7 @@ class QGSJetIIRun(MCRun):
         info(10, 'All particles stable in QGSJET-II')
         self.set_event_kinematics(event_kinematics)
 
-    def set_stable(self, stable):
+    def set_stable(self, pdgid, stable=True):
         info(10, "All particles stable in QGSJet-II.")
 
     def generate_event(self):
@@ -288,7 +289,7 @@ class QGSJet01Run(MCRun):
 
         info(5, 'Initializing QGSJET01c')
         self.attach_log(fname=logfname)
-        datdir = path.join(root_dir, impy_config['qgsjet']['datdir'])
+        datdir = path.join(base_path, impy_config['qgsjet']['datdir'])
         self.lib.cqgsini(seed, datdir, self._lun,
                          impy_config['qgsjet']['debug_level'])
 
@@ -296,7 +297,7 @@ class QGSJet01Run(MCRun):
         info(10, 'All particles stable in QGSJET-01')
         self.set_event_kinematics(event_kinematics)
 
-    def set_stable(self, stable):
+    def set_stable(self, pdgid, stable=True):
         info(10, "All particles stable in QGSJet.")
 
     def generate_event(self):

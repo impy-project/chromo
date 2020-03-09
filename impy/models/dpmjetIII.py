@@ -5,7 +5,8 @@ Created on 14.04.2014
 '''
 
 import numpy as np
-from impy.common import MCRun, MCEvent, impy_config, pdata
+from impy.common import MCRun, MCEvent
+from impy import impy_config, pdata
 from impy.util import standard_particles, info
 
 
@@ -155,6 +156,10 @@ class DpmjetIIIRun(MCRun):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
         info(5, 'Setting event kinematics')
+        assert event_kinematics.A1 <= self._max_A1 and \
+            event_kinematics.A2 <= self._max_A2, \
+            'Maximal initialization mass exceeded'
+            
         self._curr_event_kin = event_kinematics
 
         # AF: No idea yet, but apparently this functionality was around?!
@@ -198,6 +203,11 @@ class DpmjetIIIRun(MCRun):
             seed = int(seed)
         info(5, 'Using seed:', seed)
 
+        # Save maximal mass that has been inisialized
+        # (DPMJET sometimes crashes if higher mass requested than initialized)
+        self._max_A1 = event_kinematics.A1
+        self._max_A2 = event_kinematics.A2
+
         self.set_event_kinematics(event_kinematics)
         k = self._curr_event_kin
         dpm_conf = impy_config['dpmjetIII']
@@ -231,7 +241,7 @@ class DpmjetIIIRun(MCRun):
                          k.Z2,
                          k.p1pdg,
                          iglau=0)
-
+        
         # Set seed of random number generator
         sseed = str(seed)
         n1, n2, n3, n4 = int(sseed[0:2]), int(sseed[2:4]), \
