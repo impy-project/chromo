@@ -140,9 +140,9 @@ class EventKinematics(object):
             'Define exclusively one energy/momentum definition'
         )
         assert p1pdg or nuc1_prop, ('Define either particle id or ' +
-                'nuclear protperties for side 1.')
+                'nuclear properties for side 1.')
         assert p2pdg or nuc2_prop, ('Define either particle id or ' +
-                'nuclear protperties for side 2.')
+                'nuclear properties for side 2.')
 
         # Store average nucleon mass
         mnuc = 0.5 * (pdata.mass(2212) + pdata.mass(2112))
