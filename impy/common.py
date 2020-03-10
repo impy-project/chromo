@@ -393,6 +393,14 @@ class MCRun(six.with_metaclass(ABCMeta)):
             stable (bool)      : If `False`, particle is allowed to decay
         """
         pass
+    
+    def set_unstable(self, pdgid):
+        """Convenience funtion for `self.set_stable(..., stable=False)`
+        
+        Args:
+            pdgid(int)         : PDG ID of the particle
+        """
+        self.set_stable(pdgid, stable=False)
 
     @abstractmethod
     def sigma_inel(self):
