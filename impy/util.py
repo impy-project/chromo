@@ -3,7 +3,7 @@
 from __future__ import print_function
 import inspect
 import os
-from impy.common import impy_config
+from impy import impy_config
 
 # Global debug flags that would be nice to have in some sort
 # of config or other ideas?
