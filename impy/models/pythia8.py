@@ -5,7 +5,8 @@ Created on 19.01.2015
 '''
 
 import numpy as np
-from impy.common import MCRun, MCEvent, impy_config, pdata
+from impy.common import MCRun, MCEvent
+from impy import impy_config, pdata
 from impy.util import standard_particles, info, AZ2pdg
 
 _len_evt = 300000

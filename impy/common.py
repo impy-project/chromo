@@ -9,34 +9,12 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 '''
 import six
 import os
-from os.path import abspath, join, dirname
+from os.path import abspath
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 import numpy as np
-import yaml
-
-from particletools.tables import PYTHIAParticleData, make_stable_list
-
-# Globals
-root_dir = abspath(join(dirname(__file__), ".."))
-impy_config = yaml.load(open(join(root_dir, 'impy', 'impy_config.yaml')),
-    Loader=yaml.FullLoader)
-
-# This is not nice, but the paths in the config should become absolute
-# in case impy is used outside of the folder
-for version_key in impy_config['dpmjetIII']['param_file']:
-    impy_config['dpmjetIII']['param_file'][version_key] = join(
-        root_dir, impy_config['dpmjetIII']['param_file'][version_key])
-    impy_config['dpmjetIII']['evap_file'][version_key] = join(
-        root_dir, impy_config['dpmjetIII']['evap_file'][version_key])
-    impy_config['dpmjetIII']['dat_dir'][version_key] = join(
-        root_dir, impy_config['dpmjetIII']['dat_dir'][version_key])
-impy_config['epos']['datdir'] = join(root_dir, impy_config['epos']['datdir'])
-
-pdata = PYTHIAParticleData(
-    cache_file=open(
-        os.path.join(root_dir, impy_config["pdata_cachefile"]), 'wb'))
-
+from particletools.tables import make_stable_list
+from impy import impy_config
 from impy.util import info
 
 
@@ -101,9 +79,11 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
 
         # Initialize current selection to all entries up to npart
         if impy_config['pre_slice']:
+            info(10, 'Pre-slice enabled.')
             self.selection = slice(None, self.npart)
             self._apply_slicing()
         else: 
+            info(10, 'Pre-slice disabled.')
             self.selection = slice(None, None)
         
         # The default slice only cuts limits the view to the array to
@@ -116,6 +96,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
 
     def _apply_slicing(self):
         """Slices/copies the all varaibles according to filter criteria"""
+        info(30, 'Slicing attributes.')
         for var in self.__sliced_params__:
             # TODO: AF: Not clear if the kinematical arrays should be
             # exposed to the user and sliced at all. If not remove the braching
@@ -228,6 +209,11 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         if self.event_frame == 'laboratory':
             return self.en / kin.elab
         return (kin.gamma_cm * self.en + kin.betagamma_z_cm * self.pz) / kin.elab
+    
+    @property
+    def ekin(self):
+        """Kinetic energy"""
+        return self.en - self.m
 
     @property
     def fw(self):
@@ -301,6 +287,9 @@ class Settings(six.with_metaclass(ABCMeta)):
 # MCRun
 #=========================================================================
 class MCRun(six.with_metaclass(ABCMeta)):
+    #: Prevent creating multiple classes within same python scope
+    _is_initialized = False
+
     def __init__(self, interaction_model_def, settings_dict=dict(), **kwargs):
         import importlib
         from impy.util import OutputGrabber
@@ -331,7 +320,7 @@ class MCRun(six.with_metaclass(ABCMeta)):
         """TEMP: It would be good to actually use the with construct to
         open and close logfiles on init."""
         # TODO: this is a bug.
-        self.attach_log()
+        self.attach_log(None)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -404,6 +393,14 @@ class MCRun(six.with_metaclass(ABCMeta)):
             stable (bool)      : If `False`, particle is allowed to decay
         """
         pass
+    
+    def set_unstable(self, pdgid):
+        """Convenience funtion for `self.set_stable(..., stable=False)`
+        
+        Args:
+            pdgid(int)         : PDG ID of the particle
+        """
+        self.set_stable(pdgid, stable=False)
 
     @abstractmethod
     def sigma_inel(self):

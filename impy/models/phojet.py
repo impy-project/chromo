@@ -4,7 +4,8 @@ Created on 15.05.2012
 @author: afedynitch
 '''
 import numpy as np
-from impy.common import MCRun, MCEvent, impy_config, pdata
+from impy.common import MCRun, MCEvent
+from impy import impy_config, pdata
 from impy.util import standard_particles, info, fortran_chars
 
 

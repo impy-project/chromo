@@ -5,7 +5,8 @@ Created on 03.05.2016
 '''
 
 import numpy as np
-from impy.common import MCRun, MCEvent, impy_config, root_dir
+from impy.common import MCRun, MCEvent
+from impy import impy_config, base_path
 from impy.util import standard_particles, info
 
 
@@ -166,7 +167,7 @@ class EPOSRun(MCRun):
         info(5, 'Using seed:', seed)
 
         epos_conf = impy_config['epos']
-        datdir = path.join(root_dir, epos_conf['datdir'])
+        datdir = path.join(base_path, epos_conf['datdir'])
         self.attach_log(fname=logfname)
         info(1, 'First initialization')
         self.lib.aaset(0)

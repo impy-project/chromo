@@ -15,16 +15,9 @@ the implementation is very "cooked up". We have to discuss this.
 
 """
 
-# I'm used to global configs, but I understand that this is often not good.
-# It's a must, though, to have one global instance of the particle tables
-# accessing a locally cached database. The XML parsing time was often a
-# problem in the past and this is a serious performance concern.
-
-# from somewhere_in_impy import pdata
-# For now:
 import six
 import numpy as np
-from impy.common import pdata, impy_config
+from impy import pdata, impy_config
 from impy.util import info
 
 
@@ -45,7 +38,7 @@ class CompositeTarget(object):
 
     def add_component(self, name, A, Z, fraction):
         """Add material for composite target.
-        
+
         Fraction needs relative specification, in percent, number,
         fraction of one, etc. Just make sure it's the same definition
         for all components. Internal list is sorted according to
@@ -71,7 +64,7 @@ class CompositeTarget(object):
 
     def _sort(self):
         """Sorts list acording to fraction"""
-        sort_list = lambda l, idcs: [l[i] for i in idcs]
+        def sort_list(l, idcs): return [l[i] for i in idcs]
         idcs = np.argsort(self.component_fractions)
         self.component_fractions = self.component_fractions[idcs]
         self._component_orig_fractions = sort_list(
@@ -108,7 +101,7 @@ class CompositeTarget(object):
 
 class EventKinematics(object):
     """Handles kinematic variables and conversions between reference frames.
-    
+
     There are different ways to specify a particle collision. For instance
     the projectile and target momenta can be specified in the target rest frame,
     the so called 'laboratory' frame, or the nucleon-nucleon center of mass frame
@@ -120,17 +113,21 @@ class EventKinematics(object):
     Args:
         (float) ecm      : :math:`\\sqrt{s}`, the center-of-mass energy
         (float) plab     : projectile momentum in lab frame
+        (float) elab     : projectile energy in lab frame
+        (float) ekin     : projectile kinetic energy in lab frame
         (float) p1pdg    : PDG ID of the projectile
         (float) p2pdg    : PDG ID of the target
         (tuple) beam     : Specification as tuple of 4-vectors (np.array)s
         (tuple) nuc1prop : Projectile nucleus mass & charge (A, Z)
         (tuple) nuc2prop : Target nucleus mass & charge (A, Z)
-     
+
     """
 
     def __init__(self,
                  ecm=None,
                  plab=None,
+                 elab=None,
+                 ekin=None,
                  p1pdg=None,
                  p2pdg=None,
                  beam=None,
@@ -138,22 +135,14 @@ class EventKinematics(object):
                  nuc2_prop=None):
 
         # Catch input errors
-        if beam is not None:
-            raise NotImplementedError('Not properly implmented or not needed')
-
-        if ecm and plab:
-            raise Exception(self.__class__.__name__ +
-                            '::init(): Define either ecm or plab')
-
-        if p1pdg and nuc1_prop:
-            raise Exception(self.__class__.__name__ +
-                            '::init(): Define either particle id or ' +
-                            'nuclear protperties for side 1.')
-
-        if p2pdg and nuc2_prop:
-            raise Exception(self.__class__.__name__ +
-                            '::init(): Define either particle id or ' +
-                            'nuclear protperties for side 2.')
+        assert np.sum(
+            np.asarray([ecm, plab, elab, ekin, beam], dtype='bool')) == 1, (
+            'Define exclusively one energy/momentum definition'
+        )
+        assert p1pdg or nuc1_prop, ('Define either particle id or ' +
+                'nuclear properties for side 1.')
+        assert p2pdg or nuc2_prop, ('Define either particle id or ' +
+                'nuclear properties for side 2.')
 
         # Store average nucleon mass
         mnuc = 0.5 * (pdata.mass(2212) + pdata.mass(2112))
@@ -188,24 +177,31 @@ class EventKinematics(object):
              (self.p2pdg, self.A2, self.Z2))
 
         # Input specification in center of mass frame
-        if ecm and not (plab or beam):
+        if ecm:
             self.ecm = ecm
             self.elab = 0.5 * (ecm**2 - pmass1**2 + pmass2**2) / pmass2
             self.plab = self._e2p(self.elab, pmass1)
-            info(20, 'Center of mass variables specified.')
-
+            info(20, 'ecm specified.')
+        elif elab:
+            assert elab > pmass1, 'Lab. energy > particle mass required.'
+            self.elab = elab
+            self.plab = self._e2p(self.elab, pmass1)
+            self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
+            info(20, 'elab specified.')
+        elif ekin:
+            self.elab = ekin + pmass1
+            self.plab = self._e2p(self.elab, pmass1)
+            self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
+            info(20, 'ekin specified.')
         # Input specification in lab frame
-        elif plab and not (ecm or beam):
+        elif plab:
             self.plab = plab
             self.elab = np.sqrt(plab**2 + pmass1**2)
             self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
-            info(20, 'Lab variables specified.')
+            info(20, 'plab specified.')
 
         # Input specification as 4-vectors
-        elif beam and not (ecm or plab):
-            # self.beam = beam
-            # p1 = np.array([0, 0, self._e2p(beam[0][2], pmass1), beam[0][3]])
-            # p2 = np.array([0, 0, self._e2p(beam[1][2], pmass2), beam[0][3]])
+        elif beam:
             p1, p2 = beam
             s = p1 + p2
             self.ecm = np.sqrt(s[3]**2 - np.sum(s[:3]**2))
@@ -235,9 +231,12 @@ class EventKinematics(object):
         }
 
         # self.e_range = []
-        
+
     @property
     def beam_as_4vec(self):
+        """Return the projectile target kinematics as 4-vectors. Can be used
+        for PHOJET and PYTHIA."""
+        
         p1, p2 = np.array(
             np.zeros(4), dtype='d'), np.array(
                 np.zeros(4), dtype='d')
@@ -315,8 +314,8 @@ class EventKinematics(object):
 
     def boost_cms_to_lab(self, event):
         """Boosts from center of mass to lab frame.
-        
-        Viewed from the target rest frame the center of mass frame 
+
+        Viewed from the target rest frame the center of mass frame
         is moving backwards.
         """
         new_en = self.gamma_cm * event.en + self.betagamma_z_cm * event.pz
@@ -325,8 +324,8 @@ class EventKinematics(object):
 
     def boost_lab_to_cms(self, event):
         """Boosts from lab to center of mass frame
-        
-        Viewed from the target rest frame the center of mass frame 
+
+        Viewed from the target rest frame the center of mass frame
         is moving backwards.
         """
         new_en = self.gamma_cm * event.en - self.betagamma_z_cm * event.pz
