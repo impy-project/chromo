@@ -12,7 +12,7 @@ all: dpmjet2$(LEXT) install
 
 .PHONY: clean
 clean:
-	rm -rf $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l
+	$(DEL_COMMAND) $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l
 
 .PHONY: distclean
 distclean: clean
@@ -20,11 +20,11 @@ distclean: clean
 
 .PHONY: install
 install: dpmjet2$(LEXT)
-	cp *$(LEXT) $(WORK_DIR)
+	$(COPY_COMMAND) *$(LEXT) $(WORK_DIR)
 
 dpmjet2$(LEXT): dpmjet2.pyf $(LOGO) $(RND) $(DPMJET_O) dpmjet_iface.o
 	@echo "RND is " $(RND) $(WORK_DIR)
-	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" dpmjet2.pyf \
+	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" dpmjet2.pyf \
 	$(LOGS) $(DPMJET_O) $(RND) dpmjet_iface.o >> dpmjet2.f2l 2>&1
 
 dpmjet2.pyf: dpmjet_iface.f90 dpmjet253c.f dpmjet255.f Makefile

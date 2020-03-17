@@ -36,7 +36,7 @@ all: install
 
 .PHONY: clean
 clean:
-	rm -rf sources/*.o *.prj *.chk core *.dSYM *$(LEXT) *.f2l
+	$(DEL_COMMAND) sources$(PATHSEP)*.o *.prj *.chk core *.dSYM *$(LEXT) *.f2l
 
 .PHONY: distclean
 distclean: clean
@@ -44,13 +44,13 @@ distclean: clean
 
 .PHONY: install
 install: dpmjet306$(LEXT)
-	cp *$(LEXT) $(LIB_DIR)
+	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
 
-dpm3usr: sources/user3.0-6.o $(DPM_OBJS)
+dpm3usr: sources$(PATHSEP)user3.0-6.o $(DPM_OBJS)
 	gfortran $(DPM_OBJS) -o dpm3usr
 
 dpmjet306$(LEXT): dpmjet306.pyf $(DPM_OBJS) Makefile
-	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" \
+	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
 	dpmjet306.pyf $(DPM_OBJS) $(LOGO) >> dpmjet306.f2l 2>&1
 
 dpmjet306.pyf: $(DPM_SRCS) Makefile

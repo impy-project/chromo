@@ -3,9 +3,11 @@
 **.so
 **.pyf
 **.pyc
+**.pyd
 **.mod
 .ipynb*
 iamdata
+nul
 fort.7
 output_urtest.txt
 tables.dat
@@ -21,3 +23,4 @@ build/*
 dist/*
 *.egg-info
 test_hepmc_writer_*.dat
+lib/dpmjet306.cp37-win_amd64.pyd

@@ -19,27 +19,24 @@ all: install
 
 .PHONY: clean
 clean:
-	rm -rf sources/*.o *.prj *.chk core *.dSYM *$(LEXT) *.f2l
+	$(DEL_COMMAND) sources$(PATHSEP)*.o *.prj *.chk core *.dSYM *$(LEXT) *.f2l $(COPY_DUMP)
 
 .PHONY: distclean
 distclean: clean
-	rm -f *.pyf
+	$(DEL_COMMAND) *.pyf $(COPY_DUMP)
 
 .PHONY: install
 install: eposlhc$(LEXT)
-	cp *$(LEXT) $(LIB_DIR)
+	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
 
 example: sources/epos_example.f $(EX_OBJS)
-	gfortran sources/epos_example.f $(EX_OBJS) -o epos_example.exe
+	$(FC) sources$(PATHSEP)epos_example.f $(EX_OBJS) -o epos_example.exe
 
 eposlhc$(LEXT): eposlhc.pyf $(EPOS_OBJS)
-	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" \
-	eposlhc.pyf $(EPOS_OBJS) $(LOGO) >> epos-lhc.f2l 2>&1
+	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" eposlhc.pyf $(EPOS_OBJS) $(LOGO) >> epos-lhc.f2l 2>&1
 
 eposlhc.pyf: sources/epos-bas-lhc.f sources/epos_interface.f Makefile
-	$(F2PY) -m eposlhc -h eposlhc.pyf --overwrite-signature \
-	only: $(EPOS_FUNC) : sources/epos-bas-lhc.f sources/epos-ids-lhc.f \
-	sources/epos_interface.f $(LOGS) > epos-lhc.f2l 2>&1
+	$(F2PY) -m eposlhc -h eposlhc.pyf --overwrite-signature only: $(EPOS_FUNC) : sources$(PATHSEP)epos-bas-lhc.f sources$(PATHSEP)epos-ids-lhc.f sources$(PATHSEP)epos_interface.f $(LOGS) > epos-lhc.f2l 2>&1
 
 sources/%.o: sources/%.f
 	$(FC) -c $(OPT) -o $@ $<

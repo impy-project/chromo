@@ -12,7 +12,7 @@ all:  install
 
 .PHONY: clean
 clean:
-	rm -rf $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l
+	$(DEL_COMMAND) $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l
 
 .PHONY: distclean
 distclean: clean
@@ -20,11 +20,11 @@ distclean: clean
 
 .PHONY: install
 install: pythia6$(LEXT)
-	cp *$(LEXT) $(LIB_DIR)
+	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
 
 #PYTHIA
 pythia6$(LEXT): pythia6.pyf $(PYTHIA6).o $(LOGO) 
-	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" pythia6.pyf \
+	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" pythia6.pyf \
 	$(PYTHIA6).o $(LOGO) >> pythia6.f2l 2>&1
 
 pythia6.pyf: $(PYTHIA6).f $(LOGS)

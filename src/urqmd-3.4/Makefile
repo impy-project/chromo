@@ -29,18 +29,18 @@ all: install
 
 .PHONY: clean
 clean:
-	rm -rf $(TARGET) *.o sources/*.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l
+	$(DEL_COMMAND) $(TARGET) *.o sources$(PATHSEP)*.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l *.mod $(COPY_DUMP)
 
 .PHONY: distclean
 distclean: clean
-	rm -f *.pyf
+	$(DEL_COMMAND) *.pyf $(COPY_DUMP)
 
 .PHONY: install
 install: urqmd34$(LEXT)
-	cp *$(LEXT) $(LIB_DIR)
+	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
 
 urqmd34$(LEXT): urqmd34.pyf $(URQMD_OBJS) impy_urqmd.o $(LOGO) $(RND)
-	$(F2PY_L) -c --fcompiler=$(F2PY_C) --opt="$(OPT)" urqmd34.pyf \
+	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT) -Wl,--image-base -Wl,0x10000000" urqmd34.pyf \
 	$(LOGO) $(RND) $(URQMD_OBJS) impy_urqmd.o >> urqmd34.f2l 2>&1
 
 urqmd34.pyf: $(URQMD_SRCS) $(URQMD_90SRCS) $(RNDS) Makefile

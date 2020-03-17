@@ -5,13 +5,8 @@
 #
 
 CVendor = "GNU"
-Config?="Release"
+Config?="Debug"
 
-WORK_DIR = $(CURDIR)
-LIB_DIR?=$(WORK_DIR)/lib
-RND = $(CURDIR)/src/rangen.o
-# Shared library suffix
-LEXT?=$(shell python -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')
 
 # For f2py
 LOGF = impy_openlogfile impy_closelogfile
@@ -28,6 +23,11 @@ ifeq ($(CVendor),"GNU")
 	#  GNU
 	FC = gfortran
 	F2PY_C = gnu95
+	ifeq ($(OS),Windows_NT)
+		F2PY_CCONF = --compiler=mingw32 --fcompiler=$(F2PY_C)
+	else
+		F2PY_CCONF = --compiler=unix --fcompiler=$(F2PY_C)
+	endif
 else
 	#  Intel
 	FC = ifort
@@ -74,9 +74,37 @@ endif
 #
 #######################################################################
 #general version for signature file extraction and linking
-F2PY = python -m numpy.f2py --quiet
+ifeq ($(Config),"Debug")
+	F2PY = python -m numpy.f2py
+else
+	F2PY = python -m numpy.f2py --quiet
+endif
 #additional flags for linker
 F2PY_L = $(F2PY)
+
+# Portability (I know that this is insane, but still better then rewriting
+# everything in cmake. In fact this worked quite fine!)
+ifeq ($(OS),Windows_NT)
+  DEL_COMMAND = del /q /f
+  MKDIR_COMMAND = if not exist "$(LIB_DIR)" mkdir
+  COPY_COMMAND = copy /b
+  COPY_DUMP = > nul  2>&1
+  PATHSEP2=\\
+  PATHSEP=$(strip $(PATHSEP2))
+  # Shared library suffix
+  LEXT?=$(shell python -c "import sysconfig; print('.cp' + sysconfig.get_config_var('py_version_nodot') + '-' + sysconfig.get_platform().replace('-','_') + sysconfig.get_config_var('EXT_SUFFIX'))")
+else
+  DEL_COMMAND = rm -f
+  MKDIR_COMMAND = mkdir -p
+  COPY_COMMAND = cp
+  COPY_DUMP =
+  PATHSEP=/
+  LEXT?=$(shell python -c "import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))")
+endif
+
+WORK_DIR = $(CURDIR)
+LIB_DIR?="$(WORK_DIR)/lib"
+RND = $(CURDIR)$(PATHSEP)src$(PATHSEP)rangen.o
 
 #######################################################################
 #
@@ -90,7 +118,7 @@ all: odir src
 
 .PHONY: odir
 odir:
-	mkdir -p $(LIB_DIR)
+	 $(MKDIR_COMMAND) "$(LIB_DIR)"
 
 .PHONY: src
 src:
@@ -98,12 +126,12 @@ src:
 
 .PHONY: clean
 clean:
-	rm -f $(TARGET) *.o *.prj *.chk core  *.pyf *$(LEXT)
+	$(DEL_COMMAND) $(TARGET) *.o *.prj *.chk core *$(LEXT) $(COPY_DUMP)
 	$(MAKE) --directory=src clean
 
 .PHONY: distclean
-distclean:
-	rm -rf $(TARGET) *.o *.prj *.chk core *$(LEXT) *.pyf *.dSYM
+distclean: clean
+	$(DEL_COMMAND) *$(LEXT) *.pyf *.dSYM lib$(PATHSEP)* $(COPY_DUMP)
 	$(MAKE) --directory=src distclean
 
 %.o: %.f
