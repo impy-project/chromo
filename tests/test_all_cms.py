@@ -13,7 +13,7 @@ sys.path.append(os.path.join(root_dir, '../../apps/pythia8240/lib'))
 from impy.definitions import *
 from impy.constants import *
 from impy.kinematics import EventKinematics
-from impy.common import impy_config, pdata
+from impy import impy_config, pdata
 from impy.util import info
 
 # AF: This is what the user interaction has to yield.

@@ -5,7 +5,7 @@
 #
 
 CVendor = "GNU"
-Config?="Debug"
+Config?="Release"
 
 
 # For f2py
@@ -94,12 +94,12 @@ ifeq ($(OS),Windows_NT)
   # Shared library suffix
   LEXT?=$(shell python -c "import sysconfig; print('.cp' + sysconfig.get_config_var('py_version_nodot') + '-' + sysconfig.get_platform().replace('-','_') + sysconfig.get_config_var('EXT_SUFFIX'))")
 else
-  DEL_COMMAND = rm -f
+  DEL_COMMAND = rm -rf
   MKDIR_COMMAND = mkdir -p
   COPY_COMMAND = cp
   COPY_DUMP =
   PATHSEP=/
-  LEXT?=$(shell python -c "import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))")
+  LEXT?=$(shell python -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))")
 endif
 
 WORK_DIR = $(CURDIR)
