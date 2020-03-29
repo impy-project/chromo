@@ -31,7 +31,8 @@ event_kinematics = EventKinematics(ecm=7000 * GeV,
 impy_config["user_frame"] = 'center-of-mass'
 
 gen_list = [
-    'SIBYLL23C', 
+    'SIBYLL23C',
+    'SIBYLL23C01', 
     'SIBYLL23', 
     'SIBYLL21', 
     'DPMJETIII306', 
@@ -66,7 +67,7 @@ def run_generator(gen,*args):
     except:
         return False, gen, log, hist
         
-pool = Pool(processes=8)
+pool = Pool(processes=32)
 result = [pool.apply_async(run_generator, (gen,)) for gen in gen_list]
 result = [res.get(timeout=100000) for res in result]
 

@@ -18,7 +18,11 @@ InteractionModelDef = namedtuple('InteractionModelDef', [
 # versions when available
 interaction_model_nt_init = [
     [
-        'SIBYLL23C', 'SIBYLL', '2.3c', -1, 'sib23c', sibyll.SIBYLLRun,
+        'SIBYLL23C', 'SIBYLL', '2.3c03', -1, 'sib23c03', sibyll.SIBYLLRun,
+        sibyll.SibyllEvent, 'center-of-mass'
+    ],
+    [
+        'SIBYLL23C01', 'SIBYLL', '2.3c01', -1, 'sib23c01', sibyll.SIBYLLRun,
         sibyll.SibyllEvent, 'center-of-mass'
     ],
     [
