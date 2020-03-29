@@ -40,7 +40,7 @@ install: urqmd34$(LEXT)
 	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
 
 urqmd34$(LEXT): urqmd34.pyf $(URQMD_OBJS) impy_urqmd.o $(LOGO) $(RND)
-	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT) -Wl,--image-base -Wl,0x10000000" urqmd34.pyf \
+	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" urqmd34.pyf \
 	$(LOGO) $(RND) $(URQMD_OBJS) impy_urqmd.o >> urqmd34.f2l 2>&1
 
 urqmd34.pyf: $(URQMD_SRCS) $(URQMD_90SRCS) $(RNDS) Makefile

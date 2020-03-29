@@ -12,6 +12,10 @@ Config?="Release"
 LOGF = impy_openlogfile impy_closelogfile
 export NPY_DISTUTILS_APPEND_FLAGS=0
 
+define \n
+
+
+endef
 
 #######################################################################
 #
@@ -51,7 +55,7 @@ ifeq ($(CVendor),"GNU")
 	else
 		# GNU Release
 		#OPT = -O0 -fPIC
-		OPT = -O3 -Wno-uninitialized -fPIC -mtune=native
+		OPT = -O3 -Wno-uninitialized -fPIC
 		OPTF90 = -O3 -Wno-uninitialized -fPIC -fno-second-underscore 
 	endif
 else
