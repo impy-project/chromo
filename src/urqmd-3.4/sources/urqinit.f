@@ -240,7 +240,7 @@ cbb Note: If you add more CTParams, please make sure that all parameters
 c   are included in the standard event header output in output.f.
 c   Currently, 72 CTPs are written.
 cc
-      CTOption(1)=0  
+      CTOption(1)=1  
       CTOStrng(1)=' resonance widths are mass dependent '
       CTOption(2)=0
       CTOStrng(2)=' conservation of scattering plane'
@@ -286,15 +286,15 @@ cc
       CTOStrng(22)=' use lund excitation function'
       CTOption(23)=0
       CTOStrng(23)=' lorentz contraction of projectile & targed'
-      CTOption(24)=1
+      CTOption(24)=2      ! 1 is default    2 means fast method
       CTOStrng(24)=' Wood-Saxon initialization'
       CTOption(25)=0
       CTOStrng(25)=' phase space corrections for resonance mass'
       CTOption(26)=0
       CTOStrng(26)=' use z -> 1-z for diquark-pairs'
-      CTOption(27)=0 
+      CTOption(27)=1 
       CTOStrng(27)=' reference frame (1=target, 2=projectile, else=cms)'
-      CTOption(28)=0
+      CTOption(28)=0  ! A.F. 2020-04-01 This is different from CORSIKA
       CTOStrng(28)=' propagate spectators also '
       CTOption(29)=2
       CTOStrng(29)=' no transverse momentum in clustr '
