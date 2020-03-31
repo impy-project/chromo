@@ -253,6 +253,26 @@ C-----------------------------------------------------------------------
       RETURN
       END
 
+C-- Author :    D. HECK IK FZK KARLSRUHE   18/03/2003
+C=======================================================================
+
+      DOUBLE PRECISION FUNCTION SIMRND2()
+
+C-----------------------------------------------------------------------
+C anfe  (SIM)PLIFIED RANDOM NUMBER GENERATOR CALL TO RMMARD's SEQUENCE 2
+C
+C  SEE SUBROUT. RMMARD
+C-----------------------------------------------------------------------
+
+      DOUBLE PRECISION RVEC(1)
+      SAVE
+
+      CALL RMMARD(RVEC,1,2)
+      SIMRND2 = RVEC(1)
+
+      RETURN
+      END
+
 C====================       WRAPPERS     ===============================
 #ifdef SIBYLL_SP
       REAL FUNCTION S_RNDM()
@@ -394,4 +414,3 @@ C-----------------------------------------------------------------------
 
       RETURN
       END
-
