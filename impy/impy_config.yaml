@@ -38,6 +38,10 @@ pi0_stable : True
 # False: Expose full particle arrays, large performance impact (you should know what you are doing here)  
 pre_slice : True
 
+# Air composition for special cross section functions
+# (source https://en.wikipedia.org/wiki/Atmosphere_of_Earth) 
+frac_air : [[0.78084, 14], [0.20946, 16], [0.00934, 40]]
+
 # AF: Comment on stuff below
 # All hidden arguments shall go into this one, in particular for UrQMD.
 # They must not be trivial or user-readable. 
@@ -117,6 +121,9 @@ urqmd:
     CTParams     : {}
     caltim       : 200.0
     outtim       : 200.0
+    # at plab < 4.9 use euation of state and Lorentz contraction of projectile
+    # and target. This is not set necessarily in CORSIKA
+    LE_EOS       : True
     debug_level  : 0
 
 

@@ -127,7 +127,8 @@ class DpmjetIIIRun(MCRun):
         event setup (energy, projectile)."""
         # Mass composition of air (Nitrogen, Oxygen, Argon)
         k = self._curr_event_kin
-        frac_air = [(0.78479, 14), (0.21052, 16), (0.00469, 40)]
+        frac_air = impy_config['frac_air']
+        
         if precision != 'default':
             prev_precision = self.lib.dtglgp.jstatb
             # Set number of trials for Glauber model integration
