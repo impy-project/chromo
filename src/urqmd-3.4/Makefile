@@ -23,7 +23,7 @@ URQMD_OBJS := $(URQMD_SRCS:.f=.o) $(URQMD_90SRCS:.f90=.o)
 
 
 SFUNCS=urqmd init uinit set0 params uounit strini loginit loadwtab \
-norm_init output cascinit urqini partname chepevt ptsigtot init_rmmard
+norm_init output cascinit nucrad urqini partname chepevt ptsigtot init_rmmard
 
 all: install
 
