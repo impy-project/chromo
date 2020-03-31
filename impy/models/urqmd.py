@@ -91,6 +91,34 @@ class UrQMDRun(MCRun):
         event setup (energy, projectile, target)"""
         return self.lib.ptsigtot()
 
+    def sigma_inel_air(self):
+        """Hadron-air production cross sections according to current
+        event setup (energy, projectile)."""
+        from copy import copy
+        from impy.kinematics import EventKinematics
+
+        # Make a backup of the current kinematics config
+        prev_kin = copy(self._curr_event_kin)
+        frac_air = impy_config['frac_air']
+
+        cs = 0.
+        for f, iat in frac_air:
+            if prev_kin.p1_is_nucleus:
+                k = EventKinematics(ecm=prev_kin.ecm,
+                    nuc1_prop=(prev_kin.A1, prev_kin.Z2), 
+                    nuc2_prop=(iat, int(iat/2)))
+            else:
+                k = EventKinematics(ecm=prev_kin.ecm,
+                    p1pdg=prev_kin.p1pdg, 
+                    nuc2_prop=(iat, int(iat/2)))
+            self.set_event_kinematics(k)
+            cs += f * self.sigma_inel()
+
+        # Restore settings
+        self.set_event_kinematics(prev_kin)
+
+        return cs
+
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
@@ -128,12 +156,15 @@ class UrQMDRun(MCRun):
         # Set ebeam, eos = 0, nevents
         self.lib.input2.pbeam = k.plab
         self.lib.inputs.srtflag = 2
-        # Unclear what this thing does but should be required for very low energy
-        # if k.plab > 4.9:
-        #     self.lib.inputs.eos = 0
-        # else:
-        #     self.lib.inputs.eos = 1
-        #     self.lib.options.ctoption[23]=0
+        # Unclear what this thing does but should be required for very low energy. 
+        if k.plab > 4.9:
+            self.lib.inputs.eos = 0
+            # This is the fast method as set default in urqinit.f
+            self.lib.options.ctoption[23] = 2
+        else:
+            self.lib.inputs.eos = 1
+            # A hard sphere potential is required for equation of state
+            self.lib.options.ctoption[23]=0
 
         info(5, 'Setting event kinematics')
 

@@ -150,29 +150,33 @@ class EventKinematics(object):
         # Handle projectile type
         if p1pdg:
             pmass1 = pdata.mass(p1pdg)
-            self.A1, self.Z1 = 1, 1
+            self.A1 = 1
+            self.Z1 = pdata.charge(p1pdg)
             self.p1pdg = p1pdg
+            self.p1_is_nucleus = False
+            info(20,'Particle 1 identified from PDG ID.')
         else:
             pmass1 = mnuc
             self.p1pdg = 2212
             self.A1, self.Z1 = nuc1_prop
+            self.p1_is_nucleus = True
+            info(20,'Particle 1 is a nucleus.')
 
         # Handle target type
         if p2pdg:
-            try:
-                pmass2 = pdata.mass(p2pdg)
-            except KeyError:
-                pmass2 = pdata.mass(p1pdg)
-
+            pmass2 = pdata.mass(p2pdg)
             self.p2pdg = p2pdg
-            if p2pdg > 0:
-                self.A2, self.Z2 = 1, 1
-            else:
-                self.A2, self.Z2 = 1, -1
+            self.A2 = 1
+            self.Z2 = pdata.charge(p2pdg)
+            self.p2_is_nucleus = False
+            info(20,'Particle 2 identified from PDG ID.')
         else:
             pmass2 = mnuc
             self.p2pdg = 2212
             self.A2, self.Z2 = nuc2_prop
+            self.p2_is_nucleus = True
+            info(20,'Particle 2 is a nucleus.')
+
         info(10, 'Proj. and targ. identified', (self.p1pdg, self.A1, self.Z1),
              (self.p2pdg, self.A2, self.Z2))
 
@@ -182,6 +186,7 @@ class EventKinematics(object):
             self.elab = 0.5 * (ecm**2 - pmass1**2 + pmass2**2) / pmass2
             self.plab = self._e2p(self.elab, pmass1)
             info(20, 'ecm specified.')
+        # Input specification in lab frame
         elif elab:
             assert elab > pmass1, 'Lab. energy > particle mass required.'
             self.elab = elab
@@ -193,7 +198,6 @@ class EventKinematics(object):
             self.plab = self._e2p(self.elab, pmass1)
             self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
             info(20, 'ekin specified.')
-        # Input specification in lab frame
         elif plab:
             self.plab = plab
             self.elab = np.sqrt(plab**2 + pmass1**2)
