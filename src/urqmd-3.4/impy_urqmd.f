@@ -48,21 +48,27 @@ C The common blocks are copied from coms.f in URQMD
       COMMON /UQCHG/  ICHG(NMXHEP)
       
       INTEGER I, PDGID, IPDG, ISTIDX
+C For K0S/L replacement
+      EXTERNAL SIMRND2
+      DOUBLE PRECISION SIMRND2
+      INTEGER K0SEL(2)
+      DATA K0SEL /130, 310/
 
       DO I=1,npart
-C         WRITE(6,*) I, ich(I), esp(:,I)
          NEVHEP = event
          NHEP = NPART
-         ISTHEP(I) = 1
-c DO ISTIDX=1,NSTABLE
-c    IF (ITYP(I).EQ.STABVEC(ISTIDX)) THEN
-c       ISTHEP(I) = 1
-c    ELSE
-c       ISTHEP(I) = 2
-c    ENDIF
-c ENDDO
+         ISTHEP(I) = 1 ! All particles stable on UrQMD stack
          IDHEP(I) = pdgid(ityp(I),iso3(I))
-c         WRITE(6,*) I,'/',npart, ityp(I),iso3(I), IDHEP(I)
+
+c UrQMD doesn't know K0S or L and produces K0(bar) by default.
+c We will replace those with K0S/L based on a 50/50 rule.
+c Random numbers are sourced from second sequence
+c to avoid interference with the event generator's sequence
+            
+         IF (ABS(IDHEP(I)).EQ.311) THEN
+            IDHEP(I) = K0SEL(INT(2.D0*SIMRND2()))
+         END IF
+
          PHEP(1,I) = px(I)
          PHEP(2,I) = py(I)
          PHEP(3,I) = pz(I)
