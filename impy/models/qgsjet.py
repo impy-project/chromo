@@ -11,7 +11,6 @@ from impy.util import standard_particles, info
 
 class QGSJETEvent(MCEvent):
     """Wrapper class around QGSJet HEPEVT converter."""
-
     def __init__(self, lib, event_kinematics, event_frame):
         # HEPEVT (style) common block
         evt = lib.hepevt
@@ -98,10 +97,27 @@ class QGSJETEvent(MCEvent):
         return self.lib.jdiff.jdiff
 
 
+#: Projectiles for QGSJET01 and cross sections
+_qgsjet01_projectiles = {
+    211: 1,
+    111: 1,
+    2212: 2,
+    2112: 2,
+    321: 3,
+    130: 3,
+    310: 3
+}
+
+#: Specific projectile particle indices for QGSII
+_qgsjetII_projectiles = {211: 1, 2212: 2, 2112: 3, 321: 4, 130: 5, 310: -5}
+
+#: Used for cross section routines
+_qgsjet_hadron_classes = _qgsjet01_projectiles
+
+
 class QGSJetIIRun(MCRun):
     """Implements all abstract attributes of MCRun for the 
        QGSJET-II-xx series of event generators."""
-
     def __init__(self, *args, **kwargs):
         from particletools.tables import QGSJetParticleTable
         MCRun.__init__(self, *args, **kwargs)
@@ -110,25 +126,27 @@ class QGSJetIIRun(MCRun):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
         k = self._curr_event_kin
-        return self.lib.qgsect(self._curr_event_kin.elab, self._qgsproj, k.A1,
+        return self.lib.qgsect(self._curr_event_kin.elab,
+                               _qgsjet_hadron_classes[abs(k.p1pdg)], k.A1,
                                k.A2)
 
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
+        and target for next event."""
 
         info(5, 'Setting event kinematics')
         k = event_kinematics
         self._curr_event_kin = k
-        if abs(k.p1pdg) in [2212, 2112]:
-            self._qgsproj = 2
-        elif abs(k.p1pdg) in [211, 111]:
-            self._qgsproj = 1
-        elif abs(k.p1pdg) in [321, 130, 310]:
-            self._qgsproj = 3
+        if abs(k.p1pdg) in _qgsjetII_projectiles:
+            self._qgsproj = np.sign(k.p1pdg) * _qgsjetII_projectiles[abs(
+                k.p1pdg)]
+        elif k.p1pdg == 111:
+            # For pi0 projectiles alternate between pi+ and pi-
+            self._qgsproj = int(1 - 2 * round(np.random.rand()))
         else:
             raise Exception(
-                'QGSJET only supports p, pi+- and K+- as projectile.')
+                'Projectile {0} not supported by QGSJET-II.'.format(k.p1pdg))
+
         self.lib.qgini(k.elab, self._qgsproj, k.A1, k.A2)
 
     def attach_log(self, fname=None):
@@ -177,7 +195,6 @@ class QGSJetIIRun(MCRun):
 class QGSJet01Run(MCRun):
     """Implements all abstract attributes of MCRun for the 
        QGSJET-01c legacy event generators."""
-
     def __init__(self, *args, **kwargs):
         from particletools.tables import QGSJetParticleTable
         MCRun.__init__(self, *args, **kwargs)
@@ -240,6 +257,7 @@ class QGSJet01Run(MCRun):
         info(5, 'Setting event kinematics')
         k = event_kinematics
         self._curr_event_kin = k
+
         if abs(k.p1pdg) in [2212, 2112]:
             self._qgsproj = 2
         elif abs(k.p1pdg) in [211, 111]:
