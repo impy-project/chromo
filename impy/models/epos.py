@@ -103,25 +103,7 @@ class EPOSRun(MCRun):
     def sigma_inel(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        k = self._curr_event_kin
         return self.lib.xsection()[1]
-
-    def sigma_inel_air(self, precision='default'):
-        """Hadron-air production cross sections according to current
-        event setup (energy, projectile)."""
-        t = self._epos_tup()
-
-        # Mass composition of air (Nitrogen, Oxygen, Argon)
-        frac_air = [(0.78479, 14), (0.21052, 16), (0.00469, 40)]
-        cs = 0.
-        for f, iat in frac_air:
-            custom_tup = tuple(list(t[:6]) + [iat, int(iat / 2)])
-            self.set_event_kinematics(self._curr_event_kin, custom_tup)
-            cs += f * self.lib.xsection()[1]
-
-        # Restore original kinematics
-        self.set_event_kinematics(self._curr_event_kin)
-        return cs
 
     def _epos_tup(self):
         """Constructs an tuple of arguments for calls to event generator
@@ -131,15 +113,12 @@ class EPOSRun(MCRun):
              (k.ecm, -1., k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2))
         return (k.ecm, -1., k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2)
 
-    def set_event_kinematics(self, event_kinematics, custom_tuple=None):
+    def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
         k = event_kinematics
         self._curr_event_kin = k
-        if custom_tuple is not None:
-            self.lib.initeposevt(*custom_tuple)
-        else:
-            self.lib.initeposevt(*self._epos_tup())
+        self.lib.initeposevt(*self._epos_tup())
         info(5, 'Setting event kinematics')
 
     def attach_log(self, fname=None):

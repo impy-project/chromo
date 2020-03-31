@@ -122,29 +122,6 @@ class DpmjetIIIRun(MCRun):
 
         return self.lib.dtglxs.xspro[0, 0, 0]
 
-    def sigma_inel_air(self, precision='default'):
-        """Hadron-air production cross sections according to current
-        event setup (energy, projectile)."""
-        # Mass composition of air (Nitrogen, Oxygen, Argon)
-        k = self._curr_event_kin
-        frac_air = impy_config['frac_air']
-        
-        if precision != 'default':
-            prev_precision = self.lib.dtglgp.jstatb
-            # Set number of trials for Glauber model integration
-            self.lib.dtglgp.jstatb = int(precision)
-
-        cs = 0.
-        for f, iat in frac_air:
-            self.lib.dt_xsglau(k.A1, iat, self.lib.idt_icihad(k.p1pdg), 0, 0,
-                               k.ecm, 1, 1, 1)
-            cs += f * self.lib.dtglxs.xspro[0, 0, 0]
-
-        if precision != 'default':
-            self.lib.dtglgp.jstatb = prev_precision
-
-        return cs
-
     def _dpmjet_tup(self):
         """Constructs an tuple of arguments for calls to event generator
         from given event kinematics object."""

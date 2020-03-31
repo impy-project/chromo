@@ -310,6 +310,9 @@ class MCRun(six.with_metaclass(ABCMeta)):
         # Flag to control if initialization has been already executed
         self._is_initialized = False
 
+        # Currently initialized event kinematics
+        self._curr_event_kin = None
+
         # Not yet clear how to handle these
         self.setting_dict = settings_dict
 
@@ -403,10 +406,45 @@ class MCRun(six.with_metaclass(ABCMeta)):
         self.set_stable(pdgid, stable=False)
 
     @abstractmethod
-    def sigma_inel(self):
+    def sigma_inel(self, **kwargs):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
         pass
+
+    # TODO: Change to generic function for composite target. Make
+    # exception for air
+    def sigma_inel_air(self, **kwargs):
+        """Hadron-air production cross sections according to current
+        event setup (energy, projectile).
+        
+        Args:
+           precision (int): Anything else then 'default' (str) will set
+                            the number of MC trails to that number.
+        """
+        from copy import copy
+        from impy.kinematics import EventKinematics
+
+        # Make a backup of the current kinematics config
+        prev_kin = copy(self._curr_event_kin)
+        frac_air = impy_config['frac_air']
+
+        cs = 0.
+        for f, iat in frac_air:
+            if prev_kin.p1_is_nucleus:
+                k = EventKinematics(ecm=prev_kin.ecm,
+                    nuc1_prop=(prev_kin.A1, prev_kin.Z2), 
+                    nuc2_prop=(iat, int(iat/2)))
+            else:
+                k = EventKinematics(ecm=prev_kin.ecm,
+                    p1pdg=prev_kin.p1pdg, 
+                    nuc2_prop=(iat, int(iat/2)))
+            self.set_event_kinematics(k)
+            cs += f * self.sigma_inel(**kwargs)
+
+        # Restore settings
+        self.set_event_kinematics(prev_kin)
+
+        return cs
 
     @abstractmethod
     def attach_log(self, fname):

@@ -113,18 +113,6 @@ class QGSJetIIRun(MCRun):
         return self.lib.qgsect(self._curr_event_kin.elab, self._qgsproj, k.A1,
                                k.A2)
 
-    def sigma_inel_air(self):
-        """Hadron-air production cross sections according to current
-        event setup (energy, projectile)."""
-        # Mass composition of air (Nitrogen, Oxygen, Argon)
-        frac_air = [(0.78479, 14), (0.21052, 16), (0.00469, 40)]
-        return np.sum([
-            f *
-            self.lib.qgsect(self._curr_event_kin.elab, self._qgsproj, 1, iat)
-            for f, iat in frac_air
-        ],
-                      axis=0)
-
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""

@@ -119,6 +119,10 @@ class PHOJETRun(MCRun):
                            self._curr_event_kin.p2pdg)
         return self.lib.powght.siggen[3]
 
+    def sigma_inel_air(self, **kwargs):
+        """PHOJET does not support nuclear targets."""
+        raise Exception("PHOJET does not support nuclear targets.")
+
     def set_stable(self, pdgid, stable=True):
         if abs(pdgid) == 2212:
             return

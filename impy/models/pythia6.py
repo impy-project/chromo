@@ -80,6 +80,10 @@ class PYTHIA6Run(MCRun):
         event setup (energy, projectile, target)"""
         return self.lib.pyint7.sigt[0, 0, 5]
 
+    def sigma_inel_air(self, **kwargs):
+        """PYTHIA6 does not support nuclear targets."""
+        raise Exception("PYTHIA6 does not support nuclear targets.")
+
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
