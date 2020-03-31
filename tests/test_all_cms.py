@@ -32,7 +32,8 @@ impy_config["user_frame"] = 'center-of-mass'
 
 gen_list = [
     'SIBYLL23C',
-    'SIBYLL23C01', 
+    'SIBYLL23C01',
+    'SIBYLL23C00', 
     'SIBYLL23', 
     'SIBYLL21', 
     'DPMJETIII306', 
@@ -41,7 +42,7 @@ gen_list = [
     'PHOJET112',
     'PHOJET191',
     'URQMD34',
-    'PYTHIA8',
+    # 'PYTHIA8',
     'QGSJET01C',
     'QGSJETII03',
     'QGSJETII04'

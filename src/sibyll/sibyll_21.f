@@ -2292,8 +2292,8 @@ C..."string-like" decay
 C...Phase space decay of the excited state
       ELSE
         AV = 2.*SQRT(DELTAE)
-ctp060203 100     NPI = AV*(1.+0.5*GASDEV(0))
-100     NPI = AV*(1.+0.5*GASDEV(LA))
+ctp060203 100     NPI = AV*(1.+0.5*SPGASDEV(0))
+100     NPI = AV*(1.+0.5*SPGASDEV(LA))
         IF(NPI.LE.0.OR.NPI.GT.9.OR.AM(LA)+NPI*AM(7)+0.02
      .            .GT.P0(5))  GOTO 100
         IF (S_RNDM(0).LT.PCHEX)  THEN
@@ -6300,10 +6300,10 @@ C GAUSSIAN SIGMA IN ALL THREE DIRECTION
             SIG = FK/3.162
 C THIS IS NOT CORRECT, TOO LARGE !!!!!!!!!!!!!!
             ENDIF
-ctp060203             PPFX = SIG*GASDEV(0)/NPF
-ctp060203             PPFY = SIG*GASDEV(0)/NPF
-             PPFX = SIG*GASDEV(NW)/NPF
-             PPFY = SIG*GASDEV(IAP)/NPF
+ctp060203             PPFX = SIG*SPGASDEV(0)/NPF
+ctp060203             PPFY = SIG*SPGASDEV(0)/NPF
+             PPFX = SIG*SPGASDEV(NW)/NPF
+             PPFY = SIG*SPGASDEV(IAP)/NPF
 C THREE MOMENTUM COMPONENTS PER NUCLEON FOR THE PREFRAGMENT
 
 C.............Crude model for small prefragment mass .......
@@ -7615,30 +7615,6 @@ C...........................................................
         SS = SS + W(J) * (FUN(XM+DX) + FUN(XM-DX))
       ENDDO
       GAUSS = XR*SS
-      RETURN
-      END
-
-ctp060203      FUNCTION GASDEV(Idum)
-      FUNCTION GASDEV(Idum)
-C...Gaussian deviation
-      SAVE
-
-ctp060123      SAVE GSET
-      DATA ISET/0/
-
-      IF (ISET.EQ.0) THEN
-1       V1=2.*S_RNDM(ISET)-1.
-        V2=2.*S_RNDM(Idum)-1.
-        R=V1**2+V2**2
-        IF(R.GE.1.)GO TO 1
-        FAC=SQRT(-2.*LOG(R)/R)
-        GSET=V1*FAC
-        GASDEV=V2*FAC
-        ISET=1
-      ELSE
-        GASDEV=GSET
-        ISET=0
-      ENDIF
       RETURN
       END
 

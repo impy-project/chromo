@@ -23665,25 +23665,3 @@ C******************************************************i****************
       GL = SIB_DBFINT(NARG,XT,NA,ARRF,XGF)  * X1**5 * XS
 
       END
-
-      FUNCTION GASDEV(Idum)
-C...Gaussian deviation
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      SAVE
-      SAVE GSET
-      DATA ISET/0/
-      IF (ISET.EQ.0) THEN
-1       V1=2.*S_RNDM(0)-1.
-        V2=2.*S_RNDM(0)-1.
-        R=V1**2+V2**2
-        IF(R.GE.1.)GO TO 1
-        FAC=SQRT(-2.*LOG(R)/R)
-        GSET=V1*FAC
-        GASDEV=V2*FAC
-        ISET=1
-      ELSE
-        GASDEV=GSET
-        ISET=0
-      ENDIF
-      RETURN
-      END

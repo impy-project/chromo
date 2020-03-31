@@ -7,7 +7,7 @@ C         SSSSSS    IIIIIII  BBBBB       YY       LLLLLLL  LLLLLLL
 C=======================================================================
 C  Code for SIBYLL:  hadronic interaction Monte Carlo event generator
 C=======================================================================
-C   Version 2.3c01 (Jun-01-2017, modified Sept-05-2017)
+C   Version 2.3c (Jun-01-2017)
 C
 C     with CHARM production
 C
@@ -33,7 +33,6 @@ C                stanev@bartol.udel.edu
 C     
 C     differences to Sibyll 2.3 include:
 C      
-C      *extend eta' and phi decay to include prompt muons
 C      *allow initialization from file
 C      *explicit hyperon production in 2-particle fireballs
 C      *forbid baryon pair production immediately next to leading baryon
@@ -469,7 +468,7 @@ C-----------------------------------------------------------------------
      *     /,' ','| F. RIEHN et al., Proc. 34th Int. Cosmic Ray Conf.|',
      *     /,' ','| The Hague, The Netherlands, cont. 1313 (2015)    |',
      *     /,' ','|                                                  |',
-     *     /,' ','| last modifications: F. Riehn (09/05/2017)        |',
+     *     /,' ','| last modifications: F. Riehn (06/01/2017)        |',
      *     /,' ','====================================================',
      *     /)
 
@@ -6748,25 +6747,14 @@ C-----------------------------------------------------------------------
       CHARACTER*6 NAMP
       COMMON /S_CNAM/ NAMP (0:99)
       SAVE
-c     CBR contains the normed sum of the branching ratios of the decay channels
-c     indexed by IDB, i.e. a particle with 4 decay channels will have the entries
-c     [B1/Btot, (B1+B2)/Btot, (B1+B2+B3)/Btot, 1.]
       DATA CBR /3*1.D0,0.D0,1.D0,1.D0,0.6354D0,0.8422D0,0.8981D0,
      + 0.9157D0,0.9492D0,1.D0,0.6354D0,0.8422D0,0.8981D0,0.9157D0,
      + 0.9492D0,1.D0,0.1965D0,0.3224D0,0.4579D0,0.5934D0,0.7967D0,1.D0,
-     + 0.6925D0,1.D0,3*0.D0,0.5D0,1.D0,0.5D0,1.D0,
-     + 0.3941D0,0.7197D0,0.9470D0,0.9930D0,1.D0,                     ! eta
-     + 0.4285D0,0.7193D0,0.9487D0,0.9750D0,0.9973D0,0.9999D0,1.D0,   ! eta'
-     + 3*1.D0,                                                       ! rho-mesons
-     + 0.6670D0,1.D0,                                                ! K*+
-     + 0.4894D0,0.8317D0,0.9850D0,0.9981D0,0.9994D0,0.9997D0,1.D0,   ! phi(1020)
-     + 2*0.D0,                                                       ! (empty)      
-     + 0.6670D0,1.D0,                                                ! K*-
-     + 0.6670D0,1.D0,                                                ! K*0
-     + 0.6670D0,1.D0,                                                ! K*0 bar
-     + 0.8940D0,0.9830D0,1.D0,                                       ! omega
-     + 4*0.D0,                                                       ! (empty)
-     + 0.5160D0,5*1.D0,0.6410D0,2*1.D0,0.67D0,1.D0,0.33D0,2*1.D0,
+     + 0.6925D0,1.D0,3*0.D0,0.5D0,1.D0,0.5D0,1.D0,0.3941D0,0.7197D0,
+     + 0.9470D0,0.9930D0,1.D0,0.D0,0.4460D0,0.6530D0,0.9470D0,0.9770D0,
+     + 0.9980D0,4*1.D0,0.6670D0,1.D0,9*0.D0,0.6670D0,1.D0,0.6670D0,1.D0,
+     + 0.6670D0,1.D0,0.8940D0,0.9830D0,1.D0,0.4930D0,0.8340D0,0.9870D0,
+     + 1.D0,0.5160D0,5*1.D0,0.6410D0,2*1.D0,0.67D0,1.D0,0.33D0,2*1.D0,
      + 0.88D0,0.94D0,1.D0,0.88D0,0.94D0,1.D0,0.88D0,0.94D0,1.D0,0.33D0,
      + 1.D0,0.67D0,1.D0,0.678D0,0.914D0,1.D0,0.217D0,0.398D0,0.506D0,
      + 0.595D0,0.684D0,0.768D0,0.852D0,0.923D0,0.976D0,1.D0,0.217D0,
@@ -6827,22 +6815,13 @@ c     [B1/Btot, (B1+B2)/Btot, (B1+B2+B3)/Btot, 1.]
      &     0.001295D0,0.00155D0,8.281D-05,9.801D-05,0.D0,0.D0,0.09D0,
      &     0.01D0,0.09D0,0.01D0,6*0.D0,0.01D0,0.01D0,0.01D0,4*0.0729D0,
      &     32*0.D0/
-c     IDB is the index to the branching ratios (CBR) and decay channels (KDEC).
-c     always indicates the first decay channel
       DATA IDB /
-     +     0,0,0,1,2,                                        ! leptons
-     +     3,5,6,7,13,19,25,                                 ! pions and kaons
-     +     8*0,30,32,34,39,46,47,48,49,60,62,64,66,51, !69,       ! meson resonances
-     +     73,75,76,77,78,79,81,82,84,86,87,90,93,96,98,100, ! baryons : Sibyll 2.1
-     +     0,224,228,232,239,4*0,                            ! Nucleon resonaces
-     +     103,113,246,248,250, 252,254,256,258,3*0,      
-     +     123,134,145,204,214,200,202,151,154,157,159,0,
-     +     161,164,165,166,167,175,179,4*0,189,190,191,192,194,196 /
-c     KDEC contains decay channels, format is [ND, MAT, LL(1:4)]
-c     where ND is the number of particles in the final state (max 4)
-C     MAT is 0, 1 for semi-leptonic (weak decay) or not
-c     (adds primitive matrix element)
-c     LL(1:4) are the particle ids of the final state particles
+     + 0,0,0,1,2,3,5,6,7,13,19,25,8*0,30,32,34,40,46,47,48,49,60,62,
+     + 64,66,69,73,75,76,77,78,79,81,82,84,86,87,90,93,96,98,100,
+     + 0,224,228,232,239,4*0, ! < 59
+     + 103,113,246,248,250, 252,254,256,258,3*0,      
+     + 123,134,145,204,214,200,202,151,154,157,159,0,
+     + 161,164,165,166,167,175,179,4*0,189,190,191,192,194,196 /
       DATA KDEC /
      + 3,1,15,2,18,0,3,1,16,3,17,0,2,0,1,1,8*0,2,0,4,17,0,0,2,0,5,18,0,
      + 0,2,0,4,17,0,0,2,0,7,6,0,0,3,0,7,7,8,0,3,0,7,6,6,0,3,1,17,4,6,0,
@@ -6850,22 +6829,13 @@ c     LL(1:4) are the particle ids of the final state particles
      + 1,18,5,6,0,3,1,16,3,6,0,3,0,6,6,6,0,3,0,7,8,6,0,3,1,18,5,7,0,3,
      + 1,17,4,8,0,3,1,16,3,7,0,3,1,15,2,8,0,2,0,7,8,0,0,2,0,6,6,20*0,1,
      + 0,11,3*0,1,0,12,0,0,0,1,0,11,0,0,0,1,0,12,0,0,0,2,0,1,1,0,0,3,0,
-     + 6,6,6,0,3,0,7,8,6,0,3,0,1,7,8,0,3,0,1,3,2,0,
-     + 3,0,7,8,23,0, 3,0,6,6,23,0, 2,0,1,27,0,0, 2,0,1,32,0,0,           ! eta'
-     + 2,0,1,1,0,0, 3,0,6,6,6,0, 3,0,1,4,5,0,                            ! eta'
-     + 2,0,7,6,0,0,                                                      ! rho+
-     + 2,0,8,6,0,0,                                                      ! rho-
-     + 2,0,7,8,0,0,                                                      ! rho0
-     + 2,0,21,7,0,0, 2,0,9,6,0,0,                                        ! K*+
-     + 2,0,9,10,0,0, 2,0,11,12,0,0, 3,0,7,8,6,0, 2,0,1,23,0,0,           ! phi(1020)
-     + 2,0,1,6,0,0, 2,0,2,3,0,0, 2,0,4,5,0,0,                            ! phi(1020)                  
-     + 12*0,
-     + 2,0,22,8,0,0, 2,0,10,6,0,0,                                       ! K*-
-     + 2,0,9,8,0,0, 2,0,21,6,0,0,                                        ! K*0
-     + 2,0,10,7,0,0, 2,0,22,6,0,0,                                       ! K*0 bar
-     + 3,0,7,8,6,0, 2,0,1,6,0,0, 2,0,7,8,0,0,                            ! omega
-     + 24*0,
-     + 2,0,13,6,0,0,2,0,14,7,0,0,2,0,39,1,0,0,2,                         ! baryons
+     + 6,6,6,0,3,0,7,8,6,0,3,0,1,7,8,0,3,0,1,3,2,7*0,3,0,7,8,23,0,3,0,6
+     + ,6,23,0,2,0,1,27,0,0,2,0,1,32,0,0,2,0,1,1,0,0,3,0,6,6,6,0,2,0,7,
+     + 6,0,0,2,0,8,6,0,0,2,0,7,8,0,0,2,0,21,7,0,0,2,0,9,6,0,0,54*0,2,0,
+     + 22,8,0,0,2,0,10,6,0,0,2,0,9,8,0,0,2,0,21,6,0,0,2,0,10,7,0,0,
+     + 2,0,22,6,0,0,3,0,7,8,6,0,2,0,1,6,0,0,2,0,7,8,0,0,2,0,9,10,0,
+     + 0,2,0,11,12,0,0,3,0,7,
+     + 8,6,0,2,0,1,23,0,0,2,0,13,6,0,0,2,0,14,7,0,0,2,0,39,1,0,0,2,
      + 0,14,8,0,0,2,0,39,6,0,0,2,0,39,8,0,0,2,0,13,8,0,0,2,0,
      + 14,6,0,0,2,0,13,7,0,0,2,0,13,6,
      + 0,0,2,0,14,7,0,0,2,0,13,8,0,0,2,0,14,6,0,0,2,0,14,8,0,0,2,0,
@@ -8436,10 +8406,8 @@ C--------------------------------------------------------------------
 
 c     internal types
       INTEGER LL,LCON,LRES,LRES1,NTRYS,NRJECT,LA,N1,IREJ,I,J,IFLA,
-     &     IFL1,IFL2,IFBAD,NPI,IRES,LA1,JQQ,JQTOT,K,JQR,
-     &     KB_0,IAT_0
-      DOUBLE PRECISION PD,BE,EMIN,EMIN2,PCHEX,PRES,DELTAE,
-     &     SQS_0,S_0,PTmin_0,XMIN_0,ZMIN_0,
+     &     IFL1,IFL2,IFBAD,NPI,IRES,LA1,JQQ,JQTOT,K,JQR
+      DOUBLE PRECISION PD,BE,EMIN,EMIN2,PCHEX,PRES,DELTAE,SQS_0,
      &     PAR1_def,PAR24_def,PAR53_def,GA,BEP,S_RNDM,AV,GASDEV,PCXG,
      &     XI1,XI2,XSMR         !,FERMI
       DIMENSION LL(10), PD(10,5), BE(3), LCON(6:99),LRES1(6:99)
@@ -8506,24 +8474,12 @@ C...  pomeron-hadron scattering (pi0 is used instead of pomeron)
  50      CONTINUE
          IPFLAG= IPFLAG*100
 c     create subevent
-         SQS_0   = SQS
-         S_0     = S
-         PTmin_0 = PTmin 
-         XMIN_0  = XMIN
-         ZMIN_0  = ZMIN
-         KB_0    = KB
-         IAT_0   = IAT
+         SQS_0 = SQS
          CALL INI_EVENT(P0(5),L0,6,0)
 c     create L0 - pi0 interaction, pi0(pid=6) target
          CALL SIB_NDIFF(L0, 1, P0(5), 0, IREJ) ! ori
 c     restore main event
-         SQS   = SQS_0
-         S     = S_0
-         PTmin = PTmin_0         
-         XMIN  = XMIN_0
-         ZMIN  = ZMIN_0
-         KB    = KB_0
-         IAT   = IAT_0
+         SQS = SQS_0         
          IF(IREJ.NE.0) THEN
             NP = N1-1
             GOTO 50
@@ -19919,7 +19875,7 @@ C..........................................................................
       IMPLICIT INTEGER(I-N)
 
       PARAMETER (IAMAX=56)
-      PARAMETER (IAMAX2=3136)          
+      PARAMETER (IAMAX2=3136)
       COMMON  /CPROBAB/ PROBA(IAMAX), DPROBA(IAMAX), 
      +   PROBB(IAMAX), DPROBB(IAMAX), PROBI(IAMAX2), DPROBI(IAMAX2),
      +   P1AEL(0:IAMAX),DP1AEL(0:IAMAX),P1BEL(0:IAMAX), DP1BEL(0:IAMAX),
@@ -20032,7 +19988,7 @@ C..........................................................................
       IMPLICIT INTEGER(I-N)
 
       PARAMETER (IAMAX=56)
-      PARAMETER (IAMAX2=3136)          
+      PARAMETER (IAMAX2=3136)
       COMMON  /CPROBAB/ PROBA(IAMAX), DPROBA(IAMAX), 
      +   PROBB(IAMAX), DPROBB(IAMAX), PROBI(IAMAX2), DPROBI(IAMAX2),
      +   P1AEL(0:IAMAX),DP1AEL(0:IAMAX),P1BEL(0:IAMAX), DP1BEL(0:IAMAX),

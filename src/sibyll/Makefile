@@ -26,7 +26,7 @@ distclean: clean
 	rm -f *.pyf
 
 .PHONY: install
-install: sib21$(LEXT) sib23$(LEXT) sib23c01$(LEXT) sib23c03$(LEXT)
+install: sib21$(LEXT) sib23$(LEXT) sib23c00$(LEXT) sib23c01$(LEXT) sib23c03$(LEXT)
 	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
 
 sib21$(LEXT): sib21.pyf $(SIBMISC_21_O) $(PIM_FUNCS_O) sibyll_21.o
@@ -47,9 +47,13 @@ sib23.pyf: sibyll2.3.f $(PIM_FUNCS_F) Makefile
 	$(F2PY) -m sib23 -h sib23.pyf --overwrite-signature \
 	only: $(SIGFUNC) sibhep3 : sibyll2.3.f $(PIM_FUNCS_F) > sib23.f2l 2>&1
 
-sib23c01$(LEXT): sib23c01.pyf $(PIM_FUNCS_O) sibyll2.3c01.o 
+sib23c00$(LEXT): sib23c00.pyf $(PIM_FUNCS_O) sibyll2.3c00.o 
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
-	sib23c01.pyf sibyll2.3c01.o $(PIM_FUNCS_O) >> sib23c01.f2l 2>&1
+	sib23c00.pyf sibyll2.3c00.o $(PIM_FUNCS_O) >> sib23c00.f2l 2>&1
+
+sib23c00.pyf: sibyll2.3c00.f $(PIM_FUNCS_F) Makefile
+	$(F2PY) -m sib23c00 -h sib23c00.pyf --overwrite-signature \
+	only: $(SIGFUNC) sibhep3 : sibyll2.3c00.f $(PIM_FUNCS_F) > sib23c00.f2l 2>&1
 
 sib23c01$(LEXT): sib23c01.pyf $(PIM_FUNCS_O) sibyll2.3c01.o 
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
@@ -58,10 +62,6 @@ sib23c01$(LEXT): sib23c01.pyf $(PIM_FUNCS_O) sibyll2.3c01.o
 sib23c01.pyf: sibyll2.3c01.f $(PIM_FUNCS_F) Makefile
 	$(F2PY) -m sib23c01 -h sib23c01.pyf --overwrite-signature \
 	only: $(SIGFUNC) sibhep3 : sibyll2.3c01.f $(PIM_FUNCS_F) > sib23c01.f2l 2>&1
-
-sib23c03$(LEXT): sib23c03.pyf $(PIM_FUNCS_O) sibyll2.3c03.o 
-	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
-	sib23c03.pyf sibyll2.3c03.o $(PIM_FUNCS_O) >> sib23c03.f2l 2>&1
 
 sib23c03$(LEXT): sib23c03.pyf $(PIM_FUNCS_O) sibyll2.3c03.o 
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
