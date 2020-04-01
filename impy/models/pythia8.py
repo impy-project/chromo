@@ -127,20 +127,20 @@ class PYTHIA8Run(MCRun):
         for param_string in self.save_init_strings:
             self.lib.readString(param_string)
         # Replay stable history
-        for stable_sett in self.stable_history:
-            self.set_stable(*stable_sett)
+        for pdgid in self.stable_history:
+            self.set_stable(pdgid,self.stable_history[pdgid])
 
-        if k.A1 > 1 or k.A2 > 1:
+        if k.p1_is_nucleus or k.p2_is_nucleus:
             self.lib.readString("HeavyIon:SigFitNGen = 0")
             self.lib.readString(
                 "HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0")
-        if k.A1 > 1:
+        if k.p1_is_nucleus:
             k.p1pdg = AZ2pdg(k.A1, k.A2)
             # pdgid, p name, ap name, spin, 3*charge, color, mass
             self.lib.particleData.addParticle(k.p1pdg, str(k.A1 * 100 + k.Z1),
                                               str(k.A1 * 100 + k.Z1) + 'bar',
                                               1, 3 * k.Z1, 0, float(k.A1))
-        if k.A2 > 1:
+        if k.p2_is_nucleus:
             k.p2pdg = AZ2pdg(k.A2, k.Z2)
             # pdgid, p name, ap name, spin, 3*charge, color, mass
             self.lib.particleData.addParticle(k.p2pdg, str(k.A2 * 100 + k.Z2),
@@ -230,6 +230,7 @@ class PYTHIA8Run(MCRun):
         # of the Fortran stuff where the import of self.lib generates
         # the object, we will backup the library
         self.cpp_lib = self.lib
+        self.lib = None
         # The object/instance is created each time event_kinematics is
         # set, since Pythia8 ATM does not support changing beams or
         # energies at runtime.
@@ -253,21 +254,20 @@ class PYTHIA8Run(MCRun):
 
         # Create history for particle decay settings
         # since changing energy changes resets the stable settings
-        self.stable_history = []
+        self.stable_history = {}
 
         # self.set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
-        if stable:
-            self.lib.particleData.mayDecay(pdgid, False)
-            if (pdgid, False) not in self.stable_history:
-                self.stable_history.append((pdgid, False))
-            info(5, 'defining', pdgid, 'as stable particle')
-        else:
-            self.lib.particleData.mayDecay(pdgid, True)
-            if (pdgid, True) not in self.stable_history:
-                self.stable_history.append((pdgid, True))
-            info(5, pdgid, 'allowed to decay')
+        
+        may_decay = not stable
+        if self.lib is not None:
+            self.lib.particleData.mayDecay(pdgid, may_decay)
+        
+        info(5, pdgid, 'allowed to decay: ', may_decay)
+        
+        self.stable_history[pdgid] = stable
+        
 
     def generate_event(self):
         return not self.lib.next()
