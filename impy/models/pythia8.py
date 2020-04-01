@@ -259,15 +259,15 @@ class PYTHIA8Run(MCRun):
 
     def set_stable(self, pdgid, stable=True):
         if stable:
-            self.cpp_lib.particleData.mayDecay(pdgid, False)
+            self.lib.particleData.mayDecay(pdgid, False)
             if (pdgid, False) not in self.stable_history:
                 self.stable_history.append((pdgid, False))
             info(5, 'defining', pdgid, 'as stable particle')
         else:
-            self.cpp_lib.particleData.mayDecay(pdgid, True)
+            self.lib.particleData.mayDecay(pdgid, True)
             if (pdgid, True) not in self.stable_history:
                 self.stable_history.append((pdgid, True))
             info(5, pdgid, 'allowed to decay')
 
     def generate_event(self):
-        return not next(self.lib)
+        return not self.lib.next()
