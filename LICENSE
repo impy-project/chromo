@@ -1,6 +1,6 @@
 BSD 3-Clause License
 
-Copyright (c) 2016-2019, Anatoli Fedynitch
+Copyright (c) 2016-2020, Anatoli Fedynitch
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -26,3 +26,13 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+Note concerning the PYTHIA8 distribution:
+The BSD license is GPL compatible, so it is an acceptable license for a wrapper,
+as can be seen here:
+https://www.gnu.org/licenses/old-licenses/gpl-2.0-faq.html#GPLWrapper
+https://www.gnu.org/licenses/old-licenses/gpl-2.0-faq.html#OrigBSD
+
+(L)GPL can be combined or included in code that does not impose more restrictive
+conditions.

@@ -87,7 +87,7 @@ endif
 F2PY_L = $(F2PY)
 
 # Portability (I know that this is insane, but still better then rewriting
-# everything in cmake. In fact this worked quite fine!)
+# everything in cmake. In fact this works quite fine!)
 ifeq ($(OS),Windows_NT)
   DEL_COMMAND = del /q /f
   MKDIR_COMMAND = if not exist "$(LIB_DIR)" mkdir
@@ -122,6 +122,7 @@ all: odir src
 
 .PHONY: odir
 odir:
+	@echo $(LEXT)
 	 $(MKDIR_COMMAND) "$(LIB_DIR)"
 
 .PHONY: src
