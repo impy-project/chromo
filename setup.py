@@ -103,7 +103,7 @@ setup(
     description='Hadronic Interaction Model interface in PYthon',
     long_description=extract_longdescription(),
     long_description_content_type='text/markdown',
-    author='Anatoli Fedynitch and others',
+    author='Anatoli Fedynitch',
     maintainer_email='afedynitch@gmail.com',
     license='BSD 3-Clause License',
     url='https://github.com/afedynitch/impy',

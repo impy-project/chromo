@@ -22,7 +22,7 @@ interaction_model_nt_init = [
         sibyll.SibyllEvent, 'center-of-mass'
     ],
     [
-        'SIBYLL23C03', 'SIBYLL', '2.3c03', -1, 'sib23c03', sibyll.SIBYLLRun,
+        'SIBYLL23C00', 'SIBYLL', '2.3c00', -1, 'sib23c00', sibyll.SIBYLLRun,
         sibyll.SibyllEvent, 'center-of-mass'
     ],
     [
@@ -30,7 +30,15 @@ interaction_model_nt_init = [
         sibyll.SibyllEvent, 'center-of-mass'
     ],
     [
-        'SIBYLL23C00', 'SIBYLL', '2.3c00', -1, 'sib23c00', sibyll.SIBYLLRun,
+        'SIBYLL23C02', 'SIBYLL', '2.3c02', -1, 'sib23c02', sibyll.SIBYLLRun,
+        sibyll.SibyllEvent, 'center-of-mass'
+    ],
+    [
+        'SIBYLL23C03', 'SIBYLL', '2.3c03', -1, 'sib23c03', sibyll.SIBYLLRun,
+        sibyll.SibyllEvent, 'center-of-mass'
+    ],
+    [
+        'SIBYLL23C04', 'SIBYLL', '2.3c04', -1, 'sib23c04', sibyll.SIBYLLRun,
         sibyll.SibyllEvent, 'center-of-mass'
     ],
     [
