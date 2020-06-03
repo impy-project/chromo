@@ -26,7 +26,6 @@ class CompositeTarget(object):
 
     Examples of such composite targets are Air, CO_2, HCl, C_2H_60.
     """
-
     def __init__(self, label=''):
         self.label = label
         self.ncomponents = 0
@@ -64,7 +63,9 @@ class CompositeTarget(object):
 
     def _sort(self):
         """Sorts list acording to fraction"""
-        def sort_list(l, idcs): return [l[i] for i in idcs]
+        def sort_list(l, idcs):
+            return [l[i] for i in idcs]
+
         idcs = np.argsort(self.component_fractions)
         self.component_fractions = self.component_fractions[idcs]
         self._component_orig_fractions = sort_list(
@@ -122,7 +123,6 @@ class EventKinematics(object):
         (tuple) nuc2prop : Target nucleus mass & charge (A, Z)
 
     """
-
     def __init__(self,
                  ecm=None,
                  plab=None,
@@ -135,14 +135,13 @@ class EventKinematics(object):
                  nuc2_prop=None):
 
         # Catch input errors
-        assert np.sum(
-            np.asarray([ecm, plab, elab, ekin, beam], dtype='bool')) == 1, (
-            'Define exclusively one energy/momentum definition'
-        )
+        assert np.sum(np.asarray(
+            [ecm, plab, elab, ekin, beam], dtype='bool')) == 1, (
+                'Define exclusively one energy/momentum definition')
         assert p1pdg or nuc1_prop, ('Define either particle id or ' +
-                'nuclear properties for side 1.')
+                                    'nuclear properties for side 1.')
         assert p2pdg or nuc2_prop, ('Define either particle id or ' +
-                'nuclear properties for side 2.')
+                                    'nuclear properties for side 2.')
 
         # Store average nucleon mass
         mnuc = 0.5 * (pdata.mass(2212) + pdata.mass(2112))
@@ -154,13 +153,13 @@ class EventKinematics(object):
             self.Z1 = pdata.charge(p1pdg)
             self.p1pdg = p1pdg
             self.p1_is_nucleus = False
-            info(20,'Particle 1 identified from PDG ID.')
+            info(20, 'Particle 1 identified from PDG ID.')
         else:
             pmass1 = mnuc
             self.p1pdg = 2212
             self.A1, self.Z1 = nuc1_prop
             self.p1_is_nucleus = True
-            info(20,'Particle 1 is a nucleus.')
+            info(20, 'Particle 1 is a nucleus.')
 
         # Handle target type
         if p2pdg:
@@ -169,13 +168,13 @@ class EventKinematics(object):
             self.A2 = 1
             self.Z2 = pdata.charge(p2pdg)
             self.p2_is_nucleus = False
-            info(20,'Particle 2 identified from PDG ID.')
+            info(20, 'Particle 2 identified from PDG ID.')
         else:
             pmass2 = mnuc
             self.p2pdg = 2212
             self.A2, self.Z2 = nuc2_prop
             self.p2_is_nucleus = True
-            info(20,'Particle 2 is a nucleus.')
+            info(20, 'Particle 2 is a nucleus.')
 
         info(10, 'Proj. and targ. identified', (self.p1pdg, self.A1, self.Z1),
              (self.p2pdg, self.A2, self.Z2))
@@ -183,7 +182,7 @@ class EventKinematics(object):
         # Input specification in center of mass frame
         if ecm:
             self.ecm = ecm
-            self.elab = 0.5 * (ecm**2 - pmass1**2 + pmass2**2) / pmass2
+            self.elab = 0.5 * (ecm**2 - pmass1**2 - pmass2**2) / pmass2
             self.plab = self._e2p(self.elab, pmass1)
             info(20, 'ecm specified.')
         # Input specification in lab frame
@@ -191,17 +190,20 @@ class EventKinematics(object):
             assert elab > pmass1, 'Lab. energy > particle mass required.'
             self.elab = elab
             self.plab = self._e2p(self.elab, pmass1)
-            self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
+            self.ecm = np.sqrt(2. * self.elab * pmass2 + pmass2**2 + pmass1**2)
+            # self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
             info(20, 'elab specified.')
         elif ekin:
             self.elab = ekin + pmass1
             self.plab = self._e2p(self.elab, pmass1)
-            self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
+            self.ecm = np.sqrt(2. * self.elab * pmass2 + pmass2**2 + pmass1**2)
+            # self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
             info(20, 'ekin specified.')
         elif plab:
             self.plab = plab
             self.elab = np.sqrt(plab**2 + pmass1**2)
-            self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
+            self.ecm = np.sqrt(2. * self.elab * pmass2 + pmass2**2 + pmass1**2)
+            # self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
             info(20, 'plab specified.')
 
         # Input specification as 4-vectors
@@ -240,10 +242,9 @@ class EventKinematics(object):
     def beam_as_4vec(self):
         """Return the projectile target kinematics as 4-vectors. Can be used
         for PHOJET and PYTHIA."""
-        
-        p1, p2 = np.array(
-            np.zeros(4), dtype='d'), np.array(
-                np.zeros(4), dtype='d')
+
+        p1, p2 = np.array(np.zeros(4), dtype='d'), np.array(np.zeros(4),
+                                                            dtype='d')
         p1[0] = 0.0
         p1[1] = 0.0
         p1[2] = self.pcm
