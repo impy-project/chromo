@@ -202,19 +202,25 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         """Feynman x_F"""
         return 2. * self.pz / self.kin.ecm
 
+    
     @property
-    def xlab(self):
-        """Energy fraction E/E_beam in lab. frame"""
+    def elab(self):
+        """Kinetic energy"""
         kin = self.kin
         if self.event_frame == 'laboratory':
-            return self.en / kin.elab
-        return (kin.gamma_cm * self.en + kin.betagamma_z_cm * self.pz) / kin.elab
+            return self.en
+        return (kin.gamma_cm * self.en + kin.betagamma_z_cm * self.pz)
     
     @property
     def ekin(self):
         """Kinetic energy"""
-        return self.en - self.m
+        return self.elab - self.m
 
+    @property
+    def xlab(self):
+        """Energy fraction E/E_beam in lab. frame"""
+        return self.elab / self.kin.elab
+    
     @property
     def fw(self):
         """I don't remember what this was for..."""
