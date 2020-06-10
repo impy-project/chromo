@@ -107,7 +107,7 @@ else
 endif
 
 WORK_DIR = $(CURDIR)
-LIB_DIR?=$(WORK_DIR)$(PATHSEP)impy$(PATHSEP)lib"
+LIB_DIR?=$(WORK_DIR)$(PATHSEP)impy$(PATHSEP)lib
 RND = $(CURDIR)$(PATHSEP)src$(PATHSEP)rangen.o
 
 #######################################################################
