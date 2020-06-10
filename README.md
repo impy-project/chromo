@@ -8,7 +8,7 @@ Producing interactions with any of the supported event generators requires simpl
 from impy.definitions import *
 from impy.constants import *
 from impy.kinematics import EventKinematics
-from impy.common import impy_config
+from impy import impy_config
 
 # Define the parameters of the collisions
 event_kinematics = EventKinematics(
@@ -29,10 +29,9 @@ for event in generator.event_generator(event_kinematics, nevents):
     event.filter_final_state_charged()
     # do something with event.p_ids, event.eta, event.en, event.pt, etc.
     # these variables are numpy arrays, that can be histogrammed or counted like
-    average_pt = np.mean(event.pt[np.abs(event.p_ids) == 211])
-    print(average_pt)
-    # This will calculate the average transverse momentum for charged pions
+    average_pt += 1/float(nevents)*np.mean(event.pt[np.abs(event.p_ids) == 211])
 
+print('Average pT for charged pions {0:4.3f}'.format(average_pt))
 ```
 
 ## Installation
@@ -46,6 +45,9 @@ To build from source (the **recursive** flag is important to checkout the sub-mo
     git clone --recursive https://github.com/afedynitch/impy
     cd impy
     make -j<insert number of CPU cores>
+
+The package can be installed in editable mode with `pip install -e .` and will behave as an
+ordirnary pip package but using this source build. 
 
 ## Requirements
 
@@ -82,14 +84,17 @@ There are two ways to interact with the code.
 - SIBYLL-2.1
 - SIBYLL-2.3
 - SIBYLL-2.3c
+- SIBYLL-2.3d
 - SOPHIA
 - UrQMD 3.4
 
-## Contributers:
 
-Hans Dembinski
-Sonia El Hadri
-Keito Watanabe
+## Authors:
+
+- Anatoli Fedynitch
+- Hans Dembinski
+- Sonia El Hadri
+- Keito Watanabe
 
 ## LICENSE
 
