@@ -5,7 +5,7 @@ import yaml
 from particletools.tables import PYTHIAParticleData, make_stable_list
 
 
-base_path = abspath(join(dirname(__file__), '..'))
+base_path = abspath(dirname(__file__))
 sys.path.append(join(base_path, 'lib'))
 
 
