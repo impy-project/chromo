@@ -7,12 +7,13 @@ C         SSSSSS    IIIIIII  BBBBB       YY       LLLLLLL  LLLLLLL
 C=======================================================================
 C  Code for SIBYLL:  hadronic interaction Monte Carlo event generator
 C=======================================================================
-C   Version 2.3c04 (Jun-01-2017, modified Mar-28-2020)
+C   Version 2.3d (Jun-01-2017, modified May-20-2020)
 C
 C     with CHARM production
 C
 C       By   Eun-Joo Ahn
 C            Ralph Engel
+C            A. Fedynitch      
 C            R.S. Fletcher
 C            T.K. Gaisser
 C            Paolo Lipari
@@ -26,12 +27,14 @@ C
 C      For a correct copy contact:
 C                sein@fnal.gov
 C                ralph.engel@kit.edu
+C                afedynitch@gmail.com 
 C                gaisser@bartol.udel.edu
 C                paolo.lipari@roma1.infn.it
 C                friehn@lip.pt
 C                stanev@bartol.udel.edu
 C     
 C     last changes relative to Sibyll 2.3c:
+C     * no pi0 suppression in minijets
 C     * added cross section tables for hadron-nitrogen and hadron-oxygen
 C       (changed S_CCSIG common)
 C     * no remnant in high mass diff. events (pi0-had scattering)
@@ -458,22 +461,18 @@ C-----------------------------------------------------------------------
       WRITE(*,100)
  100  FORMAT(' ','====================================================',
      *     /,' ','|                                                  |',
-     *     /,' ','|                 S I B Y L L  2.3c04              |',
+     *     /,' ','|                 S I B Y L L  2.3d                |',
      *     /,' ','|                                                  |',
      *     /,' ','|         HADRONIC INTERACTION MONTE CARLO         |',
      *     /,' ','|                        BY                        |',
      *     /,' ','|            Eun-Joo AHN, Felix RIEHN              |',
-     *     /,' ','|     R. ENGEL, R.S. FLETCHER, T.K. GAISSER        |',
-     *     /,' ','|               P. LIPARI, T. STANEV               |',
+     *     /,' ','|      R. ENGEL, A. FEDYNITCH, R.S. FLETCHER,      |',
+     *     /,' ','|       T.K. GAISSER, P. LIPARI, T. STANEV         |',
      *     /,' ','|                                                  |',
      *     /,' ','| Publication to be cited when using this program: |',
      *     /,' ','| Eun-Joo AHN et al., Phys.Rev. D80 (2009) 094003  |',
-     *     /,' ','| F. RIEHN et al., Proc. 35th Int. Cosmic Ray Conf.|',
-     *     /,' ','|           Bexco, Busan, Korea, cont. 301 (2017)  |',
-     *     /,' ','|                                                  |',
-     *     /,' ','|      ==>  no pi0 suppression in minijets         |',
-     *     /,' ','|                                                  |',      
-     *     /,' ','| last modifications: F. Riehn (03/28/2020)        |',
+     *     /,' ','| F. RIEHN et al., hep-ph: 1912.03300              |',
+     *     /,' ','| last modifications: F. Riehn (05/20/2020)        |',
      *     /,' ','====================================================',
      *     /)
 

@@ -18,9 +18,25 @@ InteractionModelDef = namedtuple('InteractionModelDef', [
 # versions when available
 interaction_model_nt_init = [
     [
-        'SIBYLL23C', 'SIBYLL', '2.3c04', -1, 'sib23c04', sibyll.SIBYLLRun,
+        'SIBYLL23D', 'SIBYLL', '2.3d', -1, 'sib23c04', sibyll.SIBYLLRun,
         sibyll.SibyllEvent, 'center-of-mass'
     ],
+    # This was the default version that was firstly circulated in CORSIKA
+    [ 
+        'SIBYLL23C', 'SIBYLL', '2.3c', -1, 'sib23c01', sibyll.SIBYLLRun,
+        sibyll.SibyllEvent, 'center-of-mass'
+    ],
+    # The c03 version was also in CORSIKA until 2020
+    [
+        'SIBYLL23C03', 'SIBYLL', '2.3c03', -1, 'sib23c03', sibyll.SIBYLLRun,
+        sibyll.SibyllEvent, 'center-of-mass'
+    ],
+    # The latest patch c04 was renamed to d, to generate less confusion
+    [
+        'SIBYLL23C04', 'SIBYLL', '2.3d', -1, 'sib23d', sibyll.SIBYLLRun,
+        sibyll.SibyllEvent, 'center-of-mass'
+    ],
+    # The other versions are development versions and won't be distributed with impy (maybe)
     [
         'SIBYLL23C00', 'SIBYLL', '2.3c00', -1, 'sib23c00', sibyll.SIBYLLRun,
         sibyll.SibyllEvent, 'center-of-mass'
@@ -31,14 +47,6 @@ interaction_model_nt_init = [
     ],
     [
         'SIBYLL23C02', 'SIBYLL', '2.3c02', -1, 'sib23c02', sibyll.SIBYLLRun,
-        sibyll.SibyllEvent, 'center-of-mass'
-    ],
-    [
-        'SIBYLL23C03', 'SIBYLL', '2.3c03', -1, 'sib23c03', sibyll.SIBYLLRun,
-        sibyll.SibyllEvent, 'center-of-mass'
-    ],
-    [
-        'SIBYLL23C04', 'SIBYLL', '2.3c04', -1, 'sib23c04', sibyll.SIBYLLRun,
         sibyll.SibyllEvent, 'center-of-mass'
     ],
     [
