@@ -47,12 +47,15 @@ class MakeBuild(build_ext):
             make_command = 'mingw32-make.exe'
             libext = ('.cp' + sysconfig.get_config_var('py_version_nodot') + '-' +
                 sysconfig.get_platform().replace('-','_') + sysconfig.get_config_var('EXT_SUFFIX'))
+    
+            build_args = ['LIB_DIR=' + (extdir + '/impy/lib').replace('/','\\'),
+                        'LEXT=' + libext]
         else:
             make_command = 'make'
             libext = sysconfig.get_config_var("EXT_SUFFIX")
-            
-        build_args = ['LIB_DIR=' + extdir + '/impy/lib',
-                      'LEXT=' + libext]
+            build_args = ['LIB_DIR=' + extdir + '/impy/lib',
+                        'LEXT=' + libext]
+
         n_parallel_builds = multiprocessing.cpu_count()
 
         cfg = 'Debug' if self.debug else 'Release'

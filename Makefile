@@ -90,7 +90,6 @@ F2PY_L = $(F2PY)
 # everything in cmake. In fact this works quite fine!)
 ifeq ($(OS),Windows_NT)
   DEL_COMMAND = del /q /f
-  MKDIR_COMMAND = mkdir
   COPY_COMMAND = copy /b
   COPY_DUMP = > nul  2>&1
   PATHSEP2=\\
@@ -107,8 +106,13 @@ else
 endif
 
 WORK_DIR = $(CURDIR)
-LIB_DIR?=$(WORK_DIR)$(PATHSEP)impy$(PATHSEP)lib
+LIB_DIR?=$(WORK_DIR)/impy/lib
 RND = $(CURDIR)$(PATHSEP)src$(PATHSEP)rangen.o
+
+ifeq ($(OS),Windows_NT)
+  LIB_DIR=$(subst /,\\,$(WORK_DIR)/impy/lib)
+  MKDIR_COMMAND = if not exist $(LIB_DIR) mkdir
+endif
 
 #######################################################################
 #
