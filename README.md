@@ -91,10 +91,10 @@ There are two ways to interact with the code.
 
 ## Authors:
 
-Anatoli Fedynitch
-Hans Dembinski
-Sonia El Hadri
-Keito Watanabe
+- Anatoli Fedynitch
+- Hans Dembinski
+- Sonia El Hadri
+- Keito Watanabe
 
 ## LICENSE
 
