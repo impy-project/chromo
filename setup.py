@@ -51,7 +51,7 @@ class MakeBuild(build_ext):
             make_command = 'make'
             libext = sysconfig.get_config_var("EXT_SUFFIX")
             
-        build_args = ['LIB_DIR=' + extdir + '/lib',
+        build_args = ['LIB_DIR=' + extdir + '/impy/lib',
                       'LEXT=' + libext]
         n_parallel_builds = multiprocessing.cpu_count()
 

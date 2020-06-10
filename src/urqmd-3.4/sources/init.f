@@ -284,7 +284,7 @@ c else use a logaritmic excitation function
                ipbm=0
                firstev=1
                pbeam=pbmin
-            endif
+             endif
           endif
 c input was pbeam per particle
           pbeam=AAp*pbeam
@@ -311,8 +311,8 @@ c reduce to per particle quantities
          pbeam=pbeam/dble(AAp)
          ebeam=ebeam/dble(AAp)
 c the following is the NN sqrt(s)
-         ecm=sqrt(embeam**2+2*eb/dble(AAp)*emtarget+emtarget**2) 
-     
+         ecm=sqrt(embeam**2+2*eb/dble(AAp)*emtarget+emtarget**2)
+
 ccccccccccccccccccccccccccccccccccccccccccccc
 c compute transformation betas for output
 
