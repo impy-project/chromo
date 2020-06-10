@@ -10,7 +10,6 @@ import subprocess
 import glob
 from os.path import join, dirname, abspath
 
-
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 
@@ -20,20 +19,24 @@ class MakeExtension(Extension):
         Extension.__init__(self, name, sources=[])
         self.sourcedir = os.path.abspath(sourcedir)
 
+
 class MakeBuild(build_ext):
     def run(self):
         if platform.system() == "Windows":
             try:
-                out = subprocess.check_output(['mingw32-make.exe', '--version'])
+                out = subprocess.check_output(
+                    ['mingw32-make.exe', '--version'])
             except OSError:
-                raise RuntimeError("mingw32-make.exe must be installed to build the following extensions: " +
-                                ", ".join(e.name for e in self.extensions))
+                raise RuntimeError(
+                    "mingw32-make.exe must be installed to build the following extensions: "
+                    + ", ".join(e.name for e in self.extensions))
         else:
             try:
                 out = subprocess.check_output(['make', '--version'])
             except OSError:
-                raise RuntimeError("Make must be installed to build the following extensions: " +
-                                ", ".join(e.name for e in self.extensions))
+                raise RuntimeError(
+                    "Make must be installed to build the following extensions: "
+                    + ", ".join(e.name for e in self.extensions))
 
         for ext in self.extensions:
             self.build_extension(ext)
@@ -42,25 +45,33 @@ class MakeBuild(build_ext):
         import sysconfig
         import multiprocessing
 
-        extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
+        extdir = os.path.abspath(
+            os.path.dirname(self.get_ext_fullpath(ext.name)))
+        suffix = sysconfig.get_config_var('EXT_SUFFIX')
+        # Some Python 2.7 versions don't define EXT_SUFFIX
+        if suffix is None and 'SO' in sysconfig.get_config_vars():
+            suffix = sysconfig.get_config_var('SO')
+
         if platform.system() == "Windows":
             make_command = 'mingw32-make.exe'
-            libext = ('.cp' + sysconfig.get_config_var('py_version_nodot') + '-' +
-                sysconfig.get_platform().replace('-','_') + sysconfig.get_config_var('EXT_SUFFIX'))
-    
-            build_args = ['LIB_DIR=' + (extdir + '/impy/lib').replace('/','\\'),
-                        'LEXT=' + libext]
+            libext = ('.cp' + sysconfig.get_config_var('py_version_nodot') +
+                      '-' + sysconfig.get_platform().replace('-', '_') +
+                      suffix)
+
+            build_args = [
+                'LIB_DIR=' + (extdir + '/impy/lib').replace('/', '\\'),
+                'LEXT=' + libext
+            ]
         else:
             make_command = 'make'
-            libext = sysconfig.get_config_var("EXT_SUFFIX")
-            build_args = ['LIB_DIR=' + extdir + '/impy/lib',
-                        'LEXT=' + libext]
+            libext = suffix
+            build_args = ['LIB_DIR=' + extdir + '/impy/lib', 'LEXT=' + libext]
 
         n_parallel_builds = multiprocessing.cpu_count()
 
         cfg = 'Debug' if self.debug else 'Release'
-        build_args  += ['Config=' + cfg]
-        
+        build_args += ['Config=' + cfg]
+
         make_args = []
         make_args += ['-j' + str(n_parallel_builds)]
 
@@ -72,17 +83,20 @@ class MakeBuild(build_ext):
             os.makedirs(extdir)
         subprocess.check_call([make_command] + build_args + make_args)
 
+
 def get_version():
     version = {}
     with open("impy/version.py") as fp:
-        exec (fp.read(), version)
+        exec(fp.read(), version)
     return version['__version__']
+
 
 __version__ = get_version()
 
 # Require pytest-runner only when running tests
 needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
 pytest_runner = ['pytest-runner'] if needs_pytest else []
+
 
 def extract_longdescription():
     this_directory = abspath(dirname(__file__))
@@ -94,7 +108,7 @@ def extract_longdescription():
             long_description = f.read()
 
     skip_marker = "# impy"
-    return long_description[long_description.index(skip_marker) :].lstrip()
+    return long_description[long_description.index(skip_marker):].lstrip()
 
 
 # Data files for interaction models
@@ -115,13 +129,7 @@ setup(
     data_files=[('', ['LICENSE', 'impy/impy_config.yaml']),
                 ('iamdata', iamfiles)],
     include_package_data=True,
-    install_requires=[
-        'six',
-        'particletools',
-        'numpy',
-        'pyyaml',
-        'pyhepmc-ng'
-    ],
+    install_requires=['six', 'particletools', 'numpy', 'pyyaml', 'pyhepmc-ng'],
     ext_modules=[MakeExtension('impy_libs')],
     cmdclass=dict(build_ext=MakeBuild),
     zip_safe=False,
