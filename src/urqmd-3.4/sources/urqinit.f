@@ -292,9 +292,9 @@ cc
       CTOStrng(25)=' phase space corrections for resonance mass'
       CTOption(26)=0
       CTOStrng(26)=' use z -> 1-z for diquark-pairs'
-      CTOption(27)=1 
+      CTOption(27)=0
       CTOStrng(27)=' reference frame (1=target, 2=projectile, else=cms)'
-      CTOption(28)=0  ! A.F. 2020-04-01 This is different from CORSIKA
+      CTOption(28)=0 ! A.F. 2020-04-01 This is different from CORSIKA8
       CTOStrng(28)=' propagate spectators also '
       CTOption(29)=2
       CTOStrng(29)=' no transverse momentum in clustr '
