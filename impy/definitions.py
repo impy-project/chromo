@@ -18,7 +18,7 @@ InteractionModelDef = namedtuple('InteractionModelDef', [
 # versions when available
 interaction_model_nt_init = [
     [
-        'SIBYLL23D', 'SIBYLL', '2.3d', -1, 'sib23c04', sibyll.SIBYLLRun,
+        'SIBYLL23D', 'SIBYLL', '2.3d', -1, 'sib23d', sibyll.SIBYLLRun,
         sibyll.SibyllEvent, 'center-of-mass'
     ],
     # This was the default version that was firstly circulated in CORSIKA

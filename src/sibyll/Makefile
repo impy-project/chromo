@@ -4,8 +4,8 @@
 #                                        (A.F. 08/12)
 #
 
-export SIGFUNC = sibyll sibyll_ini sib_sigma_hp sib_sigma_hair int_nuc \
-	decsib decpar sibini sib_list isib_pid2pdg isib_pdg2pid pdg_ini \
+export SIGFUNC = sibyll sibyll_ini sib_sigma_hp sib_sigma_hair sib_sigma_hnuc \
+	int_nuc decsib decpar sibini sib_list isib_pid2pdg isib_pdg2pid pdg_ini \
 	$(LOGF)
 
 # Fortran functions for PyInteractionModels
