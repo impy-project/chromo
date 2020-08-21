@@ -12,7 +12,6 @@ from impy.util import standard_particles, info
 
 class DpmjetIIIEvent(MCEvent):
     """Wrapper class around DPMJET-III HEPEVT-style particle stack."""
-
     def __init__(self, lib, event_kinematics, event_frame):
         # HEPEVT (style) common block
         evt = lib.dtevt1
@@ -103,7 +102,6 @@ class DpmjetIIIRun(MCRun):
     dpmjet306. No special constructor is necessary and everything is
     handled by the default constructor of the base class.
     """
-
     def sigma_inel(self, precision='default'):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
@@ -136,8 +134,10 @@ class DpmjetIIIRun(MCRun):
         info(5, 'Setting event kinematics')
         assert event_kinematics.A1 <= self._max_A1 and \
             event_kinematics.A2 <= self._max_A2, \
-            'Maximal initialization mass exceeded'
-            
+            'Maximal initialization mass exceeded {0}/{1}, {2}/{3}'.format(
+                event_kinematics.A1, self._max_A1, event_kinematics.A2, self._max_A2
+            )
+
         self._curr_event_kin = event_kinematics
 
         # AF: No idea yet, but apparently this functionality was around?!
@@ -201,25 +201,19 @@ class DpmjetIIIRun(MCRun):
         if hasattr(self.lib, 'poinou') and hasattr(self.lib.poinou, 'datdir'):
             pfile = dpm_conf['dat_dir'][self.version]
             info(10, 'DPMJET data dir is at', pfile)
-            self.lib.poinou.datdir = fortran_chars(self.lib.poinou.datdir, pfile)
+            self.lib.poinou.datdir = fortran_chars(self.lib.poinou.datdir,
+                                                   pfile)
             self.lib.poinou.lendir = len(pfile)
 
         if hasattr(self.lib, 'dtimpy'):
             evap_file = dpm_conf['evap_file'][self.version]
             info(10, 'DPMJET evap file at', evap_file)
-            self.lib.dtimpy.fnevap = fortran_chars(self.lib.dtimpy.fnevap, evap_file)
+            self.lib.dtimpy.fnevap = fortran_chars(self.lib.dtimpy.fnevap,
+                                                   evap_file)
 
-        
         self.attach_log(logfname)
-        self.lib.dt_init(-1,
-                         k.plab,
-                         k.A1,
-                         k.Z1,
-                         k.A2,
-                         k.Z2,
-                         k.p1pdg,
-                         iglau=0)
-        
+        self.lib.dt_init(-1, k.plab, k.A1, k.Z1, k.A2, k.Z2, k.p1pdg, iglau=0)
+
         # Set seed of random number generator
         sseed = str(seed)
         n1, n2, n3, n4 = int(sseed[0:2]), int(sseed[2:4]), \
@@ -232,7 +226,7 @@ class DpmjetIIIRun(MCRun):
         elif impy_config['user_frame'] == 'laboratory':
             self.lib.dtflg1.iframe = 1
             self._output_frame = 'laboratory'
-        
+
         # Relax momentum and energy conservation checks at very high energies
         if k.ecm > 5e4:
             # Relative allowed deviation
