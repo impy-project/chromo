@@ -95,8 +95,11 @@ ifeq ($(OS),Windows_NT)
   COPY_DUMP = > nul  2>&1
   PATHSEP2=\\
   PATHSEP=$(strip $(PATHSEP2))
+  # For mingw fPIC is not necessary
+  OPT:=$(patsubst %-fPIC,%,$(OPT))
+  OPTF90:=$(patsubst %-fPIC,%,$(OPTF90))
   # Shared library suffix
-  LEXT?=$(shell python -c "import sysconfig; print('.cp' + sysconfig.get_config_var('py_version_nodot') + '-' + sysconfig.get_platform().replace('-','_')")$(EXT_SUFFIX)
+  LEXT?=$(shell python -c "import sysconfig; print('.cp' + sysconfig.get_config_var('py_version_nodot') + '-' + sysconfig.get_platform().replace('-','_')"))$(EXT_SUFFIX)
 else
   DEL_COMMAND = rm -rf
   MKDIR_COMMAND = mkdir -p
