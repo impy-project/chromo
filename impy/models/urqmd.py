@@ -79,7 +79,11 @@ class UrQMDEvent(MCEvent):
 
 class UrQMDRun(MCRun):
     """Implements all abstract attributes of MCRun for the 
-    UrQMD series of event generators."""
+    UrQMD series of event generators.
+    
+    The version included here is UrQMD 3.4. The manual and further
+    references can be accessed on this webpage https://urqmd.org/. 
+    """
 
     def __init__(self, *args, **kwargs):
         from particletools.tables import UrQMDParticleTable
@@ -97,7 +101,7 @@ class UrQMDRun(MCRun):
         k = event_kinematics
         self._curr_event_kin = k
 
-        if k.A1 == 1:
+        if not k.p1_is_nucleus:
             # Special projectile
             self.lib.inputs.prspflg = 1
             self.lib.sys.ap = 1
@@ -108,7 +112,7 @@ class UrQMDRun(MCRun):
             self.lib.sys.ap = k.A1
             self.lib.sys.zp = k.Z1
 
-        if k.A2 == 1:
+        if not k.p2_is_nucleus:
             # Special projectile
             self.lib.inputs.trspflg = 1
             self.lib.sys.at = 1
@@ -121,39 +125,28 @@ class UrQMDRun(MCRun):
 
         # Set impact parameter (to be revisited)
         self.lib.rsys.bdist = (
-            self._nucrad(self.lib.sys.ap, self.lib.options.ctoption[23]) +
-            self._nucrad(self.lib.sys.at, self.lib.options.ctoption[23]) +
-            2 * self.lib.options.ctparam[29])
+            self.lib.nucrad(self.lib.sys.ap) +
+            self.lib.nucrad(self.lib.sys.at) +
+            2 * self.lib.options.ctparam[30-1])
 
-        # Set ebeam, eos = 0, nevents
+        
+        # Output only correct in lab frame, don't try using the
+        # "equal speed" frame.
         self.lib.input2.pbeam = k.plab
         self.lib.inputs.srtflag = 2
-        # Unclear what this thing does but should be required for very low energy. 
+
+        # Unclear what the effect of the equation of state is but
+        # should be required for very low energy. 
         if k.plab > 4.9:
             self.lib.inputs.eos = 0
             # This is the fast method as set default in urqinit.f
-            self.lib.options.ctoption[23] = 2
+            self.lib.options.ctoption[24-1] = 2
         else:
             self.lib.inputs.eos = 1
             # A hard sphere potential is required for equation of state
-            self.lib.options.ctoption[23]=0
+            self.lib.options.ctoption[24-1]=0
 
         info(5, 'Setting event kinematics')
-
-    def _nucrad(self, AA, ctopt):
-        A = abs(AA)
-        nucrad = 0
-        rho0 = 0.16
-        # root mean square radius of nucleus of mass A
-        # r_0 corresponding to rho0
-        if ctopt >= 1:
-            # root mean square radius of nucleus of mass A (Mayer-Kuckuck)
-            nucrad = 1.128 * A**(1. / 3.) - 0.89 * A**(-(1. / 3.))
-        else:
-            r_0 = (0.75 / np.pi / rho0)**(1. / 3.)
-            # subtract gaussian tails, for distributing centroids correctly
-            nucrad = r_0 * (0.5 * (A + (A**(1. / 3.) - 1.)**3.))**(1. / 3.)
-        return nucrad
 
     def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
@@ -188,13 +181,14 @@ class UrQMDRun(MCRun):
         self._define_default_fs_particles()
         self.set_event_kinematics(event_kinematics)
 
-        self.lib.sys.eos = 0
         self.lib.inputs.nevents = 1
         self.lib.rsys.bmin = 0
-        self.lib.options.ctoption[4] = 1
-        # Disable elastic collision
-        self.lib.options.ctoption[6] = 1
+        # Use bdb weighting for impact parameter selection
+        self.lib.options.ctoption[5-1] = 1
 
+        # Disable elastic collision
+        self.lib.options.ctoption[7-1] = 1
+        
         # Change CTParams and/or CTOptions if needed
         if 'CTParams' in impy_config['urqmd']:
             for ctp in impy_config['urqmd']['CTParams']:
@@ -205,14 +199,14 @@ class UrQMDRun(MCRun):
                 self.lib.options.ctoptions[cto[0]] = cto[1]
                 info(5, 'CTOptions[{}] changed to {}'.format(cto[0], cto[1]))
 
-        # Just copied CORSIKA here
+        # Time evolution (only relevant for QMD?)
         caltim = impy_config['urqmd']['caltim']
         outtim = impy_config['urqmd']['outtim']
+        # Don't do time evolution in QMD (as in CORSIKA)
+        # This sets timestep to final time -> all steps are = 1
         self.lib.pots.dtimestep = outtim
-        self._nsteps = int(0.01 + caltim / outtim)
-        self._outsteps = 1.
-        self.lib.sys.nsteps = self._nsteps
-        self.lib.inputs.outsteps = self._outsteps
+        self.lib.sys.nsteps = int(0.01 + caltim / self.lib.pots.dtimestep)
+        self.lib.inputs.outsteps = int(0.01 + caltim / self.lib.pots.dtimestep)
 
     def set_stable(self, pdgid, stable=True):
         stable_ids = self.lib.stables.stabvec
@@ -236,7 +230,7 @@ class UrQMDRun(MCRun):
 
     def generate_event(self):
         # If new event, initialize projectile and target
-        if self.lib.options.ctoption[39] == 0:
+        if self.lib.options.ctoption[40-1] == 0:
             if self.lib.inputs.prspflg == 0:
                 self.lib.cascinit(self.lib.sys.zp, self.lib.sys.ap, 1)
             if self.lib.inputs.trspflg == 0:
