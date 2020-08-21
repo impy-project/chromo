@@ -106,7 +106,17 @@ class SIBYLLRun(MCRun):
         else:
             info(0, "No cross section available for projectile", k.p1pdg)
             raise Exception('Input error')
+        
+        if k.p1_is_nucleus:
+            raise Exception('Nuclear projectiles not supported by SIBYLL.')
 
+        if k.p2_is_nucleus:
+            # Return production cross section for nuclear target
+            try:
+                return self.lib.sib_sigma_hnuc(sigproj, k.A2, self._ecm)[0]
+            except AttributeError:
+                return 'Nuclear cross section not supported for this SIBYLL version'
+        
         return self.lib.sib_sigma_hp(sigproj, self._ecm)[2]
 
     def sigma_inel_air(self):
