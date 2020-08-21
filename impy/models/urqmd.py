@@ -90,7 +90,7 @@ class UrQMDRun(MCRun):
         self.stab = UrQMDParticleTable()
         MCRun.__init__(self, *args, **kwargs)
 
-    def sigma_inel(self):
+    def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
         return self.lib.ptsigtot()

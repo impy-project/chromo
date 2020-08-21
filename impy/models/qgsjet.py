@@ -122,7 +122,7 @@ class QGSJetIIRun(MCRun):
         from particletools.tables import QGSJetParticleTable
         MCRun.__init__(self, *args, **kwargs)
 
-    def sigma_inel(self):
+    def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
         k = self._curr_event_kin
@@ -199,14 +199,14 @@ class QGSJet01Run(MCRun):
         from particletools.tables import QGSJetParticleTable
         MCRun.__init__(self, *args, **kwargs)
 
-    # def sigma_inel(self):
+    # def sigma_inel(self, *args, **kwargs):
     #     """Inelastic cross section according to current
     #     event setup (energy, projectile, target)"""
     #     k = self._curr_event_kin
     #     return self.lib.qgsect(self._curr_event_kin.elab, self._qgsproj, k.A1,
     #                            k.A2)
 
-    def sigma_inel(self):
+    def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
         # k = self._curr_event_kin

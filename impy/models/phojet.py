@@ -109,7 +109,7 @@ class PhojetEvent(MCEvent):
 
 
 class PHOJETRun(MCRun):
-    def sigma_inel(self):
+    def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
 

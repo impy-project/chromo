@@ -92,7 +92,7 @@ class SIBYLLRun(MCRun):
     """Implements all abstract attributes of MCRun for the 
     SIBYLL 2.1, 2.3 and 2.3c event generators."""
 
-    def sigma_inel(self):
+    def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
         k = self._curr_event_kin

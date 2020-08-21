@@ -51,7 +51,7 @@ epos:
     has_boosts   : True
     has_hepevt   : True
     int_support  : [ 'hh', 'hA', 'AA', 'gg', 'gh', 'gA']
-    datdir       : impy/iamdata/epos/
+    datdir       : iamdata/epos/
     debug_level  : 0
     projectiles  : {
         'LHC' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
@@ -67,12 +67,12 @@ phojet:
     int_support  : [ 'hh', 'gg', 'gh']
     debug_level  : 0
     dat_dir      : {
-      '1.12-35'  : impy/iamdata/dpm3/,
-        '19.1'   : impy/iamdata/dpm3191/
+      '1.12-35'  : iamdata/dpm3/,
+        '19.1'   : iamdata/dpm3191/
     }
     param_file   : {
-      '1.12-35'  : impy/iamdata/dpm3/fitpar.dat,
-        '19.1'   : impy/iamdata/dpm3191/dpmjpar.dat
+      '1.12-35'  : iamdata/dpm3/fitpar.dat,
+        '19.1'   : iamdata/dpm3191/dpmjpar.dat
     }
     projectiles  : {
         'last' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
@@ -137,16 +137,16 @@ dpmjetIII:
     # maximal energy for cross section table initialization
     debug_level  : 0
     dat_dir      : {
-        '3.0-6'  : impy/iamdata/dpm3/,
-        '19.1'   : impy/iamdata/dpm3191/
+        '3.0-6'  : iamdata/dpm3/,
+        '19.1'   : iamdata/dpm3191/
     }
     param_file   : {
-        '3.0-6'  : impy/iamdata/dpm3/fitpar.dat,
-        '19.1'   : impy/iamdata/dpm3191/dpmjpar.dat
+        '3.0-6'  : iamdata/dpm3/fitpar.dat,
+        '19.1'   : iamdata/dpm3191/dpmjpar.dat
     }
     evap_file    : {
-        '3.0-6'  : impy/iamdata/dpm3/dpmjet.dat,
-        '19.1'   : impy/iamdata/dpm3191/dpmjet.dat
+        '3.0-6'  : iamdata/dpm3/dpmjet.dat,
+        '19.1'   : iamdata/dpm3191/dpmjet.dat
     }
 
     projectiles  : {
@@ -166,7 +166,7 @@ qgsjet:
     has_boosts   : False
     has_hepevt   : True
     int_support  : [ 'hh', 'hA', 'AA' ]
-    datdir       : impy/iamdata/qgsjet/
+    datdir       : iamdata/qgsjet/
     debug_level  : 0
     projectiles  : {
         'II-03' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112 ],

@@ -109,7 +109,7 @@ class PYTHIA8Run(MCRun):
     """Implements all abstract attributes of MCRun for the 
     EPOS-LHC series of event generators."""
 
-    def sigma_inel(self):
+    def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
         # Cross section and energy (in mb and GeV)
