@@ -209,9 +209,41 @@ class QGSJet01Run(MCRun):
     def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        # k = self._curr_event_kin
-        info(2, 'Sigma inel not implemented for QGSJet01c')
-        return 0.
+        return self._qg1_cross_section(self._curr_event_kin.A2)
+        # info(2, 'Sigma inel not implemented for QGSJet01c')
+        # return 0.
+
+    def _qg1_cross_section(self, A_target):
+        """Interpolation routine for QGSJET01C cross sections."""
+        from scipy.interpolate import UnivariateSpline
+
+        # Projectile ID-1 to access fortran indices directly
+        icz = self._qgsproj - 1
+        qgsgrid = 10**np.arange(1, 11)
+        cross_section = np.zeros(10)
+        wa = np.zeros(3)
+        for je in range(10):
+            sectn = 0.
+
+            ya = A_target
+
+            ya = np.log(ya) / 1.38629 + 1.
+            ja = min(int(ya), 2)
+            wa[1] = (ya - ja)
+            wa[2] = wa[1] * (wa[1] - 1) * .5
+            wa[0] = 1. - wa[1] + wa[2]
+            wa[1] = wa[1] - 2. * wa[2]
+            sectn = sum([self.lib.xsect.gsect[je, icz, ja + m - 1] * wa[m]
+                for m in range(3)])
+            cross_section[je] = np.exp(sectn)
+        
+        spl = UnivariateSpline(np.log(qgsgrid),
+                               np.log(cross_section),
+                               ext='extrapolate',
+                               s=0,
+                               k=1)
+
+        return np.exp(spl(np.log(self._curr_event_kin.elab)))
 
     def sigma_inel_air(self):
         """Hadron-air production cross sections according to current
@@ -219,36 +251,12 @@ class QGSJet01Run(MCRun):
         # Mass composition of air (Nitrogen, Oxygen, Argon)
         from scipy.interpolate import UnivariateSpline
 
-        # Projectile ID-1 to access fortran indices directly
-        icz = self._qgsproj - 1
-
-        qgsgrid = 10**np.arange(1, 11)
-        cross_section = np.zeros(10)
         frac_air = [(0.78479, 14), (0.21052, 16), (0.00469, 40)]
-        wa = np.zeros(3)
+        cross_section = 0.
         for frac, iat in frac_air:
-            for je in range(10):
-                sectn = 0.
+            cross_section += frac* self._qg1_cross_section(iat)
 
-                ya = iat
-
-                ya = np.log(ya) / 1.38629 + 1.
-                ja = min(int(ya), 2)
-                wa[1] = (ya - ja)
-                wa[2] = wa[1] * (wa[1] - 1) * .5
-                wa[0] = 1. - wa[1] + wa[2]
-                wa[1] = wa[1] - 2. * wa[2]
-                for m in range(3):
-                    sectn += self.lib.xsect.gsect[je, icz, ja + m - 1] * wa[m]
-
-                cross_section[je] += frac * np.exp(sectn)
-
-        spl = UnivariateSpline(np.log(qgsgrid),
-                               np.log(cross_section),
-                               ext='extrapolate',
-                               s=0,
-                               k=1)
-        return np.exp(spl(np.log(self._curr_event_kin.elab)))
+        return cross_section
 
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
