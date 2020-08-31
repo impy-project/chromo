@@ -146,7 +146,11 @@ class SIBYLLRun(MCRun):
         info(5, 'Setting event kinematics.')
         info(10, event_kinematics)
         k = event_kinematics
-
+        if k.p1_is_nucleus:
+            raise Exception('Projectile nuclei not natively supported in SIBYLL')
+        elif k.p2_is_nucleus and k.A2 > 20:
+            print(k.p2_is_nucleus, k.A2)
+            raise Exception('Target nuclei with A>20 not supported in SIBYLL')
         self._sibproj = self.lib.isib_pdg2pid(k.p1pdg)
         self._iatarg = k.A2
         self._ecm = k.ecm
