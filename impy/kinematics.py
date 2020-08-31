@@ -158,7 +158,9 @@ class EventKinematics(object):
             pmass1 = mnuc
             self.p1pdg = 2212
             self.A1, self.Z1 = nuc1_prop
-            self.p1_is_nucleus = True
+            self.p1_is_nucleus = True if self.A1 > 1 else False
+            if self.A1 == 1 and self.Z1 == 0:
+                self.p1pdg = 2212
             info(20, 'Particle 1 is a nucleus.')
 
         # Handle target type
@@ -173,7 +175,9 @@ class EventKinematics(object):
             pmass2 = mnuc
             self.p2pdg = 2212
             self.A2, self.Z2 = nuc2_prop
-            self.p2_is_nucleus = True
+            self.p2_is_nucleus = True if self.A2 > 1 else False
+            if self.A2 == 1 and self.Z2 == 0:
+                self.p2pdg = 2112
             info(20, 'Particle 2 is a nucleus.')
 
         info(10, 'Proj. and targ. identified', (self.p1pdg, self.A1, self.Z1),
