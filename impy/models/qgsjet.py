@@ -199,24 +199,15 @@ class QGSJet01Run(MCRun):
         from particletools.tables import QGSJetParticleTable
         MCRun.__init__(self, *args, **kwargs)
 
-    # def sigma_inel(self, *args, **kwargs):
-    #     """Inelastic cross section according to current
-    #     event setup (energy, projectile, target)"""
-    #     k = self._curr_event_kin
-    #     return self.lib.qgsect(self._curr_event_kin.elab, self._qgsproj, k.A1,
-    #                            k.A2)
-
     def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        return self._qg1_cross_section(self._curr_event_kin.A2)
-        # info(2, 'Sigma inel not implemented for QGSJet01c')
-        # return 0.
+        event setup (energy, projectile, target).
+        
+        Interpolation routine for QGSJET01C cross sections from CORSIKA."""
 
-    def _qg1_cross_section(self, A_target):
-        """Interpolation routine for QGSJET01C cross sections."""
         from scipy.interpolate import UnivariateSpline
 
+        A_target = self._curr_event_kin.A2
         # Projectile ID-1 to access fortran indices directly
         icz = self._qgsproj - 1
         qgsgrid = 10**np.arange(1, 11)
@@ -244,19 +235,6 @@ class QGSJet01Run(MCRun):
                                k=1)
 
         return np.exp(spl(np.log(self._curr_event_kin.elab)))
-
-    def sigma_inel_air(self):
-        """Hadron-air production cross sections according to current
-        event setup (energy, projectile)."""
-        # Mass composition of air (Nitrogen, Oxygen, Argon)
-        from scipy.interpolate import UnivariateSpline
-
-        frac_air = [(0.78479, 14), (0.21052, 16), (0.00469, 40)]
-        cross_section = 0.
-        for frac, iat in frac_air:
-            cross_section += frac* self._qg1_cross_section(iat)
-
-        return cross_section
 
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
