@@ -141,6 +141,10 @@ class PHOJETRun(MCRun):
         self._curr_event_kin = event_kinematics
 
         k = event_kinematics
+
+        if k.p1_is_nucleus or k.p2_is_nucleus:
+            raise Exception('PHOJET does not support nuclei.')
+
         # self.p1_type, self.p2_type, self.ecm, self.pcm = \
         #                     k.p1pdg, k.p2pdg, k.ecm, k.pcm
 
@@ -177,13 +181,11 @@ class PHOJETRun(MCRun):
 
         self.lib.pydat1.mstu[10] = lun
 
-        return lun
-
     def init_generator(self, event_kinematics, seed='random', logfname=None):
         from impy.constants import c
         from random import randint
         from os.path import join
-        from impy.common import root_dir
+        from impy import root_dir
 
         self._abort_if_already_initialized()
 
@@ -194,7 +196,7 @@ class PHOJETRun(MCRun):
         info(5, 'Using seed:', seed)
 
         # Define where output will go
-        lun = self.attach_log(fname=logfname)
+        self.attach_log(fname=logfname)
 
         # Detect what kind of PHOJET interface is attached. If PHOJET
         # is run through DPMJET, initial init needs -2 else -1
@@ -203,14 +205,14 @@ class PHOJETRun(MCRun):
         pho_conf = impy_config['phojet']
         # Set the dpmjpar.dat file
         if hasattr(self.lib, 'pomdls') and hasattr(self.lib.pomdls, 'parfn'):
-            pfile = join(root_dir, pho_conf['param_file'][self.version])
+            pfile = pho_conf['param_file'][self.version]
             info(10, 'PHOJET parameter file at', pfile)
             self.lib.pomdls.parfn = fortran_chars(self.lib.pomdls.parfn, pfile)
 
         # Set the data directory for the other files
         if hasattr(self.lib, 'poinou') and hasattr(self.lib.poinou, 'datdir'):
-            pfile = str(join(root_dir, pho_conf['dat_dir'][self.version],
-                             '')) + '/'
+            # pfile = str(join(root_dir, pho_conf['dat_dir'][self.version],
+            #                  '')) + '/'
             info(10, 'PHOJET data dir is at', pfile)
             self.lib.poinou.datdir = fortran_chars(self.lib.poinou.datdir, pfile)
             self.lib.poinou.lendir = len(pfile)

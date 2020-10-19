@@ -17,7 +17,7 @@ event_kinematics = EventKinematics(
 # Create an instance of an event generator by passing
 # the model name as a string
 generator = make_generator_instance(
-    interaction_model_by_tag['SIBYLL2.3C'])
+    interaction_model_by_tag['SIBYLL2.3D'])
 
 # Initialize it
 generator.init_generator(event_kinematics)
@@ -36,7 +36,7 @@ print('Average pT for charged pions {0:4.3f}'.format(average_pt))
 
 ## Installation
 
-The package is available including the pre-compiled binaries. The installation in that case simplifies to:
+The package is available including the pre-compiled binaries. The installation in that case simplifies to (*this does not work yet use installation from source*):
 
     pip install impy
 
@@ -52,14 +52,13 @@ ordirnary pip package but using this source build.
 ## Requirements
 
 - Python 2.7 - 3.8
-- Linux or Mac OS X
+- Linux, Mac OS X, or Windows
 - pip
 - particletools
 - numpy
 - scipy
 - pyyaml
 - pyhepmc-ng
-- Windows support planned in a future release (needs MinGW build because of Fortran)
 
 ## User interface
 
@@ -77,7 +76,7 @@ There are two ways to interact with the code.
 - PHOJET 1.12-35
 - PHOJET 19.1
 - PYTHIA 6
-- PYTHIA 8
+- PYTHIA 8 (not yet bundled)
 - QGSJet-01
 - QGSJet-II-03
 - QGSJet-II-04

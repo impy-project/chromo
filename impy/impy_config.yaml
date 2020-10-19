@@ -59,27 +59,6 @@ epos:
                   3122, -3122, 22]
     }
 
-phojet:
-    output_frame : ['4-vectors']
-    sqs_min_GeV  : 5.
-    has_hepevt   : True
-    has_boosts   : True
-    int_support  : [ 'hh', 'gg', 'gh']
-    debug_level  : 0
-    dat_dir      : {
-      '1.12-35'  : iamdata/dpm3/,
-        '19.1'   : iamdata/dpm3191/
-    }
-    param_file   : {
-      '1.12-35'  : iamdata/dpm3/fitpar.dat,
-        '19.1'   : iamdata/dpm3191/dpmjpar.dat
-    }
-    projectiles  : {
-        'last' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
-                   3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
-                   3122, -3122, 22]
-    }
-
 pythia6:
     output_frame : ['center-of-mass']
     sqs_min_GeV  : 5.
@@ -158,6 +137,27 @@ dpmjetIII:
     # Advanced params:
     # Number of trials for glauber hA, AA cross section calc.
     dtglgp.jstatb : 1000
+
+phojet:
+    output_frame : ['4-vectors']
+    sqs_min_GeV  : 5.
+    has_hepevt   : True
+    has_boosts   : True
+    int_support  : [ 'hh', 'gg', 'gh']
+    debug_level  : 0
+    dat_dir      : {
+      '1.12-35'  : iamdata/dpm3/,
+        '19.1'   : iamdata/dpm3191/
+    }
+    param_file   : {
+      '1.12-35'  : iamdata/dpm3/fitpar.dat,
+        '19.1'   : iamdata/dpm3191/dpmjpar.dat
+    }
+    projectiles  : {
+        'last' : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
+                   3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
+                   3122, -3122, 22]
+    }
 
 
 qgsjet:
