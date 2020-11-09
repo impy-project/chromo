@@ -25,7 +25,7 @@ endef
 
 ifeq ($(CVendor),"GNU")
 	#  GNU
-	FC = gfortran
+	FC := $(or $(FC), gfortran)
 	F2PY_C = gnu95
 	ifeq ($(OS),Windows_NT)
 		F2PY_CCONF = --compiler=mingw32 --fcompiler=$(F2PY_C)
@@ -90,7 +90,7 @@ F2PY_L = $(F2PY)
 
 # Portability (I know that this is insane, but still better then rewriting
 # everything in cmake. In fact this works quite fine!)
-EXT_SUFFIX = $(shell python -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX') if sysconfig.get_config_var('EXT_SUFFIX') is not None else sysconfig.get_config_var('SO'))")
+EXT_SUFFIX = $(shell $(PYTHON_EXE) -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX') if sysconfig.get_config_var('EXT_SUFFIX') is not None else sysconfig.get_config_var('SO'))")
 ifeq ($(OS),Windows_NT)
   DEL_COMMAND = del /q /f
   COPY_COMMAND = copy /b
@@ -101,7 +101,7 @@ ifeq ($(OS),Windows_NT)
   OPT:=$(patsubst %-fPIC,%,$(OPT))
   OPTF90:=$(patsubst %-fPIC,%,$(OPTF90))
   # Shared library suffix
-  LEXT?=$(shell python -c "import sysconfig; print('.cp' + sysconfig.get_config_var('py_version_nodot') + '-' + sysconfig.get_platform().replace('-','_')"))$(EXT_SUFFIX)
+  LEXT?=$(shell $(PYTHON_EXE) -c "import sysconfig; print('.cp' + sysconfig.get_config_var('py_version_nodot') + '-' + sysconfig.get_platform().replace('-','_')"))$(EXT_SUFFIX)
 else
   DEL_COMMAND = rm -rf
   MKDIR_COMMAND = mkdir -p
@@ -132,7 +132,6 @@ all: odir src
 
 .PHONY: odir
 odir:
-	@echo $(LEXT)
 	 $(MKDIR_COMMAND) "$(LIB_DIR)"
 
 .PHONY: src
