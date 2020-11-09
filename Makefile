@@ -47,16 +47,16 @@ ifeq ($(CVendor),"GNU")
 	ifeq ($(Config),"Debug")
 		# GNU Debug
 		OPT = -fPIC -Wall -fbounds-check -O0 -g \
-			  -ffpe-trap=invalid,zero,overflow -Wuninitialized
+			  -ffpe-trap=invalid,zero,overflow -Wuninitialized -fallow-argument-mismatch
 		OPTF90 = -fPIC -Wall -fbounds-check -O0 -g \
 			  -ffpe-trap=invalid,zero,overflow -Wuninitialized \
-			  -fno-second-underscore
+			  -fno-second-underscore -fallow-argument-mismatch
 		#OPT = -fPIC -Wall -Wno-uninitialized -Wno-unused-variable -O3 -g -ffpe-trap=invalid,zero,overflow
 	else
 		# GNU Release
 		#OPT = -O0 -fPIC
-		OPT = -O3 -Wno-uninitialized -fPIC
-		OPTF90 = -O3 -Wno-uninitialized -fPIC -fno-second-underscore 
+		OPT = -O3 -Wno-uninitialized -fPIC -fallow-argument-mismatch
+		OPTF90 = -O3 -Wno-uninitialized -fPIC -fno-second-underscore -fallow-argument-mismatch
 	endif
 else
 	ifeq ($(Config),"Debug")
@@ -77,11 +77,13 @@ endif
 #   F2PY
 #
 #######################################################################
+PYTHON_EXE := $(or $(PYTHON_EXE), python3)
+
 #general version for signature file extraction and linking
 ifeq ($(Config),"Debug")
-	F2PY = python -m numpy.f2py
+	F2PY = $(PYTHON_EXE) -m numpy.f2py
 else
-	F2PY = python -m numpy.f2py --quiet
+	F2PY = $(PYTHON_EXE)  -m numpy.f2py --quiet
 endif
 #additional flags for linker
 F2PY_L = $(F2PY)

@@ -46,9 +46,14 @@ To build from source (the **recursive** flag is important to checkout the sub-mo
     cd impy
     make -j<insert number of CPU cores>
 
-The package can be installed in editable mode with `pip install -e .` and will behave as an
-ordirnary pip package but using this source build. 
+The package can be installed in editable mode with `pip install -e .` and will behave as an ordinary pip package but using this source build.
 
+Because of the architectural transition and the many other issue on mac, building from source may be a bit complicated. Using brew gcc and python it is possible to build the code by:
+
+    CC=gcc-10 CXX=gcc-10 FC=gfortran-10 PYTHON_EXE=/usr/local/opt/python@3.8/bin/python3 make -jXXX
+
+Replace `gcc-10` by your version in brew. The official Mac Python is currently broken due to th transition to Apple Silicon.
+ 
 ## Requirements
 
 - Python 2.7 - 3.8

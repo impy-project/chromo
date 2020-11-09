@@ -129,7 +129,7 @@ setup(
     data_files=[('', ['LICENSE', 'impy/impy_config.yaml']),
                 ('iamdata', iamfiles)],
     include_package_data=True,
-    install_requires=['six', 'particletools', 'numpy', 'pyyaml', 'pyhepmc-ng'],
+    install_requires=['six', 'particletools', 'numpy', 'pyyaml', 'pyhepmc-ng', 'scipy'],
     ext_modules=[MakeExtension('impy_libs')],
     cmdclass=dict(build_ext=MakeBuild),
     zip_safe=False,
