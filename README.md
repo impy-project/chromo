@@ -9,6 +9,7 @@ from impy.definitions import *
 from impy.constants import *
 from impy.kinematics import EventKinematics
 from impy import impy_config
+import numpy as np
 
 # Define the parameters of the collisions
 event_kinematics = EventKinematics(
@@ -17,19 +18,22 @@ event_kinematics = EventKinematics(
 # Create an instance of an event generator by passing
 # the model name as a string
 generator = make_generator_instance(
-    interaction_model_by_tag['SIBYLL2.3D'])
+    interaction_model_by_tag['SIBYLL23D'])
 
 # Initialize it
 generator.init_generator(event_kinematics)
 
 # Number of events to generate
 nevents = 100
+average_pt = 0.
 
 for event in generator.event_generator(event_kinematics, nevents):
     event.filter_final_state_charged()
     # do something with event.p_ids, event.eta, event.en, event.pt, etc.
     # these variables are numpy arrays, that can be histogrammed or counted like
-    average_pt += 1/float(nevents)*np.mean(event.pt[np.abs(event.p_ids) == 211])
+    sel = np.abs(event.p_ids) == 211
+    if np.count_nonzero(sel):
+        average_pt += 1/float(nevents)*np.mean(event.pt[np.abs(event.p_ids) == 211])
 
 print('Average pT for charged pions {0:4.3f}'.format(average_pt))
 ```
