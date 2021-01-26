@@ -49,14 +49,14 @@ class SibyllEvent(MCEvent):
     def filter_final_state_charged(self):
         self.selection = np.where((self.status == 1) & (self.charge != 0))
         self._apply_slicing()
-    
+
     @property
     def charge(self):
         return self.lib.schg.ichg[self.selection]
 
     @property
     def parents(self):
-        """In SIBYLL parents are difficult to obtain. This function returns 0."""
+        """In SIBYLL parents are difficult to obtain. This function returns the index of the mother particle for decay products otherwise 0."""
         MCEvent.parents(self)
         return self.lib.hepevt.jmohep
 
@@ -65,7 +65,7 @@ class SibyllEvent(MCEvent):
         """In SIBYLL daughters are difficult to obtain. This function returns 0."""
         MCEvent.children(self)
         return self.lib.hepevt.jdahep
-
+    
     # Nuclear collision parameters
     @property
     def impact_parameter(self):
@@ -86,6 +86,27 @@ class SibyllEvent(MCEvent):
     def n_NN_interactions(self):
         """Number of inelastic nucleon-nucleon interactions"""
         return self.lib.cnucms.ni
+
+    @property
+    def n_wounded(self):
+        """Number of total wounded nucleons in hadron-hadron or hadron-nucleus interaction"""
+        return self.lib.s_chist.nwd
+
+    @property
+    def mpi(self):
+        """Total number of cuts"""
+        return self.lib.s_chist.nsof + self.lib.s_chist.njet
+
+    @property
+    def n_soft(self):
+        """Total number of realized soft cuts"""
+        return self.lib.s_chist.nsof
+
+    @property
+    def n_hard(self):
+        """Total number of realized hard cuts"""
+        return self.lib.s_chist.njet
+
 
 
 class SIBYLLRun(MCRun):
