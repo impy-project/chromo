@@ -25,3 +25,9 @@ test_hepmc_writer_*.dat
 impy/lib/*
 impy/tests/*.pkl
 .DS_Store
+# LLVM stuff
+*.stb
+*.ilm
+*.cmdx
+*.cmod
+*.o-*
