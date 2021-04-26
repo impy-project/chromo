@@ -34,7 +34,7 @@ dpmjet2.pyf: dpmjet_iface.f90 dpmjet253c.f dpmjet255.f Makefile
 #dpmjet255.f dpmjet256.f
 
 dpmjettest: $(DPMJET_O) $(RND) $(LOGO) dpmjet_iface.o
-	gfortran -O0 -g -o dpmjettest $(DPMJET_O) $(RND) $(LOGO) dpmjet_iface.o
+	$(FC) -O0 -g -o dpmjettest $(DPMJET_O) $(RND) $(LOGO) dpmjet_iface.o
 
 .f.o:
 	$(FC) -c $(OPT) $<

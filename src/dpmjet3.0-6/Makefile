@@ -47,7 +47,7 @@ install: dpmjet306$(LEXT)
 	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
 
 dpm3usr: sources$(PATHSEP)user3.0-6.o $(DPM_OBJS)
-	gfortran $(DPM_OBJS) -o dpm3usr
+	$(FC) $(DPM_OBJS) -o dpm3usr
 
 dpmjet306$(LEXT): dpmjet306.pyf $(DPM_OBJS) Makefile
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
