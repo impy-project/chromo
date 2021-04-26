@@ -7,13 +7,12 @@ from multiprocessing import Pool
 import tempfile
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
 sys.path.append(root_dir)
-sys.path.append(os.path.join(root_dir, '../DPMJET-III-gitlab'))
 sys.path.append(os.path.join(root_dir, '../../apps/pythia8240/lib'))
 
 from impy.definitions import *
 from impy.constants import *
 from impy.kinematics import EventKinematics
-from impy.common import impy_config, pdata
+from impy import impy_config, pdata
 from impy.util import info
 
 # AF: This is what the user interaction has to yield.
@@ -31,16 +30,17 @@ event_kinematics = EventKinematics(ecm=7000 * GeV,
 impy_config["user_frame"] = 'center-of-mass'
 
 gen_list = [
+    'SIBYLL23D', 
     'SIBYLL23C', 
     'SIBYLL23', 
     'SIBYLL21', 
     'DPMJETIII306', 
-    'DPMJETIII171', 
+    'DPMJETIII191', 
     'EPOSLHC',
 #     'PHOJET112',
 #     'PHOJET171', # Does not support nuclei
     'URQMD34',
-    'PYTHIA8',
+    # 'PYTHIA8',
     'QGSJET01C',
     'QGSJETII03',
     'QGSJETII04'

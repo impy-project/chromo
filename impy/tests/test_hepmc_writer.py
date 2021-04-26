@@ -11,7 +11,7 @@ sys.path.append(root_dir)
 from impy.definitions import *
 from impy.constants import *
 from impy.kinematics import EventKinematics
-from impy.common import impy_config, pdata
+from impy import impy_config, pdata
 from impy.util import info
 from impy.writer import HepMCWriter
 import pytest
@@ -24,7 +24,7 @@ impy_config["user_frame"] = 'laboratory'
 
 
 @pytest.mark.parametrize("model_tag", [
-    "SIBYLL23C",
+    "SIBYLL23D",
     # "DPMJETIII306",
     # "EPOSLHC"
     ])

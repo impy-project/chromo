@@ -5,12 +5,11 @@ import numpy as np
 root_dir = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(root_dir)
 sys.path.append(os.path.join(root_dir, '../DPMJET-III-gitlab'))
-print root_dir
 
 from impy.definitions import *
 from impy.constants import *
 from impy.kinematics import EventKinematics
-from impy.common import impy_config, pdata
+from impy import impy_config, pdata
 
 # AF: This is what the user interaction has to yield.
 # It is the typical expected configuration that one
