@@ -142,6 +142,12 @@ class EventKinematics(object):
                                     'nuclear properties for side 1.')
         assert p2pdg or nuc2_prop, ('Define either particle id or ' +
                                     'nuclear properties for side 2.')
+        assert nuc1_prop is None or (isinstance(nuc1_prop, tuple)
+                                     and len(nuc1_prop) == 2), (
+                                         'Define nuc1_prop as an (A,Z) tuple.')
+        assert nuc2_prop is None or (isinstance(nuc2_prop, tuple)
+                                     and len(nuc2_prop) == 2), (
+                                         'Define nuc2_prop as an (A,Z) tuple.')
 
         # Store average nucleon mass
         mnuc = 0.5 * (pdata.mass(2212) + pdata.mass(2112))
