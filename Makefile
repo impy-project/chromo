@@ -25,12 +25,28 @@ endef
 
 ifeq ($(CVendor),"GNU")
 	#  GNU
-	FC := $(or $(FC), gfortran)
+	FC = gfortran
+	# FC := $(or $(F77), gfortran)
+	# ifeq ($(FC),"f77")
+	# 	FC = gfortran
+	# endif
 	F2PY_C = gnu95
 	ifeq ($(OS),Windows_NT)
 		F2PY_CCONF = --compiler=mingw32 --fcompiler=$(F2PY_C)
 	else
 		F2PY_CCONF = --compiler=unix --fcompiler=$(F2PY_C)
+	endif
+
+	ifeq ($(OS),Windows_NT)
+		FOSFLAGS = 
+	else
+		UNAME_S := $(shell uname -s)
+# ifeq ($(UNAME_S),Linux)
+# 	FOSFLAGS += -D LINUX
+# endif
+		ifeq ($(UNAME_S),Darwin)
+			FOSFLAGS += -fallow-argument-mismatch
+		endif
 	endif
 else
 	#  Intel
@@ -47,16 +63,16 @@ ifeq ($(CVendor),"GNU")
 	ifeq ($(Config),"Debug")
 		# GNU Debug
 		OPT = -fPIC -Wall -fbounds-check -O0 -g \
-			  -ffpe-trap=invalid,zero,overflow -Wuninitialized -fallow-argument-mismatch
+			  -ffpe-trap=invalid,zero,overflow -Wuninitialized $(FOSFLAGS)
 		OPTF90 = -fPIC -Wall -fbounds-check -O0 -g \
 			  -ffpe-trap=invalid,zero,overflow -Wuninitialized \
-			  -fno-second-underscore -fallow-argument-mismatch
+			  -fno-second-underscore $(FOSFLAGS)
 		#OPT = -fPIC -Wall -Wno-uninitialized -Wno-unused-variable -O3 -g -ffpe-trap=invalid,zero,overflow
 	else
 		# GNU Release
 		#OPT = -O0 -fPIC
-		OPT = -O3 -Wno-uninitialized -fPIC -fallow-argument-mismatch
-		OPTF90 = -O3 -Wno-uninitialized -fPIC -fno-second-underscore -fallow-argument-mismatch
+		OPT = -O3 -Wno-uninitialized -fPIC -std=legacy $(FOSFLAGS)
+		OPTF90 = -O3 -Wno-uninitialized -fPIC -fno-second-underscore $(FOSFLAGS)
 	endif
 else
 	ifeq ($(Config),"Debug")
@@ -77,7 +93,7 @@ endif
 #   F2PY
 #
 #######################################################################
-PYTHON_EXE := $(or $(PYTHON_EXE), python3)
+PYTHON_EXE := $(or $(PYTHON_EXE), python)
 
 #general version for signature file extraction and linking
 ifeq ($(Config),"Debug")
