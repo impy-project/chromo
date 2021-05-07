@@ -19,11 +19,11 @@ all: install
 
 .PHONY: clean
 clean:
-	$(DEL_COMMAND) $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l
+	$(DEL_COMMAND) $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l *.cmdx *.cmod *.ilm *.stb
 
 .PHONY: distclean
 distclean: clean
-	rm -f *.pyf
+	rm -f *.pyf *.pyd *.so 
 
 .PHONY: install
 install: sib21$(LEXT) sib23$(LEXT) sib23c00$(LEXT) sib23c01$(LEXT) sib23c02$(LEXT) sib23c03$(LEXT) sib23d$(LEXT)

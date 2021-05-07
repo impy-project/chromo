@@ -29,7 +29,7 @@ all: install
 
 .PHONY: clean
 clean:
-	$(DEL_COMMAND) $(TARGET) *.o sources$(PATHSEP)*.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l *.mod $(COPY_DUMP)
+	$(DEL_COMMAND) $(TARGET) *.o sources$(PATHSEP)*.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l *.mod $(COPY_DUMP) *.cmdx *.cmod *.ilm *.stb *.pyd
 
 .PHONY: distclean
 distclean: clean

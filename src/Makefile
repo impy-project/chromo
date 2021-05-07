@@ -35,7 +35,7 @@ $(SUBDIRS): $(RND) $(LOGO)
 
 .PHONY: clean
 clean:
-	$(DEL_COMMAND) $(TARGET) *.o *.prj *.chk core *$(LEXT) $(COPY_DUMP)
+	$(DEL_COMMAND) $(TARGET) *.o *.prj *.chk core *$(LEXT) $(COPY_DUMP) *.cmdx *.cmod *.ilm *.stb *.pyd
 	$(foreach d, $(SUBDIRS), $(MAKE) --directory=$(d) clean${\n})
 
 .PHONY: distclean

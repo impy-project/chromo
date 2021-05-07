@@ -8,7 +8,7 @@ all:  install
 
 .PHONY: clean
 clean:
-	$(DEL_COMMAND) $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l
+	$(DEL_COMMAND) $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l *.cmdx *.cmod *.ilm *.stb *.pyd
 
 .PHONY: distclean
 distclean: clean
