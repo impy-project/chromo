@@ -117,7 +117,12 @@ ifeq ($(OS),Windows_NT)
   OPT:=$(patsubst %-fPIC,%,$(OPT))
   OPTF90:=$(patsubst %-fPIC,%,$(OPTF90))
   # Shared library suffix
-  LEXT?=$(shell $(PYTHON_EXE) -c "import sysconfig; print('.cp' + sysconfig.get_config_var('py_version_nodot') + '-' + sysconfig.get_platform().replace('-','_')"))$(EXT_SUFFIX)
+  PY_VERSION = $(shell $(PYTHON_EXE) -c "import sysconfig; print(sysconfig.get_config_var('py_version_nodot'))")
+  ifeq ($(PY_VERSION),39)
+    LEXT?=$(EXT_SUFFIX)
+  else
+    LEXT?=$(shell $(PYTHON_EXE) -c "import sysconfig; print('.cp' + sysconfig.get_config_var('py_version_nodot') + '-' + sysconfig.get_platform().replace('-','_')"))$(EXT_SUFFIX)
+  endif
 else
   DEL_COMMAND = rm -rf
   MKDIR_COMMAND = mkdir -p
