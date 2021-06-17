@@ -62,6 +62,10 @@ interaction_model_nt_init = [
         dpmjetIII.DpmjetIIIRun, dpmjetIII.DpmjetIIIEvent, 'center-of-mass'
     ],
     [
+        'DPMJETIII192', 'DPMJET-III', '19.2', -1, 'dpmjetIII191',
+        dpmjetIII.DpmjetIIIRun, dpmjetIII.DpmjetIIIEvent, 'center-of-mass'
+    ],
+    [
         'DPMJETIII306', 'DPMJET-III', '3.0-6', -1, 'dpmjet306',
         dpmjetIII.DpmjetIIIRun, dpmjetIII.DpmjetIIIEvent, 'center-of-mass'
     ],

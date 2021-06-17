@@ -20,7 +20,7 @@ class EPOSEvent(MCEvent):
         # Save selector for implementation of on-demand properties
         px, py, pz, en, m = evt.phep
         vx, vy, vz, vt = evt.vhep
-
+        
         MCEvent.__init__(self,
                          lib=lib,
                          event_kinematics=event_kinematics,

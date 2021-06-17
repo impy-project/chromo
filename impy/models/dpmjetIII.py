@@ -19,7 +19,6 @@ class DpmjetIIIEvent(MCEvent):
         # Save selector for implementation of on-demand properties
         px, py, pz, en, m = evt.phkk
         vx, vy, vz, vt = evt.vhkk
-
         MCEvent.__init__(self,
                          lib=lib,
                          event_kinematics=event_kinematics,

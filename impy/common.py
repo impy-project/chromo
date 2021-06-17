@@ -60,7 +60,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         self.event_frame = event_frame
 
         self.nevent = nevent
-        self.npart = npart
+        self._npart = self.npart = npart
         self.p_ids = p_ids
         self.status = status
         self.px = px
@@ -105,6 +105,10 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
                 setattr(self, var, getattr(self, var)[:,self.selection])
             else:
                 setattr(self, var, getattr(self, var)[self.selection])
+        
+        # Update the exposed number of particles to the length of slice
+        self.npart = len(self.p_ids)
+        
         self._is_filtered = True
 
     @abstractmethod
@@ -202,6 +206,15 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         """Feynman x_F"""
         return 2. * self.pz / self.kin.ecm
 
+    @property
+    def theta(self):
+        """arctan(pt/pz) in rad"""
+        return np.arctan2(self.pt , self.pz)
+
+    @property
+    def phi(self):
+        """arctan(py/px) in rad"""
+        return np.arctan2(self.py , self.px)
     
     @property
     def elab(self):
