@@ -36,7 +36,8 @@ C-----------------------------------------------------------------------
       IMPLICIT NONE
 
       DOUBLE PRECISION P
-      INTEGER NP,LLIST,NP_max
+      INTEGER NP,LLIST,NP_max, NEVSIB
+      DATA NEVSIB /0/
       PARAMETER (NP_max=8000)
       COMMON /S_PLIST/ P(NP_max,5), LLIST(NP_max), NP
       INTEGER ICHP,ISTR,IBAR
@@ -55,8 +56,11 @@ C-----------------------------------------------------------------------
       INTEGER I, ISIB_PID2PDG
       EXTERNAL ISIB_PID2PDG
 
-      NHEP = NP
+      SAVE NEVSIB
 
+      NHEP = NP
+      NEVHEP = NEVSIB
+      
       DO I=1,NP
          IF (ABS(LLIST(I)).LT.10000) THEN
             ISTHEP(I) = 1
@@ -72,6 +76,8 @@ C-----------------------------------------------------------------------
          PHEP(4,I) = P(I,4)
          PHEP(5,I) = P(I,5)
       END DO
+
+      NEVSIB = NEVSIB + 1
       END
       
       DOUBLE PRECISION FUNCTION GASDEV(Idum)
