@@ -2,3 +2,5 @@ src/qgsjet/data/qgsdat-II-04 filter=lfs diff=lfs merge=lfs -text
 src/qgsjet/data/qgsdat-II-03 filter=lfs diff=lfs merge=lfs -text
 src/urqmd-3.4/sources/eosfiles/chiraleos.dat filter=lfs diff=lfs merge=lfs -text
 src/urqmd-3.4/sources/eosfiles/hadgas_eos.dat filter=lfs diff=lfs merge=lfs -text
+impy/iamdata/ filter=lfs diff=lfs merge=lfs -text
+impy/iamdata/* filter=lfs diff=lfs merge=lfs -text
