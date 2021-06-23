@@ -50,7 +50,7 @@ class PhojetEvent(MCEvent):
 
     @property
     def charge(self):
-        return self.lib.poevt2.icolor[0, self.selection] / 3
+        return self.lib.poevt2.icolor[0, self.selection] // 3
 
     def _gen_cut_info(self):
         """Init variables tracking the number of soft and hard cuts"""
@@ -109,6 +109,13 @@ class PhojetEvent(MCEvent):
 
 
 class PHOJETRun(MCRun):
+    """Implements all abstract attributes of MCRun for the
+    PHOJET series of event generators.
+    
+    PHOJET is part of DPMJET and is run via the same fortran library.
+    The results for pp and hadron-p `should` be the same.
+    """
+
     def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
@@ -138,22 +145,12 @@ class PHOJETRun(MCRun):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
         info(5, 'Setting event kinematics')
-        self._curr_event_kin = event_kinematics
 
+        self._curr_event_kin = event_kinematics
         k = event_kinematics
 
         if k.p1_is_nucleus or k.p2_is_nucleus:
             raise Exception('PHOJET does not support nuclei.')
-
-        # self.p1_type, self.p2_type, self.ecm, self.pcm = \
-        #                     k.p1pdg, k.p2pdg, k.ecm, k.pcm
-
-        # TODO: Some functionality was around to "override projectile"?!
-        # if self.def_settings.override_projectile != None:
-        #     print 'Overriding projectile', self.p1_type, self.def_settings.override_projectile
-        #     self.lib.pho_setpar(1, self.def_settings.override_projectile, 0,
-        #                         0.0)
-        # else:
 
         self.lib.pho_setpar(1, k.p1pdg, 0, 0.0)
         self.lib.pho_setpar(2, k.p2pdg, 0, 0.0)
@@ -181,11 +178,13 @@ class PHOJETRun(MCRun):
 
         self.lib.pydat1.mstu[10] = lun
 
+        # Save lun for initialization of PHOJET
+        self._lun = lun
+
     def init_generator(self, event_kinematics, seed='random', logfname=None):
         from impy.constants import c
         from random import randint
         from os.path import join
-        from impy import root_dir
 
         self._abort_if_already_initialized()
 
@@ -193,10 +192,7 @@ class PHOJETRun(MCRun):
             seed = randint(1000000, 10000000)
         else:
             seed = int(seed)
-        info(5, 'Using seed:', seed)
-
-        # Define where output will go
-        self.attach_log(fname=logfname)
+        info(3, 'Using seed:', seed)
 
         # Detect what kind of PHOJET interface is attached. If PHOJET
         # is run through DPMJET, initial init needs -2 else -1
@@ -206,14 +202,13 @@ class PHOJETRun(MCRun):
         # Set the dpmjpar.dat file
         if hasattr(self.lib, 'pomdls') and hasattr(self.lib.pomdls, 'parfn'):
             pfile = pho_conf['param_file'][self.version]
-            info(10, 'PHOJET parameter file at', pfile)
+            info(3, 'PHOJET parameter file at', pfile)
             self.lib.pomdls.parfn = fortran_chars(self.lib.pomdls.parfn, pfile)
 
         # Set the data directory for the other files
         if hasattr(self.lib, 'poinou') and hasattr(self.lib.poinou, 'datdir'):
-            # pfile = str(join(root_dir, pho_conf['dat_dir'][self.version],
-            #                  '')) + '/'
-            info(10, 'PHOJET data dir is at', pfile)
+            pfile = pho_conf['dat_dir'][self.version]
+            info(3, 'PHOJET data dir is at', pfile)
             self.lib.poinou.datdir = fortran_chars(self.lib.poinou.datdir, pfile)
             self.lib.poinou.lendir = len(pfile)
         
@@ -221,9 +216,10 @@ class PHOJETRun(MCRun):
         for i in range(self.lib.podebg.ideb.size):
             self.lib.podebg.ideb[i] = pho_conf['debug_level']
 
-        self.attach_log()
+        self.attach_log(fname=logfname)
+
         #Initialize PHOJET's parameters
-        if self.lib.pho_init(init_flag, lun):
+        if self.lib.pho_init(init_flag, self._lun):
             raise Exception('PHOJET unable to initialize or set LUN')
 
         process_switch = self.lib.poprcs.ipron

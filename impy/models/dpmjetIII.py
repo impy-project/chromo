@@ -193,20 +193,20 @@ class DpmjetIIIRun(MCRun):
         # Set the dpmjpar.dat file
         if hasattr(self.lib, 'pomdls') and hasattr(self.lib.pomdls, 'parfn'):
             pfile = dpm_conf['param_file'][self.version]
-            info(10, 'DPMJET parameter file at', pfile)
+            info(3, 'DPMJET parameter file at', pfile)
             self.lib.pomdls.parfn = fortran_chars(self.lib.pomdls.parfn, pfile)
 
         # Set the data directory for the other files
         if hasattr(self.lib, 'poinou') and hasattr(self.lib.poinou, 'datdir'):
             pfile = dpm_conf['dat_dir'][self.version]
-            info(10, 'DPMJET data dir is at', pfile)
+            info(3, 'DPMJET data dir is at', pfile)
             self.lib.poinou.datdir = fortran_chars(self.lib.poinou.datdir,
                                                    pfile)
             self.lib.poinou.lendir = len(pfile)
 
         if hasattr(self.lib, 'dtimpy'):
             evap_file = dpm_conf['evap_file'][self.version]
-            info(10, 'DPMJET evap file at', evap_file)
+            info(3, 'DPMJET evap file at', evap_file)
             self.lib.dtimpy.fnevap = fortran_chars(self.lib.dtimpy.fnevap,
                                                    evap_file)
 
