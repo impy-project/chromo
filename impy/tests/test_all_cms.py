@@ -14,13 +14,8 @@ from impy.kinematics import EventKinematics
 from impy import impy_config, pdata
 from impy.util import info
 
-# AF: This is what the user interaction has to yield.
-# It is the typical expected configuration that one
-# wants to run (read pp-mode at energies not exceeding
-# 7 TeV). If you want cosmic ray energies, this should
-# be rather p-N at 10 EeV and lab frame (not yet defined).
-
 gen_list = [
+    'SIBYLL23D',
     'SIBYLL23C',
     'SIBYLL23C01',
     'SIBYLL23C00', 
@@ -73,7 +68,7 @@ if __name__ in ['__main__', '__test__']:
     freeze_support()
     pool = Pool(processes=32)
     result = [pool.apply_async(run_generator, (gen,)) for gen in gen_list]
-    result = [res.get(timeout=100000) for res in result]
+    result = [res.get(timeout=1000) for res in result]
 
     failed = []
     passed = []

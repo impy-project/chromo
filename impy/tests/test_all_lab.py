@@ -3,11 +3,8 @@ from __future__ import print_function
 import sys
 import os
 import numpy as np
-from multiprocessing import Pool
+from multiprocessing import Pool, freeze_support
 import tempfile
-root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
-sys.path.append(root_dir)
-sys.path.append(os.path.join(root_dir, '../../apps/pythia8240/lib'))
 
 from impy.definitions import *
 from impy.constants import *
@@ -37,8 +34,8 @@ gen_list = [
     'DPMJETIII306', 
     'DPMJETIII191', 
     'EPOSLHC',
-#     'PHOJET112',
-#     'PHOJET171', # Does not support nuclei
+    'PHOJET112',
+    'PHOJET191',
     'URQMD34',
     # 'PYTHIA8',
     'QGSJET01C',
@@ -74,33 +71,36 @@ def run_generator(gen,*args):
         return True, gen, log, hist_p, hist_pi
     except:
         return False, gen, log, hist_p, hist_pi
-        
-pool = Pool(processes=8)
-result = [pool.apply_async(run_generator, (gen,)) for gen in gen_list]
-result = [res.get(timeout=100000) for res in result]
 
-logs = {}
-xlab_protons = {}
-xlab_piplus = {}
-failed = []
-passed = []
 
-for r, gen, log, hist_p, hist_pi in result:
-    if r:
-        passed.append(gen)
-        xlab_protons[gen] = hist_p
-        xlab_piplus[gen] = hist_pi
-    else:
-        failed.append(gen)
-        
-    with open(log) as f:
-            logs[gen] = f.read()
-        
+if __name__ in ['__main__', '__test__']:
+    freeze_support()
+    pool = Pool(processes=32)
+    result = [pool.apply_async(run_generator, (gen,)) for gen in gen_list]
+    result = [res.get(timeout=100000) for res in result]
 
-info(0, 'Test results for 158 GeV pC collisions in lab frame:\n')
-info(0, 'Passed:', '\n', '\n '.join(passed))
-info(0, '\nFailed:', '\n', '\n '.join(failed))
+    logs = {}
+    xlab_protons = {}
+    xlab_piplus = {}
+    failed = []
+    passed = []
 
-import pickle
-pickle.dump((xlab_bins, xlab_protons, xlab_piplus, logs),
-            open(os.path.splitext(__file__)[0] + '.pkl','wb'), protocol=-1)
+    for r, gen, log, hist_p, hist_pi in result:
+        if r:
+            passed.append(gen)
+            xlab_protons[gen] = hist_p
+            xlab_piplus[gen] = hist_pi
+        else:
+            failed.append(gen)
+            
+        with open(log) as f:
+                logs[gen] = f.read()
+            
+
+    info(0, 'Test results for 158 GeV pC collisions in lab frame:\n')
+    info(0, 'Passed:', '\n', '\n '.join(passed))
+    info(0, '\nFailed:', '\n', '\n '.join(failed))
+
+    import pickle
+    pickle.dump((xlab_bins, xlab_protons, xlab_piplus, logs),
+                open(os.path.splitext(__file__)[0] + '.pkl','wb'), protocol=-1)
