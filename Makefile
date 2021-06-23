@@ -141,6 +141,8 @@ ifeq ($(OS),Windows_NT)
   MKDIR_COMMAND = if not exist $(LIB_DIR) mkdir
 endif
 
+CLEANEXT = *.prj *.chk core *.dSYM *$(LEXT) *.f2l $(COPY_DUMP) *.cmdx *.cmod *.ilm *.stb *.pyd *.so
+
 #######################################################################
 #
 #   Targets

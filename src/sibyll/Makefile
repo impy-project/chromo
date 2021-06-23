@@ -19,7 +19,7 @@ all: install
 
 .PHONY: clean
 clean:
-	$(DEL_COMMAND) $(TARGET) *.o *.prj *.chk core *$(LEXT) *.dSYM *.f2l *.cmdx *.cmod *.ilm *.stb
+	$(DEL_COMMAND) $(TARGET) $(CLEANEXT)
 
 .PHONY: distclean
 distclean: clean

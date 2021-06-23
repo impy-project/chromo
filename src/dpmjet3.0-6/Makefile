@@ -36,7 +36,7 @@ all: install
 
 .PHONY: clean
 clean:
-	$(DEL_COMMAND) sources$(PATHSEP)*.o *.prj *.chk core *.dSYM *$(LEXT) *.f2l *.cmdx *.cmod *.ilm *.stb *.pyd
+	$(DEL_COMMAND) sources$(PATHSEP)*.o $(CLEANEXT)
 
 .PHONY: distclean
 distclean: clean
