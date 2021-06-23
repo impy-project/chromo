@@ -307,7 +307,7 @@ class Settings(six.with_metaclass(ABCMeta)):
 #=========================================================================
 class MCRun(six.with_metaclass(ABCMeta)):
     #: Prevent creating multiple classes within same python scope
-    _is_initialized = False
+    _is_initialized = []
 
     def __init__(self, interaction_model_def, settings_dict=dict(), **kwargs):
         import importlib
@@ -317,6 +317,7 @@ class MCRun(six.with_metaclass(ABCMeta)):
         self.lib = importlib.import_module(interaction_model_def.library_name)
 
         # Save definitions from namedtuple into attributes
+        self.library_name = interaction_model_def.library_name
         self._event_class = interaction_model_def.EventClass
         self._name = interaction_model_def.name
         self._version = interaction_model_def.version
@@ -325,9 +326,6 @@ class MCRun(six.with_metaclass(ABCMeta)):
             self._label = self._name + " " + self._version
         else:
             self._label = kwargs['label']
-
-        # Flag to control if initialization has been already executed
-        self._is_initialized = False
 
         # Currently initialized event kinematics
         self._curr_event_kin = None
@@ -475,9 +473,14 @@ class MCRun(six.with_metaclass(ABCMeta)):
         once. This method should be called in the beginning of each
         init_generator() implementation.
         """
+        message = """
+        Don't run initialization multiple times for the same generator. This
+        is a limitation of fortran libraries since all symbols are by default
+        in global scope. Multiple instances can be created in mupliple threads
+        or "python executables" using Pool in multiprocessing etc."""
 
-        assert not self._is_initialized
-        self._is_initialized = True
+        assert self.library_name not in self._is_initialized, message
+        self._is_initialized.append(self.library_name)
 
     def _attach_fortran_logfile(self, fname):
         """Chooses a random LUN between 20 - 100 and returns a FORTRAN
