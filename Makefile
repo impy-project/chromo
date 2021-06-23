@@ -170,6 +170,7 @@ clean:
 distclean: clean
 	$(DEL_COMMAND) *$(LEXT) *.pyf *.dSYM lib$(PATHSEP)* $(COPY_DUMP)
 	$(MAKE) --directory=src distclean
+	rm impy/lib/*
 
 %.o: %.f
 	$(FC) -c $(OPT) -cpp $<
