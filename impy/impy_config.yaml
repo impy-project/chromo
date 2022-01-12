@@ -12,7 +12,7 @@ pdata_cachefile : 'impy_pdata_cache.cch'
 retry_on_rejection : True
 
 # If to write output to a logfile or 'stdout'
-output_log : stdout
+output_log : logfile
 
 # User frame (in what frame to output)
 user_frame : 'center-of-mass'
