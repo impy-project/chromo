@@ -236,8 +236,8 @@ class EventKinematics(object):
         s = self.ecm**2
         self.s = s
         self.pcm = np.sqrt(s**2 - 2 * (s *
-                                       (pmass1 + pmass2) + pmass1 * pmass2) +
-                           pmass1**2 + pmass2**2) / (2 * self.ecm)
+                                       (pmass1 + pmass2)**2 + (pmass1 * pmass2)**2) +
+                           pmass1**4 + pmass2**4) / (2 * self.ecm)
         self.gamma_cm = (self.elab + pmass2) / self.ecm
         self.betagamma_z_cm = self.plab / self.ecm
 
