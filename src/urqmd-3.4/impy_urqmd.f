@@ -5,7 +5,7 @@ C
 C-----------------------------------------------------------------------
       IMPLICIT NONE
 
-C The common blocks are copied from coms.f in URQMD       
+C The common blocks are copied from coms.f in URQMD
       integer nmax
       parameter (nmax = 40000)
 
@@ -26,18 +26,18 @@ C The common blocks are copied from coms.f in URQMD
       real*8  time,  acttime, bdist, ebeam, bimp,bmin,ecm
       common /rsys/ time,acttime,bdist,bimp,bmin,ebeam,ecm
 
-      real*8 
+      real*8
      +     r0(nmax), rx(nmax), ry(nmax), rz(nmax),
      +     p0(nmax), px(nmax), py(nmax), pz(nmax),
-     +     fmass(nmax), rww(nmax), 
+     +     fmass(nmax), rww(nmax),
      +     dectime(nmax), tform(nmax), xtotfac(nmax)
       common /coor/ r0, rx, ry, rz, p0, px, py, pz, fmass, rww, dectime
-      
+
       integer nstable, maxstables
       parameter(maxstables=20)
       integer stabvec(maxstables)
       common /stables/nstable,stabvec
-      
+
       INTEGER NEVHEP,NMXHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
       PARAMETER (NMXHEP=nmax)
@@ -46,7 +46,7 @@ C The common blocks are copied from coms.f in URQMD
      &                VHEP(4,NMXHEP)
       INTEGER ICHG
       COMMON /UQCHG/  ICHG(NMXHEP)
-      
+
       INTEGER I, PDGID, IPDG, ISTIDX
 C For K0S/L replacement
       EXTERNAL SIMRND2
@@ -64,7 +64,7 @@ c UrQMD doesn't know K0S or L and produces K0(bar) by default.
 c We will replace those with K0S/L based on a 50/50 rule.
 c Random numbers are sourced from second sequence
 c to avoid interference with the event generator's sequence
-            
+
          IF (ABS(IDHEP(I)).EQ.311) THEN
             IDHEP(I) = K0SEL(INT(2.D0*SIMRND2()))
          END IF
@@ -78,7 +78,7 @@ c to avoid interference with the event generator's sequence
          VHEP(2,I) = ry(I)
          VHEP(3,I) = rz(I)
          VHEP(4,I) = r0(I)
-         JMOHEP(1,I) = origin(I)
+         JMOHEP(1,I) = mod(origin(I), 100)
          ICHG(I) = charge(I)
       END DO
 
