@@ -87,7 +87,7 @@ pythia8:
     ]
 
 urqmd:
-    output_frame : ['center-of-mass']
+    output_frame : ['laboratory']
     sqs_min_GeV  : 0.
     has_hepevt   : True
     has_boosts   : False
