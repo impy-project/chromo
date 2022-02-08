@@ -336,7 +336,7 @@ cc
       CTOStrng(47)=' flag for equation of state for hydro'
       CTOption(48)=0
       CTOStrng(48)=' propagate only N timesteps of hydro evolution'
-      CTOption(49)=1
+      CTOption(49)=0
       CTOStrng(49)=' propagate also spectators with hydrodynamics'
       CTOption(50)=0
       CTOStrng(50)=' (additional) f14/f19 output after hydro phase'
@@ -354,7 +354,7 @@ cc
       CTOStrng(57)=' legacy event header w/ missing cto and ctp'
       CTOPtion(58)=0
       CTOStrng(58)=' standard event header in collision file (file15)'
-      CTOption(59)=0
+      CTOption(59)=1
       CTOStrng(59)=' activate Baryon-Baryon strangeness exchange'
 
 C  INITIALIZE ARRAYS FOR SPECIAL PRO/TAR COMBINATIONS
