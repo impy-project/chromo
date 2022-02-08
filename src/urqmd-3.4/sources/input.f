@@ -4,9 +4,9 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 c
 c     Revision : 1.0
 c
-c     This subroutine reads the UQMD input file (unit=9) 
+c     This subroutine reads the UQMD input file (unit=9)
 C
-c input : for ({\\tt io=0} input-file will be processed, else default values assumed 
+c input : for ({\\tt io=0} input-file will be processed, else default values assumed
 c output: information in common-block coms.f
 c
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -37,20 +37,20 @@ c SEH: useless apparently, can be removed in the python
 
       save
 
-      valint(1)=0.d0    
+      valint(1)=0.d0
 
 c SEH: bret is called after setting the CTOs (return if bret)
       bret=io.ne.0
       goto 108
 
 c SEH: useless too
-      entry inpini  
+      entry inpini
 c  called by some test programs
 
 c SEH: bret is called after setting the CTOs (return if bret)
       bret=.true.
  108  continue
-  
+
 c initialize counters
 c SEH: to be removed, used to read input file
       line=0
@@ -62,7 +62,7 @@ c  Line 135688 onwards from corsika
       solid=0
       mbox=0
 
-c the following flags check, wether all necessary input is given 
+c the following flags check, wether all necessary input is given
 c projectile
 c SEH: pro, same principle as beam
       proflg=0
@@ -114,41 +114,41 @@ c skip conditions on unit 14, 15, 16 & 18
       nstable = 0
 
 c default settings for CTParam and CTOption cccccccccccccccccccccccccccccc
-      CTParam(1)=1.d0  
+      CTParam(1)=1.d0
       CTPStrg(1)='scaling factor for decay-width'
-      CTParam(2)=0.52d0 
+      CTParam(2)=0.52d0
       CTPStrg(2)='used for minimal stringmass & el/inel cut in makestr'
-      CTParam(3)=2d0 
-      CTPStrg(3)='velocity exponent for modified AQM'  
-      CTParam(4)=0.3d0 
+      CTParam(3)=2d0
+      CTPStrg(3)='velocity exponent for modified AQM'
+      CTParam(4)=0.3d0
       CTPStrg(4)='transverse pion mass, used in make22 & strexct'
-      CTParam(5)=0d0 
+      CTParam(5)=0d0
       CTPStrg(5)='probabil. for quark rearrangement in cluster'
-      CTParam(6)=0.37d0    
+      CTParam(6)=0.37d0
       CTPstrg(6)='strangeness probability'
-      CTParam(7)=0.d0 
+      CTParam(7)=0.d0
       CTPStrg(7)='charm probability (not yet implemented in UQMD)'
-      CTParam(8)=0.093d0 
+      CTParam(8)=0.093d0
       CTPStrg(8)='probability to create a diquark'
-      CTParam(9)=0.35d0 
+      CTParam(9)=0.35d0
       CTPStrg(9)='kinetic energy cut off for last string break'
-      CTParam(10)=0.25d0 
+      CTParam(10)=0.25d0
       CTPStrg(10)='min. kinetic energy for hadron in string'
-      CTParam(11)=0.d0 
+      CTParam(11)=0.d0
       CTPStrg(11)='fraction of non groundstate resonances'
-      CTParam(12)=.5d0  
+      CTParam(12)=.5d0
       CTPStrg(12)='probability for rho 770 in String'
-      CTParam(13)=.27d0 
+      CTParam(13)=.27d0
       CTPStrg(13)='probability for rho 1450 (rest->rho1700)'
-      CTParam(14)=.49d0 
+      CTParam(14)=.49d0
       CTPStrg(14)='probability for omega 782'
-      CTParam(15)=.27d0 
+      CTParam(15)=.27d0
       CTPStrg(15)='probability for omega 1420(rest->om1600)'
-      CTParam(16)=1.0d0 
+      CTParam(16)=1.0d0
       CTPStrg(16)='mass cut betw. rho770 and rho 1450'
-      CTParam(17)=1.6d0 
+      CTParam(17)=1.6d0
       CTPSTRG(17)='mass cut betw. rho1450 and rho1700'
-      CTParam(18)=.85d0 
+      CTParam(18)=.85d0
       CTPStrg(18)='mass cut betw. om 782 and om1420'
       CTParam(19)=1.55d0
       CTPStrg(19)='mass cut betw. om1420 and om1600'
@@ -156,19 +156,19 @@ c default settings for CTParam and CTOption cccccccccccccccccccccccccccccc
       CTPStrg(20)=' distance for second projectile'
       CTParam(21)=0.0d0
       CTPStrg(21)=' deformation parameter'
-      CTParam(25)=.9d0 
+      CTParam(25)=.9d0
       CTPStrg(25)=' probability for diquark not to break'
-      CTParam(26)=50d0 
+      CTParam(26)=50d0
       CTPStrg(26)=' maximum trials to get string masses'
-      CTParam(27)=1d0 
+      CTParam(27)=1d0
       CTPStrg(27)=' scaling factor for xmin in string excitation'
-      CTParam(28)=1d0 
+      CTParam(28)=1d0
       CTPStrg(28)=' scaling factor for transverse fermi motion'
-      CTParam(29)=1d0 
+      CTParam(29)=1d0
       CTPStrg(29)=' double strange di-quark suppression factor '
-      CTParam(30)=1.5 
+      CTParam(30)=1.5
       CTPStrg(30)=' radius offset for initialisation  '
-      CTParam(31)=1.6d0 
+      CTParam(31)=1.6d0
       CTPStrg(31)=' sigma of gaussian for tranverse momentum tranfer '
       CTParam(32)=0d0
       CTPStrg(32)=' alpha-1 for valence quark distribution  '
@@ -206,22 +206,22 @@ c default settings for CTParam and CTOption cccccccccccccccccccccccccccccc
       CTPStrg(48)=' field feynman fragmentation funct. param. b'
       CTParam(49)=0.5
       CTPStrg(49)='additional single strange diquark suppression factor'
-      CTParam(50)=1d0 
+      CTParam(50)=1d0
       CTPStrg(50)=' enhancement factor for 0- mesons'
-      CTParam(51)=1d0 
+      CTParam(51)=1d0
       CTPStrg(51)=' enhancement factor for 1- mesons'
       CTParam(52)=1d0
       CTPStrg(52)=' enhancement factor for 0+ mesons'
       CTParam(53)=1d0
-      CTPStrg(53)=' enhancement factor for 1+ mesons'   
-      CTParam(54)=1d0 
-      CTPStrg(54)=' enhancement factor for 2+ mesons'   
+      CTPStrg(53)=' enhancement factor for 1+ mesons'
+      CTParam(54)=1d0
+      CTPStrg(54)=' enhancement factor for 2+ mesons'
       CTParam(55)=1d0
-      CTPStrg(55)=' enhancement factor for 1+-mesons'   
+      CTPStrg(55)=' enhancement factor for 1+-mesons'
       CTParam(56)=1d0
-      CTPStrg(56)=' enhancement factor for 1-*mesons'   
+      CTPStrg(56)=' enhancement factor for 1-*mesons'
       CTParam(57)=1d0
-      CTPStrg(57)=' enhancement factor for 1-*mesons'    
+      CTPStrg(57)=' enhancement factor for 1-*mesons'
       CTParam(58)=1.d0
       CTPStrg(58)=' scaling factor for DP time-delay'
 c SEH: need to add these parameters wrt to corsika
@@ -258,43 +258,43 @@ cbb Note: If you add more CTParams, please make sure that all parameters
 c   are included in the standard event header output in output.f.
 c   Currently, 72 CTPs are written.
 cc
-      CTOption(1)=0  
+      CTOption(1)=0
       CTOStrng(1)=' resonance widths are mass dependent '
       CTOption(2)=0
       CTOStrng(2)=' conservation of scattering plane'
-      CTOption(3)=0  
+      CTOption(3)=0
       CTOStrng(3)=' use modified detailed balance'
-      CTOption(4)=0  
+      CTOption(4)=0
       CTOStrng(4)=' no initial conf. output '
-      CTOption(5)=0  
+      CTOption(5)=0
       CTOStrng(5)=' fixed impact parameter'
-      CTOption(6)=0  
+      CTOption(6)=0
       CTOStrng(6)=' no first collisions inside proj/target'
-      CTOption(7)=0  
+      CTOption(7)=0
       CTOStrng(7)=' elastic cross section enabled (<>0:total=inelast)'
-      CTOption(8)=0  
+      CTOption(8)=0
       CTOStrng(8)=' extrapolate branching ratios '
-      CToption(9)=0  
-      CTOStrng(9)=' use tabulated pp cross sections ' 
-      CTOption(10)=0 
+      CToption(9)=0
+      CTOStrng(9)=' use tabulated pp cross sections '
+      CTOption(10)=0
       CTOStrng(10)=' enable Pauli Blocker'
-      CTOption(11)=0 
-      CTOStrng(11)=' mass reduction for cascade initialisation' 
-      CTOption(12)=0 
+      CTOption(11)=0
+      CTOStrng(11)=' mass reduction for cascade initialisation'
+      CTOption(12)=0
       CTOStrng(12)=' string condition =0 (.ne.0 no strings)'
-      CTOption(13)=0 
+      CTOption(13)=0
       CTOStrng(13)=' enhanced file16 output '
-      CTOption(14)=0 
+      CTOption(14)=0
       CTOStrng(14)=' cos(the) is distributet between -1..1 '
-      CTOption(15)=0 
+      CTOption(15)=0
       CTOStrng(15)=' allow mm&mb-scattering'
-      CTOption(16)=0 
+      CTOption(16)=0
       CTOStrng(16)=' propagate without collisions'
-      CTOption(17)=0 
+      CTOption(17)=0
       CTOStrng(17)=' colload after every timestep '
-      CTOption(18)=0 
+      CTOption(18)=0
       CTOStrng(18)=' final decay of unstable particles'
-      CTOption(19)=0  
+      CTOption(19)=0
       CTOStrng(19)=' allow bbar annihilaion'
       CTOption(20)=0
       CTOStrng(20)=' dont generate e+e- instead of bbar'
@@ -310,7 +310,7 @@ cc
       CTOStrng(25)=' phase space corrections for resonance mass'
       CTOption(26)=0
       CTOStrng(26)=' use z -> 1-z for diquark-pairs'
-      CTOption(27)=0 
+      CTOption(27)=1
       CTOStrng(27)=' reference frame (1=target, 2=projectile, else=cms)'
       CTOption(28)=0
       CTOStrng(28)=' propagate spectators also '
@@ -366,7 +366,7 @@ c SEH: parameters updated wrt to corsika
       CTOption(54)=0
       CTOStrng(54)=' OSCAR-Output during hydro evolution'
       CTOPtion(55)=0
-      CTOStrng(55)=' f19 output adjusted for visualization'  
+      CTOStrng(55)=' f19 output adjusted for visualization'
       CTOPtion(56)=0
       CTOStrng(56)=' f15 output has unique particle id'
       CTOPtion(57)=1
@@ -460,7 +460,7 @@ C evolution gracefully.
       endif
 c
  99   format(1A3,1A77)
-    
+
 
 c stop input if old event is read in
       if(CTOption(40).ne.0) return
@@ -469,9 +469,9 @@ c stop input if old event is read in
 c this entry is used to read cto,ctp and tim statements
 c in case of old event readin
       entry getparams
-      
+
       rewind(UNIT=9)
- 
+
 c read input lines
  1    continue
       line=line+1
@@ -531,7 +531,7 @@ c TAR: define special target
          endif
 c box: define a box with a length in fm
 c       parameters: 2: energie
-c                   3: 1 =solid         
+c                   3: 1 =solid
 c                   4: 1 = walls
         elseif(flag.eq.'box') then
           ! don't increase boxflag if we read old data.
@@ -540,7 +540,7 @@ c                   4: 1 = walls
           endif
           read(inputstr,fmt=*,err=88,end=88) lbox,edens,solid,para
            if (edens.gt.0.d0) edensflag=1
-                
+
            if (lbox.le.0) then
               write(6,*) 'Error, length<=0'
               stop
@@ -548,7 +548,7 @@ c                   4: 1 = walls
            lboxhalbe=lbox/2.d0
            lboxd=lbox*2.d0
 
-           if (edens.lt.0.d0) then 
+           if (edens.lt.0.d0) then
               write(6,*) 'Error, a negativ energy '
               stop
            endif
@@ -582,19 +582,19 @@ cbb: Shame on you.
      &                   ' in boxinc.f .'
              stop 137
            endif
-           read(inputstr,fmt=*,err=88,end=88) 
+           read(inputstr,fmt=*,err=88,end=88)
      &     bptityp(mbox),bptiso3(mbox),bptpart(mbox),bptpmax(mbox)
-           edensflag=0 
-           if (bptpart(mbox).le.0) then 
+           edensflag=0
+           if (bptpart(mbox).le.0) then
               write(6,*) 'Error, a negativ particle number'
               stop
            endif
            if(boxflag.lt.1) then
-            write(6,*)'no box is defined'          
+            write(6,*)'no box is defined'
             stop
         endif
 c bpe: define particles in the box with a given energy
-c parameters: ityp, iso3, mpart, 
+c parameters: ityp, iso3, mpart,
         elseif(flag.eq.'bpe') then
            if (edens.le.0) then
               write(6,*) 'Error, no energy is defined'
@@ -610,16 +610,16 @@ cbb: Shame on you.
      &                   ' in boxinc.f .'
              stop 137
            endif
-           read(inputstr,fmt=*,err=88,end=88) 
+           read(inputstr,fmt=*,err=88,end=88)
      &     bptityp(mbox),bptiso3(mbox),bptpart(mbox)
            if(boxflag.lt.1) then
-            write(6,*)'no box is defined'          
+            write(6,*)'no box is defined'
             stop
         endif
 c ene: beam energy (lab-system)
       elseif(flag.eq.'ene'.or.flag.eq.'elb') then
          beamflg=beamflg+1
-         read(inputstr,fmt=*,err=88,end=88) ebeam 
+         read(inputstr,fmt=*,err=88,end=88) ebeam
          if(beamflg.gt.1) then
             write(6,*)'multiple definitions for beam-energy:'
             write(6,*)'-> last entry will be used'
@@ -632,7 +632,7 @@ c plb: beam momentum (lab-system)
       elseif(flag.eq.'plb') then
          beamflg=beamflg+1
          srtflag=2
-         read(inputstr,fmt=*,err=88,end=88) pbeam 
+         read(inputstr,fmt=*,err=88,end=88) pbeam
          if(beamflg.gt.1) then
             write(6,*)'multiple definitions for beam-energy:'
             write(6,*)'-> last entry will be used'
@@ -645,7 +645,7 @@ c PLB: beam momentum ( LAb-system, excitation function possible)
       elseif(flag.eq.'PLB'.or.flag.eq.'PLG') then
          beamflg=beamflg+1
          srtflag=2
-         read(inputstr,fmt=*,err=88,end=88) pbmin,pbmax,npb 
+         read(inputstr,fmt=*,err=88,end=88) pbmin,pbmax,npb
          pbeam=pbmin
          if(beamflg.gt.1) then
             write(6,*)'multiple definitions for beam-energy:'
@@ -661,20 +661,20 @@ c PLB: beam momentum ( LAb-system, excitation function possible)
             write(6,*)'Calculations at pbmax.le.200 A GeV:'
             write(6,*)'parameter nmax in coms.f may be decreased!'
          endif
-c ecm:  c.m.energy 
+c ecm:  c.m.energy
       elseif(flag.eq.'ecm') then
          beamflg=beamflg+1
          srtflag=1
-         read(inputstr,fmt=*,err=88,end=88) ecm 
+         read(inputstr,fmt=*,err=88,end=88) ecm
          srtmin=ecm
          srtmax=ecm
          nsrt=1
-         efuncflag=0 
+         efuncflag=0
          if(beamflg.gt.1) then
             write(6,*)'multiple definitions for beam-energy:'
             write(6,*)'-> last entry will be used'
          endif
-         if (ecm.le.20) then 
+         if (ecm.le.20) then
             write(6,*)'Calculation at sroot.le.20 A GeV:'
             write(6,*)'parameter nmax in coms.f may be decreased!'
          endif
@@ -682,7 +682,7 @@ c ENE: beam energy (sqrt(s): CM-system, excitation function possible)
       elseif(flag.eq.'ENE'.or.flag.eq.'ELG') then
          beamflg=beamflg+1
          srtflag=1
-         read(inputstr,fmt=*,err=88,end=88) srtmin,srtmax,nsrt 
+         read(inputstr,fmt=*,err=88,end=88) srtmin,srtmax,nsrt
          ecm=srtmin
 c        if(flag.eq.'ELG')ecm=1d1**dlog10(srtmin)
          if(beamflg.gt.1) then
@@ -703,7 +703,7 @@ c imp: impact parameter
       elseif(flag.eq.'imp') then
          bmin=0.d0
          impflg=impflg+1
-         read(inputstr,fmt=*,err=88,end=88) bdist 
+         read(inputstr,fmt=*,err=88,end=88) bdist
          if(bdist.lt.0d0)then
            CTOption(5)=1
            bdist=abs(bdist)
@@ -717,7 +717,7 @@ c imp: impact parameter
 c IMP: impact parameter
       elseif(flag.eq.'IMP') then
          impflg=impflg+1
-         read(inputstr,fmt=*,err=88,end=88) bmin,bdist 
+         read(inputstr,fmt=*,err=88,end=88) bmin,bdist
          CTOption(5)=1
          if(impflg.gt.1) then
             write(6,*)'multiple definitions for impact parameter:'
@@ -726,7 +726,7 @@ c IMP: impact parameter
 c eos: impact parameter
       elseif(flag.eq.'eos') then
          eosflg=eosflg+1
-         read(inputstr,fmt=*,err=88,end=88) eos 
+         read(inputstr,fmt=*,err=88,end=88) eos
          if(eosflg.gt.1) then
             write(6,*)'multiple definitions for equation of state:'
             write(6,*)'-> last entry will be used'
@@ -736,8 +736,8 @@ c eos: impact parameter
          endif
 c nev: number of events
       elseif(flag.eq.'nev') then
-         read(inputstr,fmt=*,err=88,end=88) nevents 
-c rsd: 
+         read(inputstr,fmt=*,err=88,end=88) nevents
+c rsd:
       elseif(flag.eq.'rsd') then
          read(inputstr,fmt=*,err=88,end=88) ranseed
 c cdt: collision time step
@@ -746,7 +746,7 @@ c cdt: collision time step
          dtflag=.true.
 c tim: time of propatation
       elseif(flag.eq.'tim') then
-         read(inputstr,fmt=*,err=88,end=88) caltim, outtim 
+         read(inputstr,fmt=*,err=88,end=88) caltim, outtim
 c stb: keep particle stable
       elseif(flag.eq.'stb') then
          read(inputstr,fmt=*,err=88,end=88) partid
@@ -841,12 +841,12 @@ c here some validity checks of the input should be performed
          stop
       endif
 c EndIf for the Box
-        EndIf      
+        EndIf
       if (efuncflag.ne.0.and.
      &    mod(nevents,max(nsrt,npb)).ne.0) then
          write(6,*)'INPUT: the number of events divided by the ',
      ,   'number of energies requested is no integer.'
-      end if      
+      end if
 c SEH: end of the input/output stuff
 c
 c constraints for skyrme pots:
@@ -869,7 +869,7 @@ c now print the selected analysis
 
 c...some input combinations should be avoided and/or commented
       if(CTOption(7).ne.0.and.At*Ap.ne.1)then
-        write(6,*)'Warning: CTOption(7)=',CTOption(7), 
+        write(6,*)'Warning: CTOption(7)=',CTOption(7),
      ,  ' no elastic collisions in NN',
      ,  ' should not be used for serious calculations!'
       end if
@@ -883,7 +883,7 @@ c...some input combinations should be avoided and/or commented
       if(CTOption(31).ne.0)then
         write(6,*)'Warning: CTOption(31)=',CToption(31),': ',
      ,  "Not yet completly implemented. Don't use for serious",
-     ,  'calculations (not yet..).' 
+     ,  'calculations (not yet..).'
       end if
 
       if(CTParam(28).lt.0d0.or.CTParam(28).gt.1d0)then
@@ -891,7 +891,7 @@ c...some input combinations should be avoided and/or commented
      ,  'should be between 0 and 1. it will be corrected.'
         CTParam(28)=min(1d0,max(0d0,CTParam(28)))
       end if
-      
+
       return
 
  88   write(6,*) 'syntax-error in input-file on line ',line,flag
