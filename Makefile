@@ -93,7 +93,7 @@ endif
 #   F2PY
 #
 #######################################################################
-PYTHON_EXE := $(or $(PYTHON_EXE), python)
+PYTHON_EXE := $(or $(PYTHON_EXE), python3)
 
 #general version for signature file extraction and linking
 ifeq ($(Config),"Debug")
