@@ -6,10 +6,10 @@
 #
 
 # Global variables for all recipes
-export RNDS = $(CURDIR)/rangen.f
-export RND = $(CURDIR)/rangen.o
-export LOGS = $(CURDIR)/logging.f
-export LOGO = $(CURDIR)/logging.o
+export RNDS = $(PWD)$(PATHSEP)src$(PATHSEP)rangen.f
+export RND = $(PWD)$(PATHSEP)src$(PATHSEP)rangen.o
+export LOGS = $(PWD)$(PATHSEP)src$(PATHSEP)logging.f
+export LOGO = $(PWD)$(PATHSEP)src$(PATHSEP)logging.o
 
 define \n
 

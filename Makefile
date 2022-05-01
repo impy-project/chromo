@@ -132,9 +132,9 @@ else
   LEXT?=$(EXT_SUFFIX)
 endif
 
-WORK_DIR = $(CURDIR)
+WORK_DIR = $(PWD)
 LIB_DIR?=$(WORK_DIR)/impy/lib
-RND = $(CURDIR)$(PATHSEP)src$(PATHSEP)rangen.o
+RND = $(PWD)$(PATHSEP)src$(PATHSEP)rangen.o
 
 ifeq ($(OS),Windows_NT)
   LIB_DIR=$(subst /,\\,$(WORK_DIR)/impy/lib)

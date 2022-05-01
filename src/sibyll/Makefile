@@ -9,11 +9,11 @@ export SIGFUNC = sibyll sibyll_ini sib_sigma_hp sib_sigma_hair sib_sigma_hnuc \
 	$(LOGF)
 
 # Fortran functions for PyInteractionModels
-export PIM_FUNCS_F = $(CURDIR)$(PATHSEP)sibyll_init.f $(LOGS)
-export PIM_FUNCS_O = $(CURDIR)$(PATHSEP)sibyll_init.o $(LOGO) $(RND)
+export PIM_FUNCS_F = $(WORK_DIR)$(PATHSEP)src$(PATHSEP)sibyll$(PATHSEP)sibyll_init.f $(LOGS)
+export PIM_FUNCS_O = $(WORK_DIR)$(PATHSEP)src$(PATHSEP)sibyll$(PATHSEP)sibyll_init.o $(LOGO) $(RND)
 
 export SIBMISC_21_F = sib21aux.f 
-export SIBMISC_21_O = sib21aux.o $(CURDIR)$(PATHSEP)sibyll_init.o $(LOGO) sib21rnd.o
+export SIBMISC_21_O = sib21aux.o $(WORK_DIR)$(PATHSEP)src$(PATHSEP)sibyll$(PATHSEP)sibyll_init.o $(LOGO) sib21rnd.o
 
 all: install
 

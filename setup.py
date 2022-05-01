@@ -81,7 +81,7 @@ class MakeBuild(build_ext):
         print(extdir, make_args, build_args)
         if not os.path.exists(extdir):
             os.makedirs(extdir)
-        subprocess.check_call([make_command] + build_args + make_args)
+        # subprocess.check_call([make_command] + build_args + make_args)
 
 
 def get_version():
