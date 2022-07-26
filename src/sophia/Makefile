@@ -10,7 +10,7 @@ OBJS= utility.o SOPHIA20.o eventgen.o sampling.o inpoutput.o\
       jetset74dp.o
       
 SFUNCS=eventgen print_event crossection initial\
-      icon_pdg_sib init_rmmard prepare_event_data toevt
+      icon_pdg_sib init_rmmard toevt
 
 all:  install
 
