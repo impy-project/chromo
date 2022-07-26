@@ -78,21 +78,21 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         self.vt_arr = vt_arr  # (vx, vy, vz, t)
 
         # Initialize current selection to all entries up to npart
-        if impy_config['pre_slice']:
-            info(10, 'Pre-slice enabled.')
-            self.selection = slice(None, self.npart)
-            self._apply_slicing()
-        else: 
-            info(10, 'Pre-slice disabled.')
-            self.selection = slice(None, None)
+        # if impy_config['pre_slice']:
+        #     info(10, 'Pre-slice enabled.')
+        #     self.selection = slice(None, self.npart)
+        #     self._apply_slicing()
+        # else: 
+        #     info(10, 'Pre-slice disabled.')
+        #     self.selection = slice(None, None)
         
-        # The default slice only cuts limits the view to the array to
-        # to the current number of entries
-        self._is_filtered = False
+        # # The default slice only cuts limits the view to the array to
+        # # to the current number of entries
+        # self._is_filtered = False
 
-        # Apply boosts into frame required by user
-        self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
-        self.event_frame = impy_config["user_frame"]
+        # # Apply boosts into frame required by user
+        # self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
+        # self.event_frame = impy_config["user_frame"]
 
     def _apply_slicing(self):
         """Slices/copies the all varaibles according to filter criteria"""
