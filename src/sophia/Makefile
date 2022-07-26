@@ -4,10 +4,10 @@
 #                                        (A.F. 08/12)
 #
 
-SRCS= utility.f SOPHIA20.f eventgen.f sampling.f inpoutput.f\
-      jetset74dp.f
-OBJS= utility.o SOPHIA20.o eventgen.o sampling.o inpoutput.o\
-      jetset74dp.o
+SRCS= SOPHIA20.f eventgen.f sampling.f inpoutput.f\
+      jetset74dp.f utility.f
+OBJS= $(subst .f,.o,$(SRCS))
+LIB_NAME = sophia
       
 SFUNCS=eventgen print_event crossection initial\
       icon_pdg_sib init_rmmard toevt
@@ -22,18 +22,28 @@ clean:
 distclean: clean
 	rm -f *.pyf
 
+.PHONY: remove_generated_files
+remove_generated_files:
+	rm -f *.pyf *.f2l *.so
+
+install: remove_generated_files
+$(OBJS): remove_generated_files
+
+$(LIB_DIR)/%$(LEXT): %$(LEXT)
+	$(COPY_COMMAND) $< $@	
+
+
 .PHONY: install
-install: sophia$(LEXT)
-	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
+install: $(LIB_DIR)/$(LIB_NAME)$(LEXT)
 
 sophia$(LEXT): sophia.pyf $(RND) $(OBJS) $(LOGO) $(SRCS)
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" sophia.pyf \
 	$(RND) $(LOGO) $(OBJS) >> sophia.f2l 2>&1
 
-sophia.pyf: $(RNDS) $(SRCS) $(LOGS) Makefile
+sophia.pyf: $(RNDS) $(SRCS) $(LOGS) $(OBJS) Makefile
 	$(F2PY) -m sophia -h sophia.pyf --overwrite-signature \
 	only: $(SFUNCS) $(LOGF) : $(SRCS) $(LOGS) $(RNDS) > sophia.f2l 2>&1
 
 .f.o:
-	$(FC) -fcray-pointer -c $(OPT) $<
+	$(FC) -c $(OPT) $<
 	
