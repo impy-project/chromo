@@ -44,8 +44,7 @@ c**************************
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       SAVE
 
-C** anpros 2022/07/22 added block begins      
-!f2py intent(inout) Imode  ! for f2py
+C** anpros 2022/07/22 added block begins
        INTEGER REMDEC
        DATA REMDEC / 0 /     !default value means removing 
        COMMON /EG_IO/ REMDEC !controls removing decayed particles
