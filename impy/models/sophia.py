@@ -209,24 +209,24 @@ class SophiaEvent(MCEvent):
     
     @property
     def charge(self):
-        return self.particle_charge[self.selection]
+        return self.lib.schg.ichg[self.selection]
     
     @property
     def decayed_parent(self):
         MCEvent.parents(self)
-        return self.decayed_parent
+        return self.lib.schg.decpar[0:self.npart]
 
     @property
     def parents(self):
         """In SOPHIA parents are difficult to obtain. This function returns 0."""
         MCEvent.parents(self)
-        return self.hepevt.jmohep
+        return self.lib.hepevt.jmohep[0:self.npart]
 
     @property
     def children(self):
         """In SOPHIA daughters are difficult to obtain. This function returns 0."""
         MCEvent.children(self)
-        return self.hepevt.jdahep
+        return self.lib.hepevt.jdahep[0:self.npart]
 
     # Nuclear collision parameters
     @property
