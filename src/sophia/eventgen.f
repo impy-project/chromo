@@ -46,9 +46,9 @@ c**************************
 
 C** anpros 2022/07/22 added block begins      
 !f2py intent(inout) Imode  ! for f2py
-C       INTEGER REMDEC
-C       DATA REMDEC / 0 /     !default value means removing 
-C       COMMON /EG_IO/ REMDEC !controls removing decayed particles
+       INTEGER REMDEC
+       DATA REMDEC / 0 /     !default value means removing 
+       COMMON /EG_IO/ REMDEC !controls removing decayed particles
 C** anpros 2022/07/22 added block ends
        COMMON /S_RUN/ SQS, S, Q2MIN, XMIN, ZMIN, kb, kt, a1, a2, Nproc
        COMMON /S_PLIST/ P(2000,5), LLIST(2000), NP, Ideb
@@ -269,8 +269,8 @@ c 2-particle decay of resonance in CM system:
        endif
 
 c... consider only stable particles:
-C       if (REMDEC .eq. 0) then !anpros 2022/07/22: Leave decayed 
-C                               !particle in the LLIST if REMDEC != 0
+       if (REMDEC .eq. 0) then !anpros 2022/07/22: Leave decayed 
+                               !particle in the LLIST if REMDEC != 0
  18     istable=0
         do 16 i=1,NP
          if (abs(LLIST(i)).lt.10000) then
@@ -294,7 +294,7 @@ C                               !particle in the LLIST if REMDEC != 0
          enddo
         endif
         NP = istable       
-C       end if  ! anpros 2022/07/22  REMDEC condition end       
+       end if  ! anpros 2022/07/22  REMDEC condition end       
 
 c***********************************************
 c transformation from CM-system to lab-system: *

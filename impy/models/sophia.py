@@ -324,7 +324,7 @@ class SophiaRun(MCRun):
         # Keep decayed particles in the history:
         # self.lib.eg_io.remdec == 0 removes all decayed particles
         # self.lib.eg_io.remdec != 0 leaves decayed particles
-#        self.lib.eg_io.remdec = 1
+        self.lib.eg_io.remdec = 1
 
     def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
