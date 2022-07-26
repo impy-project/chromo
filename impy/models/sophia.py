@@ -173,116 +173,31 @@ class SophiaEvent(MCEvent):
     _no_vertex_data = None
 
     def __init__(self, lib, event_kinematics, event_frame):   
-        # self.lib = lib
-        # #lib.toevt()
-        start_time = time.time()
-        lib.prepare_event_data()
-        time1 = time.time() - start_time
-        start_time = time.time()
-        lib.toevt()
-        time2 = time.time() - start_time
-        print("time1/time2 = %s" % (time1/time2))
-        time.sleep(1)
-        #hepevt = lib.hepevt
-        
-        # event_number = hepevt.nevhep
-        number_of_particles = lib.hepevt.nhep
-        # pdg_id = hepevt.idhep[0:number_of_particles]
-        # status_code = hepevt.isthep[0:number_of_particles]
-        # particle_momenta = hepevt.phep[:, 0:number_of_particles]
-        # vertex = hepevt.vhep[:, 0:number_of_particles]
-        
-        # common /event_data/ event_number,number_of_particles,
-        # status_codes,pdg_ids,charges,parents particle_momenta,vertices,jmohep,jdahep
-        # event_number = lib.event_data.event_number
-        #number_of_particles = lib.event_data.number_of_particles
-        
-        # particle_momenta = lib.event_data.particle_momenta[:, 0:number_of_particles]
-        # px = particle_momenta[0]
-        # py = particle_momenta[1]
-        # pz = particle_momenta[2]
-        # en = particle_momenta[3]
-        # m =  particle_momenta[4]
-        
-        arr = lib.s_plist.p[:number_of_particles,:].T
-        px = arr[0]
-        py = arr[1]
-        pz = arr[2]
-        en = arr[3]
-        ma = arr[4]
-        
-        # pdg_id = lib.event_data.pdg_ids[0:number_of_particles]
-        # status_code = lib.event_data.status_codes[0:number_of_particles]
-        #print(particle_momenta)
-        
-        # buf = lib.s_plist.p.data
-        # px = lib.s_plist.p[:number_of_particles,0:1].T[0]
-        # py = lib.s_plist.p[:number_of_particles,1:2].T[0]
-        # pz = lib.s_plist.p[:number_of_particles,2:3].T[0]
-        # en = lib.s_plist.p[:number_of_particles,3:4].T[0]
-        # ma = lib.s_plist.p[:number_of_particles,4:5].T[0]
-        
-        # print('px =', px)
-        # print('py =', py)
-        # print('pz =', pz)
-        # print('en =', en)
-        # print('ma =', ma)
-        # vertex = lib.event_data.vertices[:, 0:number_of_particles]
-        
-        #schg = lib.schg
-        #self.decayed_parent = schg.decpar[0:number_of_particles]
-        #self.particle_charge = schg.ichg[0:number_of_particles]
-        
-        #self.hepevt = hepevt
-        #self.schg = schg
-        
-        
-        # start_time = time.time()
-        # # arr = np.array([lib.event_data.px, lib.event_data.py, 
-        # #           lib.event_data.pz, lib.event_data.en,
-        # #           lib.event_data.ma])[:, 0:number_of_particles]
-        # arr = lib.s_plist.p[:number_of_particles,:].T
-        # px = arr[0]
-        # py = arr[1]
-        # pz = arr[2]
-        # en = arr[3]
-        # ma = arr[4]
 
-        # time_to_unpack = time.time() - start_time
-        # #print("Unpack--- %s seconds ---" % (time.time() - start_time))
-        # # px, py, pz, en, m = particle_momenta
-        # start_time = time.time()
-        # particle_momenta = lib.event_data.particle_momenta[:, 0:number_of_particles]
-        # px = particle_momenta[0]
-        # py = particle_momenta[1]
-        # pz = particle_momenta[2]
-        # en = particle_momenta[3]
-        # m =  particle_momenta[4]
-        # time_to_array = time.time() - start_time
-        # print("Array--- %s seconds ---" % (time_to_unpack/time_to_array))
-        # time.sleep(1)
-        # vx, vy, vz, vt = vertex
+        lib.toevt() # prepare hepevt common block     
+        np = lib.hepevt.nhep # number of particles in event
+        pem_arr = lib.s_plist.p[:np,:].T # array of particle momenta
+        vt_arr = lib.hepevt.vhep[:, 0:np] # array of verticies (x, y, z, t) - all zeros for sophia
         
-    
-        # MCEvent.__init__(self,
-        #                  lib = lib,
-        #                  event_kinematics = event_kinematics,
-        #                  event_frame = event_frame,
-        #                  nevent = event_number,
-        #                  npart = number_of_particles,
-        #                  p_ids = pdg_id,
-        #                  status = status_code,
-        #                  px = px,
-        #                  py = py,
-        #                  pz = pz,
-        #                  en = en,
-        #                  m = m,
-        #                  vx = vx,
-        #                  vy = vy,
-        #                  vz = vz,
-        #                  vt = vt,
-        #                  pem_arr = particle_momenta,
-        #                  vt_arr = vertex)
+        MCEvent.__init__(self,
+                         lib = lib,
+                         event_kinematics = event_kinematics,
+                         event_frame = event_frame,
+                         nevent = lib.hepevt.nevhep, # event number
+                         npart = np,
+                         p_ids = lib.hepevt.idhep[0:np],
+                         status = lib.hepevt.isthep[0:np],
+                         px = pem_arr[0],
+                         py = pem_arr[1],
+                         pz = pem_arr[2],
+                         en = pem_arr[3],
+                         m = pem_arr[4],
+                         vx = vt_arr[0],
+                         vy = vt_arr[1],
+                         vz = vt_arr[2],
+                         vt = vt_arr[3],
+                         pem_arr = pem_arr,
+                         vt_arr = vt_arr)
 
     def filter_final_state(self):
         self.selection = np.where(self.status == 1)
