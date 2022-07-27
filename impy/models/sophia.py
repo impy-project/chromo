@@ -1,44 +1,56 @@
-'''
+"""
 Created on 17.03.2014
 
 @author: afedynitch
-'''
+"""
 
 import numpy as np
 from impy.common import MCRun, MCEvent, impy_config
 from impy.util import info
 
+sophia_interaction_types = [
+    "multipion production (fragmentation)",
+    "diffractive scattering: N \u03B3 \u2192 N \u03C1",
+    "direct pion production: N \u03B3 \u2192 \u0394 \u03C0",
+    "direct pion production: N \u03B3 \u2192 \u0394 \u03C0",
+    "diffractive scattering: N \u03B3 \u2192 N \u03C9",
+    "fragmentation in resonance region",
+    "excitation/decay of resonance",
+]
 
 
 class SophiaEvent(MCEvent):
     """Wrapper class around Sophia code"""
 
-    def __init__(self, lib, event_kinematics, event_frame):   
+    def __init__(self, lib, event_kinematics, event_frame):
 
-        lib.toevt() # prepare hepevt common block     
-        np = lib.hepevt.nhep # number of particles in event
-        pem_arr = lib.s_plist.p[:np,:].T # array of particle momenta
-        vt_arr = lib.hepevt.vhep[:, 0:np] # array of verticies (x, y, z, t) - all zeros for sophia
-        
-        MCEvent.__init__(self,
-                         lib = lib,
-                         event_kinematics = event_kinematics,
-                         event_frame = event_frame,
-                         nevent = lib.hepevt.nevhep, # event number
-                         npart = np,
-                         p_ids = lib.hepevt.idhep[0:np],
-                         status = lib.hepevt.isthep[0:np],
-                         px = pem_arr[0],
-                         py = pem_arr[1],
-                         pz = pem_arr[2],
-                         en = pem_arr[3],
-                         m = pem_arr[4],
-                         vx = vt_arr[0],
-                         vy = vt_arr[1],
-                         vz = vt_arr[2],
-                         vt = vt_arr[3],
-                         pem_arr = pem_arr,
-                         vt_arr = vt_arr)
+        lib.toevt()  # prepare hepevt common block
+        np = lib.hepevt.nhep  # number of particles in event
+        pem_arr = lib.s_plist.p[:np, :].T  # array of particle momenta
+        # array of verticies (x, y, z, t) - all zeros for sophia
+        vt_arr = lib.hepevt.vhep[:, 0:np]
+
+        MCEvent.__init__(
+            self,
+            lib=lib,
+            event_kinematics=event_kinematics,
+            event_frame=event_frame,
+            nevent=lib.hepevt.nevhep,  # event number
+            npart=np,
+            p_ids=lib.hepevt.idhep[0:np],
+            status=lib.hepevt.isthep[0:np],
+            px=pem_arr[0],
+            py=pem_arr[1],
+            pz=pem_arr[2],
+            en=pem_arr[3],
+            m=pem_arr[4],
+            vx=vt_arr[0],
+            vy=vt_arr[1],
+            vz=vt_arr[2],
+            vt=vt_arr[3],
+            pem_arr=pem_arr,
+            vt_arr=vt_arr,
+        )
 
     def filter_final_state(self):
         self.selection = np.where(self.status == 1)
@@ -47,80 +59,98 @@ class SophiaEvent(MCEvent):
     def filter_final_state_charged(self):
         self.selection = np.where((self.status == 1) & (self.charge != 0))
         self._apply_slicing()
-    
+
+    @property
+    def interaction_type(self):
+        return sophia_interaction_types[self.lib.interaction_type_code]
+
     @property
     def charge(self):
         return self.lib.schg.ichg[self.selection]
-    
+
     @property
     def decayed_parent(self):
         """Returns the array of indices of the decayed parent particles"""
         MCEvent.parents(self)
-        return self.lib.schg.decpar[0:self.npart]
+        return self.lib.schg.decpar[0 : self.npart]
 
     @property
     def parents(self):
-        """In SOPHIA parents are difficult to obtain. This function returns 0."""
+        """In SOPHIA parents are difficult to obtain. This function
+        returns a zeroed array of the correct shape.
+        """
         MCEvent.parents(self)
-        return self.lib.hepevt.jmohep[0:self.npart]
+        return self.lib.hepevt.jmohep[:, 0 : self.npart]
 
     @property
     def children(self):
-        """In SOPHIA daughters are difficult to obtain. This function returns 0."""
+        """In SOPHIA daughters are difficult to obtain. This function
+        returns a zeroed array of the correct shape.
+        """
         MCEvent.children(self)
-        return self.lib.hepevt.jdahep[0:self.npart]
+        return self.lib.hepevt.jdahep[:, 0 : self.npart]
+
 
 class SophiaRun(MCRun):
-    """Implements all abstract attributes of MCRun for the 
+    """Implements all abstract attributes of MCRun for the
     Sophia event generator.
     """
 
     def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
+        event setup (energy, projectile, target).
+        Currently it returns total cross section.
+        """
         k = self._curr_event_kin
-        
+
         if k.p1pdg != 22:
             info(0, "The first particle must be a photon, but particle pdg = ", k.p1pdg)
-            raise Exception('Input error')
-        
+            raise Exception("Input error")
+
         if k.p2pdg not in [2212, 2112]:
-            info(0, "The second particle must be a proton or neutron, but particle pdg = ", k.p2pdg)
-            raise Exception('Input error')
-        
+            info(
+                0,
+                "The second particle must be a proton or neutron, but particle pdg = ",
+                k.p2pdg,
+            )
+            raise Exception("Input error")
+
         # self.energy_of_photon is the energy in lab frame
         # where nucleon is at rest and photon is moving
-        total_crossection_id = 3 # 3 is for total crossection
+        total_crossection_id = 3  # 3 is for total crossection
         # cross section in micro barn
-        return self.lib.crossection(self.energy_of_photon, total_crossection_id, 
-                                    self.nucleon_code_number)
-        
+        return self.lib.crossection(
+            self.energy_of_photon, total_crossection_id, self.nucleon_code_number
+        )
 
     def sigma_inel_air(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        raise Exception('SophiaRun.sigma_inel_air has no implementation')
+        raise Exception("SophiaRun.sigma_inel_air has no implementation")
 
     def set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
 
-        info(5, 'Setting event kinematics.')
+        info(5, "Setting event kinematics.")
         info(10, event_kinematics)
         k = event_kinematics
-        
+
         if k.p1pdg != 22:
             info(0, "The first particle must be a photon, but particle pdg = ", k.p1pdg)
-            raise Exception('Input error')
-        
+            raise Exception("Input error")
+
         if k.p2pdg not in [2212, 2112]:
-            info(0, "The second particle must be a proton or neutron, but particle pdg = ", k.p2pdg)
-            raise Exception('Input error')
-        
-        
+            info(
+                0,
+                "The second particle must be a proton or neutron, but particle pdg = ",
+                k.p2pdg,
+            )
+            raise Exception("Input error")
+
         self.nucleon_code_number = self.lib.icon_pdg_sib(k.p2pdg)
         self.energy_of_nucleon = k.pmass2
-        self.energy_of_photon = k.elab 
+        self.energy_of_photon = k.elab
         # Here we consider laboratory frame where photon moves along z axis
         # and nucleon is at rest. The angle is counted from z axis.
         # However, because of the definitions in "eventgen" subroutine of
@@ -132,64 +162,74 @@ class SophiaRun(MCRun):
 
     def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
-        fname = impy_config['output_log'] if fname is None else fname
-        if fname == 'stdout':
-            #self.lib.s_debug.lun = 6
-            info(5, 'Output is routed to stdout.')
+        fname = impy_config["output_log"] if fname is None else fname
+        if fname == "stdout":
+            # self.lib.s_debug.lun = 6
+            info(5, "Output is routed to stdout.")
         else:
             lun = self._attach_fortran_logfile(fname)
-            #self.lib.s_debug.lun = lun
-            info(5, 'Output is routed to', fname, 'via LUN', lun)
+            # self.lib.s_debug.lun = lun
+            info(5, "Output is routed to", fname, "via LUN", lun)
 
-    def init_generator(self, event_kinematics, seed='random', logfname=None, **kwargs):
+    def init_generator(self, event_kinematics, seed="random", logfname=None):
         from random import randint
 
         self._abort_if_already_initialized()
 
-        if seed == 'random':
+        if seed == "random":
             seed = randint(1000000, 10000000)
         else:
             seed = int(seed)
-        info(5, 'Using seed:', seed)
+        info(5, "Using seed:", seed)
 
-        self.lib.s_plist.ideb = impy_config['sibyll']['debug_level']
+        self.lib.s_plist.ideb = impy_config["sophia"]["debug_level"]
 
         self.set_event_kinematics(event_kinematics)
         self.attach_log(fname=logfname)
-        
-        self.lib.init_rmmard(int(seed)) # setting random number generator seed
-        self.lib.initial(self.nucleon_code_number) # setting parameters for cross-section
-        
+
+        self.lib.init_rmmard(int(seed))  # setting random number generator seed
+        self.lib.initial(
+            self.nucleon_code_number
+        )  # setting parameters for cross-section
+
         # Keep decayed particles in the history:
-        self.lib.eg_io.remdec = 0 # do not keep unless keep_decayed_particles = True:
-        if (kwargs.get('keep_decayed_particles', False)):
-                self.lib.eg_io.remdec = 1 # keep
         
+        keep_decayed = impy_config["sophia"]["keep_decayed_particles"]
+        if keep_decayed:
+            self.lib.eg_io.remdec = 1
+        else:
+            self.lib.eg_io.remdec = 0
+
         self._define_default_fs_particles()
 
     def set_stable(self, pdgid, stable=True):
         sid = abs(self.lib.icon_pdg_sib(pdgid))
         if abs(pdgid) == 311:
-            info(1, 'Ignores K0. Use K0L/S 130/310 in final state definition.')
+            info(1, "Ignores K0. Use K0L/S 130/310 in final state definition.")
             return
         idb = self.lib.s_csydec.idb
         if sid == 0 or sid > idb.size - 1:
             return
         if stable:
             info(
-                5, 'defining as stable particle pdgid/sid = {0}/{1}'.format(
-                    pdgid, sid))
+                5, "defining as stable particle pdgid/sid = {0}/{1}".format(pdgid, sid)
+            )
             idb[sid - 1] = -np.abs(idb[sid - 1])
         else:
-            info(5, 'pdgid/sid = {0}/{1} allowed to decay'.format(pdgid, sid))
+            info(5, "pdgid/sid = {0}/{1} allowed to decay".format(pdgid, sid))
             idb[sid - 1] = np.abs(idb[sid - 1])
 
     def generate_event(self):
-        # Generate event (the final particles and their parameters) 
-        # by underlying Fortran library 
-        self.lib.eventgen(self.nucleon_code_number, 
-                self.energy_of_nucleon, 
-                self.energy_of_photon, 
-                self.angle_between_nucleon_and_photon, 0)
+        # Generate event (the final particles and their parameters)
+        # by underlying Fortran library
+        self.interaction_type_code = self.lib.eventgen(
+            self.nucleon_code_number,
+            self.energy_of_nucleon,
+            self.energy_of_photon,
+            self.angle_between_nucleon_and_photon,
+        )
+
+        # pass interaction type code to MCEvent
+        # via additional attribute in lib object:
+        setattr(self.lib, "interaction_type_code", self.interaction_type_code)
         return 0  # No rejection is implemented so far
-    

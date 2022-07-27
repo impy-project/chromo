@@ -111,9 +111,6 @@ interaction_model_nt_init = [
     ]
 ]
 
-# 'tag', 'name', 'version', 'crmc_id', 'library_name', 'RunClass',
-#     'EventClass', 'output_frame'
-
 # Different kinds of lookup-maps/dictionaries to refer to models by name
 # or ID
 interaction_model_by_tag = {}

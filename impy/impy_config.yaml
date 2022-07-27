@@ -202,3 +202,15 @@ sibyll:
                    3122, -3122, 411, -411, 421, -421, 431, -431, 4232, 
                    -4232, 4132, 4122, 4332]
     }
+
+sophia:
+    output_frame : ['laboratory']
+    sqs_min_GeV  : 1.1646
+    has_boosts   : False
+    has_hepevt   : True
+    int_support  : [ 'hh', 'hA']
+    keep_decayed_particles : True
+    debug_level  : 0
+    projectiles  : { 
+        '2.0'  : [ 22 ]
+    }

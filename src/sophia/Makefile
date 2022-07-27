@@ -5,7 +5,7 @@
 #
 
 SRCS= SOPHIA20.f eventgen.f sampling.f inpoutput.f\
-      jetset74dp.f utility.f
+      jetset74dp.f impy_sophia.f
 OBJS= $(subst .f,.o,$(SRCS))
 LIB_NAME = sophia
       

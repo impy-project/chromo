@@ -50,7 +50,7 @@ C     number added to decayed particle:
       NEVHEP = NEVHEP + 1
       NHEP = NP
 C     We do not transpose P, because we don't use PHEP         
-C      PHEP = TRANSPOSE(P)
+C     PHEP = TRANSPOSE(P)
         
       DO I = 1, NHEP
         CID = LLIST(I)
