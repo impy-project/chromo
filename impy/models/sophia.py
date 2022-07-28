@@ -73,7 +73,12 @@ class SophiaEvent(MCEvent):
 
     @property
     def decayed_parent(self):
-        """Returns the array of indices of the decayed parent particles"""
+        """Returns the array of zero-based indices
+        of the decayed parent particles.
+        Index -1 means that there is no parent particle.
+        It throw an exception (via MCEvent.parents)
+        if selection is applied
+        """
         MCEvent.parents(self)
         return self.lib.schg.iparnt[0 : self.npart]
 
@@ -200,6 +205,11 @@ class SophiaRun(MCRun):
         self._define_default_fs_particles()
 
     def set_stable(self, pdgid, stable=True):
+         
+        # Do not use global stable_list
+        if not impy_config["sophia"]["use_stable_list"]:
+            return
+           
         sid = abs(self.lib.icon_pdg_sib(pdgid))
         if abs(pdgid) == 311:
             info(1, "Ignores K0. Use K0L/S 130/310 in final state definition.")

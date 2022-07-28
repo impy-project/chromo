@@ -50,14 +50,17 @@ C     IDS is sophia ID of the current particle
 C     number added to decayed particle:
       INTEGER IDEC
       PARAMETER (IDEC = 10000)
+
+C     If KEEPDC = .TRUE. then LLIST1 has correct entries
+C     otherwise LLIST1 contains not relevant data
+      LOGICAL KEEPDC
+      COMMON /EG_IO/ KEEPDC
        
       NEVHEP = NEVHEP + 1
       NHEP = NP
-C     We do not transpose P, because we don't use PHEP         
-C     PHEP = TRANSPOSE(P)
 
       DO I = 1, NHEP
-C       transpose P to get PHEP        
+C       Convert P to PHEP
         PHEP(1,I) = P(I,1)
         PHEP(2,I) = P(I,2)
         PHEP(3,I) = P(I,3)
@@ -82,8 +85,16 @@ C       Convert sophia ID to pdg ID of the particle
         IDHEP(I) = ISIGN(1, IDS) * IPDG(ABS(IDS))
 C       Record charge of the particle        
         ICHG(I) = ICHP(ABS(IDS))
-C       Record decayed parent of the particle        
-        IPARNT(I) = LLIST1(I)
+C       Record entry index of decayed parent for the particle
+C       if decayed particles are kept
+C       Zero-based indexing is used, therefore
+C       -1 indicates that there is no meaningful
+C       parent and LLIST1(I) - 1 is the index
+        IF ((KEEPDC) .AND. (LLIST1(I) .GT. 0)) THEN
+            IPARNT(I) = LLIST1(I) - 1
+        ELSE
+            IPARNT(I) = -1
+        END IF
       ENDDO
   
       END      
