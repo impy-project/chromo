@@ -210,7 +210,7 @@ sophia:
     has_hepevt   : True
     int_support  : [ 'gh']
     keep_decayed_particles : True
-    use_stable_list : False
+    use_stable_list : True
     debug_level  : 0
     projectiles  : { 
         '2.0'  : [ 22 ]
