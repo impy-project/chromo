@@ -208,7 +208,7 @@ sophia:
     sqs_min_GeV  : 0
     has_boosts   : True
     has_hepevt   : True
-    int_support  : [ 'gh'']
+    int_support  : [ 'gh']
     keep_decayed_particles : True
     use_stable_list : False
     debug_level  : 0
