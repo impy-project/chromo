@@ -24,12 +24,15 @@ class SophiaEvent(MCEvent):
 
     def __init__(self, lib, event_kinematics, event_frame):
 
-        lib.toevt()  # prepare hepevt common block
-        np = lib.hepevt.nhep  # number of particles in event
-        pem_arr = lib.s_plist.p[:np, :].T  # array of particle momenta
+        # prepare hepevt common block
+        lib.toevt()
+        # number of particles in event
+        np = lib.hepevt.nhep
+        # array of particle momenta
+        pem_arr = lib.hepevt.phep[:, 0:np]
         # array of verticies (x, y, z, t) - all zeros for sophia
         vt_arr = lib.hepevt.vhep[:, 0:np]
-
+        
         MCEvent.__init__(
             self,
             lib=lib,
@@ -72,7 +75,7 @@ class SophiaEvent(MCEvent):
     def decayed_parent(self):
         """Returns the array of indices of the decayed parent particles"""
         MCEvent.parents(self)
-        return self.lib.schg.decpar[0 : self.npart]
+        return self.lib.schg.iparnt[0 : self.npart]
 
     @property
     def parents(self):
@@ -193,13 +196,7 @@ class SophiaRun(MCRun):
         )  # setting parameters for cross-section
 
         # Keep decayed particles in the history:
-        
-        keep_decayed = impy_config["sophia"]["keep_decayed_particles"]
-        if keep_decayed:
-            self.lib.eg_io.remdec = 1
-        else:
-            self.lib.eg_io.remdec = 0
-
+        self.lib.eg_io.keepdc = impy_config["sophia"]["keep_decayed_particles"]
         self._define_default_fs_particles()
 
     def set_stable(self, pdgid, stable=True):

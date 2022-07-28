@@ -11,8 +11,10 @@ C************************************************************************
       IMPLICIT INTEGER (I-N)
 
       SAVE
-      INTEGER PDGCOD(49)
-      DATA PDGCOD /
+C     IPDG is the conversion table from sophia ID (index of the array) 
+C     to pdg ID (value at the index)     
+      INTEGER IPDG(49)
+      DATA IPDG /
      &  22, -11, 11, -13, 13, 111, 211, -211, 321, -321, 130, 310, 2212,
      &  2112, 12, -12, 14, -14, -99999999, -99999999, 311, -311, 221, 
      &  331, 213, -213, 113, 323, -323, 313, -313, 223, 333, 3222, 3212,
@@ -38,31 +40,50 @@ C     Initialization of HEVEVT variables
 
 C     Common block SCHG with additional information:
 C     ICHG - charge, 
-C     DECPAR - position in the arrays (ISTHEP, PHEP, ...) of parent (decayed) particle     
-      INTEGER ICHG, DECPAR
-      COMMON /SCHG/ ICHG(NMXHEP), DECPAR(NMXHEP)
+C     IPARNT - position in the arrays (ISTHEP, PHEP, ...) 
+C     of parent (decayed) particle     
+      INTEGER ICHG, IPARNT
+      COMMON /SCHG/ ICHG(NMXHEP), IPARNT(NMXHEP)
 
-      INTEGER CID  ! id of the current (in the loop) particle
+C     IDS is sophia ID of the current particle
+      INTEGER IDS
 C     number added to decayed particle:
-      INTEGER DNUM
-      PARAMETER (DNUM = 10000)
+      INTEGER IDEC
+      PARAMETER (IDEC = 10000)
        
       NEVHEP = NEVHEP + 1
       NHEP = NP
 C     We do not transpose P, because we don't use PHEP         
 C     PHEP = TRANSPOSE(P)
-        
+
       DO I = 1, NHEP
-        CID = LLIST(I)
-        IF (ABS(CID) .GT. DNUM) THEN
+C       transpose P to get PHEP        
+        PHEP(1,I) = P(I,1)
+        PHEP(2,I) = P(I,2)
+        PHEP(3,I) = P(I,3)
+        PHEP(4,I) = P(I,4)
+        PHEP(5,I) = P(I,5)    
+
+C       IDS - sophia ID        
+        IDS = LLIST(I)
+C       Normalize ID of decayed particle to sophia ID
+C       by subtracting IDEC = 10000
+C       and record the status ISTHEP:
+C       ISTHEP = 1 for final particle 
+C       ISTHEP = 2 for decayed particle        
+        IF (ABS(IDS) .GT. IDEC) THEN
             ISTHEP(I) = 2
-            CID = CID - ISIGN(DNUM, CID)
+            IDS = IDS - ISIGN(IDEC, IDS)
         ELSE 
             ISTHEP(I) = 1
-        END IF     
-        IDHEP(I) = ISIGN(1, CID) * PDGCOD(ABS(CID))
-        ICHG(I) = ICHP(ABS(CID))
-        DECPAR(I) = LLIST1(I)
+        END IF
+
+C       Convert sophia ID to pdg ID of the particle           
+        IDHEP(I) = ISIGN(1, IDS) * IPDG(ABS(IDS))
+C       Record charge of the particle        
+        ICHG(I) = ICHP(ABS(IDS))
+C       Record decayed parent of the particle        
+        IPARNT(I) = LLIST1(I)
       ENDDO
   
       END      

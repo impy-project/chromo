@@ -46,14 +46,15 @@ c**************************
 
 C** anpros 2022/07/22 added block begins
 !f2py intent(out) Imode
-C      REMDEC (REMove DECayed) controls whether to
-C      remove (REMDEC = 0) or leave (REMDEC > 0)
-C      decayed particles in LLIST.
-C      The default REMDEC = 0 (remove) is set in DATA
+C      KEEPDC (KEEp DeCayed) controls whether to
+C      keep (KEEPDC = .TRUE.) or remove (KEEPDC = .FALSE.)
+C      decayed particles from LLIST.
+C      The default KEEPDC = .FALSE. is set in DATA
+C      as it was the original behaviour of the function.
 C      The value can be changed via EG_IO common block
-       INTEGER REMDEC 
-       DATA REMDEC / 0 /
-       COMMON /EG_IO/ REMDEC
+       LOGICAL KEEPDC
+       DATA KEEPDC / .FALSE. /
+       COMMON /EG_IO/ KEEPDC
 C** anpros 2022/07/22 added block ends
        COMMON /S_RUN/ SQS, S, Q2MIN, XMIN, ZMIN, kb, kt, a1, a2, Nproc
        COMMON /S_PLIST/ P(2000,5), LLIST(2000), NP, Ideb
@@ -275,10 +276,10 @@ c 2-particle decay of resonance in CM system:
 
 c... consider only stable particles:
 C anpros 2022/07/22: the line:
-C   if (REMDEC .eq. 0) then
+C   if (.NOT.KEEPDC) then
 C is added to the original version
 C to control removal of decayed particles from LLIST
-       if (REMDEC .eq. 0) then 
+       if ( .NOT. KEEPDC) then 
  18     istable=0
         do 16 i=1,NP
          if (abs(LLIST(i)).lt.10000) then
@@ -302,7 +303,7 @@ C to control removal of decayed particles from LLIST
          enddo
         endif
         NP = istable
-C anpros 2022/07/2. REMDEC condition end:            
+C anpros 2022/07/2. KEEPDC condition end:            
        end if      
 
 c***********************************************
