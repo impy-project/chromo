@@ -335,6 +335,11 @@ class MCRun(six.with_metaclass(ABCMeta)):
 
         # FORTRAN LUN that keeps logfile handle
         self.output_lun = None
+        
+        # Number of events to generate
+        self.nevents = None
+        # Normalization 1/nevents for histograms
+        self.norm = None
 
     def __enter__(self):
         """TEMP: It would be good to actually use the with construct to
@@ -552,6 +557,8 @@ class MCRun(six.with_metaclass(ABCMeta)):
         # Initialize counters to prevent infinite loops in rejections
         ntrials = 0
         nremaining = nevents
+        self.nevents = nevents
+        self.norm = 1./float(nevents)
         while nremaining > 0:
             if self.generate_event() == 0:
                 yield self._event_class(self.lib, self._curr_event_kin,
