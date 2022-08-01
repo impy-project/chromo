@@ -535,6 +535,30 @@ class MCRun(six.with_metaclass(ABCMeta)):
         if impy_config['pi0_stable']:
             self.set_stable(111)
 
+    def __call__(self, nevents):
+        """Generator function (in python sence) 
+        which launches the underlying event generator 
+        and returns its the result (event) as MCEvent object
+        """
+        retry_on_rejection = impy_config['retry_on_rejection']
+        # Initialize counters to prevent infinite loops in rejections
+        ntrials = 0
+        nremaining = nevents
+        while nremaining > 0:
+            if self.generate_event() == 0:
+                yield self._event_class(self.lib, self._curr_event_kin,
+                                        self._output_frame)
+                nremaining -= 1
+                ntrials += 1
+            elif retry_on_rejection:
+                info(10, 'Rejection occured. Retrying..')
+                ntrials += 1
+                continue
+            elif ntrials > 2 * nevents:
+                raise Exception('Things run bad. Check your input.')
+            else:
+                info(0, 'Rejection occured')
+
     def event_generator(self, event_kinematics, nevents):
         """This is some kind of equivalent to Hans'
         generator concept.
