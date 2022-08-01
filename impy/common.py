@@ -404,6 +404,14 @@ class MCRun(six.with_metaclass(ABCMeta)):
         """
         pass
 
+    @property
+    def event_kinematics(self):
+        return self._curr_event_kin
+    
+    @event_kinematics.setter
+    def event_kinematics(self, evtkin):
+        self.set_event_kinematics(evtkin)
+
     @abstractmethod
     def set_stable(self, pdgid, stable=True):
         """Prevent decay of unstable particles
