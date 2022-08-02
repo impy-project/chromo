@@ -271,3 +271,10 @@ class PYTHIA8Run(MCRun):
 
     def generate_event(self):
         return not self.lib.next()
+
+class Pyphia8(PYTHIA8Run):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["PYTHIA8"]       
+        super(PYTHIA8Run, self).__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname) 

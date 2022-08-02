@@ -297,3 +297,25 @@ class QGSJet01Run(MCRun):
         # Convert QGSJET to HEPEVT
         self.lib.chepevt()
         return False
+    
+class QGSJet01c(QGSJet01Run):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["QGSJET01C"]       
+        super(QGSJet01Run, self).__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname) 
+      
+class QGSJetII03(QGSJetIIRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["QGSJETII03"]       
+        super(QGSJetIIRun, self).__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname) 
+        
+class QGSJetII04(QGSJetIIRun):   
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["QGSJETII04"]       
+        super(QGSJetIIRun, self).__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)           
+       

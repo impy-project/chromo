@@ -157,3 +157,11 @@ class PYTHIA6Run(MCRun):
     def generate_event(self):
         self.event_call()
         return False
+    
+class Pyphia6(PYTHIA6Run):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["PYTHIA6"]       
+        super(PYTHIA6Run, self).__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)     
+          

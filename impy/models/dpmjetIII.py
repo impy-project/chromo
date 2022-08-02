@@ -272,3 +272,25 @@ class DpmjetIIIRun(MCRun):
         reject = self.lib.dt_kkinc(*self._dpmjet_tup(), kkmat=-1)
         self.lib.dtevno.nevent += 1
         return reject
+
+class DpmjetIII191(DpmjetIIIRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["DPMJETIII191"]       
+        super(DpmjetIIIRun, self).__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)
+        
+class DpmjetIII192(DpmjetIIIRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["DPMJETIII192"]       
+        super(DpmjetIIIRun, self).__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)
+
+class DpmjetIII306(DpmjetIIIRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["DPMJETIII306"]       
+        super(DpmjetIIIRun, self).__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)                
+    

@@ -267,3 +267,17 @@ class PHOJETRun(MCRun):
 
     def generate_event(self):
         return self.lib.pho_event(1, self.p1, self.p2)[1]
+
+class Phojet112(PHOJETRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["PHOJET112"]       
+        super(PHOJETRun, self).__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)
+        
+class Phojet191(PHOJETRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["PHOJET191"]       
+        super(PHOJETRun, self).__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)        

@@ -240,3 +240,10 @@ class UrQMDRun(MCRun):
         # Convert URQMD event to HEPEVT
         self.lib.chepevt()
         return 0
+
+class UrQMD34(UrQMDRun):  
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["URQMD34"]       
+        super(UrQMDRun, self).__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)

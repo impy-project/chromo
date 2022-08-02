@@ -1,10 +1,10 @@
 # This dependency might be overkill for just reading a few
 # variables. Should be changed at some point.
-import scipy.constants as spc
+from scipy.constants import speed_of_light as _c_SI
 
-c = 1e2 * spc.c
-cm2sec = 1e-2 / spc.c
-sec2cm = spc.c * 1e2
+c = 1e2 * _c_SI
+cm2sec = 1e-2 / _c_SI
+sec2cm = _c_SI * 1e2
 eV = 1e-9
 keV = 1e-6
 MeV = 1e-3
