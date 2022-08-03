@@ -60,7 +60,7 @@ class EPOSEvent(MCEvent):
         return self.lib.hepevt.jdahep
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.charge_vect(self.lib.hepevt.idhep[self.selection])
 
     # Nuclear collision parameters

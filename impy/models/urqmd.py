@@ -67,7 +67,7 @@ class UrQMDEvent(MCEvent):
         return self.lib.hepevt.jdahep
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.uqchg.ichg[self.selection]
 
     # Nuclear collision parameters

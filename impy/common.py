@@ -18,6 +18,28 @@ from impy import impy_config
 from impy.util import info
 
 
+class EventData:
+    """Data structure to keep views of filtered data"""
+    def __init__(self, npart, p_ids, status, charge,
+                 px, py, pz, en, m, vx, vy, vz, vt,
+                 pem_arr, vt_arr):
+        self.npart = npart
+        self.p_ids = p_ids
+        self.status = status
+        self.charge = charge
+        self.px = px
+        self.py = py
+        self.pz = pz
+        self.en = en
+        self.m = m
+        self.vx = vx
+        self.vy = vy
+        self.vz = vz
+        self.vt = vt
+        self.pem_arr = pem_arr
+        self.vt_arr = vt_arr
+    
+    
 class MCEvent(object, six.with_metaclass(ABCMeta)):
     """The basis of interaction between user and all the event generators.
 
@@ -47,7 +69,9 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         vt (np.array)      : temporal order of vertex in ps, fs?
     """
     __sliced_params__ = [
-        'p_ids', 'status', 'px', 'py', 'pz', 'en', 'm', 'vx', 'vy', 'vz', 'vt',
+        'p_ids', 'status', 'charge',
+        'px', 'py', 'pz', 'en', 'm',
+        'vx', 'vy', 'vz', 'vt',
         'pem_arr', 'vt_arr'
     ]
 
@@ -81,18 +105,72 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         if impy_config['pre_slice']:
             info(10, 'Pre-slice enabled.')
             self.selection = slice(None, self.npart)
+            self.charge = self._charge_init
             self._apply_slicing()
         else: 
             info(10, 'Pre-slice disabled.')
             self.selection = slice(None, None)
+            self.charge = self._charge_init
         
         # The default slice only cuts limits the view to the array to
         # to the current number of entries
         self._is_filtered = False
+        self._views_cache = []
 
         # Apply boosts into frame required by user
         self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
         self.event_frame = impy_config["user_frame"]
+
+    
+    def filter_final(self):
+        self.selection = (self.status == 1)
+        self._cache_current_view()
+        self._apply_slicing()
+        return self
+      
+    def filter_charged(self):
+        self.selection = (self.charge != 0)
+        self._cache_current_view()
+        self._apply_slicing()
+        return self
+    
+    def _cache_current_view(self):
+        """Cache the current view of data"""
+        self._views_cache.append(EventData(
+            self._npart, self.p_ids, self.status, self.charge,
+            self.px, self.py, self.pz, self.en, self.m,
+            self.vx, self.vy, self.vz, self.vt,
+            self.pem_arr, self.vt_arr
+        ))
+    
+    def remove_last_filter(self):
+        """Remove the last applied filter"""
+        # if list empty then return
+        if not self._views_cache:
+            return
+        last = self._views_cache.pop()
+        self.npart = last.npart
+        self.p_ids = last.p_ids
+        self.status = last.status
+        self.charge = last.charge
+        self.px = last.px
+        self.py = last.py
+        self.pz = last.pz
+        self.en = last.en
+        self.m = last.m
+        self.vx = last.vx
+        self.vy = last.vy
+        self.vz = last.vz
+        self.vt = last.vt
+        self.pem_arr = last.pem_arr
+        self.vt_arr = last.vt_arr
+     
+    def remove_all_filters(self):
+        """Remove all filters (return to original data)"""
+        del self._views_cache[1:]
+        self.remove_last_filter()
+        self._is_filtered = False
+    
 
     def _apply_slicing(self):
         """Slices/copies the all varaibles according to filter criteria"""
@@ -126,7 +204,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         pass
 
     @abstractproperty
-    def charge(self):
+    def _charge_init(self):
         """Electrical charge"""
         pass
 

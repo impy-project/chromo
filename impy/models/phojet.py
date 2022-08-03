@@ -49,7 +49,7 @@ class PhojetEvent(MCEvent):
         self._apply_slicing()
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.poevt2.icolor[0, self.selection] // 3
 
     def _gen_cut_info(self):

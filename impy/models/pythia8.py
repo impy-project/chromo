@@ -81,7 +81,7 @@ class PYTHIA8Event(MCEvent):
         return self.lib.hepevt.jdahep
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.p_charge[self.selection]
 
     # Nuclear collision parameters

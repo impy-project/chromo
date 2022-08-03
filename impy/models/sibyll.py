@@ -51,7 +51,7 @@ class SibyllEvent(MCEvent):
         self._apply_slicing()
     
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.schg.ichg[self.selection]
 
     @property

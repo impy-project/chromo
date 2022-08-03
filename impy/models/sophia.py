@@ -68,7 +68,7 @@ class SophiaEvent(MCEvent):
         return sophia_interaction_types[self.lib.interaction_type_code]
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.schg.ichg[self.selection]
 
     @property

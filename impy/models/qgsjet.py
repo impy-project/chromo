@@ -58,7 +58,7 @@ class QGSJETEvent(MCEvent):
         return self.lib.hepevt.jdahep
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.qgchg.ichg[self.selection]
 
     @property

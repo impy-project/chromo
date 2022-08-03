@@ -24,6 +24,8 @@ class DpmjetIIMCEvent(MCEvent):
 
         if 'charge_info' in event_config and event_config['charge_info']:
             self.charge = lib.extevt.idch[sel]
+            # This is a patch to allow working with all other generators
+            self._charge_init = self.charge
 
         self.p_ids = evt.idhkk[sel]
         self.pt2 = evt.phkk[0, sel]**2 + evt.phkk[1, sel]**2

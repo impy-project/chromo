@@ -58,7 +58,7 @@ class DpmjetIIIEvent(MCEvent):
         return self.lib.dtevt1.jdahkk
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.dtpart.iich[self.lib.dtevt2.idbam[self.selection] - 1]
 
     # Nuclear collision parameters

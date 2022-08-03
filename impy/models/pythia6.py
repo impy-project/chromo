@@ -62,7 +62,7 @@ class PYTHIA6Event(MCEvent):
         return self.lib.hepevt.jdahep
 
     @property
-    def charge(self):
+    def _charge_init(self):
         if self.charge_vec is None:
             self.charge_vec = [
                 self.lib.pychge(self.lib.pyjets.k[i, 1]) / 3
