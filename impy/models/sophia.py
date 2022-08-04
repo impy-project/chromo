@@ -32,7 +32,7 @@ class SophiaEvent(MCEvent):
         pem_arr = lib.hepevt.phep[:, 0:np]
         # array of verticies (x, y, z, t) - all zeros for sophia
         vt_arr = lib.hepevt.vhep[:, 0:np]
-        
+
         MCEvent.__init__(
             self,
             lib=lib,
@@ -205,11 +205,11 @@ class SophiaRun(MCRun):
         self._define_default_fs_particles()
 
     def set_stable(self, pdgid, stable=True):
-         
+
         # Do not use global stable_list
         if not impy_config["sophia"]["use_stable_list"]:
             return
-           
+
         sid = abs(self.lib.icon_pdg_sib(pdgid))
         if abs(pdgid) == 311:
             info(1, "Ignores K0. Use K0L/S 130/310 in final state definition.")

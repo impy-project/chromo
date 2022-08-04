@@ -104,7 +104,6 @@ urqmd:
     # at plab < 4.9 use euation of state and Lorentz contraction of projectile
     # and target. This is not set necessarily in CORSIKA
     LE_EOS       : True
-    debug_level  : 0
 
 
 dpmjetIII:

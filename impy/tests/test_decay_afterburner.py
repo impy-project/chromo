@@ -22,9 +22,10 @@ class Pythia8DecayAfterburner(object):
         self._init_pythia()
 
     def _init_pythia(self):
-        pythia_dir = os.path.join(os.path.expanduser('~'), 'devel', 'apps',
-                                 'pythia8240')
-        sys.path.append(os.path.join(pythia_dir, 'lib'))
+        pythia_dir = os.path.join(
+            os.path.expanduser("~"), "devel", "apps", "pythia8240"
+        )
+        sys.path.append(os.path.join(pythia_dir, "lib"))
         import pythia8
 
         self.pythia = pythia8.Pythia()
@@ -87,22 +88,22 @@ class Pythia8DecayAfterburner(object):
         event._apply_slicing()
 
 
-event_kinematics = EventKinematics(ecm=200 * GeV,
-                                   p1pdg=2212,
-                                   p2pdg=2212
-                                   # nuc2_prop=(14,7)
-                                   )
+event_kinematics = EventKinematics(
+    ecm=200 * GeV,
+    p1pdg=2212,
+    p2pdg=2212
+    # nuc2_prop=(14,7)
+)
 
 # Watch out this setting!
-impy_config['pre_slice'] = False
+impy_config["pre_slice"] = False
 
 # The rest is pretty standard
-generator = make_generator_instance(interaction_model_by_tag['DPMJETIII191'])
+generator = make_generator_instance(interaction_model_by_tag["DPMJETIII191"])
 generator.init_generator(event_kinematics)
 
 # Here provide the list of particles which you want to retain as stable
-pythia_afterburner = Pythia8DecayAfterburner(
-    stable_list=[2212, 11, 12, 14, 15, 16, 22])
+pythia_afterburner = Pythia8DecayAfterburner(stable_list=[2212, 11, 12, 14, 15, 16, 22])
 
 for event in generator.event_generator(event_kinematics, 200):
     # This has to be the first call after an event is generated. The event object
@@ -111,4 +112,4 @@ for event in generator.event_generator(event_kinematics, 200):
     # Here filter only the particles that are remaining as stable
     event.filter_final_state()
     # Enjoy the result
-    print('p_ids', event.p_ids)
+    print("p_ids", event.p_ids)

@@ -1,4 +1,4 @@
-'''The :mod:`common`module contains the classes that expose the
+"""The :mod:`common`module contains the classes that expose the
 interaction model interface to the front-end and/or the user.
 
 Classes derived from :class:`MCEvent` in (for example :mod:`impy.models.sibyll`)
@@ -6,7 +6,7 @@ cast the data from the event generators' particle stacks to numpy arrays.
 The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
-'''
+"""
 import six
 import os
 from os.path import abspath
@@ -46,14 +46,44 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         vz (np.array)      : z-vertex in fm, mm?
         vt (np.array)      : temporal order of vertex in ps, fs?
     """
+
     __sliced_params__ = [
-        'p_ids', 'status', 'px', 'py', 'pz', 'en', 'm', 'vx', 'vy', 'vz', 'vt',
-        'pem_arr', 'vt_arr'
+        "p_ids",
+        "status",
+        "px",
+        "py",
+        "pz",
+        "en",
+        "m",
+        "vx",
+        "vy",
+        "vz",
+        "vt",
+        "pem_arr",
+        "vt_arr",
     ]
 
-    def __init__(self, lib, event_kinematics, event_frame, nevent, npart,
-                 p_ids, status, px, py, pz, en, m, vx, vy, vz, vt, pem_arr,
-                 vt_arr):
+    def __init__(
+        self,
+        lib,
+        event_kinematics,
+        event_frame,
+        nevent,
+        npart,
+        p_ids,
+        status,
+        px,
+        py,
+        pz,
+        en,
+        m,
+        vx,
+        vy,
+        vz,
+        vt,
+        pem_arr,
+        vt_arr,
+    ):
         # Store the variables for further filtering/access
         self.lib = lib
         self.kin = event_kinematics
@@ -78,14 +108,14 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         self.vt_arr = vt_arr  # (vx, vy, vz, t)
 
         # Initialize current selection to all entries up to npart
-        if impy_config['pre_slice']:
-            info(10, 'Pre-slice enabled.')
+        if impy_config["pre_slice"]:
+            info(10, "Pre-slice enabled.")
             self.selection = slice(None, self.npart)
             self._apply_slicing()
-        else: 
-            info(10, 'Pre-slice disabled.')
+        else:
+            info(10, "Pre-slice disabled.")
             self.selection = slice(None, None)
-        
+
         # The default slice only cuts limits the view to the array to
         # to the current number of entries
         self._is_filtered = False
@@ -96,19 +126,19 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
 
     def _apply_slicing(self):
         """Slices/copies the all varaibles according to filter criteria"""
-        info(30, 'Slicing attributes.')
+        info(30, "Slicing attributes.")
         for var in self.__sliced_params__:
             # TODO: AF: Not clear if the kinematical arrays should be
             # exposed to the user and sliced at all. If not remove the braching
             # and delete *_arr from sliced params class variable.
-            if var[-4:] == '_arr':
-                setattr(self, var, getattr(self, var)[:,self.selection])
+            if var[-4:] == "_arr":
+                setattr(self, var, getattr(self, var)[:, self.selection])
             else:
                 setattr(self, var, getattr(self, var)[self.selection])
-        
+
         # Update the exposed number of particles to the length of slice
         self.npart = len(self.p_ids)
-        
+
         self._is_filtered = True
 
     @abstractmethod
@@ -144,19 +174,20 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
 
         Returns:
             (array)     : [2, npart] array
-            
+
         Raises:
             (Exception) : if filtering has been applied.
         """
         if self._is_filtered:
             raise Exception(
-                'Parent indices do not point to the' +
-                'correct particle indices if slicing/filtering is applied.')
+                "Parent indices do not point to the"
+                + "correct particle indices if slicing/filtering is applied."
+            )
 
     @abstractmethod
     def children(self):
         """Range of indices pointing to daughter particles.
-        
+
         The range of children particles is given by two the two
         indices of the 0th axis.
 
@@ -173,8 +204,9 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         """
         if self._is_filtered:
             raise Exception(
-                'Child indices do not point to the' +
-                'correct particle indices if slicing/filtering is applied.')
+                "Child indices do not point to the"
+                + "correct particle indices if slicing/filtering is applied."
+            )
 
     @property
     def pt(self):
@@ -204,26 +236,26 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
     @property
     def xf(self):
         """Feynman x_F"""
-        return 2. * self.pz / self.kin.ecm
+        return 2.0 * self.pz / self.kin.ecm
 
     @property
     def theta(self):
         """arctan(pt/pz) in rad"""
-        return np.arctan2(self.pt , self.pz)
+        return np.arctan2(self.pt, self.pz)
 
     @property
     def phi(self):
         """arctan(py/px) in rad"""
-        return np.arctan2(self.py , self.px)
-    
+        return np.arctan2(self.py, self.px)
+
     @property
     def elab(self):
         """Kinetic energy"""
         kin = self.kin
-        if self.event_frame == 'laboratory':
+        if self.event_frame == "laboratory":
             return self.en
-        return (kin.gamma_cm * self.en + kin.betagamma_z_cm * self.pz)
-    
+        return kin.gamma_cm * self.en + kin.betagamma_z_cm * self.pz
+
     @property
     def ekin(self):
         """Kinetic energy"""
@@ -233,16 +265,16 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
     def xlab(self):
         """Energy fraction E/E_beam in lab. frame"""
         return self.elab / self.kin.elab
-    
+
     @property
     def fw(self):
         """I don't remember what this was for..."""
         return self.en / self.kin.pcm
 
 
-#=========================================================================
+# =========================================================================
 # Settings
-#=========================================================================
+# =========================================================================
 class Settings(six.with_metaclass(ABCMeta)):
     """Custom classes derived from this template allow to set certain low
     level variables in the generators before or after initialization, or for
@@ -286,14 +318,13 @@ class Settings(six.with_metaclass(ABCMeta)):
         return not self.__ne__(other_instance)
 
     def __ne__(self, other_instance):
-        if self.__class__.__name__ != \
-                other_instance.__class__.__name__:
+        if self.__class__.__name__ != other_instance.__class__.__name__:
             return True
 
         other_attr = other_instance.__dict__
 
         for attr, value in six.iteritems(self.__dict__):
-            if attr == 'lib':
+            if attr == "lib":
                 continue
             elif attr not in other_attr.keys():
                 return True
@@ -302,9 +333,9 @@ class Settings(six.with_metaclass(ABCMeta)):
         return False
 
 
-#=========================================================================
+# =========================================================================
 # MCRun
-#=========================================================================
+# =========================================================================
 class MCRun(six.with_metaclass(ABCMeta)):
     #: Prevent creating multiple classes within same python scope
     _is_initialized = []
@@ -322,10 +353,10 @@ class MCRun(six.with_metaclass(ABCMeta)):
         self._name = interaction_model_def.name
         self._version = interaction_model_def.version
         self._output_frame = interaction_model_def.output_frame
-        if 'label' not in kwargs:
+        if "label" not in kwargs:
             self._label = self._name + " " + self._version
         else:
-            self._label = kwargs['label']
+            self._label = kwargs["label"]
 
         # Currently initialized event kinematics
         self._curr_event_kin = None
@@ -368,9 +399,9 @@ class MCRun(six.with_metaclass(ABCMeta)):
         return self._version
 
     @abstractmethod
-    def init_generator(self, event_kinematics, seed='random'):
+    def init_generator(self, event_kinematics, seed="random"):
         """Initializes event generator.
-        
+
         The maximal energy and particle masses from the event_kinematics
         object define the maximal range, i.e. the energy requested in subsequent
         `set_event_kinematics` calls should not exceed the one provided here.
@@ -379,7 +410,7 @@ class MCRun(six.with_metaclass(ABCMeta)):
             event_kinematics (object): maximal energy and masses for subsequent runs
             seed (int)               : random seed, at least 8 digit int
 
-        """ 
+        """
         pass
 
     @abstractmethod
@@ -407,16 +438,16 @@ class MCRun(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def set_stable(self, pdgid, stable=True):
         """Prevent decay of unstable particles
-        
+
         Args:
             pdgid (int)        : PDG ID of the particle
             stable (bool)      : If `False`, particle is allowed to decay
         """
         pass
-    
+
     def set_unstable(self, pdgid):
         """Convenience funtion for `self.set_stable(..., stable=False)`
-        
+
         Args:
             pdgid(int)         : PDG ID of the particle
         """
@@ -433,7 +464,7 @@ class MCRun(six.with_metaclass(ABCMeta)):
     def sigma_inel_air(self, **kwargs):
         """Hadron-air production cross sections according to current
         event setup (energy, projectile).
-        
+
         Args:
            precision (int): Anything else then 'default' (str) will set
                             the number of MC trails to that number.
@@ -443,18 +474,22 @@ class MCRun(six.with_metaclass(ABCMeta)):
 
         # Make a backup of the current kinematics config
         prev_kin = copy(self._curr_event_kin)
-        frac_air = impy_config['frac_air']
+        frac_air = impy_config["frac_air"]
 
-        cs = 0.
+        cs = 0.0
         for f, iat in frac_air:
             if prev_kin.p1_is_nucleus:
-                k = EventKinematics(ecm=prev_kin.ecm,
-                    nuc1_prop=(prev_kin.A1, prev_kin.Z2), 
-                    nuc2_prop=(iat, int(iat/2)))
+                k = EventKinematics(
+                    ecm=prev_kin.ecm,
+                    nuc1_prop=(prev_kin.A1, prev_kin.Z2),
+                    nuc2_prop=(iat, int(iat / 2)),
+                )
             else:
-                k = EventKinematics(ecm=prev_kin.ecm,
-                    p1pdg=prev_kin.p1pdg, 
-                    nuc2_prop=(iat, int(iat/2)))
+                k = EventKinematics(
+                    ecm=prev_kin.ecm,
+                    p1pdg=prev_kin.p1pdg,
+                    nuc2_prop=(iat, int(iat / 2)),
+                )
             self.set_event_kinematics(k)
             cs += f * self.sigma_inel(**kwargs)
 
@@ -490,9 +525,9 @@ class MCRun(six.with_metaclass(ABCMeta)):
         from random import randint
 
         if path.isfile(fname) and os.stat(fname).st_size != 0:
-            raise Exception('Attempts to overwrite log :' + fname)
+            raise Exception("Attempts to overwrite log :" + fname)
         elif self.output_lun is not None:
-            raise Exception('Log already attached to LUN', self.output_lun)
+            raise Exception("Log already attached to LUN", self.output_lun)
 
         path.abspath(fname)
         # Create a random fortran output unit
@@ -501,9 +536,8 @@ class MCRun(six.with_metaclass(ABCMeta)):
         return self.output_lun
 
     def close_logfile(self):
-        """Constructed for closing C++ and FORTRAN log files
-        """
-        if 'pythia8' not in self._label:
+        """Constructed for closing C++ and FORTRAN log files"""
+        if "pythia8" not in self._label:
             self.close_fortran_logfile()
         else:
             # self.close_cc_logfile()
@@ -512,7 +546,7 @@ class MCRun(six.with_metaclass(ABCMeta)):
     def close_fortran_logfile(self):
         """FORTRAN LUN has to be released when finished to flush buffers."""
         if self.output_lun is None:
-            info(2, 'Output went not to file.')
+            info(2, "Output went not to file.")
         else:
             self.lib.impy_closelogfile(self.output_lun)
             self.output_lun = None
@@ -526,13 +560,12 @@ class MCRun(six.with_metaclass(ABCMeta)):
         # for pdgid in make_stable_list(impy_config['tau_stable'], pdata):
         #     self.set_stable(pdgid)
 
-        info(5, 'Setting following particles to be stable:',
-             impy_config['stable_list'])
+        info(5, "Setting following particles to be stable:", impy_config["stable_list"])
 
-        for pdgid in impy_config['stable_list']:
+        for pdgid in impy_config["stable_list"]:
             self.set_stable(pdgid)
 
-        if impy_config['pi0_stable']:
+        if impy_config["pi0_stable"]:
             self.set_stable(111)
 
     def event_generator(self, event_kinematics, nevents):
@@ -545,21 +578,22 @@ class MCRun(six.with_metaclass(ABCMeta)):
         and history. And classes seem to just this.
         """
         self.set_event_kinematics(event_kinematics)
-        retry_on_rejection = impy_config['retry_on_rejection']
+        retry_on_rejection = impy_config["retry_on_rejection"]
         # Initialize counters to prevent infinite loops in rejections
         ntrials = 0
         nremaining = nevents
         while nremaining > 0:
             if self.generate_event() == 0:
-                yield self._event_class(self.lib, self._curr_event_kin,
-                                        self._output_frame)
+                yield self._event_class(
+                    self.lib, self._curr_event_kin, self._output_frame
+                )
                 nremaining -= 1
                 ntrials += 1
             elif retry_on_rejection:
-                info(10, 'Rejection occured. Retrying..')
+                info(10, "Rejection occured. Retrying..")
                 ntrials += 1
                 continue
             elif ntrials > 2 * nevents:
-                raise Exception('Things run bad. Check your input.')
+                raise Exception("Things run bad. Check your input.")
             else:
-                info(0, 'Rejection occured')
+                info(0, "Rejection occured")

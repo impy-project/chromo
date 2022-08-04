@@ -24,7 +24,11 @@ models = {
 parser = argparse.ArgumentParser()
 parser.add_argument("-v,--version", action="version", version="0.1")
 # parser.add
-parser.add_argument("-m,--model", type=int, default=0,
+parser.add_argument(
+    "-m,--model",
+    type=int,
+    default=0,
     help="model [0=EPOS_LHC, 1=EPOS_1.99, 2=QGSJET01,"
-         "4=Pythia_6.115, 6=Sibyll_2.3, 7=QGSJETII-04,"
-         "12=DPMJet 3.0-6]")
+    "4=Pythia_6.115, 6=Sibyll_2.3, 7=QGSJETII-04,"
+    "12=DPMJet 3.0-6]",
+)
