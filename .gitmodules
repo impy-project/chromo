@@ -1,3 +1,6 @@
 [submodule "src/dpmjetIII-19.1"]
 	path = src/dpmjetIII-19.1
 	url = https://github.com/afedynitch/DPMJET.git
+[submodule "src/dpmjetIII-19.3"]
+	path = src/dpmjetIII-19.3
+	url = git@github.com:DPMJET/DPMJET.git
