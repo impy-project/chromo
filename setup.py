@@ -3,7 +3,6 @@ https://github.com/pybind/cmake_example/blob/master/setup.py
 """
 
 import os
-import re
 import sys
 import platform
 import subprocess
@@ -24,15 +23,18 @@ class MakeBuild(build_ext):
     def run(self):
         if platform.system() == "Windows":
             try:
-                out = subprocess.check_output(["mingw32-make.exe", "--version"])
+                subprocess.check_output(["mingw32-make.exe", "--version"])
             except OSError:
                 raise RuntimeError(
-                    "mingw32-make.exe must be installed to build the following extensions: "
+                    (
+                        "mingw32-make.exe must be installed to "
+                        "build the following extensions: "
+                    )
                     + ", ".join(e.name for e in self.extensions)
                 )
         else:
             try:
-                out = subprocess.check_output(["make", "--version"])
+                subprocess.check_output(["make", "--version"])
             except OSError:
                 raise RuntimeError(
                     "Make must be installed to build the following extensions: "
@@ -53,7 +55,7 @@ class MakeBuild(build_ext):
             suffix = sysconfig.get_config_var("SO")
 
         if platform.system() == "Windows":
-            make_command = "mingw32-make.exe"
+            # make_command = "mingw32-make.exe"
             libext = (
                 ".cp"
                 + sysconfig.get_config_var("py_version_nodot")
@@ -67,7 +69,7 @@ class MakeBuild(build_ext):
                 "LEXT=" + libext,
             ]
         else:
-            make_command = "make"
+            # make_command = "make"
             libext = suffix
             build_args = ["LIB_DIR=" + extdir + "/impy/lib", "LEXT=" + libext]
 
@@ -132,7 +134,14 @@ setup(
     packages=["impy", "impy.models"],
     data_files=[("", ["LICENSE", "impy/impy_config.yaml"]), ("iamdata", iamfiles)],
     include_package_data=True,
-    install_requires=["six", "particletools", "numpy", "pyyaml", "pyhepmc-ng", "scipy"],
+    install_requires=[
+        "six",
+        "particletools",
+        "numpy<1.20",
+        "pyyaml",
+        "pyhepmc",
+        "scipy",
+    ],
     ext_modules=[MakeExtension("impy_libs")],
     cmdclass=dict(build_ext=MakeBuild),
     zip_safe=False,

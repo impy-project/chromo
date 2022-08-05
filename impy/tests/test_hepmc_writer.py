@@ -33,7 +33,7 @@ def test_hepmc_writer(model_tag):
     # To run this test do `pytest tests/test_hepmc_writer.py`
     # This test fails because the event record written by HepMC3 C++ is bad,
     # a lot of particles are missing. Either a bug in the original impy record or a bug in the
-    # HepMC3 C++ code (not the pyhepmc_ng code).
+    # HepMC3 C++ code (not the pyhepmc code).
     generator = make_generator_instance(interaction_model_by_tag[model_tag])
     generator.init_generator(event_kinematics)
 
@@ -61,9 +61,9 @@ def test_hepmc_writer(model_tag):
             )
             w.write(event)
 
-    import pyhepmc_ng
+    import pyhepmc
 
-    for ievent, event in enumerate(pyhepmc_ng.open(test_file)):
+    for ievent, event in enumerate(pyhepmc.open(test_file)):
         assert event is not None
         assert event.event_number == ievent
 
