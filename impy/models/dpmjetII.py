@@ -24,6 +24,8 @@ class DpmjetIIMCEvent(MCEvent):
 
         if "charge_info" in event_config and event_config["charge_info"]:
             self.charge = lib.extevt.idch[sel]
+            # This is a patch to allow working with all other generators
+            self._charge_init = self.charge
 
         self.p_ids = evt.idhkk[sel]
         self.pt2 = evt.phkk[0, sel] ** 2 + evt.phkk[1, sel] ** 2
@@ -52,7 +54,7 @@ class DpmjetIIMCRun(MCRun):
         k = self.evkin
         return self.lib.siinel(self.lib.mcihad(k.p1pdg), 1, k.ecm)
 
-    def set_event_kinematics(self, event_kinematics):
+    def _set_event_kinematics(self, event_kinematics):
         k = event_kinematics
 
         self.dpmevt_tup = k.elab, k.A1, k.Z1, k.A2, k.Z2, self.lib.mcihad(k.p1pdg)
@@ -61,7 +63,7 @@ class DpmjetIIMCRun(MCRun):
 
     def init_generator(self, config):
         # Comprise DPMJET input from the event kinematics object
-        self.set_event_kinematics(self.evkin)
+        self._set_event_kinematics(self.evkin)
         k = self.evkin
 
         try:

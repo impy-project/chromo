@@ -62,7 +62,7 @@ class EPOSEvent(MCEvent):
         return self.lib.hepevt.jdahep
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.charge_vect(self.lib.hepevt.idhep[self.selection])
 
     # Nuclear collision parameters
@@ -118,7 +118,7 @@ class EPOSRun(MCRun):
         )
         return (k.ecm, -1.0, k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2)
 
-    def set_event_kinematics(self, event_kinematics):
+    def _set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
         k = event_kinematics
@@ -181,7 +181,7 @@ class EPOSRun(MCRun):
 
         # Set default stable
         self._define_default_fs_particles()
-        self.set_event_kinematics(event_kinematics)
+        self._set_event_kinematics(event_kinematics)
 
         self.lib.charge_vect = np.vectorize(self.lib.getcharge, otypes=[np.int])
 
@@ -198,3 +198,10 @@ class EPOSRun(MCRun):
         self.lib.afinal()
         self.lib.hepmcstore()
         return False
+
+class EposLHC(EPOSRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["EPOSLHC"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)

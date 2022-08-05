@@ -64,7 +64,7 @@ class PYTHIA6Event(MCEvent):
         return self.lib.hepevt.jdahep
 
     @property
-    def charge(self):
+    def _charge_init(self):
         if self.charge_vec is None:
             self.charge_vec = [
                 self.lib.pychge(self.lib.pyjets.k[i, 1]) / 3 for i in range(self.npart)
@@ -85,7 +85,7 @@ class PYTHIA6Run(MCRun):
         """PYTHIA6 does not support nuclear targets."""
         raise Exception("PYTHIA6 does not support nuclear targets.")
 
-    def set_event_kinematics(self, event_kinematics):
+    def _set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
         k = event_kinematics
@@ -139,7 +139,7 @@ class PYTHIA6Run(MCRun):
         # self.mstp[51]
 
         # self.lib.pysubs.msel = 2
-        # self.set_event_kinematics(event_kinematics)
+        # self._set_event_kinematics(event_kinematics)
 
         # Set default stable
         self._define_default_fs_particles()
@@ -161,3 +161,11 @@ class PYTHIA6Run(MCRun):
     def generate_event(self):
         self.event_call()
         return False
+    
+class Pyphia6(PYTHIA6Run):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["PYTHIA6"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)     
+          

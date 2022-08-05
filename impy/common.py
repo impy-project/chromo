@@ -18,6 +18,28 @@ from impy import impy_config
 from impy.util import info
 
 
+class EventData:
+    """Data structure to keep views of filtered data"""
+    def __init__(self, npart, p_ids, status, charge,
+                 px, py, pz, en, m, vx, vy, vz, vt,
+                 pem_arr, vt_arr):
+        self.npart = npart
+        self.p_ids = p_ids
+        self.status = status
+        self.charge = charge
+        self.px = px
+        self.py = py
+        self.pz = pz
+        self.en = en
+        self.m = m
+        self.vx = vx
+        self.vy = vy
+        self.vz = vz
+        self.vt = vt
+        self._pem_arr = pem_arr
+        self._vt_arr = vt_arr
+    
+    
 class MCEvent(object, six.with_metaclass(ABCMeta)):
     """The basis of interaction between user and all the event generators.
 
@@ -48,19 +70,10 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
     """
 
     __sliced_params__ = [
-        "p_ids",
-        "status",
-        "px",
-        "py",
-        "pz",
-        "en",
-        "m",
-        "vx",
-        "vy",
-        "vz",
-        "vt",
-        "pem_arr",
-        "vt_arr",
+        'p_ids', 'status', 'charge',
+        'px', 'py', 'pz', 'en', 'm',
+        'vx', 'vy', 'vz', 'vt',
+        '_pem_arr', '_vt_arr'
     ]
 
     def __init__(
@@ -104,25 +117,80 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         self.vt = vt
 
         # Full arrays of kinematical vectors
-        self.pem_arr = pem_arr  # (px, py, pz, E, m)
-        self.vt_arr = vt_arr  # (vx, vy, vz, t)
+        self._pem_arr = pem_arr  # (px, py, pz, E, m)
+        self._vt_arr = vt_arr  # (vx, vy, vz, t)
 
         # Initialize current selection to all entries up to npart
         if impy_config["pre_slice"]:
             info(10, "Pre-slice enabled.")
             self.selection = slice(None, self.npart)
+            self.charge = self._charge_init
             self._apply_slicing()
         else:
             info(10, "Pre-slice disabled.")
             self.selection = slice(None, None)
-
+            self.charge = self._charge_init
+        
         # The default slice only cuts limits the view to the array to
         # to the current number of entries
         self._is_filtered = False
+        self._views_cache = []
 
         # Apply boosts into frame required by user
         self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
         self.event_frame = impy_config["user_frame"]
+
+    
+    def filter_final(self):
+        self.selection = (self.status == 1)
+        self._cache_current_view()
+        self._apply_slicing()
+        return self
+      
+    def filter_charged(self):
+        self.selection = (self.charge != 0)
+        self._cache_current_view()
+        self._apply_slicing()
+        return self
+    
+    def _cache_current_view(self):
+        """Cache the current view of data"""
+        self._views_cache.append(EventData(
+            self._npart, self.p_ids, self.status, self.charge,
+            self.px, self.py, self.pz, self.en, self.m,
+            self.vx, self.vy, self.vz, self.vt,
+            self._pem_arr, self._vt_arr
+        ))
+    
+    def remove_last_filter(self):
+        """Remove the last applied filter"""
+        # if list empty then return
+        if not self._views_cache:
+            return
+        last = self._views_cache.pop()
+        self.npart = last.npart
+        self.p_ids = last.p_ids
+        self.status = last.status
+        self.charge = last.charge
+        self.px = last.px
+        self.py = last.py
+        self.pz = last.pz
+        self.en = last.en
+        self.m = last.m
+        self.vx = last.vx
+        self.vy = last.vy
+        self.vz = last.vz
+        self.vt = last.vt
+        self._pem_arr = last._pem_arr
+        self._vt_arr = last._vt_arr
+        
+     
+    def remove_all_filters(self):
+        """Remove all filters (return to original data)"""
+        del self._views_cache[1:]
+        self.remove_last_filter()
+        self._is_filtered = False
+    
 
     def _apply_slicing(self):
         """Slices/copies the all varaibles according to filter criteria"""
@@ -156,7 +224,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         pass
 
     @abstractproperty
-    def charge(self):
+    def _charge_init(self):
         """Electrical charge"""
         pass
 
@@ -366,6 +434,9 @@ class MCRun(six.with_metaclass(ABCMeta)):
 
         # FORTRAN LUN that keeps logfile handle
         self.output_lun = None
+        
+        # Number of generated events so far
+        self.nevents = 0
 
     def __enter__(self):
         """TEMP: It would be good to actually use the with construct to
@@ -404,7 +475,7 @@ class MCRun(six.with_metaclass(ABCMeta)):
 
         The maximal energy and particle masses from the event_kinematics
         object define the maximal range, i.e. the energy requested in subsequent
-        `set_event_kinematics` calls should not exceed the one provided here.
+        `_set_event_kinematics` calls should not exceed the one provided here.
 
         Args:
             event_kinematics (object): maximal energy and masses for subsequent runs
@@ -423,7 +494,7 @@ class MCRun(six.with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def set_event_kinematics(self, evtkin):
+    def _set_event_kinematics(self, evtkin):
         """Set new combination of energy, momentum, projectile
         and target combination for next event.
 
@@ -434,6 +505,14 @@ class MCRun(six.with_metaclass(ABCMeta)):
         important thing is that generate_event remains argument-free.
         """
         pass
+
+    @property
+    def event_kinematics(self):
+        return self._curr_event_kin
+    
+    @event_kinematics.setter
+    def event_kinematics(self, evtkin):
+        self._set_event_kinematics(evtkin)
 
     @abstractmethod
     def set_stable(self, pdgid, stable=True):
@@ -485,16 +564,14 @@ class MCRun(six.with_metaclass(ABCMeta)):
                     nuc2_prop=(iat, int(iat / 2)),
                 )
             else:
-                k = EventKinematics(
-                    ecm=prev_kin.ecm,
-                    p1pdg=prev_kin.p1pdg,
-                    nuc2_prop=(iat, int(iat / 2)),
-                )
-            self.set_event_kinematics(k)
+                k = EventKinematics(ecm=prev_kin.ecm,
+                    p1pdg=prev_kin.p1pdg, 
+                    nuc2_prop=(iat, int(iat/2)))
+            self._set_event_kinematics(k)
             cs += f * self.sigma_inel(**kwargs)
 
         # Restore settings
-        self.set_event_kinematics(prev_kin)
+        self._set_event_kinematics(prev_kin)
 
         return cs
 
@@ -568,6 +645,31 @@ class MCRun(six.with_metaclass(ABCMeta)):
         if impy_config["pi0_stable"]:
             self.set_stable(111)
 
+    def __call__(self, nevents):
+        """Generator function (in python sence) 
+        which launches the underlying event generator 
+        and returns its the result (event) as MCEvent object
+        """
+        retry_on_rejection = impy_config['retry_on_rejection']
+        # Initialize counters to prevent infinite loops in rejections
+        ntrials = 0
+        nremaining = nevents
+        while nremaining > 0:
+            if self.generate_event() == 0:
+                self.nevents += 1
+                yield self._event_class(self.lib, self._curr_event_kin,
+                                        self._output_frame)
+                nremaining -= 1
+                ntrials += 1
+            elif retry_on_rejection:
+                info(10, 'Rejection occured. Retrying..')
+                ntrials += 1
+                continue
+            elif ntrials > 2 * nevents:
+                raise Exception('Things run bad. Check your input.')
+            else:
+                info(0, 'Rejection occured')
+
     def event_generator(self, event_kinematics, nevents):
         """This is some kind of equivalent to Hans'
         generator concept.
@@ -577,8 +679,8 @@ class MCRun(six.with_metaclass(ABCMeta)):
         initialization issue something has to keep track of ownership
         and history. And classes seem to just this.
         """
-        self.set_event_kinematics(event_kinematics)
-        retry_on_rejection = impy_config["retry_on_rejection"]
+        self._set_event_kinematics(event_kinematics)
+        retry_on_rejection = impy_config['retry_on_rejection']
         # Initialize counters to prevent infinite loops in rejections
         ntrials = 0
         nremaining = nevents
@@ -594,6 +696,6 @@ class MCRun(six.with_metaclass(ABCMeta)):
                 ntrials += 1
                 continue
             elif ntrials > 2 * nevents:
-                raise Exception("Things run bad. Check your input.")
+                raise RuntimeError('Things run bad. Check your input.')
             else:
                 info(0, "Rejection occured")

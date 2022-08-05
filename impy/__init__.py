@@ -32,5 +32,10 @@ for dpmmod in ["dpmjetIII", "phojet"]:
 impy_config["epos"]["datdir"] = join(base_path, impy_config["epos"]["datdir"])
 
 pdata = PYTHIAParticleData(
-    cache_file=open(join(base_path, impy_config["pdata_cachefile"]), "wb")
-)
+    cache_file=open(
+        join(base_path, impy_config["pdata_cachefile"]), 'wb'))
+
+
+import impy.models as models
+import impy.kinematics as kinematics
+import impy.constants as constants

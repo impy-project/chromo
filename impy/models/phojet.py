@@ -51,7 +51,7 @@ class PhojetEvent(MCEvent):
         self._apply_slicing()
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.poevt2.icolor[0, self.selection] // 3
 
     def _gen_cut_info(self):
@@ -141,7 +141,7 @@ class PHOJETRun(MCRun):
             self.lib.pydat3.mdcy[kc - 1, 0] = 1
             info(5, "forcing decay of", pdgid)
 
-    def set_event_kinematics(self, event_kinematics):
+    def _set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
         info(5, "Setting event kinematics")
@@ -240,7 +240,7 @@ class PHOJETRun(MCRun):
         # direct photon interaction (for incoming photons only)
         process_switch[7, 0] = 1
 
-        self.set_event_kinematics(event_kinematics)
+        self._set_event_kinematics(event_kinematics)
 
         if self.lib.pho_event(-1, self.p1, self.p2)[1]:
             raise Exception(
@@ -272,3 +272,17 @@ class PHOJETRun(MCRun):
 
     def generate_event(self):
         return self.lib.pho_event(1, self.p1, self.p2)[1]
+
+class Phojet112(PHOJETRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["PHOJET112"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)
+        
+class Phojet191(PHOJETRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["PHOJET191"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)        

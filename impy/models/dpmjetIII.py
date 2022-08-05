@@ -61,7 +61,7 @@ class DpmjetIIIEvent(MCEvent):
         return self.lib.dtevt1.jdahkk
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.dtpart.iich[self.lib.dtevt2.idbam[self.selection] - 1]
 
     # Nuclear collision parameters
@@ -136,7 +136,7 @@ class DpmjetIIIRun(MCRun):
         )
         return (k.A1, k.Z1, k.A2, k.Z2, self.lib.idt_icihad(k.p1pdg), k.elab)
 
-    def set_event_kinematics(self, event_kinematics):
+    def _set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
         info(5, "Setting event kinematics")
@@ -150,7 +150,7 @@ class DpmjetIIIRun(MCRun):
 
         # AF: No idea yet, but apparently this functionality was around?!
         # if hasattr(k, 'beam') and hasattr(self.lib, 'init'):
-        #     print(self.class_name + "::set_event_kinematics():" +
+        #     print(self.class_name + "::_set_event_kinematics():" +
         #           "setting beam params", k.beam)
         #     self.lib.dt_setbm(k.A1, k.Z1, k.A2, k.Z2, k.beam[0], k.beam[1])
         #     print 'OK'
@@ -193,7 +193,7 @@ class DpmjetIIIRun(MCRun):
         self._max_A1 = event_kinematics.A1
         self._max_A2 = event_kinematics.A2
 
-        self.set_event_kinematics(event_kinematics)
+        self._set_event_kinematics(event_kinematics)
         k = self._curr_event_kin
         dpm_conf = impy_config["dpmjetIII"]
 
@@ -281,3 +281,25 @@ class DpmjetIIIRun(MCRun):
         reject = self.lib.dt_kkinc(*self._dpmjet_tup(), kkmat=-1)
         self.lib.dtevno.nevent += 1
         return reject
+
+class DpmjetIII191(DpmjetIIIRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["DPMJETIII191"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)
+        
+class DpmjetIII192(DpmjetIIIRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["DPMJETIII192"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)
+
+class DpmjetIII306(DpmjetIIIRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["DPMJETIII306"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)                
+    
