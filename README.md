@@ -36,13 +36,17 @@ print('Average pT for charged pions {0:4.3f}'.format(average_pt))
 
 ## Installation
 
+### Without docker
+
+If you have trouble with this installation guide, look into the subsection which explains how to install in impy in a fixed docker environment.
+
 The package is (will be) available including pre-compiled binaries. The installation in that case simplifies to (*this does not work yet use installation from source*):
 
     pip install impy
 
 To build from source (the **recursive** flag is important to checkout the sub-modules):
 
-    git clone --recursive https://github.com/afedynitch/impy
+    git clone --recursive https://github.com/impy-project/impy
     cd impy
     pip install -e .
     make -j<insert number of CPU cores>
@@ -53,9 +57,32 @@ Because of the architectural transition and there are many issues on mac, buildi
 
     CC=gcc-10 CXX=gcc-10 FC=gfortran-10 PYTHON_EXE=/usr/local/opt/python@3.8/bin/python3 make -jXXX
 
-Replace `gcc-10` by your version in brew. The official Mac Python is currently broken due to th transition to Apple Silicon, but it is possible to build with a bit of hacking. But currently
+Replace `gcc-10` by your version in brew. The official Mac Python is currently broken due to the transition to Apple Silicon, but it is possible to build with a bit of hacking. But currently
 I don't use a Mac and cannot debug it. 
  
+### With docker
+
+This guide works on Linux and OSX. You need a running docker server. Please google how to set up docker on your machine.
+
+    # download impy
+    git clone --recursive https://github.com/impy-project/impy
+    cd impy
+
+    # download linux image, this takes a while
+    docker pull quay.io/pypa/manylinux2010_x86_64
+
+    # create docker instance and bind impy directory
+    docker run -d -it --name impy -v "$(pwd)":/app quay.io/pypa/manylinux2010_x86_64
+
+    # enter your docker instance
+    docker exec -it impy /bin/bash
+
+    cd /app
+    pip install -e .
+    make -j<insert number of CPU cores>
+
+You can now use impy inside the docker instance.
+
 ## Requirements
 
 - Python 2.7 - 3.9
