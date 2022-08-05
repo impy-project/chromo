@@ -4,7 +4,7 @@ import numpy as np
 
 root_dir = os.path.abspath(os.path.dirname(__file__) + "/..")
 sys.path.append(root_dir)
-sys.path.append(os.path.join(root_dir,'../DPMJET-III-gitlab'))
+sys.path.append(os.path.join(root_dir, "../DPMJET-III-gitlab"))
 
 
 from impy.definitions import *
@@ -22,11 +22,12 @@ event_kinematics = EventKinematics(
     ecm=7 * TeV,
     p1pdg=-211,
     # nuc1_prop=(12,6),
-    nuc2_prop=(12, 6))
+    nuc2_prop=(12, 6),
+)
 
-impy_config["user_frame"] = 'laboratory'
+impy_config["user_frame"] = "laboratory"
 
-generator = make_generator_instance(interaction_model_by_tag['DPMJETIII171'])
+generator = make_generator_instance(interaction_model_by_tag["DPMJETIII171"])
 generator.init_generator(event_kinematics)
 # import IPython
 # IPython.embed()
@@ -38,8 +39,8 @@ for event in generator.event_generator(event_kinematics, 10):
     # print 'py', event.py
     # print 'pz', event.pz
     # print 'en', event.en
-    print('p_ids', event.p_id)
-    print('impact param', event.impact_parameter)
+    print("p_ids", event.p_id)
+    print("impact param", event.impact_parameter)
     # import IPython
     # IPython.embed()
     # print event.impact_parameter, event.n_wounded_A, event.n_wounded_B#, event.n_NN_interactions

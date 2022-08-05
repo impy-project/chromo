@@ -18,62 +18,68 @@ from impy.util import info
 # 7 TeV). If you want cosmic ray energies, this should
 # be rather p-N at 10 EeV and lab frame (not yet defined).
 
-event_kinematics = EventKinematics(ecm=7000 * GeV,
-                                   p1pdg=2212,
-                                   p2pdg=2212
-                                   # nuc2_prop=(14,7)
-                                   )
+event_kinematics = EventKinematics(
+    ecm=7000 * GeV,
+    p1pdg=2212,
+    p2pdg=2212
+    # nuc2_prop=(14,7)
+)
 
-impy_config["user_frame"] = 'center-of-mass'
+impy_config["user_frame"] = "center-of-mass"
 
 gen_list = [
-    'SIBYLL23D', 
-    'SIBYLL23C', 
-    'SIBYLL23', 
-    'SIBYLL21', 
-    'DPMJETIII306', 
-    'DPMJETIII191', 
-    'EPOSLHC',
-    'PHOJET112',
-    'PHOJET191',
-    'URQMD34',
+    "SIBYLL23D",
+    "SIBYLL23C",
+    "SIBYLL23",
+    "SIBYLL21",
+    "DPMJETIII306",
+    "DPMJETIII191",
+    "EPOSLHC",
+    "PHOJET112",
+    "PHOJET191",
+    "URQMD34",
     # 'PYTHIA8',
-    'QGSJET01C',
-    'QGSJETII03',
-    'QGSJETII04'
+    "QGSJET01C",
+    "QGSJETII03",
+    "QGSJETII04",
 ]
 
-xlab_bins = np.linspace(0,1,21)
+xlab_bins = np.linspace(0, 1, 21)
 xlab_widths = xlab_bins[1:] - xlab_bins[:-1]
-xlab_centers = 0.5*(xlab_bins[1:] + xlab_bins[:-1])
+xlab_centers = 0.5 * (xlab_bins[1:] + xlab_bins[:-1])
 nevents = 5000
-norm = 1./float(nevents)/xlab_widths
+norm = 1.0 / float(nevents) / xlab_widths
 
-def run_generator(gen,*args):
-    print('Testing',gen)
+
+def run_generator(gen, *args):
+    print("Testing", gen)
     hist_p = np.zeros(len(xlab_centers))
-    hist_pi = np.zeros(len(xlab_centers)) 
+    hist_pi = np.zeros(len(xlab_centers))
     try:
         log = tempfile.mkstemp()[1]
         generator = make_generator_instance(interaction_model_by_tag[gen])
-        generator.init_generator(event_kinematics,logfname=log)
+        generator.init_generator(event_kinematics, logfname=log)
         for event in generator.event_generator(event_kinematics, nevents):
             event.filter_final_state_charged()
 
-            hist_p += np.histogram(event.xlab[event.p_ids == 2212],
-                               bins=xlab_bins,
-                               weights=event.xlab[event.p_ids == 2212]**1.7)[0]
+            hist_p += np.histogram(
+                event.xlab[event.p_ids == 2212],
+                bins=xlab_bins,
+                weights=event.xlab[event.p_ids == 2212] ** 1.7,
+            )[0]
 
-            hist_pi += np.histogram(event.xlab[np.abs(event.p_ids) == 211],
-                                bins=xlab_bins,
-                                weights=event.xlab[np.abs(event.p_ids) == 211]**1.7)[0]
-            
+            hist_pi += np.histogram(
+                event.xlab[np.abs(event.p_ids) == 211],
+                bins=xlab_bins,
+                weights=event.xlab[np.abs(event.p_ids) == 211] ** 1.7,
+            )[0]
+
         return True, gen, log, hist_p, hist_pi
     except:
         return False, gen, log, hist_p, hist_pi
 
 
-if __name__ in ['__main__', '__test__']:
+if __name__ in ["__main__", "__test__"]:
     freeze_support()
     pool = Pool(processes=32)
     result = [pool.apply_async(run_generator, (gen,)) for gen in gen_list]
@@ -92,15 +98,18 @@ if __name__ in ['__main__', '__test__']:
             xlab_piplus[gen] = hist_pi
         else:
             failed.append(gen)
-            
-        with open(log) as f:
-                logs[gen] = f.read()
-            
 
-    info(0, 'Test results for 158 GeV pC collisions in lab frame:\n')
-    info(0, 'Passed:', '\n', '\n '.join(passed))
-    info(0, '\nFailed:', '\n', '\n '.join(failed))
+        with open(log) as f:
+            logs[gen] = f.read()
+
+    info(0, "Test results for 158 GeV pC collisions in lab frame:\n")
+    info(0, "Passed:", "\n", "\n ".join(passed))
+    info(0, "\nFailed:", "\n", "\n ".join(failed))
 
     import pickle
-    pickle.dump((xlab_bins, xlab_protons, xlab_piplus, logs),
-                open(os.path.splitext(__file__)[0] + '.pkl','wb'), protocol=-1)
+
+    pickle.dump(
+        (xlab_bins, xlab_protons, xlab_piplus, logs),
+        open(os.path.splitext(__file__)[0] + ".pkl", "wb"),
+        protocol=-1,
+    )

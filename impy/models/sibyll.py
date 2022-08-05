@@ -1,8 +1,8 @@
-'''
+"""
 Created on 17.03.2014
 
 @author: afedynitch
-'''
+"""
 
 import numpy as np
 from impy.common import MCRun, MCEvent, impy_config
@@ -11,6 +11,7 @@ from impy.util import standard_particles, info
 
 class SibyllEvent(MCEvent):
     """Wrapper class around SIBYLL 2.1 & 2.3 particle stack."""
+
     # Workaround for no data on vertext positions in SIBYLL
     _no_vertex_data = None
 
@@ -22,25 +23,27 @@ class SibyllEvent(MCEvent):
         px, py, pz, en, m = evt.phep
         vx, vy, vz, vt = evt.vhep
 
-        MCEvent.__init__(self,
-                         lib=lib,
-                         event_kinematics=event_kinematics,
-                         event_frame=event_frame,
-                         nevent=evt.nevhep,
-                         npart=evt.nhep,
-                         p_ids=evt.idhep,
-                         status=evt.isthep,
-                         px=px,
-                         py=py,
-                         pz=pz,
-                         en=en,
-                         m=m,
-                         vx=vx,
-                         vy=vy,
-                         vz=vz,
-                         vt=vt,
-                         pem_arr=evt.phep,
-                         vt_arr=evt.vhep)
+        MCEvent.__init__(
+            self,
+            lib=lib,
+            event_kinematics=event_kinematics,
+            event_frame=event_frame,
+            nevent=evt.nevhep,
+            npart=evt.nhep,
+            p_ids=evt.idhep,
+            status=evt.isthep,
+            px=px,
+            py=py,
+            pz=pz,
+            en=en,
+            m=m,
+            vx=vx,
+            vy=vy,
+            vz=vz,
+            vt=vt,
+            pem_arr=evt.phep,
+            vt_arr=evt.vhep,
+        )
 
     def filter_final_state(self):
         self.selection = np.where(self.status == 1)
@@ -49,7 +52,7 @@ class SibyllEvent(MCEvent):
     def filter_final_state_charged(self):
         self.selection = np.where((self.status == 1) & (self.charge != 0))
         self._apply_slicing()
-    
+
     @property
     def _charge_init(self):
         return self.lib.schg.ichg[self.selection]
@@ -89,7 +92,7 @@ class SibyllEvent(MCEvent):
 
 
 class SIBYLLRun(MCRun):
-    """Implements all abstract attributes of MCRun for the 
+    """Implements all abstract attributes of MCRun for the
     SIBYLL 2.1, 2.3 and 2.3c event generators."""
 
     def sigma_inel(self, *args, **kwargs):
@@ -105,18 +108,18 @@ class SIBYLLRun(MCRun):
             sigproj = 3
         else:
             info(0, "No cross section available for projectile", k.p1pdg)
-            raise Exception('Input error')
-        
+            raise Exception("Input error")
+
         if k.p1_is_nucleus:
-            raise Exception('Nuclear projectiles not supported by SIBYLL.')
+            raise Exception("Nuclear projectiles not supported by SIBYLL.")
 
         if k.p2_is_nucleus:
             # Return production cross section for nuclear target
             try:
                 return self.lib.sib_sigma_hnuc(sigproj, k.A2, self._ecm)[0]
             except AttributeError:
-                return 'Nuclear cross section not supported for this SIBYLL version'
-        
+                return "Nuclear cross section not supported for this SIBYLL version"
+
         return self.lib.sib_sigma_hp(sigproj, self._ecm)[2]
 
     def sigma_inel_air(self):
@@ -132,7 +135,7 @@ class SIBYLLRun(MCRun):
             sigproj = 3
         else:
             info(0, "No cross section available for projectile", k.p1pdg)
-            raise Exception('Input error')
+            raise Exception("Input error")
         sigma = self.lib.sib_sigma_hair(sigproj, self._ecm)
         if not isinstance(sigma, tuple):
             return sigma
@@ -143,14 +146,14 @@ class SIBYLLRun(MCRun):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
 
-        info(5, 'Setting event kinematics.')
+        info(5, "Setting event kinematics.")
         info(10, event_kinematics)
         k = event_kinematics
         if k.p1_is_nucleus:
-            raise Exception('Projectile nuclei not natively supported in SIBYLL')
+            raise Exception("Projectile nuclei not natively supported in SIBYLL")
         elif k.p2_is_nucleus and k.A2 > 20:
             print(k.p2_is_nucleus, k.A2)
-            raise Exception('Target nuclei with A>20 not supported in SIBYLL')
+            raise Exception("Target nuclei with A>20 not supported in SIBYLL")
         self._sibproj = self.lib.isib_pdg2pid(k.p1pdg)
         self._iatarg = k.A2
         self._ecm = k.ecm
@@ -158,51 +161,52 @@ class SIBYLLRun(MCRun):
 
     def attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
-        fname = impy_config['output_log'] if fname is None else fname
-        if fname == 'stdout':
+        fname = impy_config["output_log"] if fname is None else fname
+        if fname == "stdout":
             self.lib.s_debug.lun = 6
-            info(5, 'Output is routed to stdout.')
+            info(5, "Output is routed to stdout.")
         else:
             lun = self._attach_fortran_logfile(fname)
             self.lib.s_debug.lun = lun
-            info(5, 'Output is routed to', fname, 'via LUN', lun)
+            info(5, "Output is routed to", fname, "via LUN", lun)
 
-    def init_generator(self, event_kinematics, seed='random', logfname=None):
+    def init_generator(self, event_kinematics, seed="random", logfname=None):
         from random import randint
 
         self._abort_if_already_initialized()
 
-        if seed == 'random':
+        if seed == "random":
             seed = randint(1000000, 10000000)
         else:
             seed = int(seed)
-        info(5, 'Using seed:', seed)
+        info(5, "Using seed:", seed)
 
-        self.lib.s_debug.ndebug = impy_config['sibyll']['debug_level']
+        self.lib.s_debug.ndebug = impy_config["sibyll"]["debug_level"]
 
         self._set_event_kinematics(event_kinematics)
         self.attach_log(fname=logfname)
         self.lib.sibini(int(seed))
         self.lib.pdg_ini()
-        self.conv_hepevt = (self.lib.sibhep1
-                            if '21' in self.lib.__name__ else self.lib.sibhep3)
+        self.conv_hepevt = (
+            self.lib.sibhep1 if "21" in self.lib.__name__ else self.lib.sibhep3
+        )
         self._define_default_fs_particles()
 
     def set_stable(self, pdgid, stable=True):
         sid = abs(self.lib.isib_pdg2pid(pdgid))
         if abs(pdgid) == 311:
-            info(1, 'Ignores K0. Use K0L/S 130/310 in final state definition.')
+            info(1, "Ignores K0. Use K0L/S 130/310 in final state definition.")
             return
         idb = self.lib.s_csydec.idb
         if sid == 0 or sid > idb.size - 1:
             return
         if stable:
             info(
-                5, 'defining as stable particle pdgid/sid = {0}/{1}'.format(
-                    pdgid, sid))
+                5, "defining as stable particle pdgid/sid = {0}/{1}".format(pdgid, sid)
+            )
             idb[sid - 1] = -np.abs(idb[sid - 1])
         else:
-            info(5, 'pdgid/sid = {0}/{1} allowed to decay'.format(pdgid, sid))
+            info(5, "pdgid/sid = {0}/{1} allowed to decay".format(pdgid, sid))
             idb[sid - 1] = np.abs(idb[sid - 1])
 
     def generate_event(self):
@@ -211,66 +215,83 @@ class SIBYLLRun(MCRun):
         self.conv_hepevt()
         return 0  # SIBYLL never rejects
 
+
 class Sibyll21(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["SIBYLL21"]       
+
+        interaction_model_def = models_dict["SIBYLL21"]
         super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
-        
+
+
 class Sibyll23(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["SIBYLL23"]       
+
+        interaction_model_def = models_dict["SIBYLL23"]
         super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
-        
+
+
 class Sibyll23c(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["SIBYLL23C"]       
+
+        interaction_model_def = models_dict["SIBYLL23C"]
         super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
+
 
 class Sibyll23c00(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["SIBYLL23C00"]       
+
+        interaction_model_def = models_dict["SIBYLL23C00"]
         super().__init__(interaction_model_def)
-        self.init_generator(event_kinematics, seed, logfname)    
-        
+        self.init_generator(event_kinematics, seed, logfname)
+
+
 class Sibyll23c01(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["SIBYLL23C01"]       
+
+        interaction_model_def = models_dict["SIBYLL23C01"]
         super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
+
 
 class Sibyll23c02(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["SIBYLL23C02"]       
+
+        interaction_model_def = models_dict["SIBYLL23C02"]
         super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
+
 
 class Sibyll23c03(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["SIBYLL23C03"]       
+
+        interaction_model_def = models_dict["SIBYLL23C03"]
         super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
-        
+
+
 class Sibyll23c04(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["SIBYLL23C04"]       
+
+        interaction_model_def = models_dict["SIBYLL23C04"]
         super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
+
 
 class Sibyll23d(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["SIBYLL23D"]       
+
+        interaction_model_def = models_dict["SIBYLL23D"]
         super().__init__(interaction_model_def)
-        self.init_generator(event_kinematics, seed, logfname)                                               
-                  
+        self.init_generator(event_kinematics, seed, logfname)

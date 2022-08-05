@@ -1,8 +1,8 @@
-'''
+"""
 Created on 19.01.2015
 
 @author: afedynitch
-'''
+"""
 
 import numpy as np
 from impy.common import MCRun, MCEvent
@@ -19,9 +19,9 @@ class PYTHIA8Event(MCEvent):
     vhep = np.zeros((4, _len_evt))
     jmohep = np.zeros((2, _len_evt))
     jdahep = np.zeros((2, _len_evt))
-    status = np.zeros(_len_evt, dtype='int')
-    p_ids = np.zeros(_len_evt, dtype='int')
-    p_charge = np.zeros(_len_evt, dtype='int')
+    status = np.zeros(_len_evt, dtype="int")
+    p_ids = np.zeros(_len_evt, dtype="int")
+    p_charge = np.zeros(_len_evt, dtype="int")
     n_events = 0
 
     def __init__(self, lib, event_kinematics, event_frame):
@@ -42,25 +42,27 @@ class PYTHIA8Event(MCEvent):
         px, py, pz, en, m = self.phep
         vx, vy, vz, vt = self.vhep
 
-        MCEvent.__init__(self,
-                         lib=lib,
-                         event_kinematics=event_kinematics,
-                         event_frame=event_frame,
-                         nevent=self.n_events,
-                         npart=nhep,
-                         p_ids=self.p_ids,
-                         status=self.status,
-                         px=px,
-                         py=py,
-                         pz=pz,
-                         en=en,
-                         m=m,
-                         vx=vx,
-                         vy=vy,
-                         vz=vz,
-                         vt=vt,
-                         pem_arr=self.phep,
-                         vt_arr=self.vhep)
+        MCEvent.__init__(
+            self,
+            lib=lib,
+            event_kinematics=event_kinematics,
+            event_frame=event_frame,
+            nevent=self.n_events,
+            npart=nhep,
+            p_ids=self.p_ids,
+            status=self.status,
+            px=px,
+            py=py,
+            pz=pz,
+            en=en,
+            m=m,
+            vx=vx,
+            vy=vy,
+            vz=vz,
+            vt=vt,
+            pem_arr=self.phep,
+            vt_arr=self.vhep,
+        )
 
     def filter_final_state(self):
         self.selection = np.where(self.status > 0)
@@ -89,7 +91,7 @@ class PYTHIA8Event(MCEvent):
     def impact_parameter(self):
         """Returns impact parameter for nuclear collisions."""
         return self.lib.info.hiinfo.b()
-    
+
     @property
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
@@ -105,8 +107,9 @@ class PYTHIA8Event(MCEvent):
         """Number of total wounded nucleons"""
         return self.lib.info.hiinfo.nPartProj() + self.lib.info.hiinfo.nPartTarg()
 
+
 class PYTHIA8Run(MCRun):
-    """Implements all abstract attributes of MCRun for the 
+    """Implements all abstract attributes of MCRun for the
     EPOS-LHC series of event generators."""
 
     def sigma_inel(self, *args, **kwargs):
@@ -128,24 +131,37 @@ class PYTHIA8Run(MCRun):
             self.lib.readString(param_string)
         # Replay stable history
         for pdgid in self.stable_history:
-            self.set_stable(pdgid,self.stable_history[pdgid])
+            self.set_stable(pdgid, self.stable_history[pdgid])
 
         if k.p1_is_nucleus or k.p2_is_nucleus:
             self.lib.readString("HeavyIon:SigFitNGen = 0")
             self.lib.readString(
-                "HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0")
+                "HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0"
+            )
         if k.p1_is_nucleus:
             k.p1pdg = AZ2pdg(k.A1, k.A2)
             # pdgid, p name, ap name, spin, 3*charge, color, mass
-            self.lib.particleData.addParticle(k.p1pdg, str(k.A1 * 100 + k.Z1),
-                                              str(k.A1 * 100 + k.Z1) + 'bar',
-                                              1, 3 * k.Z1, 0, float(k.A1))
+            self.lib.particleData.addParticle(
+                k.p1pdg,
+                str(k.A1 * 100 + k.Z1),
+                str(k.A1 * 100 + k.Z1) + "bar",
+                1,
+                3 * k.Z1,
+                0,
+                float(k.A1),
+            )
         if k.p2_is_nucleus:
             k.p2pdg = AZ2pdg(k.A2, k.Z2)
             # pdgid, p name, ap name, spin, 3*charge, color, mass
-            self.lib.particleData.addParticle(k.p2pdg, str(k.A2 * 100 + k.Z2),
-                                              str(k.A2 * 100 + k.Z2) + 'bar',
-                                              1, 3 * k.Z2, 0, float(k.A2))
+            self.lib.particleData.addParticle(
+                k.p2pdg,
+                str(k.A2 * 100 + k.Z2),
+                str(k.A2 * 100 + k.Z2) + "bar",
+                1,
+                3 * k.Z2,
+                0,
+                float(k.A2),
+            )
 
         self.lib.readString("Beams:idA = {0}".format(k.p1pdg))
         self.lib.readString("Beams:idB = {0}".format(k.p2pdg))
@@ -155,7 +171,7 @@ class PYTHIA8Run(MCRun):
 
         self.lib.init()
 
-        info(5, 'Setting event kinematics')
+        info(5, "Setting event kinematics")
 
     # def attach_log(self, fname):
     #     """Routes the output to a file or the stdout."""
@@ -202,7 +218,8 @@ class PYTHIA8Run(MCRun):
 
     def attach_log(self, fname):
         from impy.util import OutputGrabber
-        fname = impy_config['output_log'] if fname is None else fname
+
+        fname = impy_config["output_log"] if fname is None else fname
         # info(1, 'Not implemented at this stage')
 
         # out = OutputGrabber()
@@ -211,21 +228,20 @@ class PYTHIA8Run(MCRun):
         # print out.capturedtext
         # with open(fname, 'w') as f:
         #     f.write(out.capturedtext)
-        
+
         # out.stop()
 
-
-    def init_generator(self, event_kinematics, seed='random', logfname=None):
+    def init_generator(self, event_kinematics, seed="random", logfname=None):
         from random import randint
 
         self._abort_if_already_initialized()
 
-        if seed == 'random':
+        if seed == "random":
             seed = randint(1000000, 10000000)
         else:
             seed = int(seed)
-        info(5, 'Using seed:', seed)
-        
+        info(5, "Using seed:", seed)
+
         # Since a Pythia 8 instance is an object unlike in the case
         # of the Fortran stuff where the import of self.lib generates
         # the object, we will backup the library
@@ -235,18 +251,18 @@ class PYTHIA8Run(MCRun):
         # set, since Pythia8 ATM does not support changing beams or
         # energies at runtime.
         # Super cool workaround but not very performant!
-        
+
         self.save_init_strings = [
             "Random:setSeed = on",
             "Random:seed = " + str(seed),
             # Specify energy in center of mass
             "Beams:frameType = 1",
             # Minimum bias events
-            "SoftQCD:all = on"
+            "SoftQCD:all = on",
         ]
 
         # Add more options from config file
-        for param_string in impy_config['pythia8']['options']:
+        for param_string in impy_config["pythia8"]["options"]:
             info(5, "Using Pythia 8 parameter:", param_string)
             self.save_init_strings.append(param_string)
 
@@ -259,22 +275,23 @@ class PYTHIA8Run(MCRun):
         # self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
-        
+
         may_decay = not stable
         if self.lib is not None:
             self.lib.particleData.mayDecay(pdgid, may_decay)
-        
-        info(5, pdgid, 'allowed to decay: ', may_decay)
-        
+
+        info(5, pdgid, "allowed to decay: ", may_decay)
+
         self.stable_history[pdgid] = stable
-        
 
     def generate_event(self):
         return not self.lib.next()
 
+
 class Pyphia8(PYTHIA8Run):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["PYTHIA8"]       
+
+        interaction_model_def = models_dict["PYTHIA8"]
         super().__init__(interaction_model_def)
-        self.init_generator(event_kinematics, seed, logfname) 
+        self.init_generator(event_kinematics, seed, logfname)

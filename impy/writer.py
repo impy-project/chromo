@@ -5,10 +5,12 @@ import numpy as np
 
 class Writer(object, with_metaclass(ABCMeta)):
     @abstractmethod
-    def write(self, event): pass
+    def write(self, event):
+        pass
 
     @abstractmethod
-    def close(self): pass
+    def close(self):
+        pass
 
     # support with statement
     def __enter__(self):
@@ -21,7 +23,7 @@ class Writer(object, with_metaclass(ABCMeta)):
 
 class HepMCWriter(Writer):
     def __init__(self, filename):
-        self._hep = __import__('pyhepmc_ng') # delay import till instantiation
+        self._hep = __import__("pyhepmc_ng")  # delay import till instantiation
         self._writer = self._hep.WriterAscii(filename)
         self._genevent = self._hep.GenEvent()
         self._event_number = 0
@@ -39,8 +41,8 @@ class HepMCWriter(Writer):
         # - add info about generator
 
         self._genevent.clear()
-        pem = impy_event._pem_arr.T # the need to transpose this is bad
-        vt = impy_event._vt_arr.T # the need to transpose this is bad
+        pem = impy_event._pem_arr.T  # the need to transpose this is bad
+        vt = impy_event._vt_arr.T  # the need to transpose this is bad
         n = pem.shape[0]
 
         parents = impy_event.parents.T[:n]
@@ -53,6 +55,6 @@ class HepMCWriter(Writer):
             pid=impy_event.p_ids,
             parents=impy_event.parents.T[:n],
             children=impy_event.children.T[:n],
-            status=impy_event.status, # particle status
+            status=impy_event.status,  # particle status
         )
         self._event_number += 1

@@ -26,7 +26,8 @@ class CompositeTarget(object):
 
     Examples of such composite targets are Air, CO_2, HCl, C_2H_60.
     """
-    def __init__(self, label=''):
+
+    def __init__(self, label=""):
         self.label = label
         self.ncomponents = 0
         self.component_fractions = []
@@ -48,28 +49,34 @@ class CompositeTarget(object):
         self.component_A.append(A)
         self.component_Z.append(Z)
         self._component_orig_fractions.append(float(fraction))
-        self.component_fractions = np.array([
-            f / np.sum(self._component_orig_fractions)
-            for f in self._component_orig_fractions
-        ])
+        self.component_fractions = np.array(
+            [
+                f / np.sum(self._component_orig_fractions)
+                for f in self._component_orig_fractions
+            ]
+        )
         self.ncomponents += 1
 
         self._sort()
 
-        assert (len(self.component_name) == len(self.component_A) == len(
-            self.component_Z) == len(self.component_fractions) == len(
-                self._component_orig_fractions))
-        assert np.sum(self.component_fractions) == 1.
+        assert (
+            len(self.component_name)
+            == len(self.component_A)
+            == len(self.component_Z)
+            == len(self.component_fractions)
+            == len(self._component_orig_fractions)
+        )
+        assert np.sum(self.component_fractions) == 1.0
 
     def _sort(self):
         """Sorts list acording to fraction"""
+
         def sort_list(l, idcs):
             return [l[i] for i in idcs]
 
         idcs = np.argsort(self.component_fractions)
         self.component_fractions = self.component_fractions[idcs]
-        self._component_orig_fractions = sort_list(
-            self._component_orig_fractions, idcs)
+        self._component_orig_fractions = sort_list(self._component_orig_fractions, idcs)
         self.component_A = sort_list(self.component_A, idcs)
         self.component_Z = sort_list(self.component_Z, idcs)
         self.component_name = sort_list(self.component_name, idcs)
@@ -85,17 +92,19 @@ class CompositeTarget(object):
         ostr = "Composite target '" + self.label + "' \n"
 
         ostr += "Average mass: {0:4.1f}\n".format(
-            np.sum([
-                A * f
-                for A, f in zip(self.component_A, self.component_fractions)
-            ]))
+            np.sum([A * f for A, f in zip(self.component_A, self.component_fractions)])
+        )
 
         ostr += "  Nr   |    Name    |  A  |  Z  | fraction\n"
         templ = "  {0:3}  | {1:10s} |{2:4} |{3:4} |  {4:3.2f}\n"
         for i in range(self.ncomponents):
-            ostr += templ.format(i, self.component_name[i],
-                                 self.component_A[i], self.component_Z[i],
-                                 self.component_fractions[i])
+            ostr += templ.format(
+                i,
+                self.component_name[i],
+                self.component_A[i],
+                self.component_Z[i],
+                self.component_fractions[i],
+            )
 
         return ostr
 
@@ -123,31 +132,36 @@ class EventKinematics(object):
         (tuple) nuc2prop : Target nucleus mass & charge (A, Z)
 
     """
-    def __init__(self,
-                 ecm=None,
-                 plab=None,
-                 elab=None,
-                 ekin=None,
-                 p1pdg=None,
-                 p2pdg=None,
-                 beam=None,
-                 nuc1_prop=None,
-                 nuc2_prop=None):
+
+    def __init__(
+        self,
+        ecm=None,
+        plab=None,
+        elab=None,
+        ekin=None,
+        p1pdg=None,
+        p2pdg=None,
+        beam=None,
+        nuc1_prop=None,
+        nuc2_prop=None,
+    ):
 
         # Catch input errors
-        assert np.sum(np.asarray(
-            [ecm, plab, elab, ekin, beam], dtype='bool')) == 1, (
-                'Define exclusively one energy/momentum definition')
-        assert p1pdg or nuc1_prop, ('Define either particle id or ' +
-                                    'nuclear properties for side 1.')
-        assert p2pdg or nuc2_prop, ('Define either particle id or ' +
-                                    'nuclear properties for side 2.')
-        assert nuc1_prop is None or (isinstance(nuc1_prop, tuple)
-                                     and len(nuc1_prop) == 2), (
-                                         'Define nuc1_prop as an (A,Z) tuple.')
-        assert nuc2_prop is None or (isinstance(nuc2_prop, tuple)
-                                     and len(nuc2_prop) == 2), (
-                                         'Define nuc2_prop as an (A,Z) tuple.')
+        assert (
+            np.sum(np.asarray([ecm, plab, elab, ekin, beam], dtype="bool")) == 1
+        ), "Define exclusively one energy/momentum definition"
+        assert p1pdg or nuc1_prop, (
+            "Define either particle id or " + "nuclear properties for side 1."
+        )
+        assert p2pdg or nuc2_prop, (
+            "Define either particle id or " + "nuclear properties for side 2."
+        )
+        assert nuc1_prop is None or (
+            isinstance(nuc1_prop, tuple) and len(nuc1_prop) == 2
+        ), "Define nuc1_prop as an (A,Z) tuple."
+        assert nuc2_prop is None or (
+            isinstance(nuc2_prop, tuple) and len(nuc2_prop) == 2
+        ), "Define nuc2_prop as an (A,Z) tuple."
 
         # Store average nucleon mass
         mnuc = 0.5 * (pdata.mass(2212) + pdata.mass(2112))
@@ -159,7 +173,7 @@ class EventKinematics(object):
             self.Z1 = pdata.charge(p1pdg)
             self.p1pdg = p1pdg
             self.p1_is_nucleus = False
-            info(20, 'Particle 1 identified from PDG ID.')
+            info(20, "Particle 1 identified from PDG ID.")
         else:
             pmass1 = mnuc
             self.p1pdg = 2212
@@ -167,7 +181,7 @@ class EventKinematics(object):
             self.p1_is_nucleus = True if self.A1 > 1 else False
             if self.A1 == 1 and self.Z1 == 0:
                 self.p1pdg = 2212
-            info(20, 'Particle 1 is a nucleus.')
+            info(20, "Particle 1 is a nucleus.")
 
         # Handle target type
         if p2pdg:
@@ -176,7 +190,7 @@ class EventKinematics(object):
             self.A2 = 1
             self.Z2 = pdata.charge(p2pdg)
             self.p2_is_nucleus = False
-            info(20, 'Particle 2 identified from PDG ID.')
+            info(20, "Particle 2 identified from PDG ID.")
         else:
             pmass2 = mnuc
             self.p2pdg = 2212
@@ -184,50 +198,61 @@ class EventKinematics(object):
             self.p2_is_nucleus = True if self.A2 > 1 else False
             if self.A2 == 1 and self.Z2 == 0:
                 self.p2pdg = 2112
-            info(20, 'Particle 2 is a nucleus.')
+            info(20, "Particle 2 is a nucleus.")
 
-        info(10, 'Proj. and targ. identified', (self.p1pdg, self.A1, self.Z1),
-             (self.p2pdg, self.A2, self.Z2))
+        info(
+            10,
+            "Proj. and targ. identified",
+            (self.p1pdg, self.A1, self.Z1),
+            (self.p2pdg, self.A2, self.Z2),
+        )
 
         # Input specification in center of mass frame
         if ecm:
             self.ecm = ecm
             self.elab = 0.5 * (ecm**2 - pmass1**2 - pmass2**2) / pmass2
             self.plab = self._e2p(self.elab, pmass1)
-            info(20, 'ecm specified.')
+            info(20, "ecm specified.")
         # Input specification in lab frame
         elif elab:
-            assert elab > pmass1, 'Lab. energy > particle mass required.'
+            assert elab > pmass1, "Lab. energy > particle mass required."
             self.elab = elab
             self.plab = self._e2p(self.elab, pmass1)
-            self.ecm = np.sqrt(2. * self.elab * pmass2 + pmass2**2 + pmass1**2)
+            self.ecm = np.sqrt(2.0 * self.elab * pmass2 + pmass2**2 + pmass1**2)
             # self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
-            info(20, 'elab specified.')
+            info(20, "elab specified.")
         elif ekin:
             self.elab = ekin + pmass1
             self.plab = self._e2p(self.elab, pmass1)
-            self.ecm = np.sqrt(2. * self.elab * pmass2 + pmass2**2 + pmass1**2)
+            self.ecm = np.sqrt(2.0 * self.elab * pmass2 + pmass2**2 + pmass1**2)
             # self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
-            info(20, 'ekin specified.')
+            info(20, "ekin specified.")
         elif plab:
             self.plab = plab
             self.elab = np.sqrt(plab**2 + pmass1**2)
-            self.ecm = np.sqrt(2. * self.elab * pmass2 + pmass2**2 + pmass1**2)
+            self.ecm = np.sqrt(2.0 * self.elab * pmass2 + pmass2**2 + pmass1**2)
             # self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
-            info(20, 'plab specified.')
+            info(20, "plab specified.")
 
         # Input specification as 4-vectors
         elif beam:
             p1, p2 = beam
             s = p1 + p2
-            self.ecm = np.sqrt(s[3]**2 - np.sum(s[:3]**2))
+            self.ecm = np.sqrt(s[3] ** 2 - np.sum(s[:3] ** 2))
             self.elab = 0.5 * (self.ecm**2 - pmass1**2 + pmass2**2) / pmass2
             self.plab = self._e2p(self.elab, pmass1)
-            info(20, 'beam spec: beam, ecms, elab, plab', beam, self.ecm,
-                 self.elab, self.plab)
+            info(
+                20,
+                "beam spec: beam, ecms, elab, plab",
+                beam,
+                self.ecm,
+                self.elab,
+                self.plab,
+            )
         else:
-            raise Exception(self.__class__.__name__ +
-                            '::init(): Define at least ecm or plab')
+            raise Exception(
+                self.__class__.__name__ + "::init(): Define at least ecm or plab"
+            )
 
         self.pmass1 = pmass1
         self.pmass2 = pmass2
@@ -235,15 +260,18 @@ class EventKinematics(object):
         # compute center-of-mass variables
         s = self.ecm**2
         self.s = s
-        self.pcm = np.sqrt(s**2 - 2 * (s *
-                                       (pmass1 + pmass2)**2 + (pmass1 * pmass2)**2) +
-                           pmass1**4 + pmass2**4) / (2 * self.ecm)
+        self.pcm = np.sqrt(
+            s**2
+            - 2 * (s * (pmass1 + pmass2) ** 2 + (pmass1 * pmass2) ** 2)
+            + pmass1**4
+            + pmass2**4
+        ) / (2 * self.ecm)
         self.gamma_cm = (self.elab + pmass2) / self.ecm
         self.betagamma_z_cm = self.plab / self.ecm
 
         self.boost_def = {
             ("center-of-mass", "laboratory"): self.boost_cms_to_lab,
-            ("laboratory", "center-of-mass"): self.boost_lab_to_cms
+            ("laboratory", "center-of-mass"): self.boost_lab_to_cms,
         }
 
         # self.e_range = []
@@ -253,16 +281,15 @@ class EventKinematics(object):
         """Return the projectile target kinematics as 4-vectors. Can be used
         for PHOJET and PYTHIA."""
 
-        p1, p2 = np.array(np.zeros(4), dtype='d'), np.array(np.zeros(4),
-                                                            dtype='d')
+        p1, p2 = np.array(np.zeros(4), dtype="d"), np.array(np.zeros(4), dtype="d")
         p1[0] = 0.0
         p1[1] = 0.0
         p1[2] = self.pcm
-        p1[3] = self.ecm / 2.
+        p1[3] = self.ecm / 2.0
         p2[0] = 0.0
         p2[1] = 0.0
         p2[2] = -self.pcm
-        p2[3] = self.ecm / 2.
+        p2[3] = self.ecm / 2.0
 
         return p1, p2
 
@@ -270,20 +297,20 @@ class EventKinematics(object):
         return np.sqrt((E + m) * (E - m))
 
     def __getstate__(self):
-        if 'boost_def' in self.__dict__:
-            _ = self.__dict__.pop('boost_def')
+        if "boost_def" in self.__dict__:
+            _ = self.__dict__.pop("boost_def")
         return self.__dict__
 
     def __setstate__(self, state):
         self.__dict__ = state
         self.boost_def = {
             ("center-of-mass", "laboratory"): self.boost_cms_to_lab,
-            ("laboratory", "center-of-mass"): self.boost_lab_to_cms
+            ("laboratory", "center-of-mass"): self.boost_lab_to_cms,
         }
 
     def __ne__(self, other):
         for key, value in six.iteritems(other.__dict__):
-            if key == 'boost_def':
+            if key == "boost_def":
                 continue
             if value != self.__dict__[key]:
                 return True
@@ -294,10 +321,14 @@ class EventKinematics(object):
         return not self.__ne__(other)
 
     def __hash__(self):
-        return hash('_'.join([
-            '{0}_{1}'.format(key, self.__dict__[key])
-            for key in sorted(self.__dict__.keys())
-        ]))
+        return hash(
+            "_".join(
+                [
+                    "{0}_{1}".format(key, self.__dict__[key])
+                    for key in sorted(self.__dict__.keys())
+                ]
+            )
+        )
 
     def __le__(self, other):
         return self.ecm < other.ecm
@@ -306,25 +337,25 @@ class EventKinematics(object):
         return self.ecm > other.ecm
 
     def __repr__(self):
-        ostr = 'Event kinematics:\n'
-        ostr += '\tecm      : {0:10.5f}\n'.format(self.ecm)
-        ostr += '\tpcm      : {0:10.5f}\n'.format(self.pcm)
-        ostr += '\telab     : {0:10.5f}\n'.format(self.elab)
-        ostr += '\tplab     : {0:10.5f}\n'.format(self.plab)
-        ostr += '\tgamma_cm : {0:10.5f}\n'.format(self.gamma_cm)
-        ostr += '\tbgamm_cm : {0:10.5f}\n'.format(self.betagamma_z_cm)
-        ostr += '\tpdgid 1  : {0:10}\n'.format(self.p1pdg)
-        ostr += '\tnucprop 1: {0}/{1}\n'.format(self.A1, self.Z1)
-        ostr += '\tpdgid 2  : {0:10}\n'.format(self.p2pdg)
-        ostr += '\tnucprop 2: {0}/{1}\n'.format(self.A2, self.Z2)
+        ostr = "Event kinematics:\n"
+        ostr += "\tecm      : {0:10.5f}\n".format(self.ecm)
+        ostr += "\tpcm      : {0:10.5f}\n".format(self.pcm)
+        ostr += "\telab     : {0:10.5f}\n".format(self.elab)
+        ostr += "\tplab     : {0:10.5f}\n".format(self.plab)
+        ostr += "\tgamma_cm : {0:10.5f}\n".format(self.gamma_cm)
+        ostr += "\tbgamm_cm : {0:10.5f}\n".format(self.betagamma_z_cm)
+        ostr += "\tpdgid 1  : {0:10}\n".format(self.p1pdg)
+        ostr += "\tnucprop 1: {0}/{1}\n".format(self.A1, self.Z1)
+        ostr += "\tpdgid 2  : {0:10}\n".format(self.p2pdg)
+        ostr += "\tnucprop 2: {0}/{1}\n".format(self.A2, self.Z2)
 
         return ostr
 
     def apply_boost(self, event, gen_frame, user_frame):
         if (gen_frame, user_frame) not in self.boost_def:
-            info(20, 'FS boost not applicable', gen_frame, '->', user_frame)
+            info(20, "FS boost not applicable", gen_frame, "->", user_frame)
             return
-        info(20, 'Boosting FS', gen_frame, '->', user_frame)
+        info(20, "Boosting FS", gen_frame, "->", user_frame)
         self.boost_def[(gen_frame, user_frame)](event)
 
     def boost_cms_to_lab(self, event):
