@@ -92,7 +92,7 @@ urqmd:
     has_hepevt   : True
     has_boosts   : False
     int_support  : [ 'hh', 'hA', 'AA']
-    urqmd_dbglvl : 0
+    debug_level  : 0
     projectiles  : {
         '3.4' : [ 2212, 2112, 321, -321, 211, -211, 311, -2212,
                  -2112, 3122, -3122]
