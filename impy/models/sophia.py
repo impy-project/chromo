@@ -29,26 +29,28 @@ class SophiaEvent(MCEvent):
         px, py, pz, en, m = evt.phep
         # verticies (x, y, z, t) - all zeros for sophia
         vx, vy, vz, vt = evt.vhep
-        
-        MCEvent.__init__(self,
-                         lib=lib,
-                         event_kinematics=event_kinematics,
-                         event_frame=event_frame,
-                         nevent=evt.nevhep,
-                         npart=evt.nhep,
-                         p_ids=evt.idhep,
-                         status=evt.isthep,
-                         px=px,
-                         py=py,
-                         pz=pz,
-                         en=en,
-                         m=m,
-                         vx=vx,
-                         vy=vy,
-                         vz=vz,
-                         vt=vt,
-                         pem_arr=evt.phep,
-                         vt_arr=evt.vhep)
+
+        MCEvent.__init__(
+            self,
+            lib=lib,
+            event_kinematics=event_kinematics,
+            event_frame=event_frame,
+            nevent=evt.nevhep,
+            npart=evt.nhep,
+            p_ids=evt.idhep,
+            status=evt.isthep,
+            px=px,
+            py=py,
+            pz=pz,
+            en=en,
+            m=m,
+            vx=vx,
+            vy=vy,
+            vz=vz,
+            vt=vt,
+            pem_arr=evt.phep,
+            vt_arr=evt.vhep,
+        )
 
     def filter_final_state(self):
         self.selection = np.where(self.status == 1)
@@ -238,9 +240,11 @@ class SophiaRun(MCRun):
         self.lib.toevt()
         return 0  # No rejection is implemented so far
 
+
 class Sophia20(SophiaRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["SOPHIA20"]       
+
+        interaction_model_def = models_dict["SOPHIA20"]
         super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)

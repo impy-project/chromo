@@ -199,9 +199,11 @@ class EPOSRun(MCRun):
         self.lib.hepmcstore()
         return False
 
+
 class EposLHC(EPOSRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["EPOSLHC"]       
+
+        interaction_model_def = models_dict["EPOSLHC"]
         super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)

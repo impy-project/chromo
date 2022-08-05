@@ -175,7 +175,7 @@ class QGSJetIIRun(MCRun):
         self.lib.cqgsini(seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"])
 
         # Set default stable
-        info(10, 'All particles stable in QGSJET-II')
+        info(10, "All particles stable in QGSJET-II")
         self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
@@ -281,7 +281,7 @@ class QGSJet01Run(MCRun):
         self.lib.cqgsini(seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"])
 
         # Set default stable
-        info(10, 'All particles stable in QGSJET-01')
+        info(10, "All particles stable in QGSJET-01")
         self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
@@ -292,25 +292,30 @@ class QGSJet01Run(MCRun):
         # Convert QGSJET to HEPEVT
         self.lib.chepevt()
         return False
-    
+
+
 class QGSJet01c(QGSJet01Run):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["QGSJET01C"]       
+
+        interaction_model_def = models_dict["QGSJET01C"]
         super().__init__(interaction_model_def)
-        self.init_generator(event_kinematics, seed, logfname) 
-      
+        self.init_generator(event_kinematics, seed, logfname)
+
+
 class QGSJetII03(QGSJetIIRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["QGSJETII03"]       
+
+        interaction_model_def = models_dict["QGSJETII03"]
         super().__init__(interaction_model_def)
-        self.init_generator(event_kinematics, seed, logfname) 
-        
-class QGSJetII04(QGSJetIIRun):   
+        self.init_generator(event_kinematics, seed, logfname)
+
+
+class QGSJetII04(QGSJetIIRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
-        interaction_model_def = models_dict["QGSJETII04"]       
+
+        interaction_model_def = models_dict["QGSJETII04"]
         super().__init__(interaction_model_def)
-        self.init_generator(event_kinematics, seed, logfname)           
-       
+        self.init_generator(event_kinematics, seed, logfname)
