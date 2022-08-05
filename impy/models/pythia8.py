@@ -81,7 +81,7 @@ class PYTHIA8Event(MCEvent):
         return self.lib.hepevt.jdahep
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.p_charge[self.selection]
 
     # Nuclear collision parameters
@@ -115,7 +115,7 @@ class PYTHIA8Run(MCRun):
         # Cross section and energy (in mb and GeV)
         return self.lib.info.sigmaGen()
 
-    def set_event_kinematics(self, event_kinematics):
+    def _set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
         k = event_kinematics
@@ -256,7 +256,7 @@ class PYTHIA8Run(MCRun):
         # since changing energy changes resets the stable settings
         self.stable_history = {}
 
-        # self.set_event_kinematics(event_kinematics)
+        # self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
         
@@ -271,3 +271,10 @@ class PYTHIA8Run(MCRun):
 
     def generate_event(self):
         return not self.lib.next()
+
+class Pyphia8(PYTHIA8Run):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["PYTHIA8"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname) 

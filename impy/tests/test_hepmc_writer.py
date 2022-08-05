@@ -43,8 +43,8 @@ def test_hepmc_writer(model_tag):
         for event in generator.event_generator(event_kinematics, 3):
             # event.filter_final_state()
             n = event.npart
-            pem = event.pem_arr.T
-            vt = event.vt_arr.T
+            pem = event._pem_arr.T
+            vt = event._vt_arr.T
             pid = event.p_ids
             status = event.status
             parents = {}

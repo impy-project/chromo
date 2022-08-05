@@ -23,37 +23,32 @@ class SophiaEvent(MCEvent):
     """Wrapper class around Sophia code"""
 
     def __init__(self, lib, event_kinematics, event_frame):
+        evt = lib.hepevt
 
-        # prepare hepevt common block
-        lib.toevt()
-        # number of particles in event
-        np = lib.hepevt.nhep
-        # array of particle momenta
-        pem_arr = lib.hepevt.phep[:, 0:np]
-        # array of verticies (x, y, z, t) - all zeros for sophia
-        vt_arr = lib.hepevt.vhep[:, 0:np]
+        # Save selector for implementation of on-demand properties
+        px, py, pz, en, m = evt.phep
+        # verticies (x, y, z, t) - all zeros for sophia
+        vx, vy, vz, vt = evt.vhep
         
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=lib.hepevt.nevhep,  # event number
-            npart=np,
-            p_ids=lib.hepevt.idhep[0:np],
-            status=lib.hepevt.isthep[0:np],
-            px=pem_arr[0],
-            py=pem_arr[1],
-            pz=pem_arr[2],
-            en=pem_arr[3],
-            m=pem_arr[4],
-            vx=vt_arr[0],
-            vy=vt_arr[1],
-            vz=vt_arr[2],
-            vt=vt_arr[3],
-            pem_arr=pem_arr,
-            vt_arr=vt_arr,
-        )
+        MCEvent.__init__(self,
+                         lib=lib,
+                         event_kinematics=event_kinematics,
+                         event_frame=event_frame,
+                         nevent=evt.nevhep,
+                         npart=evt.nhep,
+                         p_ids=evt.idhep,
+                         status=evt.isthep,
+                         px=px,
+                         py=py,
+                         pz=pz,
+                         en=en,
+                         m=m,
+                         vx=vx,
+                         vy=vy,
+                         vz=vz,
+                         vt=vt,
+                         pem_arr=evt.phep,
+                         vt_arr=evt.vhep)
 
     def filter_final_state(self):
         self.selection = np.where(self.status == 1)
@@ -68,7 +63,7 @@ class SophiaEvent(MCEvent):
         return sophia_interaction_types[self.lib.interaction_type_code]
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.schg.ichg[self.selection]
 
     @property
@@ -136,7 +131,7 @@ class SophiaRun(MCRun):
         event setup (energy, projectile, target)"""
         raise Exception("SophiaRun.sigma_inel_air has no implementation")
 
-    def set_event_kinematics(self, event_kinematics):
+    def _set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
 
@@ -192,7 +187,7 @@ class SophiaRun(MCRun):
 
         self.lib.s_plist.ideb = impy_config["sophia"]["debug_level"]
 
-        self.set_event_kinematics(event_kinematics)
+        self._set_event_kinematics(event_kinematics)
         self.attach_log(fname=logfname)
 
         self.lib.init_rmmard(int(seed))  # setting random number generator seed
@@ -239,4 +234,13 @@ class SophiaRun(MCRun):
         # pass interaction type code to MCEvent
         # via additional attribute in lib object:
         setattr(self.lib, "interaction_type_code", self.interaction_type_code)
+        # prepare hepevt common block
+        self.lib.toevt()
         return 0  # No rejection is implemented so far
+
+class Sophia20(SophiaRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["SOPHIA20"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)

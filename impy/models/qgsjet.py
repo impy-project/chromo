@@ -58,7 +58,7 @@ class QGSJETEvent(MCEvent):
         return self.lib.hepevt.jdahep
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.qgchg.ichg[self.selection]
 
     @property
@@ -130,7 +130,7 @@ class QGSJetIIRun(MCRun):
                                _qgsjet_hadron_classes[abs(k.p1pdg)], k.A1,
                                k.A2)
 
-    def set_event_kinematics(self, event_kinematics):
+    def _set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target for next event."""
 
@@ -180,7 +180,7 @@ class QGSJetIIRun(MCRun):
 
         # Set default stable
         info(10, 'All particles stable in QGSJET-II')
-        self.set_event_kinematics(event_kinematics)
+        self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
         info(10, "All particles stable in QGSJet-II.")
@@ -236,7 +236,7 @@ class QGSJet01Run(MCRun):
 
         return np.exp(spl(np.log(self._curr_event_kin.elab)))
 
-    def set_event_kinematics(self, event_kinematics):
+    def _set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
 
@@ -287,7 +287,7 @@ class QGSJet01Run(MCRun):
 
         # Set default stable
         info(10, 'All particles stable in QGSJET-01')
-        self.set_event_kinematics(event_kinematics)
+        self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
         info(10, "All particles stable in QGSJet.")
@@ -297,3 +297,25 @@ class QGSJet01Run(MCRun):
         # Convert QGSJET to HEPEVT
         self.lib.chepevt()
         return False
+    
+class QGSJet01c(QGSJet01Run):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["QGSJET01C"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname) 
+      
+class QGSJetII03(QGSJetIIRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["QGSJETII03"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname) 
+        
+class QGSJetII04(QGSJetIIRun):   
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["QGSJETII04"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)           
+       

@@ -67,7 +67,7 @@ class UrQMDEvent(MCEvent):
         return self.lib.hepevt.jdahep
 
     @property
-    def charge(self):
+    def _charge_init(self):
         return self.lib.uqchg.ichg[self.selection]
 
     # Nuclear collision parameters
@@ -95,7 +95,7 @@ class UrQMDRun(MCRun):
         event setup (energy, projectile, target)"""
         return self.lib.ptsigtot()
 
-    def set_event_kinematics(self, event_kinematics):
+    def _set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
         k = event_kinematics
@@ -179,7 +179,7 @@ class UrQMDRun(MCRun):
 
         # Set default stable
         self._define_default_fs_particles()
-        self.set_event_kinematics(event_kinematics)
+        self._set_event_kinematics(event_kinematics)
 
         self.lib.inputs.nevents = 1
         self.lib.rsys.bmin = 0
@@ -240,3 +240,10 @@ class UrQMDRun(MCRun):
         # Convert URQMD event to HEPEVT
         self.lib.chepevt()
         return 0
+
+class UrQMD34(UrQMDRun):  
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+        interaction_model_def = models_dict["URQMD34"]       
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)
