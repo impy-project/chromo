@@ -64,7 +64,7 @@ I don't use a Mac and cannot debug it.
 - numpy
 - scipy
 - pyyaml
-- pyhepmc-ng
+- pyhepmc
 
 ## User interface
 

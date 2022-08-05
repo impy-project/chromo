@@ -23,7 +23,7 @@ class Writer(object, with_metaclass(ABCMeta)):
 
 class HepMCWriter(Writer):
     def __init__(self, filename):
-        self._hep = __import__("pyhepmc_ng")  # delay import till instantiation
+        self._hep = __import__("pyhepmc")  # delay import till instantiation
         self._writer = self._hep.WriterAscii(filename)
         self._genevent = self._hep.GenEvent()
         self._event_number = 0
