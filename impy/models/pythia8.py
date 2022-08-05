@@ -6,8 +6,8 @@ Created on 19.01.2015
 
 import numpy as np
 from impy.common import MCRun, MCEvent
-from impy import impy_config, pdata
-from impy.util import standard_particles, info, AZ2pdg
+from impy import impy_config
+from impy.util import info, AZ2pdg
 
 _len_evt = 300000
 
@@ -217,7 +217,7 @@ class PYTHIA8Run(MCRun):
     #     os.close(self.stdout_save)
 
     def attach_log(self, fname):
-        from impy.util import OutputGrabber
+        # from impy.util import OutputGrabber
 
         fname = impy_config["output_log"] if fname is None else fname
         # info(1, 'Not implemented at this stage')
@@ -288,7 +288,7 @@ class PYTHIA8Run(MCRun):
         return not self.lib.next()
 
 
-class Pyphia8(PYTHIA8Run):
+class Pythia8(PYTHIA8Run):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
 

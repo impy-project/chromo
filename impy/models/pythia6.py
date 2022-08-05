@@ -7,7 +7,7 @@ Created on 19.01.2015
 import numpy as np
 from impy.common import MCRun, MCEvent
 from impy import impy_config, pdata
-from impy.util import standard_particles, info
+from impy.util import info
 
 
 class PYTHIA6Event(MCEvent):
@@ -163,7 +163,7 @@ class PYTHIA6Run(MCRun):
         return False
 
 
-class Pyphia6(PYTHIA6Run):
+class Pythia6(PYTHIA6Run):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
 

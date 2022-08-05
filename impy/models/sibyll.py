@@ -6,7 +6,7 @@ Created on 17.03.2014
 
 import numpy as np
 from impy.common import MCRun, MCEvent, impy_config
-from impy.util import standard_particles, info
+from impy.util import info
 
 
 class SibyllEvent(MCEvent):

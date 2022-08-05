@@ -1,7 +1,7 @@
 import sys
 from os.path import join, abspath, dirname
 import yaml
-from particletools.tables import PYTHIAParticleData, make_stable_list
+from particletools.tables import PYTHIAParticleData
 
 
 base_path = abspath(dirname(__file__))
@@ -36,6 +36,6 @@ pdata = PYTHIAParticleData(
 )
 
 
-import impy.models as models
-import impy.kinematics as kinematics
-import impy.constants as constants
+import impy.models as models  # noqa
+import impy.kinematics as kinematics  # noqa
+import impy.constants as constants  # noqa
