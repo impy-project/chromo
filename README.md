@@ -44,9 +44,10 @@ To build from source (the **recursive** flag is important to checkout the sub-mo
 
     git clone --recursive https://github.com/afedynitch/impy
     cd impy
+    pip install -e .
     make -j<insert number of CPU cores>
 
-The package shall be installed in editable mode with `pip install -e .` and will behave as an ordinary pip package but using this source build.
+For now, you need to call make by hand, but this will be automated. The command `pip install -e .` installs the package in editable mode (for developers).
 
 Because of the architectural transition and there are many issues on mac, building from source may be a bit complicated. Using brew gcc and python it is possible to build the code by:
 
