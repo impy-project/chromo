@@ -178,7 +178,7 @@ class UrQMDRun(MCRun):
 
         self.attach_log(fname=logfname)
         info(1, "First initialization")
-        self.lib.urqini(self._lun, impy_config["urqmd"]["debug_level"])
+        self.lib.urqini(self._lun, impy_config["urqmd"]["urqmd_dbglvl"])
 
         # Set default stable
         self._define_default_fs_particles()
