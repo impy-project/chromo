@@ -139,7 +139,7 @@ class SIBYLLRun(MCRun):
         else:
             return sigma[0]
 
-    def set_event_kinematics(self, event_kinematics):
+    def _set_event_kinematics(self, event_kinematics):
         """Set new combination of energy, momentum, projectile
         and target combination for next event."""
 
@@ -180,7 +180,7 @@ class SIBYLLRun(MCRun):
 
         self.lib.s_debug.ndebug = impy_config['sibyll']['debug_level']
 
-        self.set_event_kinematics(event_kinematics)
+        self._set_event_kinematics(event_kinematics)
         self.attach_log(fname=logfname)
         self.lib.sibini(int(seed))
         self.lib.pdg_ini()
@@ -215,62 +215,62 @@ class Sibyll21(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
         interaction_model_def = models_dict["SIBYLL21"]       
-        super(SIBYLLRun, self).__init__(interaction_model_def)
+        super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
         
 class Sibyll23(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
         interaction_model_def = models_dict["SIBYLL23"]       
-        super(SIBYLLRun, self).__init__(interaction_model_def)
+        super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
         
 class Sibyll23c(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
         interaction_model_def = models_dict["SIBYLL23C"]       
-        super(SIBYLLRun, self).__init__(interaction_model_def)
+        super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
 
 class Sibyll23c00(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
         interaction_model_def = models_dict["SIBYLL23C00"]       
-        super(SIBYLLRun, self).__init__(interaction_model_def)
+        super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)    
         
 class Sibyll23c01(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
         interaction_model_def = models_dict["SIBYLL23C01"]       
-        super(SIBYLLRun, self).__init__(interaction_model_def)
+        super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
 
 class Sibyll23c02(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
         interaction_model_def = models_dict["SIBYLL23C02"]       
-        super(SIBYLLRun, self).__init__(interaction_model_def)
+        super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
 
 class Sibyll23c03(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
         interaction_model_def = models_dict["SIBYLL23C03"]       
-        super(SIBYLLRun, self).__init__(interaction_model_def)
+        super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
         
 class Sibyll23c04(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
         interaction_model_def = models_dict["SIBYLL23C04"]       
-        super(SIBYLLRun, self).__init__(interaction_model_def)
+        super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
 
 class Sibyll23d(SIBYLLRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
         interaction_model_def = models_dict["SIBYLL23D"]       
-        super(SIBYLLRun, self).__init__(interaction_model_def)
+        super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)                                               
                   

@@ -39,8 +39,8 @@ class HepMCWriter(Writer):
         # - add info about generator
 
         self._genevent.clear()
-        pem = impy_event.pem_arr.T # the need to transpose this is bad
-        vt = impy_event.vt_arr.T # the need to transpose this is bad
+        pem = impy_event._pem_arr.T # the need to transpose this is bad
+        vt = impy_event._vt_arr.T # the need to transpose this is bad
         n = pem.shape[0]
 
         parents = impy_event.parents.T[:n]

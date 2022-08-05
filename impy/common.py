@@ -36,8 +36,8 @@ class EventData:
         self.vy = vy
         self.vz = vz
         self.vt = vt
-        self.pem_arr = pem_arr
-        self.vt_arr = vt_arr
+        self._pem_arr = pem_arr
+        self._vt_arr = vt_arr
     
     
 class MCEvent(object, six.with_metaclass(ABCMeta)):
@@ -72,7 +72,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         'p_ids', 'status', 'charge',
         'px', 'py', 'pz', 'en', 'm',
         'vx', 'vy', 'vz', 'vt',
-        'pem_arr', 'vt_arr'
+        '_pem_arr', '_vt_arr'
     ]
 
     def __init__(self, lib, event_kinematics, event_frame, nevent, npart,
@@ -98,8 +98,8 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         self.vt = vt
 
         # Full arrays of kinematical vectors
-        self.pem_arr = pem_arr  # (px, py, pz, E, m)
-        self.vt_arr = vt_arr  # (vx, vy, vz, t)
+        self._pem_arr = pem_arr  # (px, py, pz, E, m)
+        self._vt_arr = vt_arr  # (vx, vy, vz, t)
 
         # Initialize current selection to all entries up to npart
         if impy_config['pre_slice']:
@@ -140,7 +140,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
             self._npart, self.p_ids, self.status, self.charge,
             self.px, self.py, self.pz, self.en, self.m,
             self.vx, self.vy, self.vz, self.vt,
-            self.pem_arr, self.vt_arr
+            self._pem_arr, self._vt_arr
         ))
     
     def remove_last_filter(self):
@@ -162,8 +162,9 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         self.vy = last.vy
         self.vz = last.vz
         self.vt = last.vt
-        self.pem_arr = last.pem_arr
-        self.vt_arr = last.vt_arr
+        self._pem_arr = last._pem_arr
+        self._vt_arr = last._vt_arr
+        
      
     def remove_all_filters(self):
         """Remove all filters (return to original data)"""
@@ -414,10 +415,8 @@ class MCRun(six.with_metaclass(ABCMeta)):
         # FORTRAN LUN that keeps logfile handle
         self.output_lun = None
         
-        # Number of events to generate
-        self.nevents = None
-        # Normalization 1/nevents for histograms
-        self.norm = None
+        # Number of generated events so far
+        self.nevents = 0
 
     def __enter__(self):
         """TEMP: It would be good to actually use the with construct to
@@ -456,7 +455,7 @@ class MCRun(six.with_metaclass(ABCMeta)):
         
         The maximal energy and particle masses from the event_kinematics
         object define the maximal range, i.e. the energy requested in subsequent
-        `set_event_kinematics` calls should not exceed the one provided here.
+        `_set_event_kinematics` calls should not exceed the one provided here.
 
         Args:
             event_kinematics (object): maximal energy and masses for subsequent runs
@@ -475,7 +474,7 @@ class MCRun(six.with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def set_event_kinematics(self, evtkin):
+    def _set_event_kinematics(self, evtkin):
         """Set new combination of energy, momentum, projectile
         and target combination for next event.
 
@@ -493,7 +492,7 @@ class MCRun(six.with_metaclass(ABCMeta)):
     
     @event_kinematics.setter
     def event_kinematics(self, evtkin):
-        self.set_event_kinematics(evtkin)
+        self._set_event_kinematics(evtkin)
 
     @abstractmethod
     def set_stable(self, pdgid, stable=True):
@@ -546,11 +545,11 @@ class MCRun(six.with_metaclass(ABCMeta)):
                 k = EventKinematics(ecm=prev_kin.ecm,
                     p1pdg=prev_kin.p1pdg, 
                     nuc2_prop=(iat, int(iat/2)))
-            self.set_event_kinematics(k)
+            self._set_event_kinematics(k)
             cs += f * self.sigma_inel(**kwargs)
 
         # Restore settings
-        self.set_event_kinematics(prev_kin)
+        self._set_event_kinematics(prev_kin)
 
         return cs
 
@@ -635,10 +634,9 @@ class MCRun(six.with_metaclass(ABCMeta)):
         # Initialize counters to prevent infinite loops in rejections
         ntrials = 0
         nremaining = nevents
-        self.nevents = nevents
-        self.norm = 1./float(nevents)
         while nremaining > 0:
             if self.generate_event() == 0:
+                self.nevents += 1
                 yield self._event_class(self.lib, self._curr_event_kin,
                                         self._output_frame)
                 nremaining -= 1
@@ -661,7 +659,7 @@ class MCRun(six.with_metaclass(ABCMeta)):
         initialization issue something has to keep track of ownership
         and history. And classes seem to just this.
         """
-        self.set_event_kinematics(event_kinematics)
+        self._set_event_kinematics(event_kinematics)
         retry_on_rejection = impy_config['retry_on_rejection']
         # Initialize counters to prevent infinite loops in rejections
         ntrials = 0
@@ -677,6 +675,6 @@ class MCRun(six.with_metaclass(ABCMeta)):
                 ntrials += 1
                 continue
             elif ntrials > 2 * nevents:
-                raise Exception('Things run bad. Check your input.')
+                raise RuntimeError('Things run bad. Check your input.')
             else:
                 info(0, 'Rejection occured')
