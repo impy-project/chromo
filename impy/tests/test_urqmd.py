@@ -4,8 +4,8 @@ import numpy as np
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(root_dir)
-sys.path.append(os.path.join(root_dir,'../DPMJET-III-gitlab'))
-print root_dir
+sys.path.append(os.path.join(root_dir, "../DPMJET-III-gitlab"))
+print(root_dir)
 
 from impy.definitions import *
 from impy.constants import *
@@ -18,35 +18,31 @@ from impy.common import impy_config, pdata
 # 7 TeV). If you want cosmic ray energies, this should
 # be rather p-N at 10 EeV and lab frame (not yet defined).
 
-event_kinematics = EventKinematics(
-    ecm=200 * GeV,
-    p1pdg=2112,
-    nuc2_prop=(14,7))
+event_kinematics = EventKinematics(ecm=200 * GeV, p1pdg=2112, nuc2_prop=(14, 7))
 
 # impy_config["user_frame"] = 'laboratory'
 # impy_config['tau_stable'] = 1.
 # impy_config['pi0_stable'] = False
-generator = make_generator_instance(interaction_model_by_tag['URQMD34'])
+generator = make_generator_instance(interaction_model_by_tag["URQMD34"])
 generator.init_generator(event_kinematics)
 # import IPython
 # IPython.embed()
 
-make_decay_list = [211,321,111,2112, 310,130,13,-13,3122,-3212]
+make_decay_list = [211, 321, 111, 2112, 310, 130, 13, -13, 3122, -3212]
 for pid in make_decay_list:
     generator.set_stable(pid, stable=False)
 generator.lib.stables.stabvec *= 0
 generator.lib.stables.nstable = 0
 
-e_grid = np.logspace(-3,event_kinematics.ecm*1.2,30)
+e_grid = np.logspace(-3, event_kinematics.ecm * 1.2, 30)
 pions = np.zeros_like(e_grid)
 protons = np.zeros_like(e_grid)
 
 
-
 # This
 for event in generator.event_generator(event_kinematics, 10):
-    protons += np.histogram(event.en[event.p_ids == 2212],bins=e_grid)[1]
-    pions += np.histogram(event.en[np.abs(event.p_ids) == 211],bins=e_grid)[1]
+    protons += np.histogram(event.en[event.p_ids == 2212], bins=e_grid)[1]
+    pions += np.histogram(event.en[np.abs(event.p_ids) == 211], bins=e_grid)[1]
     # generator.lib.pydat3.mdcy[102 - 1, 0] = 1
     # event.filter_final_state()
     # print 'px', event.px
@@ -68,4 +64,3 @@ for event in generator.event_generator(event_kinematics, 10):
 # for event in ....:
 #     for particle in event:
 #         print particle.p_id, particle.en...
-

@@ -5,7 +5,7 @@ import os
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 
-root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(root_dir)
 
 from impy.definitions import *
@@ -16,23 +16,24 @@ from impy.util import info
 from impy.writer import HepMCWriter
 import pytest
 
-event_kinematics = EventKinematics(ecm=7000 * GeV,
-                                   p1pdg=2212,
-                                   p2pdg=2212)
+event_kinematics = EventKinematics(ecm=7000 * GeV, p1pdg=2212, p2pdg=2212)
 
-impy_config["user_frame"] = 'laboratory'
+impy_config["user_frame"] = "laboratory"
 
 
-@pytest.mark.parametrize("model_tag", [
-    "SIBYLL23D",
-    # "DPMJETIII306",
-    # "EPOSLHC"
-    ])
+@pytest.mark.parametrize(
+    "model_tag",
+    [
+        "SIBYLL23D",
+        # "DPMJETIII306",
+        # "EPOSLHC"
+    ],
+)
 def test_hepmc_writer(model_tag):
     # To run this test do `pytest tests/test_hepmc_writer.py`
     # This test fails because the event record written by HepMC3 C++ is bad,
     # a lot of particles are missing. Either a bug in the original impy record or a bug in the
-    # HepMC3 C++ code (not the pyhepmc_ng code). 
+    # HepMC3 C++ code (not the pyhepmc_ng code).
     generator = make_generator_instance(interaction_model_by_tag[model_tag])
     generator.init_generator(event_kinematics)
 
@@ -55,16 +56,13 @@ def test_hepmc_writer(model_tag):
                         par.add((pid[j], pem[j, 3]))
                     if par:
                         parents[(pid[i], pem[i, 3])] = vt[i], par
-            event_data.append((
-                pem.copy(),
-                vt.copy(),
-                pid.copy(),
-                status.copy(),
-                parents.copy()
-            ))
+            event_data.append(
+                (pem.copy(), vt.copy(), pid.copy(), status.copy(), parents.copy())
+            )
             w.write(event)
 
     import pyhepmc_ng
+
     for ievent, event in enumerate(pyhepmc_ng.open(test_file)):
         assert event is not None
         assert event.event_number == ievent
@@ -79,7 +77,13 @@ def test_hepmc_writer(model_tag):
         parents = {}
         for i, p in enumerate(particles):
             assert i + 1 == p.id
-            pem[i] = p.momentum.px, p.momentum.py, p.momentum.pz, p.momentum.e, p.generated_mass
+            pem[i] = (
+                p.momentum.px,
+                p.momentum.py,
+                p.momentum.pz,
+                p.momentum.e,
+                p.generated_mass,
+            )
             pid[i] = p.pid
             status[i] = p.status
             par = set()
@@ -95,4 +99,5 @@ def test_hepmc_writer(model_tag):
 
     # delete test_file if test is successful
     import os
+
     os.unlink(test_file)

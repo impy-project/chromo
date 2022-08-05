@@ -1,8 +1,6 @@
 """Some common functions for tests"""
 
 
-    
-    
 def plot_hist(xedges, ws, axes=None, facecolor=None, **kwargs):
     """
     Plots histogram data in ROOT style.
@@ -15,6 +13,7 @@ def plot_hist(xedges, ws, axes=None, facecolor=None, **kwargs):
 
     if axes is None:
         from matplotlib import pyplot as plt
+
         axes = plt.gca()
 
     import numpy as np
