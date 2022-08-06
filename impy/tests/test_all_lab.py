@@ -1,65 +1,69 @@
-from __future__ import print_function
-
-import sys
 import os
 import numpy as np
 from multiprocessing import Pool, freeze_support
 import tempfile
-
-from impy.definitions import *
-from impy.constants import *
+import pickle
+from impy.constants import GeV
 from impy.kinematics import EventKinematics
-from impy import impy_config, pdata
+from impy import impy_config
 from impy.util import info
-
-# AF: This is what the user interaction has to yield.
-# It is the typical expected configuration that one
-# wants to run (read pp-mode at energies not exceeding
-# 7 TeV). If you want cosmic ray energies, this should
-# be rather p-N at 10 EeV and lab frame (not yet defined).
-
-event_kinematics = EventKinematics(
-    ecm=7000 * GeV,
-    p1pdg=2212,
-    p2pdg=2212
-    # nuc2_prop=(14,7)
+from impy.models import (
+    Sibyll23d,
+    Sibyll23c,
+    Sibyll23,
+    Sibyll21,
+    DpmjetIII306,
+    DpmjetIII191,
+    EposLHC,
+    Phojet112,
+    Phojet191,
+    UrQMD34,
+    QGSJet01c,
+    QGSJetII03,
+    QGSJetII04,
 )
+
 
 impy_config["user_frame"] = "center-of-mass"
 
-gen_list = [
-    "SIBYLL23D",
-    "SIBYLL23C",
-    "SIBYLL23",
-    "SIBYLL21",
-    "DPMJETIII306",
-    "DPMJETIII191",
-    "EPOSLHC",
-    "PHOJET112",
-    "PHOJET191",
-    "URQMD34",
+
+models = [
+    Sibyll23d,
+    Sibyll23c,
+    Sibyll23,
+    Sibyll21,
+    DpmjetIII306,
+    DpmjetIII191,
+    EposLHC,
+    Phojet112,
+    Phojet191,
+    UrQMD34,
     # 'PYTHIA8',
-    "QGSJET01C",
-    "QGSJETII03",
-    "QGSJETII04",
+    QGSJet01c,
+    QGSJetII03,
+    QGSJetII04,
 ]
 
 xlab_bins = np.linspace(0, 1, 21)
-xlab_widths = xlab_bins[1:] - xlab_bins[:-1]
-xlab_centers = 0.5 * (xlab_bins[1:] + xlab_bins[:-1])
-nevents = 5000
-norm = 1.0 / float(nevents) / xlab_widths
 
 
-def run_generator(gen, *args):
-    print("Testing", gen)
-    hist_p = np.zeros(len(xlab_centers))
-    hist_pi = np.zeros(len(xlab_centers))
+def run_generator(model):
+
+    nevents = 5000
+
+    event_kinematics = EventKinematics(
+        ecm=7000 * GeV,
+        p1pdg=2212,
+        p2pdg=2212
+        # nuc2_prop=(14,7)
+    )
+
+    hist_p = 0
+    hist_pi = 0
     try:
         log = tempfile.mkstemp()[1]
-        generator = make_generator_instance(interaction_model_by_tag[gen])
-        generator.init_generator(event_kinematics, logfname=log)
-        for event in generator.event_generator(event_kinematics, nevents):
+        generator = model(event_kinematics, logfname=log)
+        for event in generator(nevents):
             event.filter_final_state_charged()
 
             hist_p += np.histogram(
@@ -74,22 +78,22 @@ def run_generator(gen, *args):
                 weights=event.xlab[np.abs(event.p_ids) == 211] ** 1.7,
             )[0]
 
-        return True, gen, log, hist_p, hist_pi
-    except:
-        return False, gen, log, hist_p, hist_pi
+        return True, model.__class__.__name__, log, hist_p, hist_pi
+    except Exception:
+        return False, model.__class__.__name__, log, hist_p, hist_pi
 
 
-if __name__ in ["__main__", "__test__"]:
+def test_all_lab():
     freeze_support()
     pool = Pool(processes=32)
-    result = [pool.apply_async(run_generator, (gen,)) for gen in gen_list]
+    result = [pool.apply_async(run_generator, (gen,)) for gen in models]
     result = [res.get(timeout=100000) for res in result]
 
     logs = {}
     xlab_protons = {}
     xlab_piplus = {}
-    failed = []
-    passed = []
+    failed = set()
+    passed = set()
 
     for r, gen, log, hist_p, hist_pi in result:
         if r:
@@ -106,10 +110,7 @@ if __name__ in ["__main__", "__test__"]:
     info(0, "Passed:", "\n", "\n ".join(passed))
     info(0, "\nFailed:", "\n", "\n ".join(failed))
 
-    import pickle
+    with open(os.path.splitext(__file__)[0] + ".pkl", "wb") as f:
+        pickle.dump((xlab_bins, xlab_protons, xlab_piplus, logs), f, protocol=-1)
 
-    pickle.dump(
-        (xlab_bins, xlab_protons, xlab_piplus, logs),
-        open(os.path.splitext(__file__)[0] + ".pkl", "wb"),
-        protocol=-1,
-    )
+    assert passed == set(x.__name__ for x in models)
