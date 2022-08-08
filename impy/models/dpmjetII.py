@@ -86,12 +86,14 @@ class DpmjetIIMCRun(MCRun):
         datdir = "/lustre/fs17/group/that/af/m2m/iamdata/"
         from random import randint
 
+        # FIXME HD: this makes no sense?
         try:
             if self.init_done:
                 raise Exception(
                     self.class_name + "::init_generator(): Init already performed"
                 )
-        except:
+        except Exception:
+            # FIXME raise a warning at least
             pass
         seed = randint(1000000, 10000000)
         print(self.__class__.__name__ + "::init_generator(): seed=", seed)
@@ -132,7 +134,8 @@ class DpmjetIICascadeRun:
         from ParticleDataTool import DpmJetParticleTable
 
         exec("import " + lib_str + " as dpmlib")
-        self.lib = dpmlib  # @UndefinedVariable
+        # FIXME for Anatoly
+        # self.lib = dpmlib  # @UndefinedVariable
         self.label = label
         self.nEvents = n_events
         self.spectrum_hists = []
@@ -157,7 +160,8 @@ class DpmjetIICascadeRun:
         ]
 
         self.ptab = DpmJetParticleTable()
-        if datdir == None:
+        # FIXME Anatoly code cannot contain hardcoded paths
+        if datdir is None:
             datdir = "/lustre/fs17/group/that/af/m2m/iamdata/"
         self.init_generator(datdir)
         self.set_stable(decay_mode)
@@ -224,7 +228,8 @@ class DpmjetIICascadeRun:
             try:
                 kc = self.lib.pycomp(sibtab.modid2pdg[i])
                 self.lib.pydat3.mdcy[kc - 1, 0] = 0
-            except:
+            except Exception:
+                # FIXME raise a warning at least
                 pass
 
     def get_hadron_air_cs(self, E_lab, projectile):
@@ -256,8 +261,8 @@ class DpmjetIICascadeRun:
                 for pid in np.unique(event.p_ids)
                 if pid in avail_pid
             ]
-        #             except KeyError:
-        #                 print "DpmjetIICascadeRun::start(): Unknown particle id in result."
+        #  except KeyError:
+        #      print "DpmjetIICascadeRun::start(): Unknown particle id in result."
 
         # Correct for selective filling of histograms
         for hist in self.spectrum_hists:
@@ -301,7 +306,8 @@ class StableCharm(Settings):
                 kc = self.lib.pycomp(pdgid)
                 self.prev_settings[kc - 1] = self.lib.pydat3.mdcy[kc - 1, 0]
                 self.lib.pydat3.mdcy[kc - 1, 0] = 0
-            except:
+            except Exception:
+                # FIXME raise a warning at least
                 pass
 
         if self.mode <= 1:
@@ -316,7 +322,8 @@ class StableCharm(Settings):
                 kc = self.lib.pycomp(pdgid)
                 self.prev_settings[kc - 1] = self.lib.pydat3.mdcy[kc - 1, 0]
                 self.lib.pydat3.mdcy[kc - 1, 0] = 0
-            except:
+            except Exception:
+                # FIXME raise a warning at least
                 pass
 
         if self.mode <= 2:
@@ -329,7 +336,8 @@ class StableCharm(Settings):
                 kc = self.lib.pycomp(pdgid)
                 self.prev_settings[kc - 1] = self.lib.pydat3.mdcy[kc - 1, 0]
                 self.lib.pydat3.mdcy[kc - 1, 0] = 0
-            except:
+            except Exception:
+                # FIXME raise a warning at least
                 pass
 
     def reset(self):

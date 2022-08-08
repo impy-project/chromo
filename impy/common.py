@@ -8,12 +8,9 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 """
 import six
-import os
-from os.path import abspath
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 import numpy as np
-from particletools.tables import make_stable_list
 from impy import impy_config
 from impy.util import info
 
@@ -446,7 +443,8 @@ class MCRun(six.with_metaclass(ABCMeta)):
 
     def __init__(self, interaction_model_def, settings_dict=dict(), **kwargs):
         import importlib
-        from impy.util import OutputGrabber
+
+        # from impy.util import OutputGrabber
 
         # Import library from library name
         self.lib = importlib.import_module(interaction_model_def.library_name)

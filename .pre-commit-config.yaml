@@ -34,6 +34,14 @@ repos:
   hooks:
   - id: black
 
+# Python linter (Flake8)
+- repo: https://github.com/pycqa/flake8
+  rev: 4.0.1
+  hooks:
+  - id: flake8
+    files: impy/[^_].*\.py
+    args: [--config, setup.cfg]
+
 # # Enable the following later
 # # Python docstring formatting
 # - repo: https://github.com/pycqa/pydocstyle
@@ -41,14 +49,6 @@ repos:
 #   hooks:
 #   - id: pydocstyle
 #     files: impy/[^_].*\.py
-
-# # Python linter (Flake8)
-# - repo: https://github.com/pycqa/flake8
-#   rev: 4.0.1
-#   hooks:
-#   - id: flake8
-#     files: impy/[^_].*\.py
-#     args: [--config, setup.cfg]
 
 # # CMake formatting
 # - repo: https://github.com/cheshirekow/cmake-format-precommit

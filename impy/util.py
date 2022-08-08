@@ -134,10 +134,11 @@ class OutputGrabber(object):
     Class to capture the output produced by the console and
     store it as a string variable. This is provided for utlity
     to event generators written in C++.
-    Source: https://stackoverflow.com/questions/24277488/in-python-how-to-capture-the-stdout-from-a-c-shared-library-to-a-variable
+    Source: https://stackoverflow.com/questions/24277488/
+    in-python-how-to-capture-the-stdout-from-a-c-shared-library-to-a-variable
     """
 
-    escape_char = "\c"
+    escape_char = r"\c"
 
     def __init__(self, stream=None, threaded=False):
         import sys

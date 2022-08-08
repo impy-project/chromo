@@ -5,8 +5,8 @@ Created on 15.05.2012
 """
 import numpy as np
 from impy.common import MCRun, MCEvent
-from impy import impy_config, pdata
-from impy.util import standard_particles, info, fortran_chars
+from impy import impy_config
+from impy.util import info, fortran_chars
 
 
 class PhojetEvent(MCEvent):
@@ -184,7 +184,6 @@ class PHOJETRun(MCRun):
     def init_generator(self, event_kinematics, seed="random", logfname=None):
         from impy.constants import c
         from random import randint
-        from os.path import join
 
         self._abort_if_already_initialized()
 
