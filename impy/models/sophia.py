@@ -188,8 +188,6 @@ class SophiaRun(MCRun):
         info(5, "Using seed:", seed)
 
         self.lib.s_plist.ideb = impy_config["sophia"]["debug_level"]
-
-        self._set_event_kinematics(event_kinematics)
         self.attach_log(fname=logfname)
 
         self.lib.init_rmmard(int(seed))  # setting random number generator seed
@@ -200,6 +198,7 @@ class SophiaRun(MCRun):
         # Keep decayed particles in the history:
         self.lib.eg_io.keepdc = impy_config["sophia"]["keep_decayed_particles"]
         self._define_default_fs_particles()
+        self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
 
