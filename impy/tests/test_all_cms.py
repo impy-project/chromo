@@ -6,8 +6,9 @@ from pathlib import PurePath as Path
 from impy.constants import GeV
 from impy.kinematics import EventKinematics
 from impy import impy_config
+from impy.common import MCRun
 import impy.models
-import abc
+import traceback
 
 
 def run_generator(model, nevents):
@@ -20,20 +21,31 @@ def run_generator(model, nevents):
 
     impy_config["user_frame"] = "center-of-mass"
 
+    model_name = model.__name__
+
     eta_bins = np.linspace(-5, 5, 21)
     eta_widths = eta_bins[1:] - eta_bins[:-1]
     eta_centers = 0.5 * (eta_bins[1:] + eta_bins[:-1])
     norm = 1.0 / float(nevents) / eta_widths
     hist = np.zeros(len(eta_centers))
-    try:
-        log = tempfile.mkstemp()[1]
-        generator = model(event_kinematics)
-        for event in generator(nevents):
-            event.filter_final_state_charged()
-            hist += np.histogram(event.eta, bins=eta_bins)[0]
-        return True, model.__name__, log, eta_bins, hist * norm
-    except Exception:
-        return False, model.__name__, log, eta_bins, hist * norm
+    success = False
+    with tempfile.NamedTemporaryFile(mode="w+") as log:
+        try:
+            log.write(model_name + " init\n")
+            generator = model(event_kinematics, logfname=log.name)
+            log.write(model_name + " start\n")
+            for event in generator(nevents):
+                event.filter_final_state_charged()
+                hist += np.histogram(event.eta, bins=eta_bins)[0]
+            log.write(model_name + " finish\n")
+            success = True
+        except Exception:
+            log.write(model_name + " abort\n")
+            log.write(traceback.format_exc())
+
+        log.flush()
+        log.seek(0)
+        return success, model_name, log.read(), eta_bins, hist * norm
 
 
 def test_all_cms():
@@ -43,7 +55,7 @@ def test_all_cms():
     models = []
     for key in dir(impy.models):
         obj = getattr(impy.models, key)
-        if isinstance(obj, abc.ABCMeta):
+        if hasattr(obj, "__mro__") and MCRun in obj.__mro__:
             models.append(obj)
 
     result = []
@@ -51,29 +63,24 @@ def test_all_cms():
         jobs = [pool.apply_async(run_generator, (model, 100)) for model in models]
         for job in jobs:
             try:
-                r = job.get(timeout=1000)
+                r = job.get(timeout=10)
                 result.append(r)
             except TimeoutError:
                 pass
 
     failed = set([x.__name__ for x in models])
-    passed = set()
     psrap = {}
     logs = {}
 
-    eta_bins = result[0][3]
-
-    for r, gen, log, _, hist in result:
+    for r, model_name, log, eta_bins, hist in result:
         if r:
-            passed.add(gen)
-            psrap[gen] = hist
-
-        with open(log) as f:
-            logs[gen] = f.read()
-
-    failed -= passed
+            failed.remove(model_name)
+            psrap[model_name] = hist
+        else:
+            logs[model_name] = log
+            print(log)
 
     with open(Path(__file__).stem + ".pkl", "wb") as f:
         pickle.dump((eta_bins, psrap, logs), f)
 
-    assert not failed
+    assert failed == set()
