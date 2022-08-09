@@ -79,7 +79,7 @@ This guide works on Linux and OSX. You need a running docker server. Please goog
 
     cd /app
 
-    # select python version, e.g. 3.8, and make virtual environment
+    # select python version, e.g. 3.8, and enter virtual environment
     python3.8 -m venv venv
     source ./venv/bin/activate
 
