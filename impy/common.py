@@ -538,6 +538,11 @@ class MCRun(six.with_metaclass(ABCMeta)):
         internal variables of the model. In both cases the
         important thing is that generate_event remains argument-free.
         """
+        # _set_event_kinematics may call library functions,
+        # which work correctly only after calling other
+        # (initializing) library functions.
+        # Therefore _set_event_kinematics should only be called
+        # after these calls in init_generator
         pass
 
     @property

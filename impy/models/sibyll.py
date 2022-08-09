@@ -190,6 +190,9 @@ class SIBYLLRun(MCRun):
             self.lib.sibhep1 if "21" in self.lib.__name__ else self.lib.sibhep3
         )
         self._define_default_fs_particles()
+        # _set_event_kinematics uses function self.lib.isib_pdg2pid
+        # which works only after an initialization call to self.lib.pdg_ini()
+        # therefore it should be called after this initalization
         self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
