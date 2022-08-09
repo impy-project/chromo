@@ -133,7 +133,7 @@ else
 endif
 
 WORK_DIR = $(PWD)
-LIB_DIR?=$(WORK_DIR)/impy/lib
+LIB_DIR?=$(WORK_DIR)/src/impy/lib
 RND = $(PWD)$(PATHSEP)src$(PATHSEP)rangen.o
 
 ifeq ($(OS),Windows_NT)

@@ -92,7 +92,7 @@ class MakeBuild(build_ext):
 
 def get_version():
     version = {}
-    with open("impy/version.py") as fp:
+    with open("src/impy/version.py") as fp:
         exec(fp.read(), version)
     return version["__version__"]
 
@@ -118,7 +118,7 @@ def extract_longdescription():
 
 
 # Data files for interaction models
-iamfiles = glob.glob("impy/iamdata/*/*")
+iamfiles = glob.glob("src/impy/iamdata/*/*")
 
 setup(
     name="impy",
@@ -131,8 +131,9 @@ setup(
     license="BSD 3-Clause License",
     url="https://github.com/afedynitch/impy",
     setup_requires=[] + pytest_runner,
+    package_dir={"": "src"},
     packages=["impy", "impy.models"],
-    data_files=[("", ["LICENSE", "impy/impy_config.yaml"]), ("iamdata", iamfiles)],
+    data_files=[("", ["LICENSE", "src/impy/impy_config.yaml"]), ("iamdata", iamfiles)],
     include_package_data=True,
     install_requires=[
         "six",
