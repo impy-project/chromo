@@ -78,7 +78,15 @@ This guide works on Linux and OSX. You need a running docker server. Please goog
     docker exec -it impy /bin/bash
 
     cd /app
-    pip install -e .
+
+    # select python version, e.g. 3.8, and make virtual environment
+    python3.8 -m venv venv
+    ./venv/bin/activate
+
+    # install impy and dependencies (prefer binary wheels for deps)
+    pip install --prefer-binary -e .
+
+    # compile the FORTRAN interface (this will be automated in the future)
     make -j<insert number of CPU cores>
 
 You can now use impy inside the docker instance.
