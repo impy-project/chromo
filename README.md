@@ -81,7 +81,7 @@ This guide works on Linux and OSX. You need a running docker server. Please goog
 
     # select python version, e.g. 3.8, and make virtual environment
     python3.8 -m venv venv
-    ./venv/bin/activate
+    source ./venv/bin/activate
 
     # install impy and dependencies (prefer binary wheels for deps)
     pip install --prefer-binary -e .
