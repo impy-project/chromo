@@ -6,7 +6,7 @@ Created on 17.03.2014
 import numpy as np
 from impy.common import MCRun, MCEvent
 from impy import impy_config, base_path
-from impy.util import standard_particles, info
+from impy.util import info
 
 
 class QGSJETEvent(MCEvent):
@@ -115,9 +115,7 @@ class QGSJetIIRun(MCRun):
     QGSJET-II-xx series of event generators."""
 
     def __init__(self, *args, **kwargs):
-        from particletools.tables import QGSJetParticleTable
-
-        MCRun.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
@@ -193,9 +191,7 @@ class QGSJet01Run(MCRun):
     QGSJET-01c legacy event generators."""
 
     def __init__(self, *args, **kwargs):
-        from particletools.tables import QGSJetParticleTable
-
-        MCRun.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current

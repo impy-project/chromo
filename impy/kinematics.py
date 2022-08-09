@@ -17,7 +17,7 @@ the implementation is very "cooked up". We have to discuss this.
 
 import six
 import numpy as np
-from impy import pdata, impy_config
+from impy import pdata
 from impy.util import info
 
 
@@ -71,8 +71,8 @@ class CompositeTarget(object):
     def _sort(self):
         """Sorts list acording to fraction"""
 
-        def sort_list(l, idcs):
-            return [l[i] for i in idcs]
+        def sort_list(k, idcs):
+            return [k[i] for i in idcs]
 
         idcs = np.argsort(self.component_fractions)
         self.component_fractions = self.component_fractions[idcs]

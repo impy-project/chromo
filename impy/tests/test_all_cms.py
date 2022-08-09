@@ -9,33 +9,30 @@ import tempfile
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(root_dir, "../../apps/pythia8240/lib"))
 
-from impy.definitions import *
-from impy.constants import *
+from impy.constants import GeV
 from impy.kinematics import EventKinematics
-from impy import impy_config, pdata
+from impy import impy_config
 from impy.util import info
-
-gen_list = [
-    "SIBYLL23D",
-    "SIBYLL23C",
-    "SIBYLL23C01",
-    "SIBYLL23C00",
-    "SIBYLL23",
-    "SIBYLL21",
-    "DPMJETIII306",
-    "DPMJETIII191",
-    "EPOSLHC",
-    "PHOJET112",
-    "PHOJET191",
-    "URQMD34",
-    # 'PYTHIA8',
-    "QGSJET01C",
-    "QGSJETII03",
-    "QGSJETII04",
-]
+from impy.models import (
+    Sibyll23d,
+    Sibyll23c,
+    Sibyll23c01,
+    Sibyll23c00,
+    Sibyll23,
+    Sibyll21,
+    DpmjetIII306,
+    DpmjetIII191,
+    EposLHC,
+    Phojet112,
+    Phojet191,
+    UrQMD34,
+    QGSJet01c,
+    QGSJetII03,
+    QGSJetII04,
+)
 
 
-def run_generator(gen, *args):
+def run_generator(model):
     event_kinematics = EventKinematics(
         ecm=7000 * GeV,
         p1pdg=2212,
@@ -50,30 +47,46 @@ def run_generator(gen, *args):
     eta_centers = 0.5 * (eta_bins[1:] + eta_bins[:-1])
     nevents = 5000
     norm = 1.0 / float(nevents) / eta_widths
-    print("Testing", gen)
     hist = np.zeros(len(eta_centers))
     try:
         log = tempfile.mkstemp()[1]
-        generator = make_generator_instance(interaction_model_by_tag[gen])
-        generator.init_generator(event_kinematics, logfname=log)
-        for event in generator.event_generator(event_kinematics, nevents):
+        generator = model(event_kinematics)
+        for event in generator(nevents):
             event.filter_final_state_charged()
-            hist += norm * np.histogram(event.eta, bins=eta_bins)[0]
-        return True, gen, log, eta_bins, hist
-    except:
-        return False, gen, log, eta_bins, hist
+            hist += np.histogram(event.eta, bins=eta_bins)[0]
+        return True, generator.__class__.__name__, log, eta_bins, hist * norm
+    except Exception:
+        return False, generator.__class__.__name__, log, eta_bins, hist * norm
 
 
-# import IPython
-# IPython.embed()
-if __name__ in ["__main__", "__test__"]:
+models = [
+    Sibyll23d,
+    Sibyll23c,
+    Sibyll23c01,
+    Sibyll23c00,
+    Sibyll23,
+    Sibyll21,
+    DpmjetIII306,
+    DpmjetIII191,
+    EposLHC,
+    Phojet112,
+    Phojet191,
+    UrQMD34,
+    # 'PYTHIA8',
+    QGSJet01c,
+    QGSJetII03,
+    QGSJetII04,
+]
+
+
+def test_all_cms():
     freeze_support()
     pool = Pool(processes=32)
-    result = [pool.apply_async(run_generator, (gen,)) for gen in gen_list]
+    result = [pool.apply_async(run_generator, (model,)) for model in models]
     result = [res.get(timeout=1000) for res in result]
 
-    failed = []
-    passed = []
+    failed = set()
+    passed = set()
     psrap = {}
     logs = {}
 
@@ -81,10 +94,10 @@ if __name__ in ["__main__", "__test__"]:
 
     for r, gen, log, _, hist in result:
         if r:
-            passed.append(gen)
+            passed.add(gen)
             psrap[gen] = hist
         else:
-            failed.append(gen)
+            failed.add(gen)
 
         with open(log) as f:
             logs[gen] = f.read()
@@ -100,3 +113,5 @@ if __name__ in ["__main__", "__test__"]:
         open(os.path.splitext(__file__)[0] + ".pkl", "wb"),
         protocol=-1,
     )
+
+    assert passed == set([g.__name__ for g in models])

@@ -1,27 +1,24 @@
 import sys
 import os
-import numpy as np
-
-from impy.definitions import *
-from impy.constants import *
+from impy.constants import GeV
 from impy.kinematics import EventKinematics
 from impy import impy_config
-
-# root_dir = os.path.abspath(os.path.dirname(__file__))
-# sys.path.append(
-#     os.path.join(os.path.expanduser("~"), "devel", "apps", "pythia8240", "lib")
-# )
+from impy.models import DpmjetIII191
+from collections import Counter
 
 # This class will go through the event and decay all particles that should be
 # unstable but did not decay in some other generator
 
 
+# FIXME this should not be defined in a test
+# if it works, it should be part of the library and tested here
 class Pythia8DecayAfterburner(object):
     def __init__(self, stable_list):
         self.stable_list = stable_list
         self._init_pythia()
 
     def _init_pythia(self):
+        # FIXME Anatoly test cannot contain special paths
         pythia_dir = os.path.join(
             os.path.expanduser("~"), "devel", "apps", "pythia8240"
         )
@@ -35,7 +32,7 @@ class Pythia8DecayAfterburner(object):
         self.pythia.particleData.mayDecay(13, True)
         self.pythia.init()
 
-    def process_decays(self, event):
+    def __call__(self, event):
         nappend = 0
         p_ids, status, px, py, pz, en, m = [], [], [], [], [], [], []
 
@@ -88,28 +85,36 @@ class Pythia8DecayAfterburner(object):
         event._apply_slicing()
 
 
-event_kinematics = EventKinematics(
-    ecm=200 * GeV,
-    p1pdg=2212,
-    p2pdg=2212
-    # nuc2_prop=(14,7)
-)
+def test_decay_afterburner():
+    event_kinematics = EventKinematics(
+        ecm=200 * GeV,
+        p1pdg=2212,
+        p2pdg=2212
+        # nuc2_prop=(14,7)
+    )
 
-# Watch out this setting!
-impy_config["pre_slice"] = False
+    # Watch out this setting!
+    impy_config["pre_slice"] = False
 
-# The rest is pretty standard
-generator = make_generator_instance(interaction_model_by_tag["DPMJETIII191"])
-generator.init_generator(event_kinematics)
+    # The rest is pretty standard
+    generator = DpmjetIII191(event_kinematics)
 
-# Here provide the list of particles which you want to retain as stable
-pythia_afterburner = Pythia8DecayAfterburner(stable_list=[2212, 11, 12, 14, 15, 16, 22])
+    # Here provide the list of particles which you want to retain as stable
+    pythia_afterburner = Pythia8DecayAfterburner(
+        stable_list=[2212, 11, 12, 14, 15, 16, 22]
+    )
 
-for event in generator.event_generator(event_kinematics, 200):
-    # This has to be the first call after an event is generated. The event object
-    # will be modified and finalized by this call
-    pythia_afterburner.process_decays(event)
-    # Here filter only the particles that are remaining as stable
-    event.filter_final_state()
-    # Enjoy the result
-    print("p_ids", event.p_ids)
+    before = Counter()
+    after = Counter()
+    for event in generator(200):
+        before.update(event.p_ids)
+        # This has to be the first call after an event is generated. The event object
+        # will be modified and finalized by this call
+        pythia_afterburner(event)
+        # Here filter only the particles that are remaining as stable
+        event.filter_final_state()
+        # Enjoy the result
+        after.update(event.p_ids)
+    assert len(after) < len(before)
+    # TODO check list of specific particles that are expected to
+    # be decayed by Pythia but not Dpmjet

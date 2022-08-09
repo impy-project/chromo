@@ -7,7 +7,7 @@ Created on 03.05.2016
 import numpy as np
 from impy.common import MCRun, MCEvent
 from impy import impy_config, base_path
-from impy.util import standard_particles, info
+from impy.util import info
 
 
 class EPOSEvent(MCEvent):

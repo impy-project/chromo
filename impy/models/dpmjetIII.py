@@ -6,8 +6,8 @@ Created on 14.04.2014
 
 import numpy as np
 from impy.common import MCRun, MCEvent
-from impy import impy_config, pdata
-from impy.util import standard_particles, info
+from impy import impy_config
+from impy.util import info
 
 
 class DpmjetIIIEvent(MCEvent):

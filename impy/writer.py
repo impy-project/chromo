@@ -1,6 +1,5 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 from six import with_metaclass
-import numpy as np
 
 
 class Writer(object, with_metaclass(ABCMeta)):
@@ -45,7 +44,7 @@ class HepMCWriter(Writer):
         vt = impy_event._vt_arr.T  # the need to transpose this is bad
         n = pem.shape[0]
 
-        parents = impy_event.parents.T[:n]
+        # parents = impy_event.parents.T[:n]
         self._hep.fill_genevent_from_hepevt(
             self._genevent,
             event_number=self._event_number,

@@ -5,16 +5,16 @@ Created on 17.03.2014
 """
 
 # Some notes on UrQMD. The model works quite well now. It is slower than anything else,
-# except EPOS maybe. It describes quite okaish the fixed target results and some LHC results.
-# What is a strange feature is that decays of pions, kaons or neutrinos are not supported
-# in the model and can not be disabled by flags.
+# except EPOS maybe. It describes quite okaish the fixed target results and some LHC
+# results. What is a strange feature is that decays of pions, kaons or neutrinos are not
+# supported in the model and can not be disabled by flags.
 
 # The current settings are taken from CORSIKA and they are optimized for speed aparently.
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
 import numpy as np
 from impy.common import MCRun, MCEvent, impy_config
-from impy.util import standard_particles, info
+from impy.util import info
 
 
 class UrQMDEvent(MCEvent):
