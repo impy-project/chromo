@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.18)
 
 project(impylib LANGUAGES C Fortran)
 
+include(CMakePrintHelpers)
+
 if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
   message(
     WARNING
@@ -9,6 +11,7 @@ if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
   )
 endif()
 
+# TODO this needs to be replaced, everything has to be derived from Python_EXECUTABLE
 find_package(Python 3.7 REQUIRED
   COMPONENTS Interpreter Development.Module NumPy)
 
@@ -24,7 +27,6 @@ if (NOT F2PY_INCLUDE_DIR)
 endif()
 
 # Print out the discovered paths
-include(CMakePrintHelpers)
 cmake_print_variables(Python_EXECUTABLE)
 cmake_print_variables(Python_INCLUDE_DIRS)
 cmake_print_variables(F2PY_INCLUDE_DIR)
@@ -34,9 +36,12 @@ include_directories(${F2PY_INCLUDE_DIR})
 add_compile_definitions(NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
 
 if (UNIX)
-  add_compile_options(-O3 -Wno-uninitialized -fPIC)
   add_compile_options(
-    $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>)
+    -O3 -Wno-uninitialized -fPIC
+    # $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
+    $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
+  )
+
   if (APPLE)
     add_compile_options(
       $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>)
@@ -47,7 +52,7 @@ else() # intel
   # set(FLAGSF90 ${FLAGS} -ffree-form -Wobsolescent -fno-second-underscore)
 endif()
 
-set(IMPY_LOGGING impy_openlogfile impy_closelogfile)
+set(impy_logging impy_openlogfile impy_closelogfile)
 set(logging_source ${CMAKE_SOURCE_DIR}/src/logging.f)
 set(ran_source ${CMAKE_SOURCE_DIR}/src/rangen.f)
 
@@ -68,7 +73,7 @@ add_custom_command(
                   -h ${CMAKE_CURRENT_BINARY_DIR}/eposlhc.pyf
                   --overwrite-signature only: aaset ainit aepos afinal hepmcstore
                   getcharge idtrafo initializeepos initeposevt
-                  setstable setunstable xsection ${IMPY_LOGGING} :
+                  setstable setunstable xsection ${impy_logging} :
                   ${eposlhc_interface_sources}
                   > ${CMAKE_CURRENT_BINARY_DIR}/eposlhc.0.log 2>&1
   COMMAND ${Python_EXECUTABLE} -m numpy.f2py
@@ -89,8 +94,8 @@ target_link_libraries(eposlhc PRIVATE Python::NumPy)
 # sib21
 set(sib21_sources
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_21.f
-  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sib21aux.f
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
   ${logging_source}
 )
 set(sib21_interface_sources ${sib21_sources})
@@ -105,7 +110,7 @@ add_custom_command(
                   --overwrite-signature only: sibyll sibyll_ini
                   sib_sigma_hp sib_sigma_hair sib_sigma_hnuc
                   int_nuc decsib decpar sibini sib_list isib_pid2pdg
-                  isib_pdg2pid pdg_ini ${IMPY_LOGGING} :
+                  isib_pdg2pid pdg_ini ${impy_logging} sibhep1 :
                   ${sib21_interface_sources}
                   > ${CMAKE_CURRENT_BINARY_DIR}/sib21.0.log 2>&1
   COMMAND ${Python_EXECUTABLE} -m numpy.f2py
