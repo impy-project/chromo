@@ -1,7 +1,7 @@
 from impy.constants import TeV
 from impy.kinematics import EventKinematics
 from impy.common import impy_config
-from impy.models import EposLHC, DpmjetIII306, QGSJet01c, QGSJetII04  # noqa
+from impy import models
 from collections import Counter
 import pytest
 
@@ -9,8 +9,8 @@ import pytest
 @pytest.mark.parametrize(
     "model",
     [
-        EposLHC,
-        DpmjetIII306,
+        models.EposLHC,
+        models.Sibyll21,
         # QGSJet01c, # broken: AttributeError: module 'qgs01' has no attribute 'qgarr7'
         # QGSJetII04, # broken because apparently cannot find some files
     ],

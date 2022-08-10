@@ -9,6 +9,9 @@ from cmake_ext import CMakeExtension, CMakeBuild  # noqa: E402
 
 setup(
     zip_safe=False,
-    ext_modules=[CMakeExtension("eposlhc")],
+    ext_modules=[
+        CMakeExtension("eposlhc"),
+        CMakeExtension("sib21"),
+    ],
     cmdclass={"build_ext": CMakeBuild},
 )

@@ -11,7 +11,7 @@ from setuptools.command.build_ext import build_ext
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
         Extension.__init__(self, name, sources=[])
-        self.sourcedir = os.path.abspath(sourcedir)
+        self.sourcedir = Path(sourcedir).absolute()
 
 
 class CMakeBuild(build_ext):
@@ -73,12 +73,12 @@ class CMakeBuild(build_ext):
         print(f"cmake args: {' '.join(cmake_args)}")
         print(f"build args: {' '.join(build_args)}")
 
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
+        build_temp = Path(self.build_temp)
+        build_temp.mkdir(parents=True, exist_ok=True)
+
+        subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=build_temp)
 
         subprocess.check_call(
-            ["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp
-        )
-        subprocess.check_call(
-            ["cmake", "--build", "."] + build_args, cwd=self.build_temp
+            ["cmake", "--build", ".", "--target", ext.name] + build_args,
+            cwd=build_temp,
         )

@@ -49,7 +49,9 @@ endif()
 
 set(IMPY_LOGGING impy_openlogfile impy_closelogfile)
 set(logging_source ${CMAKE_SOURCE_DIR}/src/logging.f)
+set(ran_source ${CMAKE_SOURCE_DIR}/src/rangen.f)
 
+# eposlhc
 file(GLOB eposlhc_sources ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/*.f)
 list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
 set(eposlhc_interface_sources
@@ -83,3 +85,44 @@ Python_add_library(eposlhc MODULE WITH_SOABI
   ${logging_source}
 )
 target_link_libraries(eposlhc PRIVATE Python::NumPy)
+
+# sib21
+set(sib21_sources
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_21.f
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sib21aux.f
+  ${logging_source}
+)
+set(sib21_interface_sources ${sib21_sources})
+
+add_custom_command(
+  OUTPUT
+  ${CMAKE_CURRENT_BINARY_DIR}/sib21module.c
+  ${CMAKE_CURRENT_BINARY_DIR}/sib21-f2pywrappers.f
+  COMMAND ${Python_EXECUTABLE} -m numpy.f2py
+                  -m sib21
+                  -h ${CMAKE_CURRENT_BINARY_DIR}/sib21.pyf
+                  --overwrite-signature only: sibyll sibyll_ini
+                  sib_sigma_hp sib_sigma_hair sib_sigma_hnuc
+                  int_nuc decsib decpar sibini sib_list isib_pid2pdg
+                  isib_pdg2pid pdg_ini ${IMPY_LOGGING} :
+                  ${sib21_interface_sources}
+                  > ${CMAKE_CURRENT_BINARY_DIR}/sib21.0.log 2>&1
+  COMMAND ${Python_EXECUTABLE} -m numpy.f2py
+                  ${CMAKE_CURRENT_BINARY_DIR}/sib21.pyf
+                  > ${CMAKE_CURRENT_BINARY_DIR}/sib21.1.log 2>&1
+  DEPENDS ${sib21_sources} ${logging_source} 
+)
+
+add_library(sib21rnd OBJECT ${ran_source})
+target_compile_definitions(sib21rnd PRIVATE SIBYLL_SP)
+target_compile_options(sib21rnd PRIVATE -cpp)
+
+Python_add_library(sib21 MODULE WITH_SOABI
+  ${F2PY_INCLUDE_DIR}/fortranobject.c
+  ${CMAKE_CURRENT_BINARY_DIR}/sib21module.c
+  ${CMAKE_CURRENT_BINARY_DIR}/sib21-f2pywrappers.f
+  ${sib21_sources}
+  ${logging_source}
+)
+target_link_libraries(sib21 PRIVATE Python::NumPy sib21rnd)
