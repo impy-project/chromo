@@ -15,7 +15,7 @@ find_package(Python 3.7 REQUIRED
 # in Numpy-1.22+, this becomes easier: import numpy.f2py; print(numpy.f2py.get_include())
 if (NOT F2PY_INCLUDE_DIR)
   execute_process(
-    COMMAND python -c "import numpy.f2py; from pathlib import Path; print(Path(numpy.f2py.__file__).parent)"
+    COMMAND ${Python_EXECUTABLE} -c "import numpy.f2py; from pathlib import Path; print(Path(numpy.f2py.__file__).parent)"
     OUTPUT_VARIABLE _f2py_directory
     OUTPUT_STRIP_TRAILING_WHITESPACE
     ERROR_QUIET
