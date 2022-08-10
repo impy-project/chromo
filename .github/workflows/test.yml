@@ -28,6 +28,11 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+    - uses: awvwgk/setup-fortran@main
+      id: setup-fortran
+      with:
+        compiler: gcc
+        version: 11
     - run: python -m pip install --upgrade pip wheel
     # TODO no-build-isolation is required for now, needs to be fixed in CMakeLists.txt
     - run: python -m pip install --prefer-binary --no-build-isolation -v -e .[test]
