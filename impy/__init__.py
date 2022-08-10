@@ -1,3 +1,4 @@
+from .version import __version__  # noqa
 import sys
 from os.path import join, abspath, dirname
 import yaml
