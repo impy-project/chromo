@@ -36,13 +36,17 @@ print('Average pT for charged pions {0:4.3f}'.format(average_pt))
 
 ## Installation
 
+### Without docker
+
+If you have trouble with this installation guide, look into the subsection which explains how to install in impy in a fixed docker environment.
+
 The package is (will be) available including pre-compiled binaries. The installation in that case simplifies to (*this does not work yet use installation from source*):
 
     pip install impy
 
 To build from source (the **recursive** flag is important to checkout the sub-modules):
 
-    git clone --recursive https://github.com/afedynitch/impy
+    git clone --recursive https://github.com/impy-project/impy
     cd impy
     pip install -e .
     make -j<insert number of CPU cores>
@@ -53,9 +57,48 @@ Because of the architectural transition and there are many issues on mac, buildi
 
     CC=gcc-10 CXX=gcc-10 FC=gfortran-10 PYTHON_EXE=/usr/local/opt/python@3.8/bin/python3 make -jXXX
 
-Replace `gcc-10` by your version in brew. The official Mac Python is currently broken due to th transition to Apple Silicon, but it is possible to build with a bit of hacking. But currently
+Replace `gcc-10` by your version in brew. The official Mac Python is currently broken due to the transition to Apple Silicon, but it is possible to build with a bit of hacking. But currently
 I don't use a Mac and cannot debug it. 
  
+### With docker
+
+This guide works on Linux and OSX. You need a running docker server. Please google how to set up docker on your machine.
+
+    # download impy
+    git clone --recursive https://github.com/impy-project/impy
+    cd impy
+
+    # download linux image, this takes a while
+    docker pull quay.io/pypa/manylinux2010_x86_64
+    
+    # download linux image for x86_64
+    docker pull quay.io/pypa/manylinux2014_x86_64
+    
+    # It's possible to use the older toolchain quay.io/pypa/manylinux2010_x86_64.
+    # For aarch64 or VM on Apple Silicon use the following image and
+    # replace the end of the next command accordingly.
+    docker pull quay.io/pypa/manylinux2014_aarch64
+    
+    # create docker instance and bind impy directory
+    docker run -d -it --name impy -v "$(pwd)":/app quay.io/pypa/manylinux2014_x86_64
+
+    # enter your docker instance
+    docker exec -it impy /bin/bash
+
+    cd /app
+
+    # select python version, e.g. 3.8, and enter virtual environment
+    python3.8 -m venv venv
+    source ./venv/bin/activate
+
+    # install impy and dependencies (prefer binary wheels for deps)
+    pip install --prefer-binary -e .
+
+    # compile the FORTRAN interface (this will be automated in the future)
+    make -j<insert number of CPU cores>
+
+You can now use impy inside the docker instance.
+
 ## Requirements
 
 - Python 2.7 - 3.9
@@ -100,6 +143,7 @@ There are two ways to interact with the code.
 
 - Anatoli Fedynitch
 - Hans Dembinski
+- Anton Prosekin
 - Sonia El Hadri
 - Keito Watanabe
 
