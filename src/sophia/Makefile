@@ -22,25 +22,15 @@ clean:
 distclean: clean
 	rm -f *.pyf
 
-.PHONY: remove_generated_files
-remove_generated_files:
-	rm -f *.pyf *.f2l *.so
-
-install: remove_generated_files
-$(OBJS): remove_generated_files
-
-$(LIB_DIR)/%$(LEXT): %$(LEXT)
-	$(COPY_COMMAND) $< $@	
-
-
 .PHONY: install
-install: $(LIB_DIR)/$(LIB_NAME)$(LEXT)
+install: $(LIB_NAME)$(LEXT)
+	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
 
 sophia$(LEXT): sophia.pyf $(RND) $(OBJS) $(LOGO) $(SRCS)
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" sophia.pyf \
 	$(RND) $(LOGO) $(OBJS) >> sophia.f2l 2>&1
 
-sophia.pyf: $(RNDS) $(SRCS) $(LOGS) $(OBJS) Makefile
+sophia.pyf: $(RNDS) $(SRCS) $(LOGS) $(OBJS)
 	$(F2PY) -m sophia -h sophia.pyf --overwrite-signature \
 	only: $(SFUNCS) $(LOGF) : $(SRCS) $(LOGS) $(RNDS) > sophia.f2l 2>&1
 

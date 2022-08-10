@@ -2,7 +2,6 @@ venv
 *.dSYM
 **.o
 **.so
-**.pyf
 **.pyc
 **.pyd
 **.mod
