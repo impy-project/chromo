@@ -63,7 +63,7 @@ def test_all_cms():
         jobs = [pool.apply_async(run_generator, (model, 100)) for model in models]
         for job in jobs:
             try:
-                r = job.get(timeout=10)
+                r = job.get(timeout=30)
                 result.append(r)
             except TimeoutError:
                 pass
