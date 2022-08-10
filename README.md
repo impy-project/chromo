@@ -70,9 +70,17 @@ This guide works on Linux and OSX. You need a running docker server. Please goog
 
     # download linux image, this takes a while
     docker pull quay.io/pypa/manylinux2010_x86_64
-
+    
+    # download linux image for x86_64
+    docker pull quay.io/pypa/manylinux2014_x86_64
+    
+    # It's possible to use the older toolchain quay.io/pypa/manylinux2010_x86_64.
+    # For aarch64 or VM on Apple Silicon use the following image and
+    # replace the end of the next command accordingly.
+    docker pull quay.io/pypa/manylinux2014_aarch64
+    
     # create docker instance and bind impy directory
-    docker run -d -it --name impy -v "$(pwd)":/app quay.io/pypa/manylinux2010_x86_64
+    docker run -d -it --name impy -v "$(pwd)":/app quay.io/pypa/manylinux2014_x86_64
 
     # enter your docker instance
     docker exec -it impy /bin/bash
@@ -135,6 +143,7 @@ There are two ways to interact with the code.
 
 - Anatoli Fedynitch
 - Hans Dembinski
+- Anton Prosekin
 - Sonia El Hadri
 - Keito Watanabe
 
