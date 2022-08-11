@@ -11,14 +11,14 @@ import pytest
         models.EposLHC,
         models.Sibyll21,
         models.Sibyll23d,
+        models.QGSJetII03,
+        models.QGSJetII04,
         # models.UrQMD34,
         #   Does not compile, see comment in CMakeLists.txt
         # models.QGSJet01c,
         #   AttributeError: module 'impy.models.qgs01' has no attribute 'qgarr7'
-        # models.QGSJetII03, # aborts the Python interpreter
-        # models.QGSJetII04, # aborts the Python interpreter
         # models.Pythia6,
-        #   Aborts with Fatal Python error: Bus error
+        #   Stuck with 100 % CPU
     ],
 )
 def test_new_interface(model):
@@ -50,6 +50,13 @@ def test_new_interface(model):
             # Sibyll fails these, is this expected?
             assert event.impact_parameter > 0
             assert event.n_wounded_A == 1
+        if model not in (
+            models.Sibyll21,
+            models.Sibyll23d,
+            models.QGSJetII03,
+            models.QGSJetII04,
+        ):
+            # Sibyll and QGSJetII fail this, is this expected?
             assert event.n_wounded_B > 0
         # assert event.n_NN_interactions > 0
 
