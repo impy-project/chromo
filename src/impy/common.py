@@ -447,7 +447,9 @@ class MCRun(six.with_metaclass(ABCMeta)):
         # from impy.util import OutputGrabber
 
         # Import library from library name
-        self.lib = importlib.import_module(interaction_model_def.library_name)
+        self.lib = importlib.import_module(
+            "impy.models." + interaction_model_def.library_name
+        )
 
         # Save definitions from namedtuple into attributes
         self.library_name = interaction_model_def.library_name

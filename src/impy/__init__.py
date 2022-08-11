@@ -1,12 +1,10 @@
 from .version import __version__  # noqa
-import sys
 from os.path import join, abspath, dirname
 import yaml
 from particletools.tables import PYTHIAParticleData
 
 
 base_path = abspath(dirname(__file__))
-sys.path.append(join(base_path, "lib"))
 
 
 # Globals
