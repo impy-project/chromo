@@ -37,6 +37,6 @@ jobs:
         compiler: gcc
         version: 11
     - run: python -m pip install --upgrade pip wheel
-    # TODO no-build-isolation is required for now, needs to be fixed in CMakeLists.txt
-    - run: python -m pip install --prefer-binary --no-build-isolation -v -e .[test]
-    - run: python -m pytest tests/test_eposlhc.py
+    # TODO -e is required for now, needs to be fixed in setup.cfg
+    - run: python -m pip install --prefer-binary -v -e .[test]
+    - run: python -m pytest tests/test_new_interface.py
