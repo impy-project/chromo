@@ -239,8 +239,6 @@ class PHOJETRun(MCRun):
         # direct photon interaction (for incoming photons only)
         process_switch[7, 0] = 1
 
-        self._set_event_kinematics(event_kinematics)
-
         if self.lib.pho_event(-1, self.p1, self.p2)[1]:
             raise Exception(
                 "PHOJET failed to initialize with the current", "event kinematics"
@@ -268,6 +266,7 @@ class PHOJETRun(MCRun):
         self.lib.pydat1.mstj[22 - 1] = 2
         # Set ctau threshold in PYTHIA for the default stable list
         self.lib.pydat1.parj[70] = impy_config["tau_stable"] * c * 1e-3  # mm
+        self._set_event_kinematics(event_kinematics)
 
     def generate_event(self):
         return self.lib.pho_event(1, self.p1, self.p2)[1]
