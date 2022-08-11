@@ -1,3 +1,5 @@
+# This file was taken from pybind11.
+
 # - Find python libraries
 # This module finds the libraries corresponding to the Python interpreter
 # FindPythonInterp provides.

@@ -81,11 +81,12 @@ file(GLOB eposlhc_sources ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/*.f)
 list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
 
 f2py_add_module(eposlhc
-  SIGNATURE
+  FUNCTIONS
   aaset ainit aepos afinal hepmcstore
   getcharge idtrafo initializeepos initeposevt
   setstable setunstable xsection ${impy_logging}
   INTERFACE_SOURCES
+  ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/eposlhc.pyf
   ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/epos-bas-lhc.f
   ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/epos-ids-lhc.f
   ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/epos_interface.f
@@ -97,11 +98,12 @@ f2py_add_module(eposlhc
 
 ### sib21
 f2py_add_module(sib21
-  SIGNATURE
+  FUNCTIONS
   sibyll sibyll_ini sib_sigma_hp sib_sigma_hair sib_sigma_hnuc
   int_nuc decsib decpar sibini sib_list isib_pid2pdg
   isib_pdg2pid pdg_ini ${impy_logging} sibhep1
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sib21.pyf
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_21.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sib21aux.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f

@@ -2,7 +2,7 @@
 requires = [
     "setuptools>=42",
     "cmake",
-    "numpy"
+    "numpy<1.19"
 ]
 build-backend = "setuptools.build_meta"
 
