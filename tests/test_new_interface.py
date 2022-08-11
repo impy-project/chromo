@@ -1,6 +1,5 @@
 from impy.constants import TeV
 from impy.kinematics import EventKinematics
-from impy.common import impy_config
 from impy import models
 from collections import Counter
 import pytest
@@ -12,6 +11,14 @@ import pytest
         models.EposLHC,
         models.Sibyll21,
         models.Sibyll23d,
+        # models.UrQMD34,
+        #   Does not compile, see comment in CMakeLists.txt
+        # models.QGSJet01c,
+        #   AttributeError: module 'impy.models.qgs01' has no attribute 'qgarr7'
+        # models.QGSJetII03, # aborts the Python interpreter
+        # models.QGSJetII04, # aborts the Python interpreter
+        # models.Pythia6,
+        #   Aborts with Fatal Python error: Bus error
     ],
 )
 def test_new_interface(model):
@@ -29,18 +36,14 @@ def test_new_interface(model):
         nuc2_prop=(12, 6),
     )
 
-    # TODO can this be removed?
-    impy_config["user_frame"] = "laboratory"
+    # # TODO can this be removed?
+    # impy_config["user_frame"] = "laboratory"
 
     gen = model(ekin)
 
     c = Counter()
     for event in gen(10):
         event.filter_final_state()
-        # print 'px', event.px
-        # print 'py', event.py
-        # print 'pz', event.pz
-        # print 'en', event.en
         assert len(event.p_ids) > 0
         assert event.impact_parameter < 10
         if model not in (models.Sibyll21, models.Sibyll23d):

@@ -70,19 +70,23 @@ class CMakeBuild(build_ext):
             njobs = self.parallel or os.cpu_count() or 1
             build_args += [f"-j{njobs}"]
 
-        print(f"cmake args: {' '.join(cmake_args)}")
-        print(f"build args: {' '.join(build_args)}")
-
         build_temp = Path(self.build_temp)
-        if build_temp.exists():
-            # cmake setup must run every time to update paths
-            cmake_cache = build_temp / "CMakeCache.txt"
-            if cmake_cache.exists():
-                cmake_cache.unlink()
-        else:
+        if not build_temp.exists():
             build_temp.mkdir(parents=True)
 
-        subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=build_temp)
+        # cmake setup must run again if python path has changed
+        cmake_cache = build_temp / "CMakeCache.txt"
+        if cmake_cache.exists():
+            with cmake_cache.open() as f:
+                m = re.search("PYTHON_EXECUTABLE:FILEPATH=([^\s]+)", f.read())
+                cached_python_path = m.group(1)
+                if cached_python_path != sys.executable:
+                    cmake_cache.unlink()
+        if not cmake_cache.exists():
+            print(f"cmake args: {' '.join(cmake_args)}")
+            print(f"build args: {' '.join(build_args)}")
+
+            subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=build_temp)
 
         target = ext.name.split(".")[-1]
 
