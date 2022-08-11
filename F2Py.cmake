@@ -54,11 +54,11 @@ function (f2py_add_module target_name)
   list(FILTER F2PY_ADD_MODULE_INTERFACE_SOURCES EXCLUDE REGEX "\.pyf")
   
   # clear log file if it already exists
-  file(WRITE ${target_name}.log "\n")
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.log "\n")
 
   if (NOT F2PY_ADD_MODULE_PYF_FILE)
     # generate new .pyf file
-    set(F2PY_ADD_MODULE_PYF_FILE ${target_name}.pyf)
+    set(F2PY_ADD_MODULE_PYF_FILE ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.pyf)
 
     add_custom_command(
       OUTPUT

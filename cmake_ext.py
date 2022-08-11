@@ -74,11 +74,19 @@ class CMakeBuild(build_ext):
         print(f"build args: {' '.join(build_args)}")
 
         build_temp = Path(self.build_temp)
-        build_temp.mkdir(parents=True, exist_ok=True)
+        if build_temp.exists():
+            # cmake setup must run every time to update paths
+            cmake_cache = build_temp / "CMakeCache.txt"
+            if cmake_cache.exists():
+                cmake_cache.unlink()
+        else:
+            build_temp.mkdir(parents=True)
 
         subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=build_temp)
 
+        target = ext.name.split(".")[-1]
+
         subprocess.check_call(
-            ["cmake", "--build", ".", "--target", ext.name] + build_args,
+            ["cmake", "--build", ".", "--target", target] + build_args,
             cwd=build_temp,
         )

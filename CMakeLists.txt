@@ -86,14 +86,13 @@ f2py_add_module(eposlhc
   getcharge idtrafo initializeepos initeposevt
   setstable setunstable xsection ${impy_logging}
   INTERFACE_SOURCES
-  ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/eposlhc.pyf
+  ${logging_source}
   ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/epos-bas-lhc.f
   ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/epos-ids-lhc.f
   ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/epos_interface.f
-  ${logging_source}
   SOURCES
-  ${eposlhc_sources}
   ${logging_source}
+  ${eposlhc_sources}
 )
 
 ### sib21
@@ -103,11 +102,10 @@ f2py_add_module(sib21
   int_nuc decsib decpar sibini sib_list isib_pid2pdg
   isib_pdg2pid pdg_ini ${impy_logging} sibhep1
   SOURCES
-  ${CMAKE_SOURCE_DIR}/src/sibyll/sib21.pyf
+  ${logging_source}
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_21.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sib21aux.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
-  ${logging_source}
 )
 
 add_library(sib21rnd OBJECT ${ran_source})
