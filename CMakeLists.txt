@@ -121,10 +121,6 @@ f2py_add_module(sib23d
   sibyll sibyll_ini sib_sigma_hp sib_sigma_hair sib_sigma_hnuc
   int_nuc decsib decpar sibini sib_list isib_pid2pdg
   isib_pdg2pid pdg_ini ${impy_logging} sibhep3
-  INTERFACE_SOURCES
-  ${logging_source}
-  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3d.f
-  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
   SOURCES
   ${logging_source}
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3d.f
