@@ -183,7 +183,6 @@ class SIBYLLRun(MCRun):
 
         self.lib.s_debug.ndebug = impy_config["sibyll"]["debug_level"]
 
-        self._set_event_kinematics(event_kinematics)
         self.attach_log(fname=logfname)
         self.lib.sibini(int(seed))
         self.lib.pdg_ini()
@@ -191,6 +190,7 @@ class SIBYLLRun(MCRun):
             self.lib.sibhep1 if "21" in self.lib.__name__ else self.lib.sibhep3
         )
         self._define_default_fs_particles()
+        self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
         sid = abs(self.lib.isib_pdg2pid(pdgid))

@@ -540,6 +540,13 @@ class MCRun(six.with_metaclass(ABCMeta)):
         """
         pass
 
+    def _update_event_kinematics(self):
+        if hasattr(self._curr_event_kin, "_with_composite_target"):
+            ekin = self._curr_event_kin
+            if ekin.p2_is_nucleus:
+                ekin.A2, ekin.Z2 = ekin.composite_target.get_random_AZ()
+                self._set_event_kinematics(ekin)
+
     @property
     def event_kinematics(self):
         return self._curr_event_kin
@@ -691,6 +698,7 @@ class MCRun(six.with_metaclass(ABCMeta)):
         ntrials = 0
         nremaining = nevents
         while nremaining > 0:
+            self._update_event_kinematics()
             if self.generate_event() == 0:
                 self.nevents += 1
                 yield self._event_class(

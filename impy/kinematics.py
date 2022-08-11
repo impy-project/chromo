@@ -85,18 +85,18 @@ class CompositeTarget(object):
         """Return randomly an (A, Z) tuple according to the component fraction."""
         from numpy.random import choice
 
-        ic = choice(self.ncomponents, 1, p=self.component_fractions)
+        ic = choice(self.ncomponents, 1, p=self.component_fractions)[0]
         return self.component_A[ic], self.component_Z[ic]
 
     def __repr__(self):
         ostr = "Composite target '" + self.label + "' \n"
 
-        ostr += "Average mass: {0:4.1f}\n".format(
+        ostr += "Average mass: {0:5.3f}\n".format(
             np.sum([A * f for A, f in zip(self.component_A, self.component_fractions)])
         )
 
-        ostr += "  Nr   |    Name    |  A  |  Z  | fraction\n"
-        templ = "  {0:3}  | {1:10s} |{2:4} |{3:4} |  {4:3.2f}\n"
+        ostr += "  Nr   |    Name         |  A  |  Z  | fraction\n"
+        templ = "  {0:3}  | {1:15s} |{2:4} |{3:4} |  {4:5.4f}\n"
         for i in range(self.ncomponents):
             ostr += templ.format(
                 i,
@@ -377,3 +377,26 @@ class EventKinematics(object):
         new_en = self.gamma_cm * event.en - self.betagamma_z_cm * event.pz
         event.pz = -self.betagamma_z_cm * event.en + self.gamma_cm * event.pz
         event.en = new_en
+
+
+class CompositeTargetKinematics(EventKinematics):
+    def __init__(
+        self,
+        ecm=None,
+        plab=None,
+        elab=None,
+        ekin=None,
+        p1pdg=None,
+        composite_target=None,
+    ):
+        if composite_target is None or not isinstance(
+            composite_target, CompositeTarget
+        ):
+            raise ValueError(
+                "CompositeTargetKinematics(): composite_target parameter got wrong value"
+            )
+        self._with_composite_target = True
+        self.composite_target = composite_target
+        super().__init__(
+            ecm, plab, elab, ekin, p1pdg, nuc2_prop=composite_target.get_random_AZ()
+        )
