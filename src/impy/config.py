@@ -1,0 +1,386 @@
+# Impy configuration file
+
+# Level of verbosity
+debug_level = 1
+
+# Location for cache file for particledata.tables objects
+pdata_cachefile = "impy_pdata_cache.cch"
+
+# For generators which return not successful events:
+# True: retry rejected events until desired number of events reached
+# False: return if event not successful and set event_successful flag
+retry_on_rejection = True
+
+# If to write output to a logfile or 'stdout'
+output_log = "stdout"
+
+# User frame (in what frame to output)
+user_frame = "center-of-mass"
+
+# Default definition of final state particle
+# All particles with proper lifetime shorter than this
+# will decay
+tau_stable = 10.0e-12  # [ps] typical value at LHC.
+
+# List of stable particles
+# All particles in this list will remain stable and will not decay.
+# This is preferred over setting tau_stable due to the per-event
+# instantiation behaviour of Pythia8.
+stable_list = [
+    13,
+    2112,
+    130,
+    211,
+    310,
+    321,
+    -3334,
+    -3322,
+    -3312,
+    -3222,
+    -3122,
+    -3112,
+    3112,
+    3122,
+    3222,
+    3312,
+    3322,
+    3334,
+    -321,
+    -211,
+    -2112,
+    -13,
+]  # default stable list with stable lifetime = 10e-12
+
+# Set pi0 to stable by default (often used as default)
+pi0_stable = True
+
+# Apply initial array slicing (Advanced option)
+# True (default): Expose the event variables as truncated views, i.e. event.en[0:npart]
+# False: Expose full particle arrays, large performance impact (you should know what you
+# are doing here)
+pre_slice = True
+
+# Air composition for special cross section functions
+# (source https://en.wikipedia.org/wiki/Atmosphere_of_Earth)
+frac_air = [[0.78084, 14], [0.20946, 16], [0.00934, 40]]
+
+# AF: Comment on stuff below
+# All hidden arguments shall go into this one, in particular for UrQMD.
+# They must not be trivial or user-readable.
+epos = {
+    "output_frame": ["laboratory", "center-of-mass"],
+    "sqs_min_GeV": 5.0,
+    "has_boosts": True,
+    "has_hepevt": True,
+    "int_support": ["hh", "hA", "AA", "gg", "gh", "gA"],
+    "datdir": "iamdata/epos/",
+    "debug_level": 0,
+    "projectiles": {
+        "LHC": [
+            2212,
+            2112,
+            321,
+            -321,
+            211,
+            -211,
+            130,
+            -2212,
+            -2112,
+            3112,
+            -3112,
+            3222,
+            -3222,
+            3322,
+            -3322,
+            3312,
+            -3312,
+            3122,
+            -3122,
+            22,
+        ]
+    },
+}
+
+pythia6 = {
+    "output_frame": ["center-of-mass"],
+    "sqs_min_GeV": 5.0,
+    "has_hepevt": True,
+    "has_boosts": False,
+    "new_mpi": False,
+    "int_support": ["hh"],
+    "debug_level": 0,
+    "projectiles": {"6": [2212, 2112, 321, -321, 211, -211, 130, -2212, -2112]},
+}
+
+pythia8 = {
+    "output_frame": ["center-of-mass"],
+    "sqs_min_GeV": 5.0,
+    "has_hepevt": False,
+    "has_boosts": False,
+    "int_support": ["hh", "hA", "AA", "gh", "gg"],
+    "debug_level": 0,
+    "projectiles": {"8.2": [2212, 2112, 321, -321, 211, -211, 130, -2212, -2112]},
+    "options": [
+        # list pythia parameters as strings, for example
+        # "SoftQCD:all = off"
+    ],
+}
+
+urqmd = {
+    "output_frame": ["laboratory"],
+    "sqs_min_GeV": 0.0,
+    "has_hepevt": True,
+    "has_boosts": False,
+    "int_support": ["hh", "hA", "AA"],
+    "debug_level": 0,
+    "projectiles": {
+        "3.4": [2212, 2112, 321, -321, 211, -211, 311, -2212, -2112, 3122, -3122]
+    },
+    "CTOptions": {},
+    "CTParams": {},
+    "caltim": 200.0,
+    "outtim": 200.0,
+    # at plab < 4.9 use euation of state and Lorentz contraction of projectile
+    # and target. This is not set necessarily in CORSIKA
+    "LE_EOS": True,
+}
+
+dpmjetIII = {
+    "output_frame": ["laboratory", "center-of-mass"],
+    "sqs_min_GeV": 1.0,
+    "has_boosts": True,
+    "has_hepevt": True,
+    "int_support": ["hh", "hA", "AA", "gg", "gh", "gA"],
+    # maximal energy for cross section table initialization
+    "debug_level": 0,
+    "dat_dir": {
+        "3.0-6": "iamdata/dpm3/",
+        "19.1": "iamdata/dpm3191/",
+        "19.2": "iamdata/dpm3191/",
+    },
+    "param_file": {
+        "3.0-6": "iamdata/dpm3/fitpar.dat",
+        "19.1": "iamdata/dpm3191/dpmjpar.dat",
+        "19.2": "iamdata/dpm3191/dpmjpar.dat",
+    },
+    "evap_file": {
+        "3.0-6": "iamdata/dpm3/dpmjet.dat",
+        "19.1": "iamdata/dpm3191/dpmjet.dat",
+        "19.2": "iamdata/dpm3191/dpmjet.dat",
+    },
+    "projectiles": {
+        "3.0-6": [2212, 2112, 321, -321, 211, -211, -2212],
+        "19.1": [
+            2212,
+            2112,
+            321,
+            -321,
+            211,
+            -211,
+            130,
+            -2212,
+            -2112,
+            3112,
+            -3112,
+            3222,
+            -3222,
+            3322,
+            -3322,
+            3312,
+            -3312,
+            3122,
+            -3122,
+            22,
+        ],
+        "19.2": [
+            2212,
+            2112,
+            321,
+            -321,
+            211,
+            -211,
+            130,
+            -2212,
+            -2112,
+            3112,
+            -3112,
+            3222,
+            -3222,
+            3322,
+            -3322,
+            3312,
+            -3312,
+            3122,
+            -3122,
+            22,
+        ],
+    },
+    # Advanced params:
+    # Number of trials for glauber hA, AA cross section calc.
+    "dtglgp.jstatb": 1000,
+}
+
+phojet = {
+    "output_frame": ["4-vectors"],
+    "sqs_min_GeV": 5.0,
+    "has_hepevt": True,
+    "has_boosts": True,
+    "int_support": ["hh", "gg", "gh"],
+    "debug_level": 0,
+    "dat_dir": {
+        "1.12-35": "iamdata/dpm3/",
+        "19.1": "iamdata/dpm3191/",
+        "19.2": "iamdata/dpm3191/",
+    },
+    "param_file": {
+        "1.12-35": "iamdata/dpm3/fitpar.dat",
+        "19.1": "iamdata/dpm3191/dpmjpar.dat",
+        "19.2": "iamdata/dpm3191/dpmjpar.dat",
+    },
+    "projectiles": {
+        "last": [
+            2212,
+            2112,
+            321,
+            -321,
+            211,
+            -211,
+            130,
+            -2212,
+            -2112,
+            3112,
+            -3112,
+            3222,
+            -3222,
+            3322,
+            -3322,
+            3312,
+            -3312,
+            3122,
+            -3122,
+            22,
+        ]
+    },
+}
+
+qgsjet = {
+    "output_frame": ["laboratory"],
+    "sqs_min_GeV": 10.0,
+    "has_boosts": False,
+    "has_hepevt": True,
+    "int_support": ["hh", "hA", "AA"],
+    "datdir": "iamdata/qgsjet/",
+    "debug_level": 0,
+    "projectiles": {
+        "II-03": [2212, 2112, 321, -321, 211, -211, 130, -2212, -2112],
+        "II-04": [2212, 2112, 321, -321, 211, -211, 130, -2212, -2112],
+        "01c": [2212, 2112, 321, -321, 211, -211],
+    },
+}
+
+sibyll = {
+    "output_frame": ["center-of-mass"],
+    "sqs_min_GeV": 9.0,
+    "has_boosts": False,
+    "has_hepevt": True,
+    "int_support": ["hh", "hA"],
+    "debug_level": 0,
+    "projectiles": {
+        "2.1": [2212, 2112, 321, -321, 211, -211, 130, -2212, -2112],
+        "2.3": [
+            2212,
+            2112,
+            321,
+            -321,
+            211,
+            -211,
+            130,
+            -2212,
+            -2112,
+            3112,
+            -3112,
+            3322,
+            -3322,
+            3312,
+            -3312,
+            3122,
+            -3122,
+        ],
+        "2.3c": [
+            2212,
+            2112,
+            321,
+            -321,
+            211,
+            -211,
+            130,
+            -2212,
+            -2112,
+            3112,
+            -3112,
+            3222,
+            -3222,
+            3322,
+            -3322,
+            3312,
+            -3312,
+            3122,
+            -3122,
+            411,
+            -411,
+            421,
+            -421,
+            431,
+            -431,
+            4232,
+            -4232,
+            4132,
+            4122,
+            4332,
+        ],
+        "2.3d": [
+            2212,
+            2112,
+            321,
+            -321,
+            211,
+            -211,
+            130,
+            -2212,
+            -2112,
+            3112,
+            -3112,
+            3222,
+            -3222,
+            3322,
+            -3322,
+            3312,
+            -3312,
+            3122,
+            -3122,
+            411,
+            -411,
+            421,
+            -421,
+            431,
+            -431,
+            4232,
+            -4232,
+            4132,
+            4122,
+            4332,
+        ],
+    },
+}
+
+sophia = {
+    "output_frame": ["laboratory"],
+    "sqs_min_GeV": 0,
+    "has_boosts": True,
+    "has_hepevt": True,
+    "int_support": ["gh"],
+    "keep_decayed_particles": True,
+    "use_stable_list": True,
+    "debug_level": 0,
+    "projectiles": {"2.0": [22]},
+}

@@ -1,16 +1,13 @@
 from .version import __version__  # noqa
 from os.path import join, abspath, dirname
-import yaml
-from particletools.tables import PYTHIAParticleData
+from . import config as _config
 
+impy_config = _config.__dict__
+
+from particletools.tables import PYTHIAParticleData
 
 base_path = abspath(dirname(__file__))
 
-
-# Globals
-impy_config = yaml.load(
-    open(join(base_path, "impy_config.yaml")), Loader=yaml.FullLoader
-)
 
 # This is not nice, but the paths in the config should become absolute
 # in case impy is used outside of the folder
