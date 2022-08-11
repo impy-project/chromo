@@ -12,6 +12,7 @@ setup(
     ext_modules=[
         CMakeExtension("impy.models.eposlhc"),
         CMakeExtension("impy.models.sib21"),
+        CMakeExtension("impy.models.sib23d"),
     ],
     cmdclass={"build_ext": CMakeBuild},
 )

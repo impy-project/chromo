@@ -74,7 +74,9 @@ endif()
 
 set(impy_logging impy_openlogfile impy_closelogfile)
 set(logging_source ${CMAKE_SOURCE_DIR}/src/logging.f)
-set(ran_source ${CMAKE_SOURCE_DIR}/src/rangen.f)
+
+add_library(rangen OBJECT ${CMAKE_SOURCE_DIR}/src/rangen.f)
+target_compile_options(rangen PRIVATE -cpp)
 
 ### eposlhc
 file(GLOB eposlhc_sources ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/*.f)
@@ -108,7 +110,24 @@ f2py_add_module(sib21
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
 )
 
-add_library(sib21rnd OBJECT ${ran_source})
+add_library(sib21rnd OBJECT ${CMAKE_SOURCE_DIR}/src/rangen.f)
 target_compile_definitions(sib21rnd PRIVATE SIBYLL_SP)
 target_compile_options(sib21rnd PRIVATE -cpp)
 target_link_libraries(sib21 PRIVATE sib21rnd)
+
+### sib23d
+f2py_add_module(sib23d
+  FUNCTIONS
+  sibyll sibyll_ini sib_sigma_hp sib_sigma_hair sib_sigma_hnuc
+  int_nuc decsib decpar sibini sib_list isib_pid2pdg
+  isib_pdg2pid pdg_ini ${impy_logging} sibhep3
+  INTERFACE_SOURCES
+  ${logging_source}
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3d.f
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  SOURCES
+  ${logging_source}
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3d.f
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+)
+target_link_libraries(sib23d PRIVATE rangen)

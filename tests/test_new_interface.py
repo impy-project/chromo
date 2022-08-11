@@ -11,8 +11,7 @@ import pytest
     [
         models.EposLHC,
         models.Sibyll21,
-        # QGSJet01c, # broken: AttributeError: module 'qgs01' has no attribute 'qgarr7'
-        # QGSJetII04, # broken because apparently cannot find some files
+        models.Sibyll23d,
     ],
 )
 def test_new_interface(model):
@@ -44,7 +43,7 @@ def test_new_interface(model):
         # print 'en', event.en
         assert len(event.p_ids) > 0
         assert event.impact_parameter < 10
-        if model is not models.Sibyll21:
+        if model not in (models.Sibyll21, models.Sibyll23d):
             # Sibyll fails these, is this expected?
             assert event.impact_parameter > 0
             assert event.n_wounded_A == 1
