@@ -21,8 +21,8 @@ setup(
         CMakeExtension("impy.models._qgsII03"),
         CMakeExtension("impy.models._qgsII04"),
         CMakeExtension("impy.models._urqmd34"),
-        #   does not compile, see CMakeLists.txt
         CMakeExtension("impy.models._pythia6"),
+        CMakeExtension("impy.models._sophia"),
     ],
     cmdclass={"build_ext": CMakeBuild},
 )

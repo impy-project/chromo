@@ -75,9 +75,6 @@ function (f2py_add_module target_name)
     )
   endif()
 
-  cmake_print_variables(F2PY_ADD_MODULE_PYF_FILE)
-  cmake_print_variables(F2PY_ADD_MODULE_INTERFACE_SOURCES)
-
   add_custom_command(
     OUTPUT
     ${target_name}module.c

@@ -1,11 +1,33 @@
+"""
+Build an extension by calling cmake.
+
+The actual build logic is in the CMakeLists.txt.
+
+The following environment variables change behavior.
+
+DEBUG=1                             : Compile in debug mode.
+VERBOSE=1                           : Let cmake print the commands it is calling,
+                                      useful to debug the compiler options.
+CMAKE_GENERATOR=<Ninja,...>         : Use other than default generator.
+CMAKE_ARGS=<cmake args>             : Pass additional cmake arguments.
+CMAKE_BUILD_PARALLEL_LEVEL=<number> : Compile in parallel with number threads.
+"""
+
 import os
 import re
 import subprocess
 import sys
 from pathlib import Path
+import sysconfig as sc
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
+
+
+def cache_value(key, s):
+    m = re.search(key + r":[A-Z]+=([^\s]+)", s)
+    assert m
+    return m.group(1)
 
 
 class CMakeExtension(Extension):
@@ -78,9 +100,15 @@ class CMakeBuild(build_ext):
         cmake_cache = build_temp / "CMakeCache.txt"
         if cmake_cache.exists():
             with cmake_cache.open() as f:
-                m = re.search("PYTHON_EXECUTABLE:FILEPATH=([^\s]+)", f.read())
-                cached_python_path = m.group(1)
-                if cached_python_path != sys.executable:
+                s = f.read()
+                cached_python_path = cache_value("PYTHON_EXECUTABLE", s)
+                cached_generator = cache_value("CMAKE_GENERATOR", s)
+                cached_cfg = cache_value("CMAKE_BUILD_TYPE", s)
+                if (
+                    cached_python_path != sys.executable
+                    or cached_generator != cmake_generator
+                    or cached_cfg != cfg
+                ):
                     cmake_cache.unlink()
 
         # run cmake setup only once
@@ -90,9 +118,14 @@ class CMakeBuild(build_ext):
 
             subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=build_temp)
 
+        # This is a hack to make the parallel build faster.
+        # Compile all targets on first call to make better use of parallization.
+        # Skip if output that already exists, but run at least once since only
+        # cmake can detect which existing targets need to be recompiled.
         target = ext.name.split(".")[-1]
-
-        subprocess.check_call(
-            ["cmake", "--build", ".", "--target", target] + build_args,
-            cwd=build_temp,
-        )
+        suffix = sc.get_config_var("EXT_SUFFIX") or sc.get_config_var("SO")
+        output_file = Path(extdir) / (target + suffix)
+        if not output_file.exists() or target == "_eposlhc":  # any one target is fine
+            cmd = ["cmake", "--build", "."] + build_args
+            subprocess.check_call(["echo", " ".join(cmd)])
+            subprocess.check_call(cmd, cwd=build_temp)

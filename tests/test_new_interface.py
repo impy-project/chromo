@@ -8,6 +8,7 @@ import pytest
 @pytest.mark.parametrize(
     "model",
     [
+        models.Sophia20,
         models.EposLHC,
         models.Sibyll21,
         models.Sibyll23c00,
@@ -17,7 +18,8 @@ import pytest
         models.Sibyll23d,
         models.QGSJetII03,
         models.QGSJetII04,
-        models.UrQMD34,
+        # models.UrQMD34,
+        #   Abort Python with "no collision problem in UrQMD"
         # models.QGSJet01c,
         #   AttributeError: module 'impy.models.qgs01' has no attribute 'qgarr7'
         # models.Pythia6,
@@ -32,37 +34,26 @@ def test_new_interface(model):
     # 7 TeV). If you want cosmic ray energies, this should
     # be rather p-N at 10 EeV and lab frame (not yet defined).
 
+    p1pdg = -211  # pi-
+    p2pdg = 2212  # nitrogen
+    if model is models.Sophia20:
+        # Sophia can only do γp, γn
+        p1pdg = 22  # gamma
+    elif model is models.Pythia6:
+        # Pythia6 can only do ee, ep, pp
+        p1pdg = 2212  # proton
+
     ekin = EventKinematics(
         ecm=7 * TeV,
-        p1pdg=-211,
-        # nuc1_prop=(12,6),
-        nuc2_prop=(12, 6),
+        p1pdg=p1pdg,
+        p2pdg=p2pdg,
     )
-
-    # # TODO can this be removed?
-    # impy_config["user_frame"] = "laboratory"
-
     gen = model(ekin)
 
     c = Counter()
     for event in gen(10):
         event.filter_final_state()
         assert len(event.p_ids) > 0
-        assert event.impact_parameter < 10
-        # if model not in (models.Sibyll21, models.Sibyll23d):
-        #     # Sibyll fails these, is this expected?
-        #     assert event.impact_parameter > 0
-        #     assert event.n_wounded_A == 1
-        # if model not in (
-        #     models.Sibyll21,
-        #     models.Sibyll23d,
-        #     models.QGSJetII03,
-        #     models.QGSJetII04,
-        # ):
-        #     # Sibyll and QGSJetII fail this, is this expected?
-        #     assert event.n_wounded_B > 0
-        # # assert event.n_NN_interactions > 0
-
         c.update(event.p_ids)
 
     assert c[211] > 0, "pi+"

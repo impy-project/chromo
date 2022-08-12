@@ -51,9 +51,15 @@ include_directories(
 )
 add_compile_definitions(NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
 
+# We need to overwrite the default cmake flags for Fortran to remove
+# -DNDEBUG, since NDEBUG is a variable used in SIBYLL and the Ninja
+# generator automatically runs the preprocessor on all Fortran files
+set(CMAKE_Fortran_FLAGS_RELEASE -O3)
+
+# CMake sets -fPIC etc. automatically, add only unusual options
 if (UNIX)
   add_compile_options(
-    -O3 -Wno-uninitialized -fPIC
+    -Wno-uninitialized
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
   )
@@ -73,12 +79,7 @@ endif()
 ### common for all models
 set(impy_logging impy_openlogfile impy_closelogfile)
 set(logging_source ${CMAKE_SOURCE_DIR}/src/logging.f)
-set(rangen_source ${CMAKE_SOURCE_DIR}/src/rangen.f)
-
-add_library(rangen OBJECT ${rangen_source})
-target_compile_options(rangen PRIVATE -cpp)
-
-add_library(logging OBJECT ${logging_source})
+set(rangen_source ${CMAKE_SOURCE_DIR}/src/rangen.fpp)
 
 ### eposlhc
 file(GLOB eposlhc_sources ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/*.f)
@@ -90,13 +91,13 @@ f2py_add_module(_eposlhc
   getcharge idtrafo initializeepos initeposevt
   setstable setunstable xsection ${impy_logging}
   INTERFACE_SOURCES
-  ${logging_source}
   ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/epos-bas-lhc.f
   ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/epos-ids-lhc.f
   ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/epos_interface.f
-  SOURCES
   ${logging_source}
+  SOURCES
   ${eposlhc_sources}
+  ${logging_source}
 )
 
 ### sib21
@@ -109,71 +110,69 @@ f2py_add_module(_sib21
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep1
   SOURCES
-  ${logging_source}
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_21.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sib21aux.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  ${logging_source}
 )
-
-add_library(sib21rnd OBJECT ${CMAKE_SOURCE_DIR}/src/rangen.f)
+add_library(sib21rnd OBJECT ${rangen_source})
 target_compile_definitions(sib21rnd PRIVATE SIBYLL_SP)
-target_compile_options(sib21rnd PRIVATE -cpp)
 target_link_libraries(_sib21 PRIVATE sib21rnd)
 
 ### sib23c00
 f2py_add_module(_sib23c00
-FUNCTIONS
-${SIBYLL_COMMON_FUNCTIONS} sibhep3
-SOURCES
-${logging_source}
-${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c00.f
-${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c00.f
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  ${logging_source}
+  ${rangen_source}
 )
-target_link_libraries(_sib23c00 PRIVATE rangen)
 
 ### sib23c01
 f2py_add_module(_sib23c01
-FUNCTIONS
-${SIBYLL_COMMON_FUNCTIONS} sibhep3
-SOURCES
-${logging_source}
-${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c01.f
-${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c01.f
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  ${logging_source}
+  ${rangen_source}
 )
-target_link_libraries(_sib23c01 PRIVATE rangen)
 
 ### sib23c02
 f2py_add_module(_sib23c02
-FUNCTIONS
-${SIBYLL_COMMON_FUNCTIONS} sibhep3
-SOURCES
-${logging_source}
-${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c02.f
-${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c02.f
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  ${logging_source}
+  ${rangen_source}
 )
-target_link_libraries(_sib23c02 PRIVATE rangen)
 
 ### sib23c03
 f2py_add_module(_sib23c03
-FUNCTIONS
-${SIBYLL_COMMON_FUNCTIONS} sibhep3
-SOURCES
-${logging_source}
-${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c03.f
-${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c03.f
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  ${logging_source}
+  ${rangen_source}
 )
-target_link_libraries(_sib23c03 PRIVATE rangen)
 
 ### sib23d
 f2py_add_module(_sib23d
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
-  ${logging_source}
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3d.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  ${logging_source}
+  ${rangen_source}
 )
-target_link_libraries(_sib23d PRIVATE rangen)
 
 ### qgs01
 f2py_add_module(_qgs01
@@ -184,8 +183,8 @@ f2py_add_module(_qgs01
   ${CMAKE_SOURCE_DIR}/src/qgsjet/qgsjet01d.f
   ${CMAKE_SOURCE_DIR}/src/qgsjet/impy_qgs1.f
   ${logging_source}
+  ${rangen_source}
 )
-target_link_libraries(_qgs01 PRIVATE rangen)
 
 ### qgsII03
 set(QGSJETII_COMMON_FUNCTIONS
@@ -198,8 +197,8 @@ f2py_add_module(_qgsII03
   ${CMAKE_SOURCE_DIR}/src/qgsjet/qgsjet-II-03.f
   ${CMAKE_SOURCE_DIR}/src/qgsjet/impy_qgsII.f
   ${logging_source}
+  ${rangen_source}
 )
-target_link_libraries(_qgsII03 PRIVATE rangen)
 
 ### qgsII04
 f2py_add_module(_qgsII04
@@ -209,8 +208,8 @@ f2py_add_module(_qgsII04
   ${CMAKE_SOURCE_DIR}/src/qgsjet/qgsjet-II-04.f
   ${CMAKE_SOURCE_DIR}/src/qgsjet/impy_qgsII.f
   ${logging_source}
+  ${rangen_source}
 )
-target_link_libraries(_qgsII04 PRIVATE rangen)
 
 ### urqmd34
 set(urqmd34_sources
@@ -229,19 +228,16 @@ list(TRANSFORM urqmd34_sources PREPEND ${CMAKE_SOURCE_DIR}/src/urqmd-3.4/sources
 list(APPEND urqmd34_sources
   ${CMAKE_SOURCE_DIR}/src/urqmd-3.4/impy_urqmd.f
   ${logging_source}
+  ${rangen_source}
 )
 f2py_add_module(_urqmd34
   FUNCTIONS
   urqmd init uinit set0 params uounit strini loginit
   loadwtab norm_init output cascinit nucrad urqini partname
   chepevt ptsigtot init_rmmard ${impy_logging}
-  INTERFACE_SOURCES
-  ${urqmd34_sources}
-  ${rangen_source}
   SOURCES
   ${urqmd34_sources}
 )
-target_link_libraries(_urqmd34 PRIVATE rangen)
 
 ### pythia6
 f2py_add_module(_pythia6
@@ -251,4 +247,20 @@ f2py_add_module(_pythia6
   SOURCES
   ${CMAKE_SOURCE_DIR}/src/pythia6/pythia-6.4.28.f
   ${logging_source}
+)
+
+### sophia
+f2py_add_module(_sophia
+  FUNCTIONS
+  eventgen print_event crossection initial
+  icon_pdg_sib init_rmmard toevt ${impy_logging}
+  SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sophia/SOPHIA20.f
+  ${CMAKE_SOURCE_DIR}/src/sophia/eventgen.f
+  ${CMAKE_SOURCE_DIR}/src/sophia/sampling.f
+  ${CMAKE_SOURCE_DIR}/src/sophia/inpoutput.f
+  ${CMAKE_SOURCE_DIR}/src/sophia/jetset74dp.f
+  ${CMAKE_SOURCE_DIR}/src/sophia/impy_sophia.f
+  ${logging_source}
+  ${rangen_source}
 )
