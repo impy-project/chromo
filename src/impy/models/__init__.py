@@ -7,7 +7,6 @@ from impy.models.sibyll import (  # noqa
     Sibyll23c01,
     Sibyll23c02,
     Sibyll23c03,
-    Sibyll23c04,
     Sibyll23d,
 )
 from impy.models.dpmjetIII import DpmjetIII191, DpmjetIII192, DpmjetIII306  # noqa
