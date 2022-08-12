@@ -74,8 +74,9 @@ endif()
 
 set(impy_logging impy_openlogfile impy_closelogfile)
 set(logging_source ${CMAKE_SOURCE_DIR}/src/logging.f)
+set(rangen_source ${CMAKE_SOURCE_DIR}/src/rangen.f)
 
-add_library(rangen OBJECT ${CMAKE_SOURCE_DIR}/src/rangen.f)
+add_library(rangen OBJECT ${rangen_source})
 target_compile_options(rangen PRIVATE -cpp)
 
 # add_library(logging OBJECT ${logging_source})
@@ -119,6 +120,50 @@ add_library(sib21rnd OBJECT ${CMAKE_SOURCE_DIR}/src/rangen.f)
 target_compile_definitions(sib21rnd PRIVATE SIBYLL_SP)
 target_compile_options(sib21rnd PRIVATE -cpp)
 target_link_libraries(_sib21 PRIVATE sib21rnd)
+
+### sib23c00
+f2py_add_module(_sib23c00
+FUNCTIONS
+${SIBYLL_COMMON_FUNCTIONS} sibhep3
+SOURCES
+${logging_source}
+${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c00.f
+${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+)
+target_link_libraries(_sib23c00 PRIVATE rangen)
+
+### sib23c01
+f2py_add_module(_sib23c01
+FUNCTIONS
+${SIBYLL_COMMON_FUNCTIONS} sibhep3
+SOURCES
+${logging_source}
+${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c01.f
+${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+)
+target_link_libraries(_sib23c01 PRIVATE rangen)
+
+### sib23c02
+f2py_add_module(_sib23c02
+FUNCTIONS
+${SIBYLL_COMMON_FUNCTIONS} sibhep3
+SOURCES
+${logging_source}
+${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c02.f
+${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+)
+target_link_libraries(_sib23c02 PRIVATE rangen)
+
+### sib23c03
+f2py_add_module(_sib23c03
+FUNCTIONS
+${SIBYLL_COMMON_FUNCTIONS} sibhep3
+SOURCES
+${logging_source}
+${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c03.f
+${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+)
+target_link_libraries(_sib23c03 PRIVATE rangen)
 
 ### sib23d
 f2py_add_module(_sib23d
@@ -186,11 +231,35 @@ list(APPEND urqmd34_sources
   ${logging_source}
   ${CMAKE_SOURCE_DIR}/src/urqmd-3.4/impy_urqmd.f
 )
+list(FILTER urqmd34_sources EXCLUDE REGEX boxinc\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX urqmd_old\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX colltab\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX comnorm\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX comres\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX comstr\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX coms\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX comwid\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX defs\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX freezeout\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX inputs\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX itypdata\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX options\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX outcom\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX newpart\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX init_old\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX genranf\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX gnuranf\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX alpharanf\.f)
+list(FILTER urqmd34_sources EXCLUDE REGEX intranf\.f)
+
 f2py_add_module(_urqmd34
   FUNCTIONS
   urqmd init uinit set0 params uounit strini loginit
   loadwtab norm_init output cascinit nucrad urqini partname
   chepevt ptsigtot init_rmmard ${impy_logging}
+  INTERFACE_SOURCES
+  ${urqmd34_sources}
+  ${rangen_source}
   SOURCES
   ${urqmd34_sources}
 )

@@ -1,10 +1,10 @@
-   MODULE Terms
+   ! MODULE Terms
 
-     IMPLICIT NONE
-     REAL(KIND(0D0)) :: mass,Tem,mui,dsttilde,dsxtilde,dsztilde,gamma,vtilde
-     INTEGER :: pm
+   !   IMPLICIT NONE
+   !   REAL(KIND(0D0)) :: mass,Tem,mui,dsttilde,dsxtilde,dsztilde,gamma,vtilde
+   !   INTEGER :: pm
 
-   END MODULE Terms
+   ! END MODULE Terms
 
 
    SUBROUTINE Peaks(fmax,fpxmax,fpymax,fpzmax,m,a,T,mu,  &
@@ -33,8 +33,11 @@
    SUBROUTINE CFmax(fmax,fpxmax,fpymax,fpzmax,m,a,             &
                     T,mu,vx,vy,vz,dst,dsx,dsy,dsz,round,info)
 
-     USE Terms
+   !   USE Terms
      IMPLICIT NONE
+     REAL(KIND(0D0)) :: mass,Tem,mui,dsttilde,dsxtilde,dsztilde,gamma,vtilde
+     INTEGER :: pm
+     COMMON /terms/ mass,Tem,mui,dsttilde,dsxtilde,dsztilde,gamma,vtilde, pm
      REAL(KIND(0D0)) :: fmax,fpxmax,fpymax,fpzmax
      REAL(KIND(0D0)) :: m, T, mu
      REAL(KIND(0D0)) :: vx,vy,vz,dst,dsx,dsy,dsz
@@ -145,11 +148,14 @@
 
    SUBROUTINE Derivatives(i,P,F,K)
 
-     USE Terms
+   !   USE Terms
      IMPLICIT NONE
      INTEGER :: i,K
      REAL(KIND(0D0)) :: P(*),F(*)
      REAL(KIND(0D0)) :: px,pz,E,dsigmupmu,pdotu,fprime
+     REAL(KIND(0D0)) :: mass,Tem,mui,dsttilde,dsxtilde,dsztilde,gamma,vtilde
+     INTEGER :: pm
+     COMMON /terms/ mass,Tem,mui,dsttilde,dsxtilde,dsztilde,gamma,vtilde, pm
 
      px = P(1)
      pz = P(2)
