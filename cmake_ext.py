@@ -8,14 +8,14 @@ The following environment variables change behavior.
 DEBUG=1                             : Compile in debug mode.
 VERBOSE=1                           : Let cmake print the commands it is calling,
                                       useful to debug the compiler options.
-CMAKE_GENERATOR=<Ninja,...>         : Use other than default generator.
+CMAKE_GENERATOR=<Generator>         : Specify which generator to use.
 CMAKE_ARGS=<cmake args>             : Pass additional cmake arguments.
 CMAKE_BUILD_PARALLEL_LEVEL=<number> : Compile in parallel with number threads.
 """
 
 import os
 import re
-import subprocess
+import subprocess as subp
 import sys
 from pathlib import Path
 import sysconfig as sc
@@ -24,8 +24,22 @@ from setuptools import Extension
 from setuptools.command.build_ext import build_ext
 
 
+# Use Ninja if it is available instead of cmake default generator
+r = subp.run(["ninja", "--version"], capture_output=True)
+if r.returncode == 0:
+    print(f"Ninja generator detected: {r.stdout.decode().strip()}")
+    default_cmake_generator = "Ninja"
+else:
+    default_cmake_generator = ""
+
+
+# Normal print does not work while CMakeBuild is running
+def force_print(msg):
+    subp.run(["echo", msg])
+
+
 def cache_value(key, s):
-    m = re.search(key + r":[A-Z]+=([^\s]+)", s)
+    m = re.search(key + r":[A-Z]+=([^\s]*)", s)
     assert m
     return m.group(1)
 
@@ -45,13 +59,16 @@ class CMakeBuild(build_ext):
 
         # CMake lets you override the generator - we need to check this.
         # Can be set with Conda-Build, for example.
-        cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
+        cmake_generator = os.environ.get("CMAKE_GENERATOR", default_cmake_generator)
 
         cmake_args = [
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}/",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
             f"-DCMAKE_BUILD_TYPE={cfg}",
         ]
+
+        if cmake_generator:
+            cmake_args.append("-G" + cmake_generator)
 
         # Adding CMake arguments set as environment variable
         # (needed e.g. to build for ARM OSx on conda-forge)
@@ -96,7 +113,7 @@ class CMakeBuild(build_ext):
         if not build_temp.exists():
             build_temp.mkdir(parents=True)
 
-        # cmake setup must be run again only if python path has changed
+        # cmake setup must be run again if external settings have changed
         cmake_cache = build_temp / "CMakeCache.txt"
         if cmake_cache.exists():
             with cmake_cache.open() as f:
@@ -106,17 +123,17 @@ class CMakeBuild(build_ext):
                 cached_cfg = cache_value("CMAKE_BUILD_TYPE", s)
                 if (
                     cached_python_path != sys.executable
-                    or cached_generator != cmake_generator
+                    or (cmake_generator and cached_generator != cmake_generator)
                     or cached_cfg != cfg
                 ):
                     cmake_cache.unlink()
 
         # run cmake setup only once
         if not cmake_cache.exists():
-            print(f"cmake args: {' '.join(cmake_args)}")
-            print(f"build args: {' '.join(build_args)}")
-
-            subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=build_temp)
+            cmd = ["cmake", str(ext.sourcedir)] + cmake_args
+            if debug:
+                force_print(" ".join(cmd))
+            subp.check_call(cmd, cwd=build_temp)
 
         # This is a hack to make the parallel build faster.
         # Compile all targets on first call to make better use of parallization.
@@ -127,5 +144,6 @@ class CMakeBuild(build_ext):
         output_file = Path(extdir) / (target + suffix)
         if not output_file.exists() or target == "_eposlhc":  # any one target is fine
             cmd = ["cmake", "--build", "."] + build_args
-            subprocess.check_call(["echo", " ".join(cmd)])
-            subprocess.check_call(cmd, cwd=build_temp)
+            if debug:
+                force_print(" ".join(cmd))
+            subp.check_call(cmd, cwd=build_temp)
