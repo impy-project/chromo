@@ -38,8 +38,6 @@ if (NOT NUMPY_INCLUDE_DIRS)
   set(NUMPY_INCLUDE_DIRS "${_numpy_directory}" CACHE STRING "NumPy source directory location" FORCE)
 endif()
 
-# set(CMAKE_Fortran_FORMAT FREE)
-
 # Print out the discovered paths
 cmake_print_variables(PYTHON_EXECUTABLE)
 cmake_print_variables(PYTHON_INCLUDE_DIRS)
@@ -72,6 +70,7 @@ else() # intel
   # set(FLAGSF90 ${FLAGS} -ffree-form -Wobsolescent -fno-second-underscore)
 endif()
 
+### common for all models
 set(impy_logging impy_openlogfile impy_closelogfile)
 set(logging_source ${CMAKE_SOURCE_DIR}/src/logging.f)
 set(rangen_source ${CMAKE_SOURCE_DIR}/src/rangen.f)
@@ -79,7 +78,7 @@ set(rangen_source ${CMAKE_SOURCE_DIR}/src/rangen.f)
 add_library(rangen OBJECT ${rangen_source})
 target_compile_options(rangen PRIVATE -cpp)
 
-# add_library(logging OBJECT ${logging_source})
+add_library(logging OBJECT ${logging_source})
 
 ### eposlhc
 file(GLOB eposlhc_sources ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/*.f)
@@ -214,44 +213,23 @@ f2py_add_module(_qgsII04
 target_link_libraries(_qgsII04 PRIVATE rangen)
 
 ### urqmd34
-# FIXME does not compile
-# urqmd34module.c:734:13: error: redefinition of 'doc_f2py_rout_urqmd34_init'
-# static char doc_f2py_rout_urqmd34_init[] = "\
-# urqmd34module.c:606:13: note: previous definition is here
-# static char doc_f2py_rout_urqmd34_init[] = "\
-# urqmd34module.c:738:18: error: redefinition of 'f2py_rout_urqmd34_init'
-# static PyObject *f2py_rout_urqmd34_init(const PyObject *capi_self,
-# urqmd34module.c:610:18: note: previous definition is here
-# static PyObject *f2py_rout_urqmd34_init(const PyObject *capi_self,
-file(GLOB urqmd34_sources ${CMAKE_SOURCE_DIR}/src/urqmd-3.4/sources/*.f)
-list(APPEND urqmd34_sources
-  ${CMAKE_SOURCE_DIR}/src/urqmd-3.4/sources/CFmax.f90
-  ${CMAKE_SOURCE_DIR}/src/urqmd-3.4/sources/quadri.f90
-  ${CMAKE_SOURCE_DIR}/src/urqmd-3.4/sources/cornelius.f90
-  ${logging_source}
-  ${CMAKE_SOURCE_DIR}/src/urqmd-3.4/impy_urqmd.f
+set(urqmd34_sources
+  1fluid bessel delpart getmass hepcmp iso numrec pythia6409
+  siglookup upmerge addpart blockres coload detbal getspin
+  hepnam ityp2pdg output string urqmd angdis boxprg dwidth
+  init jdecay2 paulibl saveinfo tabinit whichres anndec
+  cascinit dectim error hepchg input make22 proppot scatter
+  uhmerge urqinit
 )
-list(FILTER urqmd34_sources EXCLUDE REGEX boxinc\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX urqmd_old\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX colltab\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX comnorm\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX comres\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX comstr\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX coms\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX comwid\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX defs\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX freezeout\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX inputs\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX itypdata\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX options\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX outcom\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX newpart\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX init_old\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX genranf\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX gnuranf\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX alpharanf\.f)
-list(FILTER urqmd34_sources EXCLUDE REGEX intranf\.f)
-
+list(TRANSFORM urqmd34_sources APPEND .f)
+list(APPEND urqmd34_sources
+  CFmax.f90 quadri.f90 cornelius.f90
+)
+list(TRANSFORM urqmd34_sources PREPEND ${CMAKE_SOURCE_DIR}/src/urqmd-3.4/sources/)
+list(APPEND urqmd34_sources
+  ${CMAKE_SOURCE_DIR}/src/urqmd-3.4/impy_urqmd.f
+  ${logging_source}
+)
 f2py_add_module(_urqmd34
   FUNCTIONS
   urqmd init uinit set0 params uounit strini loginit

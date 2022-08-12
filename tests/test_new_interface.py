@@ -18,7 +18,6 @@ import pytest
         models.QGSJetII03,
         models.QGSJetII04,
         models.UrQMD34,
-        #   Does not compile, see comment in CMakeLists.txt
         # models.QGSJet01c,
         #   AttributeError: module 'impy.models.qgs01' has no attribute 'qgarr7'
         # models.Pythia6,

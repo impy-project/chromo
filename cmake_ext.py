@@ -74,7 +74,7 @@ class CMakeBuild(build_ext):
         if not build_temp.exists():
             build_temp.mkdir(parents=True)
 
-        # cmake setup must run again if python path has changed
+        # cmake setup must be run again only if python path has changed
         cmake_cache = build_temp / "CMakeCache.txt"
         if cmake_cache.exists():
             with cmake_cache.open() as f:
@@ -82,6 +82,8 @@ class CMakeBuild(build_ext):
                 cached_python_path = m.group(1)
                 if cached_python_path != sys.executable:
                     cmake_cache.unlink()
+
+        # run cmake setup only once
         if not cmake_cache.exists():
             print(f"cmake args: {' '.join(cmake_args)}")
             print(f"build args: {' '.join(build_args)}")
