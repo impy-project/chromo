@@ -25,11 +25,11 @@ from setuptools.command.build_ext import build_ext
 
 
 # Use Ninja if it is available instead of cmake default generator
-r = subp.run(["ninja", "--version"], capture_output=True)
-if r.returncode == 0:
-    print(f"Ninja generator detected: {r.stdout.decode().strip()}")
+try:
+    out = subp.check_output(["ninja", "--version"])
+    print(f"Ninja generator detected: {out.decode().strip()}")
     default_cmake_generator = "Ninja"
-else:
+except Exception:
     default_cmake_generator = ""
 
 
@@ -55,6 +55,8 @@ class CMakeBuild(build_ext):
         extdir = Path(self.get_ext_fullpath(ext.name)).parent.absolute()
 
         debug = int(os.environ.get("DEBUG", 0)) if self.debug is None else self.debug
+        verbose = int(os.environ.get("VERBOSE", 0))
+
         cfg = "Debug" if debug else "Release"
 
         # CMake lets you override the generator - we need to check this.
@@ -131,7 +133,7 @@ class CMakeBuild(build_ext):
         # run cmake setup only once
         if not cmake_cache.exists():
             cmd = ["cmake", str(ext.sourcedir)] + cmake_args
-            if debug:
+            if verbose:
                 force_print(" ".join(cmd))
             subp.check_call(cmd, cwd=build_temp)
 
@@ -144,6 +146,6 @@ class CMakeBuild(build_ext):
         output_file = Path(extdir) / (target + suffix)
         if not output_file.exists() or target == "_eposlhc":  # any one target is fine
             cmd = ["cmake", "--build", "."] + build_args
-            if debug:
+            if verbose:
                 force_print(" ".join(cmd))
             subp.check_call(cmd, cwd=build_temp)

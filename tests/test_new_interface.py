@@ -35,7 +35,7 @@ def test_new_interface(model):
     # be rather p-N at 10 EeV and lab frame (not yet defined).
 
     p1pdg = -211  # pi-
-    p2pdg = 2212  # nitrogen
+    p2pdg = 2212  # proton
     if model is models.Sophia20:
         # Sophia can only do γp, γn
         p1pdg = 22  # gamma
