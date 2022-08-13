@@ -19,6 +19,7 @@ import pytest
         models.Sibyll23d,
         models.QGSJetII03,
         models.QGSJetII04,
+        models.DpmjetIII306,
         # models.UrQMD34,
         #   Abort Python with "no collision problem in UrQMD"
         # models.QGSJet01c,

@@ -311,3 +311,27 @@ f2py_add_module(_sophia
   ${logging_source}
   ${rangen_source}
 )
+
+### dpmjet306
+file(GLOB dpmjet306_sources ${CMAKE_SOURCE_DIR}/src/dpmjet3.0-6/sources/*.f)
+set_source_files_properties(
+  ${dpmjet306_sources}
+  PROPERTIES
+  Fortran_PREPROCESS True
+)
+f2py_add_module(_dpmjet306
+  FUNCTIONS
+  pho_event dt_init dt_kkinc idt_icihad dt_xsglau
+  pycomp dt_initjs dt_rndmst dt_rndm dt_inucas idt_ipdgha
+  pho_init pho_setpar pho_pname pho_pmass pho_setmdl
+  pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout
+  pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar pho_prevnt
+  ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
+  pho_setpcomb dt_phoxs dt_xshn dt_flahad
+  ${impy_logging}
+  SOURCES
+  ${dpmjet306_sources}
+  ${logging_source}
+)
+
+### dpmjetIII191

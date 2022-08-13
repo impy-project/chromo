@@ -23,6 +23,7 @@ setup(
         CMakeExtension("impy.models._urqmd34"),
         CMakeExtension("impy.models._pythia6"),
         CMakeExtension("impy.models._sophia"),
+        CMakeExtension("impy.models._dpmjet306"),
     ],
     cmdclass={"build_ext": CMakeBuild},
 )
