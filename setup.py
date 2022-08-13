@@ -12,6 +12,7 @@ setup(
     ext_modules=[
         CMakeExtension("impy.models._eposlhc"),
         CMakeExtension("impy.models._sib21"),
+        CMakeExtension("impy.models._sib23"),
         CMakeExtension("impy.models._sib23c00"),
         CMakeExtension("impy.models._sib23c01"),
         CMakeExtension("impy.models._sib23c02"),
@@ -24,6 +25,8 @@ setup(
         CMakeExtension("impy.models._pythia6"),
         CMakeExtension("impy.models._sophia"),
         CMakeExtension("impy.models._dpmjet306"),
+        # CMakeExtension("impy.models._dpmjetIII191"),
+        # CMakeExtension("impy.models._dpmjetIII193"),
     ],
     cmdclass={"build_ext": CMakeBuild},
 )

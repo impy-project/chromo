@@ -292,11 +292,11 @@ class DpmjetIII191(DpmjetIIIRun):
         self.init_generator(event_kinematics, seed, logfname)
 
 
-class DpmjetIII192(DpmjetIIIRun):
+class DpmjetIII193(DpmjetIIIRun):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
 
-        interaction_model_def = models_dict["DPMJETIII192"]
+        interaction_model_def = models_dict["DPMJETIII193"]
         super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
 

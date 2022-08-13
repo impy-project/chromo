@@ -53,11 +53,12 @@ function (f2py_add_module target_name)
   list(FILTER F2PY_ADD_MODULE_PYF_FILE INCLUDE REGEX "\.pyf")
   list(FILTER F2PY_ADD_MODULE_INTERFACE_SOURCES EXCLUDE REGEX "\.pyf")
   
+  set(F2PY_ADD_MODULE_LOG_FILE ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.log)
+
   # clear log file if it already exists
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.log "\n")
 
   if (NOT F2PY_ADD_MODULE_PYF_FILE)
-    # generate new .pyf file
+    file(WRITE ${F2PY_ADD_MODULE_LOG_FILE} "f2py_add_module: Generating new .pyf file...\n")
     set(F2PY_ADD_MODULE_PYF_FILE ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.pyf)
 
     add_custom_command(
@@ -69,10 +70,12 @@ function (f2py_add_module target_name)
         -h ${F2PY_ADD_MODULE_PYF_FILE}
         --overwrite-signature only: ${F2PY_ADD_MODULE_FUNCTIONS} :
         ${F2PY_ADD_MODULE_INTERFACE_SOURCES}
-        >> ${target_name}.log 2>&1
+        >> ${F2PY_ADD_MODULE_LOG_FILE} 2>&1
 
       DEPENDS ${F2PY_ADD_MODULE_INTERFACE_SOURCES}
     )
+  else()
+    file(WRITE ${F2PY_ADD_MODULE_LOG_FILE} "f2py_add_module: Use existing .pyf file...\n")
   endif()
 
   add_custom_command(
@@ -82,7 +85,7 @@ function (f2py_add_module target_name)
 
     COMMAND ${PYTHON_EXECUTABLE} -m numpy.f2py
       ${F2PY_ADD_MODULE_PYF_FILE}
-      >> ${target_name}.log 2>&1
+      >> ${F2PY_ADD_MODULE_LOG_FILE} 2>&1
 
     DEPENDS ${F2PY_ADD_MODULE_SOURCES} ${F2PY_ADD_MODULE_PYF_FILE}
   )
