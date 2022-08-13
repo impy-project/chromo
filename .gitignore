@@ -31,3 +31,5 @@ impy/tests/*.pkl
 *.cmdx
 *.cmod
 *.o-*
+__pycache__
+.pytest_cache
