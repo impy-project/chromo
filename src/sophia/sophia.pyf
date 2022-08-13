@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module sophia ! in 
+python module _sophia ! in 
     interface  ! in :sophia
         subroutine eventgen(l0,e0,eps,theta,imode) ! in :sophia:eventgen.f
             integer :: l0
@@ -286,7 +286,7 @@ python module sophia ! in
             integer :: iseedin
         end subroutine init_rmmard
     end interface 
-end python module sophia
+end python module _sophia
 
 ! This file was auto-generated with f2py (version:2).
 ! See http://cens.ioc.ee/projects/f2py2e/

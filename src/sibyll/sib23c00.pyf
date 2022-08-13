@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module sib23c00 ! in 
+python module _sib23c00 ! in 
     interface  ! in :sib23c00
         subroutine sibyll(k_beam,iatarg,ecm) ! in :sib23c00:sibyll2.3c00.f
             integer :: k_beam
@@ -447,7 +447,7 @@ python module sib23c00 ! in
             integer :: opunit
         end subroutine impy_closelogfile
     end interface 
-end python module sib23c00
+end python module _sib23c00
 
 ! This file was auto-generated with f2py (version:2).
 ! See http://cens.ioc.ee/projects/f2py2e/

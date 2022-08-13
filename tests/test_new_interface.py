@@ -11,6 +11,7 @@ import pytest
         models.Sophia20,
         models.EposLHC,
         models.Sibyll21,
+        models.Sibyll23,
         models.Sibyll23c00,
         models.Sibyll23c01,
         models.Sibyll23c02,

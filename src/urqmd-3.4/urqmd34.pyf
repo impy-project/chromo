@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module urqmd34 ! in 
+python module _urqmd34 ! in 
     interface  ! in :urqmd34
         subroutine norm_init ! in :urqmd34:sources/getmass.f
             character*45 :: versiontag
@@ -2775,7 +2775,7 @@ python module urqmd34 ! in
             common /uqchg/ ichg
         end subroutine chepevt
     end interface 
-end python module urqmd34
+end python module _urqmd34
 
 ! This file was auto-generated with f2py (version:2).
 ! See http://cens.ioc.ee/projects/f2py2e/

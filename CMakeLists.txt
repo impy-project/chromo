@@ -96,7 +96,10 @@ add_custom_command(
 )
 
 ### eposlhc
-file(GLOB eposlhc_sources ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/*.f)
+file(GLOB eposlhc_sources
+  ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/*.f
+  ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/eposlhc.pyf  
+)
 list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
 
 f2py_add_module(_eposlhc
@@ -104,12 +107,8 @@ f2py_add_module(_eposlhc
   aaset ainit aepos afinal hepmcstore
   getcharge idtrafo initializeepos initeposevt
   setstable setunstable xsection ${impy_logging}
-  INTERFACE_SOURCES
-  ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/epos-bas-lhc.f
-  ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/epos-ids-lhc.f
-  ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/epos_interface.f
-  ${logging_source}
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/eposlhc.pyf
   ${eposlhc_sources}
   ${logging_source}
 )
@@ -124,6 +123,7 @@ f2py_add_module(_sib21
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep1
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sib21.pyf
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_21.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sib21aux.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
@@ -133,11 +133,24 @@ add_library(sib21rnd OBJECT ${rangen_source_needs_preprocessing})
 target_compile_definitions(sib21rnd PRIVATE SIBYLL_SP)
 target_link_libraries(_sib21 PRIVATE sib21rnd)
 
+### sib23
+f2py_add_module(_sib23
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sib23.pyf
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3.f
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
+  ${logging_source}
+  ${rangen_source}
+)
+
 ### sib23c00
 f2py_add_module(_sib23c00
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sib23c00.pyf
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c00.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
   ${logging_source}
@@ -149,6 +162,7 @@ f2py_add_module(_sib23c01
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sib23c01.pyf
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c01.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
   ${logging_source}
@@ -160,6 +174,7 @@ f2py_add_module(_sib23c02
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sib23c02.pyf
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c02.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
   ${logging_source}
@@ -171,6 +186,7 @@ f2py_add_module(_sib23c03
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sib23c03.pyf
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3c03.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
   ${logging_source}
@@ -182,6 +198,7 @@ f2py_add_module(_sib23d
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sibyll/sib23d.pyf
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll2.3d.f
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
   ${logging_source}
@@ -194,6 +211,7 @@ f2py_add_module(_qgs01
   cqgsini sectnu xxaini psconf xxreg psaini chepevt
   ${impy_logging}
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/qgsjet/qgs01.pyf
   ${CMAKE_SOURCE_DIR}/src/qgsjet/qgsjet01d.f
   ${CMAKE_SOURCE_DIR}/src/qgsjet/impy_qgs1.f
   ${logging_source}
@@ -208,6 +226,7 @@ f2py_add_module(_qgsII03
   FUNCTIONS
   ${QGSJETII_COMMON_FUNCTIONS}
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/qgsjet/qgsII-03.pyf
   ${CMAKE_SOURCE_DIR}/src/qgsjet/qgsjet-II-03.f
   ${CMAKE_SOURCE_DIR}/src/qgsjet/impy_qgsII.f
   ${logging_source}
@@ -219,6 +238,7 @@ f2py_add_module(_qgsII04
   FUNCTIONS
   ${QGSJETII_COMMON_FUNCTIONS}
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/qgsjet/qgsII-04.pyf
   ${CMAKE_SOURCE_DIR}/src/qgsjet/qgsjet-II-04.f
   ${CMAKE_SOURCE_DIR}/src/qgsjet/impy_qgsII.f
   ${logging_source}
@@ -256,6 +276,11 @@ f2py_add_module(_urqmd34
   loadwtab norm_init output cascinit nucrad urqini partname
   chepevt ptsigtot init_rmmard ${impy_logging}
   SOURCES
+  # Using pre-generated source results in this error
+  #  Undefined symbols for architecture x86_64:
+  #  "_f2pyinitterms_", referenced from:
+  #  _f2py_init_terms in _urqmd34module.c.o
+  # ${CMAKE_SOURCE_DIR}/src/urqmd-3.4/urqmd34.pyf
   ${urqmd34_sources}
 )
 
@@ -265,6 +290,7 @@ f2py_add_module(_pythia6
   pyinit pyexec pytune pylist pyevnt pyevnw pystat pyedit
   pyhepc pychge pycomp pyk ${impy_logging}
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/pythia6/pythia6.pyf
   ${CMAKE_SOURCE_DIR}/src/pythia6/pythia-6.4.28.f
   ${logging_source}
 )
@@ -275,6 +301,7 @@ f2py_add_module(_sophia
   eventgen print_event crossection initial
   icon_pdg_sib init_rmmard toevt ${impy_logging}
   SOURCES
+  ${CMAKE_SOURCE_DIR}/src/sophia/sophia.pyf
   ${CMAKE_SOURCE_DIR}/src/sophia/SOPHIA20.f
   ${CMAKE_SOURCE_DIR}/src/sophia/eventgen.f
   ${CMAKE_SOURCE_DIR}/src/sophia/sampling.f

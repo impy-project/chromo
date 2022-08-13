@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module eposlhc ! in 
+python module _eposlhc ! in 
     interface  ! in :eposlhc
         subroutine aaset(iop) ! in :eposlhc:sources/epos-bas-lhc.f
             integer :: iop
@@ -8950,7 +8950,7 @@ python module eposlhc ! in
             integer :: opunit
         end subroutine impy_closelogfile
     end interface 
-end python module eposlhc
+end python module _eposlhc
 
 ! This file was auto-generated with f2py (version:2).
 ! See http://cens.ioc.ee/projects/f2py2e/

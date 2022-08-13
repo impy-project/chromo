@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module dpmjet306 ! in 
+python module _dpmjet306 ! in 
     interface  ! in :dpmjet306
         subroutine dt_init(ncases,epn,npmass,npchar,ntmass,ntchar,idp,iglau) ! in :dpmjet306:sources/dpmjet3.0-6.f
             integer :: ncases
@@ -3484,7 +3484,7 @@ python module dpmjet306 ! in
             integer :: opunit
         end subroutine impy_closelogfile
     end interface 
-end python module dpmjet306
+end python module _dpmjet306
 
 ! This file was auto-generated with f2py (version:2).
 ! See http://cens.ioc.ee/projects/f2py2e/

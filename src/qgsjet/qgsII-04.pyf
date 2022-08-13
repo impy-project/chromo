@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module qgsII04 ! in 
+python module _qgsII04 ! in 
     interface  ! in :qgsII04
         subroutine qgini(e0n,icp0,iap,iat) ! in :qgsII04:qgsjet-II-04.f
             double precision :: e0n
@@ -293,7 +293,7 @@ python module qgsII04 ! in
             integer :: opunit
         end subroutine impy_closelogfile
     end interface 
-end python module qgsII04
+end python module _qgsII04
 
 ! This file was auto-generated with f2py (version:2).
 ! See http://cens.ioc.ee/projects/f2py2e/
