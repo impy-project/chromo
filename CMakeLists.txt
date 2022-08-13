@@ -41,6 +41,7 @@ endif()
 # Print out the discovered paths
 cmake_print_variables(PYTHON_EXECUTABLE)
 cmake_print_variables(PYTHON_INCLUDE_DIRS)
+cmake_print_variables(PYTHON_LIBRARIES)
 cmake_print_variables(F2PY_INCLUDE_DIR)
 cmake_print_variables(NUMPY_INCLUDE_DIRS)
 
@@ -81,20 +82,23 @@ set(fortran_src_dir ${CMAKE_SOURCE_DIR}/src)
 
 set(impy_logging impy_openlogfile impy_closelogfile)
 set(logging_source ${fortran_src_dir}/logging.f)
-set(rangen_source_needs_preprocessing ${fortran_src_dir}/rangen.fpp)
 set(rangen_source rangen.f)
-
-set_property(SOURCE rangen_source_needs_preprocessing
-  PROPERTY
-  Fortran_PREPROCESS True)
+set(rangen_sib21_source rangen_sib21.f)
 
 # WARNING this is not platform-independent and needs to be adjusted
 # when new fortran compilers should be supported
 add_custom_command(
   OUTPUT ${rangen_source}
   COMMAND ${CMAKE_Fortran_COMPILER}
-    -E ${rangen_source_needs_preprocessing}
+    -E ${fortran_src_dir}/rangen.fpp
     -o ${rangen_source}
+)
+add_custom_command(
+  OUTPUT ${rangen_sib21_source}
+  COMMAND ${CMAKE_Fortran_COMPILER}
+    -E ${fortran_src_dir}/rangen.fpp
+    -o ${rangen_sib21_source}
+    -DSIBYLL_SP
 )
 
 ### eposlhc
@@ -130,10 +134,8 @@ f2py_add_module(_sib21
   ${fortran_src_dir}/sibyll/sib21aux.f
   ${fortran_src_dir}/sibyll/sibyll_init.f
   ${logging_source}
+  ${rangen_sib21_source}
 )
-add_library(sib21rnd OBJECT ${rangen_source_needs_preprocessing})
-target_compile_definitions(sib21rnd PRIVATE SIBYLL_SP)
-target_link_libraries(_sib21 PRIVATE sib21rnd)
 
 ### sib23
 f2py_add_module(_sib23

@@ -227,9 +227,9 @@ else()
     PATHS ${_PYTHON_LIBS_SEARCH}
     NO_DEFAULT_PATH)
 
-  # If all else fails, just set the name/version and let the linker figure out the path.
+  # Some python installations do not have a python library
   if(NOT PYTHON_LIBRARY)
-    set(PYTHON_LIBRARY python${PYTHON_LIBRARY_SUFFIX})
+    message(WARNING "Python library not found (this may be ok)")
   endif()
 endif()
 

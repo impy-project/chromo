@@ -96,7 +96,9 @@ function (f2py_add_module target_name)
     ${target_name}-f2pywrappers.f
     ${F2PY_ADD_MODULE_SOURCES}
   )
-  target_link_libraries(${target_name} PRIVATE ${PYTHON_LIBRARIES})
+  if (PYTHON_LIBRARIES) # may neither be available nor required
+    target_link_libraries(${target_name} PRIVATE ${PYTHON_LIBRARIES})
+  endif()
   set_property(TARGET ${target_name} PROPERTY SUFFIX ${PYTHON_MODULE_EXTENSION})
   # must be a string, so that empty string works correcty
   set_property(TARGET ${target_name} PROPERTY PREFIX "${PYTHON_MODULE_PREFIX}")
