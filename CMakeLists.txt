@@ -79,7 +79,21 @@ endif()
 ### common for all models
 set(impy_logging impy_openlogfile impy_closelogfile)
 set(logging_source ${CMAKE_SOURCE_DIR}/src/logging.f)
-set(rangen_source ${CMAKE_SOURCE_DIR}/src/rangen.fpp)
+set(rangen_source_needs_preprocessing ${CMAKE_SOURCE_DIR}/src/rangen.fpp)
+set(rangen_source rangen.f)
+
+set_property(SOURCE rangen_source_needs_preprocessing
+  PROPERTY
+  Fortran_PREPROCESS True)
+
+# WARNING this is not platform-independent and needs to be adjusted
+# when new compilers should be supported
+add_custom_command(
+  OUTPUT ${rangen_source}
+  COMMAND ${CMAKE_Fortran_COMPILER}
+    -E ${rangen_source_needs_preprocessing}
+    -o ${rangen_source}
+)
 
 ### eposlhc
 file(GLOB eposlhc_sources ${CMAKE_SOURCE_DIR}/src/EPOS-LHC/sources/*.f)
@@ -115,7 +129,7 @@ f2py_add_module(_sib21
   ${CMAKE_SOURCE_DIR}/src/sibyll/sibyll_init.f
   ${logging_source}
 )
-add_library(sib21rnd OBJECT ${rangen_source})
+add_library(sib21rnd OBJECT ${rangen_source_needs_preprocessing})
 target_compile_definitions(sib21rnd PRIVATE SIBYLL_SP)
 target_link_libraries(_sib21 PRIVATE sib21rnd)
 
@@ -229,6 +243,12 @@ list(APPEND urqmd34_sources
   ${CMAKE_SOURCE_DIR}/src/urqmd-3.4/impy_urqmd.f
   ${logging_source}
   ${rangen_source}
+)
+# urqmd34 contains files which need preprocessing
+set_source_files_properties(
+  ${urqmd34_sources}
+  PROPERTIES
+  Fortran_PREPROCESS True
 )
 f2py_add_module(_urqmd34
   FUNCTIONS
