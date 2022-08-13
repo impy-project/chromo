@@ -11,6 +11,7 @@ VERBOSE=1                           : Let cmake print the commands it is calling
 CMAKE_GENERATOR=<Generator>         : Specify which generator to use.
 CMAKE_ARGS=<cmake args>             : Pass additional cmake arguments.
 CMAKE_BUILD_PARALLEL_LEVEL=<number> : Compile in parallel with number threads.
+                                      Default is to use number of CPU cores.
 """
 
 import os
@@ -22,15 +23,6 @@ import sysconfig as sc
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
-
-
-# Use Ninja if it is available instead of cmake default generator
-try:
-    out = subp.check_output(["ninja", "--version"])
-    print(f"Ninja generator detected: {out.decode().strip()}")
-    default_cmake_generator = "Ninja"
-except Exception:
-    default_cmake_generator = ""
 
 
 # Normal print does not work while CMakeBuild is running
@@ -59,20 +51,20 @@ class CMakeBuild(build_ext):
 
         cfg = "Debug" if debug else "Release"
 
-        # CMake lets you override the generator - we need to check this.
         # Can be set with Conda-Build, for example.
-        cmake_generator = os.environ.get("CMAKE_GENERATOR", default_cmake_generator)
+        cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
 
-        cmake_args = [
+        cmake_args = []
+        if cmake_generator:
+            cmake_args.append("-G" + cmake_generator)
+
+        cmake_args += [
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}/",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
             f"-DCMAKE_BUILD_TYPE={cfg}",
         ]
 
-        if cmake_generator:
-            cmake_args.append("-G" + cmake_generator)
-
-        # Adding CMake arguments set as environment variable
+        # Arbitrary CMake arguments added via environment variable
         # (needed e.g. to build for ARM OSx on conda-forge)
         if "CMAKE_ARGS" in os.environ:
             cmake_args += [item for item in os.environ["CMAKE_ARGS"].split(" ") if item]
@@ -105,10 +97,10 @@ class CMakeBuild(build_ext):
                 cmake_args += [f"-DCMAKE_OSX_ARCHITECTURES={';'.join(archs)}"]
 
         # Set CMAKE_BUILD_PARALLEL_LEVEL to control the parallel build level
-        # across all generators.
+        # across all generators. CMake 3.12+ only. If not set, use number of
+        # CPU cores.
         if "CMAKE_BUILD_PARALLEL_LEVEL" not in os.environ:
-            # CMake 3.12+ only.
-            njobs = self.parallel or os.cpu_count() or 1
+            njobs = os.cpu_count() or 1
             build_args += [f"-j{njobs}"]
 
         build_temp = Path(self.build_temp)
