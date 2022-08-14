@@ -78,7 +78,7 @@ else() # intel
 endif()
 
 ### common for all models
-set(fortran_src_dir ${CMAKE_SOURCE_DIR}/src)
+set(fortran_src_dir ${CMAKE_SOURCE_DIR}/src/fortran)
 
 set(impy_logging impy_openlogfile impy_closelogfile)
 set(logging_source ${fortran_src_dir}/logging.f)
