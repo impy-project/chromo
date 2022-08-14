@@ -1,18 +1,18 @@
 from impy.constants import TeV
 from impy.kinematics import EventKinematics
-import impy.models
+import impy.models as im
 from impy.models import Sophia20
 from impy.common import MCRun
 from collections import Counter
 import pytest
-from concurrent.futures import ProcessPoolExecutor as Executor
+from multiprocessing import Pool
 
 
-models = []
-for key in dir(impy.models):
-    obj = getattr(impy.models, key)
+models = set()
+for key in dir(im):
+    obj = getattr(im, key)
     if hasattr(obj, "__mro__") and MCRun in obj.__mro__:
-        models.append(obj)
+        models.add(obj)
 
 
 def run_model(model, ekin):
@@ -54,10 +54,10 @@ def test_new_interface(model):
     # Some models need to initialize same fortran code,
     # which can only be initialized once, therefore run
     # in separate thread
-    with Executor(max_workers=1) as e:
-        future = e.submit(run_model, model, ekin)
+    with Pool(1) as p:
+        r = p.apply_async(run_model, (model, ekin))
         try:
-            c = future.result(timeout=30)
+            c = r.get(timeout=15)
         except TimeoutError:
             assert False
 
