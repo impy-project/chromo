@@ -1,3 +1,4 @@
+<<<<<<< HEAD:tests/test_all_cms.py
 import numpy as np
 from multiprocessing import Pool, freeze_support, TimeoutError
 import tempfile
@@ -17,14 +18,23 @@ def run_generator(model, nevents):
         event_kinematics = EventKinematics(elab=7000 * GeV, p1pdg=22, p2pdg=2212)
         impy_config["user_frame"] = "center-of-mass"
     else:
+        
+    if (model.__name__== "Sophia20"):        
         event_kinematics = EventKinematics(
-            ecm=7000 * GeV,
-            p1pdg=2212,
+            elab=7000 * GeV,
+            p1pdg=22,
             p2pdg=2212
-            # nuc2_prop=(14,7)
         )
-
         impy_config["user_frame"] = "center-of-mass"
+    else:
+        event_kinematics = EventKinematics(
+                ecm=7000 * GeV,
+                p1pdg=2212,
+                p2pdg=2212
+                # nuc2_prop=(14,7)
+            )
+
+            impy_config["user_frame"] = "center-of-mass"
 
     model_name = model.__name__
 
@@ -64,7 +74,7 @@ def test_all_cms():
             models.append(obj)
 
     result = []
-    with Pool(1, maxtasksperchild=1) as pool:
+    with Pool(1, maxtasksperchild = 1) as pool:
         jobs = [pool.apply_async(run_generator, (model, 100)) for model in models]
         for job in jobs:
             try:
@@ -89,3 +99,4 @@ def test_all_cms():
         pickle.dump((eta_bins, psrap, logs), f)
 
     assert failed == set()
+>>>>>>> 914028d (All tests in test_all_cms.py pass):impy/tests/test_all_cms.py
