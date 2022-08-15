@@ -12,13 +12,9 @@ import traceback
 
 
 def run_generator(model, nevents):
-    
-    if (model.__name__== "Sophia20"):        
-        event_kinematics = EventKinematics(
-            elab=7000 * GeV,
-            p1pdg=22,
-            p2pdg=2212
-        )
+
+    if model.__name__ == "Sophia20":
+        event_kinematics = EventKinematics(elab=7000 * GeV, p1pdg=22, p2pdg=2212)
         impy_config["user_frame"] = "center-of-mass"
     else:
         event_kinematics = EventKinematics(
@@ -68,7 +64,7 @@ def test_all_cms():
             models.append(obj)
 
     result = []
-    with Pool(1, maxtasksperchild = 1) as pool:
+    with Pool(1, maxtasksperchild=1) as pool:
         jobs = [pool.apply_async(run_generator, (model, 100)) for model in models]
         for job in jobs:
             try:
