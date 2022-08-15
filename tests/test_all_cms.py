@@ -18,13 +18,13 @@ def run_generator(model, nevents):
         impy_config["user_frame"] = "center-of-mass"
     else:
         event_kinematics = EventKinematics(
-                ecm=7000 * GeV,
-                p1pdg=2212,
-                p2pdg=2212
-                # nuc2_prop=(14,7)
-            )
+            ecm=7000 * GeV,
+            p1pdg=2212,
+            p2pdg=2212
+            # nuc2_prop=(14,7)
+        )
 
-            impy_config["user_frame"] = "center-of-mass"
+    impy_config["user_frame"] = "center-of-mass"
 
     model_name = model.__name__
 
