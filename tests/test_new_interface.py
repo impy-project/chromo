@@ -6,6 +6,7 @@ from impy.common import MCRun
 from collections import Counter
 import pytest
 from multiprocessing import Pool
+from multiprocessing.context import TimeoutError
 
 
 models = set()
@@ -50,7 +51,11 @@ def test_new_interface(model):
     # in separate thread
     with Pool(1) as p:
         r = p.apply_async(run_model, (model, ekin))
-        c = r.get(timeout=30)
+        try:
+            c = r.get(timeout=3)
+        except TimeoutError:
+            # usually happens when model aborts and kills child process
+            raise TimeoutError("check stdout for errors")
 
     assert c[211] > 0, "pi+"
     assert c[-211] > 0, "pi-"
