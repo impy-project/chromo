@@ -387,7 +387,7 @@ f2py_add_module(_dpmjetIII193
   ${fortran_dir}/dpmjetIII-19.3/include/flinclude
 )
 
-### dpmjetIII191 does not compile in CMake
+### dpmjetIII191
 file(GLOB dpmjetIII191_sources
   ${fortran_dir}/dpmjetIII-19.1/src/phojet/*.f
   ${fortran_dir}/dpmjetIII-19.1/src/pythia/*.f
