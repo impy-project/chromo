@@ -16,7 +16,9 @@ define \n
 
 endef
 
-SUBDIRS = EPOS-LHC pythia6 qgsjet sophia sibyll dpmjet3.0-6 dpmjetIII-19.1 dpmjetIII-19.3 urqmd-3.4 
+
+SUBDIRS = EPOS-LHC pythia6 qgsjet sophia sibyll dpmjet3.0-6 \
+dpmjetIII-19.1 dpmjetIII-19.3 urqmd-3.4
 
 all: $(SUBDIRS)
 
