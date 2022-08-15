@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module dpmjetIII191 ! in 
+python module _dpmjetIII191 ! in 
     interface  ! in :dpmjetIII191
         subroutine pho_sregpar ! in :dpmjetIII191:f2py_cpp.f
             integer dimension(2,40) :: mparconf
@@ -3171,7 +3171,7 @@ python module dpmjetIII191 ! in
             integer :: opunit
         end subroutine impy_closelogfile
     end interface 
-end python module dpmjetIII191
+end python module _dpmjetIII191
 
 ! This file was auto-generated with f2py (version:2).
 ! See http://cens.ioc.ee/projects/f2py2e/

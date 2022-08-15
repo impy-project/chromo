@@ -52,7 +52,7 @@ def test_new_interface(model):
     with Pool(1) as p:
         r = p.apply_async(run_model, (model, ekin))
         try:
-            c = r.get(timeout=3)
+            c = r.get(timeout=30)
         except TimeoutError:
             # usually happens when model aborts and kills child process
             raise TimeoutError("check stdout for errors")
