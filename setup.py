@@ -26,7 +26,7 @@ setup(
         CMakeExtension("impy.models._sophia"),
         CMakeExtension("impy.models._dpmjet306"),
         # CMakeExtension("impy.models._dpmjetIII191"),
-        CMakeExtension("impy.models.dpmjetIII193"),
+        CMakeExtension("impy.models._dpmjetIII193"),
     ],
     cmdclass={"build_ext": CMakeBuild},
 )

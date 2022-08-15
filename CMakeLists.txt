@@ -78,10 +78,11 @@ else() # intel
 endif()
 
 ### common for all models
-set(fortran_src_dir ${CMAKE_SOURCE_DIR}/src/fortran)
+set(fortran_dir ${CMAKE_SOURCE_DIR}/src/fortran)
+set(f2py_dir ${CMAKE_SOURCE_DIR}/src/f2py)
 
 set(impy_logging impy_openlogfile impy_closelogfile)
-set(logging_source ${fortran_src_dir}/logging.f)
+set(logging_source ${fortran_dir}/logging.f)
 set(rangen_source rangen.f)
 set(rangen_sib21_source rangen_sib21.f)
 
@@ -90,22 +91,19 @@ set(rangen_sib21_source rangen_sib21.f)
 add_custom_command(
   OUTPUT ${rangen_source}
   COMMAND ${CMAKE_Fortran_COMPILER}
-    -E ${fortran_src_dir}/rangen.fpp
+    -E ${fortran_dir}/rangen.fpp
     -o ${rangen_source}
 )
 add_custom_command(
   OUTPUT ${rangen_sib21_source}
   COMMAND ${CMAKE_Fortran_COMPILER}
-    -E ${fortran_src_dir}/rangen.fpp
+    -E ${fortran_dir}/rangen.fpp
     -o ${rangen_sib21_source}
     -DSIBYLL_SP
 )
 
 ### eposlhc
-file(GLOB eposlhc_sources
-  ${fortran_src_dir}/EPOS-LHC/sources/*.f
-  ${fortran_src_dir}/EPOS-LHC/eposlhc.pyf
-)
+file(GLOB eposlhc_sources ${fortran_dir}/EPOS-LHC/sources/*.f)
 list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
 
 f2py_add_module(_eposlhc
@@ -114,7 +112,9 @@ f2py_add_module(_eposlhc
   getcharge idtrafo initializeepos initeposevt
   setstable setunstable xsection ${impy_logging}
   SOURCES
-  ${fortran_src_dir}/EPOS-LHC/eposlhc.pyf
+  ${f2py_dir}/_eposlhc.pyf
+  ${f2py_dir}/_eposlhcmodule.c
+  ${f2py_dir}/_eposlhc-f2pywrappers.f
   ${eposlhc_sources}
   ${logging_source}
 )
@@ -129,10 +129,12 @@ f2py_add_module(_sib21
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep1
   SOURCES
-  ${fortran_src_dir}/sibyll/sib21.pyf
-  ${fortran_src_dir}/sibyll/sibyll_21.f
-  ${fortran_src_dir}/sibyll/sib21aux.f
-  ${fortran_src_dir}/sibyll/sibyll_init.f
+  ${f2py_dir}/_sib21.pyf
+  ${f2py_dir}/_sib21module.c
+  ${f2py_dir}/_sib21-f2pywrappers.f
+  ${fortran_dir}/sibyll/sibyll_21.f
+  ${fortran_dir}/sibyll/sib21aux.f
+  ${fortran_dir}/sibyll/sibyll_init.f
   ${logging_source}
   ${rangen_sib21_source}
 )
@@ -142,9 +144,11 @@ f2py_add_module(_sib23
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
-  ${fortran_src_dir}/sibyll/sib23.pyf
-  ${fortran_src_dir}/sibyll/sibyll2.3.f
-  ${fortran_src_dir}/sibyll/sibyll_init.f
+  ${f2py_dir}/_sib23.pyf
+  ${f2py_dir}/_sib23module.c
+  ${f2py_dir}/_sib23-f2pywrappers.f
+  ${fortran_dir}/sibyll/sibyll2.3.f
+  ${fortran_dir}/sibyll/sibyll_init.f
   ${logging_source}
   ${rangen_source}
 )
@@ -154,9 +158,11 @@ f2py_add_module(_sib23c00
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
-  ${fortran_src_dir}/sibyll/sib23c00.pyf
-  ${fortran_src_dir}/sibyll/sibyll2.3c00.f
-  ${fortran_src_dir}/sibyll/sibyll_init.f
+  ${f2py_dir}/_sib23c00.pyf
+  ${f2py_dir}/_sib23c00module.c
+  ${f2py_dir}/_sib23c00-f2pywrappers.f
+  ${fortran_dir}/sibyll/sibyll2.3c00.f
+  ${fortran_dir}/sibyll/sibyll_init.f
   ${logging_source}
   ${rangen_source}
 )
@@ -166,9 +172,11 @@ f2py_add_module(_sib23c01
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
-  ${fortran_src_dir}/sibyll/sib23c01.pyf
-  ${fortran_src_dir}/sibyll/sibyll2.3c01.f
-  ${fortran_src_dir}/sibyll/sibyll_init.f
+  ${f2py_dir}/_sib23c01.pyf
+  ${f2py_dir}/_sib23c01module.c
+  ${f2py_dir}/_sib23c01-f2pywrappers.f
+  ${fortran_dir}/sibyll/sibyll2.3c01.f
+  ${fortran_dir}/sibyll/sibyll_init.f
   ${logging_source}
   ${rangen_source}
 )
@@ -178,9 +186,11 @@ f2py_add_module(_sib23c02
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
-  ${fortran_src_dir}/sibyll/sib23c02.pyf
-  ${fortran_src_dir}/sibyll/sibyll2.3c02.f
-  ${fortran_src_dir}/sibyll/sibyll_init.f
+  ${f2py_dir}/_sib23c02.pyf
+  ${f2py_dir}/_sib23c02module.c
+  ${f2py_dir}/_sib23c02-f2pywrappers.f
+  ${fortran_dir}/sibyll/sibyll2.3c02.f
+  ${fortran_dir}/sibyll/sibyll_init.f
   ${logging_source}
   ${rangen_source}
 )
@@ -190,9 +200,11 @@ f2py_add_module(_sib23c03
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
-  ${fortran_src_dir}/sibyll/sib23c03.pyf
-  ${fortran_src_dir}/sibyll/sibyll2.3c03.f
-  ${fortran_src_dir}/sibyll/sibyll_init.f
+  ${f2py_dir}/_sib23c03.pyf
+  ${f2py_dir}/_sib23c03module.c
+  ${f2py_dir}/_sib23c03-f2pywrappers.f
+  ${fortran_dir}/sibyll/sibyll2.3c03.f
+  ${fortran_dir}/sibyll/sibyll_init.f
   ${logging_source}
   ${rangen_source}
 )
@@ -202,9 +214,11 @@ f2py_add_module(_sib23d
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
-  ${fortran_src_dir}/sibyll/sib23d.pyf
-  ${fortran_src_dir}/sibyll/sibyll2.3d.f
-  ${fortran_src_dir}/sibyll/sibyll_init.f
+  ${f2py_dir}/_sib23d.pyf
+  ${f2py_dir}/_sib23dmodule.c
+  ${f2py_dir}/_sib23d-f2pywrappers.f
+  ${fortran_dir}/sibyll/sibyll2.3d.f
+  ${fortran_dir}/sibyll/sibyll_init.f
   ${logging_source}
   ${rangen_source}
 )
@@ -215,9 +229,11 @@ f2py_add_module(_qgs01
   cqgsini sectnu xxaini psconf xxreg psaini chepevt
   ${impy_logging}
   SOURCES
-  ${fortran_src_dir}/qgsjet/qgs01.pyf
-  ${fortran_src_dir}/qgsjet/qgsjet01d.f
-  ${fortran_src_dir}/qgsjet/impy_qgs1.f
+  ${f2py_dir}/_qgs01.pyf
+  ${f2py_dir}/_qgs01module.c
+  ${f2py_dir}/_qgs01-f2pywrappers.f
+  ${fortran_dir}/qgsjet/qgsjet01d.f
+  ${fortran_dir}/qgsjet/impy_qgs1.f
   ${logging_source}
   ${rangen_source}
 )
@@ -230,9 +246,11 @@ f2py_add_module(_qgsII03
   FUNCTIONS
   ${QGSJETII_COMMON_FUNCTIONS}
   SOURCES
-  ${fortran_src_dir}/qgsjet/qgsII-03.pyf
-  ${fortran_src_dir}/qgsjet/qgsjet-II-03.f
-  ${fortran_src_dir}/qgsjet/impy_qgsII.f
+  ${f2py_dir}/_qgsII03.pyf
+  ${f2py_dir}/_qgsII03module.c
+  ${f2py_dir}/_qgsII03-f2pywrappers.f
+  ${fortran_dir}/qgsjet/qgsjet-II-03.f
+  ${fortran_dir}/qgsjet/impy_qgsII.f
   ${logging_source}
   ${rangen_source}
 )
@@ -242,9 +260,11 @@ f2py_add_module(_qgsII04
   FUNCTIONS
   ${QGSJETII_COMMON_FUNCTIONS}
   SOURCES
-  ${fortran_src_dir}/qgsjet/qgsII-04.pyf
-  ${fortran_src_dir}/qgsjet/qgsjet-II-04.f
-  ${fortran_src_dir}/qgsjet/impy_qgsII.f
+  ${f2py_dir}/_qgsII04.pyf
+  ${f2py_dir}/_qgsII04module.c
+  ${f2py_dir}/_qgsII04-f2pywrappers.f
+  ${fortran_dir}/qgsjet/qgsjet-II-04.f
+  ${fortran_dir}/qgsjet/impy_qgsII.f
   ${logging_source}
   ${rangen_source}
 )
@@ -262,9 +282,9 @@ list(TRANSFORM urqmd34_sources APPEND .f)
 list(APPEND urqmd34_sources
   CFmax.f90 quadri.f90 cornelius.f90
 )
-list(TRANSFORM urqmd34_sources PREPEND ${fortran_src_dir}/urqmd-3.4/sources/)
+list(TRANSFORM urqmd34_sources PREPEND ${fortran_dir}/urqmd-3.4/sources/)
 list(APPEND urqmd34_sources
-  ${fortran_src_dir}/urqmd-3.4/impy_urqmd.f
+  ${fortran_dir}/urqmd-3.4/impy_urqmd.f
   ${logging_source}
   ${rangen_source}
 )
@@ -274,10 +294,9 @@ f2py_add_module(_urqmd34
   loadwtab norm_init output cascinit nucrad urqini partname
   chepevt ptsigtot init_rmmard ${impy_logging}
   SOURCES
-  # Using pre-generated pyf file results in this error
-  #  Undefined symbols for architecture x86_64:
-  #  "_f2pyinitterms_", referenced from:
-  #  _f2py_init_terms in _urqmd34module.c.o
+  ${f2py_dir}/_urqmd34.pyf
+  ${f2py_dir}/_urqmd34module.c
+  ${f2py_dir}/_urqmd34-f2pywrappers.f
   ${urqmd34_sources}
 )
 
@@ -287,8 +306,10 @@ f2py_add_module(_pythia6
   pyinit pyexec pytune pylist pyevnt pyevnw pystat pyedit
   pyhepc pychge pycomp pyk ${impy_logging}
   SOURCES
-  ${fortran_src_dir}/pythia6/pythia6.pyf
-  ${fortran_src_dir}/pythia6/pythia-6.4.28.f
+  ${f2py_dir}/_pythia6.pyf
+  ${f2py_dir}/_pythia6module.c
+  ${f2py_dir}/_pythia6-f2pywrappers.f
+  ${fortran_dir}/pythia6/pythia-6.4.28.f
   ${logging_source}
 )
 
@@ -298,19 +319,21 @@ f2py_add_module(_sophia
   eventgen print_event crossection initial
   icon_pdg_sib init_rmmard toevt ${impy_logging}
   SOURCES
-  ${fortran_src_dir}/sophia/sophia.pyf
-  ${fortran_src_dir}/sophia/SOPHIA20.f
-  ${fortran_src_dir}/sophia/eventgen.f
-  ${fortran_src_dir}/sophia/sampling.f
-  ${fortran_src_dir}/sophia/inpoutput.f
-  ${fortran_src_dir}/sophia/jetset74dp.f
-  ${fortran_src_dir}/sophia/impy_sophia.f
+  ${f2py_dir}/_sophia.pyf
+  ${f2py_dir}/_sophiamodule.c
+  ${f2py_dir}/_sophia-f2pywrappers.f
+  ${fortran_dir}/sophia/SOPHIA20.f
+  ${fortran_dir}/sophia/eventgen.f
+  ${fortran_dir}/sophia/sampling.f
+  ${fortran_dir}/sophia/inpoutput.f
+  ${fortran_dir}/sophia/jetset74dp.f
+  ${fortran_dir}/sophia/impy_sophia.f
   ${logging_source}
   ${rangen_source}
 )
 
-# ### dpmjet306
-file(GLOB dpmjet306_sources ${fortran_src_dir}/dpmjet3.0-6/sources/*.f)
+### dpmjet306
+file(GLOB dpmjet306_sources ${fortran_dir}/dpmjet3.0-6/sources/*.f)
 f2py_add_module(_dpmjet306
   FUNCTIONS
   pho_event dt_init dt_kkinc idt_icihad dt_xsglau
@@ -322,16 +345,19 @@ f2py_add_module(_dpmjet306
   pho_setpcomb dt_phoxs dt_xshn dt_flahad
   ${impy_logging}
   SOURCES
-  ${fortran_src_dir}/dpmjet3.0-6/dpmjet306.pyf
+  ${f2py_dir}/_dpmjet306.pyf
+  ${f2py_dir}/_dpmjet306module.c
+  ${f2py_dir}/_dpmjet306-f2pywrappers.f
   ${dpmjet306_sources}
   ${logging_source}
 )
 
+### dpmjetIII193
 file(GLOB dpmjetIII193_sources
-  ${fortran_src_dir}/dpmjetIII-19.3/src/phojet/*.f
-  ${fortran_src_dir}/dpmjetIII-19.3/src/pythia/*.f
-  ${fortran_src_dir}/dpmjetIII-19.3/src/dpmjet/*.f
-  ${fortran_src_dir}/dpmjetIII-19.3/common/*.f
+  ${fortran_dir}/dpmjetIII-19.3/src/phojet/*.f
+  ${fortran_dir}/dpmjetIII-19.3/src/pythia/*.f
+  ${fortran_dir}/dpmjetIII-19.3/src/dpmjet/*.f
+  ${fortran_dir}/dpmjetIII-19.3/common/*.f
 )
 # sources need preprocessing
 set_source_files_properties(
@@ -339,7 +365,7 @@ set_source_files_properties(
   PROPERTIES
   Fortran_PREPROCESS True
 )
-f2py_add_module(dpmjetIII193
+f2py_add_module(_dpmjetIII193
   FUNCTIONS
   pho_event dt_init dt_kkinc
   idt_icihad dt_xsglau pycomp dt_initjs dt_rndmst dt_rndm dt_inucas idt_ipdgha dt_evtout
@@ -350,14 +376,15 @@ f2py_add_module(dpmjetIII193
   dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias dt_getptn
   ${impy_logging}
   SOURCES
-  ${fortran_src_dir}/dpmjetIII-19.3/common/dpmjetIII193.pyf
-)
-target_include_directories(dpmjetIII193
-  PUBLIC
-  ${fortran_src_dir}/dpmjetIII-19.3/include/phojet
-  ${fortran_src_dir}/dpmjetIII-19.3/include/dpmjet
-  ${fortran_src_dir}/dpmjetIII-19.3/include/pythia
-  ${fortran_src_dir}/dpmjetIII-19.3/include/flinclude
+  ${f2py_dir}/_dpmjetIII193.pyf
+  ${f2py_dir}/_dpmjetIII193module.c
+  ${f2py_dir}/_dpmjetIII193-f2pywrappers.f
+  ${dpmjetIII193_sources}
+  INCLUDE_DIRS
+  ${fortran_dir}/dpmjetIII-19.3/include/phojet
+  ${fortran_dir}/dpmjetIII-19.3/include/dpmjet
+  ${fortran_dir}/dpmjetIII-19.3/include/pythia
+  ${fortran_dir}/dpmjetIII-19.3/include/flinclude
 )
 
 ### dpmjetIII191 does not compile in CMake
@@ -366,26 +393,16 @@ if (FALSE)
   # This is silly, because ../src/dpmjetIII-19.1/include/flinclude/(COMPUT) exists
   # and does not need to be created
   file(GLOB dpmjetIII191_sources
-    ${fortran_src_dir}/dpmjetIII-19.1/src/phojet/*.f
-    ${fortran_src_dir}/dpmjetIII-19.1/src/pythia/*.f
-    ${fortran_src_dir}/dpmjetIII-19.1/src/dpmjet/*.f
-    ${fortran_src_dir}/dpmjetIII-19.1/common/*.f
+    ${fortran_dir}/dpmjetIII-19.1/src/phojet/*.f
+    ${fortran_dir}/dpmjetIII-19.1/src/pythia/*.f
+    ${fortran_dir}/dpmjetIII-19.1/src/dpmjet/*.f
+    ${fortran_dir}/dpmjetIII-19.1/common/*.f
   )
   # sources need preprocessing
   set_source_files_properties(
     ${dpmjetIII191_sources}
     PROPERTIES
     Fortran_PREPROCESS True
-  )
-  add_library(libdpmjetIII191 STATIC
-    ${dpmjetIII191_sources}
-  )
-  target_include_directories(libdpmjetIII191
-    PUBLIC
-    ${fortran_src_dir}/dpmjetIII-19.1/include/phojet
-    ${fortran_src_dir}/dpmjetIII-19.1/include/dpmjet
-    ${fortran_src_dir}/dpmjetIII-19.1/include/pythia
-    ${fortran_src_dir}/dpmjetIII-19.1/include/flinclude
   )
   f2py_add_module(_dpmjetIII191
     FUNCTIONS
@@ -398,7 +415,14 @@ if (FALSE)
     dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias
     ${impy_logging}
     SOURCES
-    ${fortran_src_dir}/dpmjetIII-19.1/common/dpmjetIII191.pyf
+    ${f2py_dir}/_dpmjetIII191.pyf
+    ${f2py_dir}/_dpmjetIII191module.c
+    ${f2py_dir}/_dpmjetIII191-f2pywrappers.f
+    ${dpmjetIII191_sources}
+    INCLUDE_DIRS
+    ${fortran_dir}/dpmjetIII-19.1/include/phojet
+    ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
+    ${fortran_dir}/dpmjetIII-19.1/include/pythia
+    ${fortran_dir}/dpmjetIII-19.1/include/flinclude
   )
-  target_link_libraries(_dpmjetIII191 PRIVATE libdpmjetIII191)
 endif()
