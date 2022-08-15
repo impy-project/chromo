@@ -61,7 +61,7 @@ set(CMAKE_Fortran_FLAGS_RELEASE -O3)
 if (UNIX)
   add_compile_options(
     -Wno-uninitialized
-    $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
+    # $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
   )
   if (APPLE)
@@ -294,11 +294,14 @@ f2py_add_module(_urqmd34
   loadwtab norm_init output cascinit nucrad urqini partname
   chepevt ptsigtot init_rmmard ${impy_logging}
   SOURCES
-  ${f2py_dir}/_urqmd34.pyf
-  ${f2py_dir}/_urqmd34module.c
-  ${f2py_dir}/_urqmd34-f2pywrappers.f
+  # ${f2py_dir}/_urqmd34.pyf
+  # ${f2py_dir}/_urqmd34module.c
+  # ${f2py_dir}/_urqmd34-f2pywrappers.f
+  # ${f2py_dir}/_urqmd34-f2pywrappers2.f90
   ${urqmd34_sources}
 )
+# to find terms.mod
+target_include_directories(_urqmd34 PRIVATE ${fortran_dir}/urqmd-3.4/sources)
 
 ### pythia6
 f2py_add_module(_pythia6
