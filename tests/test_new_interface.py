@@ -30,12 +30,6 @@ def run_model(model, ekin):
 @pytest.mark.parametrize("model", models)
 def test_new_interface(model):
 
-    # AF: This is what the user interaction has to yield.
-    # It is the typical expected configuration that one
-    # wants to run (read pp-mode at energies not exceeding
-    # 7 TeV). If you want cosmic ray energies, this should
-    # be rather p-N at 10 EeV and lab frame (not yet defined).
-
     p1pdg = -211  # pi-
     p2pdg = 2212  # proton
     if model is Sophia20:
@@ -56,10 +50,7 @@ def test_new_interface(model):
     # in separate thread
     with Pool(1) as p:
         r = p.apply_async(run_model, (model, ekin))
-        try:
-            c = r.get(timeout=15)
-        except TimeoutError:
-            assert False
+        c = r.get(timeout=30)
 
     assert c[211] > 0, "pi+"
     assert c[-211] > 0, "pi-"
