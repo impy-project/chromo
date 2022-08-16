@@ -240,7 +240,6 @@ class PHOJETRun(MCRun):
         process_switch[7, 0] = 1
 
         self._set_event_kinematics(event_kinematics)
-
         if self.lib.pho_event(-1, self.p1, self.p2)[1]:
             raise Exception(
                 "PHOJET failed to initialize with the current", "event kinematics"

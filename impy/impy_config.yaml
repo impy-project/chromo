@@ -117,17 +117,17 @@ dpmjetIII:
     dat_dir      : {
         '3.0-6'  : iamdata/dpm3/,
         '19.1'   : iamdata/dpm3191/,
-        '19.2'   : iamdata/dpm3191/
+        '19.3'   : iamdata/dpm3191/
     }
     param_file   : {
         '3.0-6'  : iamdata/dpm3/fitpar.dat,
         '19.1'   : iamdata/dpm3191/dpmjpar.dat,
-        '19.2'   : iamdata/dpm3191/dpmjpar.dat
+        '19.3'   : iamdata/dpm3191/dpmjpar.dat
     }
     evap_file    : {
         '3.0-6'  : iamdata/dpm3/dpmjet.dat,
         '19.1'   : iamdata/dpm3191/dpmjet.dat,
-        '19.2'   : iamdata/dpm3191/dpmjet.dat
+        '19.3'   : iamdata/dpm3191/dpmjet.dat
     }
 
     projectiles  : {
@@ -135,7 +135,7 @@ dpmjetIII:
         '19.1'   : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
                          3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
                          3122, -3122, 22],
-        '19.2'   : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
+        '19.3'   : [ 2212, 2112, 321, -321, 211, -211, 130, -2212, -2112,
                          3112, -3112, 3222, -3222, 3322, -3322, 3312, -3312,
                          3122, -3122, 22]
     }

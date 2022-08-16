@@ -182,7 +182,6 @@ class UrQMDRun(MCRun):
 
         # Set default stable
         self._define_default_fs_particles()
-        self._set_event_kinematics(event_kinematics)
 
         self.lib.inputs.nevents = 1
         self.lib.rsys.bmin = 0
@@ -210,6 +209,7 @@ class UrQMDRun(MCRun):
         self.lib.pots.dtimestep = outtim
         self.lib.sys.nsteps = int(0.01 + caltim / self.lib.pots.dtimestep)
         self.lib.inputs.outsteps = int(0.01 + caltim / self.lib.pots.dtimestep)
+        self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
         stable_ids = self.lib.stables.stabvec

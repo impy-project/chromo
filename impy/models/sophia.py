@@ -154,6 +154,9 @@ class SophiaRun(MCRun):
             raise Exception("Input error")
 
         self.nucleon_code_number = self.lib.icon_pdg_sib(k.p2pdg)
+        self.lib.initial(
+            self.nucleon_code_number
+        )  # setting parameters for cross-section
         self.energy_of_nucleon = k.pmass2
         self.energy_of_photon = k.elab
         # Here we consider laboratory frame where photon moves along z axis
@@ -188,18 +191,13 @@ class SophiaRun(MCRun):
         info(5, "Using seed:", seed)
 
         self.lib.s_plist.ideb = impy_config["sophia"]["debug_level"]
-
-        self._set_event_kinematics(event_kinematics)
         self.attach_log(fname=logfname)
 
         self.lib.init_rmmard(int(seed))  # setting random number generator seed
-        self.lib.initial(
-            self.nucleon_code_number
-        )  # setting parameters for cross-section
-
         # Keep decayed particles in the history:
         self.lib.eg_io.keepdc = impy_config["sophia"]["keep_decayed_particles"]
         self._define_default_fs_particles()
+        self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
 
