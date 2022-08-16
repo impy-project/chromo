@@ -2,8 +2,8 @@
 ! Note: the context of this file is case sensitive.
 
 python module _sib23 ! in 
-    interface  ! in :sib23
-        subroutine sibyll(k_beam,iatarg,ecm) ! in :sib23:sibyll2.3.f
+    interface  ! in :_sib23
+        subroutine sibyll(k_beam,iatarg,ecm) ! in :_sib23:sibyll2.3.f
             integer :: k_beam
             integer :: iatarg
             double precision :: ecm
@@ -39,9 +39,9 @@ python module _sib23 ! in
             common /sib_cst/ pi,twopi,cmbarn
             common /sib_fac/ facn
         end subroutine sibyll
-        subroutine sibyll_ini ! in :sib23:sibyll2.3.f
+        subroutine sibyll_ini ! in :_sib23:sibyll2.3.f
         end subroutine sibyll_ini
-        block data param_ini ! in :sib23:sibyll2.3.f
+        block data param_ini ! in :_sib23:sibyll2.3.f
             integer, optional :: ncall=0
             integer, optional :: ndebug=0
             integer, optional :: lun=7
@@ -86,7 +86,7 @@ python module _sib23 ! in
             common /sib_fac/ facn
             common /ckfrag/ kodfrag
         end block data param_ini
-        subroutine sib_list(lun) ! in :sib23:sibyll2.3.f
+        subroutine sib_list(lun) ! in :_sib23:sibyll2.3.f
             integer :: lun
             integer :: ncall
             integer :: ndebug
@@ -139,14 +139,14 @@ python module _sib23 ! in
             common /s_cnam/ namp
             common /s_rmnt/ xrmass,xrmex,irmnt,krb,krt
         end subroutine sib_list
-        function isib_pid2pdg(npid) ! in :sib23:sibyll2.3.f
+        function isib_pid2pdg(npid) ! in :_sib23:sibyll2.3.f
             integer :: npid
             integer dimension(99) :: id_pdg_list
             integer dimension(577) :: id_list
             integer :: isib_pid2pdg
             common /s_pdg2pid/ id_pdg_list,id_list
         end function isib_pid2pdg
-        function isib_pdg2pid(npdg) ! in :sib23:sibyll2.3.f
+        function isib_pdg2pid(npdg) ! in :_sib23:sibyll2.3.f
             integer :: npdg
             integer dimension(99) :: ipid_pdg_list
             integer dimension(577) :: id_list
@@ -162,7 +162,7 @@ python module _sib23 ! in
             common /s_debug/ ncall,ndebug,lun
             common /s_csydec/ cbr,kdec,lbarp,idb
         end function isib_pdg2pid
-        subroutine pdg_ini ! in :sib23:sibyll2.3.f
+        subroutine pdg_ini ! in :_sib23:sibyll2.3.f
             integer :: ncall
             integer :: ndebug
             integer :: lun
@@ -171,11 +171,11 @@ python module _sib23 ! in
             common /s_debug/ ncall,ndebug,lun
             common /s_pdg2pid/ id_pdg_list,id_list
         end subroutine pdg_ini
-        block data kflv_ini ! in :sib23:sibyll2.3.f
+        block data kflv_ini ! in :_sib23:sibyll2.3.f
             integer dimension(4,43) :: kflv
             common /s_kflv/ kflv
         end block data kflv_ini
-        subroutine decpar(la,p0,nd,ll,p) ! in :sib23:sibyll2.3.f
+        subroutine decpar(la,p0,nd,ll,p) ! in :_sib23:sibyll2.3.f
             integer :: la
             double precision dimension(5) :: p0
             integer :: nd
@@ -201,7 +201,7 @@ python module _sib23 ! in
             common /sib_cst/ pi,twopi,cmbarn
             common /sib_fac/ facn
         end subroutine decpar
-        block data datdec ! in :sib23:sibyll2.3.f
+        block data datdec ! in :_sib23:sibyll2.3.f
             double precision, optional,dimension(259) :: cbr=3*1.d0
             integer dimension(1554) :: kdec
             integer, optional,dimension(99) :: lbarp=1
@@ -225,7 +225,7 @@ python module _sib23 ! in
             common /s_chm/ ichm
             common /s_cnam/ namp
         end block data datdec
-        subroutine decsib ! in :sib23:sibyll2.3.f
+        subroutine decsib ! in :_sib23:sibyll2.3.f
             integer :: ncall
             integer :: ndebug
             integer :: lun
@@ -257,7 +257,7 @@ python module _sib23 ! in
             common /s_cflafr/ par,ipar
             common /sib_rnk/ lrnk
         end subroutine decsib
-        subroutine sib_sigma_hp(l0,sqs,sigt,sigel,siginel,sigdif,slope,rho) ! in :sib23:sibyll2.3.f
+        subroutine sib_sigma_hp(l0,sqs,sigt,sigel,siginel,sigdif,slope,rho) ! in :_sib23:sibyll2.3.f
             integer intent(in) :: l0
             double precision intent(in) :: sqs
             double precision intent(out) :: sigt
@@ -299,7 +299,7 @@ python module _sib23 ! in
             common /sib_cst/ pi,twopi,cmbarn
             common /sib_fac/ facn
         end subroutine sib_sigma_hp
-        subroutine sib_sigma_hair(l,sqs,sigprod,sigbdif) ! in :sib23:sibyll2.3.f
+        subroutine sib_sigma_hair(l,sqs,sigprod,sigbdif) ! in :_sib23:sibyll2.3.f
             integer intent(in) :: l
             double precision intent(in) :: sqs
             double precision intent(out) :: sigprod
@@ -319,7 +319,7 @@ python module _sib23 ! in
             common /s_debug/ ncall,ndebug,lun
             common /s_ccsig/ ssig,pjetc,ssign,ssignsd,alint,asqsmin,asqsmax,dasqs,nsqs
         end subroutine sib_sigma_hair
-        subroutine sib_sigma_hnuc(l,iat,sqs,sigprod,sigbdif) ! in :sib23:sibyll2.3.f
+        subroutine sib_sigma_hnuc(l,iat,sqs,sigprod,sigbdif) ! in :_sib23:sibyll2.3.f
             integer intent(in) :: l
             integer intent(in) :: iat
             double precision intent(in) :: sqs
@@ -362,7 +362,7 @@ python module _sib23 ! in
             common /sib_fac/ facn
             common /nucsig/ sigt,sigel,siginel,sigqe,sigsd,sigqsd,sigppt,sigppel,sigppsd,itg
         end subroutine sib_sigma_hnuc
-        block data pdfini ! in :sib23:sibyll2.3.f
+        block data pdfini ! in :_sib23:sibyll2.3.f
             double precision, optional,dimension(2) :: xa=1.d-06
             double precision, optional,dimension(2) :: xb=0.1d0
             double precision, optional :: xmax=0.800000011921d0
@@ -384,14 +384,14 @@ python module _sib23 ! in
             integer, optional :: nz=200
             common /s_czgen/ xa,xb,xmax,za,zb,zmax,dx,dz,apart,ffa,ffb,dfx,dfz,xx,zz,ffx,ffz,nx,nz
         end block data pdfini
-        block data frag_data ! in :sib23:sibyll2.3.f
+        block data frag_data ! in :_sib23:sibyll2.3.f
             double precision dimension(10,10,20) :: a
             double precision dimension(10,10,20) :: ae
             double precision dimension(10,10) :: eres
             integer dimension(10,10) :: nflagg
             common /fragmod/ a,ae,eres,nflagg
         end block data frag_data
-        subroutine int_nuc(ia,ib,sig0,sigel) ! in :sib23:sibyll2.3.f
+        subroutine int_nuc(ia,ib,sig0,sigel) ! in :_sib23:sibyll2.3.f
             integer :: ia
             integer :: ib
             double precision :: sig0
@@ -415,10 +415,10 @@ python module _sib23 ! in
             common /cnucms/ b,bmax,ntry,na,nb,ni,nael,nbel,jja,jjb,jjint,jjael,jjbel
             common /sib_cst/ pi,twopi,cmbarn
         end subroutine int_nuc
-        subroutine sibini(seedin) ! in :sib23:/home/afedyni/devel/impy/src/sibyll/sibyll_init.f
+        subroutine sibini(seedin) ! in :_sib23:/app/src/fortran/sibyll/sibyll_init.f
             integer :: seedin
         end subroutine sibini
-        subroutine sibhep3 ! in :sib23:/home/afedyni/devel/impy/src/sibyll/sibyll_init.f
+        subroutine sibhep3 ! in :_sib23:/app/src/fortran/sibyll/sibyll_init.f
             double precision dimension(8000,5) :: p
             integer dimension(8000) :: llist
             integer :: np
@@ -439,11 +439,11 @@ python module _sib23 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /schg/ ichg
         end subroutine sibhep3
-        subroutine impy_openlogfile(fname,opunit) ! in :sib23:/home/afedyni/devel/impy/src/logging.f
+        subroutine impy_openlogfile(fname,opunit) ! in :_sib23:/app/src/fortran/logging.f
             character*300 :: fname
             integer :: opunit
         end subroutine impy_openlogfile
-        subroutine impy_closelogfile(opunit) ! in :sib23:/home/afedyni/devel/impy/src/logging.f
+        subroutine impy_closelogfile(opunit) ! in :_sib23:/app/src/fortran/logging.f
             integer :: opunit
         end subroutine impy_closelogfile
     end interface 

@@ -2,8 +2,8 @@
 ! Note: the context of this file is case sensitive.
 
 python module _qgsII04 ! in 
-    interface  ! in :qgsII04
-        subroutine qgini(e0n,icp0,iap,iat) ! in :qgsII04:qgsjet-II-04.f
+    interface  ! in :_qgsII04
+        subroutine qgini(e0n,icp0,iap,iat) ! in :_qgsII04:qgsjet-II-04.f
             double precision :: e0n
             integer :: icp0
             integer :: iap
@@ -67,7 +67,7 @@ python module _qgsII04 ! in
             common /qgdebug/ debug
             common /qgsiinex1/ xan,xbn,bqgs,bmaxqgs,bmaxnex,bminnex
         end subroutine qgini
-        subroutine qgconf ! in :qgsII04:qgsjet-II-04.f
+        subroutine qgconf ! in :_qgsII04:qgsjet-II-04.f
             integer dimension(2) :: ia
             integer :: icz
             integer :: icp
@@ -183,7 +183,7 @@ python module _qgsII04 ! in
             common /jdiff/ bdiff,jdiff     !for external use: impact parameter
             common /c2evt/ ng1evt,ng2evt,rglevt,sglevt,eglevt,fglevt,ikoevt,typevt            !in epos.inc
         end subroutine qgconf
-        block data qgdata ! in :qgsII04:qgsjet-II-04.f
+        block data qgdata ! in :_qgsII04:qgsjet-II-04.f
             double precision, optional,dimension(56) :: trnuc=0.69d0
             double precision, optional,dimension(56) :: twsnuc=0.d0
             double precision, optional,dimension(56) :: twbnuc=0.d0
@@ -204,7 +204,7 @@ python module _qgsII04 ! in
             common /arr8/ x2,a2
             common /arr9/ x9,a9
         end block data qgdata
-        function qgsect(e0n,icz,iap0,iat0) ! in :qgsII04:qgsjet-II-04.f
+        function qgsect(e0n,icz,iap0,iat0) ! in :_qgsII04:qgsjet-II-04.f
             double precision :: e0n
             integer :: icz
             integer :: iap0
@@ -219,7 +219,7 @@ python module _qgsII04 ! in
             common /qgarr43/ moniou
             common /qgdebug/ debug
         end function qgsect
-        subroutine qgreg(ep0,ic) ! in :qgsII04:qgsjet-II-04.f
+        subroutine qgreg(ep0,ic) ! in :_qgsII04:qgsjet-II-04.f
             double precision dimension(4) :: ep0
             integer :: ic
             double precision dimension(3) :: ey0
@@ -250,7 +250,7 @@ python module _qgsII04 ! in
             common /qgarr43/ moniou
             common /qgdebug/ debug
         end subroutine qgreg
-        subroutine cqgsini(seedin,datdir,lun,debugnum) ! in :qgsII04:impy_qgsII.f
+        subroutine cqgsini(seedin,datdir,lun,debugnum) ! in :_qgsII04:impy_qgsII.f
             integer :: seedin
             character*256 :: datdir
             integer :: lun
@@ -262,7 +262,7 @@ python module _qgsII04 ! in
             common /qgarr43/ moniou
             common /qgdebug/ debug
         end subroutine cqgsini
-        subroutine chepevt ! in :qgsII04:impy_qgsII.f
+        subroutine chepevt ! in :_qgsII04:impy_qgsII.f
             integer :: nsp
             double precision dimension(4,95000) :: esp
             integer dimension(95000) :: ich
@@ -280,16 +280,16 @@ python module _qgsII04 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /qgchg/ ichg
         end subroutine chepevt
-        block data qgsdat ! in :qgsII04:impy_qgsII.f
+        block data qgsdat ! in :_qgsII04:impy_qgsII.f
             integer, optional,dimension(200) :: ictabl=0
             integer, optional,dimension(21) :: iqtabl=51
             common /crqgslin/ ictabl,iqtabl
         end block data qgsdat
-        subroutine impy_openlogfile(fname,opunit) ! in :qgsII04:/home/afedyni/devel/impy/src/logging.f
+        subroutine impy_openlogfile(fname,opunit) ! in :_qgsII04:/app/src/fortran/logging.f
             character*300 :: fname
             integer :: opunit
         end subroutine impy_openlogfile
-        subroutine impy_closelogfile(opunit) ! in :qgsII04:/home/afedyni/devel/impy/src/logging.f
+        subroutine impy_closelogfile(opunit) ! in :_qgsII04:/app/src/fortran/logging.f
             integer :: opunit
         end subroutine impy_closelogfile
     end interface 

@@ -61,7 +61,7 @@ set(CMAKE_Fortran_FLAGS_RELEASE -O3)
 if (UNIX)
   add_compile_options(
     -Wno-uninitialized
-    # $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
+    $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
   )
   if (APPLE)
@@ -297,7 +297,7 @@ f2py_add_module(_urqmd34
   ${f2py_dir}/_urqmd34.pyf
   ${f2py_dir}/_urqmd34module.c
   ${f2py_dir}/_urqmd34-f2pywrappers.f
-  ${f2py_dir}/_urqmd34-f2pywrappers2.f90
+  # ${f2py_dir}/_urqmd34-f2pywrappers2.f90
   ${urqmd34_sources}
 )
 # to find terms.mod ?
