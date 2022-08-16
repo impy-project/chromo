@@ -151,25 +151,25 @@ CLEANEXT = *.prj *.chk core *.dSYM *$(LEXT) *.f2l $(COPY_DUMP) *.cmdx *.cmod *.i
 
 export
 
-all: odir src
+all: odir src/fortran
 
 .PHONY: odir
 odir:
 	 $(MKDIR_COMMAND) "$(LIB_DIR)"
 
-.PHONY: src
-src:
+.PHONY: src/fortran
+src/fortran:
 	$(MAKE) -C $@
 
 .PHONY: clean
 clean:
 	$(DEL_COMMAND) $(TARGET) *.o *.prj *.chk core *$(LEXT) $(COPY_DUMP)
-	$(MAKE) --directory=src clean
+	$(MAKE) --directory=src/fortran clean
 
 .PHONY: distclean
 distclean: clean
 	$(DEL_COMMAND) *$(LEXT) *.pyf *.dSYM lib$(PATHSEP)* $(COPY_DUMP)
-	$(MAKE) --directory=src distclean
+	$(MAKE) --directory=src/fortran distclean
 	rm impy/lib/*
 
 %.o: %.f

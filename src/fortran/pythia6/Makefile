@@ -23,14 +23,15 @@ install: pythia6$(LEXT)
 	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
 
 #PYTHIA
-pythia6$(LEXT): pythia6.pyf $(PYTHIA6).o $(LOGO) 
-	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" pythia6.pyf \
+pythia6$(LEXT): _pythia6.pyf $(PYTHIA6).o $(LOGO) 
+	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" _pythia6.pyf \
 	$(PYTHIA6).o $(LOGO) >> pythia6.f2l 2>&1
 
-pythia6.pyf: $(PYTHIA6).f $(LOGS)
-	$(F2PY) -m pythia6 -h pythia6.pyf --overwrite-signature \
+_pythia6.pyf: $(PYTHIA6).f $(LOGS)
+	$(F2PY) -m _pythia6 -h _pythia6.pyf --overwrite-signature \
 	only: pyinit pyexec pytune pylist pyevnt pyevnw pystat pyedit pyhepc \
 	pychge pycomp pyk $(LOGF) : $(PYTHIA6).f $(LOGS) > pythia6.f2l 2>&1
+	$(F2PY) _pythia6.pyf
 
 
 .f.o:

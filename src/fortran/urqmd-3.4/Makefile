@@ -39,14 +39,15 @@ distclean: clean
 install: urqmd34$(LEXT)
 	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
 
-urqmd34$(LEXT): urqmd34.pyf $(URQMD_OBJS) impy_urqmd.o $(LOGO) $(RND)
-	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" urqmd34.pyf \
+urqmd34$(LEXT): _urqmd34.pyf $(URQMD_OBJS) impy_urqmd.o $(LOGO) $(RND)
+	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" _urqmd34.pyf \
 	$(LOGO) $(RND) $(URQMD_OBJS) impy_urqmd.o >> urqmd34.f2l 2>&1
 
-urqmd34.pyf: $(URQMD_SRCS) $(URQMD_90SRCS) $(RNDS) Makefile
-	$(F2PY) -m urqmd34 -h urqmd34.pyf --overwrite-signature \
+_urqmd34.pyf: $(URQMD_SRCS) $(URQMD_90SRCS) $(RNDS) Makefile
+	$(F2PY) -m _urqmd34 -h _urqmd34.pyf --overwrite-signature \
 	only: $(SFUNCS) $(LOGF)  : $(URQMD_SRCS) $(URQMD_90SRCS) \
 	$(LOGS) $(RNDS) impy_urqmd.f > urqmd34.f2l 2>&1
+	$(F2PY) _urqmd34.pyf
 
 sources/%.o: sources/%.f
 	$(FC) -c $(OPT) -o $@ $<

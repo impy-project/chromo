@@ -26,13 +26,14 @@ distclean: clean
 install: $(LIB_NAME)$(LEXT)
 	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
 
-sophia$(LEXT): sophia.pyf $(RND) $(OBJS) $(LOGO) $(SRCS)
-	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" sophia.pyf \
+sophia$(LEXT): _sophia.pyf $(RND) $(OBJS) $(LOGO) $(SRCS)
+	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" _sophia.pyf \
 	$(RND) $(LOGO) $(OBJS) >> sophia.f2l 2>&1
 
-sophia.pyf: $(RNDS) $(SRCS) $(LOGS) $(OBJS)
-	$(F2PY) -m sophia -h sophia.pyf --overwrite-signature \
+_sophia.pyf: $(RNDS) $(SRCS) $(LOGS) $(OBJS)
+	$(F2PY) -m _sophia -h _sophia.pyf --overwrite-signature \
 	only: $(SFUNCS) $(LOGF) : $(SRCS) $(LOGS) $(RNDS) > sophia.f2l 2>&1
+	$(F2PY) _sophia.pyf
 
 .f.o:
 	$(FC) -c $(OPT) $<

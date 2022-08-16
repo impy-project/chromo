@@ -9,11 +9,11 @@ export SIGFUNC = sibyll sibyll_ini sib_sigma_hp sib_sigma_hair sib_sigma_hnuc \
 	$(LOGF)
 
 # Fortran functions for PyInteractionModels
-export PIM_FUNCS_F = $(WORK_DIR)$(PATHSEP)src$(PATHSEP)sibyll$(PATHSEP)sibyll_init.f $(LOGS)
-export PIM_FUNCS_O = $(WORK_DIR)$(PATHSEP)src$(PATHSEP)sibyll$(PATHSEP)sibyll_init.o $(LOGO) $(RND)
+export PIM_FUNCS_F = $(WORK_DIR)$(PATHSEP)src$(PATHSEP)fortran$(PATHSEP)sibyll$(PATHSEP)sibyll_init.f $(LOGS)
+export PIM_FUNCS_O = $(WORK_DIR)$(PATHSEP)src$(PATHSEP)fortran$(PATHSEP)sibyll$(PATHSEP)sibyll_init.o $(LOGO) $(RND)
 
 export SIBMISC_21_F = sib21aux.f 
-export SIBMISC_21_O = sib21aux.o $(WORK_DIR)$(PATHSEP)src$(PATHSEP)sibyll$(PATHSEP)sibyll_init.o $(LOGO) sib21rnd.o
+export SIBMISC_21_O = sib21aux.o $(WORK_DIR)$(PATHSEP)src$(PATHSEP)fortran$(PATHSEP)sibyll$(PATHSEP)sibyll_init.o $(LOGO) sib21rnd.o
 
 all: install
 
@@ -23,69 +23,76 @@ clean:
 
 .PHONY: distclean
 distclean: clean
-	rm -f *.pyf *.pyd *.so 
+	rm -f _*.pyf *.pyd *.so 
 
 .PHONY: install
 install: sib21$(LEXT) sib23$(LEXT) sib23c00$(LEXT) sib23c01$(LEXT) sib23c02$(LEXT) sib23c03$(LEXT) sib23d$(LEXT)
 	$(COPY_COMMAND) *$(LEXT) $(LIB_DIR)
 
-sib21$(LEXT): sib21.pyf $(SIBMISC_21_O) $(PIM_FUNCS_O) sibyll_21.o
-	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" sib21.pyf sibyll_21.o $(SIBMISC_21_O) >> sib21.f2l 2>&1
+sib21$(LEXT): _sib21.pyf $(SIBMISC_21_O) $(PIM_FUNCS_O) sibyll_21.o
+	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" _sib21.pyf sibyll_21.o $(SIBMISC_21_O) >> sib21.f2l 2>&1
 
-sib21.pyf: sibyll_21.f $(SIBMISC_21_F) $(PIM_FUNCS_F) Makefile
-	$(F2PY) -m sib21 -h sib21.pyf --overwrite-signature only: $(SIGFUNC) sibhep1 : sibyll_21.f $(SIBMISC_21_F) $(PIM_FUNCS_F) > sib21.f2l 2>&1
+_sib21.pyf: sibyll_21.f $(SIBMISC_21_F) $(PIM_FUNCS_F) Makefile
+	$(F2PY) -m _sib21 -h _sib21.pyf --overwrite-signature only: $(SIGFUNC) sibhep1 : sibyll_21.f $(SIBMISC_21_F) $(PIM_FUNCS_F) > sib21.f2l 2>&1
+	$(F2PY) _sib21.pyf
 
 sib21rnd.o:
-	$(FC) -c $(OPT) -cpp -DSIBYLL_SP ..$(PATHSEP)rangen.f -o sib21rnd.o
+	$(FC) -c $(OPT) -cpp -DSIBYLL_SP ..$(PATHSEP)rangen.fpp -o sib21rnd.o
 
-sib23$(LEXT): sib23.pyf $(PIM_FUNCS_O) sibyll2.3.o 
+sib23$(LEXT): _sib23.pyf $(PIM_FUNCS_O) sibyll2.3.o 
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
-	sib23.pyf \
+	_sib23.pyf \
 	sibyll2.3.o $(PIM_FUNCS_O) >> sib23.f2l 2>&1
 
-sib23.pyf: sibyll2.3.f $(PIM_FUNCS_F) Makefile
-	$(F2PY) -m sib23 -h sib23.pyf --overwrite-signature \
+_sib23.pyf: sibyll2.3.f $(PIM_FUNCS_F) Makefile
+	$(F2PY) -m _sib23 -h _sib23.pyf --overwrite-signature \
 	only: $(SIGFUNC) sibhep3 : sibyll2.3.f $(PIM_FUNCS_F) > sib23.f2l 2>&1
-
-sib23c00$(LEXT): sib23c00.pyf $(PIM_FUNCS_O) sibyll2.3c00.o 
+	$(F2PY) _sib23.pyf
+	
+sib23c00$(LEXT): _sib23c00.pyf $(PIM_FUNCS_O) sibyll2.3c00.o 
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
-	sib23c00.pyf sibyll2.3c00.o $(PIM_FUNCS_O) >> sib23c00.f2l 2>&1
+	_sib23c00.pyf sibyll2.3c00.o $(PIM_FUNCS_O) >> sib23c00.f2l 2>&1
 
-sib23c00.pyf: sibyll2.3c00.f $(PIM_FUNCS_F) Makefile
-	$(F2PY) -m sib23c00 -h sib23c00.pyf --overwrite-signature \
+_sib23c00.pyf: sibyll2.3c00.f $(PIM_FUNCS_F) Makefile
+	$(F2PY) -m _sib23c00 -h _sib23c00.pyf --overwrite-signature \
 	only: $(SIGFUNC) sibhep3 : sibyll2.3c00.f $(PIM_FUNCS_F) > sib23c00.f2l 2>&1
-
-sib23c01$(LEXT): sib23c01.pyf $(PIM_FUNCS_O) sibyll2.3c01.o 
+	$(F2PY) _sib23c00.pyf
+	
+sib23c01$(LEXT): _sib23c01.pyf $(PIM_FUNCS_O) sibyll2.3c01.o 
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
-	sib23c01.pyf sibyll2.3c01.o $(PIM_FUNCS_O) >> sib23c01.f2l 2>&1
+	_sib23c01.pyf sibyll2.3c01.o $(PIM_FUNCS_O) >> sib23c01.f2l 2>&1
 
-sib23c01.pyf: sibyll2.3c01.f $(PIM_FUNCS_F) Makefile
-	$(F2PY) -m sib23c01 -h sib23c01.pyf --overwrite-signature \
+_sib23c01.pyf: sibyll2.3c01.f $(PIM_FUNCS_F) Makefile
+	$(F2PY) -m _sib23c01 -h _sib23c01.pyf --overwrite-signature \
 	only: $(SIGFUNC) sibhep3 : sibyll2.3c01.f $(PIM_FUNCS_F) > sib23c01.f2l 2>&1
-
-sib23c02$(LEXT): sib23c02.pyf $(PIM_FUNCS_O) sibyll2.3c02.o 
+	$(F2PY) _sib23c01.pyf
+	
+sib23c02$(LEXT): _sib23c02.pyf $(PIM_FUNCS_O) sibyll2.3c02.o 
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
-	sib23c02.pyf sibyll2.3c02.o $(PIM_FUNCS_O) >> sib23c02.f2l 2>&1
+	_sib23c02.pyf sibyll2.3c02.o $(PIM_FUNCS_O) >> sib23c02.f2l 2>&1
 
-sib23c02.pyf: sibyll2.3c02.f $(PIM_FUNCS_F) Makefile
-	$(F2PY) -m sib23c02 -h sib23c02.pyf --overwrite-signature \
+_sib23c02.pyf: sibyll2.3c02.f $(PIM_FUNCS_F) Makefile
+	$(F2PY) -m _sib23c02 -h _sib23c02.pyf --overwrite-signature \
 	only: $(SIGFUNC) sibhep3 : sibyll2.3c02.f $(PIM_FUNCS_F) > sib23c02.f2l 2>&1
-
-sib23c03$(LEXT): sib23c03.pyf $(PIM_FUNCS_O) sibyll2.3c03.o 
+	$(F2PY) _sib23c02.pyf
+	
+sib23c03$(LEXT): _sib23c03.pyf $(PIM_FUNCS_O) sibyll2.3c03.o 
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
-	sib23c03.pyf sibyll2.3c03.o $(PIM_FUNCS_O) >> sib23c03.f2l 2>&1
+	_sib23c03.pyf sibyll2.3c03.o $(PIM_FUNCS_O) >> sib23c03.f2l 2>&1
 
-sib23c03.pyf: sibyll2.3c03.f $(PIM_FUNCS_F) Makefile
-	$(F2PY) -m sib23c03 -h sib23c03.pyf --overwrite-signature \
+_sib23c03.pyf: sibyll2.3c03.f $(PIM_FUNCS_F) Makefile
+	$(F2PY) -m _sib23c03 -h _sib23c03.pyf --overwrite-signature \
 	only: $(SIGFUNC) sibhep3 : sibyll2.3c03.f $(PIM_FUNCS_F) > sib23c03.f2l 2>&1
-
-sib23d$(LEXT): sib23d.pyf $(PIM_FUNCS_O) sibyll2.3d.o 
+	$(F2PY) _sib23c03.pyf
+	
+sib23d$(LEXT): _sib23d.pyf $(PIM_FUNCS_O) sibyll2.3d.o 
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
-	sib23d.pyf sibyll2.3d.o $(PIM_FUNCS_O) >> sib23d.f2l 2>&1
+	_sib23d.pyf sibyll2.3d.o $(PIM_FUNCS_O) >> sib23d.f2l 2>&1
 
-sib23d.pyf: sibyll2.3d.f $(PIM_FUNCS_F) Makefile
-	$(F2PY) -m sib23d -h sib23d.pyf --overwrite-signature \
+_sib23d.pyf: sibyll2.3d.f $(PIM_FUNCS_F) Makefile
+	$(F2PY) -m _sib23d -h _sib23d.pyf --overwrite-signature \
 	only: $(SIGFUNC) sibhep3 : sibyll2.3d.f $(PIM_FUNCS_F) > sib23d.f2l 2>&1
-
+	$(F2PY) _sib23d.pyf
+	
 .f.o:
 	$(FC) -c -cpp $(OPT) $<

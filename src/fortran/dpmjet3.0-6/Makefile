@@ -49,13 +49,14 @@ install: dpmjet306$(LEXT)
 dpm3usr: sources$(PATHSEP)user3.0-6.o $(DPM_OBJS)
 	$(FC) $(DPM_OBJS) -o dpm3usr
 
-dpmjet306$(LEXT): dpmjet306.pyf $(DPM_OBJS) Makefile
+dpmjet306$(LEXT): _dpmjet306.pyf $(DPM_OBJS) Makefile
 	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" \
-	dpmjet306.pyf $(DPM_OBJS) $(LOGO) >> dpmjet306.f2l 2>&1
+	_dpmjet306.pyf $(DPM_OBJS) $(LOGO) >> dpmjet306.f2l 2>&1
 
-dpmjet306.pyf: $(DPM_SRCS) Makefile
-	$(F2PY) -m dpmjet306 -h dpmjet306.pyf --overwrite-signature \
+_dpmjet306.pyf: $(DPM_SRCS) Makefile
+	$(F2PY) -m _dpmjet306 -h _dpmjet306.pyf --overwrite-signature \
 	only: $(DPMJET_FUNCS) : $(DPM_SRCS) $(LOGS) > dpmjet306.f2l 2>&1
+	$(F2PY) _dpmjet306.pyf
 
 sources/%.o: sources/%.f
 	$(FC) -c $(FOPT) -o $@ $<

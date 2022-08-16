@@ -32,11 +32,12 @@ install: eposlhc$(LEXT)
 example: sources/epos_example.f $(EX_OBJS)
 	$(FC) sources$(PATHSEP)epos_example.f $(EX_OBJS) -o epos_example.exe
 
-eposlhc$(LEXT): eposlhc.pyf $(EPOS_OBJS)
-	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" eposlhc.pyf $(EPOS_OBJS) $(LOGO) >> epos-lhc.f2l 2>&1
+eposlhc$(LEXT): _eposlhc.pyf $(EPOS_OBJS)
+	$(F2PY_L) -c $(F2PY_CCONF) --opt="$(OPT)" _eposlhc.pyf $(EPOS_OBJS) $(LOGO) >> epos-lhc.f2l 2>&1
 
-eposlhc.pyf: sources/epos-bas-lhc.f sources/epos_interface.f Makefile
-	$(F2PY) -m eposlhc -h eposlhc.pyf --overwrite-signature only: $(EPOS_FUNC) : sources$(PATHSEP)epos-bas-lhc.f sources$(PATHSEP)epos-ids-lhc.f sources$(PATHSEP)epos_interface.f $(LOGS) > epos-lhc.f2l 2>&1
+_eposlhc.pyf: sources/epos-bas-lhc.f sources/epos_interface.f Makefile
+	$(F2PY) -m _eposlhc -h _eposlhc.pyf --overwrite-signature only: $(EPOS_FUNC) : sources$(PATHSEP)epos-bas-lhc.f sources$(PATHSEP)epos-ids-lhc.f sources$(PATHSEP)epos_interface.f $(LOGS) > epos-lhc.f2l 2>&1
+	$(F2PY) _eposlhc.pyf
 
 sources/%.o: sources/%.f
 	$(FC) -c $(OPT) -o $@ $<

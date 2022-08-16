@@ -6,17 +6,17 @@
 #
 
 # Global variables for all recipes
-export RNDS = $(PWD)$(PATHSEP)src$(PATHSEP)rangen.f
-export RND = $(PWD)$(PATHSEP)src$(PATHSEP)rangen.o
-export LOGS = $(PWD)$(PATHSEP)src$(PATHSEP)logging.f
-export LOGO = $(PWD)$(PATHSEP)src$(PATHSEP)logging.o
+export RNDS = $(PWD)$(PATHSEP)src$(PATHSEP)fortran$(PATHSEP)rangen.fpp
+export RND = $(PWD)$(PATHSEP)src$(PATHSEP)fortran$(PATHSEP)rangen.o
+export LOGS = $(PWD)$(PATHSEP)src$(PATHSEP)fortran$(PATHSEP)logging.f
+export LOGO = $(PWD)$(PATHSEP)src$(PATHSEP)fortran$(PATHSEP)logging.o
 
 define \n
 
 
 endef
 
-SUBDIRS = EPOS-LHC pythia6 qgsjet sophia sibyll dpmjet3.0-6 dpmjetIII-19.1 dpmjetIII-19.3 urqmd-3.4 
+SUBDIRS = sibyll qgsjet urqmd-3.4 EPOS-LHC pythia6  sophia dpmjet3.0-6 dpmjetIII-19.3 dpmjetIII-19.1
 
 all: $(SUBDIRS)
 
@@ -28,6 +28,9 @@ $(SUBDIRS): $(RND) $(LOGO)
 	$(MAKE) -C $@ install
 
 %.o: %.f
+	$(FC) -c $(OPT) -cpp $<
+
+%.o: %.fpp
 	$(FC) -c $(OPT) -cpp $<
 
 %.o: %.f90
