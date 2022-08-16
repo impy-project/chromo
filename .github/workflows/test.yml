@@ -25,19 +25,24 @@ jobs:
             python-version: "3.9"
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
-    - name: generate key for caching from lfs files
-      run: git lfs ls-files -l | cut -d' ' -f1 | sort > lfs-assets-id
-    - name: restore lfs cache
-      uses: actions/cache@v2
+    - name: Create LFS file list
+      run: |
+        git lfs ls-files --long --include  "${{ inputs.include }}" --exclude  "${{ inputs.exclude }}" | cut -d ' ' -f1 | sort > .lfs-assets-id
+      shell: bash
+
+    - name: Restore LFS cache
+      uses: actions/cache@v3
       id: lfs-cache
       with:
         path: .git/lfs
-        key: ${{ runner.os }}-lfs-${{ hashFiles('lfs-assets-id') }}-v1
-    - name: pull lfs files
+        key: lfs-${{ hashFiles('.lfs-assets-id') }}-v1
+
+    - name: Git LFS Pull
       run: git lfs pull
+      shell: bash
     - uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
