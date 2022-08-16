@@ -1,7 +1,6 @@
 from impy.constants import TeV
 from impy.kinematics import EventKinematics
 import impy.models as im
-from impy.models import Sophia20
 from impy.common import MCRun
 from collections import Counter
 import pytest
@@ -33,9 +32,12 @@ def test_new_interface(model):
 
     p1pdg = -211  # pi-
     p2pdg = 2212  # proton
-    if model is Sophia20:
+    if model is im.Sophia20:
         # Sophia can only do γp, γn
         p1pdg = 22  # gamma
+    elif model is im.Phojet112:
+        # The old phojet needs more tweaking for pion-proton (is not related to test)
+        p1pdg = 2212  # proton
     # elif model is models.Pythia6:
     #     # Pythia6 can only do ee, ep, pp
     #     p1pdg = 2212  # proton
