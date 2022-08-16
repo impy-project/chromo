@@ -51,7 +51,8 @@ def test_new_interface(model):
     # Some models need to initialize same fortran code,
     # which can only be initialized once, therefore run
     # in separate thread
-    with Pool(1) as p:
+    # maxtasksperchild=1 is needed to prevent multiproc to recycle workers and take for each task a fresh interpreter.
+    with Pool(1, maxtasksperchild=1) as p:
         r = p.apply_async(run_model, (model, ekin))
         try:
             c = r.get(timeout=30)

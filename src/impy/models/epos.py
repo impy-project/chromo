@@ -181,7 +181,7 @@ class EPOSRun(MCRun):
 
         # Set default stable
         self._define_default_fs_particles()
-        self.lib.charge_vect = np.vectorize(self.lib.getcharge, otypes=[np.int])
+        self.lib.charge_vect = np.vectorize(self.lib.getcharge, otypes=[np.int32])
         self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
