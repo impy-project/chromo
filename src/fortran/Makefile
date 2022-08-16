@@ -16,7 +16,9 @@ define \n
 
 endef
 
+
 SUBDIRS = sibyll qgsjet urqmd-3.4 EPOS-LHC pythia6  sophia dpmjet3.0-6 dpmjetIII-19.3 dpmjetIII-19.1
+
 
 all: $(SUBDIRS)
 

@@ -29,7 +29,7 @@ for event in generator(10000):
         nevents += 1
         average_pt += np.mean(pt)
 
-average_pt = 1 / float(nevents) * average_pt
+average_pt = average_pt / nevents
 print("Average pT for charged pions {0:4.3f}".format(average_pt))
 ```
 

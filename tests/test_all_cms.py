@@ -24,7 +24,7 @@ def run_generator(model, nevents):
             # nuc2_prop=(14,7)
         )
 
-    impy_config["user_frame"] = "center-of-mass"
+        impy_config["user_frame"] = "center-of-mass"
 
     model_name = model.__name__
 
