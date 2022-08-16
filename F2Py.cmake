@@ -87,8 +87,6 @@ function (f2py_add_module target_name)
 
       DEPENDS ${F2PY_ADD_MODULE_INTERFACE_SOURCES}
     )
-
-    message(STATUS "f2py_add_module: Generated ${F2PY_ADD_MODULE_PYF_FILE}")
   else()
     file(WRITE ${F2PY_ADD_MODULE_LOG_FILE} "f2py_add_module: Use existing ${F2PY_ADD_MODULE_PYF_FILE}\n")
     message(STATUS "f2py_add_module: Use existing ${F2PY_ADD_MODULE_PYF_FILE}")
@@ -106,9 +104,10 @@ function (f2py_add_module target_name)
     message(STATUS "f2py_add_module: Use existing ${F2PY_ADD_MODULE_GEN_2}")
   else()
     set(F2PY_ADD_MODULE_GEN_1 ${CMAKE_CURRENT_BINARY_DIR}/${target_name}module.c)
+    set(F2PY_ADD_MODULE_GEN_2 ${CMAKE_CURRENT_BINARY_DIR}/${target_name}-f2pywrappers.f)
 
     add_custom_command(
-      OUTPUT ${F2PY_ADD_MODULE_GEN_1}
+      OUTPUT ${F2PY_ADD_MODULE_GEN_1} ${F2PY_ADD_MODULE_GEN_2}
 
       COMMAND ${PYTHON_EXECUTABLE} -m numpy.f2py
         ${F2PY_ADD_MODULE_PYF_FILE}
@@ -117,10 +116,6 @@ function (f2py_add_module target_name)
 
       DEPENDS ${F2PY_ADD_MODULE_SOURCES} ${F2PY_ADD_MODULE_PYF_FILE}
     )
-    file(GLOB F2PY_ADD_MODULE_GEN_2 ${CMAKE_CURRENT_BINARY_DIR}/${target_name}-f2pywrappers*)
-
-    message(STATUS "f2py_add_module: Generated ${F2PY_ADD_MODULE_GEN_1}")
-    message(STATUS "f2py_add_module: Generated ${F2PY_ADD_MODULE_GEN_2}")
   endif()
 
   add_library(${target_name} MODULE

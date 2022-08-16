@@ -297,7 +297,6 @@ f2py_add_module(_urqmd34
   ${f2py_dir}/_urqmd34.pyf
   ${f2py_dir}/_urqmd34module.c
   ${f2py_dir}/_urqmd34-f2pywrappers.f
-  # ${f2py_dir}/_urqmd34-f2pywrappers2.f90
   ${urqmd34_sources}
 )
 # to find terms.mod ?
@@ -355,41 +354,6 @@ f2py_add_module(_dpmjet306
   ${logging_source}
 )
 
-### dpmjetIII193
-file(GLOB dpmjetIII193_sources
-  ${fortran_dir}/dpmjetIII-19.3/src/phojet/*.f
-  ${fortran_dir}/dpmjetIII-19.3/src/pythia/*.f
-  ${fortran_dir}/dpmjetIII-19.3/src/dpmjet/*.f
-  ${fortran_dir}/dpmjetIII-19.3/common/*.f
-)
-# sources need preprocessing
-set_source_files_properties(
-  ${dpmjetIII193_sources}
-  PROPERTIES
-  Fortran_PREPROCESS True
-)
-f2py_add_module(_dpmjetIII193
-  FUNCTIONS
-  pho_event dt_init dt_kkinc
-  idt_icihad dt_xsglau pycomp dt_initjs dt_rndmst dt_rndm dt_inucas idt_ipdgha dt_evtout
-  pho_init pho_setpar poevt1 poevt2 pho_pname pho_pmass pho_setmdl
-  pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini pho_ptcut
-  pytune pho_rregpar pho_sregpar pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint
-  pho_harxto pho_harxpt pho_setpcomb
-  dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias dt_getptn
-  ${impy_logging}
-  SOURCES
-  ${f2py_dir}/_dpmjetIII193.pyf
-  ${f2py_dir}/_dpmjetIII193module.c
-  ${f2py_dir}/_dpmjetIII193-f2pywrappers.f
-  ${dpmjetIII193_sources}
-  INCLUDE_DIRS
-  ${fortran_dir}/dpmjetIII-19.3/include/phojet
-  ${fortran_dir}/dpmjetIII-19.3/include/dpmjet
-  ${fortran_dir}/dpmjetIII-19.3/include/pythia
-  ${fortran_dir}/dpmjetIII-19.3/include/flinclude
-)
-
 ### dpmjetIII191
 file(GLOB dpmjetIII191_sources
   ${fortran_dir}/dpmjetIII-19.1/src/phojet/*.f
@@ -433,4 +397,39 @@ f2py_add_module(_dpmjetIII191
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
   ${CMAKE_CURRENT_BINARY_DIR}/include
+)
+
+### dpmjetIII193
+file(GLOB dpmjetIII193_sources
+  ${fortran_dir}/dpmjetIII-19.3/src/phojet/*.f
+  ${fortran_dir}/dpmjetIII-19.3/src/pythia/*.f
+  ${fortran_dir}/dpmjetIII-19.3/src/dpmjet/*.f
+  ${fortran_dir}/dpmjetIII-19.3/common/*.f
+)
+# sources need preprocessing
+set_source_files_properties(
+  ${dpmjetIII193_sources}
+  PROPERTIES
+  Fortran_PREPROCESS True
+)
+f2py_add_module(_dpmjetIII193
+  FUNCTIONS
+  pho_event dt_init dt_kkinc
+  idt_icihad dt_xsglau pycomp dt_initjs dt_rndmst dt_rndm dt_inucas idt_ipdgha dt_evtout
+  pho_init pho_setpar poevt1 poevt2 pho_pname pho_pmass pho_setmdl
+  pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini pho_ptcut
+  pytune pho_rregpar pho_sregpar pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint
+  pho_harxto pho_harxpt pho_setpcomb
+  dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias dt_getptn
+  ${impy_logging}
+  SOURCES
+  ${f2py_dir}/_dpmjetIII193.pyf
+  ${f2py_dir}/_dpmjetIII193module.c
+  ${f2py_dir}/_dpmjetIII193-f2pywrappers.f
+  ${dpmjetIII193_sources}
+  INCLUDE_DIRS
+  ${fortran_dir}/dpmjetIII-19.3/include/phojet
+  ${fortran_dir}/dpmjetIII-19.3/include/dpmjet
+  ${fortran_dir}/dpmjetIII-19.3/include/pythia
+  ${fortran_dir}/dpmjetIII-19.3/include/flinclude
 )
