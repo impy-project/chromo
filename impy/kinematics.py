@@ -81,6 +81,11 @@ class CompositeTarget(object):
         self.component_Z = sort_list(self.component_Z, idcs)
         self.component_name = sort_list(self.component_name, idcs)
 
+    def get_maximum_AZ(self):
+        a_val = self.component_A
+        max_ind = a_val.index(max(a_val))
+        return self.component_A[max_ind], self.component_Z[max_ind]
+
     def get_random_AZ(self):
         """Return randomly an (A, Z) tuple according to the component fraction."""
         from numpy.random import choice
@@ -397,6 +402,29 @@ class CompositeTargetKinematics(EventKinematics):
             )
         self._with_composite_target = True
         self.composite_target = composite_target
+
+        # reserve that max energy to at least 'margin_factor'
+        margin_factor = 2.0
+        ecm_max = None
+        plab_max = None
+        elab_max = None
+        ekin_max = None
+
+        if ecm:
+            ecm_max = margin_factor * ecm
+        if plab:
+            plab_max = margin_factor * ecm
+        if elab:
+            elab_max = margin_factor * elab
+        if ekin:
+            ekin_max = margin_factor * ekin
+
+        # make initialization with maximum parameter values
         super().__init__(
-            ecm, plab, elab, ekin, p1pdg, nuc2_prop=composite_target.get_random_AZ()
+            ecm_max,
+            plab_max,
+            elab_max,
+            ekin_max,
+            p1pdg,
+            nuc2_prop=composite_target.get_maximum_AZ(),
         )
