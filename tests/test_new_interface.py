@@ -1,18 +1,15 @@
 from impy.constants import TeV
 from impy.kinematics import EventKinematics
 import impy.models as im
-from impy.common import MCRun
+import abc
 from collections import Counter
 import pytest
 from multiprocessing import Pool
 from multiprocessing.context import TimeoutError
 
 
-models = set()
-for key in dir(im):
-    obj = getattr(im, key)
-    if hasattr(obj, "__mro__") and MCRun in obj.__mro__:
-        models.add(obj)
+# generate list of all models in impy.models
+models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
 
 
 def run_model(model, ekin):
