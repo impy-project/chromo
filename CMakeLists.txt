@@ -306,13 +306,14 @@ target_include_directories(_urqmd34 PRIVATE ${fortran_dir}/urqmd-3.4/sources)
 f2py_add_module(_pythia6
   FUNCTIONS
   pyinit pyexec pytune pylist pyevnt pyevnw pystat pyedit
-  pyhepc pychge pycomp pyk ${impy_logging}
+  pyhepc pychge pycomp pyk init_rmmard ${impy_logging}
   SOURCES
   ${f2py_dir}/_pythia6.pyf
   ${f2py_dir}/_pythia6module.c
   ${f2py_dir}/_pythia6-f2pywrappers.f
   ${fortran_dir}/pythia6/pythia-6.4.28.f
   ${logging_source}
+  ${rangen_source}
 )
 
 ### sophia
