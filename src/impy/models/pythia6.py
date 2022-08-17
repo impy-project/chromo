@@ -119,7 +119,6 @@ class PYTHIA6Run(MCRun):
 
         if seed == "random":
             seed = randint(1000000, 10000000)
-            sseed = str(seed)
         else:
             seed = int(seed)
 
