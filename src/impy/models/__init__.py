@@ -17,7 +17,7 @@ from impy.models.qgsjet import QGSJet01c, QGSJetII03, QGSJetII04  # noqa
 from impy.models.dpmjetIII import DpmjetIII191, DpmjetIII193  # noqa
 from impy.models.phojet import Phojet112, Phojet191  # noqa
 from impy.models.urqmd import UrQMD34  # noqa
+from impy.models.pythia6 import Pythia6  # noqa
 
 # - Currently not working -
-# from impy.models.pythia6 import Pythia6  # noqa
 # from impy.models.pythia8 import Pythia8  # noqa

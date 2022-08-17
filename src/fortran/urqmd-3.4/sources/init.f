@@ -342,7 +342,6 @@ c           if(bdist.gt.(nucrad(Ap)+nucrad(At)+2*CTParam(30)))
 c    &           bdist=nucrad(Ap)+nucrad(At)+2*CTParam(30)
 c hjd1
  215        bimp=sqrt(ranf(0))*bdist
-cdh         if (bimp<bmin) goto 215
             if (bimp .lt.  bmin) goto 215
          elseif(CTOption(5).eq.2) then
             if(bdist.gt.(nucrad(Ap)+nucrad(At)+2*CTParam(30))) 

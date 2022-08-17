@@ -35,7 +35,7 @@ def test_new_interface(model):
     if model is im.Sophia20:
         # Sophia can only do γp, γn
         p1pdg = 22  # gamma
-    elif model is im.Phojet112:
+    elif model in [im.Phojet112, im.UrQMD34]:
         # The old phojet needs more tweaking for pion-proton (is not related to test)
         p1pdg = 2212  # proton
     # elif model is models.Pythia6:
