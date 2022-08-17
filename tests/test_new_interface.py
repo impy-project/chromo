@@ -35,12 +35,10 @@ def test_new_interface(model):
     if model is im.Sophia20:
         # Sophia can only do γp, γn
         p1pdg = 22  # gamma
-    elif model in [im.Phojet112, im.UrQMD34]:
+    elif model in [im.Phojet112, im.UrQMD34, im.Pythia6]:
         # The old phojet needs more tweaking for pion-proton (is not related to test)
+        # Pythia6 can only do ee, ep, pp
         p1pdg = 2212  # proton
-    # elif model is models.Pythia6:
-    #     # Pythia6 can only do ee, ep, pp
-    #     p1pdg = 2212  # proton
 
     ekin = EventKinematics(
         ecm=7 * TeV,
@@ -48,10 +46,10 @@ def test_new_interface(model):
         p2pdg=p2pdg,
     )
 
-    # Some models need to initialize same fortran code,
-    # which can only be initialized once, therefore run
-    # in separate thread
-    # maxtasksperchild=1 is needed to prevent multiproc to recycle workers and take for each task a fresh interpreter.
+    # Some models need to initialize same fortran code, which can only be
+    # initialized once. As a workaround, we run each model in a separate
+    # thread. When running several jobs, maxtasksperchild=1 is needed to
+    # use a fresh interpreter for each task (not needed here, but still).
     with Pool(1, maxtasksperchild=1) as p:
         r = p.apply_async(run_model, (model, ekin))
         try:
@@ -63,4 +61,3 @@ def test_new_interface(model):
     assert c[211] > 0, "pi+"
     assert c[-211] > 0, "pi-"
     assert c[2212] > 0, "p"
-    # assert c[-2212] > 0, "pbar" $ This is a rare particle. Might be that it doesn't occur in within 10 events.
