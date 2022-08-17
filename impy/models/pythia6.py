@@ -117,16 +117,11 @@ class PYTHIA6Run(MCRun):
         if seed == "random":
             seed = randint(1000000, 10000000)
             sseed = str(seed)
-            self.lib.pydatr.mrpy[:4] = (
-                int(sseed[0:2]),
-                int(sseed[2:4]),
-                int(sseed[4:6]),
-                int(sseed[6:]),
-            )
         else:
             seed = int(seed)
         info(5, "Using seed:", seed)
 
+        self.lib.init_rmmard(seed)
         self.attach_log(fname=logfname)
 
         if impy_config["pythia6"]["new_mpi"]:
@@ -139,7 +134,7 @@ class PYTHIA6Run(MCRun):
         # self.mstp[51]
 
         # self.lib.pysubs.msel = 2
-        # self._set_event_kinematics(event_kinematics)
+        self._set_event_kinematics(event_kinematics)
 
         # Set default stable
         self._define_default_fs_particles()
@@ -160,6 +155,7 @@ class PYTHIA6Run(MCRun):
 
     def generate_event(self):
         self.event_call()
+        self.lib.pyhepc(1)
         return False
 
 
