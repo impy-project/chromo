@@ -112,7 +112,7 @@ class PYTHIA6Run(MCRun):
         self.lib.pydat1.mstu[10] = lun
 
     def init_generator(self, event_kinematics, seed="random", logfname=None):
-        # from random import randint
+        from random import randint
         from impy.constants import sec2cm
 
         self._abort_if_already_initialized()
