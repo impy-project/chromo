@@ -129,7 +129,7 @@ class UrQMDRun(MCRun):
         # Set impact parameter (to be revisited)
         # AF: Does this work for pions or kaons??
         self.lib.rsys.bdist = (
-            self.lib.nucrad(self.lib.sys.ap) 
+            self.lib.nucrad(self.lib.sys.ap)
             + self.lib.nucrad(self.lib.sys.at)
             + 2 * self.lib.options.ctparam[30 - 1]
         )
