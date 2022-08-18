@@ -21,9 +21,10 @@ class Writer(ABC):
 
 class HepMCWriter(Writer):
     def __init__(self, filename):
-        self._hep = __import__("pyhepmc")  # delay import till instantiation
-        self._writer = self._hep.WriterAscii(filename)
-        self._genevent = self._hep.GenEvent()
+        import pyhepmc  # delay import until initialization
+
+        self._writer = pyhepmc.WriterAscii(filename)
+        self._genevent = pyhepmc.GenEvent()
         self._event_number = 0
 
     def write(self, event):
@@ -38,18 +39,18 @@ class HepMCWriter(Writer):
         # - add cross-section info
         # - add info about generator
 
-        self._genevent.clear()
         pem = impy_event._pem_arr.T  # the need to transpose this is bad
         vt = impy_event._vt_arr.T  # the need to transpose this is bad
         n = pem.shape[0]
 
+        breakpoint()
+
         # parents = impy_event.parents.T[:n]
-        self._hep.fill_genevent_from_hepevt(
-            self._genevent,
+        self._genevent.from_hepevent(
             event_number=self._event_number,
-            p=pem[:, :4],
-            m=impy_event.m,
-            v=vt,
+            momentum=pem[:, :4],
+            mass=impy_event.m,
+            position=vt,
             pid=impy_event.p_ids,
             parents=impy_event.parents.T[:n],
             children=impy_event.children.T[:n],

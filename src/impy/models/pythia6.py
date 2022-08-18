@@ -55,13 +55,13 @@ class PYTHIA6Event(MCEvent):
 
     @property
     def parents(self):
-        MCEvent.parents(self)
-        return self.lib.hepevt.jmohep
+        super().parents()
+        return self.lib.hepevt.jmohep[:, : self.npart]
 
     @property
     def children(self):
-        MCEvent.children(self)
-        return self.lib.hepevt.jdahep
+        super().children()
+        return self.lib.hepevt.jdahep[:, : self.npart]
 
     @property
     def _charge_init(self):
