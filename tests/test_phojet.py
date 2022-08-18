@@ -30,8 +30,8 @@ def test_phojet():
     c = Counter()
     for event in gen(10):
         event.filter_final_state()
-        assert len(event.p_ids) > 0
-        c.update(event.p_ids)
+        assert len(event.id) > 0
+        c.update(event.id)
 
     assert c[211] > 0, "pi+"
     assert c[-211] > 0, "pi-"

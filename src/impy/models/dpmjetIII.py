@@ -27,7 +27,7 @@ class DpmjetIIIEvent(MCEvent):
             event_frame=event_frame,
             nevent=evt.nevhkk,
             npart=evt.nhkk,
-            p_ids=evt.idhkk,
+            id=evt.idhkk,
             status=evt.isthkk,
             px=px,
             py=py,

@@ -67,15 +67,15 @@ def run_generator(model):
             event.filter_final_state_charged()
 
             hist_p += np.histogram(
-                event.xlab[event.p_ids == 2212],
+                event.xlab[event.id == 2212],
                 bins=xlab_bins,
-                weights=event.xlab[event.p_ids == 2212] ** 1.7,
+                weights=event.xlab[event.id == 2212] ** 1.7,
             )[0]
 
             hist_pi += np.histogram(
-                event.xlab[np.abs(event.p_ids) == 211],
+                event.xlab[np.abs(event.id) == 211],
                 bins=xlab_bins,
-                weights=event.xlab[np.abs(event.p_ids) == 211] ** 1.7,
+                weights=event.xlab[np.abs(event.id) == 211] ** 1.7,
             )[0]
 
         return True, model.__class__.__name__, log, hist_p, hist_pi

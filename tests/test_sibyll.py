@@ -24,7 +24,7 @@ def test_sibyll():
     for event in generator(2):
         # generator.lib.pydat3.mdcy[102 - 1, 0] = 1
         event.filter_final_state_charged()
-        c.update(event.p_ids)
+        c.update(event.id)
 
     assert c[211] > 0
     assert c[2212] > 0

@@ -51,7 +51,7 @@ class HepMCWriter(Writer):
             p=pem[:, :4],
             m=impy_event.m,
             v=vt,
-            pid=impy_event.p_ids,
+            pid=impy_event.id,
             parents=impy_event.parents.T[:n],
             children=impy_event.children.T[:n],
             status=impy_event.status,  # particle status

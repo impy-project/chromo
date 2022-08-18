@@ -20,7 +20,7 @@ class PYTHIA8Event(MCEvent):
     jmohep = np.zeros((2, _len_evt))
     jdahep = np.zeros((2, _len_evt))
     status = np.zeros(_len_evt, dtype="int")
-    p_ids = np.zeros(_len_evt, dtype="int")
+    id = np.zeros(_len_evt, dtype="int")
     p_charge = np.zeros(_len_evt, dtype="int")
     n_events = 0
 
@@ -31,7 +31,7 @@ class PYTHIA8Event(MCEvent):
         nhep = 0
         for p in lib.event:
             self.status[nhep] = p.status()
-            self.p_ids[nhep] = p.id()
+            self.id[nhep] = p.id()
             self.p_charge[nhep] = p.charge()
             self.vhep[:, nhep] = (p.xProd(), p.yProd(), p.zProd(), p.tProd())
             self.phep[:, nhep] = (p.px(), p.py(), p.pz(), p.e(), p.m())
@@ -49,7 +49,7 @@ class PYTHIA8Event(MCEvent):
             event_frame=event_frame,
             nevent=self.n_events,
             npart=nhep,
-            p_ids=self.p_ids,
+            id=self.id,
             status=self.status,
             px=px,
             py=py,

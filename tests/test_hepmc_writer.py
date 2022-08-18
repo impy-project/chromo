@@ -47,7 +47,7 @@ def test_hepmc_writer(model):
             n = event.npart
             pem = event._pem_arr.T
             vt = event._vt_arr.T
-            pid = event.p_ids
+            pid = event.id
             status = event.status
             parents = {}
             if event.parents is not None:

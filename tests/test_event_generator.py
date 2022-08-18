@@ -16,4 +16,4 @@ def test_model(model):
         assert np.sum(event.py)
         assert np.sum(event.pz)
         assert np.sum(event.en)
-        assert np.sum(event.p_ids)
+        assert np.sum(event.id)

@@ -35,7 +35,7 @@ class UrQMDEvent(MCEvent):
             event_frame=event_frame,
             nevent=evt.nevhep,
             npart=evt.nhep,
-            p_ids=evt.idhep,
+            id=evt.idhep,
             status=evt.isthep,
             px=px,
             py=py,

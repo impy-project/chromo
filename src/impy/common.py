@@ -21,7 +21,7 @@ class EventData:
     def __init__(
         self,
         npart,
-        p_ids,
+        id,
         status,
         charge,
         px,
@@ -37,7 +37,7 @@ class EventData:
         vt_arr,
     ):
         self.npart = npart
-        self.p_ids = p_ids
+        self.id = id
         self.status = status
         self.charge = charge
         self.px = px
@@ -69,7 +69,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         event_frame (str)  : The frame in which the generator returned the variables
         nevent (int)       : Number of current event
         npart (int)        : Number of particles on the stack & length of px, py...
-        p_ids (np.array)   : particle ID according to PDG scheme
+        id (np.array)      : particle ID according to PDG scheme
         status (np.array)  : HEPEVT status flag 1=final state
         px (np.array)      : x-momentum in GeV/c
         py (np.array)      : y-momentum in GeV/c
@@ -83,7 +83,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
     """
 
     __sliced_params__ = [
-        "p_ids",
+        "id",
         "status",
         "charge",
         "px",
@@ -106,7 +106,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         event_frame,
         nevent,
         npart,
-        p_ids,
+        id,
         status,
         px,
         py,
@@ -127,7 +127,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
 
         self.nevent = nevent
         self._npart = self.npart = npart
-        self.p_ids = p_ids
+        self.id = id
         self.status = status
         self.px = px
         self.py = py
@@ -180,7 +180,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
         self._views_cache.append(
             EventData(
                 self._npart,
-                self.p_ids,
+                self.id,
                 self.status,
                 self.charge,
                 self.px,
@@ -204,7 +204,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
             return
         last = self._views_cache.pop()
         self.npart = last.npart
-        self.p_ids = last.p_ids
+        self.id = last.id
         self.status = last.status
         self.charge = last.charge
         self.px = last.px
@@ -238,7 +238,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
                 setattr(self, var, getattr(self, var)[self.selection])
 
         # Update the exposed number of particles to the length of slice
-        self.npart = len(self.p_ids)
+        self.npart = len(self.id)
 
         self._is_filtered = True
 
