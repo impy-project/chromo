@@ -114,6 +114,35 @@ class CompositeTarget(object):
         return ostr
 
 
+def recognize_particle_input_type(arg):
+    if isinstance(arg, int):
+        return "pdg_id"
+    elif isinstance(arg, str):
+        return "string"
+    elif isinstance(arg, tuple):
+        if len(arg) != 2:
+            raise ValueError(
+                "tuple (A, Z) should have len == 2, but given = {0}".format(arg)
+            )
+        if not isinstance(arg[0], int):
+            raise ValueError(
+                "1st entry should be 'int' type, but it is {0} = {1}".format(
+                    type(arg[0]), arg[0]
+                )
+            )
+        if not isinstance(arg[1], int):
+            raise ValueError(
+                "1st entry should be 'int' type, but it is {0} = {1}".format(
+                    type(arg[1]), arg[1]
+                )
+            )
+        return "tuple"
+    elif isinstance(arg, CompositeTarget):
+        return "composite_target"
+    else:
+        raise ValueError("Unmaintained parameter type {0} = {1}".format(type(arg), arg))
+
+
 class EventKinematics(object):
     """Handles kinematic variables and conversions between reference frames.
 
@@ -149,17 +178,21 @@ class EventKinematics(object):
         beam=None,
         nuc1_prop=None,
         nuc2_prop=None,
+        particle1=None,
+        particle2=None,
     ):
 
         # Catch input errors
         assert (
             np.sum(np.asarray([ecm, plab, elab, ekin, beam], dtype="bool")) == 1
         ), "Define exclusively one energy/momentum definition"
-        assert p1pdg or nuc1_prop, (
-            "Define either particle id or " + "nuclear properties for side 1."
+        assert np.sum(np.asarray([p1pdg, nuc1_prop, particle1], dtype="bool")) == 1, (
+            "Define either particle id, "
+            + "nuclear properties or particle1 for side 1."
         )
-        assert p2pdg or nuc2_prop, (
-            "Define either particle id or " + "nuclear properties for side 2."
+        assert np.sum(np.asarray([p2pdg, nuc2_prop, particle2], dtype="bool")), (
+            "Define either particle id, "
+            + "nuclear properties or particle2 for side 2."
         )
         assert nuc1_prop is None or (
             isinstance(nuc1_prop, tuple) and len(nuc1_prop) == 2
@@ -167,6 +200,22 @@ class EventKinematics(object):
         assert nuc2_prop is None or (
             isinstance(nuc2_prop, tuple) and len(nuc2_prop) == 2
         ), "Define nuc2_prop as an (A,Z) tuple."
+
+        if particle1:
+            particle_input_type = recognize_particle_input_type(particle1)
+            if particle_input_type == "pdg_id":
+                p1pdg = particle1
+            elif particle_input_type == "tuple":
+                nuc1_prop = particle1
+            elif particle_input_type == "string":
+                raise RuntimeError(
+                    "Setting of particle properties with "
+                    + "string {0} is not implemented".format(particle1)
+                )
+            elif particle_input_type == "composite_target":
+                raise RuntimeError("Only 2nd parameter could be composite target")
+                # nuc1_prop=particle1.get_maximum_AZ()
+                # self._with_composite_target = True
 
         # Store average nucleon mass
         mnuc = 0.5 * (pdata.mass(2212) + pdata.mass(2112))
@@ -187,6 +236,22 @@ class EventKinematics(object):
             if self.A1 == 1 and self.Z1 == 0:
                 self.p1pdg = 2212
             info(20, "Particle 1 is a nucleus.")
+
+        if particle2:
+            particle_input_type = recognize_particle_input_type(particle2)
+            if particle_input_type == "pdg_id":
+                p2pdg = particle2
+            elif particle_input_type == "tuple":
+                nuc2_prop = particle2
+            elif particle_input_type == "string":
+                raise RuntimeError(
+                    "Setting of particle properties with "
+                    + "string {0} is not implemented".format(particle2)
+                )
+            elif particle_input_type == "composite_target":
+                nuc2_prop = particle2.get_maximum_AZ()
+                self._with_composite_target = True
+                self.composite_target = particle2
 
         # Handle target type
         if p2pdg:
@@ -382,49 +447,3 @@ class EventKinematics(object):
         new_en = self.gamma_cm * event.en - self.betagamma_z_cm * event.pz
         event.pz = -self.betagamma_z_cm * event.en + self.gamma_cm * event.pz
         event.en = new_en
-
-
-class CompositeTargetKinematics(EventKinematics):
-    def __init__(
-        self,
-        ecm=None,
-        plab=None,
-        elab=None,
-        ekin=None,
-        p1pdg=None,
-        composite_target=None,
-    ):
-        if composite_target is None or not isinstance(
-            composite_target, CompositeTarget
-        ):
-            raise ValueError(
-                "CompositeTargetKinematics(): composite_target parameter got wrong value"
-            )
-        self._with_composite_target = True
-        self.composite_target = composite_target
-
-        # reserve that max energy to at least 'margin_factor'
-        margin_factor = 2.0
-        ecm_max = None
-        plab_max = None
-        elab_max = None
-        ekin_max = None
-
-        if ecm:
-            ecm_max = margin_factor * ecm
-        if plab:
-            plab_max = margin_factor * ecm
-        if elab:
-            elab_max = margin_factor * elab
-        if ekin:
-            ekin_max = margin_factor * ekin
-
-        # make initialization with maximum parameter values
-        super().__init__(
-            ecm_max,
-            plab_max,
-            elab_max,
-            ekin_max,
-            p1pdg,
-            nuc2_prop=composite_target.get_maximum_AZ(),
-        )
