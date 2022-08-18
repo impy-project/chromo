@@ -44,7 +44,7 @@ print("Average pT for charged pions {0:4.3f}".format(average_pt))
 
     pip install impy
 
-The package is (will be) available as pre-compiled binary wheels, but for now you have to compile it from source, see next subsection.
+The package will be available as a pre-compiled binary wheels in the future, but for now you have to compile it from source, see next subsection.
 
 ### From source
 
@@ -56,13 +56,19 @@ To build from source (the **recursive** flag is important to check out submodule
     cd impy
     pip install -v -e .
 
-This takes a while. The command `pip install -v -e .` installs the package in editable mode (for developing the Python layer) and with verbose output, so that you can watch the compilation happening during installation. Warnings can be ignored, but watch out for errors.
+This takes a while. The command `pip install -v -e .` installs the package in editable mode (for developing the Python layer) and with verbose output, so that you can watch the compilation happening. Warnings can be ignored, but watch out for errors.
+
+To run the tests or try the examples, it is convenient use this modified `pip install` instead:
+
+    pip install -v -e .'[test,examples]'
+
+This installs impy and additional optional Python packages to run tests and examples.
 
 If installation from source fails, please look into the subsection below which explains how to install in impy in a verified docker environment. The docker environment has a properly set up environment verified by us, so that the installation is guaranteed to succeed.
 
-### From source in docker
+### From source in Docker
 
-This guide works on Linux and OSX. You need a running docker server. Please google how to set up docker on your machine.
+This guide works on Linux and OSX. You need a running Docker server. Please google how to set up Docker on your machine.
 
     # download impy
     git clone --recursive https://github.com/impy-project/impy
@@ -100,7 +106,7 @@ docker and install it in your host.
     # exit docker with ctrl+D
     pip install dist/*.whl
 
-This should allow you to use impy also outside docker.
+This should allow you to use impy also outside docker. This works only if you use the same Python version inside and outside of docker.
 
 ## User interface
 
