@@ -7,8 +7,7 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 """
-import six
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod, abstractproperty
 
 import numpy as np
 from impy import impy_config
@@ -53,7 +52,7 @@ class EventData:
         self._vt_arr = vt_arr
 
 
-class MCEvent(object, six.with_metaclass(ABCMeta)):
+class MCEvent(ABC):
     """The basis of interaction between user and all the event generators.
 
     The derived classes are expected to interact with the particle stack
@@ -376,7 +375,7 @@ class MCEvent(object, six.with_metaclass(ABCMeta)):
 # =========================================================================
 # Settings
 # =========================================================================
-class Settings(six.with_metaclass(ABCMeta)):
+class Settings(ABC):
     """Custom classes derived from this template allow to set certain low
     level variables in the generators before or after initialization, or for
     each event.
@@ -424,7 +423,7 @@ class Settings(six.with_metaclass(ABCMeta)):
 
         other_attr = other_instance.__dict__
 
-        for attr, value in six.iteritems(self.__dict__):
+        for attr, value in self.__dict__.items():
             if attr == "lib":
                 continue
             elif attr not in other_attr.keys():
@@ -437,7 +436,7 @@ class Settings(six.with_metaclass(ABCMeta)):
 # =========================================================================
 # MCRun
 # =========================================================================
-class MCRun(six.with_metaclass(ABCMeta)):
+class MCRun(ABC):
     #: Prevent creating multiple classes within same python scope
     _is_initialized = []
 
