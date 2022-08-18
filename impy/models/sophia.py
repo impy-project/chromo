@@ -160,7 +160,7 @@ class SophiaRun(MCRun):
             )
 
         self.nucleon_code_number = self.lib.icon_pdg_sib(k.p2pdg)
-        self.energy_of_nucleon = k.pmass2
+        self.energy_of_nucleon = k.pmass2 * (1 + 1e-6)  # fix roundoff error
         self.energy_of_photon = k.elab
         # Here we consider laboratory frame where photon moves along z axis
         # and nucleon is at rest. The angle is counted from z axis.
