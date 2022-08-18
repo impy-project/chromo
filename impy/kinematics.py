@@ -20,6 +20,8 @@ import numpy as np
 from impy import pdata, impy_config
 from impy.util import info
 import abc
+from particle.pdgid.literals import common_particles
+import particle
 
 
 class CompositeTarget(object):
@@ -143,6 +145,14 @@ def recognize_particle_input_type(arg):
     else:
         raise ValueError("Unmaintained parameter type {0} = {1}".format(type(arg), arg))
 
+def return_pdg_from_string(pname):
+    try:
+        return common_particles[pname]
+    except KeyError:
+        try:
+            return int(particle.Particle.from_string(pname).pdgid)
+        except particle.ParticleNotFound:
+            raise ValueError("Particle with name = {0} is not found".format(pname))
 
 class EventKinematics(abc.ABC):
     """Handles kinematic variables and conversions between reference frames.
@@ -213,14 +223,9 @@ class EventKinematics(abc.ABC):
             elif particle_input_type == "tuple":
                 nuc1_prop = particle1
             elif particle_input_type == "string":
-                raise RuntimeError(
-                    "Setting of particle properties with "
-                    + "string {0} is not implemented".format(particle1)
-                )
+                p1pdg = return_pdg_from_string(particle1)
             elif particle_input_type == "composite_target":
                 raise RuntimeError("Only 2nd parameter could be composite target")
-                # nuc1_prop=particle1.get_maximum_AZ()
-                # self._with_composite_target = True
 
         # Store average nucleon mass
         mnuc = 0.5 * (pdata.mass(2212) + pdata.mass(2112))
@@ -249,10 +254,7 @@ class EventKinematics(abc.ABC):
             elif particle_input_type == "tuple":
                 nuc2_prop = particle2
             elif particle_input_type == "string":
-                raise RuntimeError(
-                    "Setting of particle properties with "
-                    + "string {0} is not implemented".format(particle2)
-                )
+                p2pdg = return_pdg_from_string(particle2)
             elif particle_input_type == "composite_target":
                 nuc2_prop = particle2.get_maximum_AZ()
                 self._with_composite_target = True
