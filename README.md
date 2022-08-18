@@ -40,33 +40,35 @@ print("Average pT for charged pions {0:4.3f}".format(average_pt))
 - Python 3.6+
 - Linux, Mac OS X, or Windows
 
-### Without docker
-
-If you have trouble with this installation guide, look into the subsection which explains how to install in impy in a fixed docker environment.
-
-The package is (will be) available including pre-compiled binaries. The installation in that case simplifies to (*this does not work yet use installation from source*):
+### From PyPI (not yet available)
 
     pip install impy
 
-To build from source (the **recursive** flag is important to checkout the sub-modules):
+The package will be available as a pre-compiled binary wheels in the future, but for now you have to compile it from source, see next subsection.
+
+### From source
+
+Installation from source requires a Python installation setup for development, as well as C and Fortran compilers.
+
+To build from source (the **recursive** flag is important to check out submodules):
 
     git clone --recursive https://github.com/impy-project/impy
     cd impy
-    pip install -e .
-    make -j<insert number of CPU cores>
+    pip install -v -e .
 
-For now, you need to call make by hand, but this will be automated. The command `pip install -e .` installs the package in editable mode (for developers).
+This takes a while. The command `pip install -v -e .` installs the package in editable mode (for developing the Python layer) and with verbose output, so that you can watch the compilation happening. Warnings can be ignored, but watch out for errors.
 
-Because of the architectural transition and there are many issues on mac, building from source may be a bit complicated. Using brew gcc and python it is possible to build the code by:
+To run the tests or try the examples, it is convenient use this modified `pip install` instead:
 
-    CC=gcc-10 CXX=gcc-10 FC=gfortran-10 PYTHON_EXE=/usr/local/opt/python@3.8/bin/python3 make -jXXX
+    pip install -v -e .'[test,examples]'
 
-Replace `gcc-10` by your version in brew. The official Mac Python is currently broken due to the transition to Apple Silicon, but it is possible to build with a bit of hacking. But currently
-I don't use a Mac and cannot debug it. 
- 
-### With docker
+This installs impy and additional optional Python packages to run tests and examples.
 
-This guide works on Linux and OSX. You need a running docker server. Please google how to set up docker on your machine.
+If installation from source fails, please look into the subsection below which explains how to install in impy in a verified docker environment. The docker environment has a properly set up environment verified by us, so that the installation is guaranteed to succeed.
+
+### From source in Docker
+
+This guide works on Linux and OSX. You need a running Docker server. Please google how to set up Docker on your machine.
 
     # download impy
     git clone --recursive https://github.com/impy-project/impy
@@ -80,30 +82,37 @@ This guide works on Linux and OSX. You need a running docker server. Please goog
     # docker pull quay.io/pypa/manylinux2014_aarch64
     
     # create docker instance and bind impy directory
-    docker run -d -it --name impy -v "$(pwd)":/app quay.io/pypa/manylinux2014_x86_64
+    docker run --rm -d -it --name impy -v "$(pwd)":/app quay.io/pypa/manylinux2014_x86_64
 
     # enter your docker instance
     docker exec -it impy /bin/bash
 
     cd /app
 
-    # select python version, e.g. 3.8, and enter virtual environment
-    python3.8 -m venv venv
+    # select python version, e.g. 3.9, and enter virtual environment
+    python3.9 -m venv venv
     source venv/bin/activate
 
     # install impy and dependencies (prefer binary wheels for deps)
-    pip install --prefer-binary -e .
+    pip install --prefer-binary -v -e .
 
-    # compile the FORTRAN interface (this will be automated in the future)
-    make -j<insert number of CPU cores>
+You can now use impy inside the docker instance. If you run Linux, you can also make a wheel inside
+docker and install it in your host.
 
-You can now use impy inside the docker instance.
+    # inside docker
+    pip install wheel
+    python setup.py bdist_wheel
+
+    # exit docker with ctrl+D
+    pip install dist/*.whl
+
+This should allow you to use impy also outside docker. This works only if you use the same Python version inside and outside of docker.
 
 ## User interface
 
 There are two ways to interact with the code.
 
-1. As in the example above, via plain python in scripts or jupyter notebooks. Look at this [example](examples/compare_two_models.ipynb).
+1. As in the example above, via plain python in scripts or Jupyter notebooks. Look at this [example](examples/compare_models.ipynb).
 
 2. Via a HEPMC output that can be piped in Rivet or other tools supporting the format.
 

@@ -1,7 +1,0 @@
-numpy
-scipy
-particletools
-pyyaml
-pyhepmc - ng
-six
-pytest
