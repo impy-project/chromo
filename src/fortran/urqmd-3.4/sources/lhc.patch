@@ -1,0 +1,65 @@
+diff -wu ./colltab.f ../urqmd-3.3p1+lhc/colltab.f
+index c7b6125..13da207 100644
+--- ./colltab.f
++++ ../urqmd-3.3p1+lhc/colltab.f
+@@ -3,7 +3,7 @@ c
+ cdes  This file contains the  uqmd collision tables
+ c
+       integer ncollmax
+-      parameter (ncollmax = 10000) ! maximum number of entries in collision table
++      parameter (ncollmax = 30000) ! maximum number of entries in collision table
+       integer nct,actcol,nsav,apt
+       real*8 cttime(0:ncollmax),ctsqrts(ncollmax),ctsigtot(ncollmax)
+       real*8 ctcolfluc(ncollmax)
+diff -wu ./coms.f ../urqmd-3.3p1+lhc/coms.f
+index ee706b3..38a4d3b 100644
+--- ./coms.f
++++ ../urqmd-3.3p1+lhc/coms.f
+@@ -10,7 +10,7 @@ c
+ 
+       integer nmax, nspl
+       real*8 hit_sphere
+-      parameter (nmax = 40000) ! maximum number of particles
++      parameter (nmax = 100000) ! maximum number of particles
+       parameter (nspl = 500)  ! dimension of spline arrays
+       parameter (hit_sphere = 8.d0)  ! hard collision cutoff: 251 mbarn
+ 
+diff -wu a/output.f ../urqmd-3.3p1+lhc/output.f
+index 49cee62..a21b6b7 100644
+--- ./output.f
++++ ../urqmd-3.3p1+lhc/output.f
+@@ -101,28 +101,22 @@ c 303  format(a20,i3,a15,e10.4,a15,e10.4,a15,e10.4)
+  303  format(a20,i3,a15,e11.4,a15,e11.4,a15,e11.4)
+ 
+ c standard particle information vector
+- 201  format(9e16.8,i11,2i3,i9,i5,i4)
+-cLHC 201  format(9e24.16,i11,2i3,i9,i5,i4)
++ 201  format(9e24.16,i11,2i3,i9,i5,i4)
+ 
+ c special output for cto40 (restart of old event)
+- 210  format(9e16.8,i11,2i3,i9,i5,i10,3e16.8,i8)
+-cLHC 210  format(9e24.16,i11,2i3,i9,i5,i10,3e24.16,i8)
++ 210  format(9e24.16,i11,2i3,i9,i5,i10,3e24.16,i8)
+ 
+ c special output for mmaker
+- 203  format(9e16.8,i5,2i3,i6,i5,i4,i5,2e16.8)
+-cLHC 203  format(9e24.16,i5,2i3,i6,i5,i4,i5,2e24.16)
++ 203  format(9e24.16,i5,2i3,i6,i5,i4,i5,2e24.16)
+ 
+ c same with index for file15
+- 501  format(i5,9e16.8,i11,2i3,i9,i5,i3,i15)
+-cLHC 501  format(i5,9e24.16,i11,2i3,i9,i5,i3,i15)
++ 501  format(i5,9e24.16,i11,2i3,i9,i5,i3,i15)
+ 
+ c enhanced file16
+- 503  format(9e15.7,i11,2i3,i9,i5,i4,2i4)
+-cLHC 503  format(9e24.16,i11,2i3,i9,i5,i4,2i4)
++ 503  format(9e24.16,i11,2i3,i9,i5,i4,2i4)
+ 
+ c same including freeze-out coordinates
+- 213  format(9e16.8,i11,2i3,i9,i5,i4,8e16.8)
+-cLHC 213  format(9e24.16,i11,2i3,i9,i5,i4,8e24.16)
++ 213  format(9e24.16,i11,2i3,i9,i5,i4,8e24.16)
+ 
+ c collsision stats for file14
+  202  format(8i8)

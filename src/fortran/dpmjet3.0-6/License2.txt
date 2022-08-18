@@ -1,0 +1,129 @@
+DPMJET3 license, 5 Nov 2008
+
+Copyright statement and license conditions
+
+Copyright: European Organization for Nuclear Research (CERN),
+Forschungszentrum Karlsruhe and Universitaet Siegen  (the DPMJET-III
+Copyright Holders) 1995-2008.
+
+All rights not expressly granted under this license are reserved.
+
+This software results from work performed by Ralph Engel, Johannes Ranft
+and Stefan Roesler (the Authors).
+
+The Authors are the exclusive source of distribution of the code, bug
+fixes and documentation of the DPMJET-III software. Each official 
+version of DPMJET-III is identified by a numbering scheme specifying 
+major and minor releases.
+
+The Authors are able to grant any of the permissions noted in this 
+License Agreement as requiring a specific consent. Any such consent 
+may only be granted in writing.
+
+DPMJET-III contains PHOJET and PYTHIA Version 6.1 as integral parts.
+The license conditions given below apply also to PHOJET and PYTHIA 
+Version 6.1. Torbjorn Sjostrand (Lund University) is the copright holder 
+of the PYTHIA subpackage.
+
+1. Installation, use, reproduction, display of the DPMJET-III 
+software in source and binary forms, are permitted free of charge on a
+non-exclusive basis for internal scientific, non-commercial and
+non-weapon-related use by non-profit organizations only. Any exercise of
+these rights is subject to the following conditions:
+ 
+Insertion of the DPMJET-III code, in whole or in part, into other 
+codes, or its translation into any other computer language are 
+possible only after obtaining prior written permission. Modifications 
+of the DPMJET-III code are permitted for use by the licensee only, 
+unless authorized in written.
+
+
+2. DPMJET-III is non-transferable, non-sub-licensable and may 
+not be distributed in any way, without express written consent, 
+whether in original or modified form, Site-wise or collaboration-wise
+conditions can be agreed with the Authors.
+
+
+3. Notwithstanding the above, the licensee may modify and 
+sub-license DPMJET-III User Routines to third parties in so far 
+as their  purpose is limited to the adaptation of input and output 
+interfaces of DPMJET-III and their modification does not circumvent,
+replace, add to or modify any of the functions of DPMJET-III, 
+or extract specific isolated results from any of the individual 
+internal physics models embedded within DPMJET-III.
+
+
+4. The licensee shall forthwith license all its modifications of
+DPMJET-III to the DPMJET-III  Authors, at no cost and with no
+limitation of use. The licensee acknowledges that the DPMJET-III 
+Authors may insert such modifications into future releases of 
+DPMJET-III,  subject to appropriate acknowledgment of 
+the licensees contribution.
+
+
+5. Any publication by the licensee with respect to DPMJET-III 
+or results obtained from it shall explicitly acknowledge DPMJET-III,
+PHOJET and PYTHIA by quoting its set of references and the DPMJET-III 
+Authors.  The licensee shall not without prior written permission 
+publish documents or results based on a modified form of DPMJET-III, 
+unless the modification exclusively concerns  User Routines for the 
+adaptation of its input and output interfaces which comply with the 
+same restrictions, as defined in section 3) as those which apply 
+to sub-licensing. Any publication of documents or results shall be 
+based only on official DPMJET-III versions as obtained  from the 
+Authors. Publication here implies any legal publication to any third
+party, whether verbal, electronic, visual, in writing or otherwise.
+
+
+6. The licensee shall ensure that the DPMJET-III, PHOJET and PYTHIA 
+references, copyright statement and license conditions are not 
+altered or removed from DPMJET-III. Any integration of 
+any portion of DPMJET-III in modified or in
+unmodified form, into any other software package must preserve the
+internal copyright notices in those portions of DPMJET-III
+that have been employed, and must reproduce such notices 
+within any additional global notices included along or embedded 
+within the software into which DPMJET-III has been integrated. 
+Any portion of DPMJET-III so integrated, whether modified or 
+unmodified shall continue to be subject to these license conditions.
+
+
+7. Versions or parts of the DPMJET-III source code, 
+entrusted to individuals or groups prior to the formulation of this 
+license are subject to this License Agreement in  addition to any 
+other restrictions on the scope of use that may have been part of 
+the initial use grant.  
+
+8. Commercial use of DPMJET-III, outside the 
+scope of this license, must be negotiated with the Authors.
+
+
+9. DISCLAIMER 
+
+THIS SOFTWARE IS PROVIDED BY THE DPMJET-III COPYRIGHT HOLDERS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+IMPLIED WARRANTIES OF MERCHANTABILITY, OF SATISFACTORY QUALITY, AND
+FITNESS FOR A PARTICULAR PURPOSE OR USE ARE DISCLAIMED. THE DPMJET-III
+COPYRIGHT HOLDERS AND THE AUTHORS MAKE NO REPRESENTATION THAT THE
+SOFTWARE AND MODIFICATIONS THEREOF, WILL NOT INFRINGE ANY PATENT,
+COPYRIGHT, TRADE SECRET OR OTHER PROPRIETARY RIGHT. 
+
+
+10. LIMITATION OF LIABILITY
+
+THE DPMJET-III COPYRIGHT HOLDERS AND THE AUTHORS SHALL HAVE NO 
+LIABILITY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, CONSEQUENTIAL,
+EXEMPLARY, OR PUNITIVE DAMAGES OF ANY CHARACTER INCLUDING, WITHOUT 
+LIMITATION, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES, LOSS OF USE,
+DATA OR PROFITS, OR BUSINESS INTERRUPTION, HOWEVER CAUSED AND ON 
+ANY THEORY OF CONTRACT, WARRANTY, TORT (INCLUDING NEGLIGENCE), 
+PRODUCT LIABILITY OR OTHERWISE, ARISING IN ANY WAY OUT OF THE USE 
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. 
+
+Users should address any request of consent to one  of the
+DPMJET-III Authors:
+
+Ralph Engel                                    Ralph.Engel@ik.fzk.de
+Johannes Ranft                                 Johannes.Ranft@cern.ch
+Stefan Roesler                                 Stefan.Roesler@cern.ch
+  
