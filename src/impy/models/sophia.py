@@ -22,51 +22,12 @@ sophia_interaction_types = [
 class SophiaEvent(MCEvent):
     """Wrapper class around Sophia code"""
 
-    def __init__(self, lib, event_kinematics, event_frame):
-        evt = lib.hepevt
-
-        # Save selector for implementation of on-demand properties
-        px, py, pz, en, m = evt.phep
-        # verticies (x, y, z, t) - all zeros for sophia
-        vx, vy, vz, vt = evt.vhep
-
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhep,
-            npart=evt.nhep,
-            p_ids=evt.idhep,
-            status=evt.isthep,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phep,
-            vt_arr=evt.vhep,
-        )
-
-    def filter_final_state(self):
-        self.selection = np.where(self.status == 1)
-        self._apply_slicing()
-
-    def filter_final_state_charged(self):
-        self.selection = np.where((self.status == 1) & (self.charge != 0))
-        self._apply_slicing()
-
     @property
     def interaction_type(self):
         return sophia_interaction_types[self.lib.interaction_type_code]
 
-    @property
-    def _charge_init(self):
-        return self.lib.schg.ichg[self.selection]
+    def _charge_init(self, npart):
+        return self._lib.schg.ichg[:npart]
 
     @property
     def decayed_parent(self):
@@ -76,24 +37,7 @@ class SophiaEvent(MCEvent):
         It throw an exception (via MCEvent.parents)
         if selection is applied
         """
-        MCEvent.parents(self)
-        return self.lib.schg.iparnt[0 : self.npart]
-
-    @property
-    def parents(self):
-        """In SOPHIA parents are difficult to obtain. This function
-        returns a zeroed array of the correct shape.
-        """
-        MCEvent.parents(self)
-        return self.lib.hepevt.jmohep[:, 0 : self.npart]
-
-    @property
-    def children(self):
-        """In SOPHIA daughters are difficult to obtain. This function
-        returns a zeroed array of the correct shape.
-        """
-        MCEvent.children(self)
-        return self.lib.hepevt.jdahep[:, 0 : self.npart]
+        return self._lib.schg.iparnt[0 : self.npart]
 
 
 class SophiaRun(MCRun):

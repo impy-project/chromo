@@ -17,9 +17,9 @@ def run_model(model, ekin):
 
     c = Counter()
     for event in gen(10):
-        event.filter_final_state()
-        assert len(event.p_ids) > 0
-        c.update(event.p_ids)
+        ev = event.final_state()
+        assert len(ev.id) > 0
+        c.update(ev.id)
 
     return c
 

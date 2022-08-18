@@ -15,59 +15,8 @@ class SibyllEvent(MCEvent):
     # Workaround for no data on vertext positions in SIBYLL
     _no_vertex_data = None
 
-    def __init__(self, lib, event_kinematics, event_frame):
-        # HEPEVT (style) common block
-        evt = lib.hepevt
-
-        # Save selector for implementation of on-demand properties
-        px, py, pz, en, m = evt.phep
-        vx, vy, vz, vt = evt.vhep
-
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhep,
-            npart=evt.nhep,
-            p_ids=evt.idhep,
-            status=evt.isthep,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phep,
-            vt_arr=evt.vhep,
-        )
-
-    def filter_final_state(self):
-        self.selection = np.where(self.status == 1)
-        self._apply_slicing()
-
-    def filter_final_state_charged(self):
-        self.selection = np.where((self.status == 1) & (self.charge != 0))
-        self._apply_slicing()
-
-    @property
-    def _charge_init(self):
-        return self.lib.schg.ichg[self.selection]
-
-    @property
-    def parents(self):
-        """In SIBYLL parents are difficult to obtain. This function returns 0."""
-        MCEvent.parents(self)
-        return self.lib.hepevt.jmohep
-
-    @property
-    def children(self):
-        """In SIBYLL daughters are difficult to obtain. This function returns 0."""
-        MCEvent.children(self)
-        return self.lib.hepevt.jdahep
+    def _charge_init(self, npart):
+        return self._lib.schg.ichg[:npart]
 
     # Nuclear collision parameters
     @property

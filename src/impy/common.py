@@ -7,260 +7,145 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 """
-from abc import ABC, abstractmethod, abstractproperty
-
+from abc import ABC, abstractmethod
 import numpy as np
 from impy import impy_config
 from impy.util import info
+import typing as _tp
+from dataclasses import dataclass
 
 
+@dataclass
 class EventData:
-    """Data structure to keep views of filtered data"""
+    """Data structure to keep filtered data"""
 
-    def __init__(
-        self,
-        npart,
-        p_ids,
-        status,
-        charge,
-        px,
-        py,
-        pz,
-        en,
-        m,
-        vx,
-        vy,
-        vz,
-        vt,
-        pem_arr,
-        vt_arr,
-    ):
-        self.npart = npart
-        self.p_ids = p_ids
-        self.status = status
-        self.charge = charge
-        self.px = px
-        self.py = py
-        self.pz = pz
-        self.en = en
-        self.m = m
-        self.vx = vx
-        self.vy = vy
-        self.vz = vz
-        self.vt = vt
-        self._pem_arr = pem_arr
-        self._vt_arr = vt_arr
+    nevent: int
+    id: np.array
+    status: np.array
+    charge: np.array
+    px: np.array
+    py: np.array
+    pz: np.array
+    en: np.array
+    m: np.array
+    vx: np.array
+    vy: np.array
+    vz: np.array
+    vt: np.array
+
+    def __getitem__(self, arg):
+        """Filter event."""
+        if not isinstance(arg, _tp.Iterable):
+            raise NotImplementedError
+        return EventData(
+            self.nevent,
+            self.id[arg],
+            self.status[arg],
+            self.charge[arg],
+            self.px[arg],
+            self.py[arg],
+            self.pz[arg],
+            self.en[arg],
+            self.m[arg],
+            self.vx[arg],
+            self.vy[arg],
+            self.vz[arg],
+            self.vt[arg],
+        )
+
+    def __len__(self):
+        return len(self.id)
 
 
-class MCEvent(ABC):
+class MCEvent(ABC, EventData):
     """The basis of interaction between user and all the event generators.
 
     The derived classes are expected to interact with the particle stack
     and derive the base variables from which everything else can be defined.
 
-    The class attribute __sliced_params__ lists the names to parameters
-    which are views on the fortran arrays, and that needs to be changed
-    when applying the filter functions.
-
     Args:
         lib (object)       : Reference to the FORTRAN library in use
         event_kinematics   : Reference to current event kinematics object
         event_frame (str)  : The frame in which the generator returned the variables
-        nevent (int)       : Number of current event
-        npart (int)        : Number of particles on the stack & length of px, py...
-        p_ids (np.array)   : particle ID according to PDG scheme
-        status (np.array)  : HEPEVT status flag 1=final state
-        px (np.array)      : x-momentum in GeV/c
-        py (np.array)      : y-momentum in GeV/c
-        pz (np.array)      : z-momentum in GeV/c
-        en (np.array)      : Energy in GeV
-        m (np.array)       : Mass in GeV
-        vx (np.array)      : x-vertex in fm, mm?
-        vy (np.array)      : y-vertex in fm, mm?
-        vz (np.array)      : z-vertex in fm, mm?
-        vt (np.array)      : temporal order of vertex in ps, fs?
     """
 
-    __sliced_params__ = [
-        "p_ids",
-        "status",
-        "charge",
-        "px",
-        "py",
-        "pz",
-        "en",
-        "m",
-        "vx",
-        "vy",
-        "vz",
-        "vt",
-        "_pem_arr",
-        "_vt_arr",
-    ]
+    # name of hepevt common block (override in subclass if necessary)
+    _hepevt = "hepevt"
 
-    def __init__(
-        self,
-        lib,
-        event_kinematics,
-        event_frame,
-        nevent,
-        npart,
-        p_ids,
-        status,
-        px,
-        py,
-        pz,
-        en,
-        m,
-        vx,
-        vy,
-        vz,
-        vt,
-        pem_arr,
-        vt_arr,
-    ):
-        # Store the variables for further filtering/access
-        self.lib = lib
+    # names of fields of hepevt common block
+    # (override in subclass if necessary)
+    _nevhep = "nevhep"
+    _nhep = "nhep"
+    _idhep = "idhep"
+    _isthep = "isthep"
+    _phep = "phep"
+    _vhep = "vhep"
+    _jmohep = "jmohep"
+    _jdahep = "jdahep"
+
+    # only called once, so setup is allowed to be slow
+    def __init__(self, lib, event_kinematics, event_frame):
+        self._lib = lib  # used by _charge_init
+
+        # Store for further filtering/access
         self.kin = event_kinematics
         self.event_frame = event_frame
 
-        self.nevent = nevent
-        self._npart = self.npart = npart
-        self.p_ids = p_ids
-        self.status = status
-        self.px = px
-        self.py = py
-        self.pz = pz
-        self.en = en
-        self.m = m
-        self.vx = vx
-        self.vy = vy
-        self.vz = vz
-        self.vt = vt
+        evt = getattr(lib, self._hepevt)
 
-        # Full arrays of kinematical vectors
-        self._pem_arr = pem_arr  # (px, py, pz, E, m)
-        self._vt_arr = vt_arr  # (vx, vy, vz, t)
+        npart = getattr(evt, self._nhep)
+        sel = slice(None, npart)
 
-        # Initialize current selection to all entries up to npart
-        if impy_config["pre_slice"]:
-            info(10, "Pre-slice enabled.")
-            self.selection = slice(None, self.npart)
-            self.charge = self._charge_init
-            self._apply_slicing()
+        self._parr = getattr(evt, self._phep)[:, sel]
+        self._varr = getattr(evt, self._vhep)[:, sel]
+
+        EventData.__init__(
+            self,
+            getattr(evt, self._nevhep),
+            getattr(evt, self._idhep)[sel],
+            getattr(evt, self._isthep)[sel],
+            self._charge_init(npart),
+            self._parr[0],
+            self._parr[1],
+            self._parr[2],
+            self._parr[3],
+            self._parr[4],
+            self._varr[0],
+            self._varr[1],
+            self._varr[2],
+            self._varr[3],
+        )
+
+        if self._jmohep is None:
+            self._parents = None
         else:
-            info(10, "Pre-slice disabled.")
-            self.selection = slice(None, None)
-            self.charge = self._charge_init
-
-        # The default slice only cuts limits the view to the array to
-        # to the current number of entries
-        self._is_filtered = False
-        self._views_cache = []
+            self._parents = getattr(evt, self._jmohep)[:, sel]
+        if self._jdahep is None:
+            self._children = None
+        else:
+            self._children = getattr(evt, self._jdahep)[:, sel]
 
         # Apply boosts into frame required by user
         self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
         self.event_frame = impy_config["user_frame"]
 
-    def filter_final(self):
-        self.selection = self.status == 1
-        self._cache_current_view()
-        self._apply_slicing()
-        return self
-
-    def filter_charged(self):
-        self.selection = self.charge != 0
-        self._cache_current_view()
-        self._apply_slicing()
-        return self
-
-    def _cache_current_view(self):
-        """Cache the current view of data"""
-        self._views_cache.append(
-            EventData(
-                self._npart,
-                self.p_ids,
-                self.status,
-                self.charge,
-                self.px,
-                self.py,
-                self.pz,
-                self.en,
-                self.m,
-                self.vx,
-                self.vy,
-                self.vz,
-                self.vt,
-                self._pem_arr,
-                self._vt_arr,
-            )
-        )
-
-    def remove_last_filter(self):
-        """Remove the last applied filter"""
-        # if list empty then return
-        if not self._views_cache:
-            return
-        last = self._views_cache.pop()
-        self.npart = last.npart
-        self.p_ids = last.p_ids
-        self.status = last.status
-        self.charge = last.charge
-        self.px = last.px
-        self.py = last.py
-        self.pz = last.pz
-        self.en = last.en
-        self.m = last.m
-        self.vx = last.vx
-        self.vy = last.vy
-        self.vz = last.vz
-        self.vt = last.vt
-        self._pem_arr = last._pem_arr
-        self._vt_arr = last._vt_arr
-
-    def remove_all_filters(self):
-        """Remove all filters (return to original data)"""
-        del self._views_cache[1:]
-        self.remove_last_filter()
-        self._is_filtered = False
-
-    def _apply_slicing(self):
-        """Slices/copies the all varaibles according to filter criteria"""
-        info(30, "Slicing attributes.")
-        for var in self.__sliced_params__:
-            # TODO: AF: Not clear if the kinematical arrays should be
-            # exposed to the user and sliced at all. If not remove the braching
-            # and delete *_arr from sliced params class variable.
-            if var[-4:] == "_arr":
-                setattr(self, var, getattr(self, var)[:, self.selection])
-            else:
-                setattr(self, var, getattr(self, var)[self.selection])
-
-        # Update the exposed number of particles to the length of slice
-        self.npart = len(self.p_ids)
-
-        self._is_filtered = True
-
-    @abstractmethod
-    def filter_final_state(self):
+    def final_state(self):
         """After calling this method, the variables will only contain
         "stable" final state particles.
         """
-        pass
+        return self.__getitem__(self.status == 1)
 
-    @abstractmethod
-    def filter_final_state_charged(self):
+    def final_state_charged(self):
         """After calling this method, the variables will only contain
         "stable" and charged final state particles.
         """
-        pass
-
-    @abstractproperty
-    def _charge_init(self):
-        """Electrical charge"""
-        pass
+        return self.__getitem__((self.status == 1) & (self.charge != 0))
 
     @abstractmethod
+    def _charge_init(self, npart):
+        pass
+
+    @property
     def parents(self):
         """Range of indices pointing to mother particles.
 
@@ -278,13 +163,9 @@ class MCEvent(ABC):
         Raises:
             (Exception) : if filtering has been applied.
         """
-        if self._is_filtered:
-            raise Exception(
-                "Parent indices do not point to the"
-                + "correct particle indices if slicing/filtering is applied."
-            )
+        return self._parents
 
-    @abstractmethod
+    @property
     def children(self):
         """Range of indices pointing to daughter particles.
 
@@ -302,11 +183,7 @@ class MCEvent(ABC):
         Raises:
             (Exception) : if filtering has been applied.
         """
-        if self._is_filtered:
-            raise Exception(
-                "Child indices do not point to the"
-                + "correct particle indices if slicing/filtering is applied."
-            )
+        return self._children
 
     @property
     def pt(self):
@@ -710,35 +587,5 @@ class MCRun(ABC):
                 continue
             elif ntrials > 2 * nevents:
                 raise Exception("Things run bad. Check your input.")
-            else:
-                info(0, "Rejection occured")
-
-    def event_generator(self, event_kinematics, nevents):
-        """This is some kind of equivalent to Hans'
-        generator concept.
-
-        I don't see a good reason to define them as module
-        level functions. Due to this fortran library and double
-        initialization issue something has to keep track of ownership
-        and history. And classes seem to just this.
-        """
-        self._set_event_kinematics(event_kinematics)
-        retry_on_rejection = impy_config["retry_on_rejection"]
-        # Initialize counters to prevent infinite loops in rejections
-        ntrials = 0
-        nremaining = nevents
-        while nremaining > 0:
-            if self.generate_event() == 0:
-                yield self._event_class(
-                    self.lib, self._curr_event_kin, self._output_frame
-                )
-                nremaining -= 1
-                ntrials += 1
-            elif retry_on_rejection:
-                info(10, "Rejection occured. Retrying..")
-                ntrials += 1
-                continue
-            elif ntrials > 2 * nevents:
-                raise RuntimeError("Things run bad. Check your input.")
             else:
                 info(0, "Rejection occured")

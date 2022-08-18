@@ -13,64 +13,9 @@ from impy.util import info
 class PYTHIA6Event(MCEvent):
     """Wrapper class around HEPEVT particle stack."""
 
-    def __init__(self, lib, event_kinematics, event_frame):
-        # HEPEVT (style) common block
-        evt = lib.hepevt
-
-        # Save selector for implementation of on-demand properties
-        px, py, pz, en, m = evt.phep
-        vx, vy, vz, vt = evt.vhep
-
-        self.charge_vec = None
-
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhep,
-            npart=evt.nhep,
-            p_ids=evt.idhep,
-            status=evt.isthep,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phep,
-            vt_arr=evt.vhep,
-        )
-
-    def filter_final_state(self):
-        self.selection = np.where(self.status == 1)
-        self._apply_slicing()
-
-    def filter_final_state_charged(self):
-        self.selection = np.where((self.status == 1) & (self.charge != 0))
-        self._apply_slicing()
-
-    @property
-    def parents(self):
-        super().parents()
-        return self.lib.hepevt.jmohep[:, : self.npart]
-
-    @property
-    def children(self):
-        super().children()
-        return self.lib.hepevt.jdahep[:, : self.npart]
-
-    @property
-    def _charge_init(self):
-        if self.charge_vec is None:
-            k = self.lib.pyjets.k[: self.npart, 1]
-            self.charge_vec = np.fromiter(
-                (self.lib.pychge(ki) / 3 for ki in k), np.double
-            )
-        return self.charge_vec[self.selection]
+    def _charge_init(self, npart):
+        k = self._lib.pyjets.k[:npart, 1]
+        return np.fromiter((self._lib.pychge(ki) / 3 for ki in k), np.double)
 
 
 class PYTHIA6Run(MCRun):
