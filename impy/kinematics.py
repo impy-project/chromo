@@ -17,8 +17,9 @@ the implementation is very "cooked up". We have to discuss this.
 
 import six
 import numpy as np
-from impy import pdata
+from impy import pdata, impy_config
 from impy.util import info
+import abc
 
 
 class CompositeTarget(object):
@@ -143,7 +144,7 @@ def recognize_particle_input_type(arg):
         raise ValueError("Unmaintained parameter type {0} = {1}".format(type(arg), arg))
 
 
-class EventKinematics(object):
+class EventKinematics(abc.ABC):
     """Handles kinematic variables and conversions between reference frames.
 
     There are different ways to specify a particle collision. For instance
@@ -167,6 +168,10 @@ class EventKinematics(object):
 
     """
 
+    @abc.abstractmethod
+    def _init_guard(self):
+        pass
+
     def __init__(
         self,
         ecm=None,
@@ -181,7 +186,7 @@ class EventKinematics(object):
         particle1=None,
         particle2=None,
     ):
-
+        self._init_guard()
         # Catch input errors
         assert (
             np.sum(np.asarray([ecm, plab, elab, ekin, beam], dtype="bool")) == 1
@@ -447,3 +452,21 @@ class EventKinematics(object):
         new_en = self.gamma_cm * event.en - self.betagamma_z_cm * event.pz
         event.pz = -self.betagamma_z_cm * event.en + self.gamma_cm * event.pz
         event.en = new_en
+
+
+class CenterOfMass(EventKinematics):
+    def __init__(self, energy, particle1, particle2):
+        impy_config["user_frame"] = "center-of-mass"
+        super().__init__(ecm=energy, particle1=particle1, particle2=particle2)
+
+    def _init_guard(self):
+        pass
+
+
+class FixedTarget(EventKinematics):
+    def __init__(self, energy, particle1, particle2):
+        impy_config["user_frame"] = "laboratory"
+        super().__init__(elab=energy, particle1=particle1, particle2=particle2)
+
+    def _init_guard(self):
+        pass
