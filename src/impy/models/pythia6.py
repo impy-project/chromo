@@ -66,11 +66,9 @@ class PYTHIA6Event(MCEvent):
     @property
     def _charge_init(self):
         if self.charge_vec is None:
-            self.charge_vec = np.asarray(
-                [
-                    self.lib.pychge(self.lib.pyjets.k[i, 1]) / 3
-                    for i in range(self.npart)
-                ]
+            k = self.lib.pyjets.k[: self.npart, 1]
+            self.charge_vec = np.fromiter(
+                (self.lib.pychge(ki) / 3 for ki in k), np.double
             )
         return self.charge_vec[self.selection]
 
