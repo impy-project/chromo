@@ -15,6 +15,10 @@ class SibyllEvent(MCEvent):
     # Workaround for no data on vertext positions in SIBYLL
     _no_vertex_data = None
 
+    # Indicate that SIBYLL has neither mother nor daughter info
+    _jmohep = None
+    _jdahep = None
+
     def _charge_init(self, npart):
         return self._lib.schg.ichg[:npart]
 

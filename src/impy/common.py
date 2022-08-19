@@ -114,6 +114,7 @@ class MCEvent(EventData, ABC):
         npart = getattr(evt, self._nhep)
         sel = slice(None, npart)
 
+        # these are used by the HepMCWriter, for example
         self._parr = getattr(evt, self._phep)[:, sel]
         self._varr = getattr(evt, self._vhep)[:, sel]
 
