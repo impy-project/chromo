@@ -19,36 +19,36 @@ class PhojetEvent(MCEvent):
     def _gen_cut_info(self):
         """Init variables tracking the number of soft and hard cuts"""
 
-        self._mpi = self.lib.podebg.kspom + self.lib.podebg.khpom
-        self._kspom = self.lib.podebg.kspom
-        self._khpom = self.lib.podebg.khpom
-        self._ksoft = self.lib.podebg.ksoft
-        self._khard = self.lib.podebg.khard
+        self._mpi = self._lib.podebg.kspom + self._lib.podebg.khpom
+        self._kspom = self._lib.podebg.kspom
+        self._khpom = self._lib.podebg.khpom
+        self._ksoft = self._lib.podebg.ksoft
+        self._khard = self._lib.podebg.khard
 
     @property
     def mpi(self):
         """Total number of cuts"""
-        return self.lib.podebg.kspom + self.lib.podebg.khpom
+        return self._lib.podebg.kspom + self._lib.podebg.khpom
 
     @property
     def kspom(self):
         """Total number of soft cuts"""
-        return self.lib.podebg.kspom
+        return self._lib.podebg.kspom
 
     @property
     def khpom(self):
         """Total number of hard cuts"""
-        return self.lib.podebg.khpom
+        return self._lib.podebg.khpom
 
     @property
     def ksoft(self):
         """Total number of realized soft cuts"""
-        return self.lib.podebg.ksoft
+        return self._lib.podebg.ksoft
 
     @property
     def khard(self):
         """Total number of realized hard cuts"""
-        return self.lib.podebg.khard
+        return self._lib.podebg.khard
 
     # def elastic_t(self):
     #     """Squared momentum transfer t for elastic interaction.

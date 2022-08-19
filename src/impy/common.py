@@ -11,7 +11,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 from impy import impy_config
 from impy.util import info
-import typing as _tp
 from dataclasses import dataclass
 
 
@@ -34,9 +33,11 @@ class EventData:
     vt: np.array
 
     def __getitem__(self, arg):
-        """Filter event."""
-        if not isinstance(arg, _tp.Iterable):
-            raise NotImplementedError
+        """
+        Return masked event.
+
+        This may return a copy if the result cannot represented as a view.
+        """
         return EventData(
             self.nevent,
             self.id[arg],
@@ -56,8 +57,25 @@ class EventData:
     def __len__(self):
         return len(self.id)
 
+    def __eq__(self, other):
+        return self.nevent == other.nevent and np.all(
+            (self.id == other.id)
+            & (self.status == other.status)
+            & (self.charge == other.charge)
+            & (self.px == other.px)
+            & (self.py == other.py)
+            & (self.pz == other.pz)
+            & (self.en == other.en)
+            & (self.m == other.m)
+            & (self.vx == other.vx)
+            & (self.vy == other.vy)
+            & (self.vz == other.vz)
+            & (self.vt == other.vt)
+            & (self.en == other.en)
+        )
 
-class MCEvent(ABC, EventData):
+
+class MCEvent(EventData, ABC):
     """The basis of interaction between user and all the event generators.
 
     The derived classes are expected to interact with the particle stack
@@ -101,20 +119,19 @@ class MCEvent(ABC, EventData):
 
         EventData.__init__(
             self,
-            getattr(evt, self._nevhep),
+            int(getattr(evt, self._nevhep)),
             getattr(evt, self._idhep)[sel],
             getattr(evt, self._isthep)[sel],
             self._charge_init(npart),
-            self._parr[0],
-            self._parr[1],
-            self._parr[2],
-            self._parr[3],
-            self._parr[4],
-            self._varr[0],
-            self._varr[1],
-            self._varr[2],
-            self._varr[3],
+            *self._parr,
+            *self._varr
         )
+
+        # make all arrays read-only, we don't want to
+        # override original record
+        for obj in self.__dict__.values():
+            if isinstance(obj, np.ndarray):
+                obj.flags["WRITEABLE"] = False
 
         if self._jmohep is None:
             self._parents = None

@@ -29,22 +29,22 @@ class DpmjetIIIEvent(MCEvent):
     @property
     def impact_parameter(self):
         """Returns impact parameter for nuclear collisions."""
-        return self.lib.dtglcp.bimpac
+        return self._lib.dtglcp.bimpac
 
     @property
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
-        return self.lib.dtglcp.nwasam
+        return self._lib.dtglcp.nwasam
 
     @property
     def n_wounded_B(self):
         """Number of wounded nucleons side B"""
-        return self.lib.dtglcp.nwbsam
+        return self._lib.dtglcp.nwbsam
 
     @property
     def n_wounded(self):
         """Number of total wounded nucleons"""
-        return self.lib.dtglcp.nwasam + self.lib.dtglcp.nwbsam
+        return self._lib.dtglcp.nwasam + self._lib.dtglcp.nwbsam
 
     # Unfortunately not that simple since this is bounced through
     # entire code as argument not in COMMON

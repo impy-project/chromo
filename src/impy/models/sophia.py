@@ -37,7 +37,7 @@ class SophiaEvent(MCEvent):
         It throw an exception (via MCEvent.parents)
         if selection is applied
         """
-        return self._lib.schg.iparnt[0 : self.npart]
+        return self._lib.schg.iparnt[: self.npart]
 
 
 class SophiaRun(MCRun):

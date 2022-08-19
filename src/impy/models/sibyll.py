@@ -22,22 +22,22 @@ class SibyllEvent(MCEvent):
     @property
     def impact_parameter(self):
         """Impact parameter for nuclear collisions."""
-        return self.lib.cnucms.b
+        return self._lib.cnucms.b
 
     @property
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
-        return self.lib.cnucms.na
+        return self._lib.cnucms.na
 
     @property
     def n_wounded_B(self):
         """Number of wounded nucleons side B"""
-        return self.lib.cnucms.nb
+        return self._lib.cnucms.nb
 
     @property
     def n_NN_interactions(self):
         """Number of inelastic nucleon-nucleon interactions"""
-        return self.lib.cnucms.ni
+        return self._lib.cnucms.ni
 
 
 class SIBYLLRun(MCRun):

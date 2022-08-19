@@ -15,6 +15,7 @@ class PYTHIA6Event(MCEvent):
 
     def _charge_init(self, npart):
         k = self._lib.pyjets.k[:npart, 1]
+        # TODO accelerate by implementing this loop in Fortran
         return np.fromiter((self._lib.pychge(ki) / 3 for ki in k), np.double)
 
 
@@ -25,7 +26,7 @@ class PYTHIA6Run(MCRun):
     def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        return self.lib.pyint7.sigt[0, 0, 5]
+        return self._lib.pyint7.sigt[0, 0, 5]
 
     def sigma_inel_air(self, **kwargs):
         """PYTHIA6 does not support nuclear targets."""
