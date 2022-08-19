@@ -20,8 +20,68 @@ import numpy as np
 from impy import pdata, impy_config
 from impy.util import info
 import abc
-from particle.pdgid.literals import common_particles
 import particle
+
+
+def is_AZ_tuple(arg):
+    if isinstance(arg, tuple):
+        if len(arg) != 2:
+            raise ValueError(
+                "tuple (A, Z) should have len == 2, but given = {0}".format(arg)
+            )
+        if not isinstance(arg[0], int):
+            raise ValueError(
+                "1st entry of (A, Z) should be 'int' type, but it is {0} = {1}".format(
+                    type(arg[0]), arg[0]
+                )
+            )
+        if not isinstance(arg[1], int):
+            raise ValueError(
+                "2nd entry of (A, Z) should be 'int' type, but it is {0} = {1}".format(
+                    type(arg[1]), arg[1]
+                )
+            )
+        return True
+    else:
+        return False
+
+
+class FromParticleName:
+    all_pdgs = {p.name: int(p.pdgid) for p in particle.Particle.findall()}
+    all_pdgs.update(
+        {p.programmatic_name: int(p.pdgid) for p in particle.Particle.findall()}
+    )
+    all_pdgs.update(
+        photon=22,
+        Higgs=25,
+        proton=2212,
+        antiproton=-2212,
+        neutron=2112,
+        antineutron=-2112,
+    )
+
+    @staticmethod
+    def get_pdg(pname):
+        try:
+            return FromParticleName.all_pdgs[pname]
+        except KeyError:
+            raise ValueError("Particle with name = {0} is not found".format(pname))
+
+    @staticmethod
+    def get_AZ(arg):
+        if isinstance(arg, str):
+            pdg = particle.pdgid.PDGID(FromParticleName.get_pdg(arg))
+            if (pdg.A is None) or (pdg.Z is None):
+                raise ValueError("'get_AZ': no (A, Z) data for '{0}'".format(arg))
+            else:
+                return pdg.A, pdg.Z
+        elif is_AZ_tuple(arg):
+            return arg
+        else:
+            raise ValueError(
+                "'get_AZ' accepts 'str' (particle name) or 'tuple' (A, Z)"
+                ", but it received object {0} = {1}".format(type(arg[1]), arg[1])
+            )
 
 
 class CompositeTarget(object):
@@ -30,7 +90,7 @@ class CompositeTarget(object):
     Examples of such composite targets are Air, CO_2, HCl, C_2H_60.
     """
 
-    def __init__(self, label=""):
+    def __init__(self, component_list, label=""):
         self.label = label
         self.ncomponents = 0
         self.component_fractions = []
@@ -39,26 +99,37 @@ class CompositeTarget(object):
         self.component_Z = []
         self.component_name = []
 
-    def add_component(self, AZ, fraction, name=""):
-        """Add material for composite target.
+        for component in component_list:
+            if len(component) == 2:
+                self._add_component(component[0], component[1])
+            elif len(component) == 3:
+                self._add_component(component[0], component[1], component[2])
+            else:
+                raise ValueError(
+                    "'CompositeTarget': wrong component length = {0} for {1}".format(
+                        len(component), component
+                    )
+                )
+        self._normalize()
 
-        Fraction needs relative specification, in percent, number,
-        fraction of one, etc. Just make sure it's the same definition
-        for all components. Internal list is sorted according to
-        relative fractions.
-        """
-
-        self.component_name.append(name)
-        self.component_A.append(AZ[0])
-        self.component_Z.append(AZ[1])
+    def _add_component(self, AZ, fraction, name=""):
+        A, Z = FromParticleName.get_AZ(AZ)
+        if (name == "") and (isinstance(AZ, str)):
+            self.component_name.append(AZ)
+        else:
+            self.component_name.append(name)
+        self.component_A.append(A)
+        self.component_Z.append(Z)
         self._component_orig_fractions.append(float(fraction))
+        self.ncomponents += 1
+
+    def _normalize(self):
         self.component_fractions = np.array(
             [
                 f / np.sum(self._component_orig_fractions)
                 for f in self._component_orig_fractions
             ]
         )
-        self.ncomponents += 1
 
         self._sort()
 
@@ -70,6 +141,17 @@ class CompositeTarget(object):
             == len(self._component_orig_fractions)
         )
         assert np.sum(self.component_fractions) == 1.0
+
+    def add_component(self, AZ, fraction, name=""):
+        """Add material for composite target.
+
+        Fraction needs relative specification, in percent, number,
+        fraction of one, etc. Just make sure it's the same definition
+        for all components. Internal list is sorted according to
+        relative fractions.
+        """
+        self._add_component(AZ, fraction, name)
+        self._normalize()
 
     def _sort(self):
         """Sorts list acording to fraction"""
@@ -117,42 +199,18 @@ class CompositeTarget(object):
         return ostr
 
 
-def recognize_particle_input_type(arg):
+def get_particle_input_type(arg):
     if isinstance(arg, int):
         return "pdg_id"
     elif isinstance(arg, str):
         return "string"
-    elif isinstance(arg, tuple):
-        if len(arg) != 2:
-            raise ValueError(
-                "tuple (A, Z) should have len == 2, but given = {0}".format(arg)
-            )
-        if not isinstance(arg[0], int):
-            raise ValueError(
-                "1st entry should be 'int' type, but it is {0} = {1}".format(
-                    type(arg[0]), arg[0]
-                )
-            )
-        if not isinstance(arg[1], int):
-            raise ValueError(
-                "1st entry should be 'int' type, but it is {0} = {1}".format(
-                    type(arg[1]), arg[1]
-                )
-            )
+    elif is_AZ_tuple(arg):
         return "tuple"
     elif isinstance(arg, CompositeTarget):
         return "composite_target"
     else:
         raise ValueError("Unmaintained parameter type {0} = {1}".format(type(arg), arg))
 
-def return_pdg_from_string(pname):
-    try:
-        return common_particles[pname]
-    except KeyError:
-        try:
-            return int(particle.Particle.from_string(pname).pdgid)
-        except particle.ParticleNotFound:
-            raise ValueError("Particle with name = {0} is not found".format(pname))
 
 class EventKinematics(abc.ABC):
     """Handles kinematic variables and conversions between reference frames.
@@ -217,13 +275,13 @@ class EventKinematics(abc.ABC):
         ), "Define nuc2_prop as an (A,Z) tuple."
 
         if particle1:
-            particle_input_type = recognize_particle_input_type(particle1)
+            particle_input_type = get_particle_input_type(particle1)
             if particle_input_type == "pdg_id":
                 p1pdg = particle1
             elif particle_input_type == "tuple":
                 nuc1_prop = particle1
             elif particle_input_type == "string":
-                p1pdg = return_pdg_from_string(particle1)
+                p1pdg = FromParticleName.get_pdg(particle1)
             elif particle_input_type == "composite_target":
                 raise RuntimeError("Only 2nd parameter could be composite target")
 
@@ -248,13 +306,13 @@ class EventKinematics(abc.ABC):
             info(20, "Particle 1 is a nucleus.")
 
         if particle2:
-            particle_input_type = recognize_particle_input_type(particle2)
+            particle_input_type = get_particle_input_type(particle2)
             if particle_input_type == "pdg_id":
                 p2pdg = particle2
             elif particle_input_type == "tuple":
                 nuc2_prop = particle2
             elif particle_input_type == "string":
-                p2pdg = return_pdg_from_string(particle2)
+                p2pdg = FromParticleName.get_pdg(particle2)
             elif particle_input_type == "composite_target":
                 nuc2_prop = particle2.get_maximum_AZ()
                 self._with_composite_target = True
