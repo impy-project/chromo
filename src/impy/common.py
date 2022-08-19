@@ -74,6 +74,23 @@ class EventData:
             & (self.en == other.en)
         )
 
+    def copy(self):
+        return EventData(
+            self.nevent,
+            self.id.copy(),
+            self.status.copy(),
+            self.charge.copy(),
+            self.px.copy(),
+            self.py.copy(),
+            self.pz.copy(),
+            self.en.copy(),
+            self.m.copy(),
+            self.vx.copy(),
+            self.vy.copy(),
+            self.vz.copy(),
+            self.vt.copy(),
+        )
+
 
 class MCEvent(EventData, ABC):
     """The basis of interaction between user and all the event generators.
@@ -137,11 +154,11 @@ class MCEvent(EventData, ABC):
         if self._jmohep is None:
             self._parents = None
         else:
-            self._parents = getattr(evt, self._jmohep)[:, sel]
+            self._parents = getattr(evt, self._jmohep).T[sel]
         if self._jdahep is None:
             self._children = None
         else:
-            self._children = getattr(evt, self._jdahep)[:, sel]
+            self._children = getattr(evt, self._jdahep).T[sel]
 
         # Apply boosts into frame required by user
         self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
