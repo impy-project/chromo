@@ -39,7 +39,7 @@ class CompositeTarget(object):
         self.component_Z = []
         self.component_name = []
 
-    def add_component(self, name, A, Z, fraction):
+    def add_component(self, AZ, fraction, name=""):
         """Add material for composite target.
 
         Fraction needs relative specification, in percent, number,
@@ -49,8 +49,8 @@ class CompositeTarget(object):
         """
 
         self.component_name.append(name)
-        self.component_A.append(A)
-        self.component_Z.append(Z)
+        self.component_A.append(AZ[0])
+        self.component_Z.append(AZ[1])
         self._component_orig_fractions.append(float(fraction))
         self.component_fractions = np.array(
             [
