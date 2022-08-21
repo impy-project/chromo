@@ -4,7 +4,6 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 from impy.constants import GeV
 from impy.kinematics import EventKinematics
-from impy import impy_config
 from impy.writer import HepMCWriter
 from impy.models import Sibyll23d, DpmjetIII306, EposLHC  # noqa
 import pytest
@@ -12,9 +11,6 @@ import pyhepmc
 
 # TODO for Hans: this test fails because new pyhepmc lacks
 # pyhepmc.fill_genevent_from_hepevent
-
-
-impy_config["user_frame"] = "laboratory"
 
 
 @pytest.mark.parametrize(

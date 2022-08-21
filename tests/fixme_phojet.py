@@ -1,3 +1,6 @@
+# FIXME this is redundant with test_generators.py
+# instead do specific tests that only work for eposlhc here
+
 from impy.constants import TeV
 from impy.kinematics import EventKinematics
 from impy.models import Phojet112

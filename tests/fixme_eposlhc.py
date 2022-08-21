@@ -1,4 +1,5 @@
-# FIXME this is redundant with test_new_interface.py, test_all_cms.py
+# FIXME this is redundant with test_generators.py
+# instead do specific tests that only work for eposlhc here
 
 from impy.constants import GeV
 from impy.kinematics import EventKinematics

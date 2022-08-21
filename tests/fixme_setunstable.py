@@ -29,9 +29,9 @@ def test_unstable(model):
         c = Counter()
         for event in generator(100):
             # generator.lib.pydat3.mdcy[102 - 1, 0] = 1
-            event.filter_final_state()
+            ev = event.final_state()
 
-            c.update(event.pid)
+            c.update(ev.pid)
 
             # for pid in decay_list:
             #     if pid in np.abs(event.pid):
