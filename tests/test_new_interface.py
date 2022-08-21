@@ -26,17 +26,18 @@ def run_model(model, ekin):
 
 @pytest.mark.parametrize("model", models)
 def test_new_interface(model):
-    # remove this once CI issue is fixed
+    # remove this when git lfs issue is fixed
     if os.environ.get("CI", False) and model in (
-        im.EposLHC,
-        im.DpmjetIII191,
-        im.DpmjetIII193,
-        im.Phojet112,
-        im.Phojet191,
+        im.QGSJet01c,
         im.QGSJetII03,
         im.QGSJetII04,
+        im.Phojet191,
+        im.EposLHC,
+        im.DpmjetIII306,
+        im.DpmjetIII191,
+        im.DpmjetIII193,
     ):
-        pytest.xfail("model cannot succeed on CI because git lfs does not work")
+        pytest.xfail("model cannot succeed on CI, because git lfs does not work")
 
     p1pdg = -211  # pi-
     p2pdg = 2212  # proton
