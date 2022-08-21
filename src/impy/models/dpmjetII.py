@@ -27,7 +27,7 @@ class DpmjetIIMCEvent(MCEvent):
             # This is a patch to allow working with all other generators
             self._charge_init = self.charge
 
-        self.p_ids = evt.idhkk[sel]
+        self.pid = evt.idhkk[sel]
         self.pt2 = evt.phkk[0, sel] ** 2 + evt.phkk[1, sel] ** 2
         self.pz = evt.phkk[2, sel]
         self.en = evt.phkk[3, sel]
@@ -258,7 +258,7 @@ class DpmjetIICascadeRun:
             #             try:
             [
                 hist_d[pid].fill_event(event)
-                for pid in np.unique(event.p_ids)
+                for pid in np.unique(event.pid)
                 if pid in avail_pid
             ]
         #  except KeyError:
@@ -278,7 +278,7 @@ class DpmjetIICascadeEvent:
         npart = lib.hkkevt.nhkk
         sel = lib.hkkevt.isthkk[:npart] == 1
 
-        self.p_ids = lib.hkkevt.idhkk[sel]
+        self.pid = lib.hkkevt.idhkk[sel]
         self.E = lib.hkkevt.phkk[3, sel]
 
 

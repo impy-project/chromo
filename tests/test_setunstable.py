@@ -31,18 +31,18 @@ def test_unstable(model):
             # generator.lib.pydat3.mdcy[102 - 1, 0] = 1
             event.filter_final_state()
 
-            c.update(event.p_ids)
+            c.update(event.pid)
 
             # for pid in decay_list:
-            #     if pid in np.abs(event.p_ids):
+            #     if pid in np.abs(event.pid):
             #         print('Decay not working for',pid)
             # raise Exception('Decay not working for',pid)
-            # print(event.p_ids)
+            # print(event.pid)
             # print 'px', event.px
             # print 'py', event.py
             # print 'pz', event.pz
             # print 'en', event.en
-            # print 'p_ids', event.p_ids
+            # print 'pid', event.pid
             # print 'impact param', event.impact_parameter
 
         if stable:

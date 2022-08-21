@@ -1,8 +1,10 @@
 from impy.kinematics import EventKinematics
 from impy.models import Pythia6
 from impy.constants import TeV
+import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from .util import reference_charge
+import pytest
 
 ekin = EventKinematics(ecm=10 * TeV, p1pdg=2212, p2pdg=2212)
 m = Pythia6(ekin, seed=1)
@@ -11,32 +13,37 @@ for event in m(1):
 
 
 def test_charge():
-    expected = reference_charge(event.id)
+    expected = reference_charge(event.pid)
     assert_allclose(event.charge, expected)
 
 
+@pytest.mark.xfail(reason="no vertex info in pythia6")
+def test_vertex():
+    assert np.sum(event.vt != 0) > 0
+
+
 def test_children():
-    assert event.children.shape == (2, len(event))
+    assert event.children.shape == (len(event), 2)
     # some particles have no children
-    assert sum((event.children[0] == 0) & (event.children[1] == 0)) > 0
+    assert sum(x[0] == 0 and x[1] == 0 for x in event.children) > 0
 
     # no particles have single children (no elastic scattering)
-    assert sum((event.children[0] > 0) & (event.children[1] == 0)) == 0
+    assert sum(x[0] > 0 and x[1] == 0 for x in event.children) == 0
 
     # some particles have multiple children
-    assert sum((event.children[0] > 0) & (event.children[1] > 0)) > 0
+    assert sum(x[0] > 0 and x[1] > 0 for x in event.children) > 0
 
 
 def test_parents():
-    assert event.parents.shape == (2, len(event))
+    assert event.parents.shape == (len(event), 2)
     # same particles have no parents
-    assert sum((event.parents[0] == 0) & (event.parents[1] == 0)) > 0
+    assert sum(x[0] == 0 and x[1] == 0 for x in event.parents) > 0
 
     # most particles have a single parent
-    assert sum((event.parents[0] > 0) & (event.parents[1] == 0)) > 0
+    assert sum(x[0] > 0 and x[1] == 0 for x in event.parents) > 0
 
     # some particles have multiple parents
-    assert sum((event.parents[0] > 0) & (event.parents[1] > 0)) > 0
+    assert sum(x[0] > 0 and x[1] > 0 for x in event.parents) > 0
 
 
 def test_event_is_readonly_view():

@@ -6,7 +6,7 @@ from collections import Counter
 import pytest
 from multiprocessing import Pool
 from multiprocessing.context import TimeoutError
-
+import os
 
 # generate list of all models in impy.models
 models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
@@ -18,14 +18,25 @@ def run_model(model, ekin):
     c = Counter()
     for event in gen(10):
         ev = event.final_state()
-        assert len(ev.id) > 0
-        c.update(ev.id)
+        assert len(ev.pid) > 0
+        c.update(ev.pid)
 
     return c
 
 
 @pytest.mark.parametrize("model", models)
 def test_new_interface(model):
+    # remove this once CI issue is fixed
+    if os.environ.get("CI", False) and model in (
+        im.EposLHC,
+        im.DpmjetIII191,
+        im.DpmjetIII193,
+        im.Phojet112,
+        im.Phojet191,
+        im.QGSJetII03,
+        im.QGSJetII04,
+    ):
+        pytest.xfail("model cannot succeed on CI because git lfs does not work")
 
     p1pdg = -211  # pi-
     p2pdg = 2212  # proton

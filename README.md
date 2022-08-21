@@ -19,11 +19,11 @@ average_pt = 0
 
 # Generate 10000 events
 for event in generator(10000):
-    # Filter events
-    event.filter_final().filter_charged()
-    # do something with event.p_ids, event.eta, event.en, event.pt, etc.
+    # Filter event
+    event = event.final_state_charged()
+    # do something with event.pid, event.eta, event.en, event.pt, etc.
     # these variables are numpy arrays, that can be histogrammed or counted like
-    pt = event.pt[np.abs(event.p_ids) == 211]
+    pt = event.pt[np.abs(event.pid) == 211]
     # The list could be empty
     if len(pt) > 0:
         nevents += 1

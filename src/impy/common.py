@@ -11,15 +11,22 @@ from abc import ABC, abstractmethod
 import numpy as np
 from impy import impy_config
 from impy.util import info
+from impy.kinematics import EventKinematics
 from dataclasses import dataclass
 
 
 @dataclass
 class EventData:
-    """Data structure to keep filtered data"""
+    """
+    Data structure to keep filtered data.
 
+    Unlike the original MCEvent, this structure is picklable.
+    """
+
+    kin: EventKinematics
+    frame: str
     nevent: int
-    id: np.array
+    pid: np.array
     status: np.array
     charge: np.array
     px: np.array
@@ -39,8 +46,10 @@ class EventData:
         This may return a copy if the result cannot represented as a view.
         """
         return EventData(
+            self.kin,
+            self.frame,
             self.nevent,
-            self.id[arg],
+            self.pid[arg],
             self.status[arg],
             self.charge[arg],
             self.px[arg],
@@ -55,29 +64,44 @@ class EventData:
         )
 
     def __len__(self):
-        return len(self.id)
+        return len(self.pid)
 
     def __eq__(self, other):
-        return self.nevent == other.nevent and np.all(
-            (self.id == other.id)
-            & (self.status == other.status)
-            & (self.charge == other.charge)
-            & (self.px == other.px)
-            & (self.py == other.py)
-            & (self.pz == other.pz)
-            & (self.en == other.en)
-            & (self.m == other.m)
-            & (self.vx == other.vx)
-            & (self.vy == other.vy)
-            & (self.vz == other.vz)
-            & (self.vt == other.vt)
-            & (self.en == other.en)
+        """
+        Return true if events are equal.
+
+        This is mostly useful for debugging and in unit tests.
+        """
+        return (
+            self.kin == other.kin
+            and self.frame == other.frame
+            and self.nevent == other.nevent
+            and np.all(
+                (self.pid == other.pid)
+                & (self.status == other.status)
+                & (self.charge == other.charge)
+                & (self.px == other.px)
+                & (self.py == other.py)
+                & (self.pz == other.pz)
+                & (self.en == other.en)
+                & (self.m == other.m)
+                & (self.vx == other.vx)
+                & (self.vy == other.vy)
+                & (self.vz == other.vz)
+                & (self.vt == other.vt)
+                & (self.en == other.en)
+            )
         )
 
     def copy(self):
+        """
+        Return event copy.
+        """
         return EventData(
+            self.kin,
+            self.frame,
             self.nevent,
-            self.id.copy(),
+            self.pid.copy(),
             self.status.copy(),
             self.charge.copy(),
             self.px.copy(),
@@ -91,17 +115,95 @@ class EventData:
             self.vt.copy(),
         )
 
+    def final_state(self):
+        """
+        Return filtered event with only final state particles.
+
+        The final state is generator-specific, but usually contains only
+        long-lived particles.
+        """
+        return self.__getitem__(self.status == 1)
+
+    def final_state_charged(self):
+        """
+        Return filtered event with only charged final state particles.
+
+        The final state is generator-specific, see :meth:`final_state`.
+        Additionally, this selects only charged particles which can be
+        seen by a tracking detector.
+        """
+        return self.__getitem__((self.status == 1) & (self.charge != 0))
+
+    @property
+    def pt(self):
+        """Return transverse momentum in GeV/c."""
+        return np.sqrt(self.pt2)
+
+    @property
+    def pt2(self):
+        """Return transverse momentum squared in (GeV/c)**2."""
+        return self.px**2 + self.py**2
+
+    @property
+    def p_tot(self):
+        """Return total momentum in GeV/c."""
+        return np.sqrt(self.pt2 + self.pz**2)
+
+    @property
+    def eta(self):
+        """Return pseudorapidity."""
+        return np.log((self.p_tot + self.pz) / self.pt)
+
+    @property
+    def y(self):
+        """Return rapidity."""
+        return 0.5 * np.log((self.en + self.pz) / (self.en - self.pz))
+
+    @property
+    def xf(self):
+        """Return Feynman x_F."""
+        return 2.0 * self.pz / self.kin.ecm
+
+    @property
+    def theta(self):
+        """Return angle to beam axis (z-axis) in rad."""
+        return np.arctan2(self.pt, self.pz)
+
+    @property
+    def phi(self):
+        """Return polar angle around beam axis (z-axis) in rad."""
+        return np.arctan2(self.py, self.px)
+
+    @property
+    def elab(self):
+        """Return kinetic energy in laboratory frame."""
+        kin = self.kin
+        if self.frame == "laboratory":
+            return self.en
+        return kin.gamma_cm * self.en + kin.betagamma_z_cm * self.pz
+
+    @property
+    def ekin(self):
+        """Return kinetic energy in current frame."""
+        return self.elab - self.m
+
+    @property
+    def xlab(self):
+        """Return energy fraction of beam in laboratory frame."""
+        return self.elab / self.kin.elab
+
+    # @property
+    # def fw(self):
+    #     """I don't remember what this was for..."""
+    #     return self.en / self.kin.pcm
+
 
 class MCEvent(EventData, ABC):
-    """The basis of interaction between user and all the event generators.
+    """
+    The base class for interaction between user and all event generators.
 
-    The derived classes are expected to interact with the particle stack
-    and derive the base variables from which everything else can be defined.
-
-    Args:
-        lib (object)       : Reference to the FORTRAN library in use
-        event_kinematics   : Reference to current event kinematics object
-        event_frame (str)  : The frame in which the generator returned the variables
+    Derived classes override base methods, if interaction with the particle stack
+    of the generator requires special treatment.
     """
 
     # name of hepevt common block (override in subclass if necessary)
@@ -120,29 +222,36 @@ class MCEvent(EventData, ABC):
 
     # only called once, so setup is allowed to be slow
     def __init__(self, lib, event_kinematics, event_frame):
-        self._lib = lib  # used by _charge_init
-
-        # Store for further filtering/access
-        self.kin = event_kinematics
-        self.event_frame = event_frame
+        """
+        Parameters
+        ----------
+        lib:
+            Reference to the FORTRAN library in use.
+        event_kinematics:
+            Reference to current event kinematics object.
+        event_frame: str
+            The frame in which the generator returned the variables.
+        """
+        self._lib = lib  # used by _charge_init and generator-specific methods
 
         evt = getattr(lib, self._hepevt)
 
         npart = getattr(evt, self._nhep)
         sel = slice(None, npart)
 
-        # these are used by the HepMCWriter, for example
-        self._parr = getattr(evt, self._phep)[:, sel]
-        self._varr = getattr(evt, self._vhep)[:, sel]
+        phep = getattr(evt, self._phep)[:, sel]
+        vhep = getattr(evt, self._vhep)[:, sel]
 
         EventData.__init__(
             self,
+            event_kinematics,
+            event_frame,
             int(getattr(evt, self._nevhep)),
             getattr(evt, self._idhep)[sel],
             getattr(evt, self._isthep)[sel],
             self._charge_init(npart),
-            *self._parr,
-            *self._varr
+            *phep,
+            *vhep,
         )
 
         # make all arrays read-only, we don't want to
@@ -162,23 +271,12 @@ class MCEvent(EventData, ABC):
 
         # Apply boosts into frame required by user
         self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
-        self.event_frame = impy_config["user_frame"]
-
-    def final_state(self):
-        """After calling this method, the variables will only contain
-        "stable" final state particles.
-        """
-        return self.__getitem__(self.status == 1)
-
-    def final_state_charged(self):
-        """After calling this method, the variables will only contain
-        "stable" and charged final state particles.
-        """
-        return self.__getitem__((self.status == 1) & (self.charge != 0))
+        self.frame = impy_config["user_frame"]
 
     @abstractmethod
     def _charge_init(self, npart):
-        pass
+        # override this in derived to get charge info
+        ...
 
     @property
     def parents(self):
@@ -219,69 +317,6 @@ class MCEvent(EventData, ABC):
             (Exception) : if filtering has been applied.
         """
         return self._children
-
-    @property
-    def pt(self):
-        """Transverse momentum in GeV/c"""
-        return np.sqrt(self.px**2 + self.py**2)
-
-    @property
-    def pt2(self):
-        """Transverse momentum squared in (GeV/c)**2"""
-        return self.px**2 + self.py**2
-
-    @property
-    def p_tot(self):
-        """Total momentum in GeV/c"""
-        return np.sqrt(self.pt2 + self.pz**2)
-
-    @property
-    def eta(self):
-        """Pseudo-rapidity"""
-        return np.log((self.p_tot + self.pz) / self.pt)
-
-    @property
-    def y(self):
-        """True rapidity"""
-        return 0.5 * np.log((self.en + self.pz) / (self.en - self.pz))
-
-    @property
-    def xf(self):
-        """Feynman x_F"""
-        return 2.0 * self.pz / self.kin.ecm
-
-    @property
-    def theta(self):
-        """arctan(pt/pz) in rad"""
-        return np.arctan2(self.pt, self.pz)
-
-    @property
-    def phi(self):
-        """arctan(py/px) in rad"""
-        return np.arctan2(self.py, self.px)
-
-    @property
-    def elab(self):
-        """Kinetic energy"""
-        kin = self.kin
-        if self.event_frame == "laboratory":
-            return self.en
-        return kin.gamma_cm * self.en + kin.betagamma_z_cm * self.pz
-
-    @property
-    def ekin(self):
-        """Kinetic energy"""
-        return self.elab - self.m
-
-    @property
-    def xlab(self):
-        """Energy fraction E/E_beam in lab. frame"""
-        return self.elab / self.kin.elab
-
-    @property
-    def fw(self):
-        """I don't remember what this was for..."""
-        return self.en / self.kin.pcm
 
 
 # =========================================================================

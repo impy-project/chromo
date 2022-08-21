@@ -11,7 +11,7 @@ for event in m(1):
 
 
 def test_charge():
-    expected = reference_charge(event.id)
+    expected = reference_charge(event.pid)
     assert_allclose(event.charge, expected)
 
 
