@@ -5,6 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from .util import reference_charge
 import pytest
+import pickle
 
 ekin = EventKinematics(ecm=10 * TeV, p1pdg=2212, p2pdg=2212)
 m = Pythia6(ekin, seed=1)
@@ -64,3 +65,17 @@ def test_final_state_charged():
     ev3 = ev3[ev3.charge != 0]
     assert_equal(ev1, ev2)
     assert_equal(ev1, ev3)
+
+
+def test_pickle():
+    # cannot pickle MCEvent...
+    with pytest.raises(TypeError):
+        pickle.dumps(event)
+
+    # but can pickle EventData
+    ev1 = event.copy()
+
+    s = pickle.dumps(ev1)
+    ev2 = pickle.loads(s)
+
+    assert ev1 == ev2
