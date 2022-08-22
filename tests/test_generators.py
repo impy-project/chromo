@@ -24,8 +24,9 @@ def run_model(model, ekin):
     return c
 
 
+# DpmjetIII191 sometimes randomly fails this
 @pytest.mark.parametrize("model", models)
-def test_new_interface(model):
+def test_generators(model):
     # remove this when git lfs issue is fixed
     if os.environ.get("CI", False) and model in (
         im.QGSJet01c,
@@ -44,9 +45,8 @@ def test_new_interface(model):
     if model is im.Sophia20:
         # Sophia can only do γp, γn
         p1pdg = 22  # gamma
-    elif model in [im.Phojet112, im.UrQMD34, im.Pythia6]:
+    elif model in [im.Phojet112, im.UrQMD34]:
         # The old phojet needs more tweaking for pion-proton (is not related to test)
-        # Pythia6 can only do ee, ep, pp
         p1pdg = 2212  # proton
 
     ekin = EventKinematics(

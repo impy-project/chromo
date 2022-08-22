@@ -13,6 +13,7 @@ from impy import impy_config
 from impy.util import info
 from impy.kinematics import EventKinematics
 from dataclasses import dataclass
+import typing as _tp
 
 
 @dataclass
@@ -21,23 +22,63 @@ class EventData:
     Data structure to keep filtered data.
 
     Unlike the original MCEvent, this structure is picklable.
+
+    kin: EventKinematics
+        Info about initial state.
+    frame: str
+        Current event frame (Lorentz frame).
+    nevent: int
+        Which event in the sequence.
+    pid: 1D array of int
+        PDG IDs of the particles.
+    status: 1D array of int
+        Status code of the particles (1 = final).
+    charge: 1D array of double
+        Charge in units of elementary charge. Fractional for quarks.
+    px: 1D array of double
+        X coordinate of momentum in GeV/c.
+    py: 1D array of double
+        Y coordinate of momentum in GeV/c.
+    pz: 1D array of double
+        Z coordinate of momentum in GeV/c.
+    en: 1D array of double
+        Energy in GeV.
+    m: 1D array of double
+        Generated mass in GeV/c^2.
+    vx: 1D array of double
+        X coordinate of particle in mm.
+    vy: 1D array of double
+        Y coordinate of particle in mm.
+    vz: 1D array of double
+        Z coordinate of particle in mm.
+    vt: 1D array of double
+        Time of particle in s.
+    parents: 2D array of int or None
+        This array has shape (N, 2) for N particles. The two numbers
+        are a range of indices pointing to parent particle(s). This
+        array is not available for all generators and it is not
+        available for filtered events. In those cases, parents is None.
+    children: 2D array of int or None
+        Same as parents.
     """
 
     kin: EventKinematics
     frame: str
     nevent: int
-    pid: np.array
-    status: np.array
-    charge: np.array
-    px: np.array
-    py: np.array
-    pz: np.array
-    en: np.array
-    m: np.array
-    vx: np.array
-    vy: np.array
-    vz: np.array
-    vt: np.array
+    pid: np.ndarray
+    status: np.ndarray
+    charge: np.ndarray
+    px: np.ndarray
+    py: np.ndarray
+    pz: np.ndarray
+    en: np.ndarray
+    m: np.ndarray
+    vx: np.ndarray
+    vy: np.ndarray
+    vz: np.ndarray
+    vt: np.ndarray
+    parents: _tp.Optional[np.ndarray]
+    children: _tp.Optional[np.ndarray]
 
     def __getitem__(self, arg):
         """
@@ -61,9 +102,12 @@ class EventData:
             self.vy[arg],
             self.vz[arg],
             self.vt[arg],
+            None,
+            None,
         )
 
     def __len__(self):
+        """Return number of particles."""
         return len(self.pid)
 
     def __eq__(self, other):
@@ -91,6 +135,8 @@ class EventData:
                 & (self.vt == other.vt)
                 & (self.en == other.en)
             )
+            and (self.parents is None or np.all(self.parents == other.parents))
+            and (self.children is None or np.all(self.children == other.children))
         )
 
     def copy(self):
@@ -113,6 +159,8 @@ class EventData:
             self.vy.copy(),
             self.vz.copy(),
             self.vt.copy(),
+            self.parents.copy() if self.parents is not None else None,
+            self.children.copy() if self.parents is not None else None,
         )
 
     def final_state(self):
@@ -122,7 +170,7 @@ class EventData:
         The final state is generator-specific, but usually contains only
         long-lived particles.
         """
-        return self.__getitem__(self.status == 1)
+        return self[self.status == 1]
 
     def final_state_charged(self):
         """
@@ -132,7 +180,7 @@ class EventData:
         Additionally, this selects only charged particles which can be
         seen by a tracking detector.
         """
-        return self.__getitem__((self.status == 1) & (self.charge != 0))
+        return self[(self.status == 1) & (self.charge != 0)]
 
     @property
     def pt(self):
@@ -242,6 +290,9 @@ class MCEvent(EventData, ABC):
         phep = getattr(evt, self._phep)[:, sel]
         vhep = getattr(evt, self._vhep)[:, sel]
 
+        parents = getattr(evt, self._jmohep).T[sel] if self._jmohep else None
+        children = getattr(evt, self._jdahep).T[sel] if self._jdahep else None
+
         EventData.__init__(
             self,
             event_kinematics,
@@ -252,6 +303,8 @@ class MCEvent(EventData, ABC):
             self._charge_init(npart),
             *phep,
             *vhep,
+            parents,
+            children
         )
 
         # make all arrays read-only, we don't want to
@@ -259,15 +312,6 @@ class MCEvent(EventData, ABC):
         for obj in self.__dict__.values():
             if isinstance(obj, np.ndarray):
                 obj.flags["WRITEABLE"] = False
-
-        if self._jmohep is None:
-            self._parents = None
-        else:
-            self._parents = getattr(evt, self._jmohep).T[sel]
-        if self._jdahep is None:
-            self._children = None
-        else:
-            self._children = getattr(evt, self._jdahep).T[sel]
 
         # Apply boosts into frame required by user
         self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
@@ -277,46 +321,6 @@ class MCEvent(EventData, ABC):
     def _charge_init(self, npart):
         # override this in derived to get charge info
         ...
-
-    @property
-    def parents(self):
-        """Range of indices pointing to mother particles.
-
-        The range of children particles is given by two the two
-        indices of the 0th axis.
-
-        Note::
-            This property has to raise an exception of filtering
-            has been applied, otherwise the indices do not point to
-            the right positions on the particle stack.
-
-        Returns:
-            (array)     : [2, npart] array
-
-        Raises:
-            (Exception) : if filtering has been applied.
-        """
-        return self._parents
-
-    @property
-    def children(self):
-        """Range of indices pointing to daughter particles.
-
-        The range of children particles is given by two the two
-        indices of the 0th axis.
-
-        Note::
-            This property has to raise an exception of filtering
-            has been applied, otherwise the indices do not point to
-            the right positions on the particle stack.
-
-        Returns:
-            (array)     : [2, npart] array
-
-        Raises:
-            (Exception) : if filtering has been applied.
-        """
-        return self._children
 
 
 # =========================================================================
