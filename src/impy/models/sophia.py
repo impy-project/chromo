@@ -163,7 +163,7 @@ class SophiaRun(MCRun):
         self.lib.initial(
             self.nucleon_code_number
         )  # setting parameters for cross-section
-        self.energy_of_nucleon = np.float32(k.pmass2) # fix roundoff error
+        self.energy_of_nucleon = np.float32(k.pmass2)  # fix roundoff error
         self.energy_of_photon = k.elab
         # Here we consider laboratory frame where photon moves along z axis
         # and nucleon is at rest. The angle is counted from z axis.
