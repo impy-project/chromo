@@ -547,7 +547,7 @@ class MCRun(ABC):
         pass
 
     def _update_event_kinematics(self):
-        if hasattr(self._curr_event_kin, "_with_composite_target"):
+        if self._curr_event_kin.composite_target:
             ekin = self._curr_event_kin
             if ekin.p2_is_nucleus:
                 ekin.A2, ekin.Z2 = ekin.composite_target.get_random_AZ()
