@@ -1,0 +1,39 @@
+**********************************************************************
+*                       p - p  , sqrt(s)=14TeV (LHC)
+*
+* Format: A10,6E10.0,A8
+*        (except for the section enclosed by "PHOINPUT" and "ENDINPUT"
+*         which is format-free)
+*         lines starting with "*" are comment lines
+**********************************************************************
+*
+* projectile / target
+* -------------------
+PROJPAR                                                               PROTON
+TARPAR                                                                PROTON
+*
+* energy of interaction
+* ---------------------
+* CMENERGY     14000.0
+BEAM          7000.0    7000.0     200.0       0.0
+*
+* PHOJET-specific input
+* ---------------------
+* The following lines control the event-generation with PHOJET for
+* individual photon/nucleon-nucleon collisions.
+* Any options explained in the PHOJET-manual can be used in between
+* the "PHOINPUT" and "ENDINPUT" cards.
+PHOINPUT
+PROCESS           1 0 1 1 1 1 1 1
+ENDINPUT
+*
+* Output
+* ------
+*   some default output (particle multiplicities etc.)
+HISTOGRAM      101.0     102.0
+*
+* Start of event generation
+* -------------------------
+START        10000.0       0.0
+STOP
+*...+....1....+....2....+....3....+....4....+....5....+....6....+....7...

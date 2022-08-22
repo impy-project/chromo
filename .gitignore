@@ -1,4 +1,4 @@
-venv
+venv*
 *.dSYM
 **.o
 **.so
@@ -17,7 +17,7 @@ src/dpmjet3.0-6/dpm3usr
 src/urqmd-3.4/terms.mod
 dev
 .cache
-build/*
+build/**
 dist/*
 *.egg-info
 test_hepmc_writer_*.dat
@@ -30,3 +30,5 @@ impy/tests/*.pkl
 *.cmdx
 *.cmod
 *.o-*
+__pycache__
+.pytest_cache
