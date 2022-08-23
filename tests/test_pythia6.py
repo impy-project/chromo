@@ -27,9 +27,8 @@ def test_charge(event):
     assert_allclose(event.charge, expected)
 
 
-@pytest.mark.xfail(reason="no vertex info in pythia6")
 def test_vertex(event):
-    assert np.sum(event.vt != 0) > 0
+    assert np.sum(event.vx != 0) > 0
 
 
 def test_children(event):
