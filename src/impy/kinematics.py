@@ -60,25 +60,25 @@ class _FromParticleName:
     )
 
     @staticmethod
-    def get_pdg(pname):
+    def _get_pdg(pname):
         try:
             return _FromParticleName.all_pdgs[pname]
         except KeyError:
             raise ValueError("Particle with name = {0} is not found".format(pname))
 
     @staticmethod
-    def get_AZ(arg):
+    def _get_AZ(arg):
         if isinstance(arg, str):
-            pdg = particle.pdgid.PDGID(_FromParticleName.get_pdg(arg))
+            pdg = particle.pdgid.PDGID(_FromParticleName._get_pdg(arg))
             if (pdg.A is None) or (pdg.Z is None):
-                raise ValueError("'get_AZ': no (A, Z) data for '{0}'".format(arg))
+                raise ValueError("'_get_AZ': no (A, Z) data for '{0}'".format(arg))
             else:
                 return pdg.A, pdg.Z
         elif _is_AZ_tuple(arg):
             return arg
         else:
             raise ValueError(
-                "'get_AZ' accepts 'str' (particle name) or 'tuple' (A, Z)"
+                "'_get_AZ' accepts 'str' (particle name) or 'tuple' (A, Z)"
                 ", but it received object {0} = {1}".format(type(arg[1]), arg[1])
             )
 
@@ -112,7 +112,7 @@ class CompositeTarget(object):
         self._normalize()
 
     def _add_component(self, az, fraction, name=""):
-        A, Z = _FromParticleName.get_AZ(az)
+        A, Z = _FromParticleName._get_AZ(az)
         if (name == "") and (isinstance(az, str)):
             self.component_name.append(az)
         else:
@@ -227,7 +227,7 @@ def _normalize_particle(particle):
     elif received == "tuple":
         nuc_prop = particle
     elif received == "string":
-        pdg = _FromParticleName.get_pdg(particle)
+        pdg = _FromParticleName._get_pdg(particle)
     elif received == "composite_target":
         nuc_prop = particle.get_maximum_AZ()
         composite_target = particle
@@ -331,7 +331,7 @@ class EventKinematics(abc.ABC):
             self.A1, self.Z1 = nuc1_prop
             self.p1_is_nucleus = True if self.A1 > 1 else False
             if self.A1 == 1 and self.Z1 == 0:
-                self.p1pdg = 2212
+                self.p1pdg = 2112
             info(20, "Particle 1 is a nucleus.")
 
         # Handle target type
