@@ -12,6 +12,8 @@ from impy.util import info
 class SibyllEvent(MCEvent):
     """Wrapper class around SIBYLL 2.1 & 2.3 particle stack."""
 
+    _jdahep = None  # no child info
+
     def _charge_init(self, npart):
         return self._lib.schg.ichg[:npart]
 

@@ -7,11 +7,13 @@ from .util import reference_charge, run_in_separate_process
 import pytest
 import pickle
 from collections import defaultdict
+from particle import literals as lp
 
 
 def run_event():
-    ekin = EventKinematics(ecm=10 * TeV, p1pdg=2212, p2pdg=2212)
+    ekin = EventKinematics(ecm=100 * GeV, p1pdg=2212, p2pdg=2212)
     m = Pythia6(ekin, seed=1)
+    m.set_stable(lp.pi_0.pdgid, False)  # needed to get nonzero vertices
     for event in m(1):
         pass
     return event.copy()  # copy is pickleable
@@ -28,7 +30,7 @@ def test_charge(event):
 
 
 def test_vertex(event):
-    assert np.sum(event.vx != 0) > 0
+    assert np.sum(event.vt != 0) > 0
 
 
 def test_children(event):

@@ -160,7 +160,7 @@ class EventData:
             self.vz.copy(),
             self.vt.copy(),
             self.parents.copy() if self.parents is not None else None,
-            self.children.copy() if self.parents is not None else None,
+            self.children.copy() if self.children is not None else None,
         )
 
     def final_state(self):
