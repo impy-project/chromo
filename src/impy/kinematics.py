@@ -434,14 +434,17 @@ class EventKinematics(abc.ABC):
         for PHOJET and PYTHIA."""
 
         p1, p2 = np.array(np.zeros(4), dtype="d"), np.array(np.zeros(4), dtype="d")
+        delta = (
+            (self.pmass1 + self.pmass2) * (self.pmass1 - self.pmass2) / (2 * self.ecm)
+        )
         p1[0] = 0.0
         p1[1] = 0.0
         p1[2] = self.pcm
-        p1[3] = self.ecm / 2.0
+        p1[3] = self.ecm / 2.0 + delta
         p2[0] = 0.0
         p2[1] = 0.0
         p2[2] = -self.pcm
-        p2[3] = self.ecm / 2.0
+        p2[3] = self.ecm / 2.0 - delta
 
         return p1, p2
 
