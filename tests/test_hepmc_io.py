@@ -1,7 +1,6 @@
 from pathlib import Path
 from impy.constants import GeV
 from impy.kinematics import EventKinematics
-from impy.writer import HepMCWriter
 import impy.models as im
 import pytest
 import pyhepmc
@@ -24,7 +23,7 @@ def run(Model):
         im.EposLHC,
     ],
 )
-def test_hepmc_writer(Model):
+def test_hepmc_io(Model):
     # To run this test do `pytest tests/test_hepmc_writer.py`
     # This test fails because the event record written by HepMC3 C++ is bad,
     # a lot of particles are missing. Either a bug in the original impy record or a
@@ -38,17 +37,19 @@ def test_hepmc_writer(Model):
     events = run_in_separate_process(run, Model)
 
     expected = []
-    with HepMCWriter(str(test_file)) as w:
+    with pyhepmc.open(test_file, "w") as f:
         for event in events:
-            w.write(event)
+            f.write(event)
             expected.append(event.to_hepmc3())
 
     restored = []
-    for event in pyhepmc.open(str(test_file)):
+    for event in pyhepmc.open(test_file):
         assert event is not None
         # Some models (e.g. Sibyll) do not set event.event_number properly
         # assert event.event_number == ievent
         restored.append(event)
+
+    assert len(restored) == len(expected)
 
     for ev1, ev2 in zip(expected, restored):
         assert ev1 == ev2
