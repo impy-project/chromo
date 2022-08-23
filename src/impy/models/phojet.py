@@ -3,7 +3,6 @@ Created on 15.05.2012
 
 @author: afedynitch
 """
-import numpy as np
 from impy.common import MCRun, MCEvent
 from impy import impy_config
 from impy.util import info, fortran_chars
@@ -12,91 +11,44 @@ from impy.util import info, fortran_chars
 class PhojetEvent(MCEvent):
     """Wrapper class around (pure) PHOJET particle stack."""
 
-    def __init__(self, lib, event_kinematics, event_frame):
-        # HEPEVT (style) common block
-        evt = lib.poevt1
+    _hepevt = "poevt1"
 
-        # Save selector for implementation of on-demand properties
-        px, py, pz, en, m = evt.phep
-        vx, vy, vz, vt = evt.vhep
-
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhep,
-            npart=evt.nhep,
-            p_ids=evt.idhep,
-            status=evt.isthep,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phep,
-            vt_arr=evt.vhep,
-        )
-
-    def filter_final_state(self):
-        self.selection = np.where(self.status == 1)
-        self._apply_slicing()
-
-    def filter_final_state_charged(self):
-        self.selection = np.where((self.status == 1) & (self.charge != 0))
-        self._apply_slicing()
-
-    @property
-    def _charge_init(self):
-        return self.lib.poevt2.icolor[0, self.selection] // 3
+    def _charge_init(self, npart):
+        return self._lib.poevt2.icolor[0, :npart] / 3
 
     def _gen_cut_info(self):
         """Init variables tracking the number of soft and hard cuts"""
 
-        self._mpi = self.lib.podebg.kspom + self.lib.podebg.khpom
-        self._kspom = self.lib.podebg.kspom
-        self._khpom = self.lib.podebg.khpom
-        self._ksoft = self.lib.podebg.ksoft
-        self._khard = self.lib.podebg.khard
+        self._mpi = self._lib.podebg.kspom + self._lib.podebg.khpom
+        self._kspom = self._lib.podebg.kspom
+        self._khpom = self._lib.podebg.khpom
+        self._ksoft = self._lib.podebg.ksoft
+        self._khard = self._lib.podebg.khard
 
     @property
     def mpi(self):
         """Total number of cuts"""
-        return self.lib.podebg.kspom + self.lib.podebg.khpom
+        return self._lib.podebg.kspom + self._lib.podebg.khpom
 
     @property
     def kspom(self):
         """Total number of soft cuts"""
-        return self.lib.podebg.kspom
+        return self._lib.podebg.kspom
 
     @property
     def khpom(self):
         """Total number of hard cuts"""
-        return self.lib.podebg.khpom
+        return self._lib.podebg.khpom
 
     @property
     def ksoft(self):
         """Total number of realized soft cuts"""
-        return self.lib.podebg.ksoft
+        return self._lib.podebg.ksoft
 
     @property
     def khard(self):
         """Total number of realized hard cuts"""
-        return self.lib.podebg.khard
-
-    @property
-    def parents(self):
-        MCEvent.parents(self)
-        return self.lib.poevt1.jmohep
-
-    @property
-    def children(self):
-        MCEvent.children(self)
-        return self.lib.poevt1.jdahep
+        return self._lib.podebg.khard
 
     # def elastic_t(self):
     #     """Squared momentum transfer t for elastic interaction.

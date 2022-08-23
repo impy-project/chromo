@@ -34,10 +34,10 @@ class Pythia8DecayAfterburner(object):
 
     def __call__(self, event):
         nappend = 0
-        p_ids, status, px, py, pz, en, m = [], [], [], [], [], [], []
+        pid, status, px, py, pz, en, m = [], [], [], [], [], [], []
 
         for ip in range(event.npart):
-            if event.status[ip] != 1 or abs(event.p_ids[ip]) in self.stable_list:
+            if event.status[ip] != 1 or abs(event.pid[ip]) in self.stable_list:
                 continue
 
             # Set particle to not final and simulate decay
@@ -45,7 +45,7 @@ class Pythia8DecayAfterburner(object):
             self.pythia.event.reset()
             # put decaying particle
             self.pythia.event.append(
-                int(event.p_ids[ip]),
+                int(event.pid[ip]),
                 91,
                 0,
                 0,
@@ -55,13 +55,13 @@ class Pythia8DecayAfterburner(object):
                 event.en[ip],
                 event.m[ip],
             )
-            self.pythia.particleData.mayDecay(int(event.p_ids[ip]), True)
+            self.pythia.particleData.mayDecay(int(event.pid[ip]), True)
             # Decay it
             self.pythia.forceHadronLevel()
             for p in self.pythia.event:
                 if not p.isFinal():
                     continue
-                p_ids.append(p.id())
+                pid.append(p.id())
                 status.append(1)
                 px.append(p.px())
                 py.append(p.py())
@@ -73,7 +73,7 @@ class Pythia8DecayAfterburner(object):
         append = slice(event.npart, event.npart + nappend)
 
         event.en[append] = en
-        event.p_ids[append] = p_ids
+        event.pid[append] = pid
         event.status[append] = status
         event.px[append] = px
         event.py[append] = py
@@ -107,14 +107,14 @@ def test_decay_afterburner():
     before = Counter()
     after = Counter()
     for event in generator(200):
-        before.update(event.p_ids)
+        before.update(event.pid)
         # This has to be the first call after an event is generated. The event object
         # will be modified and finalized by this call
         pythia_afterburner(event)
         # Here filter only the particles that are remaining as stable
         event.filter_final_state()
         # Enjoy the result
-        after.update(event.p_ids)
+        after.update(event.pid)
     assert len(after) < len(before)
     # TODO check list of specific particles that are expected to
     # be decayed by Pythia but not Dpmjet

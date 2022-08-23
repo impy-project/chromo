@@ -15,80 +15,33 @@ class SibyllEvent(MCEvent):
     # Workaround for no data on vertext positions in SIBYLL
     _no_vertex_data = None
 
-    def __init__(self, lib, event_kinematics, event_frame):
-        # HEPEVT (style) common block
-        evt = lib.hepevt
+    # Indicate that SIBYLL has neither mother nor daughter info
+    _jmohep = None
+    _jdahep = None
 
-        # Save selector for implementation of on-demand properties
-        px, py, pz, en, m = evt.phep
-        vx, vy, vz, vt = evt.vhep
-
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhep,
-            npart=evt.nhep,
-            p_ids=evt.idhep,
-            status=evt.isthep,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phep,
-            vt_arr=evt.vhep,
-        )
-
-    def filter_final_state(self):
-        self.selection = np.where(self.status == 1)
-        self._apply_slicing()
-
-    def filter_final_state_charged(self):
-        self.selection = np.where((self.status == 1) & (self.charge != 0))
-        self._apply_slicing()
-
-    @property
-    def _charge_init(self):
-        return self.lib.schg.ichg[self.selection]
-
-    @property
-    def parents(self):
-        """In SIBYLL parents are difficult to obtain. This function returns 0."""
-        MCEvent.parents(self)
-        return self.lib.hepevt.jmohep
-
-    @property
-    def children(self):
-        """In SIBYLL daughters are difficult to obtain. This function returns 0."""
-        MCEvent.children(self)
-        return self.lib.hepevt.jdahep
+    def _charge_init(self, npart):
+        return self._lib.schg.ichg[:npart]
 
     # Nuclear collision parameters
     @property
     def impact_parameter(self):
         """Impact parameter for nuclear collisions."""
-        return self.lib.cnucms.b
+        return self._lib.cnucms.b
 
     @property
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
-        return self.lib.cnucms.na
+        return self._lib.cnucms.na
 
     @property
     def n_wounded_B(self):
         """Number of wounded nucleons side B"""
-        return self.lib.cnucms.nb
+        return self._lib.cnucms.nb
 
     @property
     def n_NN_interactions(self):
         """Number of inelastic nucleon-nucleon interactions"""
-        return self.lib.cnucms.ni
+        return self._lib.cnucms.ni
 
 
 class SIBYLLRun(MCRun):

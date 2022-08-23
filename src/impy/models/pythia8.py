@@ -8,104 +8,63 @@ import numpy as np
 from impy.common import MCRun, MCEvent
 from impy import impy_config
 from impy.util import info, AZ2pdg
-
-_len_evt = 300000
+from argparse import Namespace
 
 
 class PYTHIA8Event(MCEvent):
     """Wrapper class around HEPEVT particle stack."""
 
-    phep = np.zeros((5, _len_evt))
-    vhep = np.zeros((4, _len_evt))
-    jmohep = np.zeros((2, _len_evt))
-    jdahep = np.zeros((2, _len_evt))
-    status = np.zeros(_len_evt, dtype="int")
-    p_ids = np.zeros(_len_evt, dtype="int")
-    p_charge = np.zeros(_len_evt, dtype="int")
-    n_events = 0
+    _len_evt = 300000
+
+    _hepevt = "_hepevt"
+    _hepevt = Namespace(
+        phep=np.zeros((5, _len_evt)),
+        vhep=np.zeros((4, _len_evt)),
+        isthep=np.zeros(_len_evt, dtype=np.int32),
+        idhep=np.zeros(_len_evt, dtype=np.int32),
+        jmohep=np.zeros((2, _len_evt), dtype=np.int32),
+        jdahep=np.zeros((2, _len_evt), dtype=np.int32),
+    )
 
     def __init__(self, lib, event_kinematics, event_frame):
         # The following implementation is horrible and just a prototype
         # should move to fortran or C++ if performance issue
         self.n_events += 1
-        nhep = 0
-        for p in lib.event:
-            self.status[nhep] = p.status()
-            self.p_ids[nhep] = p.id()
-            self.p_charge[nhep] = p.charge()
-            self.vhep[:, nhep] = (p.xProd(), p.yProd(), p.zProd(), p.tProd())
-            self.phep[:, nhep] = (p.px(), p.py(), p.pz(), p.e(), p.m())
-            self.jmohep[:, nhep] = p.mother1(), p.mother2()
-            self.jdahep[:, nhep] = p.daughter1(), p.daughter2()
-            nhep += 1
+        for i, p in enumerate(lib.event):
+            self._hepevt.status[i] = p.status()
+            self._hepevt.idhep[i] = p.id()
+            self._hepevt.vhep[:, i] = (p.xProd(), p.yProd(), p.zProd(), p.tProd())
+            self._hepevt.phep[:, i] = (p.px(), p.py(), p.pz(), p.e(), p.m())
+            self._hepevt.jmohep[:, i] = p.mother1(), p.mother2()
+            self._hepevt.jdahep[:, i] = p.daughter1(), p.daughter2()
 
-        px, py, pz, en, m = self.phep
-        vx, vy, vz, vt = self.vhep
+        # hack: use self instead of lib
+        super().__init__(self, event_kinematics, event_frame)
+        self._lib = lib  # set _lib correctly
 
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=self.n_events,
-            npart=nhep,
-            p_ids=self.p_ids,
-            status=self.status,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=self.phep,
-            vt_arr=self.vhep,
-        )
-
-    def filter_final_state(self):
-        self.selection = np.where(self.status > 0)
-        self._apply_slicing()
-
-    def filter_final_state_charged(self):
-        self.selection = np.where((self.status > 1) & (self.charge != 0))
-        self._apply_slicing()
-
-    @property
-    def parents(self):
-        MCEvent.parents(self)
-        return self.lib.hepevt.jmohep
-
-    @property
-    def children(self):
-        MCEvent.children(self)
-        return self.lib.hepevt.jdahep
-
-    @property
     def _charge_init(self):
-        return self.p_charge[self.selection]
+        return np.fromiter((p.charge() for p in self._lib.event), np.double)
 
     # Nuclear collision parameters
     @property
     def impact_parameter(self):
         """Returns impact parameter for nuclear collisions."""
-        return self.lib.info.hiinfo.b()
+        return self._lib.info.hiinfo.b()
 
     @property
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
-        return self.lib.info.hiinfo.nPartProj()
+        return self._lib.info.hiinfo.nPartProj()
 
     @property
     def n_wounded_B(self):
         """Number of wounded nucleons (target) side B"""
-        return self.lib.info.hiinfo.nPartTarg()
+        return self._lib.info.hiinfo.nPartTarg()
 
     @property
     def n_wounded(self):
         """Number of total wounded nucleons"""
-        return self.lib.info.hiinfo.nPartProj() + self.lib.info.hiinfo.nPartTarg()
+        return self._lib.info.hiinfo.nPartProj() + self._lib.info.hiinfo.nPartTarg()
 
 
 class PYTHIA8Run(MCRun):

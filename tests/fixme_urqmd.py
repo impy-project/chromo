@@ -35,15 +35,15 @@ def test_urqmd():
     protons = 0
 
     for event in generator(10):
-        protons += np.histogram(event.en[event.p_ids == 2212], bins=egrid)[0]
-        pions += np.histogram(event.en[np.abs(event.p_ids) == 211], bins=egrid)[0]
+        protons += np.histogram(event.en[event.pid == 2212], bins=egrid)[0]
+        pions += np.histogram(event.en[np.abs(event.pid) == 211], bins=egrid)[0]
         # generator.lib.pydat3.mdcy[102 - 1, 0] = 1
         # event.filter_final_state()
         # print 'px', event.px
         # print 'py', event.py
         # print 'pz', event.pz
         # print 'en', event.en
-        # print 'p_ids', event.p_ids
+        # print 'pid', event.pid
         # print 'impact param', event.impact_parameter
         # import IPython
         # IPython.embed()

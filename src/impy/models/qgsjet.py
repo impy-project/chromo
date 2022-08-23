@@ -12,92 +12,43 @@ from impy.util import info
 class QGSJETEvent(MCEvent):
     """Wrapper class around QGSJet HEPEVT converter."""
 
-    def __init__(self, lib, event_kinematics, event_frame):
-        # HEPEVT (style) common block
-        evt = lib.hepevt
-
-        # Save selector for implementation of on-demand properties
-        px, py, pz, en, m = evt.phep
-        vx, vy, vz, vt = evt.vhep
-
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhep,
-            npart=evt.nhep,
-            p_ids=evt.idhep,
-            status=evt.isthep,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phep,
-            vt_arr=evt.vhep,
-        )
-
-    def filter_final_state(self):
-        self.selection = np.where(self.status == 1)
-        self._apply_slicing()
-
-    def filter_final_state_charged(self):
-        self.selection = np.where((self.status == 1) & (self.charge != 0))
-        self._apply_slicing()
-
-    @property
-    def parents(self):
-        MCEvent.parents(self)
-        return self.lib.hepevt.jmohep
-
-    @property
-    def children(self):
-        MCEvent.children(self)
-        return self.lib.hepevt.jdahep
-
-    @property
-    def _charge_init(self):
-        return self.lib.qgchg.ichg[self.selection]
+    def _charge_init(self, npart):
+        return self._lib.qgchg.ichg[:npart]
 
     @property
     def impact_parameter(self):
         """Returns impact parameter for nuclear collisions."""
-        return self.lib.qgarr7.b
+        return self._lib.qgarr7.b
 
     @property
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
-        return self.lib.qgarr55.nwp
+        return self._lib.qgarr55.nwp
 
     @property
     def n_wounded_B(self):
         """Number of wounded nucleons (target) side B"""
-        return self.lib.qgarr55.nwt
+        return self._lib.qgarr55.nwt
 
     @property
     def n_wounded(self):
         """Number of total wounded nucleons"""
-        return self.lib.qgarr55.nwp + self.lib.qgarr55.nwt
+        return self._lib.qgarr55.nwp + self._lib.qgarr55.nwt
 
     @property
     def n_spectator_A(self):
         """Number of spectator nucleons side A"""
-        return self.lib.qgarr56.nspec
+        return self._lib.qgarr56.nspec
 
     @property
     def n_spectator_B(self):
         """Number of spectator nucleons (target) side B"""
-        return self.lib.qgarr56.nspect
+        return self._lib.qgarr56.nspect
 
     @property
     def diffr_type(self):
         """Type of diffration"""
-        return self.lib.jdiff.jdiff
+        return self._lib.jdiff.jdiff
 
 
 #: Projectiles for QGSJET01 and cross sections

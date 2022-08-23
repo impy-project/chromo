@@ -1,14 +1,9 @@
-# import sys
 import os
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 
-# root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-# sys.path.append(root_dir)
-
 from impy.constants import GeV
 from impy.kinematics import EventKinematics
-from impy import impy_config
 from impy.writer import HepMCWriter
 from impy.models import Sibyll23d, DpmjetIII306, EposLHC  # noqa
 import pytest
@@ -18,13 +13,10 @@ import pyhepmc
 # pyhepmc.fill_genevent_from_hepevent
 
 
-impy_config["user_frame"] = "laboratory"
-
-
 @pytest.mark.parametrize(
     "model",
     [
-        # Sibyll23d, Sibyll causes Python instance to exit
+        Sibyll23d,
         DpmjetIII306,
         EposLHC,
     ],
