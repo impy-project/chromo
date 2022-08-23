@@ -192,9 +192,11 @@ C-----------------------------------------------------------------------
       IMPLICIT NONE
 
       REAL P
-      INTEGER NP,LLIST,NP_max
+      INTEGER NP,LLIST,LLIST1,NP_max,NEVSIB
+      DATA NEVSIB /0/
       PARAMETER (NP_max=8000)
       COMMON /S_PLIST/ P(NP_max,5), LLIST(NP_max), NP
+      COMMON /S_PLIST1/ LLIST1(8000)
       INTEGER ICHP,ISTR,IBAR
       COMMON /S_CHP/ ICHP(99), ISTR(99), IBAR(99)
 
@@ -211,23 +213,29 @@ C-----------------------------------------------------------------------
       INTEGER I, ISIB_PID2PDG
       EXTERNAL ISIB_PID2PDG
 
+      SAVE NEVSIB
+
       NHEP = NP
+      NEVHEP = NEVSIB
 
       DO I=1,NHEP
          IF (ABS(LLIST(I)).LT.10000) THEN
             ISTHEP(I) = 1
-            ICHG(I) = ICHP(ABS(LLIST(I)))
          ELSE
             ISTHEP(I) = 2
-            ICHG(I) = 0
          END IF
-         IDHEP(I) = ISIB_PID2PDG(LLIST(I))
+         ICHG(I) = ICHP(ABS(LLIST(I)))
+         IDHEP(I) = ISIB_PID2PDG(MOD(LLIST(I),10000))
+         JMOHEP(1,I) = LLIST1(I)
+         JMOHEP(2,I) = LLIST1(I)
          PHEP(1,I) = DBLE(P(I,1))
          PHEP(2,I) = DBLE(P(I,2))
          PHEP(3,I) = DBLE(P(I,3))
          PHEP(4,I) = DBLE(P(I,4))
          PHEP(5,I) = DBLE(P(I,5))
       END DO
+
+      NEVSIB = NEVSIB + 1
       END
 
 

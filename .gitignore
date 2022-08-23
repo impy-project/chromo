@@ -33,3 +33,4 @@ impy/tests/*.pkl
 __pycache__
 .pytest_cache
 .benchmarks
+examples/*.dat

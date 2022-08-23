@@ -80,7 +80,8 @@ class PYTHIA6Run(MCRun):
 
         # self.mstp[51]
 
-        # self.lib.pysubs.msel = 2
+        # Run Pythia in full minimum-bias mode
+        self.lib.pysubs.msel = 2
         self._set_event_kinematics(event_kinematics)
 
         # Set default stable

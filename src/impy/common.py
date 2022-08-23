@@ -245,6 +245,43 @@ class EventData:
     #     """I don't remember what this was for..."""
     #     return self.en / self.kin.pcm
 
+    def to_hepmc3(self, genevent=None):
+        """
+        Convert event to HepMC3 GenEvent.
+
+        After conversion, it is possible to traverse and draw the particle history.
+        This requires the optional pyhepmc library.
+
+        Parameters
+        ----------
+        genevent: GenEvent or None, optional
+            If a genevent is passed, its content is replaced with this event
+            information. If genevent is None (default), a new genevent is created.
+        """
+        import pyhepmc  # delay import
+
+        if genevent is None:
+            genevent = pyhepmc.GenEvent()
+
+        genevent.from_hepevt(
+            event_number=self.nevent,
+            px=self.px,
+            py=self.py,
+            pz=self.pz,
+            en=self.en,
+            m=self.m,
+            pid=self.pid,
+            status=self.status,
+            parents=self.parents,
+            children=self.children,
+            vx=self.vx,
+            vy=self.vy,
+            vz=self.vz,
+            vt=self.vt,
+        )
+
+        return genevent
+
 
 class MCEvent(EventData, ABC):
     """

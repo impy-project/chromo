@@ -38,3 +38,20 @@ def test_vertex(event):
     assert_equal(event.vy, 0)
     assert_equal(event.vz, 0)
     assert_equal(event.vt, 0)
+
+
+def test_to_hepmc3(event):
+    hev = event.to_hepmc3()
+
+    assert len(hev.particles) == len(event)
+    # no history in Sibyll21
+    assert len(hev.vertices) == 0
+
+    for i, p in enumerate(hev.particles):
+        assert p.momentum.x == event.px[i]
+        assert p.momentum.y == event.py[i]
+        assert p.momentum.z == event.pz[i]
+        assert p.momentum.e == event.en[i]
+        assert p.status == event.status[i]
+        assert p.pid == event.pid[i]
+        assert p.id == i + 1

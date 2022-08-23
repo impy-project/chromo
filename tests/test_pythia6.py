@@ -6,6 +6,7 @@ from numpy.testing import assert_allclose, assert_equal
 from .util import reference_charge, run_in_separate_process
 import pytest
 import pickle
+from collections import defaultdict
 
 
 def run_event():
@@ -84,6 +85,58 @@ def test_final_state_charged(event):
     ev3 = ev3[ev3.charge != 0]
     assert_equal(ev1, ev2)
     assert_equal(ev1, ev3)
+
+
+def test_to_hepmc3(event):
+    unique_vertices = defaultdict(list)
+    for i, pa in enumerate(event.parents):
+        assert pa.shape == (2,)
+        if np.all(pa == 0):
+            continue
+        pa = (pa[0], pa[1])
+        unique_vertices[pa].append(i)
+
+    # not all vertices have locations different from zero,
+    # create unique fake vertex locations for testing
+    for ch in unique_vertices.values():
+        i = ch[0]
+        event.vx[i] = i
+        event.vy[i] = i + 1
+        event.vz[i] = i + 2
+        event.vt[i] = i + 3
+
+    hev = event.to_hepmc3()
+
+    assert len(hev.particles) == len(event)
+    assert len(hev.vertices) == len(unique_vertices)
+
+    for i, p in enumerate(hev.particles):
+        assert p.momentum.x == event.px[i]
+        assert p.momentum.y == event.py[i]
+        assert p.momentum.z == event.pz[i]
+        assert p.momentum.e == event.en[i]
+        assert p.status == event.status[i]
+        assert p.pid == event.pid[i]
+        assert p.id == i + 1
+
+    for i, v in enumerate(hev.vertices):
+        k = v.particles_out[0].id - 1
+        assert v.position.x == event.vx[k]
+        assert v.position.y == event.vy[k]
+        assert v.position.z == event.vz[k]
+        assert v.position.t == event.vt[k]
+
+    unique_vertices2 = defaultdict(list)
+    for v in hev.vertices:
+        pi = [p.id for p in v.particles_in]
+        if len(pi) == 1:
+            pa = (pi[0], 0)
+        else:
+            pa = (min(pi), max(pi))
+        children = [p.id - 1 for p in v.particles_out]
+        unique_vertices2[pa] = children
+
+    assert unique_vertices == unique_vertices2
 
 
 def run_pickle():

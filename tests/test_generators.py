@@ -24,9 +24,8 @@ def run_model(model, ekin):
     return c
 
 
-# DpmjetIII191 sometimes randomly fails this
 @pytest.mark.parametrize("model", models)
-def test_generators(model):
+def test_new_interface(model):
     # remove this when git lfs issue is fixed
     if os.environ.get("CI", False) and model in (
         im.QGSJet01c,
