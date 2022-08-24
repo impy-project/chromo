@@ -1,4 +1,5 @@
-# FIXME this is redundant with test_new_interface.py, test_all_cms.py
+# FIXME this is redundant with test_generators.py
+# instead do specific tests that only work for eposlhc here
 
 from impy.constants import GeV
 from impy.kinematics import EventKinematics
@@ -23,8 +24,8 @@ def test_eposlhc():
     c = Counter()
     for event in generator(2):
         # generator.lib.pydat3.mdcy[102 - 1, 0] = 1
-        event.filter_final_state_charged()
-        c.update(event.p_ids)
+        ev = event.final_state_charged()
+        c.update(ev.pid)
 
     assert c[211] > 0
     assert c[2212] > 0

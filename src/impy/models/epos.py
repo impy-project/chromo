@@ -13,89 +13,40 @@ from impy.util import info
 class EPOSEvent(MCEvent):
     """Wrapper class around EPOS particle stack."""
 
-    def __init__(self, lib, event_kinematics, event_frame):
-        # HEPEVT (style) common block
-        evt = lib.hepevt
-
-        # Save selector for implementation of on-demand properties
-        px, py, pz, en, m = evt.phep
-        vx, vy, vz, vt = evt.vhep
-
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhep,
-            npart=evt.nhep,
-            p_ids=evt.idhep,
-            status=evt.isthep,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phep,
-            vt_arr=evt.vhep,
-        )
-
-    def filter_final_state(self):
-        self.selection = np.where(self.status == 1)
-        self._apply_slicing()
-
-    def filter_final_state_charged(self):
-        self.selection = np.where((self.status == 1) & (self.charge != 0))
-        self._apply_slicing()
-
-    @property
-    def parents(self):
-        MCEvent.parents(self)
-        return self.lib.hepevt.jmohep
-
-    @property
-    def children(self):
-        MCEvent.children(self)
-        return self.lib.hepevt.jdahep
-
-    @property
-    def _charge_init(self):
-        return self.lib.charge_vect(self.lib.hepevt.idhep[self.selection])
+    def _charge_init(self, npart):
+        return self._lib.charge_vect(self._lib.hepevt.idhep[:npart])
 
     # Nuclear collision parameters
     @property
     def impact_parameter(self):
         """Returns impact parameter for nuclear collisions."""
-        # return self.lib.nuc3.bimp
-        return self.lib.cevt.bimevt
+        # return self._lib.nuc3.bimp
+        return self._lib.cevt.bimevt
 
     @property
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
-        return self.lib.cevt.npjevt
+        return self._lib.cevt.npjevt
 
     @property
     def n_wounded_B(self):
         """Number of wounded nucleons (target) side B"""
-        return self.lib.cevt.ntgevt
+        return self._lib.cevt.ntgevt
 
     @property
     def n_wounded(self):
         """Number of total wounded nucleons"""
-        return self.lib.cevt.npjevt + self.lib.cevt.ntgevt
+        return self._lib.cevt.npjevt + self._lib.cevt.ntgevt
 
     @property
     def n_spectator_A(self):
         """Number of spectator nucleons side A"""
-        return self.lib.cevt.npnevt + self.lib.cevt.nppevt
+        return self._lib.cevt.npnevt + self._lib.cevt.nppevt
 
     @property
     def n_spectator_B(self):
         """Number of spectator nucleons (target) side B"""
-        return self.lib.cevt.ntnevt + self.lib.cevt.ntpevt
+        return self._lib.cevt.ntnevt + self._lib.cevt.ntpevt
 
 
 class EPOSRun(MCRun):

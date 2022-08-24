@@ -1,3 +1,6 @@
+# FIXME this is redundant with test_generators.py
+# instead do specific tests that only work for eposlhc here
+
 from impy.constants import TeV
 from impy.kinematics import EventKinematics
 from impy.models import Phojet112
@@ -30,8 +33,8 @@ def test_phojet():
     c = Counter()
     for event in gen(10):
         event.filter_final_state()
-        assert len(event.p_ids) > 0
-        c.update(event.p_ids)
+        assert len(event.pid) > 0
+        c.update(event.pid)
 
     assert c[211] > 0, "pi+"
     assert c[-211] > 0, "pi-"

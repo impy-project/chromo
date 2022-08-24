@@ -4,7 +4,6 @@ Created on 14.04.2014
 @author: afedynitch
 """
 
-import numpy as np
 from impy.common import MCRun, MCEvent
 from impy import impy_config
 from impy.util import info
@@ -13,77 +12,39 @@ from impy.util import info
 class DpmjetIIIEvent(MCEvent):
     """Wrapper class around DPMJET-III HEPEVT-style particle stack."""
 
-    def __init__(self, lib, event_kinematics, event_frame):
-        # HEPEVT (style) common block
-        evt = lib.dtevt1
+    _hepevt = "dtevt1"
+    _phep = "phkk"
+    _vhep = "vhkk"
+    _nevhep = "nevhkk"
+    _nhep = "nhkk"
+    _idhep = "idhkk"
+    _isthep = "isthkk"
+    _jmohep = "jmohkk"
+    _jdahep = "jdahkk"
 
-        # Save selector for implementation of on-demand properties
-        px, py, pz, en, m = evt.phkk
-        vx, vy, vz, vt = evt.vhkk
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhkk,
-            npart=evt.nhkk,
-            p_ids=evt.idhkk,
-            status=evt.isthkk,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phkk,
-            vt_arr=evt.vhkk,
-        )
-
-    def filter_final_state(self):
-        self.selection = np.where(self.status == 1)
-        self._apply_slicing()
-
-    def filter_final_state_charged(self):
-        self.selection = np.where((self.status == 1) & (self.charge != 0))
-        self._apply_slicing()
-
-    @property
-    def parents(self):
-        MCEvent.parents(self)
-        return self.lib.dtevt1.jmohkk
-
-    @property
-    def children(self):
-        MCEvent.children(self)
-        return self.lib.dtevt1.jdahkk
-
-    @property
-    def _charge_init(self):
-        return self.lib.dtpart.iich[self.lib.dtevt2.idbam[self.selection] - 1]
+    def _charge_init(self, npart):
+        return self._lib.dtpart.iich[self._lib.dtevt2.idbam[:npart] - 1]
 
     # Nuclear collision parameters
     @property
     def impact_parameter(self):
         """Returns impact parameter for nuclear collisions."""
-        return self.lib.dtglcp.bimpac
+        return self._lib.dtglcp.bimpac
 
     @property
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
-        return self.lib.dtglcp.nwasam
+        return self._lib.dtglcp.nwasam
 
     @property
     def n_wounded_B(self):
         """Number of wounded nucleons side B"""
-        return self.lib.dtglcp.nwbsam
+        return self._lib.dtglcp.nwbsam
 
     @property
     def n_wounded(self):
         """Number of total wounded nucleons"""
-        return self.lib.dtglcp.nwasam + self.lib.dtglcp.nwbsam
+        return self._lib.dtglcp.nwasam + self._lib.dtglcp.nwbsam
 
     # Unfortunately not that simple since this is bounced through
     # entire code as argument not in COMMON

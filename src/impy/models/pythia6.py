@@ -13,66 +13,10 @@ from impy.util import info
 class PYTHIA6Event(MCEvent):
     """Wrapper class around HEPEVT particle stack."""
 
-    def __init__(self, lib, event_kinematics, event_frame):
-        # HEPEVT (style) common block
-        evt = lib.hepevt
-
-        # Save selector for implementation of on-demand properties
-        px, py, pz, en, m = evt.phep
-        vx, vy, vz, vt = evt.vhep
-
-        self.charge_vec = None
-
-        MCEvent.__init__(
-            self,
-            lib=lib,
-            event_kinematics=event_kinematics,
-            event_frame=event_frame,
-            nevent=evt.nevhep,
-            npart=evt.nhep,
-            p_ids=evt.idhep,
-            status=evt.isthep,
-            px=px,
-            py=py,
-            pz=pz,
-            en=en,
-            m=m,
-            vx=vx,
-            vy=vy,
-            vz=vz,
-            vt=vt,
-            pem_arr=evt.phep,
-            vt_arr=evt.vhep,
-        )
-
-    def filter_final_state(self):
-        self.selection = np.where(self.status == 1)
-        self._apply_slicing()
-
-    def filter_final_state_charged(self):
-        self.selection = np.where((self.status == 1) & (self.charge != 0))
-        self._apply_slicing()
-
-    @property
-    def parents(self):
-        MCEvent.parents(self)
-        return self.lib.hepevt.jmohep
-
-    @property
-    def children(self):
-        MCEvent.children(self)
-        return self.lib.hepevt.jdahep
-
-    @property
-    def _charge_init(self):
-        if self.charge_vec is None:
-            self.charge_vec = np.asarray(
-                [
-                    self.lib.pychge(self.lib.pyjets.k[i, 1]) / 3
-                    for i in range(self.npart)
-                ]
-            )
-        return self.charge_vec[self.selection]
+    def _charge_init(self, npart):
+        k = self._lib.pyjets.k[:npart, 1]
+        # TODO accelerate by implementing this loop in Fortran
+        return np.fromiter((self._lib.pychge(ki) / 3 for ki in k), np.double)
 
 
 class PYTHIA6Run(MCRun):
@@ -82,7 +26,7 @@ class PYTHIA6Run(MCRun):
     def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        return self.lib.pyint7.sigt[0, 0, 5]
+        return self._lib.pyint7.sigt[0, 0, 5]
 
     def sigma_inel_air(self, **kwargs):
         """PYTHIA6 does not support nuclear targets."""

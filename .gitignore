@@ -32,3 +32,4 @@ impy/tests/*.pkl
 *.o-*
 __pycache__
 .pytest_cache
+.benchmarks
