@@ -560,13 +560,3 @@ def test_composite_target():
         outcome_az.append(air.get_random_AZ())
 
     assert outcome_az == expected_az, "get_random_AZ(): outcome != expected"
-
-
-# n = 0
-# for name, pdg in _FromParticleName.all_pdgs.items():
-#     if pdg > 9090225:
-#         print('"', name, '" : ', _FromParticleName._get_AZ(name), sep="", end=",\n")
-#         n += 1
-#         # input()
-#         if n > 200:
-#             break
