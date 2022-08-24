@@ -344,12 +344,6 @@ class MCEvent(EventData, ABC):
             children
         )
 
-        # make all arrays read-only, we don't want to
-        # override original record
-        for obj in self.__dict__.values():
-            if isinstance(obj, np.ndarray):
-                obj.flags["WRITEABLE"] = False
-
         # Apply boosts into frame required by user
         self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
         self.frame = impy_config["user_frame"]
