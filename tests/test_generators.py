@@ -1,5 +1,5 @@
 from impy.constants import TeV
-from impy.kinematics import EventKinematics
+from impy.kinematics import CenterOfMass
 import impy.models as im
 import abc
 from collections import Counter
@@ -49,10 +49,10 @@ def test_generators(model):
         # The old phojet needs more tweaking for pion-proton (is not related to test)
         p1pdg = 2212  # proton
 
-    ekin = EventKinematics(
-        ecm=7 * TeV,
-        p1pdg=p1pdg,
-        p2pdg=p2pdg,
+    ekin = CenterOfMass(
+        7 * TeV,
+        p1pdg,
+        p2pdg,
     )
 
     # Some models need to initialize same fortran code, which can only be
