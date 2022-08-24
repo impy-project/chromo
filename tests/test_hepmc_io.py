@@ -29,9 +29,6 @@ def test_hepmc_io(Model):
     # a lot of particles are missing. Either a bug in the original impy record or a
     # bug in the HepMC3 C++ code (not the pyhepmc code).
 
-    if Model is im.EposLHC:
-        pytest.xfail("EposLHC has indices that are out of range")
-
     test_file = Path(f"{basename}_{Model.__name__}.dat")
 
     events = run_in_separate_process(run, Model)
