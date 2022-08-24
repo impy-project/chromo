@@ -25,7 +25,7 @@ def run_model(model, ekin):
 
 
 @pytest.mark.parametrize("model", models)
-def test_new_interface(model):
+def test_generator(model):
     # remove this when git lfs issue is fixed
     if os.environ.get("CI", False) and model in (
         im.QGSJet01c,
