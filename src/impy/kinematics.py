@@ -89,7 +89,10 @@ class CompositeTarget(object):
     Examples of such composite targets are Air, CO_2, HCl, C_2H_60.
     """
 
+    from numpy.random import default_rng
+
     def __init__(self, component_list, label=""):
+        self.rng = self.default_rng()
         self.label = label
         self.ncomponents = 0
         self.component_fractions = []
@@ -175,11 +178,12 @@ class CompositeTarget(object):
         max_ind = a_val.index(max(a_val))
         return self.component_A[max_ind], self.component_Z[max_ind]
 
+    def set_rng_seed(self, seed):
+        self.rng = self.default_rng(seed)
+
     def get_random_AZ(self):
         """Return randomly an (A, Z) tuple according to the component fraction."""
-        from numpy.random import choice
-
-        ic = choice(self.ncomponents, 1, p=self.component_fractions)[0]
+        ic = self.rng.choice(self.ncomponents, 1, p=self.component_fractions)[0]
         return self.component_A[ic], self.component_Z[ic]
 
     def __str__(self):
