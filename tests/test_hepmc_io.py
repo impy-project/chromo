@@ -4,9 +4,7 @@ from impy.kinematics import EventKinematics
 import impy.models as im
 import pytest
 import pyhepmc
-from .util import run_in_separate_process
-
-basename = Path(__file__).with_suffix("")
+from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
 
 
 def run(Model):
@@ -29,7 +27,9 @@ def test_hepmc_io(Model):
     # a lot of particles are missing. Either a bug in the original impy record or a
     # bug in the HepMC3 C++ code (not the pyhepmc code).
 
-    test_file = Path(f"{basename}_{Model.__name__}.dat")
+    test_file = Path(f"{Path(__file__).with_suffix('')}_{Model.__name__}.dat")
+
+    xfail_on_ci_if_model_is_incompatible(Model)
 
     events = run_in_separate_process(run, Model)
 

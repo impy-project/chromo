@@ -2,7 +2,7 @@ from collections import defaultdict
 from impy.kinematics import EventKinematics
 from impy import models as im
 from impy.constants import TeV
-from .util import run_in_separate_process
+from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
 import numpy as np
 import pytest
 
@@ -18,6 +18,8 @@ def make_event(Model):
 
 @pytest.mark.parametrize("Model", (im.Sibyll21, im.Pythia6, im.EposLHC))
 def test_to_hepmc3(Model):
+    xfail_on_ci_if_model_is_incompatible(Model)
+
     event = run_in_separate_process(make_event, Model)
 
     unique_vertices = defaultdict(list)

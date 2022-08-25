@@ -4,10 +4,7 @@ import impy.models as im
 import abc
 from collections import Counter
 import pytest
-from multiprocessing import Pool
-from multiprocessing.context import TimeoutError
-import os
-from .util import run_in_separate_process
+from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
 
 # generate list of all models in impy.models
 models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
@@ -27,18 +24,7 @@ def run_model(model, ekin):
 
 @pytest.mark.parametrize("Model", models)
 def test_generator(Model):
-    # remove this when git lfs issue is fixed
-    if os.environ.get("CI", False) and Model in (
-        im.QGSJet01c,
-        im.QGSJetII03,
-        im.QGSJetII04,
-        im.Phojet191,
-        im.EposLHC,
-        im.DpmjetIII306,
-        im.DpmjetIII191,
-        im.DpmjetIII193,
-    ):
-        pytest.xfail("model cannot succeed on CI, because git lfs does not work")
+    xfail_on_ci_if_model_is_incompatible(Model)
 
     p1pdg = -211  # pi-
     p2pdg = 2212  # proton
