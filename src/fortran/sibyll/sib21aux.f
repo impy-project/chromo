@@ -198,7 +198,7 @@ C-----------------------------------------------------------------------
       COMMON /S_PLIST/ P(NP_max,5), LLIST(NP_max), NP
       COMMON /S_PLIST1/ LLIST1(8000)
       INTEGER ICHP,ISTR,IBAR
-      COMMON /S_CHP/ ICHP(99), ISTR(99), IBAR(99)
+      COMMON /S_CHP/ ICHP(49), ISTR(49), IBAR(49)
 
       INTEGER NEVHEP,NMXHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
