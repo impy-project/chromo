@@ -13,10 +13,9 @@ def run_event():
     ekin = EventKinematics(ecm=1 * TeV, p1pdg=2212, p2pdg=2212)
     m = Pythia6(ekin, seed=4)
     m.set_stable(lp.pi_0.pdgid, False)  # needed to get nonzero vertices
-    for event in m(100):
-        if len(event) > 10:  # to skip elastic events
-            break
-    return event  # MCEvent is pickeable, but restored as EventData
+    for event in m(1):
+        pass
+    return event  # MCEvent is restored as EventData
 
 
 @pytest.fixture
