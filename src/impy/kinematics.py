@@ -453,10 +453,7 @@ class EventKinematics(abc.ABC):
         s = self.ecm**2
         self.s = s
         self.pcm = np.sqrt(
-            s**2
-            - 2 * (s * (pmass1 + pmass2) ** 2 + (pmass1 * pmass2) ** 2)
-            + pmass1**4
-            + pmass2**4
+            (s - (pmass1 + pmass2) ** 2) * (s - (pmass1 - pmass2) ** 2)
         ) / (2 * self.ecm)
         self.gamma_cm = (self.elab + pmass2) / self.ecm
         self.betagamma_z_cm = self.plab / self.ecm
@@ -474,17 +471,14 @@ class EventKinematics(abc.ABC):
         for PHOJET and PYTHIA."""
 
         p1, p2 = np.array(np.zeros(4), dtype="d"), np.array(np.zeros(4), dtype="d")
-        delta = (
-            (self.pmass1 + self.pmass2) * (self.pmass1 - self.pmass2) / (2 * self.ecm)
-        )
         p1[0] = 0.0
         p1[1] = 0.0
         p1[2] = self.pcm
-        p1[3] = self.ecm / 2.0 + delta
+        p1[3] = np.sqrt(self.pcm**2 + self.pmass1**2)
         p2[0] = 0.0
         p2[1] = 0.0
         p2[2] = -self.pcm
-        p2[3] = self.ecm / 2.0 - delta
+        p2[3] = np.sqrt(self.pcm**2 + self.pmass2**2)
 
         return p1, p2
 
