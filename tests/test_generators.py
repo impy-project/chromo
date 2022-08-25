@@ -7,6 +7,7 @@ import pytest
 from multiprocessing import Pool
 from multiprocessing.context import TimeoutError
 import os
+from .util import run_in_separate_process
 
 # generate list of all models in impy.models
 models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
@@ -24,10 +25,10 @@ def run_model(model, ekin):
     return c
 
 
-@pytest.mark.parametrize("model", models)
-def test_generator(model):
+@pytest.mark.parametrize("Model", models)
+def test_generator(Model):
     # remove this when git lfs issue is fixed
-    if os.environ.get("CI", False) and model in (
+    if os.environ.get("CI", False) and Model in (
         im.QGSJet01c,
         im.QGSJetII03,
         im.QGSJetII04,
@@ -41,10 +42,10 @@ def test_generator(model):
 
     p1pdg = -211  # pi-
     p2pdg = 2212  # proton
-    if model is im.Sophia20:
+    if Model is im.Sophia20:
         # Sophia can only do γp, γn
         p1pdg = 22  # gamma
-    elif model in [im.Phojet112, im.UrQMD34]:
+    elif Model in [im.Phojet112, im.UrQMD34]:
         # The old phojet needs more tweaking for pion-proton (is not related to test)
         p1pdg = 2212  # proton
 
@@ -54,17 +55,7 @@ def test_generator(model):
         p2pdg=p2pdg,
     )
 
-    # Some models need to initialize same fortran code, which can only be
-    # initialized once. As a workaround, we run each model in a separate
-    # thread. When running several jobs, maxtasksperchild=1 is needed to
-    # use a fresh interpreter for each task (not needed here, but still).
-    with Pool(1, maxtasksperchild=1) as p:
-        r = p.apply_async(run_model, (model, ekin))
-        try:
-            c = r.get(timeout=30)
-        except TimeoutError:
-            # usually happens when model aborts and kills child process
-            raise TimeoutError("check stdout for errors")
+    c = run_in_separate_process(run_model, Model, ekin)
 
     assert c[211] > 0, "pi+"
     assert c[-211] > 0, "pi-"

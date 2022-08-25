@@ -21,6 +21,7 @@ def event():
     return run_in_separate_process(event_run)
 
 
+@pytest.mark.xfail(reason="needs a fix to sibylls ICHP table")
 def test_charge(event):
     expected = reference_charge(event.pid)
     assert_allclose(event.charge, expected)

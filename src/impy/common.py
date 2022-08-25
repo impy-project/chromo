@@ -23,6 +23,8 @@ class EventData:
 
     Unlike the original MCEvent, this structure is picklable.
 
+    generator: (str, str)
+        Info about the generator, its name and version.
     kin: EventKinematics
         Info about initial state.
     frame: str
@@ -62,6 +64,7 @@ class EventData:
         Same as parents.
     """
 
+    generator: _tp.Tuple[str, str]
     kin: EventKinematics
     frame: str
     nevent: int
@@ -87,6 +90,7 @@ class EventData:
         This may return a copy if the result cannot represented as a view.
         """
         return EventData(
+            self.generator,
             self.kin,
             self.frame,
             self.nevent,
@@ -143,25 +147,12 @@ class EventData:
         """
         Return event copy.
         """
-        return EventData(
-            self.kin,
-            self.frame,
-            self.nevent,
-            self.pid.copy(),
-            self.status.copy(),
-            self.charge.copy(),
-            self.px.copy(),
-            self.py.copy(),
-            self.pz.copy(),
-            self.en.copy(),
-            self.m.copy(),
-            self.vx.copy(),
-            self.vy.copy(),
-            self.vz.copy(),
-            self.vt.copy(),
-            self.parents.copy() if self.parents is not None else None,
-            self.children.copy() if self.children is not None else None,
-        )
+        copies = []
+        for k in self.__dataclass_fields__:
+            obj = getattr(self, k)
+            copies.append(obj.copy() if hasattr(obj, "copy") else obj)
+
+        return EventData(*copies)
 
     def final_state(self):
         """
@@ -280,6 +271,8 @@ class EventData:
             vt=self.vt,
         )
 
+        genevent.run_info = pyhepmc.GenRunInfo()
+        genevent.run_info.tools = [self.generator + ("",)]
         return genevent
 
 
@@ -305,21 +298,16 @@ class MCEvent(EventData, ABC):
     _jmohep = "jmohep"
     _jdahep = "jdahep"
 
-    # only called once, so setup is allowed to be slow
-    def __init__(self, lib, event_kinematics, event_frame):
+    def __init__(self, generator):
         """
         Parameters
         ----------
-        lib:
-            Reference to the FORTRAN library in use.
-        event_kinematics:
-            Reference to current event kinematics object.
-        event_frame: str
-            The frame in which the generator returned the variables.
+        generator:
+            Generator instance.
         """
-        self._lib = lib  # used by _charge_init and generator-specific methods
+        self._lib = generator.lib  # used by _charge_init and generator-specific methods
 
-        evt = getattr(lib, self._hepevt)
+        evt = getattr(self._lib, self._hepevt)
 
         npart = getattr(evt, self._nhep)
         sel = slice(None, npart)
@@ -330,10 +318,13 @@ class MCEvent(EventData, ABC):
         parents = getattr(evt, self._jmohep).T[sel] if self._jmohep else None
         children = getattr(evt, self._jdahep).T[sel] if self._jdahep else None
 
+        user_frame = impy_config["user_frame"]  # TODO take from event_kinematics
+
         EventData.__init__(
             self,
-            event_kinematics,
-            event_frame,
+            (generator.name, generator.version),
+            generator.event_kinematics,
+            user_frame,
             int(getattr(evt, self._nevhep)),
             getattr(evt, self._idhep)[sel],
             getattr(evt, self._isthep)[sel],
@@ -345,13 +336,22 @@ class MCEvent(EventData, ABC):
         )
 
         # Apply boosts into frame required by user
-        self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
-        self.frame = impy_config["user_frame"]
+        self.kin.apply_boost(self, generator._output_frame, user_frame)
 
     @abstractmethod
     def _charge_init(self, npart):
         # override this in derived to get charge info
         ...
+
+    # MCEvent is not pickleable, but EventData is. For convenience, we
+    # make it so that MCEvent can be saved and is restored as EventData.
+    def __getstate__(self):
+        # save only EventData sub-state
+        return {k: getattr(self, k) for k in self.__dataclass_fields__}
+
+    def __getnewargs__(self):
+        # upon unpickling, create EventData object instead of MCEvent object
+        return (EventData,)
 
 
 # =========================================================================
@@ -681,9 +681,7 @@ class MCRun(ABC):
         while nremaining > 0:
             if self.generate_event() == 0:
                 self.nevents += 1
-                yield self._event_class(
-                    self.lib, self._curr_event_kin, self._output_frame
-                )
+                yield self._event_class(self)
                 nremaining -= 1
                 ntrials += 1
             elif retry_on_rejection:

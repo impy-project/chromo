@@ -15,8 +15,8 @@ class EPOSEvent(MCEvent):
 
     _jdahep = None  # no child info
 
-    def __init__(self, lib, event_kinematics, event_frame):
-        super().__init__(lib, event_kinematics, event_frame)
+    def __init__(self, generator):
+        super().__init__(generator)
         # EPOS sets parents of beam particles to (-1, -1),
         # while other particles have (0, 0). We fix this and to get
         # a crudely correct history, we make non-beam particles
