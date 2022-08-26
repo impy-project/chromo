@@ -36,6 +36,7 @@ def test_generators(model):
         pytest.xfail("TimeoutError")
 
     projectile = "pi-"
+    seed_for_test = 321
     target = CompositeTarget(
         [
             ("N14", 2 * 0.78084, "Nitrogen"),
@@ -44,8 +45,8 @@ def test_generators(model):
             ("proton", 2 * 0.004, "Hydrogen(Vapor)"),
         ],
         "Air without argon",
+        seed_for_test,
     )
-    target.set_rng_seed(321)
     ekin = CenterOfMass(7 * TeV, projectile, target)
 
     # Some models need to initialize same fortran code, which can only be

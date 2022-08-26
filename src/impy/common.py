@@ -501,7 +501,7 @@ class MCRun(ABC):
         if self._curr_event_kin.composite_target:
             ekin = self._curr_event_kin
             if ekin.p2_is_nucleus:
-                ekin.A2, ekin.Z2 = ekin.composite_target.get_random_AZ()
+                ekin.A2, ekin.Z2 = ekin.composite_target._get_random_AZ()
                 self._set_event_kinematics(ekin)
 
     @property

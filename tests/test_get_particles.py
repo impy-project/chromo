@@ -439,6 +439,7 @@ def test_get_AZ():
 def test_composite_target():
     from impy.kinematics import CompositeTarget
 
+    seed_for_outcome = 321
     air = CompositeTarget(
         [
             ("N14", 2 * 0.78084, "Nitrogen"),
@@ -448,6 +449,7 @@ def test_composite_target():
             ("proton", 2 * 0.004, "Hydrogen(Vapor)"),
         ],
         "Air",
+        seed_for_outcome,
     )
 
     seed_for_outcome = 321
@@ -553,10 +555,9 @@ def test_composite_target():
         (14, 7),
         (16, 8),
     ]
-    air.set_rng_seed(seed_for_outcome)
 
     outcome_az = []
     for _ in range(len(expected_az)):
-        outcome_az.append(air.get_random_AZ())
+        outcome_az.append(air._get_random_AZ())
 
-    assert outcome_az == expected_az, "get_random_AZ(): outcome != expected"
+    assert outcome_az == expected_az, "_get_random_AZ(): outcome != expected"

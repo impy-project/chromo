@@ -91,8 +91,18 @@ class CompositeTarget(object):
 
     from numpy.random import default_rng
 
-    def __init__(self, component_list, label=""):
-        self.rng = self.default_rng()
+    def __init__(self, component_list, label="", random_state=None):
+
+        if random_state is None:
+            self.rng = self.default_rng()
+        elif isinstance(random_state, int):
+            # Use random_state as a seed
+            self.rng = self.default_rng(random_state)
+        else:
+            # Use random_state as a user provided
+            # random number generator
+            self.rng = random_state
+
         self.label = label
         self.ncomponents = 0
         self.component_fractions = []
@@ -173,15 +183,12 @@ class CompositeTarget(object):
         self.component_Z = sort_list(self.component_Z, idcs)
         self.component_name = sort_list(self.component_name, idcs)
 
-    def get_maximum_AZ(self):
+    def _get_maximum_AZ(self):
         a_val = self.component_A
         max_ind = a_val.index(max(a_val))
         return self.component_A[max_ind], self.component_Z[max_ind]
 
-    def set_rng_seed(self, seed):
-        self.rng = self.default_rng(seed)
-
-    def get_random_AZ(self):
+    def _get_random_AZ(self):
         """Return randomly an (A, Z) tuple according to the component fraction."""
         ic = self.rng.choice(self.ncomponents, 1, p=self.component_fractions)[0]
         return self.component_A[ic], self.component_Z[ic]
@@ -233,7 +240,7 @@ def _normalize_particle(particle):
     elif received == "string":
         pdg = _FromParticleName._get_pdg(particle)
     elif received == "composite_target":
-        nuc_prop = particle.get_maximum_AZ()
+        nuc_prop = particle._get_maximum_AZ()
         composite_target = particle
 
     return pdg, nuc_prop, composite_target
