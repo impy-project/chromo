@@ -275,6 +275,19 @@ class EventData:
         genevent.run_info.tools = [self.generator + ("",)]
         return genevent
 
+    # if all required packages are available, add extra
+    # method to draw event in Jupyter
+    try:
+        from pyhepmc import GenEvent
+
+        if hasattr(GenEvent, "_repr_html_"):
+
+            def _repr_html_(self):
+                return self.to_hepmc3()._repr_html_()
+
+    except ModuleNotFoundError:
+        pass
+
 
 class MCEvent(EventData, ABC):
     """
