@@ -402,7 +402,7 @@ class EventKinematics(abc.ABC):
             p1, p2 = beam
             s = p1 + p2
             self.ecm = np.sqrt(s[3] ** 2 - np.sum(s[:3] ** 2))
-            self.elab = 0.5 * (self.ecm**2 - pmass1**2 + pmass2**2) / pmass2
+            self.elab = 0.5 * (self.ecm**2 - pmass1**2 - pmass2**2) / pmass2
             self.plab = self._e2p(self.elab, pmass1)
             info(
                 20,
