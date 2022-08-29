@@ -336,16 +336,21 @@ f2py_add_module(_sophia
 )
 
 ### dpmjet306
-file(GLOB dpmjet306_sources ${fortran_dir}/dpmjet3.0-6/sources/*.f)
+set(dpmjet306_sources
+  ${fortran_dir}/dpmjet3.0-6/sources/dpmjet3.0-6.f
+  ${fortran_dir}/dpmjet3.0-6/sources/phojet1.12-35c4.f
+  ${fortran_dir}/dpmjet3.0-6/sources/pythia6115dpm3v1.f
+  ${fortran_dir}/dpmjet3.0-6/sources/user3.0-6.f
+)
 f2py_add_module(_dpmjet306
   FUNCTIONS
   pho_event dt_init dt_kkinc idt_icihad dt_xsglau
-  pycomp dt_initjs dt_rndmst dt_rndm dt_inucas idt_ipdgha
+  pycomp dt_initjs dt_inucas idt_ipdgha
   pho_init pho_setpar pho_pname pho_pmass pho_setmdl
   pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout
   pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar pho_prevnt
   ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
-  pho_setpcomb dt_phoxs dt_xshn dt_flahad
+  pho_setpcomb dt_phoxs dt_xshn dt_flahad init_rmmard
   ${impy_logging}
   SOURCES
   ${f2py_dir}/_dpmjet306.pyf
@@ -353,7 +358,30 @@ f2py_add_module(_dpmjet306
   ${f2py_dir}/_dpmjet306-f2pywrappers.f
   ${dpmjet306_sources}
   ${logging_source}
+  ${rangen_source}
 )
+target_compile_definitions(_dpmjet306 PRIVATE IMPY)
+target_compile_options(_dpmjet306 PRIVATE -cpp)
+
+### Phojet112
+f2py_add_module(_phojet112
+  FUNCTIONS
+  pho_event pycomp pho_init pho_setpar pho_pname pho_pmass
+  pho_setmdl pho_setpdf pycomp pho_xsect pho_borncs pho_harmci
+  pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
+  pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
+  pho_setpcomb init_rmmard
+  ${impy_logging}
+  SOURCES
+  ${f2py_dir}/_phojet112.pyf
+  ${f2py_dir}/_phojet112module.c
+  ${f2py_dir}/_phojet112-f2pywrappers.f
+  ${dpmjet306_sources}
+  ${logging_source}
+  ${rangen_source}
+)
+target_compile_definitions(_phojet112 PRIVATE IMPY)
+target_compile_options(_phojet112 PRIVATE -cpp)
 
 ### dpmjetIII191
 file(GLOB dpmjetIII191_sources
@@ -381,12 +409,12 @@ set_source_files_properties(
 f2py_add_module(_dpmjetIII191
   FUNCTIONS
   pho_event dt_init dt_kkinc
-  idt_icihad dt_xsglau pycomp dt_initjs dt_rndmst dt_rndm dt_inucas idt_ipdgha dt_evtout
+  idt_icihad dt_xsglau pycomp dt_initjs dt_inucas idt_ipdgha dt_evtout
   pho_init pho_setpar poevt1 poevt2 pho_pname pho_pmass pho_setmdl
   pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini pho_ptcut
   pytune pho_rregpar pho_sregpar pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint
   pho_harxto pho_harxpt pho_setpcomb
-  dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias
+  dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias init_rmmard
   ${impy_logging}
   SOURCES
   ${f2py_dir}/_dpmjetIII191.pyf
@@ -421,7 +449,7 @@ f2py_add_module(_dpmjetIII193
   pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini pho_ptcut
   pytune pho_rregpar pho_sregpar pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint
   pho_harxto pho_harxpt pho_setpcomb
-  dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias dt_getptn
+  dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias dt_getptn init_rmmard
   ${impy_logging}
   SOURCES
   ${f2py_dir}/_dpmjetIII193.pyf

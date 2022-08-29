@@ -148,6 +148,8 @@ class DpmjetIIIRun(MCRun):
         else:
             seed = int(seed)
         info(5, "Using seed:", seed)
+        # Set seed of random number generator
+        self.lib.init_rmmard(seed)
 
         # Save maximal mass that has been inisialized
         # (DPMJET sometimes crashes if higher mass requested than initialized)
@@ -179,16 +181,6 @@ class DpmjetIIIRun(MCRun):
 
         self.attach_log(logfname)
         self.lib.dt_init(-1, k.plab, k.A1, k.Z1, k.A2, k.Z2, k.p1pdg, iglau=0)
-
-        # Set seed of random number generator
-        sseed = str(seed)
-        n1, n2, n3, n4 = (
-            int(sseed[0:2]),
-            int(sseed[2:4]),
-            int(sseed[4:6]),
-            int(sseed[6:]),
-        )
-        self.lib.dt_rndmst(n1, n2, n3, n4)
 
         if impy_config["user_frame"] == "center-of-mass":
             self.lib.dtflg1.iframe = 2
