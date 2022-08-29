@@ -11,6 +11,7 @@ import os
 # generate list of all models in impy.models
 models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
 
+# models = [im.DpmjetIII306, im.Phojet112]
 
 def run_model(model, ekin):
     gen = model(ekin)

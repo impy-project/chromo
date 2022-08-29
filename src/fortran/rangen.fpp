@@ -389,6 +389,21 @@ C-----------------------------------------------------------------------
       RETURN
       END
 
+      DOUBLE PRECISION FUNCTION DT_RNDM(VDUMMY)
+
+C-----------------------------------------------------------------------
+C  RAN(DOM GENERATOR FOR PHOJET
+C-----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      DOUBLE PRECISION SIMRND, VDUMMY
+
+      DT_RNDM = SIMRND()
+
+      RETURN
+      END
+
       SUBROUTINE INIT_RMMARD(ISEEDIN)
 
 C-----------------------------------------------------------------------
