@@ -148,7 +148,7 @@ class PHOJETRun(MCRun):
         info(3, "Using seed:", seed)
         # Set seed of random number generator
         self.lib.init_rmmard(seed)
-        
+
         # Detect what kind of PHOJET interface is attached. If PHOJET
         # is run through DPMJET, initial init needs -2 else -1
         init_flag = -2 if "dpmjetIII" in self.lib.__name__ else -1
