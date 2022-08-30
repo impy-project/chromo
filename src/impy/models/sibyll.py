@@ -12,12 +12,7 @@ from impy.util import info
 class SibyllEvent(MCEvent):
     """Wrapper class around SIBYLL 2.1 & 2.3 particle stack."""
 
-    # Workaround for no data on vertext positions in SIBYLL
-    _no_vertex_data = None
-
-    # Indicate that SIBYLL has neither mother nor daughter info
-    _jmohep = None
-    _jdahep = None
+    _jdahep = None  # no child info
 
     def _charge_init(self, npart):
         return self._lib.schg.ichg[:npart]

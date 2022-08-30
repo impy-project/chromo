@@ -85,6 +85,8 @@ set(impy_logging impy_openlogfile impy_closelogfile)
 set(logging_source ${fortran_dir}/logging.f)
 set(rangen_source rangen.f)
 set(rangen_sib21_source rangen_sib21.f)
+set(sibyll_init_source sibyll_init.f)
+set(sibyll_init_sib21_source sibyll_init_sib21.f)
 
 # WARNING this is not platform-independent and needs to be adjusted
 # when new fortran compilers should be supported
@@ -100,6 +102,20 @@ add_custom_command(
     -E ${fortran_dir}/rangen.fpp
     -o ${rangen_sib21_source}
     -DSIBYLL_SP
+)
+add_custom_command(
+  OUTPUT ${sibyll_init_source}
+  COMMAND ${CMAKE_Fortran_COMPILER}
+    -E ${fortran_dir}/sibyll/sibyll_init.fpp
+    -o ${sibyll_init_source}
+    -DSIBYLL_TABLE_LENGTH=99
+)
+add_custom_command(
+  OUTPUT ${sibyll_init_sib21_source}
+  COMMAND ${CMAKE_Fortran_COMPILER}
+    -E ${fortran_dir}/sibyll/sibyll_init.fpp
+    -o ${sibyll_init_sib21_source}
+    -DSIBYLL_TABLE_LENGTH=49
 )
 
 ### eposlhc
@@ -134,9 +150,9 @@ f2py_add_module(_sib21
   ${f2py_dir}/_sib21-f2pywrappers.f
   ${fortran_dir}/sibyll/sibyll_21.f
   ${fortran_dir}/sibyll/sib21aux.f
-  ${fortran_dir}/sibyll/sibyll_init.f
   ${logging_source}
   ${rangen_sib21_source}
+  ${sibyll_init_sib21_source}
 )
 
 ### sib23
@@ -148,7 +164,7 @@ f2py_add_module(_sib23
   ${f2py_dir}/_sib23module.c
   ${f2py_dir}/_sib23-f2pywrappers.f
   ${fortran_dir}/sibyll/sibyll2.3.f
-  ${fortran_dir}/sibyll/sibyll_init.f
+  ${sibyll_init_source}
   ${logging_source}
   ${rangen_source}
 )
@@ -162,7 +178,7 @@ f2py_add_module(_sib23c00
   ${f2py_dir}/_sib23c00module.c
   ${f2py_dir}/_sib23c00-f2pywrappers.f
   ${fortran_dir}/sibyll/sibyll2.3c00.f
-  ${fortran_dir}/sibyll/sibyll_init.f
+  ${sibyll_init_source}
   ${logging_source}
   ${rangen_source}
 )
@@ -176,7 +192,7 @@ f2py_add_module(_sib23c01
   ${f2py_dir}/_sib23c01module.c
   ${f2py_dir}/_sib23c01-f2pywrappers.f
   ${fortran_dir}/sibyll/sibyll2.3c01.f
-  ${fortran_dir}/sibyll/sibyll_init.f
+  ${sibyll_init_source}
   ${logging_source}
   ${rangen_source}
 )
@@ -190,7 +206,7 @@ f2py_add_module(_sib23c02
   ${f2py_dir}/_sib23c02module.c
   ${f2py_dir}/_sib23c02-f2pywrappers.f
   ${fortran_dir}/sibyll/sibyll2.3c02.f
-  ${fortran_dir}/sibyll/sibyll_init.f
+  ${sibyll_init_source}
   ${logging_source}
   ${rangen_source}
 )
@@ -204,7 +220,7 @@ f2py_add_module(_sib23c03
   ${f2py_dir}/_sib23c03module.c
   ${f2py_dir}/_sib23c03-f2pywrappers.f
   ${fortran_dir}/sibyll/sibyll2.3c03.f
-  ${fortran_dir}/sibyll/sibyll_init.f
+  ${sibyll_init_source}
   ${logging_source}
   ${rangen_source}
 )
@@ -218,7 +234,7 @@ f2py_add_module(_sib23d
   ${f2py_dir}/_sib23dmodule.c
   ${f2py_dir}/_sib23d-f2pywrappers.f
   ${fortran_dir}/sibyll/sibyll2.3d.f
-  ${fortran_dir}/sibyll/sibyll_init.f
+  ${sibyll_init_source}
   ${logging_source}
   ${rangen_source}
 )
