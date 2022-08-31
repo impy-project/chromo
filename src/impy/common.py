@@ -541,6 +541,13 @@ class MCRun(ABC):
         # after these calls in init_generator
         pass
 
+    def _update_event_kinematics(self):
+        if self._curr_event_kin.composite_target:
+            ekin = self._curr_event_kin
+            if ekin.p2_is_nucleus:
+                ekin.A2, ekin.Z2 = ekin.composite_target._get_random_AZ()
+                self._set_event_kinematics(ekin)
+
     @property
     def event_kinematics(self):
         return self._curr_event_kin
@@ -692,6 +699,7 @@ class MCRun(ABC):
         ntrials = 0
         nremaining = nevents
         while nremaining > 0:
+            self._update_event_kinematics()
             if self.generate_event() == 0:
                 self.nevents += 1
                 yield self._event_class(self)

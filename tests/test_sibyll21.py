@@ -1,4 +1,4 @@
-from impy.kinematics import EventKinematics
+from impy.kinematics import CenterOfMass
 from impy.models import Sibyll21
 from impy.constants import TeV
 from numpy.testing import assert_allclose, assert_equal
@@ -9,7 +9,7 @@ from particle import Particle
 
 
 def event_run():
-    ekin = EventKinematics(ecm=10 * TeV, p1pdg=2212, p2pdg=2212)
+    ekin = CenterOfMass(10 * TeV, 2212, 2212)
     m = Sibyll21(ekin, seed=1)
     for event in m(1):
         pass

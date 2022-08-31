@@ -1,4 +1,4 @@
-from impy.kinematics import EventKinematics
+from impy.kinematics import CenterOfMass
 from impy.models import Pythia6
 from impy.constants import GeV, TeV
 import numpy as np
@@ -10,7 +10,7 @@ from particle import literals as lp
 
 
 def run_event():
-    ekin = EventKinematics(ecm=1 * TeV, p1pdg=2212, p2pdg=2212)
+    ekin = CenterOfMass(1 * TeV, 2212, 2212)
     m = Pythia6(ekin, seed=4)
     m.set_stable(lp.pi_0.pdgid, False)  # needed to get nonzero vertices
     for event in m(1):
@@ -57,7 +57,7 @@ def test_parents(event):
 
 
 def run_is_view():
-    ekin = EventKinematics(ecm=10 * GeV, p1pdg=2212, p2pdg=2212)
+    ekin = CenterOfMass(10 * GeV, 2212, 2212)
 
     m = Pythia6(ekin, seed=1)
     for event in m(1):
@@ -97,7 +97,7 @@ def test_final_state_charged(event):
 
 
 def run_pickle():
-    ekin = EventKinematics(ecm=10 * GeV, p1pdg=2212, p2pdg=2212)
+    ekin = CenterOfMass(10 * GeV, 2212, 2212)
 
     m = Pythia6(ekin, seed=1)
     for event in m(1):

@@ -1,5 +1,5 @@
 from impy.constants import TeV
-from impy.kinematics import EventKinematics
+from impy.kinematics import CenterOfMass
 import impy.models as im
 import abc
 from collections import Counter
@@ -35,10 +35,10 @@ def test_generator(Model):
         # The old phojet needs more tweaking for pion-proton (is not related to test)
         p1pdg = 2212  # proton
 
-    ekin = EventKinematics(
-        ecm=7 * TeV,
-        p1pdg=p1pdg,
-        p2pdg=p2pdg,
+    ekin = CenterOfMass(
+        7 * TeV,
+        p1pdg,
+        p2pdg,
     )
 
     c = run_in_separate_process(run_model, Model, ekin)
