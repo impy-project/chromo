@@ -246,42 +246,6 @@ def _normalize_particle(particle):
     return pdg, nuc_prop, composite_target
 
 
-def lorentz_boost(vec4, gamma, direction):
-    """Lorentz transformation of the matrix of 4-vectors 'vec4[4,:]'
-    to the frame moving with Lorentz factor 'gamma' in the direction 'direction[3]'
-
-    Args:
-        vec4 (np.ndarray): vec4[4,:] (e.g. a collection of 4-momenta
-        of the arbitrary number of particles)
-        gamma (float) : Lorentz factor
-        direction (np.ndarray): direction[3] is arbitrary 3-vector in the direction
-        of frame movement
-    Usage:
-
-        #Transformation to some arbitrary direction
-        p_new = lorentz_boost(pold, 100, [1, 2, 3])
-        # Transformation to x-direction
-        p_new = lorentz_boost(pold, 1e10, [1, 0, 0])
-
-    Returns:
-        np.ndarray: transformed ('boosted') 'vec4[4,:]'
-    """
-
-    nd = np.array(direction, dtype=np.float64) / np.linalg.norm(direction)
-    bg = np.sqrt((gamma - 1) * (gamma + 1)) * nd
-    gn = (gamma - 1) * nd
-    lt_mat = np.array(
-        [
-            [gamma, -bg[0], -bg[1], -bg[2]],
-            [-bg[0], 1 + gn[0] * nd[0], gn[0] * nd[1], gn[0] * nd[2]],
-            [-bg[1], gn[1] * nd[0], 1 + gn[1] * nd[1], gn[1] * nd[2]],
-            [-bg[2], gn[2] * nd[0], gn[2] * nd[1], 1 + gn[2] * nd[2]],
-        ],
-        dtype=np.float64,
-    )
-    return np.dot(lt_mat, vec4)
-
-
 class EventKinematics(abc.ABC):
     """Handles kinematic variables and conversions between reference frames.
 
