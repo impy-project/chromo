@@ -56,7 +56,6 @@ def test_parents(event):
     assert sum(x[0] > 0 and x[1] > 0 for x in event.parents) > 0
 
 
-
 def run_is_view():
     ekin = CenterOfMass(10 * GeV, 2212, 2212)
 
