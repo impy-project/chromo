@@ -246,6 +246,42 @@ def _normalize_particle(particle):
     return pdg, nuc_prop, composite_target
 
 
+def lorentz_boost(vec4, gamma, direction):
+    """Lorentz transformation of the matrix of 4-vectors 'vec4[4,:]'
+    to the frame moving with Lorentz factor 'gamma' in the direction 'direction[3]'
+
+    Args:
+        vec4 (np.ndarray): vec4[4,:] (e.g. a collection of 4-momenta
+        of the arbitrary number of particles)
+        gamma (float) : Lorentz factor
+        direction (np.ndarray): direction[3] is arbitrary 3-vector in the direction
+        of frame movement
+    Usage:
+
+        #Transformation to some arbitrary direction
+        p_new = lorentz_boost(pold, 100, [1, 2, 3])
+        # Transformation to x-direction
+        p_new = lorentz_boost(pold, 1e10, [1, 0, 0])
+
+    Returns:
+        np.ndarray: transformed ('boosted') 'vec4[4,:]'
+    """
+
+    nd = np.array(direction, dtype=np.float64) / np.linalg.norm(direction)
+    bg = np.sqrt((gamma - 1) * (gamma + 1)) * nd
+    gn = (gamma - 1) * nd
+    lt_mat = np.array(
+        [
+            [gamma, -bg[0], -bg[1], -bg[2]],
+            [-bg[0], 1 + gn[0] * nd[0], gn[0] * nd[1], gn[0] * nd[2]],
+            [-bg[1], gn[1] * nd[0], 1 + gn[1] * nd[1], gn[1] * nd[2]],
+            [-bg[2], gn[2] * nd[0], gn[2] * nd[1], 1 + gn[2] * nd[2]],
+        ],
+        dtype=np.float64,
+    )
+    return np.dot(lt_mat, vec4)
+
+
 class EventKinematics(abc.ABC):
     """Handles kinematic variables and conversions between reference frames.
 
@@ -549,181 +585,3 @@ class FixedTarget(EventKinematics):
     def __init__(self, energy, particle1, particle2):
         impy_config["user_frame"] = "laboratory"
         super()._init(elab=energy, particle1=particle1, particle2=particle2)
-
-
-# Functions for transformations 'from_laboratory' and 'from_cms'
-def spherical_angles(vec):
-    """Get sin and cos of spherical angles of 3-vector 'vec'
-    theta (measured from z axis) and
-    phi (measured from x axis)
-
-    Args:
-        vec (np.ndarray): vec[3]
-
-    Returns:
-        tuple of float: cos(phi), sin(phi), cos(theta), sin(theta)
-    """
-    length = np.sqrt(vec[0] ** 2 + vec[1] ** 2 + vec[2] ** 2)
-    cos_th = vec[2] / length
-    length_xy = np.sqrt(vec[0] ** 2 + vec[1] ** 2)
-    sin_th = length_xy / length
-
-    th_norm = np.sqrt(cos_th**2 + sin_th**2)
-    cos_th = cos_th / th_norm
-    sin_th = sin_th / th_norm
-
-    if length_xy > 0:
-        cos_phi = vec[0] / length_xy
-        sin_phi = vec[1] / length_xy
-        phi_norm = np.sqrt(cos_phi**2 + sin_phi**2)
-        cos_phi = cos_phi / phi_norm
-        sin_phi = sin_phi / phi_norm
-    else:
-        cos_phi = 1.0
-        sin_phi = 0.0
-
-    return cos_phi, sin_phi, cos_th, sin_th
-
-
-def rotate_back_from_along_z_matrix(cos_phi, sin_phi, cos_th, sin_th):
-    """Returns the inverse matrix (F' -> F) of the transformation (F -> F')
-    that rotates frame in a ways that vector with (phi, theta) angles (in F)
-    aligns with axis Z (in F').
-
-    The returned matrix is supposed to be applied to the vector
-    vec[4] with components [vx, vy, vz, dimension that is not transformed]
-
-    Args:
-        cos_phi (float):
-        sin_phi (float):
-        cos_th (float):
-        sin_th (float):
-
-    Returns:
-        np.ndarray [4, 4]:
-    """
-
-    rot_matr = np.array(
-        [
-            [cos_phi * cos_th, -sin_phi, cos_phi * sin_th, 0],
-            [sin_phi * cos_th, cos_phi, sin_phi * sin_th, 0],
-            [-sin_th, 0, cos_th, 0],
-            [0, 0, 0, 1],
-        ]
-    )
-
-    return rot_matr
-
-
-def matrix_rotate_back_hep(vec):
-    """Wrapper for two methods"""
-    return rotate_back_from_along_z_matrix(*spherical_angles(vec[:3]))
-
-
-def matrix_lorentz_boost_hep(gamma, direction):
-    """Matrix for lorentz transformation of the matrix of 4-vectors 'vec4[4,:]'
-    to the frame moving with Lorentz factor 'gamma' in the direction 'direction[3]'
-    vec4 should be in format of hepevt, i.e.
-    vec4[4,:] = [[px_1,...,px_n],
-                 [py_1,...,py_n],
-                 [pz_1,...,pz_n],
-                 [en_1,...,en_n]]
-
-    Args:
-        vec4 (np.ndarray): vec4[4,:] (e.g. a collection of 4-momenta
-        of the arbitrary number of particles)
-        gamma (float) : Lorentz factor
-        direction (np.ndarray): direction[3] is arbitrary 3-vector in the direction
-        of frame movement
-    Usage:
-
-        #Transformation to some arbitrary direction
-        p_new = np.dot(matrix_lorentz_boost_hep(100, [1, 2, 3]), p_old)
-        # Transformation to x-direction
-        p_new = np.dot(matrix_lorentz_boost_hep(1e10, [1, 0, 0]), p_old)
-
-    Returns:
-        np.ndarray: matrix for lorentz transformation
-    """
-    nd = np.array(direction, dtype=np.float64) / np.linalg.norm(direction)
-    bg = np.sqrt((gamma - 1) * (gamma + 1)) * nd
-    gn = (gamma - 1) * nd
-    lt_mat = np.array(
-        [
-            [1 + gn[0] * nd[0], gn[0] * nd[1], gn[0] * nd[2], -bg[0]],
-            [gn[1] * nd[0], 1 + gn[1] * nd[1], gn[1] * nd[2], -bg[1]],
-            [gn[2] * nd[0], gn[2] * nd[1], 1 + gn[2] * nd[2], -bg[2]],
-            [-bg[0], -bg[1], -bg[2], gamma],
-        ],
-        dtype=np.float64,
-    )
-    return lt_mat
-
-
-def from_cms(p1, p2, vec):
-    """Transformation of the matrix of 4-vectors 'vec' from cms frame
-    of p1 and p2 vectors to original frame
-
-    Args:
-        p1 (np.ndarray): projectile
-        p2 (np.ndarray): target
-        vec (np.ndarray): collection of 4 vectors in hep format, i.e.
-        [px, py, pz, en] in cms frame
-
-    Returns:
-        np.ndarray: transformed vectors in original frame
-    """
-
-    s = p1 + p2
-    # "Mass" of cms
-    ecm = np.sqrt(s[3] ** 2 - np.sum(s[:3] ** 2))
-    # Gamma of cms
-    gamma = s[3] / ecm
-    # Direction of cms
-    direction = s[:3]
-
-    # p1_in_cms[:3] = - p2_in_cms[:3]
-    p1_in_cms = np.dot(matrix_lorentz_boost_hep(gamma, direction), p1)
-
-    rot_m = matrix_rotate_back_hep(p1_in_cms)
-    lor_m = matrix_lorentz_boost_hep(gamma, -direction)
-    # Total transformation
-    # 1) rotate back in cms
-    # 2) boost back from cms to original frame
-    trans_m = np.dot(lor_m, rot_m)
-    return np.dot(trans_m, vec)
-
-
-def from_laboratory(p1, p2, vec):
-    """Transformation of the matrix of 4-vectors 'vec' from rest frame
-    of p2 vector to original frame
-
-    Args:
-        p1 (np.ndarray): projectile
-        p2 (np.ndarray): target
-        vec (np.ndarray): collection of 4 vectors in hep format, i.e.
-        [px, py, pz, en] in rest frame where p1_in_rest_frame is along Z
-
-    Returns:
-        np.ndarray: transformed vectors in original frame
-    """
-
-    # Transform the p2 (target) rest frame
-    s = p2
-    mass2 = np.sqrt(s[3] ** 2 - np.sum(s[:3] ** 2))
-    # Gamma and direction of rest frame
-    gamma = s[3] / mass2
-    direction = s[:3]
-
-    # p1 in rest frame of p2
-    p1_in_rest_frame = np.dot(matrix_lorentz_boost_hep(gamma, direction), p1)
-
-    # Assume that the frame of 'vec' is where
-    # p1_in_rest_frame is along Z
-    rot_m = matrix_rotate_back_hep(p1_in_rest_frame)
-    lor_m = matrix_lorentz_boost_hep(gamma, -direction)
-    # Total transformation
-    # 1) rotate back in rest frame
-    # 2) boost back from rest frame to original frame
-    trans_m = np.dot(lor_m, rot_m)
-    return np.dot(trans_m, vec)
