@@ -383,67 +383,69 @@ target_compile_definitions(_phojet112 PRIVATE IMPY)
 target_compile_options(_phojet112 PRIVATE -cpp)
 
 # ### dpmjetIII191
-# file(GLOB dpmjetIII191_sources
-#   ${fortran_dir}/dpmjetIII-19.1/src/phojet/*.f
-#   ${fortran_dir}/dpmjetIII-19.1/src/pythia/*.f
-#   ${fortran_dir}/dpmjetIII-19.1/src/dpmjet/*.f
-#   ${fortran_dir}/dpmjetIII-19.1/common/dummies.f
-#   ${logging_source}
-#   ${rangen_source}
-# )
-# # cmake does not like filenames with parantheses, but some Fortran files
-# # include those. As a workaround, we generate modified source files and
-# # renamed copies of the headers. Not elegant, but works. 🤷‍♂️
-# execute_process(
-#   COMMAND
-#   ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py
-#   ${CMAKE_CURRENT_BINARY_DIR} ${fortran_dir}/dpmjetIII-19.1/include
-#   ${dpmjetIII191_sources}
-#   OUTPUT_VARIABLE dpmjetIII191_modded_sources
-# )
-# # sources need preprocessing
-# set_source_files_properties(
-#   ${dpmjetIII191_modded_sources}
-#   PROPERTIES
-#   Fortran_PREPROCESS True
-# )
-# f2py_add_module(_dpmjetIII191
-#   FUNCTIONS
-#   pho_event dt_init dt_kkinc
-#   idt_icihad dt_xsglau pycomp dt_initjs dt_inucas idt_ipdgha dt_evtout
-#   pho_init pho_setpar poevt1 poevt2 pho_pname pho_pmass pho_setmdl
-#   pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini pho_ptcut
-#   pytune pho_rregpar pho_sregpar pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint
-#   pho_harxto pho_harxpt pho_setpcomb dt_phoxs dt_xshn dt_flahad
-#   dt_title pho_ghhias init_rmmard ${impy_logging}
-#   SOURCES
-#   ${f2py_dir}/_dpmjetIII191.pyf
-#   ${f2py_dir}/_dpmjetIII191module.c
-#   ${f2py_dir}/_dpmjetIII191-f2pywrappers.f
-#   ${dpmjetIII191_modded_sources}
-#   INCLUDE_DIRS
-#   ${fortran_dir}/dpmjetIII-19.1/include/phojet
-#   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
-#   ${fortran_dir}/dpmjetIII-19.1/include/pythia
-#   ${CMAKE_CURRENT_BINARY_DIR}/include
-# )
+file(GLOB dpmjetIII191_sources
+  ${fortran_dir}/dpmjetIII-19.1/src/phojet/*.f
+  ${fortran_dir}/dpmjetIII-19.1/src/pythia/*.f
+  ${fortran_dir}/dpmjetIII-19.1/src/dpmjet/*.f
+)
+# cmake does not like filenames with parantheses, but some Fortran files
+# include those. As a workaround, we generate modified source files and
+# renamed copies of the headers. Not elegant, but works. 🤷‍♂️
+execute_process(
+  COMMAND
+  ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py
+  ${CMAKE_CURRENT_BINARY_DIR} ${fortran_dir}/dpmjetIII-19.1/include
+  ${dpmjetIII191_sources}
+  OUTPUT_VARIABLE dpmjetIII191_modded_sources
+)
+# sources need preprocessing
+set_source_files_properties(
+  ${dpmjetIII191_modded_sources}
+  PROPERTIES
+  Fortran_PREPROCESS True
+)
+f2py_add_module(_dpmjetIII191
+  FUNCTIONS
+  pho_event dt_init dt_kkinc
+  idt_icihad dt_xsglau pycomp dt_initjs dt_inucas idt_ipdgha dt_evtout
+  pho_init pho_setpar poevt1 poevt2 pho_pname pho_pmass pho_setmdl
+  pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini pho_ptcut
+  pytune pho_rregpar pho_sregpar pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint
+  pho_harxto pho_harxpt pho_setpcomb dt_phoxs dt_xshn dt_flahad
+  dt_title pho_ghhias init_rmmard ${impy_logging}
+  SOURCES
+  ${f2py_dir}/_dpmjetIII191.pyf
+  ${f2py_dir}/_dpmjetIII191module.c
+  ${f2py_dir}/_dpmjetIII191-f2pywrappers.f
+  ${dpmjetIII191_modded_sources}
+  ${fortran_dir}/dpmjetIII-19.1/common/dummies.f
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${fortran_dir}/dpmjetIII-19.1/include/phojet
+  ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
+  ${fortran_dir}/dpmjetIII-19.1/include/pythia
+  ${CMAKE_CURRENT_BINARY_DIR}/include
+)
+
+target_compile_definitions(_dpmjetIII191 PRIVATE IMPY)
+target_compile_options(_dpmjetIII191 PRIVATE -cpp)
 
 ### dpmjetIII193
 file(GLOB dpmjetIII193_sources
   ${fortran_dir}/dpmjetIII-19.3/src/phojet/*.f
   ${fortran_dir}/dpmjetIII-19.3/src/pythia/*.f
   ${fortran_dir}/dpmjetIII-19.3/src/dpmjet/*.f
-  ${fortran_dir}/dpmjetIII-19.3/common/dummies.f
 )
 # # sources need preprocessing
-set_source_files_properties(
-  ${dpmjetIII193_sources}
-  PROPERTIES
-  Fortran_PREPROCESS True
-  COMPILE_DEFINITIONS
-  IMPY
-  COMPILE_OPTIONS
-)
+# set_source_files_properties(
+#   ${dpmjetIII193_sources}
+#   PROPERTIES
+#   Fortran_PREPROCESS True
+#   COMPILE_DEFINITIONS
+#   IMPY
+#   COMPILE_OPTIONS
+# )
 f2py_add_module(_dpmjetIII193
   FUNCTIONS
   pho_event dt_init dt_kkinc idt_icihad dt_xsglau pycomp dt_initjs
@@ -453,11 +455,13 @@ f2py_add_module(_dpmjetIII193
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
   pho_setpcomb dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias
   init_rmmard ${impy_logging}
+
   SOURCES
-  # ${f2py_dir}/_dpmjetIII193.pyf
-  # ${f2py_dir}/_dpmjetIII193module.c
-  # ${f2py_dir}/_dpmjetIII193-f2pywrappers.f
+  ${f2py_dir}/_dpmjetIII193.pyf
+  ${f2py_dir}/_dpmjetIII193module.c
+  ${f2py_dir}/_dpmjetIII193-f2pywrappers.f
   ${dpmjetIII193_sources}
+  ${fortran_dir}/dpmjetIII-19.3/common/dummies.f
   ${rangen_source}
   ${logging_source}
   INCLUDE_DIRS
