@@ -495,7 +495,7 @@ class RMMARDState:
     def _restore_from_file(self, filename):
         with open(filename, "rb") as pfile:
             self = pickle.load(pfile)
-        return self  
+        return self
 
     @property
     def sequence(self):
