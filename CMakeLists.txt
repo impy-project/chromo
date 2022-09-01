@@ -336,11 +336,11 @@ f2py_add_module(_pythia6
 f2py_add_module(_sophia
   FUNCTIONS
   eventgen print_event crossection initial
-  icon_pdg_sib init_rmmard toevt ${impy_logging}
+  icon_pdg_sib init_rmmard toevt crranma4 ${impy_logging}
   SOURCES
-  ${f2py_dir}/_sophia.pyf
-  ${f2py_dir}/_sophiamodule.c
-  ${f2py_dir}/_sophia-f2pywrappers.f
+  # ${f2py_dir}/_sophia.pyf
+  # ${f2py_dir}/_sophiamodule.c
+  # ${f2py_dir}/_sophia-f2pywrappers.f
   ${fortran_dir}/sophia/SOPHIA20.f
   ${fortran_dir}/sophia/eventgen.f
   ${fortran_dir}/sophia/sampling.f

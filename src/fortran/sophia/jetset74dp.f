@@ -6214,7 +6214,7 @@ C...Purpose: to reconstruct an angle from given x and y coordinates.
 C********************************************************************* 
  
 CDECK  ID>, RLU
-      FUNCTION RLU(IDUMMY) 
+      FUNCTION RLUX(IDUMMY) 
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
  
 C...Purpose: to generate random numbers uniformly distributed between 
@@ -6280,7 +6280,7 @@ C...Update counters. Random number to output.
         MRLU2=MRLU2+1 
         MRLU3=0 
       ENDIF 
-      RLU=RUNI 
+      RLUX=RUNI 
  
       RETURN 
       END 

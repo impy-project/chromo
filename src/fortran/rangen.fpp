@@ -389,6 +389,21 @@ C-----------------------------------------------------------------------
       RETURN
       END
 
+      DOUBLE PRECISION FUNCTION RLU()
+
+C-----------------------------------------------------------------------
+C  RLU  RANDOM GENERATOR FOR JETSET
+C-----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      DOUBLE PRECISION SIMRND
+
+      RLU = SIMRND()
+
+      RETURN
+      END
+
       SUBROUTINE INIT_RMMARD(ISEEDIN)
 
 C-----------------------------------------------------------------------

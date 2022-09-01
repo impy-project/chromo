@@ -14,6 +14,7 @@ from impy.util import info
 from impy.kinematics import EventKinematics
 from dataclasses import dataclass
 import typing as _tp
+import pickle
 
 
 @dataclass
@@ -428,6 +429,87 @@ class Settings(ABC):
         return False
 
 
+@dataclass
+class RMMARDState:
+    _c_number: np.ndarray = None
+    _u_array: np.ndarray = None
+    _u_i: np.ndarray = None
+    _u_j: np.ndarray = None
+    _seed: np.ndarray = None
+    _counter: np.ndarray = None
+    _big_counter: np.ndarray = None
+    _sequence_number: np.ndarray = None
+
+    def record_state(self, generator):
+        data = generator.crranma4
+
+        self._c_number = np.copy(data.c)
+        self._u_array = np.copy(data.u)
+        self._u_i = np.copy(data.i97)
+        self._u_j = np.copy(data.j97)
+        self._seed = np.copy(data.ijkl)
+        self._counter = np.copy(data.ntot)
+        self._big_counter = np.copy(data.ntot2)
+        self._sequence_number = np.copy(data.jseq)
+        return self
+
+    def restore_state(self, generator):
+        data = generator.crranma4
+        data.c = self._c_number
+        data.u = self._u_array
+        data.i97 = self._u_i
+        data.j97 = self._u_j
+        data.ijkl = self._seed
+        data.ntot = self._counter
+        data.ntot2 = self._big_counter
+        data.jseq = self._sequence_number
+        return self
+
+    def __eq__(self, other: object) -> bool:
+        if other.__class__ is not self.__class__:
+            return NotImplemented
+
+        return (
+            (self._c_number == other._c_number).all()
+            and (self._u_array == other._u_array).all()
+            and (self._u_i == other._u_i).all()
+            and (self._u_j == other._u_j).all()
+            and (self._seed == other._seed).all()
+            and (self._counter == other._counter).all()
+            and (self._big_counter == other._big_counter).all()
+            and (self._sequence_number == other._sequence_number).all()
+        )
+
+    def copy(self):
+        copies = []
+        for k in self.__dataclass_fields__:
+            obj = getattr(self, k)
+            copies.append(obj.copy() if hasattr(obj, "copy") else obj)
+
+        return RMMARDState(*copies)
+
+    def _dump_to_file(self, filename):
+        with open(filename, "wb") as pfile:
+            pickle.dump(self, pfile, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def _restore_from_file(self, filename):
+        with open(filename, "rb") as pfile:
+            self = pickle.load(pfile)
+        return self  
+
+    @property
+    def sequence(self):
+        return self._sequence_number
+
+    @property
+    def counter(self):
+        return self._counter[self.sequence - 1]
+
+    @property
+    def seed(self):
+        return self._seed[self.sequence - 1]
+
+
 # =========================================================================
 # MCRun
 # =========================================================================
@@ -547,6 +629,20 @@ class MCRun(ABC):
             if ekin.p2_is_nucleus:
                 ekin.A2, ekin.Z2 = ekin.composite_target._get_random_AZ()
                 self._set_event_kinematics(ekin)
+
+    @property
+    def rng_state(self):
+        return RMMARDState().record_state(self.lib)
+
+    @rng_state.setter
+    def rng_state(self, rng_state):
+        rng_state.restore_state(self.lib)
+
+    def dump_rng_state_to(self, filename):
+        self.rng_state._dump_to_file(filename)
+
+    def restore_rng_state_from(self, filename):
+        self.rng_state = RMMARDState()._restore_from_file(filename)
 
     @property
     def event_kinematics(self):
