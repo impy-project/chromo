@@ -440,21 +440,22 @@ class RMMARDState:
     _big_counter: np.ndarray = None
     _sequence_number: np.ndarray = None
 
-    def record_state(self, generator):
+    def _record_state(self, generator):
         data = generator.crranma4
 
-        self._c_number = np.copy(data.c)
-        self._u_array = np.copy(data.u)
-        self._u_i = np.copy(data.i97)
-        self._u_j = np.copy(data.j97)
-        self._seed = np.copy(data.ijkl)
-        self._counter = np.copy(data.ntot)
-        self._big_counter = np.copy(data.ntot2)
-        self._sequence_number = np.copy(data.jseq)
+        self._c_number = data.c
+        self._u_array = data.u
+        self._u_i = data.i97
+        self._u_j = data.j97
+        self._seed = data.ijkl
+        self._counter = data.ntot
+        self._big_counter = data.ntot2
+        self._sequence_number = data.jseq
         return self
 
-    def restore_state(self, generator):
+    def _restore_state(self, generator):
         data = generator.crranma4
+
         data.c = self._c_number
         data.u = self._u_array
         data.i97 = self._u_i
@@ -470,14 +471,14 @@ class RMMARDState:
             return NotImplemented
 
         return (
-            (self._c_number == other._c_number).all()
-            and (self._u_array == other._u_array).all()
-            and (self._u_i == other._u_i).all()
-            and (self._u_j == other._u_j).all()
-            and (self._seed == other._seed).all()
-            and (self._counter == other._counter).all()
-            and (self._big_counter == other._big_counter).all()
-            and (self._sequence_number == other._sequence_number).all()
+            np.array_equal(self._c_number, other._c_number)
+            and np.array_equal(self._u_array, other._u_array)
+            and np.array_equal(self._u_i, other._u_i)
+            and np.array_equal(self._u_j, other._u_j)
+            and np.array_equal(self._seed, other._seed)
+            and np.array_equal(self._counter, other._counter)
+            and np.array_equal(self._big_counter, other._big_counter)
+            and np.array_equal(self._sequence_number, other._sequence_number)
         )
 
     def copy(self):
@@ -496,6 +497,12 @@ class RMMARDState:
         with open(filename, "rb") as pfile:
             self = pickle.load(pfile)
         return self
+
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, state):
+        self.__dict__ = state
 
     @property
     def sequence(self):
@@ -632,11 +639,11 @@ class MCRun(ABC):
 
     @property
     def rng_state(self):
-        return RMMARDState().record_state(self.lib)
+        return RMMARDState()._record_state(self.lib)
 
     @rng_state.setter
     def rng_state(self, rng_state):
-        rng_state.restore_state(self.lib)
+        rng_state._restore_state(self.lib)
 
     def dump_rng_state_to(self, filename):
         self.rng_state._dump_to_file(filename)
