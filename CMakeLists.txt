@@ -88,6 +88,12 @@ set(rangen_sib21_source rangen_sib21.f)
 set(sibyll_init_source sibyll_init.f)
 set(sibyll_init_sib21_source sibyll_init_sib21.f)
 
+#
+set(sophia_jetset74dp_source jetset74dp.f)
+set(sophia_eventgen_source eventgen.f)
+set(pythia6_pythia6428_source pythia-6.4.28.f)
+set(epos_random_source epos-random.f)
+
 # WARNING this is not platform-independent and needs to be adjusted
 # when new fortran compilers should be supported
 add_custom_command(
@@ -118,22 +124,69 @@ add_custom_command(
     -DSIBYLL_TABLE_LENGTH=49
 )
 
+
+add_custom_command(
+  OUTPUT ${pythia6_pythia6428_source}
+  COMMAND ${CMAKE_Fortran_COMPILER}
+    -E -cpp ${fortran_dir}/pythia6/pythia-6.4.28.f
+    -o ${pythia6_pythia6428_source}
+    -DIMPY
+)
+
+add_custom_command(
+  OUTPUT ${sophia_jetset74dp_source}
+  COMMAND ${CMAKE_Fortran_COMPILER}
+    -E -cpp ${fortran_dir}/sophia/jetset74dp.f
+    -o ${sophia_jetset74dp_source}
+    -DIMPY
+)
+
+add_custom_command(
+  OUTPUT ${sophia_eventgen_source}
+  COMMAND ${CMAKE_Fortran_COMPILER}
+    -E -cpp ${fortran_dir}/sophia/eventgen.f
+    -o ${sophia_eventgen_source}
+    -DIMPY
+)
+
+
 ### eposlhc
 file(GLOB eposlhc_sources ${fortran_dir}/EPOS-LHC/sources/*.f)
 list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
+list(FILTER eposlhc_sources EXCLUDE REGEX epos-random\.f)
+
+
+add_custom_command(
+  OUTPUT ${epos_random_source}
+  COMMAND ${CMAKE_Fortran_COMPILER}
+    -E -cpp ${fortran_dir}/EPOS-LHC/sources/epos-random.f
+    -o ${epos_random_source}
+    -DIMPY
+  COMMAND cp  ${fortran_dir}/EPOS-LHC/sources/epos.inc epos.inc  
+)
 
 f2py_add_module(_eposlhc
   FUNCTIONS
   aaset ainit aepos afinal hepmcstore
   getcharge idtrafo initializeepos initeposevt
-  setstable setunstable xsection ${impy_logging}
+  setstable setunstable xsection init_rmmard ${impy_logging}
   SOURCES
-  ${f2py_dir}/_eposlhc.pyf
-  ${f2py_dir}/_eposlhcmodule.c
-  ${f2py_dir}/_eposlhc-f2pywrappers.f
+  # ${f2py_dir}/_eposlhc.pyf
+  # ${f2py_dir}/_eposlhcmodule.c
+  # ${f2py_dir}/_eposlhc-f2pywrappers.f
   ${eposlhc_sources}
+  ${epos_random_source}
+  ${logging_source}
+  ${rangen_source}
+  INTERFACE_SOURCES
+  ${fortran_dir}/EPOS-LHC/sources/epos-bas-lhc.f 
+  ${fortran_dir}/EPOS-LHC/sources/epos-ids-lhc.f 
+  ${fortran_dir}/EPOS-LHC/sources/epos_interface.f
+  ${epos_random_source}
+  ${rangen_source}
   ${logging_source}
 )
+
 
 ### sib21
 set(SIBYLL_COMMON_FUNCTIONS
@@ -245,9 +298,9 @@ f2py_add_module(_qgs01
   cqgsini sectnu xxaini psconf xxreg psaini chepevt
   ${impy_logging}
   SOURCES
-  ${f2py_dir}/_qgs01.pyf
-  ${f2py_dir}/_qgs01module.c
-  ${f2py_dir}/_qgs01-f2pywrappers.f
+  # ${f2py_dir}/_qgs01.pyf
+  # ${f2py_dir}/_qgs01module.c
+  # ${f2py_dir}/_qgs01-f2pywrappers.f
   ${fortran_dir}/qgsjet/qgsjet01d.f
   ${fortran_dir}/qgsjet/impy_qgs1.f
   ${logging_source}
@@ -324,10 +377,11 @@ f2py_add_module(_pythia6
   pyinit pyexec pytune pylist pyevnt pyevnw pystat pyedit
   pyhepc pychge pycomp pyk init_rmmard ${impy_logging}
   SOURCES
-  ${f2py_dir}/_pythia6.pyf
-  ${f2py_dir}/_pythia6module.c
-  ${f2py_dir}/_pythia6-f2pywrappers.f
-  ${fortran_dir}/pythia6/pythia-6.4.28.f
+  # ${f2py_dir}/_pythia6.pyf
+  # ${f2py_dir}/_pythia6module.c
+  # ${f2py_dir}/_pythia6-f2pywrappers.f
+  # ${fortran_dir}/pythia6/pythia-6.4.28.f
+  ${pythia6_pythia6428_source}
   ${logging_source}
   ${rangen_source}
 )
@@ -336,7 +390,12 @@ f2py_add_module(_pythia6
 f2py_add_module(_sophia
   FUNCTIONS
   eventgen print_event crossection initial
-  icon_pdg_sib init_rmmard toevt crranma4 ${impy_logging}
+  icon_pdg_sib init_rmmard toevt ${impy_logging}
+  # INTERFACE_SOURCES
+  # ${sophia_eventgen_source}
+  # ${fortran_dir}/sophia/eventgen.f
+  # ${rangen_source}
+  # ${logging_source}
   SOURCES
   # ${f2py_dir}/_sophia.pyf
   # ${f2py_dir}/_sophiamodule.c
@@ -345,7 +404,8 @@ f2py_add_module(_sophia
   ${fortran_dir}/sophia/eventgen.f
   ${fortran_dir}/sophia/sampling.f
   ${fortran_dir}/sophia/inpoutput.f
-  ${fortran_dir}/sophia/jetset74dp.f
+  # ${fortran_dir}/sophia/jetset74dp.f
+  ${sophia_jetset74dp_source}
   ${fortran_dir}/sophia/impy_sophia.f
   ${logging_source}
   ${rangen_source}

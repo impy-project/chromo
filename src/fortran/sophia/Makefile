@@ -10,7 +10,7 @@ OBJS= $(subst .f,.o,$(SRCS))
 LIB_NAME = sophia
       
 SFUNCS=eventgen print_event crossection initial\
-      icon_pdg_sib init_rmmard toevt crranma4
+      icon_pdg_sib init_rmmard toevt
 
 all:  install
 

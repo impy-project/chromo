@@ -6210,11 +6210,12 @@ C...Purpose: to reconstruct an angle from given x and y coordinates.
  
       RETURN 
       END 
- 
+
+#ifndef IMPY  
 C********************************************************************* 
  
 CDECK  ID>, RLU
-      FUNCTION RLUX(IDUMMY) 
+      FUNCTION RLU(IDUMMY) 
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
  
 C...Purpose: to generate random numbers uniformly distributed between 
@@ -6357,7 +6358,8 @@ C...Write error.
  
       RETURN 
       END 
- 
+C #endif IMPY
+#endif
 C********************************************************************* 
  
 CDECK  ID>, LUROBO

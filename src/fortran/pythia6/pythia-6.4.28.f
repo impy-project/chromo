@@ -75327,7 +75327,8 @@ C...PYR
 C...Generates random numbers uniformly distributed between
 C...0 and 1, excluding the endpoints.
  
-      FUNCTION XPYR(IDUMMY)
+#ifndef IMPY
+      FUNCTION PYR(IDUMMY)
  
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
@@ -75485,7 +75486,8 @@ C...Write error.
  
       RETURN
       END
- 
+C #ENDIF IMPY
+#endif
 C*********************************************************************
  
 C...PYROBO

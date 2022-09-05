@@ -415,6 +415,14 @@ C-----------------------------------------------------------------------
       
       IMPLICIT NONE
 
+      INTEGER          KSEQ
+      PARAMETER        (KSEQ = 8)
+      DOUBLE PRECISION C(KSEQ),U(97,KSEQ),UNI
+      INTEGER          IJKL(KSEQ),I97(KSEQ),J97(KSEQ),
+     *                 NTOT(KSEQ),NTOT2(KSEQ),JSEQ
+      
+      COMMON /CRRANMA4/C,U,IJKL,I97,J97,NTOT,NTOT2,JSEQ
+
       INTEGER ISEEDIN, ISEED(3), NSEQ, I
       PARAMETER( NSEQ = 2)
 
