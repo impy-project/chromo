@@ -454,6 +454,11 @@ file(GLOB dpmjetIII191_sources
   ${fortran_dir}/dpmjetIII-19.1/src/dpmjet/*.f
   ${fortran_dir}/dpmjetIII-19.1/common/*.f
 )
+
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDM\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMST\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMTE\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR\.f)
 # cmake does not like filenames with parantheses, but some Fortran files
 # include those. As a workaround, we generate modified source files and
 # renamed copies of the headers. Not elegant, but works. 🤷‍♂️
@@ -464,12 +469,34 @@ execute_process(
   ${dpmjetIII191_sources}
   OUTPUT_VARIABLE dpmjetIII191_modded_sources
 )
-# sources need preprocessing
-set_source_files_properties(
-  ${dpmjetIII191_modded_sources}
-  PROPERTIES
-  Fortran_PREPROCESS True
-)
+
+set(dpmjetIII191_dir dpmjetIII191)
+add_custom_target(${dpmjetIII191_dir} ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${dpmjetIII191_dir})
+
+set(dpmjetIII191_psources)
+foreach(_file ${dpmjetIII191_modded_sources})
+  get_filename_component(barename ${_file} NAME)
+  set(proc_file ${CMAKE_CURRENT_BINARY_DIR}/${dpmjetIII191_dir}/pp${barename})
+  add_custom_command(
+    OUTPUT ${proc_file}
+    COMMAND ${CMAKE_Fortran_COMPILER}
+    -E -cpp ${_file}
+    -o ${proc_file}
+  ) 
+  list(APPEND dpmjetIII191_psources ${proc_file})
+endforeach()
+
+
+
+# set_source_files_properties(
+#   ${dpmjetIII191_modded_sources}
+#   PROPERTIES
+#   Fortran_PREPROCESS True
+# )
+
+
+
 f2py_add_module(_dpmjetIII191
   FUNCTIONS
   pho_event dt_init dt_kkinc
@@ -484,7 +511,9 @@ f2py_add_module(_dpmjetIII191
   # ${f2py_dir}/_dpmjetIII191.pyf
   # ${f2py_dir}/_dpmjetIII191module.c
   # ${f2py_dir}/_dpmjetIII191-f2pywrappers.f
-  ${dpmjetIII191_modded_sources}
+  # ${dpmjetIII191_modded_sources}
+  ${dpmjetIII191_psources}
+  ${rangen_source}
   INCLUDE_DIRS
   ${fortran_dir}/dpmjetIII-19.1/include/phojet
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
@@ -499,12 +528,37 @@ file(GLOB dpmjetIII193_sources
   ${fortran_dir}/dpmjetIII-19.3/src/dpmjet/*.f
   ${fortran_dir}/dpmjetIII-19.3/common/*.f
 )
+
+list(FILTER dpmjetIII193_sources EXCLUDE REGEX DT_RNDM\.f)
+list(FILTER dpmjetIII193_sources EXCLUDE REGEX DT_RNDMST\.f)
+list(FILTER dpmjetIII193_sources EXCLUDE REGEX DT_RNDMTE\.f)
+list(FILTER dpmjetIII193_sources EXCLUDE REGEX PYR\.f)
+
 # sources need preprocessing
-set_source_files_properties(
-  ${dpmjetIII193_sources}
-  PROPERTIES
-  Fortran_PREPROCESS True
-)
+set(dpmjetIII193_psources)
+set(dpmjetIII193_dir dpmjetIII193)
+add_custom_target(${dpmjetIII193_dir} ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${dpmjetIII193_dir})
+
+foreach(_file ${dpmjetIII193_sources})
+  get_filename_component(barename ${_file} NAME)
+  set(proc_file ${CMAKE_BINARY_DIR}/${dpmjetIII193_dir}/pp${barename})
+  add_custom_command(
+    OUTPUT ${proc_file}
+    COMMAND ${CMAKE_Fortran_COMPILER}
+    -E -cpp ${_file}
+    -o ${proc_file}
+  ) 
+  list(APPEND dpmjetIII193_psources ${proc_file})
+endforeach()
+
+
+# set_source_files_properties(
+#   ${dpmjetIII193_sources}
+#   PROPERTIES
+#   Fortran_PREPROCESS True
+# )
+
 f2py_add_module(_dpmjetIII193
   FUNCTIONS
   pho_event dt_init dt_kkinc
@@ -519,7 +573,8 @@ f2py_add_module(_dpmjetIII193
   # ${f2py_dir}/_dpmjetIII193.pyf
   # ${f2py_dir}/_dpmjetIII193module.c
   # ${f2py_dir}/_dpmjetIII193-f2pywrappers.f
-  ${dpmjetIII193_sources}
+  ${dpmjetIII193_psources}
+  ${rangen_source}
   INCLUDE_DIRS
   ${fortran_dir}/dpmjetIII-19.3/include/phojet
   ${fortran_dir}/dpmjetIII-19.3/include/dpmjet

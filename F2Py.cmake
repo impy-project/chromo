@@ -69,6 +69,12 @@ function (f2py_add_module target_name)
   list(FILTER F2PY_ADD_MODULE_GEN_2 INCLUDE REGEX "${target_name}-f2pywrappers.*")
 
   set(F2PY_ADD_MODULE_LOG_FILE ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.log)
+
+  set(F2PY_ADD_MODULE_INC)
+  if (F2PY_ADD_MODULE_INCLUDE_DIRS)
+    STRING(JOIN ":" _joined_dirs ${F2PY_ADD_MODULE_INCLUDE_DIRS})
+    set(F2PY_ADD_MODULE_INC --include-paths ${_joined_dirs})
+  endif()
   
   if (NOT F2PY_ADD_MODULE_PYF_FILE)
     set(F2PY_ADD_MODULE_PYF_FILE ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.pyf)
@@ -82,6 +88,7 @@ function (f2py_add_module target_name)
         -m ${target_name}
         -h ${F2PY_ADD_MODULE_PYF_FILE}
         --overwrite-signature only: ${F2PY_ADD_MODULE_FUNCTIONS} :
+        ${F2PY_ADD_MODULE_INC}
         ${F2PY_ADD_MODULE_INTERFACE_SOURCES}
         >> ${F2PY_ADD_MODULE_LOG_FILE} 2>&1
 
@@ -92,11 +99,6 @@ function (f2py_add_module target_name)
     message(STATUS "f2py_add_module: Use existing ${F2PY_ADD_MODULE_PYF_FILE}")
   endif()
 
-  set(F2PY_ADD_MODULE_INC)
-  if (F2PY_ADD_MODULE_INCLUDE_DIRS)
-    STRING(JOIN ":" _joined_dirs ${F2PY_ADD_MODULE_INCLUDE_DIRS})
-    set(F2PY_ADD_MODULE_INC --include-paths ${_joined_dirs})
-  endif()
 
   if (F2PY_ADD_MODULE_GEN_1 AND F2PY_ADD_MODULE_GEN_2)
     file(APPEND ${F2PY_ADD_MODULE_LOG_FILE} "f2py_add_module: Use existing ${F2PY_ADD_MODULE_GEN_1} ${F2PY_ADD_MODULE_GEN_2}\n")
