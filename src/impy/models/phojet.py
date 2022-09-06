@@ -198,14 +198,15 @@ class PHOJETRun(MCRun):
             )
 
         # Set seed of random number generator
-        sseed = str(seed)
-        n1, n2, n3, n4 = (
-            int(sseed[0:2]),
-            int(sseed[2:4]),
-            int(sseed[4:6]),
-            int(sseed[6:]),
-        )
-        self.lib.dt_rndmst(n1, n2, n3, n4)
+        # sseed = str(seed)
+        # n1, n2, n3, n4 = (
+        #     int(sseed[0:2]),
+        #     int(sseed[2:4]),
+        #     int(sseed[4:6]),
+        #     int(sseed[6:]),
+        # )
+        # self.lib.dt_rndmst(n1, n2, n3, n4)
+        self.lib.init_rmmard(int(seed))
 
         # if self.def_settings:
         #     print self.class_name + \

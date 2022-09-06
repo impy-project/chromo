@@ -322,7 +322,7 @@ C  PY(THIA) R(ANDOM GENERATOR)
 C
 C  SEE SUBROUT. RMMARD
 C  WE USE HERE A SIMPLIFIED FORM OF RMMARD WITH JSEQ=1, LENV=1.
-C  THIS FUNCTON IS CALLED FROM SIBYLL ROUTINES.
+C  THIS FUNCTON IS CALLED FROM PYTHIA ROUTINES.
 C-----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -403,6 +403,47 @@ C-----------------------------------------------------------------------
 
       RETURN
       END
+
+      DOUBLE PRECISION FUNCTION DT_RNDM(VDUMMY)
+
+C-----------------------------------------------------------------------
+C  SEE SUBROUT. RMMARD
+C  WE USE HERE A SIMPLIFIED FORM OF RMMARD WITH JSEQ=1, LENV=1.
+C  THIS FUNCTON IS CALLED FROM DPM_JET306 ROUTINES.
+C-----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      DOUBLE PRECISION SIMRND, VDUMMY
+
+      DT_RNDM = SIMRND()
+
+      RETURN
+      END
+
+
+       SUBROUTINE DT_RNDMST(NA1,NA2,NA3,NB1)
+C-----------------------------------------------------------------------
+C  THIS IS A DUMMY FUNCTION FOR  DPM_JET306 ROUTINES
+C  THE ORIGINAL VERSION INITIALIZES "DT_RNDM" RANDOM NUMBER GENERATOR
+C  WHICH IS SUBSTITUTED BY "SIMRND" IN IMPY
+C  "SIMRND" IS INITIALIZED VIA "INIT_RMMARD"
+C-----------------------------------------------------------------------
+        INTEGER NA1, NA2, NA3, NB1
+        RETURN
+        END
+      
+      
+        SUBROUTINE DT_RNDMTE(IO)
+C-----------------------------------------------------------------------
+C  THIS IS A DUMMY FUNCTION FOR  DPM_JET306 ROUTINES
+C  THE ORIGINAL VERSION TESTS "DT_RNDM" RANDOM NUMBER GENERATOR
+C  WHICH IS SUBSTITUTED BY "SIMRND" IN IMPY
+C----------------------------------------------------------------------- 
+        INTEGER IO
+        RETURN      
+        END
+
 
       SUBROUTINE INIT_RMMARD(ISEEDIN)
 

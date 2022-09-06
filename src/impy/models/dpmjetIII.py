@@ -181,14 +181,15 @@ class DpmjetIIIRun(MCRun):
         self.lib.dt_init(-1, k.plab, k.A1, k.Z1, k.A2, k.Z2, k.p1pdg, iglau=0)
 
         # Set seed of random number generator
-        sseed = str(seed)
-        n1, n2, n3, n4 = (
-            int(sseed[0:2]),
-            int(sseed[2:4]),
-            int(sseed[4:6]),
-            int(sseed[6:]),
-        )
-        self.lib.dt_rndmst(n1, n2, n3, n4)
+        # sseed = str(seed)
+        # n1, n2, n3, n4 = (
+        #     int(sseed[0:2]),
+        #     int(sseed[2:4]),
+        #     int(sseed[4:6]),
+        #     int(sseed[6:]),
+        # )
+        # self.lib.dt_rndmst(n1, n2, n3, n4)
+        self.lib.init_rmmard(int(seed))
 
         if impy_config["user_frame"] == "center-of-mass":
             self.lib.dtflg1.iframe = 2

@@ -27087,6 +27087,7 @@ C     WRITE(LOUT,1000) DAT,TIM
       RETURN
       END
 
+#ifndef IMPY      
 ************************************************************************
 *                                                                      *
 *                 7) Random number generator package                   *
@@ -27340,6 +27341,8 @@ C        WRITE(6,1000)
 
       RETURN
       END
+C #endif IMPY
+#endif
 
 *$ CREATE DT_TITLE.FOR
 *COPY DT_TITLE
