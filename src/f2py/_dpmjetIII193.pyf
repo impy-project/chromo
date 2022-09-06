@@ -3,55 +3,31 @@
 
 python module _dpmjetIII193 ! in 
     interface  ! in :_dpmjetIII193
-        function pho_pname(id,mode) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: id
-            integer :: mode
+        subroutine pho_setmdl(indx,ival,imode) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: indx
+            integer :: ival
+            integer :: imode
             integer :: li
             integer :: lo
             integer :: lpri
             integer :: lendir
             character*1024 :: datdir
-            integer :: nevhep
-            integer :: nhep
-            integer dimension(8000) :: isthep
-            integer dimension(8000) :: idhep
-            integer dimension(2,8000) :: jmohep
-            integer dimension(2,8000) :: jdahep
-            double precision dimension(5,8000) :: phep
-            double precision dimension(4,8000) :: vhep
-            integer dimension(8000) :: impart
-            integer dimension(2,8000) :: iphist
-            integer dimension(2,8000) :: icolor
-            integer dimension(300) :: id_pdg_list
-            integer dimension(577) :: id_list
-            character dimension(300,12),intent(c) :: name_list
-            integer :: id_pdg_max
-            double precision dimension(300) :: xm_list
-            double precision dimension(300) :: tau_list
-            double precision dimension(300) :: gam_list
-            double precision dimension(6,6) :: xm_psm2_list
-            double precision dimension(6,6) :: xm_vem2_list
-            double precision dimension(6,6,6) :: xm_b82_list
-            double precision dimension(6,6,6) :: xm_b102_list
-            double precision dimension(6,6,6,6) :: xm_bb82_list
-            double precision dimension(6,6,6,6) :: xm_bb102_list
-            integer dimension(300) :: ich3_list
-            integer dimension(300) :: iba3_list
-            integer dimension(3,300) :: iq_list
-            integer dimension(6,6) :: id_psm_list
-            integer dimension(6,6) :: id_vem_list
-            integer dimension(6,6,6) :: id_b8_list
-            integer dimension(6,6,6) :: id_b10_list
-            character*15 :: pho_pname
+            character dimension(50,8),intent(c) :: mdlna
+            integer dimension(50) :: iswmdl
+            double precision dimension(400) :: parmdl
+            integer dimension(400) :: ipamdl
+            character*1024 :: parfn
             common /poinou/ li,lo,lpri,lendir,datdir
-            common /poevt1/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
-            common /poevt2/ impart,iphist,icolor
-            common /popar1/ id_pdg_list,id_list,name_list,id_pdg_max
-            common /popar2/ xm_list,tau_list,gam_list,xm_psm2_list,xm_vem2_list,xm_b82_list,xm_b102_list,xm_bb82_list,xm_bb102_list,ich3_list,iba3_list,iq_list,id_psm_list,id_vem_list,id_b8_list,id_b10_list
-        end function pho_pname
-        function pho_ptcut(ecm,ip) ! in :_dpmjetIII193:f2py_cpp.f
-            double precision :: ecm
-            integer :: ip
+            common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
+        end subroutine pho_setmdl
+        subroutine pho_sregpar ! in :_dpmjetIII193:f2py_cpp.f
+            integer dimension(2,40) :: mparconf
+            integer dimension(2,40) :: mpmapp
+            integer dimension(2) :: mpar
+            double precision :: sqsglobmax
+            integer :: nmpar
+            integer :: idxmpar
+            integer :: nmapp
             integer :: li
             integer :: lo
             integer :: lpri
@@ -72,16 +48,186 @@ python module _dpmjetIII193 ! in
             integer :: kevent
             integer :: ksoft
             integer :: khard
+            double precision :: alpom
+            double precision :: alpomp
+            double precision dimension(2) :: gp
+            double precision dimension(2) :: b0pom
+            double precision :: alreg
+            double precision :: alregp
+            double precision dimension(2) :: gr
+            double precision dimension(2) :: b0reg
+            double precision :: gppp
+            double precision :: gppr
+            double precision :: b0ppp
+            double precision :: b0ppr
+            double precision dimension(4) :: vdmfac
+            double precision dimension(4) :: vdmq2f
+            double precision :: b0har
+            double precision :: akfac
+            double precision dimension(40) :: salpom
+            double precision dimension(40) :: salpomp
+            double precision dimension(2,40) :: sgp
+            double precision dimension(2,40) :: sb0pom
+            double precision dimension(40) :: salreg
+            double precision dimension(40) :: salregp
+            double precision dimension(2,40) :: sgr
+            double precision dimension(2,40) :: sb0reg
+            double precision dimension(40) :: sgppp
+            double precision dimension(40) :: sgppr
+            double precision dimension(40) :: sb0ppp
+            double precision dimension(40) :: sb0ppr
+            double precision dimension(4,40) :: svdmfac
+            double precision dimension(4,40) :: svdmq2f
+            double precision dimension(40) :: sb0har
+            double precision dimension(40) :: sakfac
+            double precision dimension(2,40) :: sphisup
+            double precision dimension(2,40) :: srmass
+            double precision dimension(2) :: phisup
+            double precision dimension(2) :: rmass
+            double precision :: var
+            double precision dimension(4) :: ampfac
+            double precision dimension(4) :: elafac
+            double precision :: vfac
+            common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
+            common /poinou/ li,lo,lpri,lendir,datdir
+            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
+            common /popreg/ alpom,alpomp,gp,b0pom,alreg,alregp,gr,b0reg,gppp,gppr,b0ppp,b0ppr,vdmfac,vdmq2f,b0har,akfac
+            common /pospre/ salpom,salpomp,sgp,sb0pom,salreg,salregp,sgr,sb0reg,sgppp,sgppr,sb0ppp,sb0ppr,svdmfac,svdmq2f,sb0har,sakfac,sphisup,srmass
+            common /po2cha/ phisup,rmass,var,ampfac,elafac,vfac
+        end subroutine pho_sregpar
+        function ipho_id2pdg(idcpc) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: idcpc
+            integer :: li
+            integer :: lo
+            integer :: lpri
+            integer :: lendir
+            character*1024 :: datdir
+            integer dimension(100) :: ideb
+            integer :: kspom
+            integer :: khpom
+            integer :: ksreg
+            integer :: khdir
+            integer :: kaccep
+            integer :: kstrg
+            integer :: khtrg
+            integer :: ksloo
+            integer :: khloo
+            integer :: ksdpo
+            integer :: khdpo
+            integer :: kevent
+            integer :: ksoft
+            integer :: khard
+            integer dimension(300) :: id_pdg_list
+            integer dimension(577) :: id_list
+            character dimension(300,12),intent(c) :: name_list
+            integer :: id_pdg_max
+            integer :: ipho_id2pdg
+            common /poinou/ li,lo,lpri,lendir,datdir
+            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
+            common /popar1/ id_pdg_list,id_list,name_list,id_pdg_max
+        end function ipho_id2pdg
+        subroutine pho_ghhias(nevent,eep,een,na,nz) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: nevent
+            double precision :: eep
+            double precision :: een
+            integer :: na
+            integer :: nz
+            integer :: li
+            integer :: lo
+            integer :: lpri
+            integer :: lendir
+            character*1024 :: datdir
             character dimension(50,8),intent(c) :: mdlna
             integer dimension(50) :: iswmdl
             double precision dimension(400) :: parmdl
             integer dimension(400) :: ipamdl
             character*1024 :: parfn
-            double precision :: pho_ptcut
+            integer dimension(100) :: ideb
+            integer :: kspom
+            integer :: khpom
+            integer :: ksreg
+            integer :: khdir
+            integer :: kaccep
+            integer :: kstrg
+            integer :: khtrg
+            integer :: ksloo
+            integer :: khloo
+            integer :: ksdpo
+            integer :: khdpo
+            integer :: kevent
+            integer :: ksoft
+            integer :: khard
+            double precision :: ecmin
+            double precision :: ecmax
+            double precision :: eemin1
+            double precision :: eemin2
+            double precision :: ymin1
+            double precision :: ymax1
+            double precision :: ymin2
+            double precision :: ymax2
+            double precision :: q2min1
+            double precision :: q2max1
+            double precision :: q2min2
+            double precision :: q2max2
+            double precision :: thmin1
+            double precision :: thmax1
+            double precision :: thmin2
+            double precision :: thmax2
+            integer :: itag1
+            integer :: itag2
+            double precision dimension(5,2) :: pini
+            double precision dimension(5,2) :: pfin
+            double precision dimension(5,2) :: pgam
+            integer dimension(2) :: ighel
+            double precision dimension(2) :: gyy
+            double precision dimension(2) :: gq2
+            double precision :: ggecm
+            double precision dimension(2) :: gaimp
+            double precision dimension(2) :: pfthe
+            double precision dimension(2) :: pfphi
+            integer dimension(2) :: idpsrc
+            integer dimension(2) :: idbsrc
+            double precision dimension(2) :: radsrc
+            double precision dimension(2) :: amsrc
+            double precision dimension(2) :: gamsrc
+            double precision :: ecmn
+            double precision :: pcmn
+            double precision :: secm
+            double precision :: spcm
+            double precision :: xpsub
+            double precision :: xtsub
+            integer dimension(2) :: ideqp
+            integer dimension(2) :: ideqb
+            integer dimension(2,2) :: ihfld
+            integer dimension(2) :: ihfls
+            integer :: nevhep
+            integer :: nhep
+            integer dimension(8000) :: isthep
+            integer dimension(8000) :: idhep
+            integer dimension(2,8000) :: jmohep
+            integer dimension(2,8000) :: jdahep
+            double precision dimension(5,8000) :: phep
+            double precision dimension(4,8000) :: vhep
+            integer dimension(8000) :: impart
+            integer dimension(2,8000) :: iphist
+            integer dimension(2,8000) :: icolor
+            double precision dimension(4) :: siggen
+            double precision dimension(11) :: hswght
+            double precision dimension(20) :: hswcut
+            double precision dimension(11) :: evwght
+            integer dimension(11) :: ipowgc
+            integer dimension(20) :: iswcut
+            integer dimension(11) :: ivwght
             common /poinou/ li,lo,lpri,lendir,datdir
-            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
             common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
-        end function pho_ptcut
+            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
+            common /pofcut/ ecmin,ecmax,eemin1,eemin2,ymin1,ymax1,ymin2,ymax2,q2min1,q2max1,q2min2,q2max2,thmin1,thmax1,thmin2,thmax2,itag1,itag2
+            common /pofsrc/ pini,pfin,pgam,ighel,gyy,gq2,ggecm,gaimp,pfthe,pfphi,idpsrc,idbsrc,radsrc,amsrc,gamsrc
+            common /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp,ideqb,ihfld,ihfls
+            common /poevt1/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
+            common /poevt2/ impart,iphist,icolor
+            common /powght/ siggen,hswght,hswcut,evwght,ipowgc,iswcut,ivwght
+        end subroutine pho_ghhias
         subroutine pho_borncs(ip,ifhard,xm1,xm2,xm3,xm4) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: ip
             integer :: ifhard
@@ -249,7 +395,8 @@ python module _dpmjetIII193 ! in
             common /pocut1/ ptcut,ptano,fps,fph,psomin,xsomin
             common /point3/ sigs,dsighp,sigh,fs,fh,betas,aas,ptcon
         end subroutine pho_borncs
-        subroutine pho_mcini ! in :_dpmjetIII193:f2py_cpp.f
+        function ipho_pdg2id(idpdg) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: idpdg
             integer :: li
             integer :: lo
             integer :: lpri
@@ -270,277 +417,15 @@ python module _dpmjetIII193 ! in
             integer :: kevent
             integer :: ksoft
             integer :: khard
-            integer dimension(2,40) :: mparconf
-            integer dimension(2,40) :: mpmapp
-            integer dimension(2) :: mpar
-            double precision :: sqsglobmax
-            integer :: nmpar
-            integer :: idxmpar
-            integer :: nmapp
-            character dimension(50,8),intent(c) :: mdlna
-            integer dimension(50) :: iswmdl
-            double precision dimension(400) :: parmdl
-            integer dimension(400) :: ipamdl
-            character*1024 :: parfn
-            integer :: iproce
-            integer :: idnodf
-            integer :: idifr1
-            integer :: idifr2
-            integer :: iddpom
-            integer dimension(15,4) :: ipron
-            double precision :: sigtot
-            double precision :: sigela
-            double precision dimension(5,5) :: sigvm
-            double precision :: sigine
-            double precision :: signdf
-            double precision :: sigdir
-            double precision dimension(2) :: siglsd
-            double precision dimension(2) :: sighsd
-            double precision :: sigldd
-            double precision :: sighdd
-            double precision dimension(5) :: sigcdf
-            double precision :: sigpom
-            double precision :: sigreg
-            double precision :: sighar
-            double precision dimension(2) :: sigtr1
-            double precision dimension(2) :: sigtr2
-            double precision :: sigloo
-            double precision dimension(4) :: sigdpo
-            double precision :: sig1so
-            double precision :: sig1ha
-            double precision :: sloel
-            double precision dimension(4,4) :: slovm
-            double precision :: sigcor
-            double precision dimension(2) :: fsup
-            double precision dimension(2) :: fsud
-            double precision dimension(2) :: fsuh
-            double precision :: ecmfil
-            double precision :: p2afil
-            double precision :: p2bfil
-            integer :: ipfil
-            integer :: ifafil
-            integer :: ifbfil
-            double precision dimension(18,40) :: hfac
-            double precision dimension(18,40) :: hwgx
-            double precision dimension(18,40) :: hsig
-            double precision dimension(18,40) :: hdpt
-            double precision :: hecm_last
-            double precision :: hq2a_last
-            double precision :: hq2b_last
-            integer :: iha_last
-            integer :: ihb_last
-            integer dimension(18,5,40) :: mh_pro_on
-            integer dimension(18,5,40) :: mh_tried
-            integer dimension(18,5,40) :: mh_acc_1
-            integer dimension(18,5,40) :: mh_acc_2
-            double precision dimension(18,20,10,10,5,40) :: hfac_tab
-            double precision dimension(18,20,10,10,5,40) :: hwgx_tab
-            double precision dimension(18,20,10,10,5,40) :: hsig_tab
-            double precision dimension(18,20,10,10,5,40) :: hdpt_tab
-            double precision dimension(10,5,40) :: hq2a_tab
-            double precision dimension(10,5,40) :: hq2b_tab
-            double precision dimension(20,5,40) :: hecm_tab
-            integer dimension(5,40) :: ih_q2a_up
-            integer dimension(5,40) :: ih_q2b_up
-            integer dimension(5,40) :: ih_ecm_up
-            double precision :: ecm
-            double precision :: pcm
-            double precision dimension(2) :: pmass
-            double precision dimension(2) :: pvirt
-            integer dimension(2) :: ifpap
-            integer dimension(2) :: ifpab
-            double precision dimension(4) :: ptcut
-            double precision dimension(4) :: ptano
-            double precision dimension(4) :: fps
-            double precision dimension(4) :: fph
-            double precision :: psomin
-            double precision :: xsomin
-            double precision dimension(4) :: siggen
-            double precision dimension(11) :: hswght
-            double precision dimension(20) :: hswcut
-            double precision dimension(11) :: evwght
-            integer dimension(11) :: ipowgc
-            integer dimension(20) :: iswcut
-            integer dimension(11) :: ivwght
-            double precision dimension(20,21,501,4,40) :: prob
-            double precision dimension(20,4,40) :: eptab
-            integer :: ieemax
-            integer :: imax
-            integer :: kmax
-            double precision dimension(80,20,4,40) :: sigtab
-            double precision dimension(20,4,40) :: sigecm
-            double precision dimension(4,40) :: ecmf
-            integer dimension(40) :: isimax
+            integer dimension(300) :: id_pdg_list
+            integer dimension(577) :: id_list
+            character dimension(300,12),intent(c) :: name_list
+            integer :: id_pdg_max
+            integer :: ipho_pdg2id
             common /poinou/ li,lo,lpri,lendir,datdir
             common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
-            common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
-            common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
-            common /poprcs/ iproce,idnodf,idifr1,idifr2,iddpom,ipron
-            common /pocsec/ sigtot,sigela,sigvm,sigine,signdf,sigdir,siglsd,sighsd,sigldd,sighdd,sigcdf,sigpom,sigreg,sighar,sigtr1,sigtr2,sigloo,sigdpo,sig1so,sig1ha,sloel,slovm,sigcor,fsup,fsud,fsuh,ecmfil,p2afil,p2bfil,ipfil,ifafil,ifbfil
-            common /pohrcs/ hfac,hwgx,hsig,hdpt,hecm_last,hq2a_last,hq2b_last,iha_last,ihb_last,mh_pro_on,mh_tried,mh_acc_1,mh_acc_2
-            common /pohtab/ hfac_tab,hwgx_tab,hsig_tab,hdpt_tab,hq2a_tab,hq2b_tab,hecm_tab,ih_q2a_up,ih_q2b_up,ih_ecm_up
-            common /pogcms/ ecm,pcm,pmass,pvirt,ifpap,ifpab
-            common /pocut1/ ptcut,ptano,fps,fph,psomin,xsomin
-            common /powght/ siggen,hswght,hswcut,evwght,ipowgc,iswcut,ivwght
-            common /poprob/ prob,eptab,ieemax,imax,kmax
-            common /potabl/ sigtab,sigecm,ecmf,isimax
-        end subroutine pho_mcini
-        subroutine pho_event(nev,p1,p2,fac,irej) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: nev
-            double precision dimension(4) :: p1
-            double precision dimension(4) :: p2
-            double precision intent(out) :: fac
-            integer intent(out) :: irej
-            integer :: li
-            integer :: lo
-            integer :: lpri
-            integer :: lendir
-            character*1024 :: datdir
-            integer dimension(100) :: ideb
-            integer :: kspom
-            integer :: khpom
-            integer :: ksreg
-            integer :: khdir
-            integer :: kaccep
-            integer :: kstrg
-            integer :: khtrg
-            integer :: ksloo
-            integer :: khloo
-            integer :: ksdpo
-            integer :: khdpo
-            integer :: kevent
-            integer :: ksoft
-            integer :: khard
-            character dimension(50,8),intent(c) :: mdlna
-            integer dimension(50) :: iswmdl
-            double precision dimension(400) :: parmdl
-            integer dimension(400) :: ipamdl
-            character*1024 :: parfn
-            integer dimension(2,40) :: mparconf
-            integer dimension(2,40) :: mpmapp
-            integer dimension(2) :: mpar
-            double precision :: sqsglobmax
-            integer :: nmpar
-            integer :: idxmpar
-            integer :: nmapp
-            integer :: iproce
-            integer :: idnodf
-            integer :: idifr1
-            integer :: idifr2
-            integer :: iddpom
-            integer dimension(15,4) :: ipron
-            integer dimension(60) :: ifail
-            character dimension(60,10),intent(c) :: rejtit
-            double precision dimension(5,2) :: pini
-            double precision dimension(5,2) :: pfin
-            double precision dimension(5,2) :: pgam
-            integer dimension(2) :: ighel
-            double precision dimension(2) :: gyy
-            double precision dimension(2) :: gq2
-            double precision :: ggecm
-            double precision dimension(2) :: gaimp
-            double precision dimension(2) :: pfthe
-            double precision dimension(2) :: pfphi
-            integer dimension(2) :: idpsrc
-            integer dimension(2) :: idbsrc
-            double precision dimension(2) :: radsrc
-            double precision dimension(2) :: amsrc
-            double precision dimension(2) :: gamsrc
-            double precision :: ecm
-            double precision :: pcm
-            double precision dimension(2) :: pmass
-            double precision dimension(2) :: pvirt
-            integer dimension(2) :: ifpap
-            integer dimension(2) :: ifpab
-            double precision :: sigtot
-            double precision :: sigela
-            double precision dimension(5,5) :: sigvm
-            double precision :: sigine
-            double precision :: signdf
-            double precision :: sigdir
-            double precision dimension(2) :: siglsd
-            double precision dimension(2) :: sighsd
-            double precision :: sigldd
-            double precision :: sighdd
-            double precision dimension(5) :: sigcdf
-            double precision :: sigpom
-            double precision :: sigreg
-            double precision :: sighar
-            double precision dimension(2) :: sigtr1
-            double precision dimension(2) :: sigtr2
-            double precision :: sigloo
-            double precision dimension(4) :: sigdpo
-            double precision :: sig1so
-            double precision :: sig1ha
-            double precision :: sloel
-            double precision dimension(4,4) :: slovm
-            double precision :: sigcor
-            double precision dimension(2) :: fsup
-            double precision dimension(2) :: fsud
-            double precision dimension(2) :: fsuh
-            double precision :: ecmfil
-            double precision :: p2afil
-            double precision :: p2bfil
-            integer :: ipfil
-            integer :: ifafil
-            integer :: ifbfil
-            double precision dimension(4) :: siggen
-            double precision dimension(11) :: hswght
-            double precision dimension(20) :: hswcut
-            double precision dimension(11) :: evwght
-            integer dimension(11) :: ipowgc
-            integer dimension(20) :: iswcut
-            integer dimension(11) :: ivwght
-            character dimension(17,18),intent(c) :: proc
-            double precision dimension(18,40) :: hfac
-            double precision dimension(18,40) :: hwgx
-            double precision dimension(18,40) :: hsig
-            double precision dimension(18,40) :: hdpt
-            double precision :: hecm_last
-            double precision :: hq2a_last
-            double precision :: hq2b_last
-            integer :: iha_last
-            integer :: ihb_last
-            integer dimension(18,5,40) :: mh_pro_on
-            integer dimension(18,5,40) :: mh_tried
-            integer dimension(18,5,40) :: mh_acc_1
-            integer dimension(18,5,40) :: mh_acc_2
-            integer dimension(2,500) :: ipopos
-            integer dimension(500) :: ipores
-            integer :: ipoix1
-            integer :: ipoix2
-            integer :: ipoix3
-            common /poinou/ li,lo,lpri,lendir,datdir
-            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
-            common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
-            common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
-            common /poprcs/ iproce,idnodf,idifr1,idifr2,iddpom,ipron
-            common /poloop/ ifail,rejtit
-            common /pofsrc/ pini,pfin,pgam,ighel,gyy,gq2,ggecm,gaimp,pfthe,pfphi,idpsrc,idbsrc,radsrc,amsrc,gamsrc
-            common /pogcms/ ecm,pcm,pmass,pvirt,ifpap,ifpab
-            common /pocsec/ sigtot,sigela,sigvm,sigine,signdf,sigdir,siglsd,sighsd,sigldd,sighdd,sigcdf,sigpom,sigreg,sighar,sigtr1,sigtr2,sigloo,sigdpo,sig1so,sig1ha,sloel,slovm,sigcor,fsup,fsud,fsuh,ecmfil,p2afil,p2bfil,ipfil,ifafil,ifbfil
-            common /powght/ siggen,hswght,hswcut,evwght,ipowgc,iswcut,ivwght
-            common /pohpro/ proc
-            common /pohrcs/ hfac,hwgx,hsig,hdpt,hecm_last,hq2a_last,hq2b_last,iha_last,ihb_last,mh_pro_on,mh_tried,mh_acc_1,mh_acc_2
-            common /porecu/ ipopos,ipores,ipoix1,ipoix2,ipoix3
-        end subroutine pho_event
-        subroutine pho_setmdl(indx,ival,imode) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: indx
-            integer :: ival
-            integer :: imode
-            integer :: li
-            integer :: lo
-            integer :: lpri
-            integer :: lendir
-            character*1024 :: datdir
-            character dimension(50,8),intent(c) :: mdlna
-            integer dimension(50) :: iswmdl
-            double precision dimension(400) :: parmdl
-            integer dimension(400) :: ipamdl
-            character*1024 :: parfn
-            common /poinou/ li,lo,lpri,lendir,datdir
-            common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
-        end subroutine pho_setmdl
+            common /popar1/ id_pdg_list,id_list,name_list,id_pdg_max
+        end function ipho_pdg2id
         subroutine pho_setpar(iside,idpdg,idcpc,pvir) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: iside
             integer :: idpdg
@@ -613,6 +498,127 @@ python module _dpmjetIII193 ! in
             common /popar2/ xm_list,tau_list,gam_list,xm_psm2_list,xm_vem2_list,xm_b82_list,xm_b102_list,xm_bb82_list,xm_bb102_list,ich3_list,iba3_list,iq_list,id_psm_list,id_vem_list,id_b8_list,id_b10_list
             common /popar3/ wg_sec_list,idec_list,isec_list
         end subroutine pho_setpar
+        subroutine pho_harmci(ip,emaxf) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: ip
+            double precision :: emaxf
+            integer :: li
+            integer :: lo
+            integer :: lpri
+            integer :: lendir
+            character*1024 :: datdir
+            integer dimension(100) :: ideb
+            integer :: kspom
+            integer :: khpom
+            integer :: ksreg
+            integer :: khdir
+            integer :: kaccep
+            integer :: kstrg
+            integer :: khtrg
+            integer :: ksloo
+            integer :: khloo
+            integer :: ksdpo
+            integer :: khdpo
+            integer :: kevent
+            integer :: ksoft
+            integer :: khard
+            integer dimension(2,40) :: mparconf
+            integer dimension(2,40) :: mpmapp
+            integer dimension(2) :: mpar
+            double precision :: sqsglobmax
+            integer :: nmpar
+            integer :: idxmpar
+            integer :: nmapp
+            double precision :: pi
+            double precision :: pi2
+            double precision :: pi4
+            double precision :: gev2mb
+            double precision dimension(13) :: q_ch
+            double precision dimension(13) :: q_ch2
+            double precision dimension(13) :: q_ch4
+            double precision :: ecm
+            double precision :: pcm
+            double precision dimension(2) :: pmass
+            double precision dimension(2) :: pvirt
+            integer dimension(2) :: ifpap
+            integer dimension(2) :: ifpab
+            double precision :: ecmp
+            double precision :: pcmp
+            double precision dimension(2) :: pmassp
+            double precision dimension(2) :: pvirtp
+            double precision dimension(4) :: gambep
+            double precision :: sidp
+            double precision :: codp
+            double precision :: sifp
+            double precision :: cofp
+            integer dimension(2) :: nposp
+            integer :: idpdg1
+            integer :: idbam1
+            integer :: idpdg2
+            integer :: idbam2
+            character dimension(50,8),intent(c) :: mdlna
+            integer dimension(50) :: iswmdl
+            double precision dimension(400) :: parmdl
+            integer dimension(400) :: ipamdl
+            character*1024 :: parfn
+            double precision dimension(4) :: ptcut
+            double precision dimension(4) :: ptano
+            double precision dimension(4) :: fps
+            double precision dimension(4) :: fph
+            double precision :: psomin
+            double precision :: xsomin
+            double precision :: aqqal
+            double precision :: aqqali
+            double precision :: aqqalf
+            double precision :: aqqpd
+            integer :: nqqal
+            integer :: nqqali
+            integer :: nqqalf
+            integer :: nqqpd
+            character dimension(17,18),intent(c) :: proc
+            double precision dimension(18,40) :: hfac
+            double precision dimension(18,40) :: hwgx
+            double precision dimension(18,40) :: hsig
+            double precision dimension(18,40) :: hdpt
+            double precision :: hecm_last
+            double precision :: hq2a_last
+            double precision :: hq2b_last
+            integer :: iha_last
+            integer :: ihb_last
+            integer dimension(18,5,40) :: mh_pro_on
+            integer dimension(18,5,40) :: mh_tried
+            integer dimension(18,5,40) :: mh_acc_1
+            integer dimension(18,5,40) :: mh_acc_2
+            double precision dimension(18,20,10,10,5,40) :: hfac_tab
+            double precision dimension(18,20,10,10,5,40) :: hwgx_tab
+            double precision dimension(18,20,10,10,5,40) :: hsig_tab
+            double precision dimension(18,20,10,10,5,40) :: hdpt_tab
+            double precision dimension(10,5,40) :: hq2a_tab
+            double precision dimension(10,5,40) :: hq2b_tab
+            double precision dimension(20,5,40) :: hecm_tab
+            integer dimension(5,40) :: ih_q2a_up
+            integer dimension(5,40) :: ih_q2b_up
+            integer dimension(5,40) :: ih_ecm_up
+            double precision dimension(4) :: siggen
+            double precision dimension(11) :: hswght
+            double precision dimension(20) :: hswcut
+            double precision dimension(11) :: evwght
+            integer dimension(11) :: ipowgc
+            integer dimension(20) :: iswcut
+            integer dimension(11) :: ivwght
+            common /poinou/ li,lo,lpri,lendir,datdir
+            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
+            common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
+            common /pocons/ pi,pi2,pi4,gev2mb,q_ch,q_ch2,q_ch4
+            common /pogcms/ ecm,pcm,pmass,pvirt,ifpap,ifpab
+            common /popcms/ ecmp,pcmp,pmassp,pvirtp,gambep,sidp,codp,sifp,cofp,nposp,idpdg1,idbam1,idpdg2,idbam2
+            common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
+            common /pocut1/ ptcut,ptano,fps,fph,psomin,xsomin
+            common /pohscl/ aqqal,aqqali,aqqalf,aqqpd,nqqal,nqqali,nqqalf,nqqpd
+            common /pohpro/ proc
+            common /pohrcs/ hfac,hwgx,hsig,hdpt,hecm_last,hq2a_last,hq2b_last,iha_last,ihb_last,mh_pro_on,mh_tried,mh_acc_1,mh_acc_2
+            common /pohtab/ hfac_tab,hwgx_tab,hsig_tab,hdpt_tab,hq2a_tab,hq2b_tab,hecm_tab,ih_q2a_up,ih_q2b_up,ih_ecm_up
+            common /powght/ siggen,hswght,hswcut,evwght,ipowgc,iswcut,ivwght
+        end subroutine pho_harmci
         function pho_pmass(id,mode) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: id
             integer :: mode
@@ -686,6 +692,124 @@ python module _dpmjetIII193 ! in
             common /popar2/ xm_list,tau_list,gam_list,xm_psm2_list,xm_vem2_list,xm_b82_list,xm_b102_list,xm_bb82_list,xm_bb102_list,ich3_list,iba3_list,iq_list,id_psm_list,id_vem_list,id_b8_list,id_b10_list
             common /pydat1/ mstu,paru,mstj,parj
         end function pho_pmass
+        subroutine pho_setpdf(idpdg,ityp,ipar,iset,iext,ipaval,mode) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: idpdg
+            integer :: ityp
+            integer :: ipar
+            integer :: iset
+            integer :: iext
+            integer :: ipaval
+            integer :: mode
+            integer :: li
+            integer :: lo
+            integer :: lpri
+            integer :: lendir
+            character*1024 :: datdir
+            integer dimension(100) :: ideb
+            integer :: kspom
+            integer :: khpom
+            integer :: ksreg
+            integer :: khdir
+            integer :: kaccep
+            integer :: kstrg
+            integer :: khtrg
+            integer :: ksloo
+            integer :: khloo
+            integer :: ksdpo
+            integer :: khdpo
+            integer :: kevent
+            integer :: ksoft
+            integer :: khard
+            double precision :: ecmn
+            double precision :: pcmn
+            double precision :: secm
+            double precision :: spcm
+            double precision :: xpsub
+            double precision :: xtsub
+            integer dimension(2) :: ideqp
+            integer dimension(2) :: ideqb
+            integer dimension(2,2) :: ihfld
+            integer dimension(2) :: ihfls
+            common /poinou/ li,lo,lpri,lendir,datdir
+            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
+            common /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp,ideqb,ihfld,ihfls
+        end subroutine pho_setpdf
+        subroutine pho_harxpt(ecmh,pt,ipro,dsigmc) ! in :_dpmjetIII193:f2py_cpp.f
+            double precision :: ecmh
+            double precision :: pt
+            integer :: ipro
+            complex*16 dimension(17) :: dsigmc
+            integer :: li
+            integer :: lo
+            integer :: lpri
+            integer :: lendir
+            character*1024 :: datdir
+            double precision :: pi
+            double precision :: pi2
+            double precision :: pi4
+            double precision :: gev2mb
+            double precision dimension(13) :: q_ch
+            double precision dimension(13) :: q_ch2
+            double precision dimension(13) :: q_ch4
+            character dimension(50,8),intent(c) :: mdlna
+            integer dimension(50) :: iswmdl
+            double precision dimension(400) :: parmdl
+            integer dimension(400) :: ipamdl
+            character*1024 :: parfn
+            double precision :: ecmp
+            double precision :: pcmp
+            double precision dimension(2) :: pmassp
+            double precision dimension(2) :: pvirtp
+            double precision dimension(4) :: gambep
+            double precision :: sidp
+            double precision :: codp
+            double precision :: sifp
+            double precision :: cofp
+            integer dimension(2) :: nposp
+            integer :: idpdg1
+            integer :: idbam1
+            integer :: idpdg2
+            integer :: idbam2
+            double precision :: alpom
+            double precision :: alpomp
+            double precision dimension(2) :: gp
+            double precision dimension(2) :: b0pom
+            double precision :: alreg
+            double precision :: alregp
+            double precision dimension(2) :: gr
+            double precision dimension(2) :: b0reg
+            double precision :: gppp
+            double precision :: gppr
+            double precision :: b0ppp
+            double precision :: b0ppr
+            double precision dimension(4) :: vdmfac
+            double precision dimension(4) :: vdmq2f
+            double precision :: b0har
+            double precision :: akfac
+            integer :: ngaup1
+            integer :: ngaup2
+            integer :: ngauet
+            integer :: ngauin
+            integer :: ngauso
+            double precision dimension(3,4) :: alqcd2
+            double precision dimension(4) :: bqcd
+            integer :: nfbeta
+            integer :: nf
+            double precision dimension(6) :: qmass
+            double precision :: bet
+            double precision :: pcoudi
+            double precision :: pnorm
+            double precision dimension(2) :: valprg
+            integer :: nfs
+            common /poinou/ li,lo,lpri,lendir,datdir
+            common /pocons/ pi,pi2,pi4,gev2mb,q_ch,q_ch2,q_ch4
+            common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
+            common /popcms/ ecmp,pcmp,pmassp,pvirtp,gambep,sidp,codp,sifp,cofp,nposp,idpdg1,idbam1,idpdg2,idbam2
+            common /popreg/ alpom,alpomp,gp,b0pom,alreg,alregp,gr,b0reg,gppp,gppr,b0ppp,b0ppr,vdmfac,vdmq2f,b0har,akfac
+            common /pogaup/ ngaup1,ngaup2,ngauet,ngauin,ngauso
+            common /pohapa/ alqcd2,bqcd,nfbeta,nf
+            common /pohdrn/ qmass,bet,pcoudi,pnorm,valprg,nfs
+        end subroutine pho_harxpt
         subroutine pho_harxto(ecmh,ptcutr,ptcutd,dsigmc,dsdptc) ! in :_dpmjetIII193:f2py_cpp.f
             double precision :: ecmh
             double precision :: ptcutr
@@ -763,6 +887,217 @@ python module _dpmjetIII193 ! in
             common /pohdrn/ qmass,bet,pcoudi,pnorm,valprg,nfs
             common /pohapa/ alqcd2,bqcd,nfbeta,nf
         end subroutine pho_harxto
+        function pho_ptcut(ecm,ip) ! in :_dpmjetIII193:f2py_cpp.f
+            double precision :: ecm
+            integer :: ip
+            integer :: li
+            integer :: lo
+            integer :: lpri
+            integer :: lendir
+            character*1024 :: datdir
+            integer dimension(100) :: ideb
+            integer :: kspom
+            integer :: khpom
+            integer :: ksreg
+            integer :: khdir
+            integer :: kaccep
+            integer :: kstrg
+            integer :: khtrg
+            integer :: ksloo
+            integer :: khloo
+            integer :: ksdpo
+            integer :: khdpo
+            integer :: kevent
+            integer :: ksoft
+            integer :: khard
+            character dimension(50,8),intent(c) :: mdlna
+            integer dimension(50) :: iswmdl
+            double precision dimension(400) :: parmdl
+            integer dimension(400) :: ipamdl
+            character*1024 :: parfn
+            double precision :: pho_ptcut
+            common /poinou/ li,lo,lpri,lendir,datdir
+            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
+            common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
+        end function pho_ptcut
+        subroutine pho_harint(ipp,ecm,p2v1,p2v2,i1,i2,k1,k2,mspom) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: ipp
+            double precision :: ecm
+            double precision :: p2v1
+            double precision :: p2v2
+            integer :: i1
+            integer :: i2
+            integer :: k1
+            integer :: k2
+            integer :: mspom
+            integer :: li
+            integer :: lo
+            integer :: lpri
+            integer :: lendir
+            character*1024 :: datdir
+            integer dimension(100) :: ideb
+            integer :: kspom
+            integer :: khpom
+            integer :: ksreg
+            integer :: khdir
+            integer :: kaccep
+            integer :: kstrg
+            integer :: khtrg
+            integer :: ksloo
+            integer :: khloo
+            integer :: ksdpo
+            integer :: khdpo
+            integer :: kevent
+            integer :: ksoft
+            integer :: khard
+            character dimension(50,8),intent(c) :: mdlna
+            integer dimension(50) :: iswmdl
+            double precision dimension(400) :: parmdl
+            integer dimension(400) :: ipamdl
+            character*1024 :: parfn
+            integer dimension(2,40) :: mparconf
+            integer dimension(2,40) :: mpmapp
+            integer dimension(2) :: mpar
+            double precision :: sqsglobmax
+            integer :: nmpar
+            integer :: idxmpar
+            integer :: nmapp
+            double precision :: alpom
+            double precision :: alpomp
+            double precision dimension(2) :: gp
+            double precision dimension(2) :: b0pom
+            double precision :: alreg
+            double precision :: alregp
+            double precision dimension(2) :: gr
+            double precision dimension(2) :: b0reg
+            double precision :: gppp
+            double precision :: gppr
+            double precision :: b0ppp
+            double precision :: b0ppr
+            double precision dimension(4) :: vdmfac
+            double precision dimension(4) :: vdmq2f
+            double precision :: b0har
+            double precision :: akfac
+            double precision dimension(2) :: phisup
+            double precision dimension(2) :: rmass
+            double precision :: var
+            double precision dimension(4) :: ampfac
+            double precision dimension(4) :: elafac
+            double precision :: vfac
+            double precision :: sigs
+            double precision :: dsighp
+            double precision :: sigh
+            double precision :: fs
+            double precision :: fh
+            double precision dimension(3) :: betas
+            double precision :: aas
+            double precision :: ptcon
+            double precision :: aqqal
+            double precision :: aqqali
+            double precision :: aqqalf
+            double precision :: aqqpd
+            integer :: nqqal
+            integer :: nqqali
+            integer :: nqqalf
+            integer :: nqqpd
+            double precision dimension(4) :: ptcut
+            double precision dimension(4) :: ptano
+            double precision dimension(4) :: fps
+            double precision dimension(4) :: fph
+            double precision :: psomin
+            double precision :: xsomin
+            double precision dimension(4) :: siggen
+            double precision dimension(11) :: hswght
+            double precision dimension(20) :: hswcut
+            double precision dimension(11) :: evwght
+            integer dimension(11) :: ipowgc
+            integer dimension(20) :: iswcut
+            integer dimension(11) :: ivwght
+            double precision dimension(2) :: q2misr
+            double precision dimension(2) :: pmisr
+            double precision dimension(2) :: zmisr
+            double precision dimension(2) :: al2isr
+            integer :: nfsisr
+            double precision dimension(18,40) :: hfac
+            double precision dimension(18,40) :: hwgx
+            double precision dimension(18,40) :: hsig
+            double precision dimension(18,40) :: hdpt
+            double precision :: hecm_last
+            double precision :: hq2a_last
+            double precision :: hq2b_last
+            integer :: iha_last
+            integer :: ihb_last
+            integer dimension(18,5,40) :: mh_pro_on
+            integer dimension(18,5,40) :: mh_tried
+            integer dimension(18,5,40) :: mh_acc_1
+            integer dimension(18,5,40) :: mh_acc_2
+            double precision dimension(18,20,10,10,5,40) :: hfac_tab
+            double precision dimension(18,20,10,10,5,40) :: hwgx_tab
+            double precision dimension(18,20,10,10,5,40) :: hsig_tab
+            double precision dimension(18,20,10,10,5,40) :: hdpt_tab
+            double precision dimension(10,5,40) :: hq2a_tab
+            double precision dimension(10,5,40) :: hq2b_tab
+            double precision dimension(20,5,40) :: hecm_tab
+            integer dimension(5,40) :: ih_q2a_up
+            integer dimension(5,40) :: ih_q2b_up
+            integer dimension(5,40) :: ih_ecm_up
+            double precision :: ptwant
+            double precision :: as
+            double precision :: ah
+            double precision :: alns
+            double precision :: alnh
+            double precision :: z1max
+            double precision :: z1dif
+            double precision :: z2max
+            double precision :: z2dif
+            double precision :: pt
+            double precision :: ptfin
+            double precision :: etac
+            double precision :: etad
+            double precision :: x1
+            double precision :: x2
+            double precision :: v
+            double precision :: u
+            double precision :: w
+            double precision :: w1
+            double precision :: axx
+            double precision :: qqpd
+            double precision :: qqal
+            double precision dimension(13) :: pdf1
+            double precision dimension(13) :: pdf2
+            double precision :: weight
+            double precision dimension(5) :: phi1
+            double precision dimension(5) :: phi2
+            double precision dimension(5) :: pho1
+            double precision dimension(5) :: pho2
+            integer :: ia
+            integer :: ib
+            integer :: ic
+            integer :: id
+            integer :: iv1
+            integer :: iv2
+            integer :: mspr
+            integer :: irejsc
+            double precision dimension(80,20,4,40) :: sigtab
+            double precision dimension(20,4,40) :: sigecm
+            double precision dimension(4,40) :: ecmf
+            integer dimension(40) :: isimax
+            common /poinou/ li,lo,lpri,lendir,datdir
+            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
+            common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
+            common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
+            common /popreg/ alpom,alpomp,gp,b0pom,alreg,alregp,gr,b0reg,gppp,gppr,b0ppp,b0ppr,vdmfac,vdmq2f,b0har,akfac
+            common /po2cha/ phisup,rmass,var,ampfac,elafac,vfac
+            common /point3/ sigs,dsighp,sigh,fs,fh,betas,aas,ptcon
+            common /pohscl/ aqqal,aqqali,aqqalf,aqqpd,nqqal,nqqali,nqqalf,nqqpd
+            common /pocut1/ ptcut,ptano,fps,fph,psomin,xsomin
+            common /powght/ siggen,hswght,hswcut,evwght,ipowgc,iswcut,ivwght
+            common /podgl1/ q2misr,pmisr,zmisr,al2isr,nfsisr
+            common /pohrcs/ hfac,hwgx,hsig,hdpt,hecm_last,hq2a_last,hq2b_last,iha_last,ihb_last,mh_pro_on,mh_tried,mh_acc_1,mh_acc_2
+            common /pohtab/ hfac_tab,hwgx_tab,hsig_tab,hdpt_tab,hq2a_tab,hq2b_tab,hecm_tab,ih_q2a_up,ih_q2b_up,ih_ecm_up
+            common /pockin/ ptwant,as,ah,alns,alnh,z1max,z1dif,z2max,z2dif,pt,ptfin,etac,etad,x1,x2,v,u,w,w1,axx,qqpd,qqal,pdf1,pdf2,weight,phi1,phi2,pho1,pho2,ia,ib,ic,id,iv1,iv2,mspr,irejsc
+            common /potabl/ sigtab,sigecm,ecmf,isimax
+        end subroutine pho_harint
         subroutine pho_init(linp,lout,irej) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: linp
             integer :: lout
@@ -988,9 +1323,7 @@ python module _dpmjetIII193 ! in
             common /pospre/ salpom,salpomp,sgp,sb0pom,salreg,salregp,sgr,sb0reg,sgppp,sgppr,sb0ppp,sb0ppr,svdmfac,svdmq2f,sb0har,sakfac,sphisup,srmass
             common /po2cha/ phisup,rmass,var,ampfac,elafac,vfac
         end subroutine pho_rregpar
-        subroutine pho_harmci(ip,emaxf) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: ip
-            double precision :: emaxf
+        subroutine pho_mcini ! in :_dpmjetIII193:f2py_cpp.f
             integer :: li
             integer :: lo
             integer :: lpri
@@ -1018,53 +1351,49 @@ python module _dpmjetIII193 ! in
             integer :: nmpar
             integer :: idxmpar
             integer :: nmapp
-            double precision :: pi
-            double precision :: pi2
-            double precision :: pi4
-            double precision :: gev2mb
-            double precision dimension(13) :: q_ch
-            double precision dimension(13) :: q_ch2
-            double precision dimension(13) :: q_ch4
-            double precision :: ecm
-            double precision :: pcm
-            double precision dimension(2) :: pmass
-            double precision dimension(2) :: pvirt
-            integer dimension(2) :: ifpap
-            integer dimension(2) :: ifpab
-            double precision :: ecmp
-            double precision :: pcmp
-            double precision dimension(2) :: pmassp
-            double precision dimension(2) :: pvirtp
-            double precision dimension(4) :: gambep
-            double precision :: sidp
-            double precision :: codp
-            double precision :: sifp
-            double precision :: cofp
-            integer dimension(2) :: nposp
-            integer :: idpdg1
-            integer :: idbam1
-            integer :: idpdg2
-            integer :: idbam2
             character dimension(50,8),intent(c) :: mdlna
             integer dimension(50) :: iswmdl
             double precision dimension(400) :: parmdl
             integer dimension(400) :: ipamdl
             character*1024 :: parfn
-            double precision dimension(4) :: ptcut
-            double precision dimension(4) :: ptano
-            double precision dimension(4) :: fps
-            double precision dimension(4) :: fph
-            double precision :: psomin
-            double precision :: xsomin
-            double precision :: aqqal
-            double precision :: aqqali
-            double precision :: aqqalf
-            double precision :: aqqpd
-            integer :: nqqal
-            integer :: nqqali
-            integer :: nqqalf
-            integer :: nqqpd
-            character dimension(17,18),intent(c) :: proc
+            integer :: iproce
+            integer :: idnodf
+            integer :: idifr1
+            integer :: idifr2
+            integer :: iddpom
+            integer dimension(15,4) :: ipron
+            double precision :: sigtot
+            double precision :: sigela
+            double precision dimension(5,5) :: sigvm
+            double precision :: sigine
+            double precision :: signdf
+            double precision :: sigdir
+            double precision dimension(2) :: siglsd
+            double precision dimension(2) :: sighsd
+            double precision :: sigldd
+            double precision :: sighdd
+            double precision dimension(5) :: sigcdf
+            double precision :: sigpom
+            double precision :: sigreg
+            double precision :: sighar
+            double precision dimension(2) :: sigtr1
+            double precision dimension(2) :: sigtr2
+            double precision :: sigloo
+            double precision dimension(4) :: sigdpo
+            double precision :: sig1so
+            double precision :: sig1ha
+            double precision :: sloel
+            double precision dimension(4,4) :: slovm
+            double precision :: sigcor
+            double precision dimension(2) :: fsup
+            double precision dimension(2) :: fsud
+            double precision dimension(2) :: fsuh
+            double precision :: ecmfil
+            double precision :: p2afil
+            double precision :: p2bfil
+            integer :: ipfil
+            integer :: ifafil
+            integer :: ifbfil
             double precision dimension(18,40) :: hfac
             double precision dimension(18,40) :: hwgx
             double precision dimension(18,40) :: hsig
@@ -1088,6 +1417,18 @@ python module _dpmjetIII193 ! in
             integer dimension(5,40) :: ih_q2a_up
             integer dimension(5,40) :: ih_q2b_up
             integer dimension(5,40) :: ih_ecm_up
+            double precision :: ecm
+            double precision :: pcm
+            double precision dimension(2) :: pmass
+            double precision dimension(2) :: pvirt
+            integer dimension(2) :: ifpap
+            integer dimension(2) :: ifpab
+            double precision dimension(4) :: ptcut
+            double precision dimension(4) :: ptano
+            double precision dimension(4) :: fps
+            double precision dimension(4) :: fph
+            double precision :: psomin
+            double precision :: xsomin
             double precision dimension(4) :: siggen
             double precision dimension(11) :: hswght
             double precision dimension(20) :: hswcut
@@ -1095,21 +1436,30 @@ python module _dpmjetIII193 ! in
             integer dimension(11) :: ipowgc
             integer dimension(20) :: iswcut
             integer dimension(11) :: ivwght
+            double precision dimension(20,21,501,4,40) :: prob
+            double precision dimension(20,4,40) :: eptab
+            integer :: ieemax
+            integer :: imax
+            integer :: kmax
+            double precision dimension(80,20,4,40) :: sigtab
+            double precision dimension(20,4,40) :: sigecm
+            double precision dimension(4,40) :: ecmf
+            integer dimension(40) :: isimax
             common /poinou/ li,lo,lpri,lendir,datdir
             common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
             common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
-            common /pocons/ pi,pi2,pi4,gev2mb,q_ch,q_ch2,q_ch4
-            common /pogcms/ ecm,pcm,pmass,pvirt,ifpap,ifpab
-            common /popcms/ ecmp,pcmp,pmassp,pvirtp,gambep,sidp,codp,sifp,cofp,nposp,idpdg1,idbam1,idpdg2,idbam2
             common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
-            common /pocut1/ ptcut,ptano,fps,fph,psomin,xsomin
-            common /pohscl/ aqqal,aqqali,aqqalf,aqqpd,nqqal,nqqali,nqqalf,nqqpd
-            common /pohpro/ proc
+            common /poprcs/ iproce,idnodf,idifr1,idifr2,iddpom,ipron
+            common /pocsec/ sigtot,sigela,sigvm,sigine,signdf,sigdir,siglsd,sighsd,sigldd,sighdd,sigcdf,sigpom,sigreg,sighar,sigtr1,sigtr2,sigloo,sigdpo,sig1so,sig1ha,sloel,slovm,sigcor,fsup,fsud,fsuh,ecmfil,p2afil,p2bfil,ipfil,ifafil,ifbfil
             common /pohrcs/ hfac,hwgx,hsig,hdpt,hecm_last,hq2a_last,hq2b_last,iha_last,ihb_last,mh_pro_on,mh_tried,mh_acc_1,mh_acc_2
             common /pohtab/ hfac_tab,hwgx_tab,hsig_tab,hdpt_tab,hq2a_tab,hq2b_tab,hecm_tab,ih_q2a_up,ih_q2b_up,ih_ecm_up
+            common /pogcms/ ecm,pcm,pmass,pvirt,ifpap,ifpab
+            common /pocut1/ ptcut,ptano,fps,fph,psomin,xsomin
             common /powght/ siggen,hswght,hswcut,evwght,ipowgc,iswcut,ivwght
-        end subroutine pho_harmci
-        subroutine pho_sregpar ! in :_dpmjetIII193:f2py_cpp.f
+            common /poprob/ prob,eptab,ieemax,imax,kmax
+            common /potabl/ sigtab,sigecm,ecmf,isimax
+        end subroutine pho_mcini
+        subroutine pho_setpcomb ! in :_dpmjetIII193:f2py_cpp.f
             integer dimension(2,40) :: mparconf
             integer dimension(2,40) :: mpmapp
             integer dimension(2) :: mpar
@@ -1117,11 +1467,6 @@ python module _dpmjetIII193 ! in
             integer :: nmpar
             integer :: idxmpar
             integer :: nmapp
-            integer :: li
-            integer :: lo
-            integer :: lpri
-            integer :: lendir
-            character*1024 :: datdir
             integer dimension(100) :: ideb
             integer :: kspom
             integer :: khpom
@@ -1137,55 +1482,39 @@ python module _dpmjetIII193 ! in
             integer :: kevent
             integer :: ksoft
             integer :: khard
-            double precision :: alpom
-            double precision :: alpomp
-            double precision dimension(2) :: gp
-            double precision dimension(2) :: b0pom
-            double precision :: alreg
-            double precision :: alregp
-            double precision dimension(2) :: gr
-            double precision dimension(2) :: b0reg
-            double precision :: gppp
-            double precision :: gppr
-            double precision :: b0ppp
-            double precision :: b0ppr
-            double precision dimension(4) :: vdmfac
-            double precision dimension(4) :: vdmq2f
-            double precision :: b0har
-            double precision :: akfac
-            double precision dimension(40) :: salpom
-            double precision dimension(40) :: salpomp
-            double precision dimension(2,40) :: sgp
-            double precision dimension(2,40) :: sb0pom
-            double precision dimension(40) :: salreg
-            double precision dimension(40) :: salregp
-            double precision dimension(2,40) :: sgr
-            double precision dimension(2,40) :: sb0reg
-            double precision dimension(40) :: sgppp
-            double precision dimension(40) :: sgppr
-            double precision dimension(40) :: sb0ppp
-            double precision dimension(40) :: sb0ppr
-            double precision dimension(4,40) :: svdmfac
-            double precision dimension(4,40) :: svdmq2f
-            double precision dimension(40) :: sb0har
-            double precision dimension(40) :: sakfac
-            double precision dimension(2,40) :: sphisup
-            double precision dimension(2,40) :: srmass
-            double precision dimension(2) :: phisup
-            double precision dimension(2) :: rmass
-            double precision :: var
-            double precision dimension(4) :: ampfac
-            double precision dimension(4) :: elafac
-            double precision :: vfac
+            integer :: li
+            integer :: lo
+            integer :: lpri
+            integer :: lendir
+            character*1024 :: datdir
+            double precision :: ecm
+            double precision :: pcm
+            double precision dimension(2) :: pmass
+            double precision dimension(2) :: pvirt
+            integer dimension(2) :: ifpap
+            integer dimension(2) :: ifpab
+            double precision :: ecmn
+            double precision :: pcmn
+            double precision :: secm
+            double precision :: spcm
+            double precision :: xpsub
+            double precision :: xtsub
+            integer dimension(2) :: ideqp
+            integer dimension(2) :: ideqb
+            integer dimension(2,2) :: ihfld
+            integer dimension(2) :: ihfls
             common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
-            common /poinou/ li,lo,lpri,lendir,datdir
             common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
-            common /popreg/ alpom,alpomp,gp,b0pom,alreg,alregp,gr,b0reg,gppp,gppr,b0ppp,b0ppr,vdmfac,vdmq2f,b0har,akfac
-            common /pospre/ salpom,salpomp,sgp,sb0pom,salreg,salregp,sgr,sb0reg,sgppp,sgppr,sb0ppp,sb0ppr,svdmfac,svdmq2f,sb0har,sakfac,sphisup,srmass
-            common /po2cha/ phisup,rmass,var,ampfac,elafac,vfac
-        end subroutine pho_sregpar
-        function ipho_id2pdg(idcpc) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: idcpc
+            common /poinou/ li,lo,lpri,lendir,datdir
+            common /pogcms/ ecm,pcm,pmass,pvirt,ifpap,ifpab
+            common /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp,ideqb,ihfld,ihfls
+        end subroutine pho_setpcomb
+        subroutine pho_event(nev,p1,p2,fac,irej) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: nev
+            double precision dimension(4) :: p1
+            double precision dimension(4) :: p2
+            double precision intent(out) :: fac
+            integer intent(out) :: irej
             integer :: li
             integer :: lo
             integer :: lpri
@@ -1206,64 +1535,26 @@ python module _dpmjetIII193 ! in
             integer :: kevent
             integer :: ksoft
             integer :: khard
-            integer dimension(300) :: id_pdg_list
-            integer dimension(577) :: id_list
-            character dimension(300,12),intent(c) :: name_list
-            integer :: id_pdg_max
-            integer :: ipho_id2pdg
-            common /poinou/ li,lo,lpri,lendir,datdir
-            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
-            common /popar1/ id_pdg_list,id_list,name_list,id_pdg_max
-        end function ipho_id2pdg
-        subroutine pho_ghhias(nevent,eep,een,na,nz) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: nevent
-            double precision :: eep
-            double precision :: een
-            integer :: na
-            integer :: nz
-            integer :: li
-            integer :: lo
-            integer :: lpri
-            integer :: lendir
-            character*1024 :: datdir
             character dimension(50,8),intent(c) :: mdlna
             integer dimension(50) :: iswmdl
             double precision dimension(400) :: parmdl
             integer dimension(400) :: ipamdl
             character*1024 :: parfn
-            integer dimension(100) :: ideb
-            integer :: kspom
-            integer :: khpom
-            integer :: ksreg
-            integer :: khdir
-            integer :: kaccep
-            integer :: kstrg
-            integer :: khtrg
-            integer :: ksloo
-            integer :: khloo
-            integer :: ksdpo
-            integer :: khdpo
-            integer :: kevent
-            integer :: ksoft
-            integer :: khard
-            double precision :: ecmin
-            double precision :: ecmax
-            double precision :: eemin1
-            double precision :: eemin2
-            double precision :: ymin1
-            double precision :: ymax1
-            double precision :: ymin2
-            double precision :: ymax2
-            double precision :: q2min1
-            double precision :: q2max1
-            double precision :: q2min2
-            double precision :: q2max2
-            double precision :: thmin1
-            double precision :: thmax1
-            double precision :: thmin2
-            double precision :: thmax2
-            integer :: itag1
-            integer :: itag2
+            integer dimension(2,40) :: mparconf
+            integer dimension(2,40) :: mpmapp
+            integer dimension(2) :: mpar
+            double precision :: sqsglobmax
+            integer :: nmpar
+            integer :: idxmpar
+            integer :: nmapp
+            integer :: iproce
+            integer :: idnodf
+            integer :: idifr1
+            integer :: idifr2
+            integer :: iddpom
+            integer dimension(15,4) :: ipron
+            integer dimension(60) :: ifail
+            character dimension(60,10),intent(c) :: rejtit
             double precision dimension(5,2) :: pini
             double precision dimension(5,2) :: pfin
             double precision dimension(5,2) :: pgam
@@ -1279,27 +1570,44 @@ python module _dpmjetIII193 ! in
             double precision dimension(2) :: radsrc
             double precision dimension(2) :: amsrc
             double precision dimension(2) :: gamsrc
-            double precision :: ecmn
-            double precision :: pcmn
-            double precision :: secm
-            double precision :: spcm
-            double precision :: xpsub
-            double precision :: xtsub
-            integer dimension(2) :: ideqp
-            integer dimension(2) :: ideqb
-            integer dimension(2,2) :: ihfld
-            integer dimension(2) :: ihfls
-            integer :: nevhep
-            integer :: nhep
-            integer dimension(8000) :: isthep
-            integer dimension(8000) :: idhep
-            integer dimension(2,8000) :: jmohep
-            integer dimension(2,8000) :: jdahep
-            double precision dimension(5,8000) :: phep
-            double precision dimension(4,8000) :: vhep
-            integer dimension(8000) :: impart
-            integer dimension(2,8000) :: iphist
-            integer dimension(2,8000) :: icolor
+            double precision :: ecm
+            double precision :: pcm
+            double precision dimension(2) :: pmass
+            double precision dimension(2) :: pvirt
+            integer dimension(2) :: ifpap
+            integer dimension(2) :: ifpab
+            double precision :: sigtot
+            double precision :: sigela
+            double precision dimension(5,5) :: sigvm
+            double precision :: sigine
+            double precision :: signdf
+            double precision :: sigdir
+            double precision dimension(2) :: siglsd
+            double precision dimension(2) :: sighsd
+            double precision :: sigldd
+            double precision :: sighdd
+            double precision dimension(5) :: sigcdf
+            double precision :: sigpom
+            double precision :: sigreg
+            double precision :: sighar
+            double precision dimension(2) :: sigtr1
+            double precision dimension(2) :: sigtr2
+            double precision :: sigloo
+            double precision dimension(4) :: sigdpo
+            double precision :: sig1so
+            double precision :: sig1ha
+            double precision :: sloel
+            double precision dimension(4,4) :: slovm
+            double precision :: sigcor
+            double precision dimension(2) :: fsup
+            double precision dimension(2) :: fsud
+            double precision dimension(2) :: fsuh
+            double precision :: ecmfil
+            double precision :: p2afil
+            double precision :: p2bfil
+            integer :: ipfil
+            integer :: ifafil
+            integer :: ifbfil
             double precision dimension(4) :: siggen
             double precision dimension(11) :: hswght
             double precision dimension(20) :: hswcut
@@ -1307,47 +1615,39 @@ python module _dpmjetIII193 ! in
             integer dimension(11) :: ipowgc
             integer dimension(20) :: iswcut
             integer dimension(11) :: ivwght
+            character dimension(17,18),intent(c) :: proc
+            double precision dimension(18,40) :: hfac
+            double precision dimension(18,40) :: hwgx
+            double precision dimension(18,40) :: hsig
+            double precision dimension(18,40) :: hdpt
+            double precision :: hecm_last
+            double precision :: hq2a_last
+            double precision :: hq2b_last
+            integer :: iha_last
+            integer :: ihb_last
+            integer dimension(18,5,40) :: mh_pro_on
+            integer dimension(18,5,40) :: mh_tried
+            integer dimension(18,5,40) :: mh_acc_1
+            integer dimension(18,5,40) :: mh_acc_2
+            integer dimension(2,500) :: ipopos
+            integer dimension(500) :: ipores
+            integer :: ipoix1
+            integer :: ipoix2
+            integer :: ipoix3
             common /poinou/ li,lo,lpri,lendir,datdir
+            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
             common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
-            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
-            common /pofcut/ ecmin,ecmax,eemin1,eemin2,ymin1,ymax1,ymin2,ymax2,q2min1,q2max1,q2min2,q2max2,thmin1,thmax1,thmin2,thmax2,itag1,itag2
+            common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
+            common /poprcs/ iproce,idnodf,idifr1,idifr2,iddpom,ipron
+            common /poloop/ ifail,rejtit
             common /pofsrc/ pini,pfin,pgam,ighel,gyy,gq2,ggecm,gaimp,pfthe,pfphi,idpsrc,idbsrc,radsrc,amsrc,gamsrc
-            common /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp,ideqb,ihfld,ihfls
-            common /poevt1/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
-            common /poevt2/ impart,iphist,icolor
+            common /pogcms/ ecm,pcm,pmass,pvirt,ifpap,ifpab
+            common /pocsec/ sigtot,sigela,sigvm,sigine,signdf,sigdir,siglsd,sighsd,sigldd,sighdd,sigcdf,sigpom,sigreg,sighar,sigtr1,sigtr2,sigloo,sigdpo,sig1so,sig1ha,sloel,slovm,sigcor,fsup,fsud,fsuh,ecmfil,p2afil,p2bfil,ipfil,ifafil,ifbfil
             common /powght/ siggen,hswght,hswcut,evwght,ipowgc,iswcut,ivwght
-        end subroutine pho_ghhias
-        function ipho_pdg2id(idpdg) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: idpdg
-            integer :: li
-            integer :: lo
-            integer :: lpri
-            integer :: lendir
-            character*1024 :: datdir
-            integer dimension(100) :: ideb
-            integer :: kspom
-            integer :: khpom
-            integer :: ksreg
-            integer :: khdir
-            integer :: kaccep
-            integer :: kstrg
-            integer :: khtrg
-            integer :: ksloo
-            integer :: khloo
-            integer :: ksdpo
-            integer :: khdpo
-            integer :: kevent
-            integer :: ksoft
-            integer :: khard
-            integer dimension(300) :: id_pdg_list
-            integer dimension(577) :: id_list
-            character dimension(300,12),intent(c) :: name_list
-            integer :: id_pdg_max
-            integer :: ipho_pdg2id
-            common /poinou/ li,lo,lpri,lendir,datdir
-            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
-            common /popar1/ id_pdg_list,id_list,name_list,id_pdg_max
-        end function ipho_pdg2id
+            common /pohpro/ proc
+            common /pohrcs/ hfac,hwgx,hsig,hdpt,hecm_last,hq2a_last,hq2b_last,iha_last,ihb_last,mh_pro_on,mh_tried,mh_acc_1,mh_acc_2
+            common /porecu/ ipopos,ipores,ipoix1,ipoix2,ipoix3
+        end subroutine pho_event
         subroutine pho_xsect(ip,ifhard,ee) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: ip
             integer :: ifhard
@@ -1457,98 +1757,6 @@ python module _dpmjetIII193 ! in
             common /pogcms/ ecm,pcm,pmass,pvirt,ifpap,ifpab
             common /point4/ ampel,ampvm,ampsof,amphar,amlmsd,amhmsd,amlmdd,amhmdd,ampdp
         end subroutine pho_xsect
-        subroutine pho_setpcomb ! in :_dpmjetIII193:f2py_cpp.f
-            integer dimension(2,40) :: mparconf
-            integer dimension(2,40) :: mpmapp
-            integer dimension(2) :: mpar
-            double precision :: sqsglobmax
-            integer :: nmpar
-            integer :: idxmpar
-            integer :: nmapp
-            integer dimension(100) :: ideb
-            integer :: kspom
-            integer :: khpom
-            integer :: ksreg
-            integer :: khdir
-            integer :: kaccep
-            integer :: kstrg
-            integer :: khtrg
-            integer :: ksloo
-            integer :: khloo
-            integer :: ksdpo
-            integer :: khdpo
-            integer :: kevent
-            integer :: ksoft
-            integer :: khard
-            integer :: li
-            integer :: lo
-            integer :: lpri
-            integer :: lendir
-            character*1024 :: datdir
-            double precision :: ecm
-            double precision :: pcm
-            double precision dimension(2) :: pmass
-            double precision dimension(2) :: pvirt
-            integer dimension(2) :: ifpap
-            integer dimension(2) :: ifpab
-            double precision :: ecmn
-            double precision :: pcmn
-            double precision :: secm
-            double precision :: spcm
-            double precision :: xpsub
-            double precision :: xtsub
-            integer dimension(2) :: ideqp
-            integer dimension(2) :: ideqb
-            integer dimension(2,2) :: ihfld
-            integer dimension(2) :: ihfls
-            common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
-            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
-            common /poinou/ li,lo,lpri,lendir,datdir
-            common /pogcms/ ecm,pcm,pmass,pvirt,ifpap,ifpab
-            common /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp,ideqb,ihfld,ihfls
-        end subroutine pho_setpcomb
-        subroutine pho_setpdf(idpdg,ityp,ipar,iset,iext,ipaval,mode) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: idpdg
-            integer :: ityp
-            integer :: ipar
-            integer :: iset
-            integer :: iext
-            integer :: ipaval
-            integer :: mode
-            integer :: li
-            integer :: lo
-            integer :: lpri
-            integer :: lendir
-            character*1024 :: datdir
-            integer dimension(100) :: ideb
-            integer :: kspom
-            integer :: khpom
-            integer :: ksreg
-            integer :: khdir
-            integer :: kaccep
-            integer :: kstrg
-            integer :: khtrg
-            integer :: ksloo
-            integer :: khloo
-            integer :: ksdpo
-            integer :: khdpo
-            integer :: kevent
-            integer :: ksoft
-            integer :: khard
-            double precision :: ecmn
-            double precision :: pcmn
-            double precision :: secm
-            double precision :: spcm
-            double precision :: xpsub
-            double precision :: xtsub
-            integer dimension(2) :: ideqp
-            integer dimension(2) :: ideqb
-            integer dimension(2,2) :: ihfld
-            integer dimension(2) :: ihfls
-            common /poinou/ li,lo,lpri,lendir,datdir
-            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
-            common /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp,ideqb,ihfld,ihfls
-        end subroutine pho_setpdf
         subroutine pho_prevnt(npart) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: npart
             integer :: li
@@ -1618,260 +1826,52 @@ python module _dpmjetIII193 ! in
             common /poevt2/ impart,iphist,icolor
             common /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp,ideqb,ihfld,ihfls
         end subroutine pho_prevnt
-        subroutine pho_harxpt(ecmh,pt,ipro,dsigmc) ! in :_dpmjetIII193:f2py_cpp.f
-            double precision :: ecmh
-            double precision :: pt
-            integer :: ipro
-            complex*16 dimension(17) :: dsigmc
-            integer :: li
-            integer :: lo
-            integer :: lpri
-            integer :: lendir
-            character*1024 :: datdir
-            double precision :: pi
-            double precision :: pi2
-            double precision :: pi4
-            double precision :: gev2mb
-            double precision dimension(13) :: q_ch
-            double precision dimension(13) :: q_ch2
-            double precision dimension(13) :: q_ch4
-            character dimension(50,8),intent(c) :: mdlna
-            integer dimension(50) :: iswmdl
-            double precision dimension(400) :: parmdl
-            integer dimension(400) :: ipamdl
-            character*1024 :: parfn
-            double precision :: ecmp
-            double precision :: pcmp
-            double precision dimension(2) :: pmassp
-            double precision dimension(2) :: pvirtp
-            double precision dimension(4) :: gambep
-            double precision :: sidp
-            double precision :: codp
-            double precision :: sifp
-            double precision :: cofp
-            integer dimension(2) :: nposp
-            integer :: idpdg1
-            integer :: idbam1
-            integer :: idpdg2
-            integer :: idbam2
-            double precision :: alpom
-            double precision :: alpomp
-            double precision dimension(2) :: gp
-            double precision dimension(2) :: b0pom
-            double precision :: alreg
-            double precision :: alregp
-            double precision dimension(2) :: gr
-            double precision dimension(2) :: b0reg
-            double precision :: gppp
-            double precision :: gppr
-            double precision :: b0ppp
-            double precision :: b0ppr
-            double precision dimension(4) :: vdmfac
-            double precision dimension(4) :: vdmq2f
-            double precision :: b0har
-            double precision :: akfac
-            integer :: ngaup1
-            integer :: ngaup2
-            integer :: ngauet
-            integer :: ngauin
-            integer :: ngauso
-            double precision dimension(3,4) :: alqcd2
-            double precision dimension(4) :: bqcd
-            integer :: nfbeta
-            integer :: nf
-            double precision dimension(6) :: qmass
-            double precision :: bet
-            double precision :: pcoudi
-            double precision :: pnorm
-            double precision dimension(2) :: valprg
-            integer :: nfs
-            common /poinou/ li,lo,lpri,lendir,datdir
-            common /pocons/ pi,pi2,pi4,gev2mb,q_ch,q_ch2,q_ch4
-            common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
-            common /popcms/ ecmp,pcmp,pmassp,pvirtp,gambep,sidp,codp,sifp,cofp,nposp,idpdg1,idbam1,idpdg2,idbam2
-            common /popreg/ alpom,alpomp,gp,b0pom,alreg,alregp,gr,b0reg,gppp,gppr,b0ppp,b0ppr,vdmfac,vdmq2f,b0har,akfac
-            common /pogaup/ ngaup1,ngaup2,ngauet,ngauin,ngauso
-            common /pohapa/ alqcd2,bqcd,nfbeta,nf
-            common /pohdrn/ qmass,bet,pcoudi,pnorm,valprg,nfs
-        end subroutine pho_harxpt
-        subroutine pho_harint(ipp,ecm,p2v1,p2v2,i1,i2,k1,k2,mspom) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: ipp
-            double precision :: ecm
-            double precision :: p2v1
-            double precision :: p2v2
-            integer :: i1
-            integer :: i2
-            integer :: k1
-            integer :: k2
-            integer :: mspom
-            integer :: li
-            integer :: lo
-            integer :: lpri
-            integer :: lendir
-            character*1024 :: datdir
-            integer dimension(100) :: ideb
-            integer :: kspom
-            integer :: khpom
-            integer :: ksreg
-            integer :: khdir
-            integer :: kaccep
-            integer :: kstrg
-            integer :: khtrg
-            integer :: ksloo
-            integer :: khloo
-            integer :: ksdpo
-            integer :: khdpo
-            integer :: kevent
-            integer :: ksoft
-            integer :: khard
-            character dimension(50,8),intent(c) :: mdlna
-            integer dimension(50) :: iswmdl
-            double precision dimension(400) :: parmdl
-            integer dimension(400) :: ipamdl
-            character*1024 :: parfn
-            integer dimension(2,40) :: mparconf
-            integer dimension(2,40) :: mpmapp
-            integer dimension(2) :: mpar
-            double precision :: sqsglobmax
-            integer :: nmpar
-            integer :: idxmpar
-            integer :: nmapp
-            double precision :: alpom
-            double precision :: alpomp
-            double precision dimension(2) :: gp
-            double precision dimension(2) :: b0pom
-            double precision :: alreg
-            double precision :: alregp
-            double precision dimension(2) :: gr
-            double precision dimension(2) :: b0reg
-            double precision :: gppp
-            double precision :: gppr
-            double precision :: b0ppp
-            double precision :: b0ppr
-            double precision dimension(4) :: vdmfac
-            double precision dimension(4) :: vdmq2f
-            double precision :: b0har
-            double precision :: akfac
-            double precision dimension(2) :: phisup
-            double precision dimension(2) :: rmass
-            double precision :: var
-            double precision dimension(4) :: ampfac
-            double precision dimension(4) :: elafac
-            double precision :: vfac
-            double precision :: sigs
-            double precision :: dsighp
-            double precision :: sigh
-            double precision :: fs
-            double precision :: fh
-            double precision dimension(3) :: betas
-            double precision :: aas
-            double precision :: ptcon
-            double precision :: aqqal
-            double precision :: aqqali
-            double precision :: aqqalf
-            double precision :: aqqpd
-            integer :: nqqal
-            integer :: nqqali
-            integer :: nqqalf
-            integer :: nqqpd
-            double precision dimension(4) :: ptcut
-            double precision dimension(4) :: ptano
-            double precision dimension(4) :: fps
-            double precision dimension(4) :: fph
-            double precision :: psomin
-            double precision :: xsomin
-            double precision dimension(4) :: siggen
-            double precision dimension(11) :: hswght
-            double precision dimension(20) :: hswcut
-            double precision dimension(11) :: evwght
-            integer dimension(11) :: ipowgc
-            integer dimension(20) :: iswcut
-            integer dimension(11) :: ivwght
-            double precision dimension(2) :: q2misr
-            double precision dimension(2) :: pmisr
-            double precision dimension(2) :: zmisr
-            double precision dimension(2) :: al2isr
-            integer :: nfsisr
-            double precision dimension(18,40) :: hfac
-            double precision dimension(18,40) :: hwgx
-            double precision dimension(18,40) :: hsig
-            double precision dimension(18,40) :: hdpt
-            double precision :: hecm_last
-            double precision :: hq2a_last
-            double precision :: hq2b_last
-            integer :: iha_last
-            integer :: ihb_last
-            integer dimension(18,5,40) :: mh_pro_on
-            integer dimension(18,5,40) :: mh_tried
-            integer dimension(18,5,40) :: mh_acc_1
-            integer dimension(18,5,40) :: mh_acc_2
-            double precision dimension(18,20,10,10,5,40) :: hfac_tab
-            double precision dimension(18,20,10,10,5,40) :: hwgx_tab
-            double precision dimension(18,20,10,10,5,40) :: hsig_tab
-            double precision dimension(18,20,10,10,5,40) :: hdpt_tab
-            double precision dimension(10,5,40) :: hq2a_tab
-            double precision dimension(10,5,40) :: hq2b_tab
-            double precision dimension(20,5,40) :: hecm_tab
-            integer dimension(5,40) :: ih_q2a_up
-            integer dimension(5,40) :: ih_q2b_up
-            integer dimension(5,40) :: ih_ecm_up
-            double precision :: ptwant
-            double precision :: as
-            double precision :: ah
-            double precision :: alns
-            double precision :: alnh
-            double precision :: z1max
-            double precision :: z1dif
-            double precision :: z2max
-            double precision :: z2dif
-            double precision :: pt
-            double precision :: ptfin
-            double precision :: etac
-            double precision :: etad
-            double precision :: x1
-            double precision :: x2
-            double precision :: v
-            double precision :: u
-            double precision :: w
-            double precision :: w1
-            double precision :: axx
-            double precision :: qqpd
-            double precision :: qqal
-            double precision dimension(13) :: pdf1
-            double precision dimension(13) :: pdf2
-            double precision :: weight
-            double precision dimension(5) :: phi1
-            double precision dimension(5) :: phi2
-            double precision dimension(5) :: pho1
-            double precision dimension(5) :: pho2
-            integer :: ia
-            integer :: ib
-            integer :: ic
+        function pho_pname(id,mode) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: id
-            integer :: iv1
-            integer :: iv2
-            integer :: mspr
-            integer :: irejsc
-            double precision dimension(80,20,4,40) :: sigtab
-            double precision dimension(20,4,40) :: sigecm
-            double precision dimension(4,40) :: ecmf
-            integer dimension(40) :: isimax
+            integer :: mode
+            integer :: li
+            integer :: lo
+            integer :: lpri
+            integer :: lendir
+            character*1024 :: datdir
+            integer :: nevhep
+            integer :: nhep
+            integer dimension(8000) :: isthep
+            integer dimension(8000) :: idhep
+            integer dimension(2,8000) :: jmohep
+            integer dimension(2,8000) :: jdahep
+            double precision dimension(5,8000) :: phep
+            double precision dimension(4,8000) :: vhep
+            integer dimension(8000) :: impart
+            integer dimension(2,8000) :: iphist
+            integer dimension(2,8000) :: icolor
+            integer dimension(300) :: id_pdg_list
+            integer dimension(577) :: id_list
+            character dimension(300,12),intent(c) :: name_list
+            integer :: id_pdg_max
+            double precision dimension(300) :: xm_list
+            double precision dimension(300) :: tau_list
+            double precision dimension(300) :: gam_list
+            double precision dimension(6,6) :: xm_psm2_list
+            double precision dimension(6,6) :: xm_vem2_list
+            double precision dimension(6,6,6) :: xm_b82_list
+            double precision dimension(6,6,6) :: xm_b102_list
+            double precision dimension(6,6,6,6) :: xm_bb82_list
+            double precision dimension(6,6,6,6) :: xm_bb102_list
+            integer dimension(300) :: ich3_list
+            integer dimension(300) :: iba3_list
+            integer dimension(3,300) :: iq_list
+            integer dimension(6,6) :: id_psm_list
+            integer dimension(6,6) :: id_vem_list
+            integer dimension(6,6,6) :: id_b8_list
+            integer dimension(6,6,6) :: id_b10_list
+            character*15 :: pho_pname
             common /poinou/ li,lo,lpri,lendir,datdir
-            common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
-            common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
-            common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
-            common /popreg/ alpom,alpomp,gp,b0pom,alreg,alregp,gr,b0reg,gppp,gppr,b0ppp,b0ppr,vdmfac,vdmq2f,b0har,akfac
-            common /po2cha/ phisup,rmass,var,ampfac,elafac,vfac
-            common /point3/ sigs,dsighp,sigh,fs,fh,betas,aas,ptcon
-            common /pohscl/ aqqal,aqqali,aqqalf,aqqpd,nqqal,nqqali,nqqalf,nqqpd
-            common /pocut1/ ptcut,ptano,fps,fph,psomin,xsomin
-            common /powght/ siggen,hswght,hswcut,evwght,ipowgc,iswcut,ivwght
-            common /podgl1/ q2misr,pmisr,zmisr,al2isr,nfsisr
-            common /pohrcs/ hfac,hwgx,hsig,hdpt,hecm_last,hq2a_last,hq2b_last,iha_last,ihb_last,mh_pro_on,mh_tried,mh_acc_1,mh_acc_2
-            common /pohtab/ hfac_tab,hwgx_tab,hsig_tab,hdpt_tab,hq2a_tab,hq2b_tab,hecm_tab,ih_q2a_up,ih_q2b_up,ih_ecm_up
-            common /pockin/ ptwant,as,ah,alns,alnh,z1max,z1dif,z2max,z2dif,pt,ptfin,etac,etad,x1,x2,v,u,w,w1,axx,qqpd,qqal,pdf1,pdf2,weight,phi1,phi2,pho1,pho2,ia,ib,ic,id,iv1,iv2,mspr,irejsc
-            common /potabl/ sigtab,sigecm,ecmf,isimax
-        end subroutine pho_harint
+            common /poevt1/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
+            common /poevt2/ impart,iphist,icolor
+            common /popar1/ id_pdg_list,id_list,name_list,id_pdg_max
+            common /popar2/ xm_list,tau_list,gam_list,xm_psm2_list,xm_vem2_list,xm_b82_list,xm_b102_list,xm_bb82_list,xm_bb102_list,ich3_list,iba3_list,iq_list,id_psm_list,id_vem_list,id_b8_list,id_b10_list
+        end function pho_pname
         function pycomp(kf) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: kf
             integer dimension(200) :: mstu
@@ -2038,29 +2038,99 @@ python module _dpmjetIII193 ! in
             common /dtcomp/ emufra,iemuma,iemuch,ncompo,iemul
             common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
         end block data dt_defset
-        function idt_icihad(mcind) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: mcind
-            integer dimension(2,7) :: ipdg2
-            integer dimension(2,7) :: ibam2
-            integer dimension(2,22) :: ipdg3
-            integer dimension(2,22) :: ibam3
-            integer dimension(2,29) :: ipdg4
-            integer dimension(2,29) :: ibam4
-            integer dimension(2,19) :: ipdg5
-            integer dimension(2,19) :: ibam5
-            integer dimension(210) :: iamcin
-            integer :: idt_icihad
-            common /dthaic/ ipdg2,ibam2,ipdg3,ibam3,ipdg4,ibam4,ipdg5,ibam5,iamcin
-        end function idt_icihad
-        block data dt_blkd47 ! in :_dpmjetIII193:f2py_cpp.f
-            character dimension(602,8),intent(c) :: zkname
-            double precision dimension(602) :: wt
-            integer dimension(602,3) :: nzk
-            integer :: i
-            integer :: k
-            integer, parameter,optional :: idmax9=602
-            common /hndech/ zkname,wt,nzk
-        end block data dt_blkd47
+        block data dt_noname ! in :_dpmjetIII193:f2py_cpp.f
+            double precision, optional,dimension(25) :: sm=0.8d0 
+            double precision, optional,dimension(25) :: bbm= 0.85d0 
+            double precision, optional,dimension(25) :: bbb= 0.9d0 
+            double precision dimension(268) :: thresh
+            integer, optional,dimension(17) :: irii=0 
+            integer, optional,dimension(17) :: ikii=0 
+            integer, optional,dimension(17) :: ieii=0 
+            common /hnslop/ sm,bbm,bbb
+            common /hnredv/ thresh,irii,ikii,ieii
+        end block data dt_noname
+        subroutine dt_phoxs(kproj,ktarg,ecm,plab,stot,sine,sdif1,bel,mode) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: kproj
+            integer :: ktarg
+            double precision :: ecm
+            double precision :: plab
+            double precision intent(out) :: stot
+            double precision intent(out) :: sine
+            double precision intent(out) :: sdif1
+            double precision intent(out) :: bel
+            integer :: mode
+            double precision :: ehfllo
+            double precision :: ehflhi
+            double precision :: amxpfr
+            integer :: iapflk
+            integer :: izpflk
+            integer :: iatflk
+            integer :: iztflk
+            integer :: nphflk
+            integer :: nthflk
+            logical :: lhadcl
+            integer :: linp
+            integer :: lout
+            integer :: ldat
+            integer :: lpri
+            integer :: iflevg
+            character dimension(4,8),intent(c) :: cmodel
+            double precision :: elojet
+            integer :: mcgene
+            logical :: lphoin
+            character dimension(210,8),intent(c) :: aname
+            double precision dimension(210) :: aam
+            double precision dimension(210) :: ga
+            double precision dimension(210) :: tau
+            integer dimension(210) :: iich
+            integer dimension(210) :: iibar
+            integer dimension(210) :: k1
+            integer dimension(210) :: k2
+            integer dimension(2,40) :: mparconf
+            integer dimension(2,40) :: mpmapp
+            integer dimension(2) :: mpar
+            double precision :: sqsglobmax
+            integer :: nmpar
+            integer :: idxmpar
+            integer :: nmapp
+            double precision :: sigtot
+            double precision :: sigela
+            double precision dimension(5,5) :: sigvm
+            double precision :: sigine
+            double precision :: signdf
+            double precision :: sigdir
+            double precision dimension(2) :: siglsd
+            double precision dimension(2) :: sighsd
+            double precision :: sigldd
+            double precision :: sighdd
+            double precision dimension(5) :: sigcdf
+            double precision :: sigpom
+            double precision :: sigreg
+            double precision :: sighar
+            double precision dimension(2) :: sigtr1
+            double precision dimension(2) :: sigtr2
+            double precision :: sigloo
+            double precision dimension(4) :: sigdpo
+            double precision :: sig1so
+            double precision :: sig1ha
+            double precision :: sloel
+            double precision dimension(4,4) :: slovm
+            double precision :: sigcor
+            double precision dimension(2) :: fsup
+            double precision dimension(2) :: fsud
+            double precision dimension(2) :: fsuh
+            double precision :: ecmfil
+            double precision :: p2afil
+            double precision :: p2bfil
+            integer :: ipfil
+            integer :: ifafil
+            integer :: ifbfil
+            common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
+            common /dtmodl/ cmodel,elojet,mcgene,lphoin
+            common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
+            common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
+            common /pocsec/ sigtot,sigela,sigvm,sigine,signdf,sigdir,siglsd,sighsd,sigldd,sighdd,sigcdf,sigpom,sigreg,sighar,sigtr1,sigtr2,sigloo,sigdpo,sig1so,sig1ha,sloel,slovm,sigcor,fsup,fsud,fsuh,ecmfil,p2afil,p2bfil,ipfil,ifafil,ifbfil
+        end subroutine dt_phoxs
         block data dt_blkd43 ! in :_dpmjetIII193:f2py_cpp.f
             double precision dimension(296) :: umo
             double precision dimension(296) :: plabf
@@ -2110,6 +2180,282 @@ python module _dpmjetIII193 ! in
             integer dimension(532) :: nrklin
             common /hnreac/ umo,plabf,siin,wk,nrk,nure
         end block data dt_blkd43
+        subroutine dt_xsglau(na,nb,jjproj,xi,q2i,ecmi,ie,iq,nidx) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: na
+            integer :: nb
+            integer :: jjproj
+            double precision :: xi
+            double precision :: q2i
+            double precision :: ecmi
+            integer :: ie
+            integer :: iq
+            integer :: nidx
+            double precision :: ehfllo
+            double precision :: ehflhi
+            double precision :: amxpfr
+            integer :: iapflk
+            integer :: izpflk
+            integer :: iatflk
+            integer :: iztflk
+            integer :: nphflk
+            integer :: nthflk
+            logical :: lhadcl
+            integer :: linp
+            integer :: lout
+            integer :: ldat
+            integer :: lpri
+            integer :: iflevg
+            character dimension(210,8),intent(c) :: aname
+            double precision dimension(210) :: aam
+            double precision dimension(210) :: ga
+            double precision dimension(210) :: tau
+            integer dimension(210) :: iich
+            integer dimension(210) :: iibar
+            integer dimension(210) :: k1
+            integer dimension(210) :: k2
+            double precision dimension(100) :: emufra
+            integer dimension(100) :: iemuma
+            integer dimension(100) :: iemuch
+            integer :: ncompo
+            integer :: iemul
+            double precision dimension(100) :: rash
+            double precision dimension(100) :: rbsh
+            double precision dimension(100) :: bmax
+            double precision dimension(100) :: bstep
+            double precision :: sigsh
+            double precision :: rosh
+            double precision :: gsh
+            double precision dimension(9,5,100,50) :: bsite
+            integer :: nsiteb
+            integer :: nstatb
+            double precision dimension(8) :: ecmnn
+            double precision dimension(5) :: q2g
+            double precision :: ecmnow
+            double precision :: q2
+            double precision dimension(8,5,100) :: xstot
+            double precision dimension(8,5,100) :: xsela
+            double precision dimension(8,5,100) :: xsqep
+            double precision dimension(8,5,100) :: xsqet
+            double precision dimension(8,5,100) :: xsqe2
+            double precision dimension(8,5,100) :: xspro
+            double precision dimension(8,5,100) :: xsdel
+            double precision dimension(8,5,100) :: xsdqe
+            double precision dimension(8,5,100) :: xetot
+            double precision dimension(8,5,100) :: xeela
+            double precision dimension(8,5,100) :: xeqep
+            double precision dimension(8,5,100) :: xeqet
+            double precision dimension(8,5,100) :: xeqe2
+            double precision dimension(8,5,100) :: xepro
+            double precision dimension(8,5,100) :: xedel
+            double precision dimension(8,5,100) :: xedqe
+            double precision :: bslope
+            integer :: nebini
+            integer :: nqbini
+            integer :: jstatb
+            integer :: jbinsb
+            character*8 :: cglb
+            integer :: ioglb
+            logical :: lprod
+            character dimension(4,8),intent(c) :: cmodel
+            double precision :: elojet
+            integer :: mcgene
+            logical :: lphoin
+            double precision :: rl2
+            double precision :: epspol
+            integer dimension(2) :: intrge
+            integer :: idpdf
+            integer :: modega
+            integer dimension(3) :: ishad
+            double precision :: dibeta
+            double precision :: dialph
+            common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
+            common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
+            common /dtcomp/ emufra,iemuma,iemuch,ncompo,iemul
+            common /dtglam/ rash,rbsh,bmax,bstep,sigsh,rosh,gsh,bsite,nsiteb,nstatb
+            common /dtglxs/ ecmnn,q2g,ecmnow,q2,xstot,xsela,xsqep,xsqet,xsqe2,xspro,xsdel,xsdqe,xetot,xeela,xeqep,xeqet,xeqe2,xepro,xedel,xedqe,bslope,nebini,nqbini
+            common /dtglgp/ jstatb,jbinsb,cglb,ioglb,lprod
+            common /dtmodl/ cmodel,elojet,mcgene,lphoin
+            common /dtvdmp/ rl2,epspol,intrge,idpdf,modega,ishad
+            common /dtdiha/ dibeta,dialph
+        end subroutine dt_xsglau
+        block data dt_runtt ! in :_dpmjetIII193:f2py_cpp.f
+            double precision, optional :: runtes=100.d0 
+            double precision, optional :: eftes= 100.d0
+            common /hndrun/ runtes,eftes
+        end block data dt_runtt
+        block data dt_hadprp ! in :_dpmjetIII193:f2py_cpp.f
+            integer, optional,dimension(13) :: iqechr=- 2 
+            integer, optional,dimension(13) :: iqbchr=6* - 1 
+            integer, optional,dimension(13) :: iqichr=4*0 
+            integer, optional,dimension(13) :: iqschr=3*0 
+            integer, optional,dimension(13) :: iqcchr=2*0 
+            integer, optional,dimension(13) :: iquchr=0 
+            integer, optional,dimension(13) :: iqtchr=- 1 
+            integer, optional,dimension(3,39) :: mquark=2 
+            integer dimension(2,7) :: ipdg2
+            integer dimension(2,7) :: ibam2
+            integer dimension(2,22) :: ipdg3
+            integer dimension(2,22) :: ibam3
+            integer dimension(2,29) :: ipdg4
+            integer dimension(2,29) :: ibam4
+            integer dimension(2,19) :: ipdg5
+            integer dimension(2,19) :: ibam5
+            integer, optional,dimension(210) :: iamcin=2212 
+            character, optional,dimension(30,8),intent(c) :: btype='proton  ' 
+            integer :: k
+            common /dtquar/ iqechr,iqbchr,iqichr,iqschr,iqcchr,iquchr,iqtchr,mquark
+            common /dthaic/ ipdg2,ibam2,ipdg3,ibam3,ipdg4,ibam4,ipdg5,ibam5,iamcin
+            common /dtpain/ btype
+        end block data dt_hadprp
+        block data dt_blkd46 ! in :_dpmjetIII193:f2py_cpp.f
+            character dimension(210,8),intent(c) :: aname
+            double precision dimension(210) :: aam
+            double precision dimension(210) :: ga
+            double precision dimension(210) :: tau
+            integer dimension(210) :: iich
+            integer dimension(210) :: iibar
+            integer, optional,dimension(210) :: k1=1 
+            integer, optional,dimension(210) :: k2=1 
+            double precision, parameter,optional :: amelct=0.00051099906
+            double precision, parameter,optional :: ammuon=0.105658389
+            integer :: i
+            integer :: k
+            common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
+        end block data dt_blkd46
+        subroutine dt_kkinc(npmass,npchar,ntmass,ntchar,idp,epn,kkmat,irej) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: npmass
+            integer :: npchar
+            integer :: ntmass
+            integer :: ntchar
+            integer :: idp
+            double precision :: epn
+            integer :: kkmat
+            integer intent(out) :: irej
+            double precision :: ehfllo
+            double precision :: ehflhi
+            double precision :: amxpfr
+            integer :: iapflk
+            integer :: izpflk
+            integer :: iatflk
+            integer :: iztflk
+            integer :: nphflk
+            integer :: nthflk
+            logical :: lhadcl
+            integer :: linp
+            integer :: lout
+            integer :: ldat
+            integer :: lpri
+            integer :: iflevg
+            integer :: nhkk
+            integer :: nevhkk
+            integer dimension(250000) :: isthkk
+            integer dimension(250000) :: idhkk
+            integer dimension(2,250000) :: jmohkk
+            integer dimension(2,250000) :: jdahkk
+            double precision dimension(5,250000) :: phkk
+            double precision dimension(4,250000) :: vhkk
+            double precision dimension(4,250000) :: whkk
+            integer dimension(250000) :: idres
+            integer dimension(250000) :: idxres
+            integer dimension(250000) :: nobam
+            integer dimension(250000) :: idbam
+            integer dimension(250000) :: idch
+            integer dimension(10) :: npoint
+            integer dimension(2,250000) :: ihist
+            character dimension(210,8),intent(c) :: aname
+            double precision dimension(210) :: aam
+            double precision dimension(210) :: ga
+            double precision dimension(210) :: tau
+            integer dimension(210) :: iich
+            integer dimension(210) :: iibar
+            integer dimension(210) :: k1
+            integer dimension(210) :: k2
+            integer :: it
+            integer :: itz
+            integer :: ip
+            integer :: ipz
+            integer :: ijproj
+            integer :: ibproj
+            integer :: ijtarg
+            integer :: ibtarg
+            double precision dimension(2) :: gacms
+            double precision dimension(2) :: bgcms
+            double precision :: galab
+            double precision :: bglab
+            double precision :: blab
+            double precision :: umo
+            double precision :: ppcm
+            double precision :: eproj
+            double precision :: pproj
+            integer dimension(2) :: ifrag
+            integer :: iresco
+            integer :: imshl
+            integer :: iresrj
+            integer dimension(6) :: ioulev
+            logical :: lemcck
+            logical dimension(10) :: lhadro
+            logical :: lseadi
+            logical :: levapo
+            integer :: iframe
+            integer :: itrspt
+            integer :: ifusion
+            integer :: iflow
+            integer dimension(20) :: mstux
+            double precision dimension(20) :: parux
+            integer dimension(20) :: mstjx
+            double precision dimension(20) :: parjx
+            integer dimension(20) :: imstu
+            integer dimension(20) :: iparu
+            integer dimension(20) :: imstj
+            integer dimension(20) :: iparj
+            integer :: nmstu
+            integer :: nparu
+            integer :: nmstj
+            integer :: nparj
+            double precision :: pdb
+            double precision dimension(3) :: pdbsea
+            integer :: isig0
+            integer :: ipi0
+            logical :: ovwtdc
+            double precision :: varelo
+            double precision :: varehi
+            double precision :: varclo
+            double precision :: varchi
+            integer :: jstatb
+            integer :: jbinsb
+            character*8 :: cglb
+            integer :: ioglb
+            logical :: lprod
+            double precision :: bimin
+            double precision :: bimax
+            double precision :: xsfrac
+            integer :: icentr
+            common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
+            common /dtevt1/ nhkk,nevhkk,isthkk,idhkk,jmohkk,jdahkk,phkk,vhkk,whkk
+            common /dtevt2/ idres,idxres,nobam,idbam,idch,npoint,ihist
+            common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
+            common /dtprta/ it,itz,ip,ipz,ijproj,ibproj,ijtarg,ibtarg
+            common /dtltra/ gacms,bgcms,galab,bglab,blab,umo,ppcm,eproj,pproj
+            common /dtflg1/ ifrag,iresco,imshl,iresrj,ioulev,lemcck,lhadro,lseadi,levapo,iframe,itrspt,ifusion,iflow
+            common /dtfrpa/ mstux,parux,mstjx,parjx,imstu,iparu,imstj,iparj,nmstu,nparu,nmstj,nparj,pdb,pdbsea,isig0,ipi0,ovwtdc
+            common /dtvare/ varelo,varehi,varclo,varchi
+            common /dtglgp/ jstatb,jbinsb,cglb,ioglb,lprod
+            common /dtimpa/ bimin,bimax,xsfrac,icentr
+        end subroutine dt_kkinc
+        function idt_ipdgha(mcind) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: mcind
+            integer dimension(2,7) :: ipdg2
+            integer dimension(2,7) :: ibam2
+            integer dimension(2,22) :: ipdg3
+            integer dimension(2,22) :: ibam3
+            integer dimension(2,29) :: ipdg4
+            integer dimension(2,29) :: ibam4
+            integer dimension(2,19) :: ipdg5
+            integer dimension(2,19) :: ibam5
+            integer dimension(210) :: iamcin
+            integer :: idt_ipdgha
+            common /dthaic/ ipdg2,ibam2,ipdg3,ibam3,ipdg4,ibam4,ipdg5,ibam5,iamcin
+        end function idt_ipdgha
         subroutine dt_title ! in :_dpmjetIII193:f2py_cpp.f
             double precision :: ehfllo
             double precision :: ehflhi
@@ -2128,6 +2474,153 @@ python module _dpmjetIII193 ! in
             integer :: iflevg
             common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
         end subroutine dt_title
+        block data dt_zk ! in :_dpmjetIII193:f2py_cpp.f
+            double precision, optional,dimension(16) :: amz=3*2.2d0 
+            double precision, optional,dimension(16) :: gaz=3*.2d0 
+            double precision, optional,dimension(16) :: tauz=16*0.d0
+            integer, optional,dimension(16) :: ichz=0 
+            integer, optional,dimension(16) :: ibarz=2 
+            integer, optional,dimension(16) :: k1z=308 
+            integer, optional,dimension(16) :: k2z=309 
+            double precision, optional,dimension(153) :: wtz=.17d0 
+            integer :: ii22
+            integer, optional,dimension(153) :: nzk1=8 
+            integer, optional,dimension(153) :: nzk2=2*8 
+            integer, optional,dimension(153) :: nzk3=23 
+            character, optional,dimension(16,8),intent(c) :: anamz='nnpi' 
+            character, optional,dimension(9,8),intent(c) :: zknam4='nnpi0' 
+            character, optional,dimension(90,8),intent(c) :: zknam5=' gaga ' 
+            character, optional,dimension(54,8),intent(c) :: zknam6='p+r-r-' 
+            common /hnaddh/ amz,gaz,tauz,ichz,ibarz,k1z,k2z,wtz,ii22,nzk1,nzk2,nzk3
+            common /hnaddn/ anamz,zknam4,zknam5,zknam6
+        end block data dt_zk
+        subroutine dt_inucas(it,ip,idxcas,lcas,ncas,irej) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: it
+            integer :: ip
+            integer :: idxcas
+            logical :: lcas
+            integer :: ncas
+            integer :: irej
+            double precision :: ehfllo
+            double precision :: ehflhi
+            double precision :: amxpfr
+            integer :: iapflk
+            integer :: izpflk
+            integer :: iatflk
+            integer :: iztflk
+            integer :: nphflk
+            integer :: nthflk
+            logical :: lhadcl
+            integer :: linp
+            integer :: lout
+            integer :: ldat
+            integer :: lpri
+            integer :: iflevg
+            integer :: nhkk
+            integer :: nevhkk
+            integer dimension(250000) :: isthkk
+            integer dimension(250000) :: idhkk
+            integer dimension(2,250000) :: jmohkk
+            integer dimension(2,250000) :: jdahkk
+            double precision dimension(5,250000) :: phkk
+            double precision dimension(4,250000) :: vhkk
+            double precision dimension(4,250000) :: whkk
+            integer dimension(250000) :: idres
+            integer dimension(250000) :: idxres
+            integer dimension(250000) :: nobam
+            integer dimension(250000) :: idbam
+            integer dimension(250000) :: idch
+            integer dimension(10) :: npoint
+            integer dimension(2,250000) :: ihist
+            double precision dimension(5,100) :: pfsp
+            integer dimension(100) :: idfsp
+            integer :: nfsp
+            integer dimension(2) :: ifrag
+            integer :: iresco
+            integer :: imshl
+            integer :: iresrj
+            integer dimension(6) :: ioulev
+            logical :: lemcck
+            logical dimension(10) :: lhadro
+            logical :: lseadi
+            logical :: levapo
+            integer :: iframe
+            integer :: itrspt
+            integer :: ifusion
+            integer :: iflow
+            character dimension(210,8),intent(c) :: aname
+            double precision dimension(210) :: aam
+            double precision dimension(210) :: ga
+            double precision dimension(210) :: tau
+            integer dimension(210) :: iich
+            integer dimension(210) :: iibar
+            integer dimension(210) :: k1
+            integer dimension(210) :: k2
+            double precision :: rproj
+            double precision :: rtarg
+            double precision :: bimpac
+            integer :: nwtsam
+            integer :: nwasam
+            integer :: nwbsam
+            integer :: nwtacc
+            integer :: nwaacc
+            integer :: nwbacc
+            double precision dimension(2) :: pfermp
+            double precision dimension(2) :: pfermn
+            double precision dimension(2) :: excten
+            double precision :: fermod
+            double precision dimension(2) :: ebindp
+            double precision dimension(2) :: ebindn
+            double precision dimension(2,210) :: epot
+            double precision dimension(2) :: etacou
+            integer :: icoul
+            logical :: lfermi
+            double precision :: taufor
+            integer :: ktauge
+            integer :: itauve
+            integer :: incmod
+            logical :: lpauli
+            double precision dimension(2,300) :: ewound
+            integer dimension(2) :: nwound
+            integer dimension(2000) :: idxinc
+            integer :: noinc
+            character dimension(4,8),intent(c) :: cmodel
+            double precision :: elojet
+            integer :: mcgene
+            logical :: lphoin
+            double precision dimension(4) :: excdpm
+            double precision dimension(2) :: exceva
+            integer :: nincge
+            integer dimension(2,3) :: nincco
+            integer dimension(2,2) :: ninchr
+            integer dimension(2) :: nincwo
+            integer dimension(2,4) :: nincst
+            integer dimension(2) :: nincev
+            integer dimension(2) :: nresto
+            integer dimension(2) :: nrespr
+            integer dimension(2) :: nresnu
+            integer dimension(2) :: nresba
+            integer dimension(2) :: nrespb
+            integer dimension(2) :: nresch
+            integer dimension(4) :: nresev
+            integer dimension(2,6) :: neva
+            integer dimension(2) :: nevaga
+            integer dimension(2) :: nevaht
+            integer dimension(2,2,240) :: nevahy
+            integer dimension(2,2) :: nevafi
+            common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
+            common /dtevt1/ nhkk,nevhkk,isthkk,idhkk,jmohkk,jdahkk,phkk,vhkk,whkk
+            common /dtevt2/ idres,idxres,nobam,idbam,idch,npoint,ihist
+            common /dtcapa/ pfsp,idfsp,nfsp
+            common /dtflg1/ ifrag,iresco,imshl,iresrj,ioulev,lemcck,lhadro,lseadi,levapo,iframe,itrspt,ifusion,iflow
+            common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
+            common /dtglcp/ rproj,rtarg,bimpac,nwtsam,nwasam,nwbsam,nwtacc,nwaacc,nwbacc
+            common /dtnpot/ pfermp,pfermn,excten,fermod,ebindp,ebindn,epot,etacou,icoul,lfermi
+            common /dtfoti/ taufor,ktauge,itauve,incmod,lpauli
+            common /dtpaul/ ewound,nwound,idxinc,noinc
+            common /dtmodl/ cmodel,elojet,mcgene,lphoin
+            common /dtsta2/ excdpm,exceva,nincge,nincco,ninchr,nincwo,nincst,nincev,nresto,nrespr,nresnu,nresba,nrespb,nresch,nresev,neva,nevaga,nevaht,nevahy,nevafi
+        end subroutine dt_inucas
         subroutine dt_xshn(ip,it,pl,ecm,stot,sela) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: ip
             integer :: it
@@ -2179,6 +2672,86 @@ python module _dpmjetIII193 ! in
             common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
             common /potabl/ sigtab,sigecm,ecmf,isimax
         end subroutine dt_xshn
+        subroutine dt_initjs(mode) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: mode
+            double precision :: ehfllo
+            double precision :: ehflhi
+            double precision :: amxpfr
+            integer :: iapflk
+            integer :: izpflk
+            integer :: iatflk
+            integer :: iztflk
+            integer :: nphflk
+            integer :: nthflk
+            logical :: lhadcl
+            integer :: linp
+            integer :: lout
+            integer :: ldat
+            integer :: lpri
+            integer :: iflevg
+            integer dimension(200) :: mstu
+            double precision dimension(200) :: paru
+            integer dimension(200) :: mstj
+            double precision dimension(200) :: parj
+            integer dimension(500,4) :: kchg
+            double precision dimension(500,4) :: pmas
+            double precision dimension(2000) :: parf
+            double precision dimension(4,4) :: vckm
+            integer dimension(500,3) :: mdcy
+            integer dimension(8000,2) :: mdme
+            double precision dimension(8000) :: brat
+            integer dimension(8000,5) :: kfdp
+            integer dimension(20) :: mstux
+            double precision dimension(20) :: parux
+            integer dimension(20) :: mstjx
+            double precision dimension(20) :: parjx
+            integer dimension(20) :: imstu
+            integer dimension(20) :: iparu
+            integer dimension(20) :: imstj
+            integer dimension(20) :: iparj
+            integer :: nmstu
+            integer :: nparu
+            integer :: nmstj
+            integer :: nparj
+            double precision :: pdb
+            double precision dimension(3) :: pdbsea
+            integer :: isig0
+            integer :: ipi0
+            logical, optional :: ovwtdc=.true.
+            integer dimension(2) :: ifrag
+            integer :: iresco
+            integer :: imshl
+            integer :: iresrj
+            integer dimension(6) :: ioulev
+            logical :: lemcck
+            logical dimension(10) :: lhadro
+            logical :: lseadi
+            logical :: levapo
+            integer :: iframe
+            integer :: itrspt
+            integer :: ifusion
+            integer :: iflow
+            common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
+            common /pydat1/ mstu,paru,mstj,parj
+            common /pydat2/ kchg,pmas,parf,vckm
+            common /pydat3/ mdcy,mdme,brat,kfdp
+            common /dtfrpa/ mstux,parux,mstjx,parjx,imstu,iparu,imstj,iparj,nmstu,nparu,nmstj,nparj,pdb,pdbsea,isig0,ipi0,ovwtdc
+            common /dtflg1/ ifrag,iresco,imshl,iresrj,ioulev,lemcck,lhadro,lseadi,levapo,iframe,itrspt,ifusion,iflow
+        end subroutine dt_initjs
+        function idt_icihad(mcind) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: mcind
+            integer dimension(2,7) :: ipdg2
+            integer dimension(2,7) :: ibam2
+            integer dimension(2,22) :: ipdg3
+            integer dimension(2,22) :: ibam3
+            integer dimension(2,29) :: ipdg4
+            integer dimension(2,29) :: ibam4
+            integer dimension(2,19) :: ipdg5
+            integer dimension(2,19) :: ibam5
+            integer dimension(210) :: iamcin
+            integer :: idt_icihad
+            common /dthaic/ ipdg2,ibam2,ipdg3,ibam3,ipdg4,ibam4,ipdg5,ibam5,iamcin
+        end function idt_icihad
         subroutine dt_flahad(id,if1,if2,if3) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: id
             integer :: if1
@@ -2348,197 +2921,6 @@ python module _dpmjetIII193 ! in
             common /dtdpmi/ nvv,nsv,nvs,nss,ndv,nvd,nds,nsd,ixpv,ixps,ixtv,ixts,intvv1,intvv2,intsv1,intsv2,intvs1,intvs2,intss1,intss2,intdv1,intdv2,intvd1,intvd2,intds1,intds2,intsd1,intsd2
             common /dtdpm0/ ifrovp,itovp,ifrosp,ifrovt,itovt,ifrost
         end subroutine dt_getptn
-        subroutine dt_xsglau(na,nb,jjproj,xi,q2i,ecmi,ie,iq,nidx) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: na
-            integer :: nb
-            integer :: jjproj
-            double precision :: xi
-            double precision :: q2i
-            double precision :: ecmi
-            integer :: ie
-            integer :: iq
-            integer :: nidx
-            double precision :: ehfllo
-            double precision :: ehflhi
-            double precision :: amxpfr
-            integer :: iapflk
-            integer :: izpflk
-            integer :: iatflk
-            integer :: iztflk
-            integer :: nphflk
-            integer :: nthflk
-            logical :: lhadcl
-            integer :: linp
-            integer :: lout
-            integer :: ldat
-            integer :: lpri
-            integer :: iflevg
-            character dimension(210,8),intent(c) :: aname
-            double precision dimension(210) :: aam
-            double precision dimension(210) :: ga
-            double precision dimension(210) :: tau
-            integer dimension(210) :: iich
-            integer dimension(210) :: iibar
-            integer dimension(210) :: k1
-            integer dimension(210) :: k2
-            double precision dimension(100) :: emufra
-            integer dimension(100) :: iemuma
-            integer dimension(100) :: iemuch
-            integer :: ncompo
-            integer :: iemul
-            double precision dimension(100) :: rash
-            double precision dimension(100) :: rbsh
-            double precision dimension(100) :: bmax
-            double precision dimension(100) :: bstep
-            double precision :: sigsh
-            double precision :: rosh
-            double precision :: gsh
-            double precision dimension(9,5,100,50) :: bsite
-            integer :: nsiteb
-            integer :: nstatb
-            double precision dimension(8) :: ecmnn
-            double precision dimension(5) :: q2g
-            double precision :: ecmnow
-            double precision :: q2
-            double precision dimension(8,5,100) :: xstot
-            double precision dimension(8,5,100) :: xsela
-            double precision dimension(8,5,100) :: xsqep
-            double precision dimension(8,5,100) :: xsqet
-            double precision dimension(8,5,100) :: xsqe2
-            double precision dimension(8,5,100) :: xspro
-            double precision dimension(8,5,100) :: xsdel
-            double precision dimension(8,5,100) :: xsdqe
-            double precision dimension(8,5,100) :: xetot
-            double precision dimension(8,5,100) :: xeela
-            double precision dimension(8,5,100) :: xeqep
-            double precision dimension(8,5,100) :: xeqet
-            double precision dimension(8,5,100) :: xeqe2
-            double precision dimension(8,5,100) :: xepro
-            double precision dimension(8,5,100) :: xedel
-            double precision dimension(8,5,100) :: xedqe
-            double precision :: bslope
-            integer :: nebini
-            integer :: nqbini
-            integer :: jstatb
-            integer :: jbinsb
-            character*8 :: cglb
-            integer :: ioglb
-            logical :: lprod
-            character dimension(4,8),intent(c) :: cmodel
-            double precision :: elojet
-            integer :: mcgene
-            logical :: lphoin
-            double precision :: rl2
-            double precision :: epspol
-            integer dimension(2) :: intrge
-            integer :: idpdf
-            integer :: modega
-            integer dimension(3) :: ishad
-            double precision :: dibeta
-            double precision :: dialph
-            common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
-            common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
-            common /dtcomp/ emufra,iemuma,iemuch,ncompo,iemul
-            common /dtglam/ rash,rbsh,bmax,bstep,sigsh,rosh,gsh,bsite,nsiteb,nstatb
-            common /dtglxs/ ecmnn,q2g,ecmnow,q2,xstot,xsela,xsqep,xsqet,xsqe2,xspro,xsdel,xsdqe,xetot,xeela,xeqep,xeqet,xeqe2,xepro,xedel,xedqe,bslope,nebini,nqbini
-            common /dtglgp/ jstatb,jbinsb,cglb,ioglb,lprod
-            common /dtmodl/ cmodel,elojet,mcgene,lphoin
-            common /dtvdmp/ rl2,epspol,intrge,idpdf,modega,ishad
-            common /dtdiha/ dibeta,dialph
-        end subroutine dt_xsglau
-        block data dt_noname ! in :_dpmjetIII193:f2py_cpp.f
-            double precision, optional,dimension(25) :: sm=0.8d0 
-            double precision, optional,dimension(25) :: bbm= 0.85d0 
-            double precision, optional,dimension(25) :: bbb= 0.9d0 
-            double precision dimension(268) :: thresh
-            integer, optional,dimension(17) :: irii=0 
-            integer, optional,dimension(17) :: ikii=0 
-            integer, optional,dimension(17) :: ieii=0 
-            common /hnslop/ sm,bbm,bbb
-            common /hnredv/ thresh,irii,ikii,ieii
-        end block data dt_noname
-        subroutine dt_phoxs(kproj,ktarg,ecm,plab,stot,sine,sdif1,bel,mode) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: kproj
-            integer :: ktarg
-            double precision :: ecm
-            double precision :: plab
-            double precision intent(out) :: stot
-            double precision intent(out) :: sine
-            double precision intent(out) :: sdif1
-            double precision intent(out) :: bel
-            integer :: mode
-            double precision :: ehfllo
-            double precision :: ehflhi
-            double precision :: amxpfr
-            integer :: iapflk
-            integer :: izpflk
-            integer :: iatflk
-            integer :: iztflk
-            integer :: nphflk
-            integer :: nthflk
-            logical :: lhadcl
-            integer :: linp
-            integer :: lout
-            integer :: ldat
-            integer :: lpri
-            integer :: iflevg
-            character dimension(4,8),intent(c) :: cmodel
-            double precision :: elojet
-            integer :: mcgene
-            logical :: lphoin
-            character dimension(210,8),intent(c) :: aname
-            double precision dimension(210) :: aam
-            double precision dimension(210) :: ga
-            double precision dimension(210) :: tau
-            integer dimension(210) :: iich
-            integer dimension(210) :: iibar
-            integer dimension(210) :: k1
-            integer dimension(210) :: k2
-            integer dimension(2,40) :: mparconf
-            integer dimension(2,40) :: mpmapp
-            integer dimension(2) :: mpar
-            double precision :: sqsglobmax
-            integer :: nmpar
-            integer :: idxmpar
-            integer :: nmapp
-            double precision :: sigtot
-            double precision :: sigela
-            double precision dimension(5,5) :: sigvm
-            double precision :: sigine
-            double precision :: signdf
-            double precision :: sigdir
-            double precision dimension(2) :: siglsd
-            double precision dimension(2) :: sighsd
-            double precision :: sigldd
-            double precision :: sighdd
-            double precision dimension(5) :: sigcdf
-            double precision :: sigpom
-            double precision :: sigreg
-            double precision :: sighar
-            double precision dimension(2) :: sigtr1
-            double precision dimension(2) :: sigtr2
-            double precision :: sigloo
-            double precision dimension(4) :: sigdpo
-            double precision :: sig1so
-            double precision :: sig1ha
-            double precision :: sloel
-            double precision dimension(4,4) :: slovm
-            double precision :: sigcor
-            double precision dimension(2) :: fsup
-            double precision dimension(2) :: fsud
-            double precision dimension(2) :: fsuh
-            double precision :: ecmfil
-            double precision :: p2afil
-            double precision :: p2bfil
-            integer :: ipfil
-            integer :: ifafil
-            integer :: ifbfil
-            common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
-            common /dtmodl/ cmodel,elojet,mcgene,lphoin
-            common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
-            common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
-            common /pocsec/ sigtot,sigela,sigvm,sigine,signdf,sigdir,siglsd,sighsd,sigldd,sighdd,sigcdf,sigpom,sigreg,sighar,sigtr1,sigtr2,sigloo,sigdpo,sig1so,sig1ha,sloel,slovm,sigcor,fsup,fsud,fsuh,ecmfil,p2afil,p2bfil,ipfil,ifafil,ifbfil
-        end subroutine dt_phoxs
         subroutine dt_init(ncases,epn,npmass,npchar,ntmass,ntchar,idp,iglau) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: ncases
             double precision :: epn
@@ -2817,11 +3199,15 @@ python module _dpmjetIII193 ! in
             common /qneuto/ dsigsu,dsigmc,ndsig,neutyp,neudec
             common /dtevno/ nevent,icasca
         end subroutine dt_init
-        block data dt_runtt ! in :_dpmjetIII193:f2py_cpp.f
-            double precision, optional :: runtes=100.d0 
-            double precision, optional :: eftes= 100.d0
-            common /hndrun/ runtes,eftes
-        end block data dt_runtt
+        block data dt_blkd47 ! in :_dpmjetIII193:f2py_cpp.f
+            character dimension(602,8),intent(c) :: zkname
+            double precision dimension(602) :: wt
+            integer dimension(602,3) :: nzk
+            integer :: i
+            integer :: k
+            integer, parameter,optional :: idmax9=602
+            common /hndech/ zkname,wt,nzk
+        end block data dt_blkd47
         subroutine dt_evtout(mode) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: mode
             double precision :: ehfllo
@@ -2851,399 +3237,6 @@ python module _dpmjetIII193 ! in
             common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
             common /dtevt1/ nhkk,nevhkk,isthkk,idhkk,jmohkk,jdahkk,phkk,vhkk,whkk
         end subroutine dt_evtout
-        block data dt_hadprp ! in :_dpmjetIII193:f2py_cpp.f
-            integer, optional,dimension(13) :: iqechr=- 2 
-            integer, optional,dimension(13) :: iqbchr=6* - 1 
-            integer, optional,dimension(13) :: iqichr=4*0 
-            integer, optional,dimension(13) :: iqschr=3*0 
-            integer, optional,dimension(13) :: iqcchr=2*0 
-            integer, optional,dimension(13) :: iquchr=0 
-            integer, optional,dimension(13) :: iqtchr=- 1 
-            integer, optional,dimension(3,39) :: mquark=2 
-            integer dimension(2,7) :: ipdg2
-            integer dimension(2,7) :: ibam2
-            integer dimension(2,22) :: ipdg3
-            integer dimension(2,22) :: ibam3
-            integer dimension(2,29) :: ipdg4
-            integer dimension(2,29) :: ibam4
-            integer dimension(2,19) :: ipdg5
-            integer dimension(2,19) :: ibam5
-            integer, optional,dimension(210) :: iamcin=2212 
-            character, optional,dimension(30,8),intent(c) :: btype='proton  ' 
-            integer :: k
-            common /dtquar/ iqechr,iqbchr,iqichr,iqschr,iqcchr,iquchr,iqtchr,mquark
-            common /dthaic/ ipdg2,ibam2,ipdg3,ibam3,ipdg4,ibam4,ipdg5,ibam5,iamcin
-            common /dtpain/ btype
-        end block data dt_hadprp
-        function idt_ipdgha(mcind) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: mcind
-            integer dimension(2,7) :: ipdg2
-            integer dimension(2,7) :: ibam2
-            integer dimension(2,22) :: ipdg3
-            integer dimension(2,22) :: ibam3
-            integer dimension(2,29) :: ipdg4
-            integer dimension(2,29) :: ibam4
-            integer dimension(2,19) :: ipdg5
-            integer dimension(2,19) :: ibam5
-            integer dimension(210) :: iamcin
-            integer :: idt_ipdgha
-            common /dthaic/ ipdg2,ibam2,ipdg3,ibam3,ipdg4,ibam4,ipdg5,ibam5,iamcin
-        end function idt_ipdgha
-        block data dt_zk ! in :_dpmjetIII193:f2py_cpp.f
-            double precision, optional,dimension(16) :: amz=3*2.2d0 
-            double precision, optional,dimension(16) :: gaz=3*.2d0 
-            double precision, optional,dimension(16) :: tauz=16*0.d0
-            integer, optional,dimension(16) :: ichz=0 
-            integer, optional,dimension(16) :: ibarz=2 
-            integer, optional,dimension(16) :: k1z=308 
-            integer, optional,dimension(16) :: k2z=309 
-            double precision, optional,dimension(153) :: wtz=.17d0 
-            integer :: ii22
-            integer, optional,dimension(153) :: nzk1=8 
-            integer, optional,dimension(153) :: nzk2=2*8 
-            integer, optional,dimension(153) :: nzk3=23 
-            character, optional,dimension(16,8),intent(c) :: anamz='nnpi' 
-            character, optional,dimension(9,8),intent(c) :: zknam4='nnpi0' 
-            character, optional,dimension(90,8),intent(c) :: zknam5=' gaga ' 
-            character, optional,dimension(54,8),intent(c) :: zknam6='p+r-r-' 
-            common /hnaddh/ amz,gaz,tauz,ichz,ibarz,k1z,k2z,wtz,ii22,nzk1,nzk2,nzk3
-            common /hnaddn/ anamz,zknam4,zknam5,zknam6
-        end block data dt_zk
-        subroutine dt_inucas(it,ip,idxcas,lcas,ncas,irej) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: it
-            integer :: ip
-            integer :: idxcas
-            logical :: lcas
-            integer :: ncas
-            integer :: irej
-            double precision :: ehfllo
-            double precision :: ehflhi
-            double precision :: amxpfr
-            integer :: iapflk
-            integer :: izpflk
-            integer :: iatflk
-            integer :: iztflk
-            integer :: nphflk
-            integer :: nthflk
-            logical :: lhadcl
-            integer :: linp
-            integer :: lout
-            integer :: ldat
-            integer :: lpri
-            integer :: iflevg
-            integer :: nhkk
-            integer :: nevhkk
-            integer dimension(250000) :: isthkk
-            integer dimension(250000) :: idhkk
-            integer dimension(2,250000) :: jmohkk
-            integer dimension(2,250000) :: jdahkk
-            double precision dimension(5,250000) :: phkk
-            double precision dimension(4,250000) :: vhkk
-            double precision dimension(4,250000) :: whkk
-            integer dimension(250000) :: idres
-            integer dimension(250000) :: idxres
-            integer dimension(250000) :: nobam
-            integer dimension(250000) :: idbam
-            integer dimension(250000) :: idch
-            integer dimension(10) :: npoint
-            integer dimension(2,250000) :: ihist
-            double precision dimension(5,100) :: pfsp
-            integer dimension(100) :: idfsp
-            integer :: nfsp
-            integer dimension(2) :: ifrag
-            integer :: iresco
-            integer :: imshl
-            integer :: iresrj
-            integer dimension(6) :: ioulev
-            logical :: lemcck
-            logical dimension(10) :: lhadro
-            logical :: lseadi
-            logical :: levapo
-            integer :: iframe
-            integer :: itrspt
-            integer :: ifusion
-            integer :: iflow
-            character dimension(210,8),intent(c) :: aname
-            double precision dimension(210) :: aam
-            double precision dimension(210) :: ga
-            double precision dimension(210) :: tau
-            integer dimension(210) :: iich
-            integer dimension(210) :: iibar
-            integer dimension(210) :: k1
-            integer dimension(210) :: k2
-            double precision :: rproj
-            double precision :: rtarg
-            double precision :: bimpac
-            integer :: nwtsam
-            integer :: nwasam
-            integer :: nwbsam
-            integer :: nwtacc
-            integer :: nwaacc
-            integer :: nwbacc
-            double precision dimension(2) :: pfermp
-            double precision dimension(2) :: pfermn
-            double precision dimension(2) :: excten
-            double precision :: fermod
-            double precision dimension(2) :: ebindp
-            double precision dimension(2) :: ebindn
-            double precision dimension(2,210) :: epot
-            double precision dimension(2) :: etacou
-            integer :: icoul
-            logical :: lfermi
-            double precision :: taufor
-            integer :: ktauge
-            integer :: itauve
-            integer :: incmod
-            logical :: lpauli
-            double precision dimension(2,300) :: ewound
-            integer dimension(2) :: nwound
-            integer dimension(2000) :: idxinc
-            integer :: noinc
-            character dimension(4,8),intent(c) :: cmodel
-            double precision :: elojet
-            integer :: mcgene
-            logical :: lphoin
-            double precision dimension(4) :: excdpm
-            double precision dimension(2) :: exceva
-            integer :: nincge
-            integer dimension(2,3) :: nincco
-            integer dimension(2,2) :: ninchr
-            integer dimension(2) :: nincwo
-            integer dimension(2,4) :: nincst
-            integer dimension(2) :: nincev
-            integer dimension(2) :: nresto
-            integer dimension(2) :: nrespr
-            integer dimension(2) :: nresnu
-            integer dimension(2) :: nresba
-            integer dimension(2) :: nrespb
-            integer dimension(2) :: nresch
-            integer dimension(4) :: nresev
-            integer dimension(2,6) :: neva
-            integer dimension(2) :: nevaga
-            integer dimension(2) :: nevaht
-            integer dimension(2,2,240) :: nevahy
-            integer dimension(2,2) :: nevafi
-            common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
-            common /dtevt1/ nhkk,nevhkk,isthkk,idhkk,jmohkk,jdahkk,phkk,vhkk,whkk
-            common /dtevt2/ idres,idxres,nobam,idbam,idch,npoint,ihist
-            common /dtcapa/ pfsp,idfsp,nfsp
-            common /dtflg1/ ifrag,iresco,imshl,iresrj,ioulev,lemcck,lhadro,lseadi,levapo,iframe,itrspt,ifusion,iflow
-            common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
-            common /dtglcp/ rproj,rtarg,bimpac,nwtsam,nwasam,nwbsam,nwtacc,nwaacc,nwbacc
-            common /dtnpot/ pfermp,pfermn,excten,fermod,ebindp,ebindn,epot,etacou,icoul,lfermi
-            common /dtfoti/ taufor,ktauge,itauve,incmod,lpauli
-            common /dtpaul/ ewound,nwound,idxinc,noinc
-            common /dtmodl/ cmodel,elojet,mcgene,lphoin
-            common /dtsta2/ excdpm,exceva,nincge,nincco,ninchr,nincwo,nincst,nincev,nresto,nrespr,nresnu,nresba,nrespb,nresch,nresev,neva,nevaga,nevaht,nevahy,nevafi
-        end subroutine dt_inucas
-        subroutine dt_initjs(mode) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: mode
-            double precision :: ehfllo
-            double precision :: ehflhi
-            double precision :: amxpfr
-            integer :: iapflk
-            integer :: izpflk
-            integer :: iatflk
-            integer :: iztflk
-            integer :: nphflk
-            integer :: nthflk
-            logical :: lhadcl
-            integer :: linp
-            integer :: lout
-            integer :: ldat
-            integer :: lpri
-            integer :: iflevg
-            integer dimension(200) :: mstu
-            double precision dimension(200) :: paru
-            integer dimension(200) :: mstj
-            double precision dimension(200) :: parj
-            integer dimension(500,4) :: kchg
-            double precision dimension(500,4) :: pmas
-            double precision dimension(2000) :: parf
-            double precision dimension(4,4) :: vckm
-            integer dimension(500,3) :: mdcy
-            integer dimension(8000,2) :: mdme
-            double precision dimension(8000) :: brat
-            integer dimension(8000,5) :: kfdp
-            integer dimension(20) :: mstux
-            double precision dimension(20) :: parux
-            integer dimension(20) :: mstjx
-            double precision dimension(20) :: parjx
-            integer dimension(20) :: imstu
-            integer dimension(20) :: iparu
-            integer dimension(20) :: imstj
-            integer dimension(20) :: iparj
-            integer :: nmstu
-            integer :: nparu
-            integer :: nmstj
-            integer :: nparj
-            double precision :: pdb
-            double precision dimension(3) :: pdbsea
-            integer :: isig0
-            integer :: ipi0
-            logical, optional :: ovwtdc=.true.
-            integer dimension(2) :: ifrag
-            integer :: iresco
-            integer :: imshl
-            integer :: iresrj
-            integer dimension(6) :: ioulev
-            logical :: lemcck
-            logical dimension(10) :: lhadro
-            logical :: lseadi
-            logical :: levapo
-            integer :: iframe
-            integer :: itrspt
-            integer :: ifusion
-            integer :: iflow
-            common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
-            common /pydat1/ mstu,paru,mstj,parj
-            common /pydat2/ kchg,pmas,parf,vckm
-            common /pydat3/ mdcy,mdme,brat,kfdp
-            common /dtfrpa/ mstux,parux,mstjx,parjx,imstu,iparu,imstj,iparj,nmstu,nparu,nmstj,nparj,pdb,pdbsea,isig0,ipi0,ovwtdc
-            common /dtflg1/ ifrag,iresco,imshl,iresrj,ioulev,lemcck,lhadro,lseadi,levapo,iframe,itrspt,ifusion,iflow
-        end subroutine dt_initjs
-        block data dt_blkd46 ! in :_dpmjetIII193:f2py_cpp.f
-            character dimension(210,8),intent(c) :: aname
-            double precision dimension(210) :: aam
-            double precision dimension(210) :: ga
-            double precision dimension(210) :: tau
-            integer dimension(210) :: iich
-            integer dimension(210) :: iibar
-            integer, optional,dimension(210) :: k1=1 
-            integer, optional,dimension(210) :: k2=1 
-            double precision, parameter,optional :: amelct=0.00051099906
-            double precision, parameter,optional :: ammuon=0.105658389
-            integer :: i
-            integer :: k
-            common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
-        end block data dt_blkd46
-        subroutine dt_kkinc(npmass,npchar,ntmass,ntchar,idp,epn,kkmat,irej) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: npmass
-            integer :: npchar
-            integer :: ntmass
-            integer :: ntchar
-            integer :: idp
-            double precision :: epn
-            integer :: kkmat
-            integer intent(out) :: irej
-            double precision :: ehfllo
-            double precision :: ehflhi
-            double precision :: amxpfr
-            integer :: iapflk
-            integer :: izpflk
-            integer :: iatflk
-            integer :: iztflk
-            integer :: nphflk
-            integer :: nthflk
-            logical :: lhadcl
-            integer :: linp
-            integer :: lout
-            integer :: ldat
-            integer :: lpri
-            integer :: iflevg
-            integer :: nhkk
-            integer :: nevhkk
-            integer dimension(250000) :: isthkk
-            integer dimension(250000) :: idhkk
-            integer dimension(2,250000) :: jmohkk
-            integer dimension(2,250000) :: jdahkk
-            double precision dimension(5,250000) :: phkk
-            double precision dimension(4,250000) :: vhkk
-            double precision dimension(4,250000) :: whkk
-            integer dimension(250000) :: idres
-            integer dimension(250000) :: idxres
-            integer dimension(250000) :: nobam
-            integer dimension(250000) :: idbam
-            integer dimension(250000) :: idch
-            integer dimension(10) :: npoint
-            integer dimension(2,250000) :: ihist
-            character dimension(210,8),intent(c) :: aname
-            double precision dimension(210) :: aam
-            double precision dimension(210) :: ga
-            double precision dimension(210) :: tau
-            integer dimension(210) :: iich
-            integer dimension(210) :: iibar
-            integer dimension(210) :: k1
-            integer dimension(210) :: k2
-            integer :: it
-            integer :: itz
-            integer :: ip
-            integer :: ipz
-            integer :: ijproj
-            integer :: ibproj
-            integer :: ijtarg
-            integer :: ibtarg
-            double precision dimension(2) :: gacms
-            double precision dimension(2) :: bgcms
-            double precision :: galab
-            double precision :: bglab
-            double precision :: blab
-            double precision :: umo
-            double precision :: ppcm
-            double precision :: eproj
-            double precision :: pproj
-            integer dimension(2) :: ifrag
-            integer :: iresco
-            integer :: imshl
-            integer :: iresrj
-            integer dimension(6) :: ioulev
-            logical :: lemcck
-            logical dimension(10) :: lhadro
-            logical :: lseadi
-            logical :: levapo
-            integer :: iframe
-            integer :: itrspt
-            integer :: ifusion
-            integer :: iflow
-            integer dimension(20) :: mstux
-            double precision dimension(20) :: parux
-            integer dimension(20) :: mstjx
-            double precision dimension(20) :: parjx
-            integer dimension(20) :: imstu
-            integer dimension(20) :: iparu
-            integer dimension(20) :: imstj
-            integer dimension(20) :: iparj
-            integer :: nmstu
-            integer :: nparu
-            integer :: nmstj
-            integer :: nparj
-            double precision :: pdb
-            double precision dimension(3) :: pdbsea
-            integer :: isig0
-            integer :: ipi0
-            logical :: ovwtdc
-            double precision :: varelo
-            double precision :: varehi
-            double precision :: varclo
-            double precision :: varchi
-            integer :: jstatb
-            integer :: jbinsb
-            character*8 :: cglb
-            integer :: ioglb
-            logical :: lprod
-            double precision :: bimin
-            double precision :: bimax
-            double precision :: xsfrac
-            integer :: icentr
-            common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
-            common /dtevt1/ nhkk,nevhkk,isthkk,idhkk,jmohkk,jdahkk,phkk,vhkk,whkk
-            common /dtevt2/ idres,idxres,nobam,idbam,idch,npoint,ihist
-            common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
-            common /dtprta/ it,itz,ip,ipz,ijproj,ibproj,ijtarg,ibtarg
-            common /dtltra/ gacms,bgcms,galab,bglab,blab,umo,ppcm,eproj,pproj
-            common /dtflg1/ ifrag,iresco,imshl,iresrj,ioulev,lemcck,lhadro,lseadi,levapo,iframe,itrspt,ifusion,iflow
-            common /dtfrpa/ mstux,parux,mstjx,parjx,imstu,iparu,imstj,iparj,nmstu,nparu,nmstj,nparj,pdb,pdbsea,isig0,ipi0,ovwtdc
-            common /dtvare/ varelo,varehi,varclo,varchi
-            common /dtglgp/ jstatb,jbinsb,cglb,ioglb,lprod
-            common /dtimpa/ bimin,bimax,xsfrac,icentr
-        end subroutine dt_kkinc
-        subroutine impy_openlogfile(fname,opunit) ! in :_dpmjetIII193:f2py_cpp.f
-            character*300 :: fname
-            integer :: opunit
-        end subroutine impy_openlogfile
-        subroutine impy_closelogfile(opunit) ! in :_dpmjetIII193:f2py_cpp.f
-            integer :: opunit
-        end subroutine impy_closelogfile
         function dt_rndm(vdummy) ! in :_dpmjetIII193:f2py_cpp.f
             double precision :: vdummy
             double precision :: dt_rndm
@@ -3251,6 +3244,13 @@ python module _dpmjetIII193 ! in
         subroutine init_rmmard(iseedin) ! in :_dpmjetIII193:f2py_cpp.f
             integer :: iseedin
         end subroutine init_rmmard
+        subroutine impy_openlogfile(fname,opunit) ! in :_dpmjetIII193:f2py_cpp.f
+            character*300 :: fname
+            integer :: opunit
+        end subroutine impy_openlogfile
+        subroutine impy_closelogfile(opunit) ! in :_dpmjetIII193:f2py_cpp.f
+            integer :: opunit
+        end subroutine impy_closelogfile
     end interface 
 end python module _dpmjetIII193
 
