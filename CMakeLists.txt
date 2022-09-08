@@ -84,6 +84,7 @@ set(f2py_dir ${CMAKE_SOURCE_DIR}/src/f2py)
 set(impy_logging impy_openlogfile impy_closelogfile)
 set(logging_source ${fortran_dir}/logging.f)
 set(rangen_source rangen.f)
+set(rangen_fpp_source ${fortran_dir}/rangen.fpp)
 set(rangen_sib21_source rangen_sib21.f)
 set(sibyll_init_source sibyll_init.f)
 set(sibyll_init_sib21_source sibyll_init_sib21.f)
@@ -153,7 +154,7 @@ add_custom_command(
 ### eposlhc
 file(GLOB eposlhc_sources ${fortran_dir}/EPOS-LHC/sources/*.f)
 list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
-list(FILTER eposlhc_sources EXCLUDE REGEX epos-random\.f)
+# list(FILTER eposlhc_sources EXCLUDE REGEX epos-random\.f)
 
 
 add_custom_command(
@@ -175,16 +176,19 @@ f2py_add_module(_eposlhc
   # ${f2py_dir}/_eposlhcmodule.c
   # ${f2py_dir}/_eposlhc-f2pywrappers.f
   ${eposlhc_sources}
-  ${epos_random_source}
   ${logging_source}
   ${rangen_source}
   INTERFACE_SOURCES
   ${fortran_dir}/EPOS-LHC/sources/epos-bas-lhc.f 
   ${fortran_dir}/EPOS-LHC/sources/epos-ids-lhc.f 
   ${fortran_dir}/EPOS-LHC/sources/epos_interface.f
-  ${epos_random_source}
+  ${fortran_dir}/EPOS-LHC/sources/epos-random.f
   ${rangen_source}
   ${logging_source}
+  INCLUDE_DIRS
+  ${fortran_dir}/EPOS-LHC/sources
+  COMPILE_DEFS
+  IMPY
 )
 
 
@@ -206,6 +210,8 @@ f2py_add_module(_sib21
   ${logging_source}
   ${rangen_sib21_source}
   ${sibyll_init_sib21_source}
+  COMPILE_DEFS
+  IMPY
 )
 
 ### sib23
@@ -220,6 +226,8 @@ f2py_add_module(_sib23
   ${sibyll_init_source}
   ${logging_source}
   ${rangen_source}
+  COMPILE_DEFS
+  IMPY
 )
 
 ### sib23c00
@@ -234,6 +242,8 @@ f2py_add_module(_sib23c00
   ${sibyll_init_source}
   ${logging_source}
   ${rangen_source}
+  COMPILE_DEFS
+  IMPY
 )
 
 ### sib23c01
@@ -248,6 +258,8 @@ f2py_add_module(_sib23c01
   ${sibyll_init_source}
   ${logging_source}
   ${rangen_source}
+  COMPILE_DEFS
+  IMPY
 )
 
 ### sib23c02
@@ -262,6 +274,8 @@ f2py_add_module(_sib23c02
   ${sibyll_init_source}
   ${logging_source}
   ${rangen_source}
+  COMPILE_DEFS
+  IMPY
 )
 
 ### sib23c03
@@ -276,6 +290,8 @@ f2py_add_module(_sib23c03
   ${sibyll_init_source}
   ${logging_source}
   ${rangen_source}
+  COMPILE_DEFS
+  IMPY
 )
 
 ### sib23d
@@ -290,6 +306,8 @@ f2py_add_module(_sib23d
   ${sibyll_init_source}
   ${logging_source}
   ${rangen_source}
+  COMPILE_DEFS
+  IMPY
 )
 
 ### qgs01
@@ -305,6 +323,8 @@ f2py_add_module(_qgs01
   ${fortran_dir}/qgsjet/impy_qgs1.f
   ${logging_source}
   ${rangen_source}
+  COMPILE_DEFS
+  IMPY
 )
 
 ### qgsII03
@@ -322,6 +342,8 @@ f2py_add_module(_qgsII03
   ${fortran_dir}/qgsjet/impy_qgsII.f
   ${logging_source}
   ${rangen_source}
+  COMPILE_DEFS
+  IMPY
 )
 
 ### qgsII04
@@ -336,6 +358,8 @@ f2py_add_module(_qgsII04
   ${fortran_dir}/qgsjet/impy_qgsII.f
   ${logging_source}
   ${rangen_source}
+  COMPILE_DEFS
+  IMPY
 )
 
 ### urqmd34
@@ -367,6 +391,8 @@ f2py_add_module(_urqmd34
   # ${f2py_dir}/_urqmd34module.c
   # ${f2py_dir}/_urqmd34-f2pywrappers.f
   ${urqmd34_sources}
+  COMPILE_DEFS
+  IMPY
 )
 # to find terms.mod ?
 target_include_directories(_urqmd34 PRIVATE ${fortran_dir}/urqmd-3.4/sources)
@@ -384,6 +410,8 @@ f2py_add_module(_pythia6
   ${pythia6_pythia6428_source}
   ${logging_source}
   ${rangen_source}
+  COMPILE_DEFS
+  IMPY
 )
 
 ### sophia
@@ -409,6 +437,8 @@ f2py_add_module(_sophia
   ${fortran_dir}/sophia/impy_sophia.f
   ${logging_source}
   ${rangen_source}
+  COMPILE_DEFS
+  IMPY
 )
 
 ### dpmjet306
@@ -445,7 +475,11 @@ f2py_add_module(_dpmjet306
   ${dpmjet_dpmjet306f}
   ${rangen_source}
   ${logging_source}
+  COMPILE_DEFS
+  IMPY
 )
+
+
 
 ### dpmjetIII191
 file(GLOB dpmjetIII191_sources
@@ -470,32 +504,6 @@ execute_process(
   OUTPUT_VARIABLE dpmjetIII191_modded_sources
 )
 
-set(dpmjetIII191_dir dpmjetIII191)
-add_custom_target(${dpmjetIII191_dir} ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${dpmjetIII191_dir})
-
-set(dpmjetIII191_psources)
-foreach(_file ${dpmjetIII191_modded_sources})
-  get_filename_component(barename ${_file} NAME)
-  set(proc_file ${CMAKE_CURRENT_BINARY_DIR}/${dpmjetIII191_dir}/pp${barename})
-  add_custom_command(
-    OUTPUT ${proc_file}
-    COMMAND ${CMAKE_Fortran_COMPILER}
-    -E -cpp ${_file}
-    -o ${proc_file}
-  ) 
-  list(APPEND dpmjetIII191_psources ${proc_file})
-endforeach()
-
-
-
-# set_source_files_properties(
-#   ${dpmjetIII191_modded_sources}
-#   PROPERTIES
-#   Fortran_PREPROCESS True
-# )
-
-
 
 f2py_add_module(_dpmjetIII191
   FUNCTIONS
@@ -512,13 +520,15 @@ f2py_add_module(_dpmjetIII191
   # ${f2py_dir}/_dpmjetIII191module.c
   # ${f2py_dir}/_dpmjetIII191-f2pywrappers.f
   # ${dpmjetIII191_modded_sources}
-  ${dpmjetIII191_psources}
-  ${rangen_source}
+  ${dpmjetIII191_modded_sources}
+  ${rangen_fpp_source}
   INCLUDE_DIRS
   ${fortran_dir}/dpmjetIII-19.1/include/phojet
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
   ${CMAKE_CURRENT_BINARY_DIR}/include
+  COMPILE_DEFS
+  IMPY
 )
 
 ### dpmjetIII193
@@ -533,31 +543,8 @@ list(FILTER dpmjetIII193_sources EXCLUDE REGEX DT_RNDM\.f)
 list(FILTER dpmjetIII193_sources EXCLUDE REGEX DT_RNDMST\.f)
 list(FILTER dpmjetIII193_sources EXCLUDE REGEX DT_RNDMTE\.f)
 list(FILTER dpmjetIII193_sources EXCLUDE REGEX PYR\.f)
+list(APPEND dpmjetIII193_sources ${rangen_fpp_source})
 
-# sources need preprocessing
-set(dpmjetIII193_psources)
-set(dpmjetIII193_dir dpmjetIII193)
-add_custom_target(${dpmjetIII193_dir} ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${dpmjetIII193_dir})
-
-foreach(_file ${dpmjetIII193_sources})
-  get_filename_component(barename ${_file} NAME)
-  set(proc_file ${CMAKE_BINARY_DIR}/${dpmjetIII193_dir}/pp${barename})
-  add_custom_command(
-    OUTPUT ${proc_file}
-    COMMAND ${CMAKE_Fortran_COMPILER}
-    -E -cpp ${_file}
-    -o ${proc_file}
-  ) 
-  list(APPEND dpmjetIII193_psources ${proc_file})
-endforeach()
-
-
-# set_source_files_properties(
-#   ${dpmjetIII193_sources}
-#   PROPERTIES
-#   Fortran_PREPROCESS True
-# )
 
 f2py_add_module(_dpmjetIII193
   FUNCTIONS
@@ -569,15 +556,18 @@ f2py_add_module(_dpmjetIII193
   pho_harxto pho_harxpt pho_setpcomb
   dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias dt_getptn init_rmmard
   ${impy_logging}
+  # INTERFACE_SOURCES
+  # ${dpmjetIII193_interface_sources}
   SOURCES
   # ${f2py_dir}/_dpmjetIII193.pyf
   # ${f2py_dir}/_dpmjetIII193module.c
   # ${f2py_dir}/_dpmjetIII193-f2pywrappers.f
-  ${dpmjetIII193_psources}
-  ${rangen_source}
+  ${dpmjetIII193_sources}
   INCLUDE_DIRS
   ${fortran_dir}/dpmjetIII-19.3/include/phojet
   ${fortran_dir}/dpmjetIII-19.3/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.3/include/pythia
   ${fortran_dir}/dpmjetIII-19.3/include/flinclude
+  COMPILE_DEFS
+  IMPY
 )

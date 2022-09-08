@@ -50,7 +50,7 @@ function (f2py_add_module target_name)
   cmake_parse_arguments(F2PY_ADD_MODULE
     ""
     ""
-    "FUNCTIONS;INCLUDE_DIRS;INTERFACE_SOURCES;SOURCES"
+    "FUNCTIONS;INCLUDE_DIRS;INTERFACE_SOURCES;SOURCES;COMPILE_DEFS"
     ${ARGN})
 
   if (NOT F2PY_ADD_MODULE_INTERFACE_SOURCES)
@@ -80,6 +80,39 @@ function (f2py_add_module target_name)
     set(F2PY_ADD_MODULE_PYF_FILE ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.pyf)
     file(WRITE ${F2PY_ADD_MODULE_LOG_FILE} "f2py_add_module: Generating ${F2PY_ADD_MODULE_PYF_FILE}\n")
 
+    set(fortran_defs)
+    foreach(_def ${F2PY_ADD_MODULE_COMPILE_DEFS})
+      STRING(APPEND fortran_defs "-D${_def} ")
+    endforeach()
+
+    set(processed_files)
+    set(target_dir "CMakeFiles/${target_name}.dir/processed_files")
+
+    add_custom_command(OUTPUT ${target_dir}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${target_dir})
+
+
+    foreach(_file ${F2PY_ADD_MODULE_INTERFACE_SOURCES})
+      string(REGEX REPLACE "\.f$" "\.f\.proc" proc_file ${_file})
+      string(REGEX REPLACE "\.fpp$" "\.f\.proc"  proc_file ${proc_file})
+      get_filename_component(barename ${proc_file} NAME)
+      set(proc_file ${target_dir}/${barename})
+
+      add_custom_command(
+        OUTPUT ${proc_file}
+        COMMAND ${CMAKE_Fortran_COMPILER}
+        -E -cpp ${_file} ${fortran_defs} -o ${proc_file}
+        DEPENDS ${target_dir}
+      )
+      # message("${CMAKE_Fortran_COMPILER} -E -cpp ${_file} ${fortran_defs} -o ${proc_file}")
+      list(APPEND processed_files ${proc_file})
+    endforeach()
+
+
+    # message("fortran_defs = ${fortran_defs}" )
+    # message("Fortran_FLAGS = ${Fortran_FLAGS}" )
+    # message("Fortran_INCLUDES = ${Fortran_INCLUDES}" )
+
     add_custom_command(
       OUTPUT
       ${F2PY_ADD_MODULE_PYF_FILE}
@@ -89,10 +122,10 @@ function (f2py_add_module target_name)
         -h ${F2PY_ADD_MODULE_PYF_FILE}
         --overwrite-signature only: ${F2PY_ADD_MODULE_FUNCTIONS} :
         ${F2PY_ADD_MODULE_INC}
-        ${F2PY_ADD_MODULE_INTERFACE_SOURCES}
+        ${processed_files}
         >> ${F2PY_ADD_MODULE_LOG_FILE} 2>&1
 
-      DEPENDS ${F2PY_ADD_MODULE_INTERFACE_SOURCES}
+      DEPENDS ${processed_files}
     )
   else()
     file(WRITE ${F2PY_ADD_MODULE_LOG_FILE} "f2py_add_module: Use existing ${F2PY_ADD_MODULE_PYF_FILE}\n")
@@ -132,8 +165,14 @@ function (f2py_add_module target_name)
   if (F2PY_ADD_MODULE_INCLUDE_DIRS)
     target_include_directories(${target_name} PRIVATE ${F2PY_ADD_MODULE_INCLUDE_DIRS})
   endif()
+
+  if (F2PY_ADD_MODULE_COMPILE_DEFS)
+    target_compile_definitions(${target_name} PRIVATE ${F2PY_ADD_MODULE_COMPILE_DEFS})
+  endif()  
+  target_compile_options(${target_name} PRIVATE -cpp)
   set_property(TARGET ${target_name} PROPERTY SUFFIX ${PYTHON_MODULE_EXTENSION})
   # must be a string, so that empty string works correcty
   set_property(TARGET ${target_name} PROPERTY PREFIX "${PYTHON_MODULE_PREFIX}")
+
 
 endfunction()
