@@ -28,6 +28,10 @@ if (NOT F2PY_INCLUDE_DIR)
   set(F2PY_INCLUDE_DIR "${_f2py_directory}/src" CACHE STRING "F2PY source directory location" FORCE)
 endif()
 
+# Copy fortranobject.c to get rid of deep folder nesting
+configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c f2py/fortranobject.c COPYONLY)
+set(f2py_source f2py/fortranobject.c)
+
 if (NOT NUMPY_INCLUDE_DIRS)
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
@@ -440,8 +444,8 @@ f2py_add_module(_dpmjetIII191
   ${fortran_dir}/dpmjetIII-19.1/include/phojet
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
-  ${fortran_dir}/dpmjetIII-19.1/include/flinclude
-  # ${CMAKE_CURRENT_BINARY_DIR}/include
+  # ${fortran_dir}/dpmjetIII-19.1/include/flinclude
+  ${CMAKE_CURRENT_BINARY_DIR}/include
   COMPILE_DEFS
   ${impy_definitions}
 )
