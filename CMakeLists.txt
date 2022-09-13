@@ -474,6 +474,35 @@ f2py_add_module(_dpmjetIII191
 )
 
 
+### phojet191
+f2py_add_module(_phojet191
+  FUNCTIONS
+  pho_event pycomp pho_init pho_setpar poevt1 
+  poevt2 pho_pname pho_pmass pho_setmdl pho_setpdf 
+  pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini 
+  pho_ptcut pytune pho_rregpar pho_sregpar pho_prevnt 
+  ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt 
+  pho_setpcomb pho_ghhias init_rmmard ${impy_logging}
+  SOURCES
+  # ${f2py_dir}/_dpmjetIII191.pyf
+  # ${f2py_dir}/_dpmjetIII191module.c
+  # ${f2py_dir}/_dpmjetIII191-f2pywrappers.f
+  ${dpmjetIII191_modded_sources}
+  ${fortran_dir}/dpmjetIII-19.1/common/dummies.f
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${fortran_dir}/dpmjetIII-19.1/include/phojet
+  ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
+  ${fortran_dir}/dpmjetIII-19.1/include/pythia
+  # ${fortran_dir}/dpmjetIII-19.1/include/flinclude
+  ${CMAKE_CURRENT_BINARY_DIR}/include
+  COMPILE_DEFS
+  ${impy_definitions}
+)
+
+
+
 ### dpmjetIII193
 file(GLOB dpmjetIII193_sources
   ${fortran_dir}/dpmjetIII-19.3/src/phojet/*.f
