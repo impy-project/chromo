@@ -14,6 +14,7 @@ from impy.util import info
 from impy.kinematics import EventKinematics
 from dataclasses import dataclass
 import typing as _tp
+import pickle
 
 
 @dataclass
@@ -23,6 +24,8 @@ class EventData:
 
     Unlike the original MCEvent, this structure is picklable.
 
+    generator: (str, str)
+        Info about the generator, its name and version.
     kin: EventKinematics
         Info about initial state.
     frame: str
@@ -62,6 +65,7 @@ class EventData:
         Same as parents.
     """
 
+    generator: _tp.Tuple[str, str]
     kin: EventKinematics
     frame: str
     nevent: int
@@ -87,6 +91,7 @@ class EventData:
         This may return a copy if the result cannot represented as a view.
         """
         return EventData(
+            self.generator,
             self.kin,
             self.frame,
             self.nevent,
@@ -143,25 +148,12 @@ class EventData:
         """
         Return event copy.
         """
-        return EventData(
-            self.kin,
-            self.frame,
-            self.nevent,
-            self.pid.copy(),
-            self.status.copy(),
-            self.charge.copy(),
-            self.px.copy(),
-            self.py.copy(),
-            self.pz.copy(),
-            self.en.copy(),
-            self.m.copy(),
-            self.vx.copy(),
-            self.vy.copy(),
-            self.vz.copy(),
-            self.vt.copy(),
-            self.parents.copy() if self.parents is not None else None,
-            self.children.copy() if self.parents is not None else None,
-        )
+        copies = []
+        for k in self.__dataclass_fields__:
+            obj = getattr(self, k)
+            copies.append(obj.copy() if hasattr(obj, "copy") else obj)
+
+        return EventData(*copies)
 
     def final_state(self):
         """
@@ -245,6 +237,58 @@ class EventData:
     #     """I don't remember what this was for..."""
     #     return self.en / self.kin.pcm
 
+    def to_hepmc3(self, genevent=None):
+        """
+        Convert event to HepMC3 GenEvent.
+
+        After conversion, it is possible to traverse and draw the particle history.
+        This requires the optional pyhepmc library.
+
+        Parameters
+        ----------
+        genevent: GenEvent or None, optional
+            If a genevent is passed, its content is replaced with this event
+            information. If genevent is None (default), a new genevent is created.
+        """
+        import pyhepmc  # delay import
+
+        if genevent is None:
+            genevent = pyhepmc.GenEvent()
+
+        genevent.from_hepevt(
+            event_number=self.nevent,
+            px=self.px,
+            py=self.py,
+            pz=self.pz,
+            en=self.en,
+            m=self.m,
+            pid=self.pid,
+            status=self.status,
+            parents=self.parents,
+            children=self.children,
+            vx=self.vx,
+            vy=self.vy,
+            vz=self.vz,
+            vt=self.vt,
+        )
+
+        genevent.run_info = pyhepmc.GenRunInfo()
+        genevent.run_info.tools = [self.generator + ("",)]
+        return genevent
+
+    # if all required packages are available, add extra
+    # method to draw event in Jupyter
+    try:
+        from pyhepmc import GenEvent
+
+        if hasattr(GenEvent, "_repr_html_"):
+
+            def _repr_html_(self):
+                return self.to_hepmc3()._repr_html_()
+
+    except ModuleNotFoundError:
+        pass
+
 
 class MCEvent(EventData, ABC):
     """
@@ -268,21 +312,16 @@ class MCEvent(EventData, ABC):
     _jmohep = "jmohep"
     _jdahep = "jdahep"
 
-    # only called once, so setup is allowed to be slow
-    def __init__(self, lib, event_kinematics, event_frame):
+    def __init__(self, generator):
         """
         Parameters
         ----------
-        lib:
-            Reference to the FORTRAN library in use.
-        event_kinematics:
-            Reference to current event kinematics object.
-        event_frame: str
-            The frame in which the generator returned the variables.
+        generator:
+            Generator instance.
         """
-        self._lib = lib  # used by _charge_init and generator-specific methods
+        self._lib = generator.lib  # used by _charge_init and generator-specific methods
 
-        evt = getattr(lib, self._hepevt)
+        evt = getattr(self._lib, self._hepevt)
 
         npart = getattr(evt, self._nhep)
         sel = slice(None, npart)
@@ -293,10 +332,13 @@ class MCEvent(EventData, ABC):
         parents = getattr(evt, self._jmohep).T[sel] if self._jmohep else None
         children = getattr(evt, self._jdahep).T[sel] if self._jdahep else None
 
+        user_frame = impy_config["user_frame"]  # TODO take from event_kinematics
+
         EventData.__init__(
             self,
-            event_kinematics,
-            event_frame,
+            (generator.name, generator.version),
+            generator.event_kinematics,
+            user_frame,
             int(getattr(evt, self._nevhep)),
             getattr(evt, self._idhep)[sel],
             getattr(evt, self._isthep)[sel],
@@ -307,20 +349,23 @@ class MCEvent(EventData, ABC):
             children
         )
 
-        # make all arrays read-only, we don't want to
-        # override original record
-        for obj in self.__dict__.values():
-            if isinstance(obj, np.ndarray):
-                obj.flags["WRITEABLE"] = False
-
         # Apply boosts into frame required by user
-        self.kin.apply_boost(self, event_frame, impy_config["user_frame"])
-        self.frame = impy_config["user_frame"]
+        self.kin.apply_boost(self, generator._output_frame, user_frame)
 
     @abstractmethod
     def _charge_init(self, npart):
         # override this in derived to get charge info
         ...
+
+    # MCEvent is not pickleable, but EventData is. For convenience, we
+    # make it so that MCEvent can be saved and is restored as EventData.
+    def __getstate__(self):
+        # save only EventData sub-state
+        return {k: getattr(self, k) for k in self.__dataclass_fields__}
+
+    def __getnewargs__(self):
+        # upon unpickling, create EventData object instead of MCEvent object
+        return (EventData,)
 
 
 # =========================================================================
@@ -382,6 +427,94 @@ class Settings(ABC):
             elif value != other_attr[attr]:
                 return True
         return False
+
+
+@dataclass
+class RMMARDState:
+    _c_number: np.ndarray = None
+    _u_array: np.ndarray = None
+    _u_i: np.ndarray = None
+    _u_j: np.ndarray = None
+    _seed: np.ndarray = None
+    _counter: np.ndarray = None
+    _big_counter: np.ndarray = None
+    _sequence_number: np.ndarray = None
+
+    def _record_state(self, generator):
+        data = generator.crranma4
+
+        self._c_number = data.c
+        self._u_array = data.u
+        self._u_i = data.i97
+        self._u_j = data.j97
+        self._seed = data.ijkl
+        self._counter = data.ntot
+        self._big_counter = data.ntot2
+        self._sequence_number = data.jseq
+        return self
+
+    def _restore_state(self, generator):
+        data = generator.crranma4
+
+        data.c = self._c_number
+        data.u = self._u_array
+        data.i97 = self._u_i
+        data.j97 = self._u_j
+        data.ijkl = self._seed
+        data.ntot = self._counter
+        data.ntot2 = self._big_counter
+        data.jseq = self._sequence_number
+        return self
+
+    def __eq__(self, other: object) -> bool:
+        if other.__class__ is not self.__class__:
+            return NotImplemented
+
+        return (
+            np.array_equal(self._c_number, other._c_number)
+            and np.array_equal(self._u_array, other._u_array)
+            and np.array_equal(self._u_i, other._u_i)
+            and np.array_equal(self._u_j, other._u_j)
+            and np.array_equal(self._seed, other._seed)
+            and np.array_equal(self._counter, other._counter)
+            and np.array_equal(self._big_counter, other._big_counter)
+            and np.array_equal(self._sequence_number, other._sequence_number)
+        )
+
+    def copy(self):
+        copies = []
+        for k in self.__dataclass_fields__:
+            obj = getattr(self, k)
+            copies.append(obj.copy() if hasattr(obj, "copy") else obj)
+
+        return RMMARDState(*copies)
+
+    def _dump_to_file(self, filename):
+        with open(filename, "wb") as pfile:
+            pickle.dump(self, pfile, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def _restore_from_file(self, filename):
+        with open(filename, "rb") as pfile:
+            self = pickle.load(pfile)
+        return self
+
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+
+    @property
+    def sequence(self):
+        return self._sequence_number
+
+    @property
+    def counter(self):
+        return self._counter[self.sequence - 1]
+
+    @property
+    def seed(self):
+        return self._seed[self.sequence - 1]
 
 
 # =========================================================================
@@ -496,6 +629,27 @@ class MCRun(ABC):
         # Therefore _set_event_kinematics should only be called
         # after these calls in init_generator
         pass
+
+    def _update_event_kinematics(self):
+        if self._curr_event_kin.composite_target:
+            ekin = self._curr_event_kin
+            if ekin.p2_is_nucleus:
+                ekin.A2, ekin.Z2 = ekin.composite_target._get_random_AZ()
+                self._set_event_kinematics(ekin)
+
+    @property
+    def rng_state(self):
+        return RMMARDState()._record_state(self.lib)
+
+    @rng_state.setter
+    def rng_state(self, rng_state):
+        rng_state._restore_state(self.lib)
+
+    def dump_rng_state_to(self, filename):
+        self.rng_state._dump_to_file(filename)
+
+    def restore_rng_state_from(self, filename):
+        self.rng_state = RMMARDState()._restore_from_file(filename)
 
     @property
     def event_kinematics(self):
@@ -648,11 +802,10 @@ class MCRun(ABC):
         ntrials = 0
         nremaining = nevents
         while nremaining > 0:
+            self._update_event_kinematics()
             if self.generate_event() == 0:
                 self.nevents += 1
-                yield self._event_class(
-                    self.lib, self._curr_event_kin, self._output_frame
-                )
+                yield self._event_class(self)
                 nremaining -= 1
                 ntrials += 1
             elif retry_on_rejection:

@@ -322,7 +322,7 @@ C  PY(THIA) R(ANDOM GENERATOR)
 C
 C  SEE SUBROUT. RMMARD
 C  WE USE HERE A SIMPLIFIED FORM OF RMMARD WITH JSEQ=1, LENV=1.
-C  THIS FUNCTON IS CALLED FROM SIBYLL ROUTINES.
+C  THIS FUNCTON IS CALLED FROM PYTHIA ROUTINES.
 C-----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -389,10 +389,28 @@ C-----------------------------------------------------------------------
       RETURN
       END
 
+
+      DOUBLE PRECISION FUNCTION RLU()
+
+C-----------------------------------------------------------------------
+C  RLU  RANDOM GENERATOR FOR JETSET
+C-----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      DOUBLE PRECISION SIMRND
+
+      RLU = SIMRND()
+
+      RETURN
+      END
+
       DOUBLE PRECISION FUNCTION DT_RNDM(VDUMMY)
 
 C-----------------------------------------------------------------------
-C  RAN(DOM GENERATOR FOR PHOJET
+C  SEE SUBROUT. RMMARD
+C  WE USE HERE A SIMPLIFIED FORM OF RMMARD WITH JSEQ=1, LENV=1.
+C  THIS FUNCTON IS CALLED FROM DPM_JET306 ROUTINES.
 C-----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -404,6 +422,7 @@ C-----------------------------------------------------------------------
       RETURN
       END
 
+
       SUBROUTINE INIT_RMMARD(ISEEDIN)
 
 C-----------------------------------------------------------------------
@@ -414,6 +433,14 @@ C*  ISEEDIN    =  SEED
 C-----------------------------------------------------------------------
       
       IMPLICIT NONE
+
+      INTEGER          KSEQ
+      PARAMETER        (KSEQ = 8)
+      DOUBLE PRECISION C(KSEQ),U(97,KSEQ),UNI
+      INTEGER          IJKL(KSEQ),I97(KSEQ),J97(KSEQ),
+     *                 NTOT(KSEQ),NTOT2(KSEQ),JSEQ
+      
+      COMMON /CRRANMA4/C,U,IJKL,I97,J97,NTOT,NTOT2,JSEQ
 
       INTEGER ISEEDIN, ISEED(3), NSEQ, I
       PARAMETER( NSEQ = 2)

@@ -80,7 +80,14 @@ class PYTHIA6Run(MCRun):
 
         # self.mstp[51]
 
-        # self.lib.pysubs.msel = 2
+        # Setup pythia processes (set to custom mode)
+        self.lib.pysubs.msel = 0
+
+        # Enable minimum bias processes incl diffraction, low-pt
+        # but no elastic (see p227 of hep-ph/0603175)
+        for isub in [11, 12, 13, 28, 53, 68, 92, 93, 94, 95, 96]:
+            self.lib.pysubs.msub[isub - 1] = 1
+
         self._set_event_kinematics(event_kinematics)
 
         # Set default stable

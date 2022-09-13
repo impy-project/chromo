@@ -201,6 +201,7 @@ class PHOJETRun(MCRun):
                 "PHOJET failed to initialize with the current", "event kinematics"
             )
 
+
         # if self.def_settings:
         #     print self.class_name + \
         #         "::init_generator(): Using default settings:", \

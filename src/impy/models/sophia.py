@@ -86,22 +86,28 @@ class SophiaRun(MCRun):
         k = event_kinematics
 
         if k.p1pdg != 22:
-            info(0, "The first particle must be a photon, but particle pdg = ", k.p1pdg)
-            raise Exception("Input error")
+            raise ValueError(
+                "Sophia accepts only 'gamma' as a projectile "
+                + "but received pdg_id = {0}".format(k.p1pdg)
+            )
 
         if k.p2pdg not in [2212, 2112]:
-            info(
-                0,
-                "The second particle must be a proton or neutron, but particle pdg = ",
-                k.p2pdg,
+            raise ValueError(
+                "Sophia accepts only 'proton' or 'neutron' as a target, "
+                + "but received pdg_id = {0}".format(k.p2pdg)
             )
-            raise Exception("Input error")
+
+        if k.p2_is_nucleus:
+            raise ValueError(
+                "Sophia accepts only 'proton' or 'neutron' as a target, "
+                + "but received nucleus = ({0}, {1})".format(k.A2, k.Z2)
+            )
 
         self.nucleon_code_number = self.lib.icon_pdg_sib(k.p2pdg)
         self.lib.initial(
             self.nucleon_code_number
         )  # setting parameters for cross-section
-        self.energy_of_nucleon = k.pmass2
+        self.energy_of_nucleon = np.float32(k.pmass2)  # fix roundoff error
         self.energy_of_photon = k.elab
         # Here we consider laboratory frame where photon moves along z axis
         # and nucleon is at rest. The angle is counted from z axis.
