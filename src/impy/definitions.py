@@ -185,7 +185,7 @@ interaction_model_nt_init = [
         "PHOJET",
         "19.1",
         -1,
-        "_dpmjetIII191",
+        "_phojet191",
         phojet.PHOJETRun,
         phojet.PhojetEvent,
         "center-of-mass",

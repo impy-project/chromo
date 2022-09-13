@@ -330,11 +330,13 @@ f2py_add_module(_urqmd34
   # ${f2py_dir}/_urqmd34module.c
   # ${f2py_dir}/_urqmd34-f2pywrappers.f
   ${urqmd34_sources}
+  INCLUDE_DIRS
+  ${fortran_dir}/urqmd-3.4/sources
   COMPILE_DEFS
   ${impy_definitions}
 )
 # to find terms.mod ?
-target_include_directories(_urqmd34 PRIVATE ${fortran_dir}/urqmd-3.4/sources)
+# target_include_directories(_urqmd34 PRIVATE ${fortran_dir}/urqmd-3.4/sources)
 
 ### pythia6
 f2py_add_module(_pythia6
@@ -412,9 +414,9 @@ f2py_add_module(_phojet112
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
   pho_setpcomb init_rmmard ${impy_logging}
   SOURCES
-  ${f2py_dir}/_phojet112.pyf
-  ${f2py_dir}/_phojet112module.c
-  ${f2py_dir}/_phojet112-f2pywrappers.f
+  # ${f2py_dir}/_phojet112.pyf
+  # ${f2py_dir}/_phojet112module.c
+  # ${f2py_dir}/_phojet112-f2pywrappers.f
   ${dpmjet306_sources}
   ${logging_source}
   ${rangen_source}
