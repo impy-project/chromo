@@ -489,15 +489,6 @@ class RMMARDState:
 
         return RMMARDState(*copies)
 
-    def _dump_to_file(self, filename):
-        with open(filename, "wb") as pfile:
-            pickle.dump(self, pfile, protocol=pickle.HIGHEST_PROTOCOL)
-
-    def _restore_from_file(self, filename):
-        with open(filename, "rb") as pfile:
-            self = pickle.load(pfile)
-        return self
-
     def __getstate__(self):
         return self.__dict__
 
@@ -646,10 +637,12 @@ class MCRun(ABC):
         rng_state._restore_state(self.lib)
 
     def dump_rng_state_to(self, filename):
-        self.rng_state._dump_to_file(filename)
+        with open(filename, "wb") as pfile:
+            pickle.dump(self.rng_state, pfile, protocol=pickle.HIGHEST_PROTOCOL)
 
     def restore_rng_state_from(self, filename):
-        self.rng_state = RMMARDState()._restore_from_file(filename)
+        with open(filename, "rb") as pfile:
+            self.rng_state = pickle.load(pfile)
 
     @property
     def event_kinematics(self):
