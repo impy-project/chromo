@@ -34,3 +34,4 @@ __pycache__
 .pytest_cache
 .benchmarks
 examples/*.dat
+env_variables_cache.dat

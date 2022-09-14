@@ -28,6 +28,9 @@ if (NOT F2PY_INCLUDE_DIR)
   set(F2PY_INCLUDE_DIR "${_f2py_directory}/src" CACHE STRING "F2PY source directory location" FORCE)
 endif()
 
+
+configure_file(${CMAKE_SOURCE_DIR}/env_variables_cache.dat env_variables_cache.dat COPYONLY)
+
 # Copy fortranobject.c to get rid of deep folder nesting
 configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c f2py/fortranobject.c COPYONLY)
 set(f2py_source f2py/fortranobject.c)
@@ -544,3 +547,49 @@ f2py_add_module(_dpmjetIII193
   COMPILE_DEFS
   ${impy_definitions}
 )
+
+
+if(DEFINED ENV{DEVELOP_DPMJETIII193_SOURCE})
+
+  set (dev_source $ENV{DEVELOP_DPMJETIII193_SOURCE})
+
+  file(GLOB dev_dpmjetIII193_sources
+    ${dev_source}/src/phojet/*.f
+    ${dev_source}/src/pythia/*.f
+    ${dev_source}/src/dpmjet/*.f
+    ${dev_source}/common/*.f
+  )
+
+  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX DT_RNDM\.f)
+  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX DT_RNDMST\.f)
+  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX DT_RNDMTE\.f)
+  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX PYR\.f)
+
+
+  f2py_add_module(_dev_dpmjetIII193
+    FUNCTIONS
+    pho_event dt_init dt_kkinc idt_icihad dt_xsglau pycomp dt_initjs
+    dt_inucas idt_ipdgha dt_evtout pho_init pho_setpar poevt1 poevt2
+    pho_pname pho_pmass pho_setmdl pho_setpdf pycomp pho_xsect pho_borncs
+    pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
+    pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
+    pho_setpcomb dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias
+    init_rmmard ${impy_logging}
+    SOURCES
+    # ${f2py_dir}/_dpmjetIII193.pyf
+    # ${f2py_dir}/_dpmjetIII193module.c
+    # ${f2py_dir}/_dpmjetIII193-f2pywrappers.f
+    ${dev_dpmjetIII193_sources}
+    ${dev_source}/common/dummies.f
+    ${rangen_source}
+    ${logging_source}
+    INCLUDE_DIRS
+    ${dev_source}/include/phojet
+    ${dev_source}/include/dpmjet
+    ${dev_source}/include/pythia
+    ${dev_source}/include/flinclude
+    COMPILE_DEFS
+    ${impy_definitions}
+  )
+
+endif()

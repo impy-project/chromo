@@ -151,6 +151,16 @@ interaction_model_nt_init = [
         "center-of-mass",
     ],
     [
+        "DEV_DPMJETIII193",
+        "DEV_DPMJET-III",
+        "19.3",
+        -1,
+        "_dev_dpmjetIII193",
+        dpmjetIII.DpmjetIIIRun,
+        dpmjetIII.DpmjetIIIEvent,
+        "center-of-mass",
+    ],
+    [
         "DPMJETIII306",
         "DPMJET-III",
         "3.0-6",
