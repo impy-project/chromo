@@ -2,6 +2,7 @@ from pathlib import Path
 import re
 import sys
 import shutil
+import os
 
 this_program = Path(sys.argv[0]).name
 
@@ -49,8 +50,9 @@ assert len(set([x.name for x in needs_mod])) == len(needs_mod)
 modded = []
 for fn in needs_mod:
     fn2 = cmake_binary_dir / fn.name
-    modded.append(fn2)
-    shutil.copy(fn, fn2)
+    if (not os.path.exists(fn2)) or (os.path.getmtime(fn) > os.path.getmtime(fn2)):
+        modded.append(fn2)
+        shutil.copy(fn, fn2)
 
 for fn in modded:
     with fn.open() as f:
