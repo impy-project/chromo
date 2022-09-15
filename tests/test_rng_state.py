@@ -21,7 +21,7 @@ def rng_state_test(model):
     else:
         ekin = CenterOfMass(13 * TeV, "proton", "proton")
 
-    generator = model(ekin)
+    generator = model(ekin, seed=3163325)
     nevents = 10
 
     # Save a initial state to a variable:
