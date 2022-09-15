@@ -44,8 +44,8 @@ def rng_state_test(model):
         counter = generator.rng_state.counter
         assert (
             counters[i] == counter
-        ), 'Counters after "{0}" event are different:\n expected(previous) = {1}, received(current) = {2}'.format(
-            i, counters[i], counter
+        ), 'Counters for seed {0} after "{1}" event are different:\n expected(previous) = {2}, received(current) = {3}'.format(
+            generator.rng_state.seed, i, counters[i], counter
         )
         i = i + 1
 
