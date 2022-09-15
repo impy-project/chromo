@@ -36,22 +36,47 @@ ext_modules = [
 
 # The below block is only for development
 
-# Alwasy create file to keep value of environment variable
-# DEVELOP_DPMJETIII193_SOURCE
-with open("env_variables_cache.dat", "w") as file:
-    file.write("")
+# Monitor specific environment variables and update
+# file "env_variables_cache.dat" if they change
+# Define the environment variables which we monitor
+cache_file = "env_variables_cache.dat"
+env_variables = dict()
+env_variables["DEVELOP_DPMJETIII193_SOURCE"] = "not defined"
+env_variables["IMPY_GENERATE_PYF"] = "not defined"
 
-# Check if DEVELOP_DPMJETIII193_SOURCE is defined
-develop_dir = "DEVELOP_DPMJETIII193_SOURCE"
-if develop_dir in os.environ:
-    cached_value = ""
-    if os.path.exists("env_variables_cache.dat"):
-        with open("env_variables_cache.dat", "r") as file:
-            cached_value = file.read()
-    # Rewrite file if DEVELOP_DPMJETIII193_SOURCE has been changed
-    if cached_value != os.environ[develop_dir]:
-        with open("env_variables_cache.dat", "w") as file:
-            file.write(os.environ[develop_dir])
+# Read them if already exists
+if os.path.exists(cache_file):
+    with open(cache_file, "r") as file:
+        Lines = file.readlines()
+        for line in Lines:
+            linevals = line.split("=")
+            env_variables.update({linevals[0]: linevals[1]})
+else:
+    with open(cache_file, "w") as file:
+        for env_variable in env_variables.items():
+            line_string = env_variable[0] + "=" + env_variable[1] + "\n"
+            file.write(line_string)
+
+# Check if the variables are updated
+env_updated = False
+for env_variable in env_variables.items():
+    if env_variable[0] in os.environ:
+        if env_variable[1] != os.environ[env_variable[0]]:
+            env_updated = True
+            env_variables.update({env_variable[0]: os.environ[env_variable[0]]})
+    else:
+        if env_variable[1] != "not defined":
+            env_updated = True
+            env_variables.update({env_variable[0]: "not defined"})
+
+# Write to the file if the variables are updated
+if env_updated:
+    with open(cache_file, "w") as file:
+        for env_variable in env_variables.items():
+            line_string = env_variable[0] + "=" + env_variable[1] + "\n"
+            file.write(line_string)
+
+if env_variables["DEVELOP_DPMJETIII193_SOURCE"] != "not defined":
     ext_modules.append(CMakeExtension("impy.models._dev_dpmjetIII193"))
 # End of block for development
 

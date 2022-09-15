@@ -53,6 +53,14 @@ function (f2py_add_module target_name)
     "FUNCTIONS;INCLUDE_DIRS;INTERFACE_SOURCES;SOURCES;COMPILE_DEFS"
     ${ARGN})
 
+  if(NOT DEFINED ENV{IMPY_GENERATE_PYF})
+    list(PREPEND F2PY_ADD_MODULE_INTERFACE_SOURCES 
+      ${f2py_dir}/${target_name}.pyf
+      ${f2py_dir}/${target_name}module.c
+      ${f2py_dir}/${target_name}-f2pywrappers.f
+    ) 
+  endif()
+
   if (NOT F2PY_ADD_MODULE_INTERFACE_SOURCES)
     set(F2PY_ADD_MODULE_INTERFACE_SOURCES ${F2PY_ADD_MODULE_SOURCES})
   endif()
