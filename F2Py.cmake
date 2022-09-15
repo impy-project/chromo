@@ -79,7 +79,7 @@ function (f2py_add_module target_name)
   if (NOT F2PY_ADD_MODULE_PYF_FILE)
     # Set directory name to output generated file *.pyf files
     # *module.c and *-f2pywrappers.f
-    set(model_out ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_out)
+    set(model_out ${CMAKE_CURRENT_BINARY_DIR}/f2py)
     # Set directory name to output processed source files
     # needed to *.pyf file generation
     set(pyf_sources "CMakeFiles/${target_name}.dir/pyf_sources")

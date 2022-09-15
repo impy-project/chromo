@@ -32,8 +32,8 @@ endif()
 configure_file(${CMAKE_SOURCE_DIR}/env_variables_cache.dat env_variables_cache.dat COPYONLY)
 
 # Copy fortranobject.c to get rid of deep folder nesting
-configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c f2py/fortranobject.c COPYONLY)
-set(f2py_source f2py/fortranobject.c)
+configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c fortranobject.c COPYONLY)
+set(f2py_source fortranobject.c)
 
 if (NOT NUMPY_INCLUDE_DIRS)
   execute_process(
