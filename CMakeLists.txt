@@ -158,61 +158,65 @@ f2py_add_module(_sib23
   SIBYLL_TABLE_LENGTH=99
 )
 
-### sib23c00
-f2py_add_module(_sib23c00
-  FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
-  SOURCES
-  ${fortran_dir}/sibyll/sibyll2.3c00.f
-  ${fortran_dir}/sibyll/sibyll_init.fpp
-  ${logging_source}
-  ${rangen_source}
-  COMPILE_DEFS
-  ${impy_definitions}
-  SIBYLL_TABLE_LENGTH=99
-)
 
-### sib23c01
-f2py_add_module(_sib23c01
-  FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
-  SOURCES
-  ${fortran_dir}/sibyll/sibyll2.3c01.f
-  ${fortran_dir}/sibyll/sibyll_init.fpp
-  ${logging_source}
-  ${rangen_source}
-  COMPILE_DEFS
-  ${impy_definitions}
-  SIBYLL_TABLE_LENGTH=99
-)
 
-### sib23c02
-f2py_add_module(_sib23c02
-  FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
-  SOURCES
-  ${fortran_dir}/sibyll/sibyll2.3c02.f
-  ${fortran_dir}/sibyll/sibyll_init.fpp
-  ${logging_source}
-  ${rangen_source}
-  COMPILE_DEFS
-  ${impy_definitions}
-  SIBYLL_TABLE_LENGTH=99
-)
+if(DEFINED ENV{IMPY_EXTRA_MODELS})
+  ### sib23c00
+  f2py_add_module(_sib23c00
+    FUNCTIONS
+    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    SOURCES
+    ${fortran_dir}/sibyll/sibyll2.3c00.f
+    ${fortran_dir}/sibyll/sibyll_init.fpp
+    ${logging_source}
+    ${rangen_source}
+    COMPILE_DEFS
+    ${impy_definitions}
+    SIBYLL_TABLE_LENGTH=99
+  )
 
-### sib23c03
-f2py_add_module(_sib23c03
-  FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
-  SOURCES
-  ${fortran_dir}/sibyll/sibyll2.3c03.f
-  ${fortran_dir}/sibyll/sibyll_init.fpp
-  ${logging_source}
-  ${rangen_source}
-  COMPILE_DEFS
-  ${impy_definitions}
-  SIBYLL_TABLE_LENGTH=99
-)
+  ### sib23c01
+  f2py_add_module(_sib23c01
+    FUNCTIONS
+    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    SOURCES
+    ${fortran_dir}/sibyll/sibyll2.3c01.f
+    ${fortran_dir}/sibyll/sibyll_init.fpp
+    ${logging_source}
+    ${rangen_source}
+    COMPILE_DEFS
+    ${impy_definitions}
+    SIBYLL_TABLE_LENGTH=99
+  )
+
+  ### sib23c02
+  f2py_add_module(_sib23c02
+    FUNCTIONS
+    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    SOURCES
+    ${fortran_dir}/sibyll/sibyll2.3c02.f
+    ${fortran_dir}/sibyll/sibyll_init.fpp
+    ${logging_source}
+    ${rangen_source}
+    COMPILE_DEFS
+    ${impy_definitions}
+    SIBYLL_TABLE_LENGTH=99
+  )
+
+  ### sib23c03
+  f2py_add_module(_sib23c03
+    FUNCTIONS
+    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    SOURCES
+    ${fortran_dir}/sibyll/sibyll2.3c03.f
+    ${fortran_dir}/sibyll/sibyll_init.fpp
+    ${logging_source}
+    ${rangen_source}
+    COMPILE_DEFS
+    ${impy_definitions}
+    SIBYLL_TABLE_LENGTH=99
+  )
+endif()
 
 ### sib23d
 f2py_add_module(_sib23d

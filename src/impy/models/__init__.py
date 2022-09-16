@@ -3,11 +3,6 @@ from impy.models.sibyll import (  # noqa
     Sibyll21,
     Sibyll23,
     Sibyll23c,
-    Sibyll23c00,
-    Sibyll23c01,
-    Sibyll23c02,
-    Sibyll23c03,
-    Sibyll23c04,
     Sibyll23d,
 )
 

@@ -14,10 +14,6 @@ ext_modules = [
     CMakeExtension("impy.models._eposlhc"),
     CMakeExtension("impy.models._sib21"),
     CMakeExtension("impy.models._sib23"),
-    CMakeExtension("impy.models._sib23c00"),
-    CMakeExtension("impy.models._sib23c01"),
-    CMakeExtension("impy.models._sib23c02"),
-    CMakeExtension("impy.models._sib23c03"),
     CMakeExtension("impy.models._sib23d"),
     CMakeExtension("impy.models._qgs01"),
     CMakeExtension("impy.models._qgsII03"),
@@ -27,9 +23,9 @@ ext_modules = [
     CMakeExtension("impy.models._sophia"),
     CMakeExtension("impy.models._dpmjet306"),
     CMakeExtension("impy.models._phojet112"),
+    CMakeExtension("impy.models._phojet191"),
     CMakeExtension("impy.models._dpmjetIII191"),
     CMakeExtension("impy.models._dpmjetIII193"),
-    CMakeExtension("impy.models._phojet191"),
     # CMakeExtension("impy.models._phojet193"),
 ]
 
@@ -43,6 +39,7 @@ cache_file = "env_variables_cache.dat"
 env_variables = dict()
 env_variables["DEVELOP_DPMJETIII193_SOURCE"] = "not defined"
 env_variables["IMPY_GENERATE_PYF"] = "not defined"
+env_variables["IMPY_EXTRA_MODELS"] = "not defined"
 
 # Read them if already exists
 if os.path.exists(cache_file):
@@ -78,6 +75,13 @@ if env_updated:
 
 if env_variables["DEVELOP_DPMJETIII193_SOURCE"] != "not defined":
     ext_modules.append(CMakeExtension("impy.models._dev_dpmjetIII193"))
+
+
+if env_variables["IMPY_EXTRA_MODELS"] != "not defined":
+    ext_modules.append(CMakeExtension("impy.models._sib23c00"))
+    ext_modules.append(CMakeExtension("impy.models._sib23c01"))
+    ext_modules.append(CMakeExtension("impy.models._sib23c02"))
+    ext_modules.append(CMakeExtension("impy.models._sib23c03"))
 # End of block for development
 
 setup(

@@ -33,5 +33,6 @@ pdata = PYTHIAParticleData(
 
 
 import impy.models as models  # noqa
+import impy.models._extra_models as _extra_models  # noqa
 import impy.kinematics as kinematics  # noqa
 import impy.constants as constants  # noqa
