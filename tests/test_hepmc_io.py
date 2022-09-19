@@ -1,25 +1,27 @@
 from pathlib import Path
 from impy.constants import GeV
-from impy.kinematics import CenterOfMass
+from impy.kinematics import CenterOfMass, FixedTarget
 import impy.models as im
 import pytest
 import pyhepmc
+import abc
 from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
+
+# generate list of all models in impy.models
+models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
 
 
 def run(Model):
     ekin = CenterOfMass(10 * GeV, 2212, 2212)
-    gen = Model(ekin, seed=1)
+    if Model == im.Sophia20:
+        ekin = FixedTarget(10 * GeV, "photon", "proton")
+    gen = Model(ekin, seed=715434)
     return list(ev.copy() for ev in gen(3))
 
 
 @pytest.mark.parametrize(
     "Model",
-    [
-        im.Sibyll21,
-        im.Pythia6,
-        im.EposLHC,
-    ],
+    models,
 )
 def test_hepmc_io(Model):
     # To run this test do `pytest tests/test_hepmc_writer.py`
@@ -31,8 +33,17 @@ def test_hepmc_io(Model):
     print(test_file)
 
     xfail_on_ci_if_model_is_incompatible(Model)
+    if Model in (
+        im.DpmjetIII306,
+        im.DpmjetIII191,
+        im.DpmjetIII193,
+        im.Phojet112,
+        im.Phojet191,
+        im.UrQMD34,
+    ):
+        pytest.xfail("The model fails for some parameters")
 
-    events = run_in_separate_process(run, Model)
+    events = run_in_separate_process(run, Model, timeout=60)
 
     expected = []
     with pyhepmc.open(test_file, "w") as f:
@@ -41,11 +52,12 @@ def test_hepmc_io(Model):
             expected.append(event.to_hepmc3())
 
     restored = []
-    for event in pyhepmc.open(test_file):
-        assert event is not None
-        # Some models (e.g. Sibyll) do not set event.event_number properly
-        # assert event.event_number == ievent
-        restored.append(event)
+    with pyhepmc.open(test_file) as events:
+        for event in events:
+            assert event is not None
+            # Some models (e.g. Sibyll) do not set event.event_number properly
+            # assert event.event_number == ievent
+            restored.append(event)
 
     assert len(restored) == len(expected)
 
