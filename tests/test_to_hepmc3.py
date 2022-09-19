@@ -1,5 +1,5 @@
 from collections import defaultdict
-from impy.kinematics import EventKinematics
+from impy.kinematics import CenterOfMass
 from impy import models as im
 from impy.constants import TeV
 from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
@@ -8,7 +8,7 @@ import pytest
 
 
 def make_event(Model):
-    ekin = EventKinematics(ecm=1 * TeV, p1pdg=2212, p2pdg=2212)
+    ekin = CenterOfMass(1 * TeV, 2212, 2212)
     m = Model(ekin, seed=1)
     for event in m(100):
         if len(event) > 10:  # to skip elastic events

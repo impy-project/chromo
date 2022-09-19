@@ -1,6 +1,6 @@
 from pathlib import Path
 from impy.constants import GeV
-from impy.kinematics import EventKinematics
+from impy.kinematics import CenterOfMass
 import impy.models as im
 import pytest
 import pyhepmc
@@ -8,7 +8,7 @@ from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
 
 
 def run(Model):
-    ekin = EventKinematics(ecm=10 * GeV, p1pdg=2212, p2pdg=2212)
+    ekin = CenterOfMass(10 * GeV, 2212, 2212)
     gen = Model(ekin, seed=1)
     return list(ev.copy() for ev in gen(3))
 
@@ -28,6 +28,7 @@ def test_hepmc_io(Model):
     # bug in the HepMC3 C++ code (not the pyhepmc code).
 
     test_file = Path(f"{Path(__file__).with_suffix('')}_{Model.__name__}.dat")
+    print(test_file)
 
     xfail_on_ci_if_model_is_incompatible(Model)
 
