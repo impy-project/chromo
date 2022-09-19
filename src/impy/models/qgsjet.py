@@ -148,7 +148,7 @@ class QGSJet01Run(MCRun):
         """Inelastic cross section according to current
         event setup (energy, projectile, target).
 
-        Interpolation routine for QGSJET01C cross sections from CORSIKA."""
+        Interpolation routine for QGSJET01D cross sections from CORSIKA."""
 
         from scipy.interpolate import UnivariateSpline
 
@@ -222,7 +222,7 @@ class QGSJet01Run(MCRun):
             seed = int(seed)
         info(5, "Using seed:", seed)
 
-        info(5, "Initializing QGSJET01c")
+        info(5, "Initializing QGSJET01d")
         self.attach_log(fname=logfname)
         datdir = path.join(base_path, impy_config["qgsjet"]["datdir"])
         self.lib.cqgsini(seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"])
@@ -241,11 +241,11 @@ class QGSJet01Run(MCRun):
         return False
 
 
-class QGSJet01c(QGSJet01Run):
+class QGSJet01d(QGSJet01Run):
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.definitions import interaction_model_by_tag as models_dict
 
-        interaction_model_def = models_dict["QGSJET01C"]
+        interaction_model_def = models_dict["QGSJET01D"]
         super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)
 

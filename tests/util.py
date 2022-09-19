@@ -36,7 +36,7 @@ def run_in_separate_process(fn, *args, timeout=30):
 # remove this when git lfs issue is fixed
 def xfail_on_ci_if_model_is_incompatible(Model):
     if os.environ.get("CI", False) and Model in (
-        im.QGSJet01c,
+        im.QGSJet01d,
         im.QGSJetII03,
         im.QGSJetII04,
         im.Phojet191,

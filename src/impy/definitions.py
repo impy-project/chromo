@@ -231,7 +231,7 @@ interaction_model_nt_init = [
         "center-of-mass",
     ],
     [
-        "QGSJET01C",
+        "QGSJET01D",
         "QGSJet",
         "01c",
         -1,
