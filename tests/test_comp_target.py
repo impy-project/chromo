@@ -6,6 +6,7 @@ from collections import Counter
 import pytest
 from multiprocessing import Pool
 from multiprocessing.context import TimeoutError
+from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
 
 # generate list of all models in impy.models
 models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
@@ -26,6 +27,7 @@ def run_model(model, ekin):
 
 @pytest.mark.parametrize("model", models)
 def test_generators(model):
+    xfail_on_ci_if_model_is_incompatible(model)
     if model in (
         im.Sophia20,
         im.Phojet112,

@@ -40,6 +40,7 @@ def xfail_on_ci_if_model_is_incompatible(Model):
         im.QGSJetII03,
         im.QGSJetII04,
         im.Phojet191,
+        im.Phojet112,
         im.EposLHC,
         im.DpmjetIII306,
         im.DpmjetIII191,
