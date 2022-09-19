@@ -159,14 +159,12 @@ f2py_add_module(_sib23
 )
 
 
-
-if(DEFINED ENV{IMPY_EXTRA_MODELS})
-  ### sib23c00
-  f2py_add_module(_sib23c00
+  ### sib23c01
+  f2py_add_module(_sib23c01
     FUNCTIONS
     ${SIBYLL_COMMON_FUNCTIONS} sibhep3
     SOURCES
-    ${fortran_dir}/sibyll/sibyll2.3c00.f
+    ${fortran_dir}/sibyll/sibyll2.3c01.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
     ${logging_source}
     ${rangen_source}
@@ -175,12 +173,14 @@ if(DEFINED ENV{IMPY_EXTRA_MODELS})
     SIBYLL_TABLE_LENGTH=99
   )
 
-  ### sib23c01
-  f2py_add_module(_sib23c01
+
+if(DEFINED ENV{IMPY_EXTRA_MODELS})
+  ### sib23c00
+  f2py_add_module(_sib23c00
     FUNCTIONS
     ${SIBYLL_COMMON_FUNCTIONS} sibhep3
     SOURCES
-    ${fortran_dir}/sibyll/sibyll2.3c01.f
+    ${fortran_dir}/sibyll/sibyll2.3c00.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
     ${logging_source}
     ${rangen_source}
@@ -415,7 +415,7 @@ f2py_add_module(_dpmjetIII191
   pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini pho_ptcut
   pytune pho_rregpar pho_sregpar pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint
   pho_harxto pho_harxpt pho_setpcomb dt_phoxs dt_xshn dt_flahad
-  dt_title pho_ghhias init_rmmard ${impy_logging}
+  dt_title dt_ficonf pho_ghhias init_rmmard ${impy_logging}
   SOURCES
   ${dpmjetIII191_modded_sources}
   ${fortran_dir}/dpmjetIII-19.1/common/dummies.f

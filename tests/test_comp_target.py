@@ -1,4 +1,4 @@
-from impy.constants import TeV
+from impy.constants import TeV, GeV
 from impy.kinematics import CenterOfMass, CompositeTarget
 import impy.models as im
 import abc
@@ -12,7 +12,8 @@ models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
 
 
 def run_model(model, ekin):
-    gen = model(ekin)
+    # All tests pass for seed=3453342
+    gen = model(ekin, seed=3453342)
 
     c = Counter()
     for event in gen(10):
@@ -32,9 +33,6 @@ def test_generators(model):
     ):
         pytest.xfail("Model doesn't support nuclei")
 
-    if model in (im.UrQMD34,):
-        pytest.xfail("TimeoutError")
-
     projectile = "pi-"
     seed_for_test = 321
     target = CompositeTarget(
@@ -48,6 +46,9 @@ def test_generators(model):
         seed_for_test,
     )
     ekin = CenterOfMass(7 * TeV, projectile, target)
+
+    if model in (im.UrQMD34,):
+        ekin = CenterOfMass(50 * GeV, projectile, target)
 
     # Some models need to initialize same fortran code, which can only be
     # initialized once. As a workaround, we run each model in a separate

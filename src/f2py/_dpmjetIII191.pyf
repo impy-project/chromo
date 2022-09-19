@@ -2665,6 +2665,789 @@ python module _dpmjetIII191 ! in
             common /pydat1/ mstu,paru,mstj,parj
             common /pypars/ mstp,parp,msti,pari
         end subroutine pytune
+        subroutine dt_ficonf(ijproj,ip,ipz,it,itz,nloop,irej) ! in :_dpmjetIII191:CMakeFiles/_dpmjetIII191.dir/pyf_sources/DT_FICONF.f.proc
+            integer :: ijproj
+            integer :: ip
+            integer :: ipz
+            integer :: it
+            integer :: itz
+            integer :: nloop
+            integer :: irej
+            integer :: linp
+            integer :: lout
+            integer :: ldat
+            integer :: lpri
+            integer :: nhkk
+            integer :: nevhkk
+            integer dimension(250000) :: isthkk
+            integer dimension(250000) :: idhkk
+            integer dimension(2,250000) :: jmohkk
+            integer dimension(2,250000) :: jdahkk
+            double precision dimension(5,250000) :: phkk
+            double precision dimension(4,250000) :: vhkk
+            double precision dimension(4,250000) :: whkk
+            integer dimension(250000) :: idres
+            integer dimension(250000) :: idxres
+            integer dimension(250000) :: nobam
+            integer dimension(250000) :: idbam
+            integer dimension(250000) :: idch
+            integer dimension(10) :: npoint
+            integer dimension(2,250000) :: ihist
+            integer :: irpt
+            integer :: irhha
+            integer dimension(2) :: irres
+            integer :: lomres
+            integer :: lobres
+            integer dimension(2) :: irchki
+            integer :: irfrag
+            integer dimension(3) :: ircron
+            integer :: irevt
+            integer dimension(3) :: irexci
+            integer dimension(2) :: irdiff
+            integer :: irinc
+            double precision :: bimin
+            double precision :: bimax
+            double precision :: xsfrac
+            integer :: icentr
+            double precision dimension(5) :: pinipr
+            double precision dimension(5) :: pinita
+            double precision dimension(5) :: prclpr
+            double precision dimension(5) :: prclta
+            double precision dimension(5) :: trclpr
+            double precision dimension(5) :: trclta
+            logical :: lrclpr
+            logical :: lrclta
+            double precision dimension(2) :: amrcl0
+            double precision dimension(2) :: eexc
+            double precision dimension(2) :: eexcfi
+            integer dimension(2) :: ntot
+            integer dimension(2) :: npro
+            integer dimension(2) :: nn
+            integer dimension(2) :: nh
+            integer dimension(2) :: nhpos
+            integer dimension(2) :: nq
+            integer dimension(2) :: ntotfi
+            integer dimension(2) :: nprofi
+            double precision dimension(4) :: excdpm
+            double precision dimension(2) :: exceva
+            integer :: nincge
+            integer dimension(2,3) :: nincco
+            integer dimension(2,2) :: ninchr
+            integer dimension(2) :: nincwo
+            integer dimension(2,4) :: nincst
+            integer dimension(2) :: nincev
+            integer dimension(2) :: nresto
+            integer dimension(2) :: nrespr
+            integer dimension(2) :: nresnu
+            integer dimension(2) :: nresba
+            integer dimension(2) :: nrespb
+            integer dimension(2) :: nresch
+            integer dimension(4) :: nresev
+            integer dimension(2,6) :: neva
+            integer dimension(2) :: nevaga
+            integer dimension(2) :: nevaht
+            integer dimension(2,2,240) :: nevahy
+            integer dimension(2,2) :: nevafi
+            integer dimension(2) :: ifrag
+            integer :: iresco
+            integer :: imshl
+            integer :: iresrj
+            integer dimension(6) :: ioulev
+            logical :: lemcck
+            logical dimension(10) :: lhadro
+            logical :: lseadi
+            logical :: levapo
+            integer :: iframe
+            integer :: itrspt
+            integer :: ifusion
+            integer :: iflow
+            character dimension(210,8),intent(c) :: aname
+            double precision dimension(210) :: aam
+            double precision dimension(210) :: ga
+            double precision dimension(210) :: tau
+            integer dimension(210) :: iich
+            integer dimension(210) :: iibar
+            integer dimension(210) :: k1
+            integer dimension(210) :: k2
+            double precision dimension(60000) :: cxr
+            double precision dimension(60000) :: cyr
+            double precision dimension(60000) :: czr
+            double precision dimension(60000) :: cxrpol
+            double precision dimension(60000) :: cyrpol
+            double precision dimension(60000) :: czrpol
+            double precision dimension(60000) :: tki
+            double precision dimension(60000) :: plr
+            double precision dimension(60000) :: wei
+            double precision dimension(60000) :: agesec
+            double precision :: tv
+            double precision :: tvcms
+            double precision :: tvrecl
+            double precision :: tvheav
+            double precision :: tvbind
+            integer dimension(60000) :: kpart
+            integer dimension(60000) :: infext
+            integer :: np0
+            integer :: np
+            double precision :: amntar
+            double precision :: ammtar
+            double precision :: amnzm1
+            double precision :: ammzm1
+            double precision :: amnnm1
+            double precision :: ammnm1
+            double precision :: anow
+            double precision :: znow
+            double precision :: ancoll
+            double precision :: zncoll
+            double precision :: ammlft
+            double precision :: amnlft
+            double precision :: eres
+            double precision :: ekres
+            double precision :: amnres
+            double precision :: ammres
+            double precision :: ptres
+            double precision :: pxres
+            double precision :: pyres
+            double precision :: pzres
+            double precision :: ptres2
+            double precision :: angres
+            double precision :: anxres
+            double precision :: anyres
+            double precision :: anzres
+            double precision :: tvestr
+            double precision :: anestr
+            double precision dimension(4) :: bhyres
+            integer :: ktarp
+            integer :: ktarn
+            integer :: igreyp
+            integer :: igreyn
+            integer :: ipdpm0
+            integer :: ipdpm1
+            integer :: ipreeh
+            integer :: iprdeu
+            integer :: iprtri
+            integer :: ipr3he
+            integer :: ipr4he
+            integer :: icres
+            integer :: ibres
+            integer :: istres
+            integer :: ismres
+            integer :: ihyres
+            integer :: ievapl
+            integer :: ievaph
+            integer :: ievpho
+            integer :: ievneu
+            integer :: ievpro
+            integer :: ievdeu
+            integer :: ievtri
+            integer :: iev3he
+            integer :: iev4he
+            integer :: ideexg
+            integer :: ibtar
+            integer :: ichtar
+            integer :: ibleft
+            integer :: icleft
+            integer :: ichbln
+            integer :: icestr
+            integer :: ibestr
+            integer :: iother
+            integer dimension(4) :: khyres
+            logical :: lrnfss
+            logical :: lfragm
+            logical :: lfkevt
+            double precision :: av0wel
+            double precision :: apfrmx
+            double precision :: aefrmx
+            double precision :: aefrma
+            double precision :: rdsnuc
+            double precision dimension(2) :: v0well
+            double precision dimension(2) :: pfrmmx
+            double precision dimension(2) :: efrmmx
+            double precision dimension(2) :: efrmav
+            double precision dimension(2) :: amnucl
+            double precision dimension(2) :: amnusq
+            double precision dimension(2) :: ebndng
+            double precision dimension(2) :: veffnu
+            double precision dimension(2) :: eslope
+            double precision dimension(2) :: pkmnnu
+            double precision dimension(2) :: ekmnnu
+            double precision dimension(2) :: pkmxnu
+            double precision dimension(2) :: ekmxnu
+            double precision dimension(2) :: ekmnav
+            double precision dimension(2) :: ekinav
+            double precision dimension(2) :: exmnav
+            double precision dimension(2) :: ekupnu
+            double precision dimension(2) :: exmnnu
+            double precision dimension(2) :: exupnu
+            double precision dimension(2) :: erclav
+            double precision dimension(2) :: eswell
+            double precision dimension(2) :: fincup
+            double precision :: amrcav
+            double precision :: amrcsq
+            double precision :: ato1o3
+            double precision :: zto1o3
+            double precision :: frmrfc
+            double precision dimension(131) :: elbnde
+            double precision :: dpower
+            double precision :: fsprd0
+            double precision :: fshpfn
+            double precision :: rn1gsc
+            double precision :: rn2gsc
+            double precision :: rnswtc
+            logical dimension(64) :: ldiffr
+            logical :: lpower
+            logical :: linctv
+            logical :: levprt
+            logical :: lheavy
+            logical :: ldeexg
+            logical :: lgdhpr
+            logical :: lpreex
+            logical :: lhlfix
+            logical :: lprfix
+            logical :: lparwv
+            logical :: lsngch
+            logical :: lschdf
+            logical :: lbmprq
+            logical :: lhadri
+            logical :: lnucri
+            logical :: lpeanu
+            logical :: levbme
+            logical :: levrqm
+            logical :: lphdrc
+            logical :: latmss
+            logical :: lismrs
+            logical :: lchdcy
+            logical :: lchdcr
+            logical :: lmlccr
+            logical :: lrvkin
+            logical :: lvp2xx
+            logical :: lv2xnw
+            logical :: lnwv2x
+            logical :: levfin
+            double precision dimension(100) :: cxheav
+            double precision dimension(100) :: cyheav
+            double precision dimension(100) :: czheav
+            double precision dimension(100) :: tkheav
+            double precision dimension(100) :: pheavy
+            double precision dimension(100) :: wheavy
+            double precision dimension(100) :: agheav
+            double precision dimension(4,40) :: bhheav
+            double precision dimension(40) :: amheav
+            double precision dimension(40) :: amnhea
+            integer dimension(100) :: kheavy
+            integer dimension(100) :: infhea
+            integer dimension(40) :: icheav
+            integer dimension(40) :: ibheav
+            integer dimension(40) :: imheav
+            integer dimension(40) :: ihheav
+            integer dimension(4,40) :: khheav
+            integer :: npheav
+            character dimension(40,8),intent(c) :: anheav
+            integer :: nevent
+            integer :: icasca
+            common /dtflka/ linp,lout,ldat,lpri
+            common /dtevt1/ nhkk,nevhkk,isthkk,idhkk,jmohkk,jdahkk,phkk,vhkk,whkk
+            common /dtevt2/ idres,idxres,nobam,idbam,idch,npoint,ihist
+            common /dtrejc/ irpt,irhha,irres,lomres,lobres,irchki,irfrag,ircron,irevt,irexci,irdiff,irinc
+            common /dtimpa/ bimin,bimax,xsfrac,icentr
+            common /dtrnu1/ pinipr,pinita,prclpr,prclta,trclpr,trclta,lrclpr,lrclta
+            common /dtrnu2/ amrcl0,eexc,eexcfi,ntot,npro,nn,nh,nhpos,nq,ntotfi,nprofi
+            common /dtsta2/ excdpm,exceva,nincge,nincco,ninchr,nincwo,nincst,nincev,nresto,nrespr,nresnu,nresba,nrespb,nresch,nresev,neva,nevaga,nevaht,nevahy,nevafi
+            common /dtflg1/ ifrag,iresco,imshl,iresrj,ioulev,lemcck,lhadro,lseadi,levapo,iframe,itrspt,ifusion,iflow
+            common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
+            common /genstk/ cxr,cyr,czr,cxrpol,cyrpol,czrpol,tki,plr,wei,agesec,tv,tvcms,tvrecl,tvheav,tvbind,kpart,infext,np0,np
+            common /resnuc/ amntar,ammtar,amnzm1,ammzm1,amnnm1,ammnm1,anow,znow,ancoll,zncoll,ammlft,amnlft,eres,ekres,amnres,ammres,ptres,pxres,pyres,pzres,ptres2,angres,anxres,anyres,anzres,tvestr,anestr,bhyres,ktarp,ktarn,igreyp,igreyn,ipdpm0,ipdpm1,ipreeh,iprdeu,iprtri,ipr3he,ipr4he,icres,ibres,istres,ismres,ihyres,ievapl,ievaph,ievpho,ievneu,ievpro,ievdeu,ievtri,iev3he,iev4he,ideexg,ibtar,ichtar,ibleft,icleft,ichbln,icestr,ibestr,iother,khyres,lrnfss,lfragm,lfkevt
+            common /nucdat/ av0wel,apfrmx,aefrmx,aefrma,rdsnuc,v0well,pfrmmx,efrmmx,efrmav,amnucl,amnusq,ebndng,veffnu,eslope,pkmnnu,ekmnnu,pkmxnu,ekmxnu,ekmnav,ekinav,exmnav,ekupnu,exmnnu,exupnu,erclav,eswell,fincup,amrcav,amrcsq,ato1o3,zto1o3,frmrfc,elbnde
+            common /parevt/ dpower,fsprd0,fshpfn,rn1gsc,rn2gsc,rnswtc,ldiffr,lpower,linctv,levprt,lheavy,ldeexg,lgdhpr,lpreex,lhlfix,lprfix,lparwv,lsngch,lschdf,lbmprq,lhadri,lnucri,lpeanu,levbme,levrqm,lphdrc,latmss,lismrs,lchdcy,lchdcr,lmlccr,lrvkin,lvp2xx,lv2xnw,lnwv2x,levfin
+            common /fheavy/ cxheav,cyheav,czheav,tkheav,pheavy,wheavy,agheav,bhheav,amheav,amnhea,kheavy,infhea,icheav,ibheav,imheav,ihheav,khheav,npheav
+            common /fheavc/ anheav
+            common /dtevno/ nevent,icasca
+        end subroutine dt_ficonf
+        subroutine dt_init(ncases,epn,npmass,npchar,ntmass,ntchar,idp,iglau) ! in :_dpmjetIII191:CMakeFiles/_dpmjetIII191.dir/pyf_sources/DT_INIT.f.proc
+            integer :: ncases
+            double precision :: epn
+            integer :: npmass
+            integer :: npchar
+            integer :: ntmass
+            integer :: ntchar
+            integer :: idp
+            integer :: iglau
+            integer :: linp
+            integer :: lout
+            integer :: ldat
+            integer :: lpri
+            character dimension(210,8),intent(c) :: aname
+            double precision dimension(210) :: aam
+            double precision dimension(210) :: ga
+            double precision dimension(210) :: tau
+            integer dimension(210) :: iich
+            integer dimension(210) :: iibar
+            integer dimension(210) :: k1
+            integer dimension(210) :: k2
+            character dimension(30,8),intent(c) :: btype
+            double precision :: dpower
+            double precision :: fsprd0
+            double precision :: fshpfn
+            double precision :: rn1gsc
+            double precision :: rn2gsc
+            double precision :: rnswtc
+            logical dimension(64) :: ldiffr
+            logical :: lpower
+            logical :: linctv
+            logical :: levprt
+            logical :: lheavy
+            logical :: ldeexg
+            logical :: lgdhpr
+            logical :: lpreex
+            logical :: lhlfix
+            logical :: lprfix
+            logical :: lparwv
+            logical :: lsngch
+            logical :: lschdf
+            logical :: lbmprq
+            logical :: lhadri
+            logical :: lnucri
+            logical :: lpeanu
+            logical :: levbme
+            logical :: levrqm
+            logical :: lphdrc
+            logical :: latmss
+            logical :: lismrs
+            logical :: lchdcy
+            logical :: lchdcr
+            logical :: lmlccr
+            logical :: lrvkin
+            logical :: lvp2xx
+            logical :: lv2xnw
+            logical :: lnwv2x
+            logical :: levfin
+            double precision dimension(3) :: brpnfr
+            double precision dimension(3) :: ebrpfr
+            double precision dimension(3) :: emvbrp
+            double precision :: fdscst
+            integer :: ilvmod
+            integer :: jlvmod
+            integer :: jsipfl
+            integer :: imssfr
+            integer :: jmssfr
+            integer :: ievfss
+            integer :: mxahev
+            integer :: mxzhev
+            integer :: ifhvfl
+            integer :: ifkymx
+            integer :: igmcmp
+            integer :: mpmode
+            integer :: msmode
+            integer :: mumode
+            integer :: mfmode
+            integer :: memode
+            integer :: mrmode
+            integer :: itmcrr
+            integer :: iasycr
+            integer :: ifsbcr
+            integer :: ifssbr
+            integer :: ipexlv
+            integer :: ieexlv
+            integer :: igexlv
+            logical :: loldev
+            logical :: lufull
+            logical :: lnwlow
+            logical :: lasmen
+            logical :: lgmcmp
+            logical :: lgdrft
+            logical :: ldsclv
+            logical :: ldscgm
+            logical :: lndsld
+            logical :: lmnjpr
+            logical :: lbrpen
+            logical :: lnwbrp
+            logical :: lifkey
+            logical :: loldsm
+            logical :: lnaipr
+            logical :: lguspr
+            logical :: lflkco
+            logical :: llvmod
+            logical :: lhvevp
+            logical :: lhvecn
+            logical :: lhvcal
+            logical :: lhvral
+            logical :: lhvsgf
+            logical :: ltmcrr
+            logical :: lbzzcr
+            logical :: lqcskp
+            logical :: lpexlv
+            logical :: leexlv
+            logical :: lgexlv
+            logical :: levxpl
+            double precision :: amufbk
+            double precision dimension(700) :: eexfbk
+            double precision dimension(700) :: amfrbk
+            double precision dimension(700) :: weifbk
+            double precision dimension(700) :: gamfbk
+            double precision dimension(43000) :: exfrbk
+            double precision dimension(43000) :: sdmfbk
+            double precision dimension(43000) :: coufbk
+            double precision dimension(43000) :: cenfbk
+            double precision dimension(43000) :: geffbk
+            double precision dimension(24,22) :: rcbfbk
+            double precision dimension(24,22) :: exjpfb
+            double precision :: exmxfb
+            double precision :: r0frbk
+            double precision :: r0bfbk
+            double precision :: r0cfbk
+            double precision :: c1cfbk
+            double precision :: c2cfbk
+            double precision :: frbkls
+            double precision :: rewfbk
+            integer dimension(700) :: ifrbkn
+            integer dimension(700) :: ifrbkz
+            integer dimension(700) :: ifbksp
+            integer dimension(700) :: ifbkpr
+            integer dimension(700) :: ifbkst
+            integer dimension(700) :: ifbklv
+            integer dimension(23,21,2) :: ipsind
+            integer dimension(26) :: jpsind
+            integer dimension(23,21,2) :: ifbind
+            integer dimension(18) :: jfbind
+            integer dimension(9,43000) :: ifbcha
+            integer :: iposst
+            integer :: iposfb
+            integer :: ifbstf
+            integer :: ifbpsf
+            integer :: ifbpsi
+            integer :: ifbfrb
+            integer :: ifbchn
+            integer :: ifbnc1
+            integer :: ifbnc2
+            integer :: nbufbk
+            logical :: lfrmbk
+            logical :: lncmss
+            logical :: lewfbk
+            double precision dimension(100) :: emufra
+            integer dimension(100) :: iemuma
+            integer dimension(100) :: iemuch
+            integer :: ncompo
+            integer :: iemul
+            double precision dimension(100) :: rash
+            double precision dimension(100) :: rbsh
+            double precision dimension(100) :: bmax
+            double precision dimension(100) :: bstep
+            double precision :: sigsh
+            double precision :: rosh
+            double precision :: gsh
+            double precision dimension(9,5,100,50) :: bsite
+            integer :: nsiteb
+            integer :: nstatb
+            double precision dimension(8) :: ecmnn
+            double precision dimension(5) :: q2g
+            double precision :: ecmnow
+            double precision :: q2
+            double precision dimension(8,5,100) :: xstot
+            double precision dimension(8,5,100) :: xsela
+            double precision dimension(8,5,100) :: xsqep
+            double precision dimension(8,5,100) :: xsqet
+            double precision dimension(8,5,100) :: xsqe2
+            double precision dimension(8,5,100) :: xspro
+            double precision dimension(8,5,100) :: xsdel
+            double precision dimension(8,5,100) :: xsdqe
+            double precision dimension(8,5,100) :: xetot
+            double precision dimension(8,5,100) :: xeela
+            double precision dimension(8,5,100) :: xeqep
+            double precision dimension(8,5,100) :: xeqet
+            double precision dimension(8,5,100) :: xeqe2
+            double precision dimension(8,5,100) :: xepro
+            double precision dimension(8,5,100) :: xedel
+            double precision dimension(8,5,100) :: xedqe
+            double precision :: bslope
+            integer :: nebini
+            integer :: nqbini
+            double precision :: ehadth
+            double precision :: ehadlo
+            double precision :: ehadhi
+            integer :: inthad
+            integer :: idxta
+            double precision :: bimin
+            double precision :: bimax
+            double precision :: xsfrac
+            integer :: icentr
+            double precision :: taufor
+            integer :: ktauge
+            integer :: itauve
+            integer :: incmod
+            logical :: lpauli
+            double precision :: seasq
+            double precision :: cronco
+            double precision :: cutof
+            integer :: mkcron
+            integer :: isicha
+            integer :: irecom
+            logical :: lco2cr
+            logical :: lintpt
+            double precision :: xseacu
+            double precision :: unon
+            double precision :: unom
+            double precision :: unosea
+            double precision :: cvq
+            double precision :: cdq
+            double precision :: csea
+            double precision :: ssmima
+            double precision :: ssmimq
+            double precision :: vvmthr
+            integer dimension(2) :: ifrag
+            integer :: iresco
+            integer :: imshl
+            integer :: iresrj
+            integer dimension(6) :: ioulev
+            logical :: lemcck
+            logical dimension(10) :: lhadro
+            logical :: lseadi
+            logical :: levapo
+            integer :: iframe
+            integer :: itrspt
+            integer :: ifusion
+            integer :: iflow
+            double precision dimension(2) :: pfermp
+            double precision dimension(2) :: pfermn
+            double precision :: fermod
+            double precision dimension(2) :: ebindp
+            double precision dimension(2) :: ebindn
+            double precision dimension(2,210) :: epot
+            double precision dimension(2) :: etacou
+            integer :: icoul
+            logical :: lfermi
+            double precision dimension(1000) :: fluixx
+            integer :: ifluct
+            integer dimension(20) :: mstux
+            double precision dimension(20) :: parux
+            integer dimension(20) :: mstjx
+            double precision dimension(20) :: parjx
+            integer dimension(20) :: imstu
+            integer dimension(20) :: iparu
+            integer dimension(20) :: imstj
+            integer dimension(20) :: iparj
+            integer :: nmstu
+            integer :: nparu
+            integer :: nmstj
+            integer :: nparj
+            double precision :: pdb
+            double precision dimension(3) :: pdbsea
+            integer :: isig0
+            integer :: ipi0
+            logical :: ovwtdc
+            double precision dimension(3,8) :: dbrkr
+            double precision dimension(3,8) :: dbrka
+            double precision :: cham1
+            double precision :: cham3
+            double precision :: chab1
+            double precision :: chab3
+            character dimension(4,8),intent(c) :: cmodel
+            double precision :: elojet
+            integer :: mcgene
+            logical :: lphoin
+            integer :: it
+            integer :: itz
+            integer :: ip
+            integer :: ipz
+            integer :: ijproj
+            integer :: ibproj
+            integer :: ijtarg
+            integer :: ibtarg
+            double precision :: virt
+            double precision dimension(4) :: pgamm
+            double precision dimension(4) :: plept0
+            double precision dimension(4) :: plept1
+            double precision dimension(4) :: pnucl
+            integer :: idirec
+            integer :: isingd
+            integer :: idoubd
+            integer :: iflagd
+            integer :: idiff
+            double precision :: dibeta
+            double precision :: dialph
+            double precision dimension(2) :: gacms
+            double precision dimension(2) :: bgcms
+            double precision :: galab
+            double precision :: bglab
+            double precision :: blab
+            double precision :: umo
+            double precision :: ppcm
+            double precision :: eproj
+            double precision :: pproj
+            double precision :: ecmin
+            double precision :: ecmax
+            double precision :: xbjmin
+            double precision :: elmin
+            double precision :: egmin
+            double precision :: egmax
+            double precision :: ymin
+            double precision :: ymax
+            double precision :: q2min
+            double precision :: q2max
+            double precision :: thmin
+            double precision :: thmax
+            double precision :: q2li
+            double precision :: q2hi
+            double precision :: ecmli
+            double precision :: ecmhi
+            double precision :: rl2
+            double precision :: epspol
+            integer dimension(2) :: intrge
+            integer :: idpdf
+            integer :: modega
+            integer dimension(3) :: ishad
+            integer :: jstatb
+            integer :: jbinsb
+            character*8 :: cglb
+            integer :: ioglb
+            logical :: lprod
+            double precision :: varelo
+            double precision :: varehi
+            double precision :: varclo
+            double precision :: varchi
+            integer dimension(50) :: ihispp
+            integer dimension(50) :: ihisxs
+            integer :: ixstbl
+            integer dimension(200) :: mstu
+            double precision dimension(200) :: paru
+            integer dimension(200) :: mstj
+            double precision dimension(200) :: parj
+            integer dimension(500,3) :: mdcy
+            integer dimension(8000,2) :: mdme
+            double precision dimension(8000) :: brat
+            integer dimension(8000,5) :: kfdp
+            double precision dimension(14) :: cut
+            integer dimension(40) :: lst
+            double precision dimension(30) :: parl
+            double precision :: tmpx
+            double precision :: tmpy
+            double precision :: tmpw2
+            double precision :: tmpq2
+            double precision :: tmpu
+            double precision :: rppn
+            integer :: lepin
+            integer :: inter
+            double precision :: dsigsu
+            double precision :: dsigmc
+            integer :: ndsig
+            integer :: neutyp
+            integer :: neudec
+            integer :: nevent
+            integer :: icasca
+            common /dtflka/ linp,lout,ldat,lpri
+            common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
+            common /dtpain/ btype
+            common /parevt/ dpower,fsprd0,fshpfn,rn1gsc,rn2gsc,rnswtc,ldiffr,lpower,linctv,levprt,lheavy,ldeexg,lgdhpr,lpreex,lhlfix,lprfix,lparwv,lsngch,lschdf,lbmprq,lhadri,lnucri,lpeanu,levbme,levrqm,lphdrc,latmss,lismrs,lchdcy,lchdcr,lmlccr,lrvkin,lvp2xx,lv2xnw,lnwv2x,levfin
+            common /evaflg/ brpnfr,ebrpfr,emvbrp,fdscst,ilvmod,jlvmod,jsipfl,imssfr,jmssfr,ievfss,mxahev,mxzhev,ifhvfl,ifkymx,igmcmp,mpmode,msmode,mumode,mfmode,memode,mrmode,itmcrr,iasycr,ifsbcr,ifssbr,ipexlv,ieexlv,igexlv,loldev,lufull,lnwlow,lasmen,lgmcmp,lgdrft,ldsclv,ldscgm,lndsld,lmnjpr,lbrpen,lnwbrp,lifkey,loldsm,lnaipr,lguspr,lflkco,llvmod,lhvevp,lhvecn,lhvcal,lhvral,lhvsgf,ltmcrr,lbzzcr,lqcskp,lpexlv,leexlv,lgexlv,levxpl
+            common /frbkcm/ amufbk,eexfbk,amfrbk,weifbk,gamfbk,exfrbk,sdmfbk,coufbk,cenfbk,geffbk,rcbfbk,exjpfb,exmxfb,r0frbk,r0bfbk,r0cfbk,c1cfbk,c2cfbk,frbkls,rewfbk,ifrbkn,ifrbkz,ifbksp,ifbkpr,ifbkst,ifbklv,ipsind,jpsind,ifbind,jfbind,ifbcha,iposst,iposfb,ifbstf,ifbpsf,ifbpsi,ifbfrb,ifbchn,ifbnc1,ifbnc2,nbufbk,lfrmbk,lncmss,lewfbk
+            common /dtcomp/ emufra,iemuma,iemuch,ncompo,iemul
+            common /dtglam/ rash,rbsh,bmax,bstep,sigsh,rosh,gsh,bsite,nsiteb,nstatb
+            common /dtglxs/ ecmnn,q2g,ecmnow,q2,xstot,xsela,xsqep,xsqet,xsqe2,xspro,xsdel,xsdqe,xetot,xeela,xeqep,xeqet,xeqe2,xepro,xedel,xedqe,bslope,nebini,nqbini
+            common /hnthre/ ehadth,ehadlo,ehadhi,inthad,idxta
+            common /dtimpa/ bimin,bimax,xsfrac,icentr
+            common /dtfoti/ taufor,ktauge,itauve,incmod,lpauli
+            common /dtchai/ seasq,cronco,cutof,mkcron,isicha,irecom,lco2cr,lintpt
+            common /dtxcut/ xseacu,unon,unom,unosea,cvq,cdq,csea,ssmima,ssmimq,vvmthr
+            common /dtflg1/ ifrag,iresco,imshl,iresrj,ioulev,lemcck,lhadro,lseadi,levapo,iframe,itrspt,ifusion,iflow
+            common /dtnpot/ pfermp,pfermn,fermod,ebindp,ebindn,epot,etacou,icoul,lfermi
+            common /dtxsfl/ fluixx,ifluct
+            common /dtfrpa/ mstux,parux,mstjx,parjx,imstu,iparu,imstj,iparj,nmstu,nparu,nmstj,nparj,pdb,pdbsea,isig0,ipi0,ovwtdc
+            common /dtdiqb/ dbrkr,dbrka,cham1,cham3,chab1,chab3
+            common /dtmodl/ cmodel,elojet,mcgene,lphoin
+            common /dtprta/ it,itz,ip,ipz,ijproj,ibproj,ijtarg,ibtarg
+            common /dtgpro/ virt,pgamm,plept0,plept1,pnucl,idirec
+            common /dtflg3/ isingd,idoubd,iflagd,idiff
+            common /dtdiha/ dibeta,dialph
+            common /dtltra/ gacms,bgcms,galab,bglab,blab,umo,ppcm,eproj,pproj
+            common /dtlcut/ ecmin,ecmax,xbjmin,elmin,egmin,egmax,ymin,ymax,q2min,q2max,thmin,thmax,q2li,q2hi,ecmli,ecmhi
+            common /dtvdmp/ rl2,epspol,intrge,idpdf,modega,ishad
+            common /dtglgp/ jstatb,jbinsb,cglb,ioglb,lprod
+            common /dtvare/ varelo,varehi,varclo,varchi
+            common /dthis3/ ihispp,ihisxs,ixstbl
+            common /pydat1/ mstu,paru,mstj,parj
+            common /pydat3/ mdcy,mdme,brat,kfdp
+            common /leptou/ cut,lst,parl,tmpx,tmpy,tmpw2,tmpq2,tmpu
+            common /leptoi/ rppn,lepin,inter
+            common /qneuto/ dsigsu,dsigmc,ndsig,neutyp,neudec
+            common /dtevno/ nevent,icasca
+        end subroutine dt_init
+        subroutine dt_initjs(mode) ! in :_dpmjetIII191:CMakeFiles/_dpmjetIII191.dir/pyf_sources/DT_INITJS.f.proc
+            integer :: mode
+            integer :: linp
+            integer :: lout
+            integer :: ldat
+            integer :: lpri
+            double precision dimension(457) :: am
+            double precision dimension(457) :: ga
+            double precision dimension(457) :: tau
+            double precision dimension(457) :: amdisc
+            double precision dimension(457) :: zmnabs
+            double precision dimension(457) :: atnmna
+            double precision :: atxn14
+            double precision :: atmn14
+            double precision dimension(21) :: rnrn14
+            integer dimension(457) :: ich
+            integer dimension(457) :: ibar
+            integer dimension(457) :: isosym
+            integer dimension(457) :: ichcon
+            integer dimension(457) :: k1
+            integer dimension(457) :: k2
+            integer dimension(457) :: kptoip
+            integer dimension(71) :: iptokp
+            integer dimension(457) :: kptoia
+            integer dimension(127) :: iatokp
+            integer dimension(71) :: idcflg
+            integer dimension(71) :: iptype
+            character dimension(457,8),intent(c) :: aname
+            integer dimension(200) :: mstu
+            double precision dimension(200) :: paru
+            integer dimension(200) :: mstj
+            double precision dimension(200) :: parj
+            integer dimension(500,4) :: kchg
+            double precision dimension(500,4) :: pmas
+            double precision dimension(2000) :: parf
+            double precision dimension(4,4) :: vckm
+            integer dimension(500,3) :: mdcy
+            integer dimension(8000,2) :: mdme
+            double precision dimension(8000) :: brat
+            integer dimension(8000,5) :: kfdp
+            integer dimension(20) :: mstux
+            double precision dimension(20) :: parux
+            integer dimension(20) :: mstjx
+            double precision dimension(20) :: parjx
+            integer dimension(20) :: imstu
+            integer dimension(20) :: iparu
+            integer dimension(20) :: imstj
+            integer dimension(20) :: iparj
+            integer :: nmstu
+            integer :: nparu
+            integer :: nmstj
+            integer :: nparj
+            double precision :: pdb
+            double precision dimension(3) :: pdbsea
+            integer :: isig0
+            integer :: ipi0
+            logical, optional :: ovwtdc=.true.
+            integer dimension(2) :: ifrag
+            integer :: iresco
+            integer :: imshl
+            integer :: iresrj
+            integer dimension(6) :: ioulev
+            logical :: lemcck
+            logical dimension(10) :: lhadro
+            logical :: lseadi
+            logical :: levapo
+            integer :: iframe
+            integer :: itrspt
+            integer :: ifusion
+            integer :: iflow
+            common /dtflka/ linp,lout,ldat,lpri
+            common /part/ am,ga,tau,amdisc,zmnabs,atnmna,atxn14,atmn14,rnrn14,ich,ibar,isosym,ichcon,k1,k2,kptoip,iptokp,kptoia,iatokp,idcflg,iptype
+            common /chpart/ aname
+            common /pydat1/ mstu,paru,mstj,parj
+            common /pydat2/ kchg,pmas,parf,vckm
+            common /pydat3/ mdcy,mdme,brat,kfdp
+            common /dtfrpa/ mstux,parux,mstjx,parjx,imstu,iparu,imstj,iparj,nmstu,nparu,nmstj,nparj,pdb,pdbsea,isig0,ipi0,ovwtdc
+            common /dtflg1/ ifrag,iresco,imshl,iresrj,ioulev,lemcck,lhadro,lseadi,levapo,iframe,itrspt,ifusion,iflow
+        end subroutine dt_initjs
         subroutine impy_openlogfile(fname,opunit) ! in :_dpmjetIII191:CMakeFiles/_dpmjetIII191.dir/pyf_sources/logging.f.proc
             character*300 :: fname
             integer :: opunit

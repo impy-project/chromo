@@ -15,6 +15,7 @@ ext_modules = [
     CMakeExtension("impy.models._sib21"),
     CMakeExtension("impy.models._sib23"),
     CMakeExtension("impy.models._sib23d"),
+    CMakeExtension("impy.models._sib23c01"),
     CMakeExtension("impy.models._qgs01"),
     CMakeExtension("impy.models._qgsII03"),
     CMakeExtension("impy.models._qgsII04"),
@@ -79,7 +80,6 @@ if env_variables["DEVELOP_DPMJETIII193_SOURCE"] != "not defined":
 
 if env_variables["IMPY_EXTRA_MODELS"] != "not defined":
     ext_modules.append(CMakeExtension("impy.models._sib23c00"))
-    ext_modules.append(CMakeExtension("impy.models._sib23c01"))
     ext_modules.append(CMakeExtension("impy.models._sib23c02"))
     ext_modules.append(CMakeExtension("impy.models._sib23c03"))
 # End of block for development
