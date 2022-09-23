@@ -256,11 +256,13 @@ phojet = {
         "1.12-35": "iamdata/dpm3/",
         "19.1": "iamdata/dpm3191/",
         "19.2": "iamdata/dpm3191/",
+        "19.3": "iamdata/dpm3191/",
     },
     "param_file": {
         "1.12-35": "iamdata/dpm3/fitpar.dat",
         "19.1": "iamdata/dpm3191/dpmjpar.dat",
         "19.2": "iamdata/dpm3191/dpmjpar.dat",
+        "19.3": "iamdata/dpm3191/dpmjpar.dat",
     },
     "projectiles": {
         "last": [

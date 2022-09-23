@@ -32,6 +32,7 @@ def test_generators(model):
         im.Sophia20,
         im.Phojet112,
         im.Phojet191,
+        im.Phojet193,
     ):
         pytest.xfail("Model doesn't support nuclei")
 

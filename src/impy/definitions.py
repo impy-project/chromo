@@ -201,6 +201,16 @@ interaction_model_nt_init = [
         "center-of-mass",
     ],
     [
+        "PHOJET193",
+        "PHOJET",
+        "19.3",
+        -1,
+        "_phojet193",
+        phojet.PHOJETRun,
+        phojet.PhojetEvent,
+        "center-of-mass",
+    ],
+    [
         "URQMD34",
         "UrQMD",
         "3.4",

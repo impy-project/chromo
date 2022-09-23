@@ -10,7 +10,7 @@ from impy.models.dpmjetIII import DpmjetIII306  # noqa
 from impy.models.epos import EposLHC  # noqa
 from impy.models.qgsjet import QGSJet01d, QGSJetII03, QGSJetII04  # noqa
 from impy.models.dpmjetIII import DpmjetIII191, DpmjetIII193  # noqa
-from impy.models.phojet import Phojet112, Phojet191  # noqa
+from impy.models.phojet import Phojet112, Phojet191, Phojet193  # noqa
 from impy.models.urqmd import UrQMD34  # noqa
 from impy.models.pythia6 import Pythia6  # noqa
 

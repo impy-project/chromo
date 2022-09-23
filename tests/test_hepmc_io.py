@@ -39,9 +39,10 @@ def test_hepmc_io(Model):
         im.DpmjetIII193,
         im.Phojet112,
         im.Phojet191,
+        im.Phojet193,
         im.UrQMD34,
     ):
-        pytest.xfail("The model fails for some parameters")
+        pytest.xfail("The model SHOULD BE FIXED!!!")
 
     events = run_in_separate_process(run, Model, timeout=60)
 
