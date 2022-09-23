@@ -392,7 +392,7 @@ f2py_add_module(_phojet191
   pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini 
   pho_ptcut pytune pho_rregpar pho_sregpar pho_prevnt 
   ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt 
-  pho_setpcomb pho_ghhias init_rmmard ${impy_logging}
+  pho_setpcomb dt_ficonf pho_ghhias init_rmmard ${impy_logging}
   SOURCES
   ${dpmjetIII191_modded_sources}
   ${fortran_dir}/dpmjetIII-19.1/common/dummies.f

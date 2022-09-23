@@ -7,7 +7,7 @@ import pytest
 from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
 
 # generate list of all models in impy.models
-models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
+models = list(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
 
 # models = [im.DpmjetIII306, im.Phojet112]
 
@@ -43,7 +43,7 @@ def test_generator(Model):
         p2pdg,
     )
 
-    c = run_in_separate_process(run_model, Model, ekin)
+    c = run_in_separate_process(run_model, Model, ekin, timeout=60)
 
     assert c[211] > 0, "pi+"
     assert c[-211] > 0, "pi-"

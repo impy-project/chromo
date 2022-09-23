@@ -1097,6 +1097,382 @@ C     It contains Fortran 77 wrappers to fortran functions.
       call setupfunc(cpro,cver)
       end
 
+      subroutine f2pyinitdtevt1(setupfunc)
+      external setupfunc
+      integer nhkk
+      integer nevhkk
+      integer isthkk(250000)
+      integer idhkk(250000)
+      integer jmohkk(2,250000)
+      integer jdahkk(2,250000)
+      double precision phkk(5,250000)
+      double precision vhkk(4,250000)
+      double precision whkk(4,250000)
+      common /dtevt1/ nhkk,nevhkk,isthkk,idhkk,jmohkk,jdahkk,phkk,
+     &vhkk,whkk
+      call setupfunc(nhkk,nevhkk,isthkk,idhkk,jmohkk,jdahkk,phkk,v
+     &hkk,whkk)
+      end
+
+      subroutine f2pyinitdtevt2(setupfunc)
+      external setupfunc
+      integer idres(250000)
+      integer idxres(250000)
+      integer nobam(250000)
+      integer idbam(250000)
+      integer idch(250000)
+      integer npoint(10)
+      integer ihist(2,250000)
+      common /dtevt2/ idres,idxres,nobam,idbam,idch,npoint,ihist
+      call setupfunc(idres,idxres,nobam,idbam,idch,npoint,ihist)
+      end
+
+      subroutine f2pyinitdtrejc(setupfunc)
+      external setupfunc
+      integer irpt
+      integer irhha
+      integer irres(2)
+      integer lomres
+      integer lobres
+      integer irchki(2)
+      integer irfrag
+      integer ircron(3)
+      integer irevt
+      integer irexci(3)
+      integer irdiff(2)
+      integer irinc
+      common /dtrejc/ irpt,irhha,irres,lomres,lobres,irchki,irfrag
+     &,ircron,irevt,irexci,irdiff,irinc
+      call setupfunc(irpt,irhha,irres,lomres,lobres,irchki,irfrag,
+     &ircron,irevt,irexci,irdiff,irinc)
+      end
+
+      subroutine f2pyinitdtimpa(setupfunc)
+      external setupfunc
+      double precision bimin
+      double precision bimax
+      double precision xsfrac
+      integer icentr
+      common /dtimpa/ bimin,bimax,xsfrac,icentr
+      call setupfunc(bimin,bimax,xsfrac,icentr)
+      end
+
+      subroutine f2pyinitdtrnu1(setupfunc)
+      external setupfunc
+      double precision pinipr(5)
+      double precision pinita(5)
+      double precision prclpr(5)
+      double precision prclta(5)
+      double precision trclpr(5)
+      double precision trclta(5)
+      logical lrclpr
+      logical lrclta
+      common /dtrnu1/ pinipr,pinita,prclpr,prclta,trclpr,trclta,lr
+     &clpr,lrclta
+      call setupfunc(pinipr,pinita,prclpr,prclta,trclpr,trclta,lrc
+     &lpr,lrclta)
+      end
+
+      subroutine f2pyinitdtrnu2(setupfunc)
+      external setupfunc
+      double precision amrcl0(2)
+      double precision eexc(2)
+      double precision eexcfi(2)
+      integer ntot(2)
+      integer npro(2)
+      integer nn(2)
+      integer nh(2)
+      integer nhpos(2)
+      integer nq(2)
+      integer ntotfi(2)
+      integer nprofi(2)
+      common /dtrnu2/ amrcl0,eexc,eexcfi,ntot,npro,nn,nh,nhpos,nq,
+     &ntotfi,nprofi
+      call setupfunc(amrcl0,eexc,eexcfi,ntot,npro,nn,nh,nhpos,nq,n
+     &totfi,nprofi)
+      end
+
+      subroutine f2pyinitdtsta2(setupfunc)
+      external setupfunc
+      double precision excdpm(4)
+      double precision exceva(2)
+      integer nincge
+      integer nincco(2,3)
+      integer ninchr(2,2)
+      integer nincwo(2)
+      integer nincst(2,4)
+      integer nincev(2)
+      integer nresto(2)
+      integer nrespr(2)
+      integer nresnu(2)
+      integer nresba(2)
+      integer nrespb(2)
+      integer nresch(2)
+      integer nresev(4)
+      integer neva(2,6)
+      integer nevaga(2)
+      integer nevaht(2)
+      integer nevahy(2,2,240)
+      integer nevafi(2,2)
+      common /dtsta2/ excdpm,exceva,nincge,nincco,ninchr,nincwo,ni
+     &ncst,nincev,nresto,nrespr,nresnu,nresba,nrespb,nresch,nresev,neva,
+     &nevaga,nevaht,nevahy,nevafi
+      call setupfunc(excdpm,exceva,nincge,nincco,ninchr,nincwo,nin
+     &cst,nincev,nresto,nrespr,nresnu,nresba,nrespb,nresch,nresev,neva,n
+     &evaga,nevaht,nevahy,nevafi)
+      end
+
+      subroutine f2pyinitgenstk(setupfunc)
+      external setupfunc
+      double precision cxr(60000)
+      double precision cyr(60000)
+      double precision czr(60000)
+      double precision cxrpol(60000)
+      double precision cyrpol(60000)
+      double precision czrpol(60000)
+      double precision tki(60000)
+      double precision plr(60000)
+      double precision wei(60000)
+      double precision agesec(60000)
+      double precision tv
+      double precision tvcms
+      double precision tvrecl
+      double precision tvheav
+      double precision tvbind
+      integer kpart(60000)
+      integer infext(60000)
+      integer np0
+      integer np
+      common /genstk/ cxr,cyr,czr,cxrpol,cyrpol,czrpol,tki,plr,wei
+     &,agesec,tv,tvcms,tvrecl,tvheav,tvbind,kpart,infext,np0,np
+      call setupfunc(cxr,cyr,czr,cxrpol,cyrpol,czrpol,tki,plr,wei,
+     &agesec,tv,tvcms,tvrecl,tvheav,tvbind,kpart,infext,np0,np)
+      end
+
+      subroutine f2pyinitresnuc(setupfunc)
+      external setupfunc
+      double precision amntar
+      double precision ammtar
+      double precision amnzm1
+      double precision ammzm1
+      double precision amnnm1
+      double precision ammnm1
+      double precision anow
+      double precision znow
+      double precision ancoll
+      double precision zncoll
+      double precision ammlft
+      double precision amnlft
+      double precision eres
+      double precision ekres
+      double precision amnres
+      double precision ammres
+      double precision ptres
+      double precision pxres
+      double precision pyres
+      double precision pzres
+      double precision ptres2
+      double precision angres
+      double precision anxres
+      double precision anyres
+      double precision anzres
+      double precision tvestr
+      double precision anestr
+      double precision bhyres(4)
+      integer ktarp
+      integer ktarn
+      integer igreyp
+      integer igreyn
+      integer ipdpm0
+      integer ipdpm1
+      integer ipreeh
+      integer iprdeu
+      integer iprtri
+      integer ipr3he
+      integer ipr4he
+      integer icres
+      integer ibres
+      integer istres
+      integer ismres
+      integer ihyres
+      integer ievapl
+      integer ievaph
+      integer ievpho
+      integer ievneu
+      integer ievpro
+      integer ievdeu
+      integer ievtri
+      integer iev3he
+      integer iev4he
+      integer ideexg
+      integer ibtar
+      integer ichtar
+      integer ibleft
+      integer icleft
+      integer ichbln
+      integer icestr
+      integer ibestr
+      integer iother
+      integer khyres(4)
+      logical lrnfss
+      logical lfragm
+      logical lfkevt
+      common /resnuc/ amntar,ammtar,amnzm1,ammzm1,amnnm1,ammnm1,an
+     &ow,znow,ancoll,zncoll,ammlft,amnlft,eres,ekres,amnres,ammres,ptres
+     &,pxres,pyres,pzres,ptres2,angres,anxres,anyres,anzres,tvestr,anest
+     &r,bhyres,ktarp,ktarn,igreyp,igreyn,ipdpm0,ipdpm1,ipreeh,iprdeu,ipr
+     &tri,ipr3he,ipr4he,icres,ibres,istres,ismres,ihyres,ievapl,ievaph,i
+     &evpho,ievneu,ievpro,ievdeu,ievtri,iev3he,iev4he,ideexg,ibtar,ichta
+     &r,ibleft,icleft,ichbln,icestr,ibestr,iother,khyres,lrnfss,lfragm,l
+     &fkevt
+      call setupfunc(amntar,ammtar,amnzm1,ammzm1,amnnm1,ammnm1,ano
+     &w,znow,ancoll,zncoll,ammlft,amnlft,eres,ekres,amnres,ammres,ptres,
+     &pxres,pyres,pzres,ptres2,angres,anxres,anyres,anzres,tvestr,anestr
+     &,bhyres,ktarp,ktarn,igreyp,igreyn,ipdpm0,ipdpm1,ipreeh,iprdeu,iprt
+     &ri,ipr3he,ipr4he,icres,ibres,istres,ismres,ihyres,ievapl,ievaph,ie
+     &vpho,ievneu,ievpro,ievdeu,ievtri,iev3he,iev4he,ideexg,ibtar,ichtar
+     &,ibleft,icleft,ichbln,icestr,ibestr,iother,khyres,lrnfss,lfragm,lf
+     &kevt)
+      end
+
+      subroutine f2pyinitnucdat(setupfunc)
+      external setupfunc
+      double precision av0wel
+      double precision apfrmx
+      double precision aefrmx
+      double precision aefrma
+      double precision rdsnuc
+      double precision v0well(2)
+      double precision pfrmmx(2)
+      double precision efrmmx(2)
+      double precision efrmav(2)
+      double precision amnucl(2)
+      double precision amnusq(2)
+      double precision ebndng(2)
+      double precision veffnu(2)
+      double precision eslope(2)
+      double precision pkmnnu(2)
+      double precision ekmnnu(2)
+      double precision pkmxnu(2)
+      double precision ekmxnu(2)
+      double precision ekmnav(2)
+      double precision ekinav(2)
+      double precision exmnav(2)
+      double precision ekupnu(2)
+      double precision exmnnu(2)
+      double precision exupnu(2)
+      double precision erclav(2)
+      double precision eswell(2)
+      double precision fincup(2)
+      double precision amrcav
+      double precision amrcsq
+      double precision ato1o3
+      double precision zto1o3
+      double precision frmrfc
+      double precision elbnde(131)
+      common /nucdat/ av0wel,apfrmx,aefrmx,aefrma,rdsnuc,v0well,pf
+     &rmmx,efrmmx,efrmav,amnucl,amnusq,ebndng,veffnu,eslope,pkmnnu,ekmnn
+     &u,pkmxnu,ekmxnu,ekmnav,ekinav,exmnav,ekupnu,exmnnu,exupnu,erclav,e
+     &swell,fincup,amrcav,amrcsq,ato1o3,zto1o3,frmrfc,elbnde
+      call setupfunc(av0wel,apfrmx,aefrmx,aefrma,rdsnuc,v0well,pfr
+     &mmx,efrmmx,efrmav,amnucl,amnusq,ebndng,veffnu,eslope,pkmnnu,ekmnnu
+     &,pkmxnu,ekmxnu,ekmnav,ekinav,exmnav,ekupnu,exmnnu,exupnu,erclav,es
+     &well,fincup,amrcav,amrcsq,ato1o3,zto1o3,frmrfc,elbnde)
+      end
+
+      subroutine f2pyinitparevt(setupfunc)
+      external setupfunc
+      double precision dpower
+      double precision fsprd0
+      double precision fshpfn
+      double precision rn1gsc
+      double precision rn2gsc
+      double precision rnswtc
+      logical ldiffr(64)
+      logical lpower
+      logical linctv
+      logical levprt
+      logical lheavy
+      logical ldeexg
+      logical lgdhpr
+      logical lpreex
+      logical lhlfix
+      logical lprfix
+      logical lparwv
+      logical lsngch
+      logical lschdf
+      logical lbmprq
+      logical lhadri
+      logical lnucri
+      logical lpeanu
+      logical levbme
+      logical levrqm
+      logical lphdrc
+      logical latmss
+      logical lismrs
+      logical lchdcy
+      logical lchdcr
+      logical lmlccr
+      logical lrvkin
+      logical lvp2xx
+      logical lv2xnw
+      logical lnwv2x
+      logical levfin
+      common /parevt/ dpower,fsprd0,fshpfn,rn1gsc,rn2gsc,rnswtc,ld
+     &iffr,lpower,linctv,levprt,lheavy,ldeexg,lgdhpr,lpreex,lhlfix,lprfi
+     &x,lparwv,lsngch,lschdf,lbmprq,lhadri,lnucri,lpeanu,levbme,levrqm,l
+     &phdrc,latmss,lismrs,lchdcy,lchdcr,lmlccr,lrvkin,lvp2xx,lv2xnw,lnwv
+     &2x,levfin
+      call setupfunc(dpower,fsprd0,fshpfn,rn1gsc,rn2gsc,rnswtc,ldi
+     &ffr,lpower,linctv,levprt,lheavy,ldeexg,lgdhpr,lpreex,lhlfix,lprfix
+     &,lparwv,lsngch,lschdf,lbmprq,lhadri,lnucri,lpeanu,levbme,levrqm,lp
+     &hdrc,latmss,lismrs,lchdcy,lchdcr,lmlccr,lrvkin,lvp2xx,lv2xnw,lnwv2
+     &x,levfin)
+      end
+
+      subroutine f2pyinitfheavy(setupfunc)
+      external setupfunc
+      double precision cxheav(100)
+      double precision cyheav(100)
+      double precision czheav(100)
+      double precision tkheav(100)
+      double precision pheavy(100)
+      double precision wheavy(100)
+      double precision agheav(100)
+      double precision bhheav(4,40)
+      double precision amheav(40)
+      double precision amnhea(40)
+      integer kheavy(100)
+      integer infhea(100)
+      integer icheav(40)
+      integer ibheav(40)
+      integer imheav(40)
+      integer ihheav(40)
+      integer khheav(4,40)
+      integer npheav
+      common /fheavy/ cxheav,cyheav,czheav,tkheav,pheavy,wheavy,ag
+     &heav,bhheav,amheav,amnhea,kheavy,infhea,icheav,ibheav,imheav,ihhea
+     &v,khheav,npheav
+      call setupfunc(cxheav,cyheav,czheav,tkheav,pheavy,wheavy,agh
+     &eav,bhheav,amheav,amnhea,kheavy,infhea,icheav,ibheav,imheav,ihheav
+     &,khheav,npheav)
+      end
+
+      subroutine f2pyinitfheavc(setupfunc)
+      external setupfunc
+      character anheav(40,8)
+      common /fheavc/ anheav
+      call setupfunc(anheav)
+      end
+
+      subroutine f2pyinitdtevno(setupfunc)
+      external setupfunc
+      integer nevent
+      integer icasca
+      common /dtevno/ nevent,icasca
+      call setupfunc(nevent,icasca)
+      end
+
       subroutine f2pyinitcrranma4(setupfunc)
       external setupfunc
       double precision c(8)

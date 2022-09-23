@@ -9,7 +9,7 @@ from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
 import os
 
 # generate list of all models in impy.models
-models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
+models = list(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
 
 
 def rng_state_test(model):
@@ -23,6 +23,7 @@ def rng_state_test(model):
 
     generator = model(ekin, seed=3163325)
     nevents = 10
+    rng_state_file = str(model.name) + "rng_state.dat"
 
     # Save a initial state to a variable:
     state0 = generator.rng_state.copy()
@@ -33,7 +34,7 @@ def rng_state_test(model):
         counters.append(generator.rng_state.counter)
 
     # Save generator state after nevents to a file
-    generator.dump_rng_state_to("rng_state.dat")
+    generator.dump_rng_state_to(rng_state_file)
 
     # Restore initial state from variable
     generator.rng_state = state0
@@ -52,10 +53,10 @@ def rng_state_test(model):
     # Test for restoring state from file:
     state_after_now = generator.rng_state.copy()
     # Restore from file
-    generator.restore_rng_state_from("rng_state.dat")
+    generator.restore_rng_state_from(rng_state_file)
 
-    if os.path.exists("rng_state.dat"):
-        os.remove("rng_state.dat")
+    if os.path.exists(rng_state_file):
+        os.remove(rng_state_file)
 
     # And check for equality
     state_equal = None

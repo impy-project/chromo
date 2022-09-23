@@ -9,7 +9,7 @@ from multiprocessing.context import TimeoutError
 from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
 
 # generate list of all models in impy.models
-models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
+models = list(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
 
 
 def run_model(model, ekin):
@@ -59,7 +59,7 @@ def test_generators(model):
     with Pool(1, maxtasksperchild=1) as p:
         r = p.apply_async(run_model, (model, ekin))
         try:
-            c = r.get(timeout=30)
+            c = r.get(timeout=60)
         except TimeoutError:
             # usually happens when model aborts and kills child process
             raise TimeoutError("check stdout for errors")

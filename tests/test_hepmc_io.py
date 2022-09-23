@@ -8,7 +8,7 @@ import abc
 from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
 
 # generate list of all models in impy.models
-models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
+models = list(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
 
 
 def run(Model):
