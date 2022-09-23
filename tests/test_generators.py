@@ -9,11 +9,9 @@ from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
 # generate list of all models in impy.models
 models = list(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
 
-# models = [im.DpmjetIII306, im.Phojet112]
-
 
 def run_model(model, ekin):
-    gen = model(ekin)
+    gen = model(ekin, seed=349745)
 
     c = Counter()
     for event in gen(10):
