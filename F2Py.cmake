@@ -38,12 +38,23 @@
 #                     These can be C files, Fortran files, object files. A single .pyf
 #                     file is also accepted.
 #
+# COMPILE_DEFS      : List of definitions for compiler. If not empty the list is past
+#                     to target_compile_definitions and to fortran_defs variable used
+#                     for preprocessing. The definitions are intended for preprocessing
+#                     of source files, i.e. it is implied that -D will prepended to each
+#                     definition
+#
 # The module generates a target with target_name. You can manipulate this target like
 # any other target in cmake to change its properties, for example, to set special
 # compiler flags.
 #
 # A log file is generated as a side effect with name <target>.log. The log is placed
 # in the current build directory.
+#
+# If the environment variable IMPY_GENERATE_PYF is defined (e.g. 'export IMPY_GENERATE_PYF=1'),
+# new ${target_name}.pyf, ${target_name}module.c, ${target_name}-f2pywrappers.f will be
+# generated. Otherwise the old files from sources are used.
+
 
 function (f2py_add_module target_name)
 
@@ -53,7 +64,7 @@ function (f2py_add_module target_name)
     "FUNCTIONS;INCLUDE_DIRS;INTERFACE_SOURCES;SOURCES;COMPILE_DEFS"
     ${ARGN})
 
-  if(NOT DEFINED ENV{IMPY_GENERATE_PYF})
+  if(NOT IMPY_DEV_PYF_GENERATION)
     list(PREPEND F2PY_ADD_MODULE_INTERFACE_SOURCES 
       ${f2py_dir}/${target_name}.pyf
       ${f2py_dir}/${target_name}module.c
@@ -85,14 +96,8 @@ function (f2py_add_module target_name)
   endif()
   
   if (NOT F2PY_ADD_MODULE_PYF_FILE)
-    # Set directory name to output generated file *.pyf files
-    # *module.c and *-f2pywrappers.f
-    set(model_out ${CMAKE_CURRENT_BINARY_DIR}/f2py)
-    # Set directory name to output processed source files
-    # needed to *.pyf file generation
-    set(pyf_sources "CMakeFiles/${target_name}.dir/pyf_sources")
-    
-    set(F2PY_ADD_MODULE_PYF_FILE ${model_out}/${target_name}.pyf)
+
+    set(F2PY_ADD_MODULE_PYF_FILE ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.pyf)
     file(WRITE ${F2PY_ADD_MODULE_LOG_FILE} "f2py_add_module: Generating ${F2PY_ADD_MODULE_PYF_FILE}\n")
 
     # Definitions for source files processing
@@ -100,26 +105,17 @@ function (f2py_add_module target_name)
     foreach(_def ${F2PY_ADD_MODULE_COMPILE_DEFS})
       STRING(APPEND fortran_defs "-D${_def} ")
     endforeach()
-
-    # Target to make directories
-    set(mkdir_pyf_sources "mkdir${target_name}_pyf")
-    add_custom_target(${mkdir_pyf_sources}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${pyf_sources}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${model_out})
     
     # Source files processing for *.pyf
     set(processed_files)
-    foreach(_file ${F2PY_ADD_MODULE_INTERFACE_SOURCES})
-      string(REGEX REPLACE "\.f$" "\.f\.proc" proc_file ${_file})
-      string(REGEX REPLACE "\.fpp$" "\.f\.proc"  proc_file ${proc_file})
-      get_filename_component(barename ${proc_file} NAME)
-      set(proc_file ${pyf_sources}/${barename})
+    foreach(src_file ${F2PY_ADD_MODULE_INTERFACE_SOURCES})
+      get_filename_component(src_filename ${src_file} NAME)
+      set(proc_file CMakeFiles/${target_name}.dir/${src_filename})
 
       add_custom_command(
         OUTPUT ${proc_file}
         COMMAND ${CMAKE_Fortran_COMPILER}
-        -E -cpp ${_file} ${fortran_defs} -o ${proc_file}
-        DEPENDS ${mkdir_pyf_sources}
+        -E -cpp ${src_file} ${fortran_defs} -o ${proc_file}
       )
       list(APPEND processed_files ${proc_file})
     endforeach()
@@ -136,7 +132,6 @@ function (f2py_add_module target_name)
         ${F2PY_ADD_MODULE_INC}
         ${processed_files}
         >> ${F2PY_ADD_MODULE_LOG_FILE} 2>&1
-
       DEPENDS ${processed_files}
     )
   else()
@@ -150,8 +145,8 @@ function (f2py_add_module target_name)
     message(STATUS "f2py_add_module: Use existing ${F2PY_ADD_MODULE_GEN_1}")
     message(STATUS "f2py_add_module: Use existing ${F2PY_ADD_MODULE_GEN_2}")
   else()
-    set(F2PY_ADD_MODULE_GEN_1 ${model_out}/${target_name}module.c)
-    set(F2PY_ADD_MODULE_GEN_2 ${model_out}/${target_name}-f2pywrappers.f)
+    set(F2PY_ADD_MODULE_GEN_1 ${CMAKE_CURRENT_BINARY_DIR}/${target_name}module.c)
+    set(F2PY_ADD_MODULE_GEN_2 ${CMAKE_CURRENT_BINARY_DIR}/${target_name}-f2pywrappers.f)
 
     add_custom_command(
       OUTPUT ${F2PY_ADD_MODULE_GEN_1} ${F2PY_ADD_MODULE_GEN_2}
@@ -160,7 +155,6 @@ function (f2py_add_module target_name)
         ${F2PY_ADD_MODULE_PYF_FILE}
         ${F2PY_ADD_MODULE_INC}
         >> ${F2PY_ADD_MODULE_LOG_FILE} 2>&1
-      WORKING_DIRECTORY ${model_out}
       DEPENDS ${F2PY_ADD_MODULE_SOURCES} ${F2PY_ADD_MODULE_PYF_FILE}
     )
   endif()
@@ -185,6 +179,5 @@ function (f2py_add_module target_name)
   set_property(TARGET ${target_name} PROPERTY SUFFIX ${PYTHON_MODULE_EXTENSION})
   # must be a string, so that empty string works correcty
   set_property(TARGET ${target_name} PROPERTY PREFIX "${PYTHON_MODULE_PREFIX}")
-
 
 endfunction()
