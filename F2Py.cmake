@@ -51,7 +51,7 @@
 # A log file is generated as a side effect with name <target>.log. The log is placed
 # in the current build directory.
 #
-# If the environment variable IMPY_GENERATE_PYF is defined (e.g. 'export IMPY_GENERATE_PYF=1'),
+# If the variable IMPY_DEV_PYF_GENERATION is defined (in impy/ImpyDevSettings.cmake),
 # new ${target_name}.pyf, ${target_name}module.c, ${target_name}-f2pywrappers.f will be
 # generated. Otherwise the old files from sources are used.
 
