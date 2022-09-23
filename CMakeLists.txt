@@ -29,9 +29,6 @@ if (NOT F2PY_INCLUDE_DIR)
   set(F2PY_INCLUDE_DIR "${_f2py_directory}/src" CACHE STRING "F2PY source directory location" FORCE)
 endif()
 
-
-configure_file(${CMAKE_SOURCE_DIR}/env_variables_cache.dat env_variables_cache.dat COPYONLY)
-
 # Copy fortranobject.c to get rid of deep folder nesting
 configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c fortranobject.c COPYONLY)
 set(f2py_source fortranobject.c)

@@ -23,6 +23,7 @@ if(IMPY_DEV_EXTRA_MODELS)
     ${impy_definitions}
     SIBYLL_TABLE_LENGTH=99
   )
+
   impy_copy_lib_file(_sib23c00)
 
   ### sib23c02
@@ -38,7 +39,7 @@ if(IMPY_DEV_EXTRA_MODELS)
     ${impy_definitions}
     SIBYLL_TABLE_LENGTH=99
   )
-  
+
   impy_copy_lib_file(_sib23c02)
 
   ### sib23c03
@@ -54,7 +55,9 @@ if(IMPY_DEV_EXTRA_MODELS)
     ${impy_definitions}
     SIBYLL_TABLE_LENGTH=99
   )
+
   impy_copy_lib_file(_sib23c03)
+  
 endif()
 
 
