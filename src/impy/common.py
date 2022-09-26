@@ -489,11 +489,6 @@ class RMMARDState:
 
         return RMMARDState(*copies)
 
-    def __getstate__(self):
-        return self.__dict__
-
-    def __setstate__(self, state):
-        self.__dict__ = state
 
     @property
     def sequence(self):
@@ -629,20 +624,12 @@ class MCRun(ABC):
                 self._set_event_kinematics(ekin)
 
     @property
-    def rng_state(self):
+    def random_state(self):
         return RMMARDState()._record_state(self.lib)
 
-    @rng_state.setter
-    def rng_state(self, rng_state):
+    @random_state.setter
+    def random_state(self, rng_state):
         rng_state._restore_state(self.lib)
-
-    def dump_rng_state_to(self, filename):
-        with open(filename, "wb") as pfile:
-            pickle.dump(self.rng_state, pfile, protocol=pickle.HIGHEST_PROTOCOL)
-
-    def restore_rng_state_from(self, filename):
-        with open(filename, "rb") as pfile:
-            self.rng_state = pickle.load(pfile)
 
     @property
     def event_kinematics(self):

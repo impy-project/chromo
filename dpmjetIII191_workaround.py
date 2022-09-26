@@ -50,7 +50,9 @@ assert len(set([x.name for x in needs_mod])) == len(needs_mod)
 modded = []
 for fn in needs_mod:
     fn2 = cmake_binary_dir / fn.name
-    if (not os.path.exists(fn2)) or (os.path.getmtime(fn) > os.path.getmtime(fn2)):
+    if (not Path(fn2).exists()) or (
+        Path(fn).stat().st_mtime > Path(fn2).stat().st_mtime
+    ):
         modded.append(fn2)
         shutil.copy(fn, fn2)
 
