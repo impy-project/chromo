@@ -540,26 +540,12 @@ class EventKinematics(abc.ABC):
 
 
 class CenterOfMass(EventKinematics):
-    def __init__(self, particle1, particle2, ecm=None, plab=None, elab=None, ekin=None):
+    def __init__(self, energy, particle1, particle2):
         impy_config["user_frame"] = "center-of-mass"
-        super()._init(
-            ecm=None,
-            plab=None,
-            elab=None,
-            ekin=None,
-            particle1=particle1,
-            particle2=particle2,
-        )
+        super()._init(ecm=energy, particle1=particle1, particle2=particle2)
 
 
 class FixedTarget(EventKinematics):
-    def __init__(self, particle1, particle2, ecm=None, plab=None, elab=None, ekin=None):
+    def __init__(self, energy, particle1, particle2):
         impy_config["user_frame"] = "laboratory"
-        super()._init(
-            ecm=None,
-            plab=None,
-            elab=None,
-            ekin=None,
-            particle1=particle1,
-            particle2=particle2,
-        )
+        super()._init(elab=energy, particle1=particle1, particle2=particle2)
