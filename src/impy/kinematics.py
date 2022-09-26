@@ -270,13 +270,7 @@ class EventKinematics(abc.ABC):
 
     """
 
-    def __init__(*args, **kwargs):
-        raise ValueError(
-            "'EventKinematics' class can not be used directly."
-            + " Use 'FixedTarget' or 'CenterOfMass' instead."
-        )
-
-    def _init(
+    def __init__(
         self,
         ecm=None,
         plab=None,
@@ -540,12 +534,12 @@ class EventKinematics(abc.ABC):
 
 
 class CenterOfMass(EventKinematics):
-    def __init__(self, energy, particle1, particle2):
+    def __init__(self, ecm, particle1, particle2):
         impy_config["user_frame"] = "center-of-mass"
-        super()._init(ecm=energy, particle1=particle1, particle2=particle2)
+        super().__init__(ecm=ecm, particle1=particle1, particle2=particle2)
 
 
 class FixedTarget(EventKinematics):
-    def __init__(self, energy, particle1, particle2):
+    def __init__(self, elab, particle1, particle2):
         impy_config["user_frame"] = "laboratory"
-        super()._init(elab=energy, particle1=particle1, particle2=particle2)
+        super().__init__(elab=elab, particle1=particle1, particle2=particle2)
