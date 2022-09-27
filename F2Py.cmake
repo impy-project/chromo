@@ -64,7 +64,7 @@ function (f2py_add_module target_name)
     "FUNCTIONS;INCLUDE_DIRS;INTERFACE_SOURCES;SOURCES;COMPILE_DEFS"
     ${ARGN})
 
-  if(NOT IMPY_DEV_PYF_GENERATION)
+  if(NOT DEFINED ENV{IMPY_DEV_PYF_GENERATION})
     list(PREPEND F2PY_ADD_MODULE_INTERFACE_SOURCES 
       ${f2py_dir}/${target_name}.pyf
       ${f2py_dir}/${target_name}module.c

@@ -1,13 +1,13 @@
 from pathlib import Path
 from setuptools import setup
 import sys
-import os
 
 
 cwd = Path(__file__).parent
 
 sys.path.append(str(cwd))
 from cmake_ext import CMakeExtension, CMakeBuild  # noqa: E402
+from dev_settings import development_settings
 
 
 ext_modules = [
@@ -30,6 +30,7 @@ ext_modules = [
     CMakeExtension("impy.models._dpmjetIII193"),
 ]
 
+development_settings(ext_modules)
 
 setup(
     zip_safe=False,

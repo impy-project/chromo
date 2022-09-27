@@ -9,7 +9,7 @@ function (impy_copy_lib_file target_name)
 endfunction()
 
 
-if(IMPY_DEV_EXTRA_MODELS)
+if(DEFINED ENV{IMPY_DEV_EXTRA_MODELS})
   ### sib23c00
   f2py_add_module(_sib23c00
     FUNCTIONS
@@ -61,9 +61,11 @@ if(IMPY_DEV_EXTRA_MODELS)
 endif()
 
 
-if(IMPY_DEV_DPMJETIII193)
+if(DEFINED ENV{IMPY_DEV_DPMJETIII193})
 
-  set (dev_source ${IMPY_DEV_DPMJETIII193})
+  set (dev_source $ENV{IMPY_DEV_DPMJETIII193})
+
+  message("IMPY_DEV_DPMJETIII193 = $ENV{IMPY_DEV_DPMJETIII193}")
 
   file(GLOB dev_dpmjetIII193_sources
     ${dev_source}/src/phojet/*.f

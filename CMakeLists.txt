@@ -6,7 +6,6 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 include(CMakePrintHelpers)
 include(F2Py)
 include(FindPythonLibsNew)
-include(ImpyDevSettings)
 
 if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
   message(
@@ -32,6 +31,7 @@ endif()
 # Copy fortranobject.c to get rid of deep folder nesting
 configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c fortranobject.c COPYONLY)
 set(f2py_source fortranobject.c)
+configure_file(${CMAKE_SOURCE_DIR}/env_variables_cache.json env_variables_cache.json COPYONLY)
 
 if (NOT NUMPY_INCLUDE_DIRS)
   execute_process(
