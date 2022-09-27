@@ -1,14 +1,3 @@
-function (impy_copy_lib_file target_name)
-  
-  add_custom_command(
-    TARGET ${target_name} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    $<TARGET_FILE:${target_name}>
-    ${CMAKE_SOURCE_DIR}/src/impy/models/$<TARGET_FILE_NAME:${target_name}>
-)
-endfunction()
-
-
 if(DEFINED ENV{IMPY_DEV_EXTRA_MODELS})
   ### sib23c00
   f2py_add_module(_sib23c00
@@ -24,8 +13,6 @@ if(DEFINED ENV{IMPY_DEV_EXTRA_MODELS})
     SIBYLL_TABLE_LENGTH=99
   )
 
-  impy_copy_lib_file(_sib23c00)
-
   ### sib23c02
   f2py_add_module(_sib23c02
     FUNCTIONS
@@ -40,8 +27,6 @@ if(DEFINED ENV{IMPY_DEV_EXTRA_MODELS})
     SIBYLL_TABLE_LENGTH=99
   )
 
-  impy_copy_lib_file(_sib23c02)
-
   ### sib23c03
   f2py_add_module(_sib23c03
     FUNCTIONS
@@ -55,8 +40,6 @@ if(DEFINED ENV{IMPY_DEV_EXTRA_MODELS})
     ${impy_definitions}
     SIBYLL_TABLE_LENGTH=99
   )
-
-  impy_copy_lib_file(_sib23c03)
   
 endif()
 
@@ -101,7 +84,5 @@ if(DEFINED ENV{IMPY_DEV_DPMJETIII193})
     COMPILE_DEFS
     ${impy_definitions}
   )
-
-  impy_copy_lib_file(_dev_dpmjetIII193)
-
+  
 endif()
