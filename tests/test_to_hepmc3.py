@@ -1,4 +1,3 @@
-from collections import defaultdict
 from impy.kinematics import CenterOfMass
 from impy import models as im
 from impy.constants import TeV
@@ -22,7 +21,7 @@ def test_to_hepmc3(Model):
 
     event = run_in_separate_process(make_event, Model)
 
-    unique_vertices = defaultdict(list)
+    unique_vertices = {}
     for i, pa in enumerate(event.parents):
         assert pa.shape == (2,)
         if np.all(pa == 0):
@@ -31,7 +30,7 @@ def test_to_hepmc3(Model):
         # normalize intervals
         if pa[1] == 0:
             pa = (pa[0], pa[0])
-        unique_vertices[pa].append(i)
+        unique_vertices.setdefault(pa, []).append(i)
 
     # not all vertices have locations different from zero,
     # create unique fake vertex locations for testing
@@ -65,7 +64,7 @@ def test_to_hepmc3(Model):
         assert v.position.z == event.vz[k]
         assert v.position.t == event.vt[k]
 
-    unique_vertices2 = defaultdict(list)
+    unique_vertices2 = {}
     for v in hev.vertices:
         pi = [p.id for p in v.particles_in]
         if len(pi) == 1:

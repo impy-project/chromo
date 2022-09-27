@@ -4,11 +4,14 @@ from impy.kinematics import CenterOfMass, FixedTarget
 import impy.models as im
 import pytest
 import pyhepmc
-import abc
-from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
+from .util import (
+    run_in_separate_process,
+    xfail_on_ci_if_model_is_incompatible,
+    get_all_models,
+)
 
 # generate list of all models in impy.models
-models = list(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
+models = get_all_models(im)
 
 
 def run(Model):
@@ -34,15 +37,12 @@ def test_hepmc_io(Model):
 
     xfail_on_ci_if_model_is_incompatible(Model)
     if Model in (
-        im.DpmjetIII306,
-        im.DpmjetIII191,
-        im.DpmjetIII193,
         im.Phojet112,
         im.Phojet191,
         im.Phojet193,
         im.UrQMD34,
     ):
-        pytest.xfail("The model SHOULD BE FIXED!!!")
+        pytest.xfail("needs investigation whether the problem is in pyhepmc/HepMC3")
 
     events = run_in_separate_process(run, Model, timeout=60)
 

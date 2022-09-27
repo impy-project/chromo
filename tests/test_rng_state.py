@@ -1,16 +1,17 @@
-import impy
 from impy.kinematics import FixedTarget, CenterOfMass
 from impy.constants import TeV, GeV
 import impy.models as im
 import pickle
 from pathlib import Path
-
-import abc
 import pytest
-from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
+from .util import (
+    run_in_separate_process,
+    xfail_on_ci_if_model_is_incompatible,
+    get_all_models,
+)
 
 # generate list of all models in impy.models
-models = list(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
+models = get_all_models(im)
 
 
 def rng_state_test(model):
@@ -45,10 +46,10 @@ def rng_state_test(model):
     i = 0
     for event in generator(nevents):
         counter = generator.random_state.counter
-        assert (
-            counters[i] == counter
-        ), 'Counters for seed {0} after "{1}" event are different:\n expected(previous) = {2}, received(current) = {3}'.format(
-            generator.random_state.seed, i, counters[i], counter
+        assert counters[i] == counter, (
+            f"Counters for seed {generator.random_state.seed} "
+            f"after {i} event are different\n"
+            f"  expected(previous) = {counters[i]}, received(current) = {counter}"
         )
         i = i + 1
 

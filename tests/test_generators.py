@@ -1,13 +1,16 @@
 from impy.constants import TeV
 from impy.kinematics import CenterOfMass
 import impy.models as im
-import abc
 from collections import Counter
 import pytest
-from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
+from .util import (
+    run_in_separate_process,
+    xfail_on_ci_if_model_is_incompatible,
+    get_all_models,
+)
 
 # generate list of all models in impy.models
-models = list(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
+models = get_all_models(im)
 
 
 def run_model(model, ekin):

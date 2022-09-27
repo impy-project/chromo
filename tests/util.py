@@ -4,6 +4,7 @@ import numpy as np
 from multiprocessing import Pool
 import os
 from impy import models as im
+from impy.common import MCRun
 import pytest
 
 
@@ -48,3 +49,16 @@ def xfail_on_ci_if_model_is_incompatible(Model):
         im.DpmjetIII193,
     ):
         pytest.xfail("model cannot succeed on CI, because git lfs does not work")
+
+
+def get_all_models(module):
+    result = []
+    for key in dir(module):
+        obj = getattr(module, key)
+        try:
+            # fails if obj is not a class
+            if issubclass(obj, MCRun):
+                result.append(obj)
+        except TypeError:
+            pass
+    return result
