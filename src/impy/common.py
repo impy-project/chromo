@@ -14,7 +14,6 @@ from impy.util import info
 from impy.kinematics import EventKinematics
 from dataclasses import dataclass
 import typing as _tp
-import pickle
 
 
 @dataclass
