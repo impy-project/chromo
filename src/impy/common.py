@@ -12,11 +12,12 @@ import numpy as np
 from impy import impy_config
 from impy.util import info
 from impy.kinematics import EventKinematics
-from dataclasses import dataclass
+import dataclasses
+import copy
 import typing as _tp
 
 
-@dataclass
+@dataclasses.dataclass
 class EventData:
     """
     Data structure to keep filtered data.
@@ -147,9 +148,9 @@ class EventData:
         """
         Return event copy.
         """
+        # this should be implemented with the help of copy
         copies = []
-        for k in self.__dataclass_fields__:
-            obj = getattr(self, k)
+        for obj in dataclasses.astuple(self):
             copies.append(obj.copy() if hasattr(obj, "copy") else obj)
 
         return EventData(*copies)
@@ -428,7 +429,7 @@ class Settings(ABC):
         return False
 
 
-@dataclass
+@dataclasses.dataclass
 class RMMARDState:
     _c_number: np.ndarray = None
     _u_array: np.ndarray = None
@@ -481,12 +482,10 @@ class RMMARDState:
         )
 
     def copy(self):
-        copies = []
-        for k in self.__dataclass_fields__:
-            obj = getattr(self, k)
-            copies.append(obj.copy() if hasattr(obj, "copy") else obj)
-
-        return RMMARDState(*copies)
+        """
+        Return generator copy.
+        """
+        return copy.deepcopy(self)  # this uses setstate, getstate
 
     @property
     def sequence(self):

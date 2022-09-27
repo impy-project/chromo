@@ -19,7 +19,7 @@ def run(Model):
     if Model == im.Sophia20:
         ekin = FixedTarget(10 * GeV, "photon", "proton")
     gen = Model(ekin, seed=715434)
-    return list(ev.copy() for ev in gen(3))
+    return list(gen(3))
 
 
 @pytest.mark.parametrize(
@@ -33,7 +33,6 @@ def test_hepmc_io(Model):
     # bug in the HepMC3 C++ code (not the pyhepmc code).
 
     test_file = Path(f"{Path(__file__).with_suffix('')}_{Model.__name__}.dat")
-    print(test_file)
 
     xfail_on_ci_if_model_is_incompatible(Model)
     if Model in (
