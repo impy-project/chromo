@@ -1,7 +1,7 @@
 from pathlib import Path
 from setuptools import setup
 import sys
-
+import subprocess as subp
 
 cwd = Path(__file__).parent
 
@@ -9,6 +9,10 @@ sys.path.append(str(cwd))
 from cmake_ext import CMakeExtension, CMakeBuild  # noqa: E402
 from dev_settings import development_settings
 
+# make sure that submodules are up-to-date,
+# it is a common error to forget this when
+# switching between development branches
+subp.check_call(["git", "submodule", "update"])
 
 ext_modules = [
     CMakeExtension("impy.models._eposlhc"),
