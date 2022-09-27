@@ -489,7 +489,6 @@ class RMMARDState:
 
         return RMMARDState(*copies)
 
-
     @property
     def sequence(self):
         return self._sequence_number
