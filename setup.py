@@ -14,27 +14,31 @@ from dev_settings import development_settings
 # switching between development branches
 subp.check_call(["git", "submodule", "update"])
 
-ext_modules = [
-    CMakeExtension("impy.models._eposlhc"),
-    CMakeExtension("impy.models._sib21"),
-    CMakeExtension("impy.models._sib23"),
-    CMakeExtension("impy.models._sib23d"),
-    CMakeExtension("impy.models._sib23c01"),
-    CMakeExtension("impy.models._qgs01"),
-    CMakeExtension("impy.models._qgsII03"),
-    CMakeExtension("impy.models._qgsII04"),
-    CMakeExtension("impy.models._urqmd34"),
-    CMakeExtension("impy.models._pythia6"),
-    CMakeExtension("impy.models._sophia"),
-    CMakeExtension("impy.models._dpmjet306"),
-    CMakeExtension("impy.models._phojet112"),
-    CMakeExtension("impy.models._phojet191"),
-    CMakeExtension("impy.models._phojet193"),
-    CMakeExtension("impy.models._dpmjetIII191"),
-    CMakeExtension("impy.models._dpmjetIII193"),
+models = [
+    "eposlhc",
+    "sib21",
+    "sib23",
+    "sib23d",
+    "sib23c01",
+    "qgs01",
+    "qgsII03",
+    "qgsII04",
+    "urqmd34",
+    "pythia6",
+    "sophia",
+    "dpmjet306",
+    "phojet112",
+    "phojet191",
+    "phojet193",
+    "dpmjetIII191",
+    "dpmjetIII193",
 ]
 
-development_settings(ext_modules)
+development_settings(models)
+
+ext_modules = []
+for model in models:
+    ext_modules.append(CMakeExtension(f"impy.models._{model}"))
 
 setup(
     zip_safe=False,

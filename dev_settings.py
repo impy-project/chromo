@@ -21,11 +21,8 @@ import json
 
 cwd = Path(__file__).parent
 
-sys.path.append(str(cwd))
-from cmake_ext import CMakeExtension  # noqa: E402
 
-
-def development_settings(ext_modules):
+def development_settings(models):
     cache_file = "env_variables_cache.json"
 
     # Monitor specific environment variables and update
@@ -35,7 +32,6 @@ def development_settings(ext_modules):
     env_variables = {
         "IMPY_DEV_EXTRA_MODELS": None,
         "IMPY_DEV_DPMJETIII193": None,
-        "IMPY_DEV_PYF_GENERATION": None,
     }
 
     # Read them if already exists
@@ -65,9 +61,36 @@ def development_settings(ext_modules):
             json.dump(env_variables, file)
 
     if env_variables["IMPY_DEV_DPMJETIII193"]:
-        ext_modules.append(CMakeExtension("impy.models._dev_dpmjetIII193"))
+        models.append("dev_dpmjetIII193")
 
     if env_variables["IMPY_DEV_EXTRA_MODELS"]:
-        ext_modules.append(CMakeExtension("impy.models._sib23c00"))
-        ext_modules.append(CMakeExtension("impy.models._sib23c02"))
-        ext_modules.append(CMakeExtension("impy.models._sib23c03"))
+        models.append("sib23c00")
+        models.append("sib23c02")
+        models.append("sib23c03")
+
+    # Check for existence of f2py files
+    pyf_files = []
+    for model in models:
+        pyf_files.append(f"_{model}.pyf")
+        pyf_files.append(f"_{model}module.c")
+        pyf_files.append(f"_{model}-f2pywrappers.f")
+
+    f2py_dir = f"{str(cwd)}/src/f2py"
+    # Touch file if not all f2py files in the f2py directory "f2py_dir"
+    # lfile = f"{str(cwd)}/generate_f2py_files.dat"
+    # info_string = "This file is for automatic regeneration of f2py files by CMake"
+
+    # if not Path(lfile).exists():
+    #     with open(lfile, "w") as f:
+    #         f.write(info_string)
+    # else:
+    flist = [str(f.name) for f in Path(f2py_dir).iterdir()]
+    for filename in pyf_files:
+        if filename not in flist:
+            print(f"{filename} is not in flist")
+            print("TOUCHHHHHHHHHHH")
+            Path(cache_file).touch()
+            break
+            # with open(lfile, "w") as f:
+            #     f.write(info_string)
+            # break
