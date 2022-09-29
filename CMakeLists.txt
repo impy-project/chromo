@@ -32,6 +32,7 @@ endif()
 configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c fortranobject.c COPYONLY)
 set(f2py_source fortranobject.c)
 configure_file(${CMAKE_SOURCE_DIR}/env_variables_cache.json env_variables_cache.json COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/generate_f2py_files.json generate_f2py_files.json COPYONLY)
 
 if (NOT NUMPY_INCLUDE_DIRS)
   execute_process(

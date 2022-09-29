@@ -52,7 +52,6 @@
 # in the current build directory.
 #
 
-
 function (f2py_add_module target_name)
 
   cmake_parse_arguments(F2PY_ADD_MODULE
@@ -83,7 +82,7 @@ function (f2py_add_module target_name)
 
   if (NOT EXISTS ${pyf_file})
     file(WRITE ${F2PY_ADD_MODULE_LOG_FILE} "f2py_add_module: Generating ${pyf_file}\n")
-    message(STATUS "f2py_add_module: ${pyf_file} will be regenerated")
+    message(STATUS "f2py_add_module: Generating ${pyf_file}")
     # Definitions for source files processing
     set(fortran_defs)
     foreach(_def ${F2PY_ADD_MODULE_COMPILE_DEFS})
@@ -112,7 +111,7 @@ function (f2py_add_module target_name)
       OUTPUT ${pyf_file0}
       COMMAND ${PYTHON_EXECUTABLE} -m numpy.f2py
         -m ${target_name}
-        -h ${pyf_file}
+        -h ${pyf_file0}
         --overwrite-signature only: ${F2PY_ADD_MODULE_FUNCTIONS} :
         ${F2PY_ADD_MODULE_INC}
         ${processed_files}
@@ -133,6 +132,7 @@ function (f2py_add_module target_name)
     message(STATUS "f2py_add_module: Use existing ${pyf_file}")
   endif()
 
+  add_custom_target(pyf${target_name} DEPENDS ${pyf_file})
   
   if ((EXISTS ${modulec_file}) AND (EXISTS ${f2pywrap_file}))
     file(APPEND ${F2PY_ADD_MODULE_LOG_FILE} "f2py_add_module: Use existing ${modulec_file} ${f2pywrap_file}\n")
@@ -144,8 +144,8 @@ function (f2py_add_module target_name)
     get_filename_component(f2pywrap_file0 ${f2pywrap_file} NAME)
     set(f2pywrap_file0 ${CMAKE_CURRENT_BINARY_DIR}/${f2pywrap_file0})
 
-    message(STATUS "f2py_add_module: ${modulec_file} will be regenerated")
-    message(STATUS "f2py_add_module: ${f2pywrap_file} will be regenerated")
+    message(STATUS "f2py_add_module: Generating ${modulec_file}")
+    message(STATUS "f2py_add_module: Generating ${f2pywrap_file}")
 
     # Generate in binary directory
     add_custom_command(
@@ -154,7 +154,7 @@ function (f2py_add_module target_name)
         ${pyf_file}
         ${F2PY_ADD_MODULE_INC}
         >> ${F2PY_ADD_MODULE_LOG_FILE} 2>&1 
-      DEPENDS ${F2PY_ADD_MODULE_SOURCES} ${pyf_file0}
+      DEPENDS ${F2PY_ADD_MODULE_SOURCES} ${pyf_file}
     )
 
     # And copy in f2py source directory
@@ -174,6 +174,8 @@ function (f2py_add_module target_name)
     ${f2pywrap_file}
     ${F2PY_ADD_MODULE_SOURCES}
   )
+
+  add_dependencies(${target_name} pyf${target_name})
   if (PYTHON_LIBRARIES) # may not be available (e.g. on manylinux)
     target_link_libraries(${target_name} PRIVATE ${PYTHON_LIBRARIES})
   endif()

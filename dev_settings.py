@@ -68,7 +68,9 @@ def development_settings(models):
         models.append("sib23c02")
         models.append("sib23c03")
 
-    # Check for existence of f2py files
+    # Check for existence of f2py files,
+    # and restart CMake configure stage
+    # if some of them are absent
     pyf_files = []
     for model in models:
         pyf_files.append(f"_{model}.pyf")
@@ -76,21 +78,34 @@ def development_settings(models):
         pyf_files.append(f"_{model}-f2pywrappers.f")
 
     f2py_dir = f"{str(cwd)}/src/f2py"
-    # Touch file if not all f2py files in the f2py directory "f2py_dir"
-    # lfile = f"{str(cwd)}/generate_f2py_files.dat"
-    # info_string = "This file is for automatic regeneration of f2py files by CMake"
+    lfile = f"{str(cwd)}/generate_f2py_files.json"
 
-    # if not Path(lfile).exists():
-    #     with open(lfile, "w") as f:
-    #         f.write(info_string)
-    # else:
+    gen_pyf = {"generate_f2py": False}
+
+    if not Path(lfile).exists():
+        with open(lfile, "w") as file:
+            json.dump(gen_pyf, file)
+
+    generate_pyf = False
     flist = [str(f.name) for f in Path(f2py_dir).iterdir()]
     for filename in pyf_files:
         if filename not in flist:
-            print(f"{filename} is not in flist")
-            print("TOUCHHHHHHHHHHH")
-            Path(cache_file).touch()
+            generate_pyf = True
             break
-            # with open(lfile, "w") as f:
-            #     f.write(info_string)
-            # break
+
+    if generate_pyf:
+        # Set to force CMake reconfigure to
+        # produce f2py files
+        gen_pyf["generate_f2py"] = True
+        with open(lfile, "w") as file:
+            json.dump(gen_pyf, file)
+    else:
+        with open(lfile, "r") as file:
+            gen_pyf = json.load(file)
+
+        if gen_pyf["generate_f2py"] == True:
+            # Set to force CMake reconfigure to
+            # stop producing f2py files
+            gen_pyf["generate_f2py"] = False
+            with open(lfile, "w") as file:
+                json.dump(gen_pyf, file)
