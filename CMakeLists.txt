@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.18)
 
 project(impylib LANGUAGES C Fortran)
 
+option(BUILD_dev_dpmjetiii193 OFF)
+option(BUILD_sib23c00 OFF)
+option(BUILD_sib23c02 OFF)
+option(BUILD_sib23c03 OFF)
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 include(CMakePrintHelpers)
 include(F2Py)
@@ -28,12 +33,6 @@ if (NOT F2PY_INCLUDE_DIR)
   set(F2PY_INCLUDE_DIR "${_f2py_directory}/src" CACHE STRING "F2PY source directory location" FORCE)
 endif()
 
-# Copy fortranobject.c to get rid of deep folder nesting
-configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c fortranobject.c COPYONLY)
-set(f2py_source fortranobject.c)
-configure_file(${CMAKE_SOURCE_DIR}/env_variables_cache.json env_variables_cache.json COPYONLY)
-configure_file(${CMAKE_SOURCE_DIR}/generate_f2py_files.json generate_f2py_files.json COPYONLY)
-
 if (NOT NUMPY_INCLUDE_DIRS)
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
@@ -50,6 +49,9 @@ cmake_print_variables(PYTHON_INCLUDE_DIRS)
 cmake_print_variables(PYTHON_LIBRARIES)
 cmake_print_variables(F2PY_INCLUDE_DIR)
 cmake_print_variables(NUMPY_INCLUDE_DIRS)
+cmake_print_variables(BUILD_sib2302c)
+cmake_print_variables(BUILD_sib2304c)
+cmake_print_variables(BUILD_dev_dpmjetiii193)
 
 include_directories(
   ${PYTHON_INCLUDE_DIRS}
@@ -87,6 +89,9 @@ endif()
 set(impy_definitions IMPY)
 set(fortran_dir ${CMAKE_SOURCE_DIR}/src/fortran)
 set(f2py_dir ${CMAKE_SOURCE_DIR}/src/f2py)
+# Copy fortranobject.c to get rid of deep folder nesting
+configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c fortranobject.c COPYONLY)
+set(f2py_source fortranobject.c)
 
 set(impy_logging impy_openlogfile impy_closelogfile)
 set(logging_source ${fortran_dir}/logging.f)
@@ -96,7 +101,6 @@ set(rangen_source ${fortran_dir}/rangen.fpp)
 ### eposlhc
 file(GLOB eposlhc_sources ${fortran_dir}/EPOS-LHC/sources/*.f)
 list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
-
 
 
 f2py_add_module(_eposlhc
@@ -158,19 +162,19 @@ f2py_add_module(_sib23
 )
 
 
-  ### sib23c01
-  f2py_add_module(_sib23c01
-    FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
-    SOURCES
-    ${fortran_dir}/sibyll/sibyll2.3c01.f
-    ${fortran_dir}/sibyll/sibyll_init.fpp
-    ${logging_source}
-    ${rangen_source}
-    COMPILE_DEFS
-    ${impy_definitions}
-    SIBYLL_TABLE_LENGTH=99
-  )
+### sib23c01
+f2py_add_module(_sib23c01
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3c01.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  COMPILE_DEFS
+  ${impy_definitions}
+  SIBYLL_TABLE_LENGTH=99
+)
 
 
 ### sib23d
@@ -471,4 +475,88 @@ f2py_add_module(_phojet193
   ${impy_definitions}
 )
 
-include(ImpyDevBuilds)
+##### extra optional models follow below ######
+
+if(BUILD_sib23c00)
+  f2py_add_module(_sib23c00
+    FUNCTIONS
+    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    SOURCES
+    ${fortran_dir}/sibyll/sibyll2.3c00.f
+    ${fortran_dir}/sibyll/sibyll_init.fpp
+    ${logging_source}
+    ${rangen_source}
+    COMPILE_DEFS
+    ${impy_definitions}
+    SIBYLL_TABLE_LENGTH=99
+  )
+endif()
+
+if(BUILD_sib23c02)
+  f2py_add_module(_sib23c02
+    FUNCTIONS
+    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    SOURCES
+    ${fortran_dir}/sibyll/sibyll2.3c02.f
+    ${fortran_dir}/sibyll/sibyll_init.fpp
+    ${logging_source}
+    ${rangen_source}
+    COMPILE_DEFS
+    ${impy_definitions}
+    SIBYLL_TABLE_LENGTH=99
+  )
+endif()
+
+if(BUILD_sib23c03)
+  f2py_add_module(_sib23c03
+    FUNCTIONS
+    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    SOURCES
+    ${fortran_dir}/sibyll/sibyll2.3c03.f
+    ${fortran_dir}/sibyll/sibyll_init.fpp
+    ${logging_source}
+    ${rangen_source}
+    COMPILE_DEFS
+    ${impy_definitions}
+    SIBYLL_TABLE_LENGTH=99
+  )
+endif()
+
+if(BUILD_dev_dpmjetiii193)
+
+  file(GLOB dev_dpmjetIII193_sources
+    ${dev_source}/src/phojet/*.f
+    ${dev_source}/src/pythia/*.f
+    ${dev_source}/src/dpmjet/*.f
+    ${dev_source}/common/*.f
+  )
+
+  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX DT_RNDM\.f)
+  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX DT_RNDMST\.f)
+  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX DT_RNDMTE\.f)
+  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX PYR\.f)
+
+  f2py_add_module(_dev_dpmjetIII193
+    FUNCTIONS
+    pho_event dt_init dt_kkinc idt_icihad dt_xsglau pycomp dt_initjs
+    dt_inucas idt_ipdgha dt_evtout pho_init pho_setpar poevt1 poevt2
+    pho_pname pho_pmass pho_setmdl pho_setpdf pycomp pho_xsect pho_borncs
+    pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
+    pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
+    pho_setpcomb dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias
+    init_rmmard ${impy_logging}
+    SOURCES
+    ${dev_dpmjetIII193_sources}
+    ${dev_source}/common/dummies.f
+    ${rangen_source}
+    ${logging_source}
+    INCLUDE_DIRS
+    ${dev_source}/include/phojet
+    ${dev_source}/include/dpmjet
+    ${dev_source}/include/pythia
+    ${dev_source}/include/flinclude
+    COMPILE_DEFS
+    ${impy_definitions}
+  )
+  
+endif()

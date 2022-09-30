@@ -2,12 +2,12 @@ from pathlib import Path
 from setuptools import setup
 import sys
 import subprocess as subp
+import json
 
 cwd = Path(__file__).parent
 
 sys.path.append(str(cwd))
 from cmake_ext import CMakeExtension, CMakeBuild  # noqa: E402
-from dev_settings import development_settings
 
 # make sure that submodules are up-to-date,
 # it is a common error to forget this when
@@ -34,7 +34,14 @@ models = [
     "dpmjetIII193",
 ]
 
-development_settings(models)
+# for convenience, support building extra models via extra.cfg
+# extra.cfg is not tracked by git, so can be freely modified
+extra_cfg = cwd / "extra.cfg"
+
+if extra_cfg.exists():
+    with open(extra_cfg) as f:
+        for line in f:
+            models.append(line.strip())
 
 ext_modules = []
 for model in models:

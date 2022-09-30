@@ -19,6 +19,8 @@
 #   F2PY_INCLUDE_DIR
 #   PYTHON_MODULE_EXTENSION
 #   PYTHON_MODULE_PREFIX
+#   f2py_source
+#   f2py_dir
 #
 # The following arguments are accepted:
 #
@@ -71,7 +73,7 @@ function (f2py_add_module target_name)
     set(F2PY_ADD_MODULE_INTERFACE_SOURCES ${F2PY_ADD_MODULE_SOURCES})
   endif()
 
-  set(F2PY_ADD_MODULE_LOG_FILE ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.log)
+  set(log_file ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.log)
 
   set(F2PY_ADD_MODULE_INC)
   if (F2PY_ADD_MODULE_INCLUDE_DIRS)
@@ -79,9 +81,11 @@ function (f2py_add_module target_name)
     set(F2PY_ADD_MODULE_INC --include-paths ${_joined_dirs})
   endif()
 
-
-  if (NOT EXISTS ${pyf_file})
-    file(WRITE ${F2PY_ADD_MODULE_LOG_FILE} "f2py_add_module: Generating ${pyf_file}\n")
+  if (EXISTS ${pyf_file})
+    file(WRITE ${log_file} "f2py_add_module: Use existing ${pyf_file}\n")
+    message(STATUS "f2py_add_module: Use existing ${pyf_file}")
+  else()
+    file(WRITE ${log_file} "f2py_add_module: Generating ${pyf_file}\n")
     message(STATUS "f2py_add_module: Generating ${pyf_file}")
     # Definitions for source files processing
     set(fortran_defs)
@@ -103,67 +107,46 @@ function (f2py_add_module target_name)
       list(APPEND processed_files ${proc_file})
     endforeach()
 
-    get_filename_component(pyf_file0 ${pyf_file} NAME)
-    set(pyf_file0 ${CMAKE_CURRENT_BINARY_DIR}/${pyf_file0})   
+    get_filename_component(pyf_file_new ${pyf_file} NAME)
     
-    # Generate pyf file in binary directory
+    # Generate in binary directory and copy to source directory.
     add_custom_command(
-      OUTPUT ${pyf_file0}
+      OUTPUT ${pyf_file}
       COMMAND ${PYTHON_EXECUTABLE} -m numpy.f2py
         -m ${target_name}
-        -h ${pyf_file0}
+        -h ${pyf_file_new}
         --overwrite-signature only: ${F2PY_ADD_MODULE_FUNCTIONS} :
         ${F2PY_ADD_MODULE_INC}
         ${processed_files}
-        >> ${F2PY_ADD_MODULE_LOG_FILE} 2>&1
+        >> ${log_file} 2>&1
+      COMMAND ${CMAKE_COMMAND} -E copy
+        ${pyf_file_new} ${f2py_dir}
       DEPENDS ${processed_files}
     )
 
-    # Copy pyf file to f2py source directory
-    add_custom_command(
-      OUTPUT ${pyf_file}
-      COMMAND ${CMAKE_COMMAND} -E copy
-      ${pyf_file0} ${f2py_dir}
-      DEPENDS ${pyf_file0}
-    )
-
-  else()
-    file(WRITE ${F2PY_ADD_MODULE_LOG_FILE} "f2py_add_module: Use existing ${pyf_file}\n")
-    message(STATUS "f2py_add_module: Use existing ${pyf_file}")
   endif()
-
-  add_custom_target(pyf${target_name} DEPENDS ${pyf_file})
   
   if ((EXISTS ${modulec_file}) AND (EXISTS ${f2pywrap_file}))
-    file(APPEND ${F2PY_ADD_MODULE_LOG_FILE} "f2py_add_module: Use existing ${modulec_file} ${f2pywrap_file}\n")
+    file(APPEND ${log_file} "f2py_add_module: Use existing ${modulec_file} ${f2pywrap_file}\n")
     message(STATUS "f2py_add_module: Use existing ${modulec_file}")
     message(STATUS "f2py_add_module: Use existing ${f2pywrap_file}")
   else()
-    get_filename_component(modulec_file0 ${modulec_file} NAME)
-    set(modulec_file0 ${CMAKE_CURRENT_BINARY_DIR}/${modulec_file0})
-    get_filename_component(f2pywrap_file0 ${f2pywrap_file} NAME)
-    set(f2pywrap_file0 ${CMAKE_CURRENT_BINARY_DIR}/${f2pywrap_file0})
-
     message(STATUS "f2py_add_module: Generating ${modulec_file}")
     message(STATUS "f2py_add_module: Generating ${f2pywrap_file}")
 
-    # Generate in binary directory
+    get_filename_component(modulec_file_new ${modulec_file} NAME)
+    get_filename_component(f2pywrap_file_new ${f2pywrap_file} NAME)
+
+    # Generate in binary directory and copy to source directory.
     add_custom_command(
-      OUTPUT ${modulec_file0} ${f2pywrap_file0}
+      OUTPUT ${modulec_file} ${f2pywrap_file}
       COMMAND ${PYTHON_EXECUTABLE} -m numpy.f2py
         ${pyf_file}
         ${F2PY_ADD_MODULE_INC}
-        >> ${F2PY_ADD_MODULE_LOG_FILE} 2>&1 
-      DEPENDS ${F2PY_ADD_MODULE_SOURCES} ${pyf_file}
-    )
-
-    # And copy in f2py source directory
-    add_custom_command(
-      OUTPUT ${modulec_file} ${f2pywrap_file}
+        >> ${log_file} 2>&1 
       COMMAND ${CMAKE_COMMAND} -E copy
-      ${modulec_file0} ${f2pywrap_file0}
-      ${f2py_dir}
-      DEPENDS ${modulec_file0} ${f2pywrap_file0}
+        ${modulec_file_new} ${f2pywrap_file_new} ${f2py_dir}
+      DEPENDS ${F2PY_ADD_MODULE_SOURCES} ${pyf_file}
     )
 
   endif()
@@ -175,7 +158,6 @@ function (f2py_add_module target_name)
     ${F2PY_ADD_MODULE_SOURCES}
   )
 
-  add_dependencies(${target_name} pyf${target_name})
   if (PYTHON_LIBRARIES) # may not be available (e.g. on manylinux)
     target_link_libraries(${target_name} PRIVATE ${PYTHON_LIBRARIES})
   endif()

@@ -6,7 +6,7 @@ The actual build logic is in the CMakeLists.txt.
 The following environment variables change behavior.
 
 DEBUG=1                             : Compile in debug mode.
-VERBOSE=1                           : Let cmake print the commands it is calling,
+VERBOSE=1                           : Let cmake print commands it is calling,
                                       useful to debug the compiler options.
 CMAKE_GENERATOR=<Generator>         : Specify which generator to use.
 CMAKE_ARGS=<cmake args>             : Pass additional cmake arguments.
@@ -24,6 +24,7 @@ import sysconfig as sc
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
 
+cwd = Path(__file__).parent
 
 # Normal print does not work while CMakeBuild is running
 def force_print(msg):
@@ -63,6 +64,12 @@ class CMakeBuild(build_ext):
             f"-DPYTHON_EXECUTABLE={sys.executable}",
             f"-DCMAKE_BUILD_TYPE={cfg}",
         ]
+
+        # Read cmake args from extra.cfg
+        extra_cfg = cwd / "extra.cfg"
+        with open(extra_cfg) as f:
+            for line in f:
+                cmake_args.append(f"-DBUILD_{line.strip()}=ON")
 
         # Arbitrary CMake arguments added via environment variable
         # (needed e.g. to build for ARM OSx on conda-forge)
@@ -112,13 +119,20 @@ class CMakeBuild(build_ext):
         if cmake_cache.exists():
             with cmake_cache.open() as f:
                 s = f.read()
-                cached_python_path = cache_value("PYTHON_EXECUTABLE", s)
                 cached_generator = cache_value("CMAKE_GENERATOR", s)
                 cached_cfg = cache_value("CMAKE_BUILD_TYPE", s)
-                if (
-                    cached_python_path != sys.executable
-                    or (cmake_generator and cached_generator != cmake_generator)
-                    or cached_cfg != cfg
+                disagreement = []
+                for arg in cmake_args:
+                    if arg.startswith("-D"):
+                        key, value = arg[2:].split("=")
+                        cached_value = cache_value(key, s)
+                        disagreement.append(value != cached_value)
+                if any(
+                    disagreement
+                    + [
+                        (cmake_generator and cached_generator != cmake_generator),
+                        cached_cfg != cfg,
+                    ]
                 ):
                     cmake_cache.unlink()
 
