@@ -23,7 +23,7 @@ def rng_state_test(model):
     else:
         ekin = CenterOfMass(13 * TeV, "proton", "proton")
 
-    generator = model(ekin, seed=3163325)
+    generator = model(ekin, seed=1)
     nevents = 10
     rng_state_file = str(model.name) + "rng_state.dat"
 

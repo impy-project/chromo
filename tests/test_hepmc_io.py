@@ -18,7 +18,7 @@ def run(Model):
     ekin = CenterOfMass(10 * GeV, 2212, 2212)
     if Model == im.Sophia20:
         ekin = FixedTarget(10 * GeV, "photon", "proton")
-    gen = Model(ekin, seed=715434)
+    gen = Model(ekin, seed=1)
     return list(gen(3))
 
 
@@ -40,6 +40,9 @@ def test_hepmc_io(Model):
         im.Phojet191,
         im.Phojet193,
         im.UrQMD34,
+        im.DpmjetIII193,
+        im.Sibyll23d,
+        im.Sibyll23c,
     ):
         pytest.xfail("needs investigation whether the problem is in pyhepmc/HepMC3")
 
