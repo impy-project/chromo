@@ -67,9 +67,10 @@ class CMakeBuild(build_ext):
 
         # Read cmake args from extra.cfg
         extra_cfg = cwd / "extra.cfg"
-        with open(extra_cfg) as f:
-            for line in f:
-                cmake_args.append(f"-DBUILD_{line.strip()}=ON")
+        if extra_cfg.exists():
+            with open(extra_cfg) as f:
+                for line in f:
+                    cmake_args.append(f"-DBUILD_{line.strip()}=ON")
 
         # Arbitrary CMake arguments added via environment variable
         # (needed e.g. to build for ARM OSx on conda-forge)
