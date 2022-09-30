@@ -40,8 +40,10 @@ extra_cfg = cwd / "extra.cfg"
 
 if extra_cfg.exists():
     with open(extra_cfg) as f:
-        for line in f:
-            models.append(line.strip())
+        for model in f:
+            model = model.strip()
+            if model:
+                models.append(model)
 
 ext_modules = []
 for model in models:

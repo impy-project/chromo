@@ -75,10 +75,9 @@ function (f2py_add_module target_name)
 
   set(log_file ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.log)
 
-  set(F2PY_ADD_MODULE_INC)
   if (F2PY_ADD_MODULE_INCLUDE_DIRS)
     STRING(JOIN ":" _joined_dirs ${F2PY_ADD_MODULE_INCLUDE_DIRS})
-    set(F2PY_ADD_MODULE_INC --include-paths ${_joined_dirs})
+    set(f2py_include_paths --include-paths ${_joined_dirs})
   endif()
 
   if (EXISTS ${pyf_file})
@@ -116,7 +115,7 @@ function (f2py_add_module target_name)
         -m ${target_name}
         -h ${pyf_file_new}
         --overwrite-signature only: ${F2PY_ADD_MODULE_FUNCTIONS} :
-        ${F2PY_ADD_MODULE_INC}
+        ${f2py_include_paths}
         ${processed_files}
         >> ${log_file} 2>&1
       COMMAND ${CMAKE_COMMAND} -E copy
@@ -142,7 +141,7 @@ function (f2py_add_module target_name)
       OUTPUT ${modulec_file} ${f2pywrap_file}
       COMMAND ${PYTHON_EXECUTABLE} -m numpy.f2py
         ${pyf_file}
-        ${F2PY_ADD_MODULE_INC}
+        ${f2py_include_paths}
         >> ${log_file} 2>&1 
       COMMAND ${CMAKE_COMMAND} -E copy
         ${modulec_file_new} ${f2pywrap_file_new} ${f2py_dir}
@@ -162,11 +161,13 @@ function (f2py_add_module target_name)
     target_link_libraries(${target_name} PRIVATE ${PYTHON_LIBRARIES})
   endif()
   if (F2PY_ADD_MODULE_INCLUDE_DIRS)
-    target_include_directories(${target_name} PRIVATE ${F2PY_ADD_MODULE_INCLUDE_DIRS})
+    target_include_directories(${target_name}
+    PRIVATE ${F2PY_ADD_MODULE_INCLUDE_DIRS})
   endif()
 
   if (F2PY_ADD_MODULE_COMPILE_DEFS)
-    target_compile_definitions(${target_name} PRIVATE ${F2PY_ADD_MODULE_COMPILE_DEFS})
+    target_compile_definitions(${target_name}
+    PRIVATE ${F2PY_ADD_MODULE_COMPILE_DEFS})
   endif()  
   target_compile_options(${target_name} PRIVATE -cpp)
   set_property(TARGET ${target_name} PROPERTY SUFFIX ${PYTHON_MODULE_EXTENSION})

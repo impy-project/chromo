@@ -33,7 +33,7 @@ def force_print(msg):
 
 def cache_value(key, s):
     m = re.search(key + r":[A-Z]+=([^\s]*)", s)
-    assert m
+    assert m, f"{key} is not a cached cmake variable"
     return m.group(1)
 
 
@@ -69,8 +69,11 @@ class CMakeBuild(build_ext):
         extra_cfg = cwd / "extra.cfg"
         if extra_cfg.exists():
             with open(extra_cfg) as f:
-                for line in f:
-                    cmake_args.append(f"-DBUILD_{line.strip()}=ON")
+                for model in f:
+                    model = model.strip()
+                    if not model:
+                        continue
+                    cmake_args.append(f"-DBUILD_{model}=ON")
 
         # Arbitrary CMake arguments added via environment variable
         # (needed e.g. to build for ARM OSx on conda-forge)
