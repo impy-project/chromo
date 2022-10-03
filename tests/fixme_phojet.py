@@ -20,8 +20,8 @@ def test_phojet():
 
     ekin = EventKinematics(
         ecm=7 * TeV,
-        p1pdg=p1pdg,
-        p2pdg=p2pdg,
+        particle1=p1pdg,
+        particle2=p2pdg,
     )
 
     # Some models need to initialize same fortran code,

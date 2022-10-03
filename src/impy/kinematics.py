@@ -18,7 +18,6 @@ the implementation is very "cooked up". We have to discuss this.
 import numpy as np
 from impy import pdata, impy_config
 from impy.util import info
-import abc
 import particle
 
 
@@ -246,7 +245,7 @@ def _normalize_particle(particle):
     return pdg, nuc_prop, composite_target
 
 
-class EventKinematics(abc.ABC):
+class EventKinematics:
     """Handles kinematic variables and conversions between reference frames.
 
     There are different ways to specify a particle collision. For instance
@@ -262,11 +261,10 @@ class EventKinematics(abc.ABC):
         (float) plab     : projectile momentum in lab frame
         (float) elab     : projectile energy in lab frame
         (float) ekin     : projectile kinetic energy in lab frame
-        (float) p1pdg    : PDG ID of the projectile
-        (float) p2pdg    : PDG ID of the target
         (tuple) beam     : Specification as tuple of 4-vectors (np.array)s
-        (tuple) nuc1prop : Projectile nucleus mass & charge (A, Z)
-        (tuple) nuc2prop : Target nucleus mass & charge (A, Z)
+        (tuple) particle1: PDG ID, or nucleus mass & charge (A, Z) of the projectile
+        (tuple) particle2: PDG ID, or nucleus mass & charge (A, Z),
+                           or CompositeTarget of the target
 
     """
 
@@ -276,40 +274,14 @@ class EventKinematics(abc.ABC):
         plab=None,
         elab=None,
         ekin=None,
-        p1pdg=None,
-        p2pdg=None,
         beam=None,
-        nuc1_prop=None,
-        nuc2_prop=None,
         particle1=None,
         particle2=None,
     ):
         # Catch input errors
 
-        if np.sum(np.asarray([ecm, plab, elab, ekin, beam], dtype="bool")) != 1:
-            raise ValueError("Define exclusively one energy/momentum definition")
-
-        if np.sum(np.asarray([p1pdg, nuc1_prop, particle1], dtype="bool")) != 1:
-            raise ValueError(
-                "Define either particle id, "
-                + "nuclear properties or particle1 for side 1."
-            )
-
-        if np.sum(np.asarray([p2pdg, nuc2_prop, particle2], dtype="bool")) != 1:
-            raise ValueError(
-                "Define either particle id, "
-                + "nuclear properties or particle2 for side 2."
-            )
-
-        if not (
-            nuc1_prop is None or (isinstance(nuc1_prop, tuple) and len(nuc1_prop) == 2)
-        ):
-            raise ValueError("Define nuc1_prop as an (A,Z) tuple.")
-
-        if not (
-            nuc2_prop is None or (isinstance(nuc2_prop, tuple) and len(nuc2_prop) == 2)
-        ):
-            raise ValueError("Define nuc2_prop as an (A,Z) tuple.")
+        if sum(bool(x) for x in [ecm, plab, elab, ekin, beam]) != 1:
+            raise ValueError("Define exlusiverly on energy/momentum definition")
 
         if particle1:
             p1pdg, nuc1_prop, composite_target = _normalize_particle(particle1)

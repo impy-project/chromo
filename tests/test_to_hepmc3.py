@@ -8,7 +8,7 @@ import pytest
 
 
 def make_event(Model):
-    ekin = EventKinematics(ecm=1 * TeV, p1pdg=2212, p2pdg=2212)
+    ekin = EventKinematics(ecm=1 * TeV, particle1=2212, particle2=2212)
     m = Model(ekin, seed=1)
     for event in m(100):
         if len(event) > 10:  # to skip elastic events

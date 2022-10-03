@@ -8,7 +8,7 @@ from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
 
 
 def run(Model):
-    ekin = EventKinematics(ecm=10 * GeV, p1pdg=2212, p2pdg=2212)
+    ekin = EventKinematics(ecm=10 * GeV, particle1=2212, particle2=2212)
     gen = Model(ekin, seed=1)
     return list(ev.copy() for ev in gen(3))
 

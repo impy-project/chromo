@@ -602,14 +602,14 @@ class MCRun(ABC):
             if prev_kin.p1_is_nucleus:
                 k = EventKinematics(
                     ecm=prev_kin.ecm,
-                    nuc1_prop=(prev_kin.A1, prev_kin.Z2),
-                    nuc2_prop=(iat, int(iat / 2)),
+                    particle1=(prev_kin.A1, prev_kin.Z2),
+                    particle2=(iat, int(iat / 2)),
                 )
             else:
                 k = EventKinematics(
                     ecm=prev_kin.ecm,
-                    p1pdg=prev_kin.p1pdg,
-                    nuc2_prop=(iat, int(iat / 2)),
+                    particle1=prev_kin.p1pdg,
+                    particle2=(iat, int(iat / 2)),
                 )
             self._set_event_kinematics(k)
             cs += f * self.sigma_inel(**kwargs)
