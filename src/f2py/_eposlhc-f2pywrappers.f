@@ -1905,7 +1905,7 @@ C     It contains Fortran 77 wrappers to fortran functions.
 
       subroutine f2pyinitproducetab(setupfunc)
       external setupfunc
-      real producetables
+      logical producetables
       common /producetab/ producetables
       call setupfunc(producetables)
       end
@@ -2354,6 +2354,20 @@ C     It contains Fortran 77 wrappers to fortran functions.
       integer ighenex(35)
       common /ighnx/ ighenex
       call setupfunc(ighenex)
+      end
+
+      subroutine f2pyinitcrranma4(setupfunc)
+      external setupfunc
+      double precision c(8)
+      double precision u(97,8)
+      integer ijkl(8)
+      integer i97(8)
+      integer j97(8)
+      integer ntot(8)
+      integer ntot2(8)
+      integer jseq
+      common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
+      call setupfunc(c,u,ijkl,i97,j97,ntot,ntot2,jseq)
       end
 
 

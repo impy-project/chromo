@@ -1,25 +1,30 @@
 from pathlib import Path
 from impy.constants import GeV
-from impy.kinematics import EventKinematics
+from impy.kinematics import CenterOfMass, FixedTarget
 import impy.models as im
 import pytest
 import pyhepmc
-from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
+from .util import (
+    run_in_separate_process,
+    xfail_on_ci_if_model_is_incompatible,
+    get_all_models,
+)
+
+# generate list of all models in impy.models
+models = get_all_models(im)
 
 
 def run(Model):
-    ekin = EventKinematics(ecm=10 * GeV, p1pdg=2212, p2pdg=2212)
+    ekin = CenterOfMass(10 * GeV, 2212, 2212)
+    if Model == im.Sophia20:
+        ekin = FixedTarget(10 * GeV, "photon", "proton")
     gen = Model(ekin, seed=1)
-    return list(ev.copy() for ev in gen(3))
+    return list(gen(3))
 
 
 @pytest.mark.parametrize(
     "Model",
-    [
-        im.Sibyll21,
-        im.Pythia6,
-        im.EposLHC,
-    ],
+    models,
 )
 def test_hepmc_io(Model):
     # To run this test do `pytest tests/test_hepmc_writer.py`
@@ -30,8 +35,18 @@ def test_hepmc_io(Model):
     test_file = Path(f"{Path(__file__).with_suffix('')}_{Model.__name__}.dat")
 
     xfail_on_ci_if_model_is_incompatible(Model)
+    if Model in (
+        im.Phojet112,
+        im.Phojet191,
+        im.Phojet193,
+        im.UrQMD34,
+        im.DpmjetIII193,
+        im.Sibyll23d,
+        im.Sibyll23c,
+    ):
+        pytest.xfail("needs investigation whether the problem is in pyhepmc/HepMC3")
 
-    events = run_in_separate_process(run, Model)
+    events = run_in_separate_process(run, Model, timeout=60)
 
     expected = []
     with pyhepmc.open(test_file, "w") as f:
@@ -40,11 +55,12 @@ def test_hepmc_io(Model):
             expected.append(event.to_hepmc3())
 
     restored = []
-    for event in pyhepmc.open(test_file):
-        assert event is not None
-        # Some models (e.g. Sibyll) do not set event.event_number properly
-        # assert event.event_number == ievent
-        restored.append(event)
+    with pyhepmc.open(test_file) as events:
+        for event in events:
+            assert event is not None
+            # Some models (e.g. Sibyll) do not set event.event_number properly
+            # assert event.event_number == ievent
+            restored.append(event)
 
     assert len(restored) == len(expected)
 

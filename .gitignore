@@ -34,3 +34,5 @@ __pycache__
 .pytest_cache
 .benchmarks
 examples/*.dat
+tests/*.dat
+extra.cfg

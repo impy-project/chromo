@@ -12,11 +12,12 @@ import numpy as np
 from impy import impy_config
 from impy.util import info
 from impy.kinematics import EventKinematics
-from dataclasses import dataclass
+import dataclasses
+import copy
 import typing as _tp
 
 
-@dataclass
+@dataclasses.dataclass
 class EventData:
     """
     Data structure to keep filtered data.
@@ -147,9 +148,9 @@ class EventData:
         """
         Return event copy.
         """
+        # this should be implemented with the help of copy
         copies = []
-        for k in self.__dataclass_fields__:
-            obj = getattr(self, k)
+        for obj in dataclasses.astuple(self):
             copies.append(obj.copy() if hasattr(obj, "copy") else obj)
 
         return EventData(*copies)
@@ -428,6 +429,77 @@ class Settings(ABC):
         return False
 
 
+@dataclasses.dataclass
+class RMMARDState:
+    _c_number: np.ndarray = None
+    _u_array: np.ndarray = None
+    _u_i: np.ndarray = None
+    _u_j: np.ndarray = None
+    _seed: np.ndarray = None
+    _counter: np.ndarray = None
+    _big_counter: np.ndarray = None
+    _sequence_number: np.ndarray = None
+
+    def _record_state(self, generator):
+        data = generator.crranma4
+
+        self._c_number = data.c
+        self._u_array = data.u
+        self._u_i = data.i97
+        self._u_j = data.j97
+        self._seed = data.ijkl
+        self._counter = data.ntot
+        self._big_counter = data.ntot2
+        self._sequence_number = data.jseq
+        return self
+
+    def _restore_state(self, generator):
+        data = generator.crranma4
+
+        data.c = self._c_number
+        data.u = self._u_array
+        data.i97 = self._u_i
+        data.j97 = self._u_j
+        data.ijkl = self._seed
+        data.ntot = self._counter
+        data.ntot2 = self._big_counter
+        data.jseq = self._sequence_number
+        return self
+
+    def __eq__(self, other: object) -> bool:
+        if other.__class__ is not self.__class__:
+            return NotImplemented
+
+        return (
+            np.array_equal(self._c_number, other._c_number)
+            and np.array_equal(self._u_array, other._u_array)
+            and np.array_equal(self._u_i, other._u_i)
+            and np.array_equal(self._u_j, other._u_j)
+            and np.array_equal(self._seed, other._seed)
+            and np.array_equal(self._counter, other._counter)
+            and np.array_equal(self._big_counter, other._big_counter)
+            and np.array_equal(self._sequence_number, other._sequence_number)
+        )
+
+    def copy(self):
+        """
+        Return generator copy.
+        """
+        return copy.deepcopy(self)  # this uses setstate, getstate
+
+    @property
+    def sequence(self):
+        return self._sequence_number
+
+    @property
+    def counter(self):
+        return self._counter[self.sequence - 1]
+
+    @property
+    def seed(self):
+        return self._seed[self.sequence - 1]
+
+
 # =========================================================================
 # MCRun
 # =========================================================================
@@ -547,6 +619,14 @@ class MCRun(ABC):
             if ekin.p2_is_nucleus:
                 ekin.A2, ekin.Z2 = ekin.composite_target._get_random_AZ()
                 self._set_event_kinematics(ekin)
+
+    @property
+    def random_state(self):
+        return RMMARDState()._record_state(self.lib)
+
+    @random_state.setter
+    def random_state(self, rng_state):
+        rng_state._restore_state(self.lib)
 
     @property
     def event_kinematics(self):

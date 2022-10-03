@@ -2,6 +2,7 @@ from pathlib import Path
 import re
 import sys
 import shutil
+import os
 
 this_program = Path(sys.argv[0]).name
 

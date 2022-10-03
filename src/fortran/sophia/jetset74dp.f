@@ -6210,7 +6210,8 @@ C...Purpose: to reconstruct an angle from given x and y coordinates.
  
       RETURN 
       END 
- 
+
+#ifndef IMPY  
 C********************************************************************* 
  
 CDECK  ID>, RLU
@@ -6280,7 +6281,7 @@ C...Update counters. Random number to output.
         MRLU2=MRLU2+1 
         MRLU3=0 
       ENDIF 
-      RLU=RUNI 
+      RLUX=RUNI 
  
       RETURN 
       END 
@@ -6357,7 +6358,8 @@ C...Write error.
  
       RETURN 
       END 
- 
+C #endif IMPY
+#endif
 C********************************************************************* 
  
 CDECK  ID>, LUROBO

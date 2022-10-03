@@ -315,6 +315,25 @@ C-----------------------------------------------------------------------
 #endif
 
 
+      DOUBLE PRECISION FUNCTION GASDEV(idum)
+C-----------------------------------------------------------------------
+C  SEE SUBROUT. RMMARD
+C  WE USE HERE A SIMPLIFIED FORM OF RMMARD WITH JSEQ=1, LENV=1.
+C  THIS FUNCTON IS CALLED FROM SIBYLL ROUTINES.
+C-----------------------------------------------------------------------
+
+
+      IMPLICIT NONE
+      INTEGER idum
+      DOUBLE PRECISION SIMRND
+
+      GASDEV = SIMRND()
+
+      RETURN
+      END
+
+
+
       DOUBLE PRECISION FUNCTION PYR()
 
 C-----------------------------------------------------------------------
@@ -322,7 +341,7 @@ C  PY(THIA) R(ANDOM GENERATOR)
 C
 C  SEE SUBROUT. RMMARD
 C  WE USE HERE A SIMPLIFIED FORM OF RMMARD WITH JSEQ=1, LENV=1.
-C  THIS FUNCTON IS CALLED FROM SIBYLL ROUTINES.
+C  THIS FUNCTON IS CALLED FROM PYTHIA ROUTINES.
 C-----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -360,7 +379,7 @@ C  RAN(DOM GENERATOR FOR QGSJET)
 C
 C  SEE SUBROUT. RMMARD
 C  WE USE HERE A SIMPLIFIED FORM OF RMMARD WITH JSEQ=1, LENV=1.
-C  THIS FUNCTON IS CALLED FROM QGSJET01C AND QGSJET_II ROUTINES.
+C  THIS FUNCTON IS CALLED FROM QGSJET01D AND QGSJET_II ROUTINES.
 C* ARGUMENT:
 C*  B10    =  DUMMY ARGUMENT
 C-----------------------------------------------------------------------
@@ -389,6 +408,39 @@ C-----------------------------------------------------------------------
       RETURN
       END
 
+
+      DOUBLE PRECISION FUNCTION RLU()
+
+C-----------------------------------------------------------------------
+C  RLU  RANDOM GENERATOR FOR JETSET
+C-----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      DOUBLE PRECISION SIMRND
+
+      RLU = SIMRND()
+
+      RETURN
+      END
+
+      DOUBLE PRECISION FUNCTION DT_RNDM(VDUMMY)
+
+C-----------------------------------------------------------------------
+C  SEE SUBROUT. RMMARD
+C  WE USE HERE A SIMPLIFIED FORM OF RMMARD WITH JSEQ=1, LENV=1.
+C  THIS FUNCTON IS CALLED FROM DPM_JET306 ROUTINES.
+C-----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      DOUBLE PRECISION SIMRND, VDUMMY
+
+      DT_RNDM = SIMRND()
+
+      RETURN
+      END
+
       SUBROUTINE INIT_RMMARD(ISEEDIN)
 
 C-----------------------------------------------------------------------
@@ -399,6 +451,14 @@ C*  ISEEDIN    =  SEED
 C-----------------------------------------------------------------------
       
       IMPLICIT NONE
+
+      INTEGER          KSEQ
+      PARAMETER        (KSEQ = 8)
+      DOUBLE PRECISION C(KSEQ),U(97,KSEQ),UNI
+      INTEGER          IJKL(KSEQ),I97(KSEQ),J97(KSEQ),
+     *                 NTOT(KSEQ),NTOT2(KSEQ),JSEQ
+      
+      COMMON /CRRANMA4/C,U,IJKL,I97,J97,NTOT,NTOT2,JSEQ
 
       INTEGER ISEEDIN, ISEED(3), NSEQ, I
       PARAMETER( NSEQ = 2)

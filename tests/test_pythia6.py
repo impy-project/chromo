@@ -1,3 +1,5 @@
+# These tests check Pythia6 but also the MCEvent in general.
+# It is not necessary to duplicate all tests for every model.
 from impy.kinematics import CenterOfMass
 from impy.models import Pythia6
 from impy.constants import GeV, TeV
@@ -111,3 +113,32 @@ def run_pickle():
 
 def test_pickle(event):
     run_in_separate_process(run_pickle)
+
+
+def run_event_copy():
+    from impy.models.pythia6 import PYTHIA6Event
+    from impy.common import EventData
+
+    ekin = CenterOfMass(1 * TeV, 2212, 2212)
+    m = Pythia6(ekin, seed=4)
+    m.set_stable(lp.pi_0.pdgid, False)  # needed to get nonzero vertices
+    for event in m(1):
+        pass
+
+    event2 = event.copy()
+    assert type(event) is PYTHIA6Event
+    assert type(event2) is not PYTHIA6Event
+    assert type(event2) is EventData
+    assert event2 is not event
+    assert event2 == event
+
+    event3 = event2.copy()
+    assert type(event3) is EventData
+    assert event3 == event2
+
+    # just running this used to trigger a bug
+    list(m(1))
+
+
+def test_event_copy():
+    run_in_separate_process(run_event_copy)

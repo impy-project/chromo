@@ -63,7 +63,11 @@ c Important : to be call before ranfst
 c-----------------------------------------------------------------------
       IMPLICIT NONE
       INTEGER          KSEQ
+#ifndef IMPY      
       PARAMETER        (KSEQ = 2)
+#else
+      PARAMETER        (KSEQ = 8)
+#endif  
       COMMON /CRRANMA3/CD,CINT,CM,TWOM24,TWOM48,MODCNS
       DOUBLE PRECISION CD,CINT,CM,TWOM24,TWOM48
       INTEGER          MODCNS
@@ -97,7 +101,11 @@ c Important : to be call after ranfgt
 c-----------------------------------------------------------------------
       IMPLICIT NONE
       INTEGER          KSEQ
+#ifndef IMPY      
       PARAMETER        (KSEQ = 2)
+#else
+      PARAMETER        (KSEQ = 8)
+#endif            
       COMMON /CRRANMA3/CD,CINT,CM,TWOM24,TWOM48,MODCNS
       DOUBLE PRECISION CD,CINT,CM,TWOM24,TWOM48
       INTEGER          MODCNS
@@ -190,6 +198,8 @@ c iiseed(2) and iiseed(3) defined in aread
       endif
       return
       end
+
+#ifndef IMPY      
 C=======================================================================
       SUBROUTINE RMMARD( RVEC,LENV,ISEQ )
 C-----------------------------------------------------------------------
@@ -389,3 +399,4 @@ C  COMPLETE INITIALIZATION BY SKIPPING (NTOT2*MODCNS+NTOT) RANDOMNUMBERS
       ENDIF
       RETURN
       END
+#endif      

@@ -123,6 +123,8 @@ class PHOJETRun(MCRun):
             self.lib.dtflka.lpri = 50
         elif hasattr(self.lib, "dtiont"):
             self.lib.dtiont.lout = lun
+        elif hasattr(self.lib, "poinou"):
+            self.lib.poinou.lo = lun
         else:
             raise Exception(
                 "Unknown PHOJET (DPMJET) version, IO common block not detected."
@@ -144,6 +146,8 @@ class PHOJETRun(MCRun):
         else:
             seed = int(seed)
         info(3, "Using seed:", seed)
+        # Set seed of random number generator
+        self.lib.init_rmmard(seed)
 
         # Detect what kind of PHOJET interface is attached. If PHOJET
         # is run through DPMJET, initial init needs -2 else -1
@@ -197,16 +201,6 @@ class PHOJETRun(MCRun):
                 "PHOJET failed to initialize with the current", "event kinematics"
             )
 
-        # Set seed of random number generator
-        sseed = str(seed)
-        n1, n2, n3, n4 = (
-            int(sseed[0:2]),
-            int(sseed[2:4]),
-            int(sseed[4:6]),
-            int(sseed[6:]),
-        )
-        self.lib.dt_rndmst(n1, n2, n3, n4)
-
         # if self.def_settings:
         #     print self.class_name + \
         #         "::init_generator(): Using default settings:", \
@@ -238,5 +232,14 @@ class Phojet191(PHOJETRun):
         from impy.definitions import interaction_model_by_tag as models_dict
 
         interaction_model_def = models_dict["PHOJET191"]
+        super().__init__(interaction_model_def)
+        self.init_generator(event_kinematics, seed, logfname)
+
+
+class Phojet193(PHOJETRun):
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.definitions import interaction_model_by_tag as models_dict
+
+        interaction_model_def = models_dict["PHOJET193"]
         super().__init__(interaction_model_def)
         self.init_generator(event_kinematics, seed, logfname)

@@ -3,7 +3,7 @@
 
 python module _sib21 ! in 
     interface  ! in :_sib21
-        subroutine sibyll(k_beam,iatarg,ecm) ! in :_sib21:sibyll_21.f
+        subroutine sibyll(k_beam,iatarg,ecm) ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sibyll_21.f.proc
             integer :: k_beam
             integer :: iatarg
             real :: ecm
@@ -56,7 +56,7 @@ python module _sib21 ! in
             common /s_cqdis/ ppt0,ptflag
             common /s_cutoff/ str_mass_val,str_mass_sea
         end subroutine sibyll
-        subroutine sib_list ! in :_sib21:sibyll_21.f
+        subroutine sib_list ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sibyll_21.f.proc
             real dimension(8000,5) :: p
             integer dimension(8000) :: llist
             integer :: np
@@ -106,7 +106,7 @@ python module _sib21 ! in
             common /s_cnam/ namp
             common /s_chp/ ichp,istr,ibar
         end subroutine sib_list
-        block data param_ini ! in :_sib21:sibyll_21.f
+        block data param_ini ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sibyll_21.f.proc
             integer, optional :: ncall=0
             integer, optional :: ndebug=0
             integer, optional :: lun=6
@@ -134,9 +134,9 @@ python module _sib21 ! in
             common /s_cutoff/ str_mass_val,str_mass_sea
             common /ckfrag/ kodfrag
         end block data param_ini
-        subroutine sibyll_ini ! in :_sib21:sibyll_21.f
+        subroutine sibyll_ini ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sibyll_21.f.proc
         end subroutine sibyll_ini
-        subroutine sib_sigma_hp(l,sqs,sigt,sigel,siginel,sigdif,slope,rho) ! in :_sib21:sibyll_21.f
+        subroutine sib_sigma_hp(l,sqs,sigt,sigel,siginel,sigdif,slope,rho) ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sibyll_21.f.proc
             integer :: l
             real :: sqs
             real intent(out) :: sigt
@@ -162,7 +162,7 @@ python module _sib21 ! in
             common /s_ccsig/ ssig,pjetc,ssign,alint,asqsmin,asqsmax,dasqs,nsqs
             common /s_ccsig2/ ssig_tot,ssig_sd1,ssig_sd2,ssig_dd,ssig_b,ssig_rho
         end subroutine sib_sigma_hp
-        subroutine sib_sigma_hair(l,sqs,sigprod) ! in :_sib21:sibyll_21.f
+        subroutine sib_sigma_hair(l,sqs,sigprod) ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sibyll_21.f.proc
             integer :: l
             real :: sqs
             real intent(out) :: sigprod
@@ -176,7 +176,7 @@ python module _sib21 ! in
             integer :: nsqs
             common /s_ccsig/ ssig,pjetc,ssign,alint,asqsmin,asqsmax,dasqs,nsqs
         end subroutine sib_sigma_hair
-        subroutine decsib ! in :_sib21:sibyll_21.f
+        subroutine decsib ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sibyll_21.f.proc
             real dimension(102) :: cbr
             integer dimension(612) :: kdec
             integer dimension(49) :: lbarp
@@ -192,7 +192,7 @@ python module _sib21 ! in
             common /s_plist1/ llist1
             common /s_mass1/ am,am2
         end subroutine decsib
-        subroutine decpar(la,p0,nd,ll,p) ! in :_sib21:sibyll_21.f
+        subroutine decpar(la,p0,nd,ll,p) ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sibyll_21.f.proc
             integer :: la
             real dimension(5) :: p0
             integer :: nd
@@ -207,7 +207,7 @@ python module _sib21 ! in
             common /s_csydec/ cbr,kdec,lbarp,idb
             common /s_mass1/ am,am2
         end subroutine decpar
-        block data datdec ! in :_sib21:sibyll_21.f
+        block data datdec ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sibyll_21.f.proc
             real, optional,dimension(102) :: cbr=3*1.
             integer, optional,dimension(612) :: kdec=3
             integer, optional,dimension(49) :: lbarp=1
@@ -223,14 +223,14 @@ python module _sib21 ! in
             common /s_chp/ ichp,istr,ibar
             common /s_cnam/ namp
         end block data datdec
-        block data frag_data ! in :_sib21:sibyll_21.f
+        block data frag_data ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sibyll_21.f.proc
             real dimension(10,10,20) :: a
             real dimension(10,10,20) :: ae
             real dimension(10,10) :: eres
             integer dimension(10,10) :: nflagg
             common /fragmod/ a,ae,eres,nflagg
         end block data frag_data
-        subroutine int_nuc(ia,ib,sig0,sigel) ! in :_sib21:sibyll_21.f
+        subroutine int_nuc(ia,ib,sig0,sigel) ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sibyll_21.f.proc
             integer :: ia
             integer :: ib
             real :: sig0
@@ -250,7 +250,7 @@ python module _sib21 ! in
             integer dimension(56) :: jjbel
             common /cnucms/ b,bmax,ntry,na,nb,ni,nael,nbel,jja,jjb,jjint,jjael,jjbel
         end subroutine int_nuc
-        subroutine pdg_ini ! in :_sib21:sib21aux.f
+        subroutine pdg_ini ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sib21aux.f.proc
             integer :: ncall
             integer :: ndebug
             integer :: lun
@@ -259,7 +259,7 @@ python module _sib21 ! in
             common /s_debug/ ncall,ndebug,lun
             common /s_pdg2pid/ id_pdg_list,id_list
         end subroutine pdg_ini
-        function isib_pdg2pid(npdg) ! in :_sib21:sib21aux.f
+        function isib_pdg2pid(npdg) ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sib21aux.f.proc
             integer :: npdg
             integer dimension(99) :: ipid_pdg_list
             integer dimension(577) :: id_list
@@ -270,20 +270,21 @@ python module _sib21 ! in
             common /s_pdg2pid/ ipid_pdg_list,id_list
             common /s_debug/ ncall,ndebug,lun
         end function isib_pdg2pid
-        function isib_pid2pdg(npid) ! in :_sib21:sib21aux.f
+        function isib_pid2pdg(npid) ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sib21aux.f.proc
             integer :: npid
             integer dimension(99) :: id_pdg_list
             integer dimension(577) :: id_list
             integer :: isib_pid2pdg
             common /s_pdg2pid/ id_pdg_list,id_list
         end function isib_pid2pdg
-        subroutine sibhep1 ! in :_sib21:sib21aux.f
+        subroutine sibhep1 ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sib21aux.f.proc
             real dimension(8000,5) :: p
             integer dimension(8000) :: llist
             integer :: np
-            integer dimension(99) :: ichp
-            integer dimension(99) :: istr
-            integer dimension(99) :: ibar
+            integer dimension(8000) :: llist1
+            integer dimension(49) :: ichp
+            integer dimension(49) :: istr
+            integer dimension(49) :: ibar
             integer :: nevhep
             integer :: nhep
             integer dimension(8000) :: isthep
@@ -294,20 +295,33 @@ python module _sib21 ! in
             double precision dimension(4,8000) :: vhep
             integer dimension(8000) :: ichg
             common /s_plist/ p,llist,np
+            common /s_plist1/ llist1
             common /s_chp/ ichp,istr,ibar
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /schg/ ichg
         end subroutine sibhep1
-        subroutine sibini(seedin) ! in :_sib21:/app/src/fortran/sibyll/sibyll_init.f
+        subroutine sibini(seedin) ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/sibyll_init.f.proc
             integer :: seedin
         end subroutine sibini
-        subroutine impy_openlogfile(fname,opunit) ! in :_sib21:/app/src/fortran/logging.f
+        subroutine impy_openlogfile(fname,opunit) ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/logging.f.proc
             character*300 :: fname
             integer :: opunit
         end subroutine impy_openlogfile
-        subroutine impy_closelogfile(opunit) ! in :_sib21:/app/src/fortran/logging.f
+        subroutine impy_closelogfile(opunit) ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/logging.f.proc
             integer :: opunit
         end subroutine impy_closelogfile
+        subroutine init_rmmard(iseedin) ! in :_sib21:CMakeFiles/_sib21.dir/pyf_sources/rangen.f.proc
+            integer :: iseedin
+            double precision dimension(8) :: c
+            double precision dimension(97,8) :: u
+            integer dimension(8) :: ijkl
+            integer dimension(8) :: i97
+            integer dimension(8) :: j97
+            integer dimension(8) :: ntot
+            integer dimension(8) :: ntot2
+            integer :: jseq
+            common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
+        end subroutine init_rmmard
     end interface 
 end python module _sib21
 
