@@ -43,6 +43,8 @@ if extra_cfg.exists():
         for model in f:
             model = model.strip()
             if model:
+                if "=" in model:
+                    model = model.split("=")[0]
                 models.append(model)
 
 ext_modules = []

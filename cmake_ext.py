@@ -73,7 +73,12 @@ class CMakeBuild(build_ext):
                     model = model.strip()
                     if not model:
                         continue
-                    cmake_args.append(f"-DBUILD_{model}=ON")
+                    if "=" in model:
+                        if model[-1] == "/":
+                            model = model[:-1]
+                        cmake_args.append(f"-DBUILD_{model}")
+                    else:
+                        cmake_args.append(f"-DBUILD_{model}=ON")
 
         # Arbitrary CMake arguments added via environment variable
         # (needed e.g. to build for ARM OSx on conda-forge)

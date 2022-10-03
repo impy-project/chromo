@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.18)
 
 project(impylib LANGUAGES C Fortran)
 
-option(BUILD_dev_dpmjetiii193 OFF)
+set(BUILD_dev_dpmjetIII193 CACHE 
+  PATH "source directory for dev_dpmjetIII193")
 option(BUILD_sib23c00 OFF)
 option(BUILD_sib23c02 OFF)
 option(BUILD_sib23c03 OFF)
@@ -52,7 +53,7 @@ cmake_print_variables(NUMPY_INCLUDE_DIRS)
 cmake_print_variables(BUILD_sib23c00)
 cmake_print_variables(BUILD_sib23c02)
 cmake_print_variables(BUILD_sib23c03)
-cmake_print_variables(BUILD_dev_dpmjetiii193)
+cmake_print_variables(BUILD_dev_dpmjetIII193)
 
 include_directories(
   ${PYTHON_INCLUDE_DIRS}
@@ -523,7 +524,9 @@ if(BUILD_sib23c03)
   )
 endif()
 
-if(BUILD_dev_dpmjetiii193)
+if(BUILD_dev_dpmjetIII193)
+
+  set(dev_source ${BUILD_dev_dpmjetIII193})
 
   file(GLOB dev_dpmjetIII193_sources
     ${dev_source}/src/phojet/*.f
