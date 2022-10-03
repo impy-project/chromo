@@ -36,6 +36,14 @@ models = [
 
 # for convenience, support building extra models via extra.cfg
 # extra.cfg is not tracked by git, so can be freely modified
+# extra.cfg example:
+# -----
+# sib23c00
+# sib23c02
+# sib23c03
+# dev_dpmjetIII193=/full/path/to/dir/dpmjetIII-19.3
+# ----
+
 extra_cfg = cwd / "extra.cfg"
 
 if extra_cfg.exists():

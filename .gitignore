@@ -35,6 +35,4 @@ __pycache__
 .benchmarks
 examples/*.dat
 tests/*.dat
-env_variables_cache.json
-generate_f2py_files.json
 extra.cfg
