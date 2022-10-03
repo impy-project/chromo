@@ -10,79 +10,112 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        arch: [auto, aarch64]
-        py: [cp37, cp38, cp39, cp310]
-        include:
-          - os: macos-latest
-            py: cp38
-            arch: universal2
-          - os: macos-latest
-            py: cp39
-            arch: universal2
-          - os: macos-latest
-            py: cp310
-            arch: universal2
-        exclude:
-          - os: windows-latest
-            arch: aarch64
-          - os: macos-latest
-            arch: aarch64
+        os: [windows-latest]
+        arch: [native]
+        py: [cp39]
+        # os: [ubuntu-latest, windows-latest, macos-latest]
+        # arch: [native, aarch64, universal2]
+        # py: [cp37, cp38, cp39, cp310]
+        # exclude:
+        #   - os: windows-latest
+        #     arch: aarch64
+        #   - os: windows-latest
+        #     arch: universal2
+        #   - os: macos-latest
+        #     arch: aarch64 
+        #   - os: ubuntu-latest
+        #     arch: universal2
     env:
       CIBW_BUILD: ${{ matrix.py }}-*
-      CIBW_ARCHS_LINUX: ${{ matrix.arch }}
+      CIBW_ARCHS: ${{ matrix.arch }}
+      CIBW_SKIP: "*musllinux*"
+      CIBW_TEST_SKIP: "*-macosx_universal2:arm64"
+      PYTEST_COMMAND: >
+          pip install pytest-xdist[psutil] && 
+          export CI=true && 
+          pytest -vv -n auto `echo {package}/tests/test_*`
+
     steps:
-      - uses: actions/checkout@v2
+
+      - name: Show environment
+        run: env | grep ^GITHUB
+
+      - name: Show CI env
+        run: env | grep ^CI  
+
+      - uses: actions/checkout@v3
         with:
           submodules: true
 
-      - if: ${{ matrix.arch == 'aarch64' }}
-        uses: docker/setup-qemu-action@v1
+      - name: Set up testing command
+        run: |
+          echo "CIBW_TEST_COMMAND=${{ env.PYTEST_COMMAND }}" >> $GITHUB_ENV
+        shell: bash
 
-      - uses: pypa/cibuildwheel@v2.3.1
+      - name: Set different generator for Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          $Env:CMAKE_GENERATOR = 'MinGW Makefiles'
+
+      - if: ${{ matrix.arch == 'aarch64' }}
+        uses: docker/setup-qemu-action@v2 
+
+      - uses: awvwgk/setup-fortran@main
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 11
+
+      - run: ${{ env.FC }} --version
+        env:
+          FC: ${{ steps.setup-fortran.outputs.fc }}     
+
+      - uses: pypa/cibuildwheel@v2.9.0
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
+          CMAKE_GENERATOR: "MinGW Makefiles"
+          FC: ${{ steps.setup-fortran.outputs.fc }}
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
-          path: ./wheelhouse/*.whl
+          path: ./wheelhouse/*.whl 
 
-  sdist:
-    name: source package
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
+  # sdist:
+  #   name: source package
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         submodules: true
 
-      - uses: actions/setup-python@v2
-        name: Install Python
-        with:
-          python-version: '3.9'
+  #     - uses: actions/setup-python@v4
+  #       name: Install Python
+  #       with:
+  #         python-version: '3.9'
 
-      - run: python -m pip install --upgrade pip wheel
-      - run: python setup.py sdist
+  #     - run: python -m pip install --upgrade pip wheel
+  #     - run: python setup.py sdist
 
-      - run: python -m pip install dist/impy-*
-      - run: python -m pip install pytest
-      - run: python -m pytest
+  #     - run: python -m pip install dist/impy-*
+  #     - run: python -m pip install pytest
+  #     - run: python -m pytest
 
-      - uses: actions/upload-artifact@v2
-        with:
-          path: dist/*.tar.gz
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         path: dist/*.tar.gz
 
-  upload:
-    needs: [wheels, sdist]
-    runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/master' }}
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: artifact
-          path: dist
+  # upload:
+  #   needs: [wheels, sdist]
+  #   runs-on: ubuntu-latest
+  #   if: ${{ github.ref == 'refs/heads/master' }} && startsWith(github.ref, 'refs/tags/v')
+  #   steps:
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: artifact
+  #         path: dist
 
-      - uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{secrets.pypi_password}}
+  #     - uses: pypa/gh-action-pypi-publish@master
+  #       with:
+  #         user: __token__
+  #         password: ${{secrets.pypi_password}}
