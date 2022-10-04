@@ -5,8 +5,9 @@ Created on 17.03.2014
 """
 
 import numpy as np
-from impy.common import MCRun, MCEvent, impy_config
+from impy.common import MCRun, MCEvent, RMMARDState, impy_config
 from impy.util import info
+import dataclasses
 
 
 class SibyllEvent(MCEvent):
@@ -37,6 +38,26 @@ class SibyllEvent(MCEvent):
     def n_NN_interactions(self):
         """Number of inelastic nucleon-nucleon interactions"""
         return self._lib.cnucms.ni
+
+
+@dataclasses.dataclass
+class RMMARDSib(RMMARDState):
+    _gasdev_iset: np.ndarray = None
+
+    def _record_state(self, generator):
+        super()._record_state(generator)
+        self._gasdev_iset = generator.lib.rndmgas.iset
+        return self
+
+    def _restore_state(self, generator):
+        super()._restore_state(generator)
+        generator.lib.rndmgas.iset = self._gasdev_iset
+        return self
+
+    def __eq__(self, other: object) -> bool:
+        return super().__eq__(other) and np.array_equal(
+            self._gasdev_iset, other._gasdev_iset
+        )
 
 
 class SIBYLLRun(MCRun):
@@ -133,6 +154,8 @@ class SIBYLLRun(MCRun):
 
         self.attach_log(fname=logfname)
         self.lib.sibini(int(seed))
+        # Set the internal state of GASDEV function (rng) to 0
+        self.lib.rndmgas.iset = 0
         self.lib.pdg_ini()
         self.conv_hepevt = (
             self.lib.sibhep1 if "21" in self.lib.__name__ else self.lib.sibhep3
@@ -165,6 +188,14 @@ class SIBYLLRun(MCRun):
         self.lib.decsib()
         self.conv_hepevt()
         return 0  # SIBYLL never rejects
+
+    @property
+    def random_state(self):
+        return RMMARDSib()._record_state(self)
+
+    @random_state.setter
+    def random_state(self, rng_state):
+        rng_state._restore_state(self)
 
 
 class Sibyll21(SIBYLLRun):

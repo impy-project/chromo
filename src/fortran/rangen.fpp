@@ -315,23 +315,6 @@ C-----------------------------------------------------------------------
 #endif
 
 
-      DOUBLE PRECISION FUNCTION GASDEV(idum)
-C-----------------------------------------------------------------------
-C  SEE SUBROUT. RMMARD
-C  WE USE HERE A SIMPLIFIED FORM OF RMMARD WITH JSEQ=1, LENV=1.
-C  THIS FUNCTON IS CALLED FROM SIBYLL ROUTINES.
-C-----------------------------------------------------------------------
-
-
-      IMPLICIT NONE
-      INTEGER idum
-      DOUBLE PRECISION SIMRND
-
-      GASDEV = SIMRND()
-
-      RETURN
-      END
-
 
 
       DOUBLE PRECISION FUNCTION PYR()
