@@ -15,7 +15,7 @@ def make_event(Model):
     return event  # MCEvent is pickeable, but restored as EventData
 
 
-@pytest.mark.parametrize("Model", (im.Sibyll21, im.Pythia6, im.EposLHC))
+@pytest.mark.parametrize("Model", (im.Sibyll21, im.Sibyll23d, im.Pythia6, im.EposLHC))
 def test_to_hepmc3(Model):
     xfail_on_ci_if_model_is_incompatible(Model)
 
