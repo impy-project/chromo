@@ -42,7 +42,17 @@ def test_to_hepmc3(Model):
             pa = (pa[0] - 1, pa[0])
         unique_vertices.setdefault(pa, []).append(i)
 
-    # check that vertices have no overlapping parent ranges
+    # check that parent ranges do not exceed particle range;
+    # that's a requirement for a valid particle history
+    nmax = len(event.px)
+    for i, (a, b) in enumerate(unique_vertices):
+        assert a >= 0 or a == -1
+        assert (
+            b <= nmax
+        ), f"vertex {i} has parent range {(a, b)} which exceeds particle record {nmax=}"
+
+    # check that vertices have no overlapping parent ranges;
+    # that's a requirement for a valid particle history
     uv = list(unique_vertices)
     for i, pa in enumerate(unique_vertices):
         for j in range(i):
