@@ -241,9 +241,11 @@ C-----------------------------------------------------------------------
 
       FUNCTION SPGASDEV(Idum)
 C...Gaussian deviation
+      INTEGER ISET
+      COMMON /RNDMGAS/ ISET
       SAVE
 
-ctp060123      SAVE GSET
+ctp060123      SAVE GSET    
       DATA ISET/0/
 
       IF (ISET.EQ.0) THEN

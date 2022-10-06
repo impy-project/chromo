@@ -18,11 +18,11 @@ C     It contains Fortran 77 wrappers to fortran functions.
       end
 
 
-      subroutine f2pywrapgasdev (gasdevf2pywrap, idum)
-      external gasdev
+      subroutine f2pywrapspgasdev (spgasdevf2pywrap, idum)
+      external spgasdev
       integer idum
-      double precision gasdevf2pywrap, gasdev
-      gasdevf2pywrap = gasdev(idum)
+      real spgasdevf2pywrap, spgasdev
+      spgasdevf2pywrap = spgasdev(idum)
       end
 
 

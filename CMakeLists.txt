@@ -129,14 +129,16 @@ f2py_add_module(_eposlhc
 
 
 ### sib21
-set(SIBYLL_COMMON_FUNCTIONS
+set(SIBYLL21_FUNCTIONS
   sibyll sibyll_ini sib_sigma_hp sib_sigma_hair sib_sigma_hnuc
   int_nuc decsib decpar sibini sib_list isib_pid2pdg
-  isib_pdg2pid pdg_ini init_rmmard gasdev ${impy_logging})
+  isib_pdg2pid pdg_ini init_rmmard ${impy_logging})
+
+set(SIBYLL_COMMON_FUNCTIONS ${SIBYLL21_FUNCTIONS} gasdev)  
 
 f2py_add_module(_sib21
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep1
+  ${SIBYLL21_FUNCTIONS} sibhep1 spgasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll_21.f
   ${fortran_dir}/sibyll/sib21aux.f

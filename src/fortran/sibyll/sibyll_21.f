@@ -104,6 +104,18 @@ C----------------------------------------------------------------------
       NJET = 0
       NSOF = 0
       IATARGET = IATARG
+      
+C...afed 06.10.2022      
+C...Set PPT0 back to initial values given in block data:
+C...DATA PPT0 /0.30,0.30,0.450,30*0.60/
+C...When ptflag=1 (as in default), PPT0 is different
+C...from initial values - it is a potential PROBLEM!!!
+      PPT0(1) = 0.30
+      PPT0(2) = 0.30
+      PPT0(3) = 0.450
+      DO J=4,33
+      PPT0(J) = 0.60
+      ENDDO      
 
 C...Generate an 'air' interaction by choosing Nitrogen or Oxygen
 

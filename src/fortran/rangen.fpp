@@ -289,7 +289,8 @@ C-----------------------------------------------------------------------
 
       DOUBLE PRECISION SIMRND
 
-      S_RNDM = real(SIMRND())
+555   S_RNDM = real(SIMRND())
+      IF ((S_RNDM.LE.0E0).OR.(S_RNDM.GE.1E0)) GOTO 555     
 
       RETURN
       END

@@ -300,15 +300,15 @@ python module _sib21 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /schg/ ichg
         end subroutine sibhep1
+        function spgasdev(idum) ! in :_sib21:CMakeFiles/_sib21.dir/sib21aux.f
+            integer :: idum
+            integer, optional :: iset=0
+            real :: spgasdev
+            common /rndmgas/ iset
+        end function spgasdev
         subroutine sibini(seedin) ! in :_sib21:CMakeFiles/_sib21.dir/sibyll_init.fpp
             integer :: seedin
         end subroutine sibini
-        function gasdev(idum) ! in :_sib21:CMakeFiles/_sib21.dir/sibyll_init.fpp
-            integer :: idum
-            integer, optional :: iset=0
-            double precision :: gasdev
-            common /rndmgas/ iset
-        end function gasdev
         subroutine impy_openlogfile(fname,opunit) ! in :_sib21:CMakeFiles/_sib21.dir/logging.f
             character*300 :: fname
             integer :: opunit
