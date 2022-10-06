@@ -49,7 +49,7 @@ def test_to_hepmc3(Model):
         assert a >= 0 or a == -1
         assert (
             b <= nmax
-        ), f"vertex {i} has parent range {(a, b)} which exceeds particle record {nmax=}"
+        ), f"vertex {i} has parent range {(a, b)} which exceeds particle record nmax={nmax}"
 
     # check that vertices have no overlapping parent ranges;
     # that's a requirement for a valid particle history
