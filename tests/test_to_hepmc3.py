@@ -1,13 +1,23 @@
-from impy.kinematics import CenterOfMass
+from impy.kinematics import CenterOfMass, FixedTarget
 from impy import models as im
-from impy.constants import TeV
-from .util import run_in_separate_process, xfail_on_ci_if_model_is_incompatible
+from impy.constants import GeV
+from impy.models.sophia import Sophia20
+from .util import (
+    run_in_separate_process,
+    xfail_on_ci_if_model_is_incompatible,
+    get_all_models,
+)
 import numpy as np
 import pytest
 
+# generate list of all models in impy.models
+models = get_all_models(im)
 
-def make_event(Model):
-    ekin = CenterOfMass(1 * TeV, 2212, 2212)
+
+def run(Model):
+    ekin = CenterOfMass(10 * GeV, "proton", "proton")
+    if Model is Sophia20:
+        ekin = CenterOfMass(10 * GeV, "photon", "proton")
     m = Model(ekin, seed=1)
     for event in m(100):
         if len(event) > 10:  # to skip elastic events
@@ -15,11 +25,11 @@ def make_event(Model):
     return event  # MCEvent is pickeable, but restored as EventData
 
 
-@pytest.mark.parametrize("Model", (im.Sibyll21, im.Sibyll23d, im.Pythia6, im.EposLHC))
+@pytest.mark.parametrize("Model", models)
 def test_to_hepmc3(Model):
     xfail_on_ci_if_model_is_incompatible(Model)
 
-    event = run_in_separate_process(make_event, Model)
+    event = run_in_separate_process(run, Model)
 
     unique_vertices = {}
     for i, pa in enumerate(event.parents):
