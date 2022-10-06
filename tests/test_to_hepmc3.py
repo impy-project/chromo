@@ -36,11 +36,20 @@ def test_to_hepmc3(Model):
         assert pa.shape == (2,)
         if np.all(pa == 0):
             continue
-        pa = (pa[0], pa[1])
+        pa = (pa[0] - 1, pa[1])
         # normalize intervals
         if pa[1] == 0:
-            pa = (pa[0], pa[0])
+            pa = (pa[0] - 1, pa[0])
         unique_vertices.setdefault(pa, []).append(i)
+
+    # check that vertices have no overlapping parent ranges
+    uv = list(unique_vertices)
+    for i, pa in enumerate(unique_vertices):
+        for j in range(i):
+            pa2 = uv[j]
+            assert not (
+                pa[0] <= pa2[0] < pa[1] or pa[0] <= pa2[1] - 1 < pa[1]
+            ), f"vertices {j} and {i} overlap: {pa2}, {pa}"
 
     # not all vertices have locations different from zero,
     # create unique fake vertex locations for testing
@@ -76,11 +85,11 @@ def test_to_hepmc3(Model):
 
     unique_vertices2 = {}
     for v in hev.vertices:
-        pi = [p.id for p in v.particles_in]
+        pi = [p.id - 1 for p in v.particles_in]
         if len(pi) == 1:
-            pa = (pi[0], pi[0])
+            pa = (pi[0], pi[0] + 1)
         else:
-            pa = (min(pi), max(pi))
+            pa = (min(pi), max(pi) + 1)
         children = [p.id - 1 for p in v.particles_out]
         unique_vertices2[pa] = children
 

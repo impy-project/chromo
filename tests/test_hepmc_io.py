@@ -41,7 +41,7 @@ def test_hepmc_io(Model):
 
     with pyhepmc.open(test_file, "w") as f:
         for event in expected:
-            f.write(event)  # this calls to_hepmc3() implicitly
+            f.write(event)
 
     restored = []
     with pyhepmc.open(test_file) as f:
