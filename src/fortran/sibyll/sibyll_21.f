@@ -84,7 +84,7 @@ C----------------------------------------------------------------------
       COMMON /S_CQDIS/ PPT0 (33),ptflag
       COMMON /S_CUTOFF/ STR_mass_val, STR_mass_sea
 
-      COMMON /S_CQDIS00/ PPT00(33)
+      REAL PPT00(33)
       INTEGER ISP00/0/
 
       DIMENSION LL(6:14)
@@ -117,7 +117,7 @@ C...Save (once) the block data values of PPT0 to PPT00
           ISP00 = 1
       END IF      
 C...Set PPT0 to the value in block data
-      PPT0 = PPT00     
+      PPT0 = PPT00
 
 C...Generate an 'air' interaction by choosing Nitrogen or Oxygen
 
