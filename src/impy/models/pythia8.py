@@ -8,42 +8,17 @@ import numpy as np
 from impy.common import MCRun, MCEvent
 from impy import impy_config
 from impy.util import info, AZ2pdg
-from argparse import Namespace
 
 
 class PYTHIA8Event(MCEvent):
     """Wrapper class around HEPEVT particle stack."""
 
-    _len_evt = 300000
+    _hepevt = "hepevt"
+    _jdahep = None
 
-    _hepevt = "_hepevt"
-    _hepevt = Namespace(
-        phep=np.zeros((5, _len_evt)),
-        vhep=np.zeros((4, _len_evt)),
-        isthep=np.zeros(_len_evt, dtype=np.int32),
-        idhep=np.zeros(_len_evt, dtype=np.int32),
-        jmohep=np.zeros((2, _len_evt), dtype=np.int32),
-        jdahep=np.zeros((2, _len_evt), dtype=np.int32),
-    )
-
-    def __init__(self, lib, event_kinematics, event_frame):
-        # The following implementation is horrible and just a prototype
-        # should move to fortran or C++ if performance issue
-        self.n_events += 1
-        for i, p in enumerate(lib.event):
-            self._hepevt.status[i] = p.status()
-            self._hepevt.idhep[i] = p.id()
-            self._hepevt.vhep[:, i] = (p.xProd(), p.yProd(), p.zProd(), p.tProd())
-            self._hepevt.phep[:, i] = (p.px(), p.py(), p.pz(), p.e(), p.m())
-            self._hepevt.jmohep[:, i] = p.mother1(), p.mother2()
-            self._hepevt.jdahep[:, i] = p.daughter1(), p.daughter2()
-
-        # hack: use self instead of lib
-        super().__init__(self, event_kinematics, event_frame)
-        self._lib = lib  # set _lib correctly
-
-    def _charge_init(self):
-        return np.fromiter((p.charge() for p in self._lib.event), np.double)
+    def _charge_init(self, npart):
+        # TODO
+        return np.zeros(npart, dtype=np.int_)
 
     # Nuclear collision parameters
     @property
@@ -68,9 +43,6 @@ class PYTHIA8Event(MCEvent):
 
 
 class PYTHIA8Run(MCRun):
-    """Implements all abstract attributes of MCRun for the
-    EPOS-LHC series of event generators."""
-
     def sigma_inel(self, *args, **kwargs):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
@@ -84,7 +56,7 @@ class PYTHIA8Run(MCRun):
         self._curr_event_kin = k
 
         # create new object
-        self.lib = self.cpp_lib.Pythia()
+        self.lib = self.cpp_lib.Pythia("", True)
         # Replay initialization strings
         for param_string in self.save_init_strings:
             self.lib.readString(param_string)
@@ -122,9 +94,9 @@ class PYTHIA8Run(MCRun):
                 float(k.A2),
             )
 
-        self.lib.readString("Beams:idA = {0}".format(k.p1pdg))
-        self.lib.readString("Beams:idB = {0}".format(k.p2pdg))
-        self.lib.readString("Beams:eCM = {0}".format(k.ecm))
+        self.lib.readString(f"Beams:idA = {k.p1pdg}")
+        self.lib.readString(f"Beams:idB = {k.p2pdg}")
+        self.lib.readString(f"Beams:eCM = {k.ecm}")
         # Set default stable
         self._define_default_fs_particles()
 
@@ -132,63 +104,8 @@ class PYTHIA8Run(MCRun):
 
         info(5, "Setting event kinematics")
 
-    # def attach_log(self, fname):
-    #     """Routes the output to a file or the stdout."""
-
-    #     import os, sys, threading
-
-    #     fname = impy_config['output_log'] if fname is None else fname
-    #     # info(1, 'Not implemented at this stage')
-
-    #     os.dup2(self.stdout_pipe[1], self.stdout_fileno)
-    #     os.close(self.stdout_pipe[1])
-
-    #     captured_stdout = ''
-
-    #     t = threading.Thread(target=self.drain_pipe(captured_stdout))
-    #     t.start()
-
-    #     print 'Captured stdout \n{:s}'.format(captured_stdout)
-    #     print len(captured_stdout)
-
-    #     self._attach_cc_logfile(captured_stdout, fname)
-
-    # def drain_pipe(self, captured_stdout):
-    #     import os
-    #     while True:
-    #         data = os.read(self.stdout_pipe[0], 1024)
-    #         if not data:
-    #             break
-    #         captured_stdout += data
-
-    # def _attach_cc_logfile(self, captured_stdout, fname):
-    #     """Writes captured stdout into the file given"""
-    #     with open(fname, 'w') as f:
-    #         f.write(captured_stdout)
-
-    # def close_cc_logfile(self):
-    #     """Properly close duplicates and correctly restore stdout"""
-    #     import os, threading
-    #     os.close(self.stdout_fileno)
-
-    #     os.close(self.stdout_pipe[0])
-    #     os.dup2(self.stdout_save, self.stdout_fileno)
-    #     os.close(self.stdout_save)
-
     def attach_log(self, fname):
-        # from impy.util import OutputGrabber
-
         fname = impy_config["output_log"] if fname is None else fname
-        # info(1, 'Not implemented at this stage')
-
-        # out = OutputGrabber()
-
-        # out.start()
-        # print out.capturedtext
-        # with open(fname, 'w') as f:
-        #     f.write(out.capturedtext)
-
-        # out.stop()
 
     def init_generator(self, event_kinematics, seed="random", logfname=None):
         from random import randint
@@ -231,7 +148,7 @@ class PYTHIA8Run(MCRun):
         # since changing energy changes resets the stable settings
         self.stable_history = {}
 
-        # self._set_event_kinematics(event_kinematics)
+        self._set_event_kinematics(event_kinematics)
 
     def set_stable(self, pdgid, stable=True):
 

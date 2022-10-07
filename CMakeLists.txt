@@ -306,6 +306,17 @@ f2py_add_module(_pythia6
   ${impy_definitions}
 )
 
+### pythia8
+file(GLOB pythia8_sources ${cpp_dir}/pythia8307/src/*.cc)
+
+add_library(_pythia8lib STATIC ${pythia8_sources})
+target_include_directories(_pythia8lib PUBLIC ${cpp_dir}/pythia8307/include)
+target_compile_definitions(_pythia8lib
+  PRIVATE XMLDIR="${cpp_dir}/pythia8307/share/Pythia8/xmldoc")
+
+pybind11_add_module(_pythia8 ${cpp_dir}/pythia8_interface/_pythia8.cpp)
+target_link_libraries(_pythia8 PRIVATE _pythia8lib)
+
 ### sophia
 f2py_add_module(_sophia
   FUNCTIONS
@@ -502,23 +513,6 @@ f2py_add_module(_phojet193
   ${impy_definitions}
 )
 
-
-### Pythia8
-file(GLOB pythia8_sources ${cpp_dir}/pythia8307/src/*.cc)
-
-add_library(_pythia8lib STATIC
-  ${pythia8_sources}
-)
-target_include_directories(_pythia8lib
-  PUBLIC ${cpp_dir}/pythia8307/include
-)
-target_compile_definitions(_pythia8lib
-  PRIVATE XMLDIR="${cpp_dir}/pythia8307/share/Pythia8/xmldoc")
-
-pybind11_add_module(_pythia8
-  ${cpp_dir}/pythia8_interface/_pythia8.cpp
-)
-target_link_libraries(_pythia8 PRIVATE _pythia8lib)
 
 ##### extra optional models follow below ######
 
