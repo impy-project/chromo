@@ -293,17 +293,18 @@ class EventKinematics:
                 raise ValueError("Only 2nd parameter could be composite target")
         else:
             raise ValueError(
-                "particle1 parameter is empty. Please provide one of the following accepted argument types:"
-                "\nparticle name (str), PDG ID (int), or nucleus mass & charge (A, Z) tuple"
+                '"particle1" parameter is empty. Please provide one of the following'
+                " accepted argument types: \nparticle name (str), PDG ID (int), or "
+                "nucleus mass & charge (A, Z) tuple"
             )
 
         if particle2:
             p2pdg, nuc2_prop, self.composite_target = _normalize_particle(particle2)
         else:
             raise ValueError(
-                "particle2 parameter is empty. Please provide one of the following accepted argument types:"
-                "\nparticle name (str), PDG ID (int), nucleus mass & charge (A, Z) tuple,"
-                " or CompositeTarget object"
+                '"particle2" parameter is empty. Please provide one of the following'
+                " accepted argument types:\nparticle name (str), PDG ID (int),"
+                " nucleus mass & charge (A, Z) tuple, or CompositeTarget object"
             )
 
         # Store average nucleon mass
