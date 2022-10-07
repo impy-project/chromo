@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(impylib LANGUAGES C Fortran)
+project(impylib LANGUAGES C CXX Fortran)
 
 set(BUILD_dev_dpmjetIII193 CACHE 
   PATH "source directory for dev_dpmjetIII193")
@@ -8,10 +8,17 @@ option(BUILD_sib23c00 OFF)
 option(BUILD_sib23c02 OFF)
 option(BUILD_sib23c03 OFF)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
+add_subdirectory(${CMAKE_SOURCE_DIR}/src/cpp/pybind11)
+
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src/cpp/pybind11/tools)
 include(CMakePrintHelpers)
 include(F2Py)
-include(FindPythonLibsNew)
+find_package(pybind11 CONFIG)
 
 if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
   message(
@@ -43,6 +50,21 @@ if (NOT NUMPY_INCLUDE_DIRS)
   )
   set(NUMPY_INCLUDE_DIRS "${_numpy_directory}" CACHE STRING "NumPy source directory location" FORCE)
 endif()
+
+macro(use_alternate_linker_if_available linker)
+  find_program(LINKER_EXECUTABLE ld.${linker})
+  cmake_print_variables(LINKER_EXECUTABLE)
+  if(LINKER_EXECUTABLE)
+    message(STATUS Using ${linker})
+    if(CLANG AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 12.0.0)
+      add_link_options(-ld-path=${linker})
+    else()
+      add_link_options(-fuse-ld=${linker})
+    endif()
+  endif()
+endmacro()
+
+use_alternate_linker_if_available(mold)
 
 # Print out the discovered paths
 cmake_print_variables(PYTHON_EXECUTABLE)
@@ -90,6 +112,7 @@ endif()
 ### common for all models
 set(impy_definitions IMPY)
 set(fortran_dir ${CMAKE_SOURCE_DIR}/src/fortran)
+set(cpp_dir ${CMAKE_SOURCE_DIR}/src/cpp)
 set(f2py_dir ${CMAKE_SOURCE_DIR}/src/f2py)
 # Copy fortranobject.c to get rid of deep folder nesting
 configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c fortranobject.c COPYONLY)
@@ -478,6 +501,24 @@ f2py_add_module(_phojet193
   COMPILE_DEFS
   ${impy_definitions}
 )
+
+
+### Pythia8
+file(GLOB pythia8_sources ${cpp_dir}/pythia8307/src/*.cc)
+
+add_library(_pythia8lib STATIC
+  ${pythia8_sources}
+)
+target_include_directories(_pythia8lib
+  PUBLIC ${cpp_dir}/pythia8307/include
+)
+target_compile_definitions(_pythia8lib
+  PRIVATE XMLDIR="${cpp_dir}/pythia8307/share/Pythia8/xmldoc")
+
+pybind11_add_module(_pythia8
+  ${cpp_dir}/pythia8_interface/_pythia8.cpp
+)
+target_link_libraries(_pythia8 PRIVATE _pythia8lib)
 
 ##### extra optional models follow below ######
 

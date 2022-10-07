@@ -32,6 +32,7 @@ models = [
     "phojet193",
     "dpmjetIII191",
     "dpmjetIII193",
+    "pythia8",
 ]
 
 # for convenience, support building extra models via extra.cfg
