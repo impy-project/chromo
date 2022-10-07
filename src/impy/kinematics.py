@@ -63,7 +63,7 @@ class _FromParticleName:
         try:
             return _FromParticleName.all_pdgs[pname]
         except KeyError:
-            raise ValueError("Particle with name = {0} is not found".format(pname))
+            raise ValueError('Particle with name = "{0}" is not found'.format(pname))
 
     @staticmethod
     def _get_AZ(arg):
@@ -262,14 +262,16 @@ class EventKinematics:
         (float) elab     : projectile energy in lab frame
         (float) ekin     : projectile kinetic energy in lab frame
         (tuple) beam     : Specification as tuple of 4-vectors (np.array)s
-        (tuple) particle1: PDG ID, or nucleus mass & charge (A, Z) of the projectile
-        (tuple) particle2: PDG ID, or nucleus mass & charge (A, Z),
+        (tuple) particle1: particle name, PDG ID, or nucleus mass & charge (A, Z)
+                           of the projectile
+        (tuple) particle2: particle name, PDG ID, or nucleus mass & charge (A, Z),
                            or CompositeTarget of the target
 
     """
 
     def __init__(
         self,
+        *,
         ecm=None,
         plab=None,
         elab=None,
@@ -281,15 +283,28 @@ class EventKinematics:
         # Catch input errors
 
         if sum(bool(x) for x in [ecm, plab, elab, ekin, beam]) != 1:
-            raise ValueError("Define exlusiverly on energy/momentum definition")
+            raise ValueError(
+                "Please provide only one of ecm/plab/elab/ekin/beam arguments"
+            )
 
         if particle1:
             p1pdg, nuc1_prop, composite_target = _normalize_particle(particle1)
             if composite_target:
-                raise RuntimeError("Only 2nd parameter could be composite target")
+                raise ValueError("Only 2nd parameter could be composite target")
+        else:
+            raise ValueError(
+                "particle1 parameter is empty. Please provide one of the following accepted argument types:"
+                "\nparticle name (str), PDG ID (int), or nucleus mass & charge (A, Z) tuple"
+            )
 
         if particle2:
             p2pdg, nuc2_prop, self.composite_target = _normalize_particle(particle2)
+        else:
+            raise ValueError(
+                "particle2 parameter is empty. Please provide one of the following accepted argument types:"
+                "\nparticle name (str), PDG ID (int), nucleus mass & charge (A, Z) tuple,"
+                " or CompositeTarget object"
+            )
 
         # Store average nucleon mass
         mnuc = 0.5 * (pdata.mass(2212) + pdata.mass(2112))
