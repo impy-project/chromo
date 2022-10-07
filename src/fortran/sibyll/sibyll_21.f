@@ -108,7 +108,7 @@ C----------------------------------------------------------------------
       NSOF = 0
       IATARGET = IATARG
 
-C...afed 06.10.2022
+C...apros 06.10.2022
 C...When ptflag=1 (which is default), PPT0 could change.
 C...It could be a problem. Set it back to initial value.
 C...Save (once) the block data values of PPT0 to PPT00
