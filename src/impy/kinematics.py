@@ -526,7 +526,36 @@ class CenterOfMass(EventKinematics):
         super().__init__(ecm=ecm, particle1=particle1, particle2=particle2)
 
 
+class EnergyArg:
+    # total energy type
+    class _TotalEnergyFT:
+        pass
+
+    # kinetic energy type
+    class _KinEnergyFT:
+        pass
+
+    # momentum type
+    class _MomentumFT:
+        pass
+
+    TotalEnergy = _TotalEnergyFT()
+    KinEnergy = _KinEnergyFT()
+    Momentum = _MomentumFT()
+
+
 class FixedTarget(EventKinematics):
-    def __init__(self, elab, particle1, particle2):
+    def __init__(self, energy, particle1, particle2, energy_arg=EnergyArg.TotalEnergy):
         impy_config["user_frame"] = "laboratory"
-        super().__init__(elab=elab, particle1=particle1, particle2=particle2)
+
+        if isinstance(energy_arg, EnergyArg._TotalEnergyFT):
+            super().__init__(elab=energy, particle1=particle1, particle2=particle2)
+        elif isinstance(energy_arg, EnergyArg._KinEnergyFT):
+            super().__init__(ekin=energy, particle1=particle1, particle2=particle2)
+        elif isinstance(energy_arg, EnergyArg._MomentumFT):
+            super().__init__(plab=energy, particle1=particle1, particle2=particle2)
+        else:
+            raise ValueError(
+                '"energy_arg" accepts only EnergyArg.TotalEnergy'
+                ", EnergyArg.KinEnergy, EnergyArg.Momentum "
+            )
