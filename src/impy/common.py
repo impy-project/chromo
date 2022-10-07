@@ -441,8 +441,7 @@ class RMMARDState:
     _sequence_number: np.ndarray = None
 
     def _record_state(self, generator):
-        data = generator.crranma4
-
+        data = generator.lib.crranma4
         self._c_number = data.c
         self._u_array = data.u
         self._u_i = data.i97
@@ -454,7 +453,7 @@ class RMMARDState:
         return self
 
     def _restore_state(self, generator):
-        data = generator.crranma4
+        data = generator.lib.crranma4
 
         data.c = self._c_number
         data.u = self._u_array
@@ -622,11 +621,11 @@ class MCRun(ABC):
 
     @property
     def random_state(self):
-        return RMMARDState()._record_state(self.lib)
+        return RMMARDState()._record_state(self)
 
     @random_state.setter
     def random_state(self, rng_state):
-        rng_state._restore_state(self.lib)
+        rng_state._restore_state(self)
 
     @property
     def event_kinematics(self):

@@ -34,9 +34,6 @@ def test_generators(model):
     ):
         pytest.xfail("Model doesn't support nuclei")
 
-    if model in (im.Sibyll23d,):
-        pytest.xfail("Sibyll23d is brocken. Something with rng.")
-
     projectile = "pi-"
     seed_for_test = 321
     target = CompositeTarget(

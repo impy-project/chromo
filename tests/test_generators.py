@@ -29,9 +29,6 @@ def run_model(model, ekin):
 def test_generator(Model):
     xfail_on_ci_if_model_is_incompatible(Model)
 
-    if Model in (im.Sibyll23d,):
-        pytest.xfail("Sibyll23d is brocken. Something with rng.")
-
     p1pdg = -211  # pi-
     p2pdg = 2212  # proton
     if Model is im.Sophia20:

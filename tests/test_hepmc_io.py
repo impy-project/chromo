@@ -41,8 +41,6 @@ def test_hepmc_io(Model):
         im.Phojet193,
         im.UrQMD34,
         im.DpmjetIII193,
-        im.Sibyll23d,
-        im.Sibyll23c,
     ):
         pytest.xfail("needs investigation whether the problem is in pyhepmc/HepMC3")
 

@@ -82,7 +82,7 @@ C-----------------------------------------------------------------------
       NEVSIB = NEVSIB + 1
       END
 
-#ifndef IMPY      
+#ifndef SIBYLL_SP      
       DOUBLE PRECISION FUNCTION GASDEV(Idum)
 C***********************************************************************
 C     Gaussian deviation
@@ -108,4 +108,4 @@ C***********************************************************************
       ENDIF
       RETURN
       END
-#endif      
+#endif         
