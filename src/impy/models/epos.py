@@ -13,17 +13,12 @@ from impy.util import info
 class EPOSEvent(MCEvent):
     """Wrapper class around EPOS particle stack."""
 
-    _jdahep = None  # no child info
-
     def __init__(self, generator):
         super().__init__(generator)
-        # EPOS sets parents of beam particles to (-1, -1),
-        # while other particles have (0, 0). We fix this and to get
-        # a crudely correct history, we make non-beam particles
-        # daughters of beam particles.
+        # EPOS sets parents of beam particles to (-1, -1).
+        # We change it to (0, 0)
         nbeam = np.sum(self.status == 4)
         self.parents[:nbeam] = 0
-        self.parents[nbeam:] = (1, nbeam + 1)  # Fortran indices
 
     def _charge_init(self, npart):
         return self._lib.charge_vect(self._lib.hepevt.idhep[:npart])
@@ -146,6 +141,8 @@ class EPOSRun(MCRun):
         self._define_default_fs_particles()
         self.lib.charge_vect = np.vectorize(self.lib.getcharge, otypes=[np.int32])
         self._set_event_kinematics(event_kinematics)
+        # Turn on particle history
+        self.lib.othe1.istmax = 1
 
     def set_stable(self, pdgid, stable=True):
         if stable:

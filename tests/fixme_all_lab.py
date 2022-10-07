@@ -18,7 +18,7 @@ from impy.models import (
     Phojet112,
     Phojet191,
     UrQMD34,
-    QGSJet01c,
+    QGSJet01d,
     QGSJetII03,
     QGSJetII04,
 )
@@ -39,7 +39,7 @@ models = [
     Phojet191,
     UrQMD34,
     # 'PYTHIA8',
-    QGSJet01c,
+    QGSJet01d,
     QGSJetII03,
     QGSJetII04,
 ]

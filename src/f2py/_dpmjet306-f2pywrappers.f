@@ -18,22 +18,6 @@ C     It contains Fortran 77 wrappers to fortran functions.
       end
 
 
-      subroutine f2pywrapdt_rndm (dt_rndmf2pywrap, vdummy)
-      external dt_rndm
-      double precision vdummy
-      double precision dt_rndmf2pywrap, dt_rndm
-      dt_rndmf2pywrap = dt_rndm(vdummy)
-      end
-
-
-      subroutine f2pywrappycomp (pycompf2pywrap, kf)
-      external pycomp
-      integer kf
-      integer pycompf2pywrap, pycomp
-      pycompf2pywrap = pycomp(kf)
-      end
-
-
       subroutine f2pywrappho_ptcut (pho_ptcutf2pywrap, ecm, ip)
       external pho_ptcut
       double precision ecm
@@ -74,6 +58,14 @@ C     It contains Fortran 77 wrappers to fortran functions.
       integer mode
       double precision pho_pmassf2pywrap, pho_pmass
       pho_pmassf2pywrap = pho_pmass(id, mode)
+      end
+
+
+      subroutine f2pywrappycomp (pycompf2pywrap, kf)
+      external pycomp
+      integer kf
+      integer pycompf2pywrap, pycomp
+      pycompf2pywrap = pycomp(kf)
       end
 
 
@@ -752,18 +744,6 @@ C     It contains Fortran 77 wrappers to fortran functions.
      &tchr,mquark
       call setupfunc(iqechr,iqbchr,iqichr,iqschr,iqcchr,iquchr,iqt
      &chr,mquark)
-      end
-
-      subroutine f2pyinitdtrand(setupfunc)
-      external setupfunc
-      double precision u(97)
-      double precision c
-      double precision cd
-      double precision cm
-      integer i
-      integer j
-      common /dtrand/ u,c,cd,cm,i,j
-      call setupfunc(u,c,cd,cm,i,j)
       end
 
       subroutine f2pyinithndech(setupfunc)
@@ -1488,129 +1468,6 @@ C     It contains Fortran 77 wrappers to fortran functions.
       call setupfunc(umo,plabf,siin,wk,nrk,nure)
       end
 
-      subroutine f2pyinitpydat4(setupfunc)
-      external setupfunc
-      character chaf(500,2,16)
-      common /pydat4/ chaf
-      call setupfunc(chaf)
-      end
-
-      subroutine f2pyinitpydatr(setupfunc)
-      external setupfunc
-      integer mrpy(6)
-      double precision rrpy(100)
-      common /pydatr/ mrpy,rrpy
-      call setupfunc(mrpy,rrpy)
-      end
-
-      subroutine f2pyinitpysubs(setupfunc)
-      external setupfunc
-      integer msel
-      integer mselpd
-      integer msub(500)
-      integer kfin(2,81)
-      double precision ckin(200)
-      common /pysubs/ msel,mselpd,msub,kfin,ckin
-      call setupfunc(msel,mselpd,msub,kfin,ckin)
-      end
-
-      subroutine f2pyinitpypars(setupfunc)
-      external setupfunc
-      integer mstp(200)
-      double precision parp(200)
-      integer msti(200)
-      double precision pari(200)
-      common /pypars/ mstp,parp,msti,pari
-      call setupfunc(mstp,parp,msti,pari)
-      end
-
-      subroutine f2pyinitpyint1(setupfunc)
-      external setupfunc
-      integer mint(400)
-      double precision vint(400)
-      common /pyint1/ mint,vint
-      call setupfunc(mint,vint)
-      end
-
-      subroutine f2pyinitpyint2(setupfunc)
-      external setupfunc
-      integer iset(500)
-      integer kfpr(500,2)
-      double precision coef(500,20)
-      integer icol(40,4,2)
-      common /pyint2/ iset,kfpr,coef,icol
-      call setupfunc(iset,kfpr,coef,icol)
-      end
-
-      subroutine f2pyinitpyint3(setupfunc)
-      external setupfunc
-      double precision xsfx(2,81)
-      integer isig(1000,3)
-      double precision sigh(1000)
-      common /pyint3/ xsfx,isig,sigh
-      call setupfunc(xsfx,isig,sigh)
-      end
-
-      subroutine f2pyinitpyint4(setupfunc)
-      external setupfunc
-      integer mwid(500)
-      double precision wids(500,5)
-      common /pyint4/ mwid,wids
-      call setupfunc(mwid,wids)
-      end
-
-      subroutine f2pyinitpyint5(setupfunc)
-      external setupfunc
-      integer ngenpd
-      integer ngen(501,3)
-      double precision xsec(501,3)
-      common /pyint5/ ngenpd,ngen,xsec
-      call setupfunc(ngenpd,ngen,xsec)
-      end
-
-      subroutine f2pyinitpyint6(setupfunc)
-      external setupfunc
-      character proc(501,28)
-      common /pyint6/ proc
-      call setupfunc(proc)
-      end
-
-      subroutine f2pyinitpyint7(setupfunc)
-      external setupfunc
-      double precision sigt(7,7,6)
-      common /pyint7/ sigt
-      call setupfunc(sigt)
-      end
-
-      subroutine f2pyinitpymssm(setupfunc)
-      external setupfunc
-      integer imss(100)
-      double precision rmss(100)
-      common /pymssm/ imss,rmss
-      call setupfunc(imss,rmss)
-      end
-
-      subroutine f2pyinitpyssmt(setupfunc)
-      external setupfunc
-      double precision zmix(4,4)
-      double precision umix(2,2)
-      double precision vmix(2,2)
-      double precision smz(4)
-      double precision smw(2)
-      double precision sfmix(16,4)
-      common /pyssmt/ zmix,umix,vmix,smz,smw,sfmix
-      call setupfunc(zmix,umix,vmix,smz,smw,sfmix)
-      end
-
-      subroutine f2pyinitpybins(setupfunc)
-      external setupfunc
-      integer ihist(4)
-      integer indx(1000)
-      double precision bin(20000)
-      common /pybins/ ihist,indx,bin
-      call setupfunc(ihist,indx,bin)
-      end
-
       subroutine f2pyinitpoinou(setupfunc)
       external setupfunc
       integer li
@@ -2218,6 +2075,143 @@ C     It contains Fortran 77 wrappers to fortran functions.
       integer isec_list(3,500)
       common /popar3/ wg_sec_list,idec_list,isec_list
       call setupfunc(wg_sec_list,idec_list,isec_list)
+      end
+
+      subroutine f2pyinitpydat4(setupfunc)
+      external setupfunc
+      character chaf(500,2,16)
+      common /pydat4/ chaf
+      call setupfunc(chaf)
+      end
+
+      subroutine f2pyinitpydatr(setupfunc)
+      external setupfunc
+      integer mrpy(6)
+      double precision rrpy(100)
+      common /pydatr/ mrpy,rrpy
+      call setupfunc(mrpy,rrpy)
+      end
+
+      subroutine f2pyinitpysubs(setupfunc)
+      external setupfunc
+      integer msel
+      integer mselpd
+      integer msub(500)
+      integer kfin(2,81)
+      double precision ckin(200)
+      common /pysubs/ msel,mselpd,msub,kfin,ckin
+      call setupfunc(msel,mselpd,msub,kfin,ckin)
+      end
+
+      subroutine f2pyinitpypars(setupfunc)
+      external setupfunc
+      integer mstp(200)
+      double precision parp(200)
+      integer msti(200)
+      double precision pari(200)
+      common /pypars/ mstp,parp,msti,pari
+      call setupfunc(mstp,parp,msti,pari)
+      end
+
+      subroutine f2pyinitpyint1(setupfunc)
+      external setupfunc
+      integer mint(400)
+      double precision vint(400)
+      common /pyint1/ mint,vint
+      call setupfunc(mint,vint)
+      end
+
+      subroutine f2pyinitpyint2(setupfunc)
+      external setupfunc
+      integer iset(500)
+      integer kfpr(500,2)
+      double precision coef(500,20)
+      integer icol(40,4,2)
+      common /pyint2/ iset,kfpr,coef,icol
+      call setupfunc(iset,kfpr,coef,icol)
+      end
+
+      subroutine f2pyinitpyint3(setupfunc)
+      external setupfunc
+      double precision xsfx(2,81)
+      integer isig(1000,3)
+      double precision sigh(1000)
+      common /pyint3/ xsfx,isig,sigh
+      call setupfunc(xsfx,isig,sigh)
+      end
+
+      subroutine f2pyinitpyint4(setupfunc)
+      external setupfunc
+      integer mwid(500)
+      double precision wids(500,5)
+      common /pyint4/ mwid,wids
+      call setupfunc(mwid,wids)
+      end
+
+      subroutine f2pyinitpyint5(setupfunc)
+      external setupfunc
+      integer ngenpd
+      integer ngen(501,3)
+      double precision xsec(501,3)
+      common /pyint5/ ngenpd,ngen,xsec
+      call setupfunc(ngenpd,ngen,xsec)
+      end
+
+      subroutine f2pyinitpyint6(setupfunc)
+      external setupfunc
+      character proc(501,28)
+      common /pyint6/ proc
+      call setupfunc(proc)
+      end
+
+      subroutine f2pyinitpyint7(setupfunc)
+      external setupfunc
+      double precision sigt(7,7,6)
+      common /pyint7/ sigt
+      call setupfunc(sigt)
+      end
+
+      subroutine f2pyinitpymssm(setupfunc)
+      external setupfunc
+      integer imss(100)
+      double precision rmss(100)
+      common /pymssm/ imss,rmss
+      call setupfunc(imss,rmss)
+      end
+
+      subroutine f2pyinitpyssmt(setupfunc)
+      external setupfunc
+      double precision zmix(4,4)
+      double precision umix(2,2)
+      double precision vmix(2,2)
+      double precision smz(4)
+      double precision smw(2)
+      double precision sfmix(16,4)
+      common /pyssmt/ zmix,umix,vmix,smz,smw,sfmix
+      call setupfunc(zmix,umix,vmix,smz,smw,sfmix)
+      end
+
+      subroutine f2pyinitpybins(setupfunc)
+      external setupfunc
+      integer ihist(4)
+      integer indx(1000)
+      double precision bin(20000)
+      common /pybins/ ihist,indx,bin
+      call setupfunc(ihist,indx,bin)
+      end
+
+      subroutine f2pyinitcrranma4(setupfunc)
+      external setupfunc
+      double precision c(8)
+      double precision u(97,8)
+      integer ijkl(8)
+      integer i97(8)
+      integer j97(8)
+      integer ntot(8)
+      integer ntot2(8)
+      integer jseq
+      common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
+      call setupfunc(c,u,ijkl,i97,j97,ntot,ntot2,jseq)
       end
 
 

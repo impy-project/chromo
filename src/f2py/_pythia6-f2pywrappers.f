@@ -336,4 +336,18 @@ C     It contains Fortran 77 wrappers to fortran functions.
      &stup,mothup,icolup,pup,vtimup,spinup)
       end
 
+      subroutine f2pyinitcrranma4(setupfunc)
+      external setupfunc
+      double precision c(8)
+      double precision u(97,8)
+      integer ijkl(8)
+      integer i97(8)
+      integer j97(8)
+      integer ntot(8)
+      integer ntot2(8)
+      integer jseq
+      common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
+      call setupfunc(c,u,ijkl,i97,j97,ntot,ntot2,jseq)
+      end
+
 

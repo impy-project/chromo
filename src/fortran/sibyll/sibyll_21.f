@@ -84,6 +84,9 @@ C----------------------------------------------------------------------
       COMMON /S_CQDIS/ PPT0 (33),ptflag
       COMMON /S_CUTOFF/ STR_mass_val, STR_mass_sea
 
+      REAL PPT00(33)
+      INTEGER ISP00/0/
+
       DIMENSION LL(6:14)
       DATA LL /7*2,2*1/
       DATA FOX /0.257/
@@ -104,6 +107,17 @@ C----------------------------------------------------------------------
       NJET = 0
       NSOF = 0
       IATARGET = IATARG
+
+C...apros 06.10.2022
+C...When ptflag=1 (which is default), PPT0 could change.
+C...It could be a problem. Set it back to initial value.
+C...Save (once) the block data values of PPT0 to PPT00
+      IF (ISP00.EQ.0) THEN
+          PPT00 = PPT0
+          ISP00 = 1
+      END IF      
+C...Set PPT0 to the value in block data
+      PPT0 = PPT00
 
 C...Generate an 'air' interaction by choosing Nitrogen or Oxygen
 

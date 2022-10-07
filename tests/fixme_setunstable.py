@@ -1,6 +1,6 @@
 import numpy as np
 
-from impy.models import QGSJet01c, EposLHC
+from impy.models import QGSJet01d, EposLHC
 from impy.constants import GeV
 from impy.kinematics import EventKinematics
 from impy import impy_config
@@ -10,7 +10,7 @@ from collections import Counter
 # TODO this test is broken
 
 
-@pytest.mark.parametrize("model", [QGSJet01c, EposLHC])
+@pytest.mark.parametrize("model", [QGSJet01d, EposLHC])
 def test_unstable(model):
     event_kinematics = EventKinematics(ecm=200 * GeV, particle1=2212, particle2=2212)
 

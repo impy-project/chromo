@@ -1,18 +1,18 @@
-from impy.constants import TeV
+from impy.constants import TeV, GeV
 from impy.kinematics import CenterOfMass, CompositeTarget
 import impy.models as im
-import abc
 from collections import Counter
 import pytest
 from multiprocessing import Pool
 from multiprocessing.context import TimeoutError
+from .util import xfail_on_ci_if_model_is_incompatible, get_all_models
 
 # generate list of all models in impy.models
-models = set(obj for obj in im.__dict__.values() if type(obj) is abc.ABCMeta)
+models = get_all_models(im)
 
 
 def run_model(model, ekin):
-    gen = model(ekin)
+    gen = model(ekin, seed=1)
 
     c = Counter()
     for event in gen(10):
@@ -25,15 +25,14 @@ def run_model(model, ekin):
 
 @pytest.mark.parametrize("model", models)
 def test_generators(model):
+    xfail_on_ci_if_model_is_incompatible(model)
     if model in (
         im.Sophia20,
         im.Phojet112,
         im.Phojet191,
+        im.Phojet193,
     ):
         pytest.xfail("Model doesn't support nuclei")
-
-    if model in (im.UrQMD34,):
-        pytest.xfail("TimeoutError")
 
     projectile = "pi-"
     seed_for_test = 321
@@ -49,6 +48,9 @@ def test_generators(model):
     )
     ekin = CenterOfMass(7 * TeV, projectile, target)
 
+    if model in (im.UrQMD34,):
+        ekin = CenterOfMass(50 * GeV, projectile, target)
+
     # Some models need to initialize same fortran code, which can only be
     # initialized once. As a workaround, we run each model in a separate
     # thread. When running several jobs, maxtasksperchild=1 is needed to
@@ -56,7 +58,7 @@ def test_generators(model):
     with Pool(1, maxtasksperchild=1) as p:
         r = p.apply_async(run_model, (model, ekin))
         try:
-            c = r.get(timeout=30)
+            c = r.get(timeout=60)
         except TimeoutError:
             # usually happens when model aborts and kills child process
             raise TimeoutError("check stdout for errors")
