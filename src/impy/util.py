@@ -3,6 +3,12 @@
 from __future__ import print_function
 import inspect
 import os
+from tqdm import tqdm
+import requests
+import math
+import hashlib
+from pathlib import Path
+
 from impy import impy_config
 
 # Global debug flags that would be nice to have in some sort
@@ -211,3 +217,47 @@ class OutputGrabber(object):
             if not char or self.escape_char in char:
                 break
             self.capturedtext += char
+
+
+# Functions to check and download dababase files on github
+
+_impy_dir = Path(__file__).parent
+_github_url = "https://github.com/afedynitch/MCEq/releases/download/builds_on_azure/"
+
+
+def _download_file(url, outfile):
+    """Downloads a file from github"""
+    # Streaming, so we can iterate over the response.
+    r = requests.get(url, stream=True)
+
+    # Total size in bytes.
+    total_size = int(r.headers.get("content-length", 0))
+    block_size = 1024 * 1024
+    wrote = 0
+    with open(outfile, "wb") as f:
+        for data in tqdm(
+            r.iter_content(block_size),
+            total=math.ceil(total_size // block_size),
+            unit="MB",
+            unit_scale=True,
+        ):
+            wrote = wrote + len(data)
+            f.write(data)
+    if total_size != 0 and wrote != total_size:
+        raise Exception("ERROR, something went wrong")
+
+
+def _file_checksum(filename):
+    """Calculates file checksum"""
+    hash_var = hashlib.sha256()
+    block_size = 1024 * 1024
+    with open(filename, "rb") as file:
+        for byte_block in iter(lambda: file.read(block_size), b""):
+            hash_var.update(byte_block)
+    return hash_var.hexdigest()
+
+
+def _check_db_file(remote_file, local_file, checksum):
+    if not (Path(local_file).exists() and _file_checksum(local_file) == checksum):
+        print(f"Downloading database file {local_file}.")
+        _download_file(remote_file, local_file)
