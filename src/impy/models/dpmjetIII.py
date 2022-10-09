@@ -70,11 +70,13 @@ class DpmjetIIIRun(MCRun):
     _event_class = DpmjetIIIEvent
     _output_frame = "center-of-mass"
 
-    def __init__(self, event_kinematics, seed="random", logfname=None):
+    def __init__(self, event_kinematics, seed=None, logfname=None):
         from impy.util import fortran_chars
         from impy.constants import sec2cm
 
         super().__init__(seed, logfname)
+
+        self._lib.init_rmmard(self._seed)
 
         # Save maximal mass that has been inisialized
         # (DPMJET sometimes crashes if higher mass requested than initialized)

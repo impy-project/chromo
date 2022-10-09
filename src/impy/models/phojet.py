@@ -79,6 +79,8 @@ class PHOJETRun(MCRun):
 
         super().__init__(seed, logfname)
 
+        self._lib.init_rmmard(self._seed)
+
         # Detect what kind of PHOJET interface is attached. If PHOJET
         # is run through DPMJET, initial init needs -2 else -1
         init_flag = -2 if "dpmjetIII" in self._lib.__name__ else -1

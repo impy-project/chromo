@@ -34,6 +34,8 @@ class Pythia6(MCRun):
 
         super().__init__(seed, logfname)
 
+        self._lib.init_rmmard(self._seed)
+
         if impy_config["pythia6"]["new_mpi"]:
             # Latest Pythia 6 is tune 383
             self._lib.pytune(383)

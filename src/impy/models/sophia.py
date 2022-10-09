@@ -56,6 +56,8 @@ class Sophia20(MCRun):
 
         self._lib.s_plist.ideb = impy_config["sophia"]["debug_level"]
 
+        self._lib.init_rmmard(self._seed)
+
         # Keep decayed particles in the history:
         self._lib.eg_io.keepdc = impy_config["sophia"]["keep_decayed_particles"]
         self._set_final_state_particles()

@@ -51,6 +51,8 @@ class UrQMD34(MCRun):
 
         super().__init__(seed, logfname)
 
+        self._lib.init_rmmard(self._seed)
+
         info(1, "First initialization")
         self._lib.urqini(self._lun, impy_config["urqmd"]["debug_level"])
 
