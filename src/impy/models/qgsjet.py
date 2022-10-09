@@ -61,18 +61,37 @@ _qgsjetII_projectiles = {211: 1, 2212: 2, 2112: 3, 321: 4, 130: 5, 310: -5}
 _qgsjet_hadron_classes = _qgsjet01_projectiles
 
 
-class QGSJetIIRun(MCRun):
+class QGSJetRun(MCRun):
+    _name = "QGSJet"
+    _output_frame = "laboratory"
+    _event_class = QGSJETEvent
+
+    def _set_stable(self, pdgid, stable):
+        import warnings
+
+        warnings.warn("stable particles cannot be changed in QGSJet", RuntimeWarning)
+
+
+class QGSJetIIRun(QGSJetRun):
     """Implements all abstract attributes of MCRun for the
     QGSJET-II-xx series of event generators."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        import os.path as path
 
-    def sigma_inel(self, *args, **kwargs):
+        super().__init__(seed, logfname)
+
+        info(5, "Initializing QGSJET-II")
+        datdir = path.join(base_path, impy_config["qgsjet"]["datdir"])
+        self._lib.cqgsini(seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"])
+
+        self._set_event_kinematics(event_kinematics)
+
+    def sigma_inel(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
         k = self._curr_event_kin
-        return self.lib.qgsect(
+        return self._lib.qgsect(
             self._curr_event_kin.elab, _qgsjet_hadron_classes[abs(k.p1pdg)], k.A1, k.A2
         )
 
@@ -93,9 +112,9 @@ class QGSJetIIRun(MCRun):
                 "Projectile {0} not supported by QGSJET-II.".format(k.p1pdg)
             )
 
-        self.lib.qgini(k.elab, self._qgsproj, k.A1, k.A2)
+        self._lib.qgini(k.elab, self._qgsproj, k.A1, k.A2)
 
-    def attach_log(self, fname=None):
+    def _attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
         fname = impy_config["output_log"] if fname is None else fname
         if fname == "stdout":
@@ -106,45 +125,29 @@ class QGSJetIIRun(MCRun):
             info(5, "Output is routed to", fname, "via LUN", lun)
         self._lun = lun
 
-    def init_generator(self, event_kinematics, seed="random", logfname=None):
-        from random import randint
-        from os import path
-
-        self._abort_if_already_initialized()
-
-        if seed == "random":
-            seed = randint(1000000, 10000000)
-        else:
-            seed = int(seed)
-        info(5, "Using seed:", seed)
-
-        info(5, "Initializing QGSJET-II")
-        datdir = path.join(base_path, impy_config["qgsjet"]["datdir"])
-        self.attach_log(fname=logfname)
-        self.lib.cqgsini(seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"])
-
-        # Set default stable
-        info(10, "All particles stable in QGSJET-II")
-        self._set_event_kinematics(event_kinematics)
-
-    def set_stable(self, pdgid, stable=True):
-        info(10, "All particles stable in QGSJet-II.")
-
-    def generate_event(self):
-        self.lib.qgconf()
+    def _generate_event(self):
+        self._lib.qgconf()
         # Convert QGSJET to HEPEVT
-        self.lib.chepevt()
+        self._lib.chepevt()
         return False
 
 
-class QGSJet01Run(MCRun):
+class QGSJet01Run(QGSJetRun):
     """Implements all abstract attributes of MCRun for the
     QGSJET-01c legacy event generators."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from os import path
 
-    def sigma_inel(self, *args, **kwargs):
+        super().__init__(seed, logfname)
+
+        info(5, "Initializing QGSJET01d")
+        datdir = path.join(base_path, impy_config["qgsjet"]["datdir"])
+        self._lib.cqgsini(seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"])
+
+        self._set_event_kinematics(event_kinematics)
+
+    def sigma_inel(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target).
 
@@ -170,7 +173,7 @@ class QGSJet01Run(MCRun):
             wa[0] = 1.0 - wa[1] + wa[2]
             wa[1] = wa[1] - 2.0 * wa[2]
             sectn = sum(
-                [self.lib.xsect.gsect[je, icz, ja + m - 1] * wa[m] for m in range(3)]
+                [self._lib.xsect.gsect[je, icz, ja + m - 1] * wa[m] for m in range(3)]
             )
             cross_section[je] = np.exp(sectn)
 
@@ -196,9 +199,9 @@ class QGSJet01Run(MCRun):
             self._qgsproj = 3
         else:
             raise Exception("QGSJET only supports p, pi+- and K+- as projectile.")
-        self.lib.xxaini(k.elab, self._qgsproj, k.A1, k.A2)
+        self._lib.xxaini(k.elab, self._qgsproj, k.A1, k.A2)
 
-    def attach_log(self, fname=None):
+    def _attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
         fname = impy_config["output_log"] if fname is None else fname
         if fname == "stdout":
@@ -210,59 +213,23 @@ class QGSJet01Run(MCRun):
 
         self._lun = lun
 
-    def init_generator(self, event_kinematics, seed="random", logfname=None):
-        from random import randint
-        from os import path
-
-        self._abort_if_already_initialized()
-
-        if seed == "random":
-            seed = randint(1000000, 10000000)
-        else:
-            seed = int(seed)
-        info(5, "Using seed:", seed)
-
-        info(5, "Initializing QGSJET01d")
-        self.attach_log(fname=logfname)
-        datdir = path.join(base_path, impy_config["qgsjet"]["datdir"])
-        self.lib.cqgsini(seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"])
-
-        # Set default stable
-        info(10, "All particles stable in QGSJET-01")
-        self._set_event_kinematics(event_kinematics)
-
-    def set_stable(self, pdgid, stable=True):
-        info(10, "All particles stable in QGSJet.")
-
-    def generate_event(self):
-        self.lib.psconf()
+    def _generate_event(self):
+        self._lib.psconf()
         # Convert QGSJET to HEPEVT
-        self.lib.chepevt()
+        self._lib.chepevt()
         return False
 
 
 class QGSJet01d(QGSJet01Run):
-    def __init__(self, event_kinematics, seed="random", logfname=None):
-        from impy.definitions import interaction_model_by_tag as models_dict
-
-        interaction_model_def = models_dict["QGSJET01D"]
-        super().__init__(interaction_model_def)
-        self.init_generator(event_kinematics, seed, logfname)
+    _version = "01d"
+    _library_name = "_qgs01"
 
 
 class QGSJetII03(QGSJetIIRun):
-    def __init__(self, event_kinematics, seed="random", logfname=None):
-        from impy.definitions import interaction_model_by_tag as models_dict
-
-        interaction_model_def = models_dict["QGSJETII03"]
-        super().__init__(interaction_model_def)
-        self.init_generator(event_kinematics, seed, logfname)
+    _version = "II-03"
+    _library_name = "_qgsII03"
 
 
 class QGSJetII04(QGSJetIIRun):
-    def __init__(self, event_kinematics, seed="random", logfname=None):
-        from impy.definitions import interaction_model_by_tag as models_dict
-
-        interaction_model_def = models_dict["QGSJETII04"]
-        super().__init__(interaction_model_def)
-        self.init_generator(event_kinematics, seed, logfname)
+    _version = "II-04"
+    _library_name = "_qgsII04"

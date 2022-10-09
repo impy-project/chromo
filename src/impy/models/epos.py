@@ -56,63 +56,27 @@ class EPOSEvent(MCEvent):
         return self._lib.cevt.ntnevt + self._lib.cevt.ntpevt
 
 
-class EPOSRun(MCRun):
+class EposLHC(MCRun):
     """Implements all abstract attributes of MCRun for the
     EPOS-LHC series of event generators."""
 
-    def sigma_inel(self, *args, **kwargs):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        return self.lib.xsection()[1]
+    _name = "EPOS"
+    _version = "LHC"
+    _event_class = EPOSEvent
+    _library_name = "_eposlhc"
+    _output_frame = "center-of-mass"
 
-    def _epos_tup(self):
-        """Constructs an tuple of arguments for calls to event generator
-        from given event kinematics object."""
-        k = self._curr_event_kin
-        info(
-            20,
-            "Request EPOS ARGs tuple:\n",
-            (k.ecm, -1.0, k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2),
-        )
-        return (k.ecm, -1.0, k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2)
-
-    def _set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
-        k = event_kinematics
-        self._curr_event_kin = k
-        self.lib.initeposevt(*self._epos_tup())
-        info(5, "Setting event kinematics")
-
-    def attach_log(self, fname=None):
-        """Routes the output to a file or the stdout."""
-        fname = impy_config["output_log"] if fname is None else fname
-        if fname == "stdout":
-            lun = 6
-            info(5, "Output is routed to stdout.")
-        else:
-            lun = self._attach_fortran_logfile(fname)
-            info(5, "Output is routed to", fname, "via LUN", lun)
-
-        self._lun = lun
-
-    def init_generator(self, event_kinematics, seed="random", logfname=None):
-        from random import randint
+    def __init__(self, event_kinematics, seed="random", logfname=None):
         from os import path
 
-        self._abort_if_already_initialized()
+        super().__init__(seed, logfname)
+
         k = event_kinematics
-        if seed == "random":
-            seed = randint(1000000, 10000000)
-        else:
-            seed = int(seed)
-        info(5, "Using seed:", seed)
 
         epos_conf = impy_config["epos"]
-        datdir = path.join(base_path, epos_conf["datdir"])
-        self.attach_log(fname=logfname)
+
         info(1, "First initialization")
-        self.lib.aaset(0)
+        self._lib.aaset(0)
 
         if impy_config["user_frame"] == "center-of-mass":
             iframe = 1
@@ -121,7 +85,8 @@ class EPOSRun(MCRun):
             iframe = 2
             self._output_frame = "laboratory"
 
-        self.lib.initializeepos(
+        datdir = path.join(base_path, epos_conf["datdir"])
+        self._lib.initializeepos(
             float(seed),
             k.ecm,
             datdir,
@@ -138,31 +103,56 @@ class EPOSRun(MCRun):
         )
 
         # Set default stable
-        self._define_default_fs_particles()
-        self.lib.charge_vect = np.vectorize(self.lib.getcharge, otypes=[np.int32])
+        self._set_final_state_particles()
+        self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.int32])
         self._set_event_kinematics(event_kinematics)
         # Turn on particle history
-        self.lib.othe1.istmax = 1
+        self._lib.othe1.istmax = 1
 
-    def set_stable(self, pdgid, stable=True):
-        if stable:
-            self.lib.setstable(pdgid)
-            info(5, "defining", pdgid, "as stable particle")
+    def sigma_inel(self):
+        """Inelastic cross section according to current
+        event setup (energy, projectile, target)"""
+        return self._lib.xsection()[1]
+
+    def _epos_tup(self):
+        """Constructs an tuple of arguments for calls to event generator
+        from given event kinematics object."""
+        k = self._curr_event_kin
+        info(
+            20,
+            "Request EPOS ARGs tuple:\n",
+            (k.ecm, -1.0, k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2),
+        )
+        return (k.ecm, -1.0, k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2)
+
+    def _set_event_kinematics(self, event_kinematics):
+        """Set new combination of energy, momentum, projectile
+        and target combination for next event."""
+        info(5, "Setting event kinematics")
+        k = event_kinematics
+        self._curr_event_kin = k
+        self._lib.initeposevt(*self._epos_tup())
+
+    def _attach_log(self, fname=None):
+        """Routes the output to a file or the stdout."""
+        fname = impy_config["output_log"] if fname is None else fname
+        if fname == "stdout":
+            lun = 6
+            info(5, "Output is routed to stdout.")
         else:
-            self.lib.setunstable(pdgid)
-            info(5, pdgid, "allowed to decay")
+            lun = self._attach_fortran_logfile(fname)
+            info(5, "Output is routed to", fname, "via LUN", lun)
 
-    def generate_event(self):
-        self.lib.aepos(-1)
-        self.lib.afinal()
-        self.lib.hepmcstore()
+        self._lun = lun
+
+    def _set_stable(self, pdgid, stable):
+        if stable:
+            self._lib.setstable(pdgid)
+        else:
+            self._lib.setunstable(pdgid)
+
+    def _generate_event(self):
+        self._lib.aepos(-1)
+        self._lib.afinal()
+        self._lib.hepmcstore()
         return False
-
-
-class EposLHC(EPOSRun):
-    def __init__(self, event_kinematics, seed="random", logfname=None):
-        from impy.definitions import interaction_model_by_tag as models_dict
-
-        interaction_model_def = models_dict["EPOSLHC"]
-        super().__init__(interaction_model_def)
-        self.init_generator(event_kinematics, seed, logfname)

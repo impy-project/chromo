@@ -314,7 +314,7 @@ target_include_directories(_pythia8lib PUBLIC ${cpp_dir}/pythia8307/include)
 target_compile_definitions(_pythia8lib
   PRIVATE XMLDIR="${cpp_dir}/pythia8307/share/Pythia8/xmldoc")
 
-pybind11_add_module(_pythia8 ${cpp_dir}/pythia8_interface/_pythia8.cpp)
+pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
 target_link_libraries(_pythia8 PRIVATE _pythia8lib)
 
 ### sophia

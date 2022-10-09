@@ -19,16 +19,54 @@ class PYTHIA6Event(MCEvent):
         return np.fromiter((self._lib.pychge(ki) / 3 for ki in k), np.double)
 
 
-class PYTHIA6Run(MCRun):
+class Pythia6(MCRun):
     """Implements all abstract attributes of MCRun for the
     EPOS-LHC series of event generators."""
 
-    def sigma_inel(self, *args, **kwargs):
+    _name = "Pythia"
+    _version = "6.428"
+    _library_name = "_pythia6"
+    _event_class = PYTHIA6Event
+    _output_frame = "center-of-mass"
+
+    def __init__(self, event_kinematics, seed="random", logfname=None):
+        from impy.constants import sec2cm
+
+        super().__init__(seed, logfname)
+
+        if impy_config["pythia6"]["new_mpi"]:
+            # Latest Pythia 6 is tune 383
+            self._lib.pytune(383)
+            self.event_call = self._lib.pyevnw
+        else:
+            self.event_call = self._lib.pyevnt
+
+        # self.mstp[51]
+
+        # Setup pythia processes (set to custom mode)
+        self._lib.pysubs.msel = 0
+
+        # Enable minimum bias processes incl diffraction, low-pt
+        # but no elastic (see p227 of hep-ph/0603175)
+        for isub in [11, 12, 13, 28, 53, 68, 92, 93, 94, 95, 96]:
+            self._lib.pysubs.msub[isub - 1] = 1
+
+        self._set_event_kinematics(event_kinematics)
+
+        # Set default stable
+        self._set_final_state_particles()
+        # Set PYTHIA decay flags to follow all changes to MDCY
+        self._lib.pydat1.mstj[21 - 1] = 1
+        self._lib.pydat1.mstj[22 - 1] = 2
+        # # Set ctau threshold in PYTHIA for the default stable list
+        self._lib.pydat1.parj[70] = impy_config["tau_stable"] * sec2cm * 10.0  # mm
+
+    def sigma_inel(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
         return self._lib.pyint7.sigt[0, 0, 5]
 
-    def sigma_inel_air(self, **kwargs):
+    def sigma_inel_air(self):
         """PYTHIA6 does not support nuclear targets."""
         raise Exception("PYTHIA6 does not support nuclear targets.")
 
@@ -40,10 +78,10 @@ class PYTHIA6Run(MCRun):
         self.p1_type = pdata.name(k.p1pdg)
         self.p2_type = pdata.name(k.p2pdg)
         self.ecm = k.ecm
-        self.lib.pyinit("CMS", self.p1_type, self.p2_type, self.ecm)
+        self._lib.pyinit("CMS", self.p1_type, self.p2_type, self.ecm)
         info(5, "Setting event kinematics")
 
-    def attach_log(self, fname=None):
+    def _attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
         fname = impy_config["output_log"] if fname is None else fname
         if fname == "stdout":
@@ -53,70 +91,13 @@ class PYTHIA6Run(MCRun):
             lun = self._attach_fortran_logfile(fname)
             info(5, "Output is routed to", fname, "via LUN", lun)
 
-        self.lib.pydat1.mstu[10] = lun
+        self._lib.pydat1.mstu[10] = lun
 
-    def init_generator(self, event_kinematics, seed="random", logfname=None):
-        from random import randint
-        from impy.constants import sec2cm
+    def _set_stable(self, pdgid, stable):
+        kc = self._lib.pycomp(pdgid)
+        self._lib.pydat3.mdcy[kc - 1, 0] = 0 if stable else 1
 
-        self._abort_if_already_initialized()
-
-        if seed == "random":
-            seed = randint(1000000, 10000000)
-        else:
-            seed = int(seed)
-
-        info(5, "Using seed:", seed)
-
-        self.lib.init_rmmard(seed)
-        self.attach_log(fname=logfname)
-
-        if impy_config["pythia6"]["new_mpi"]:
-            # Latest Pythia 6 is tune 383
-            self.lib.pytune(383)
-            self.event_call = self.lib.pyevnw
-        else:
-            self.event_call = self.lib.pyevnt
-
-        # self.mstp[51]
-
-        # Setup pythia processes (set to custom mode)
-        self.lib.pysubs.msel = 0
-
-        # Enable minimum bias processes incl diffraction, low-pt
-        # but no elastic (see p227 of hep-ph/0603175)
-        for isub in [11, 12, 13, 28, 53, 68, 92, 93, 94, 95, 96]:
-            self.lib.pysubs.msub[isub - 1] = 1
-
-        self._set_event_kinematics(event_kinematics)
-
-        # Set default stable
-        self._define_default_fs_particles()
-        # Set PYTHIA decay flags to follow all changes to MDCY
-        self.lib.pydat1.mstj[21 - 1] = 1
-        self.lib.pydat1.mstj[22 - 1] = 2
-        # # Set ctau threshold in PYTHIA for the default stable list
-        self.lib.pydat1.parj[70] = impy_config["tau_stable"] * sec2cm * 10.0  # mm
-
-    def set_stable(self, pdgid, stable=True):
-        kc = self.lib.pycomp(pdgid)
-        if stable:
-            self.lib.pydat3.mdcy[kc - 1, 0] = 0
-            info(5, "defining", pdgid, "as stable particle")
-        else:
-            self.lib.pydat3.mdcy[kc - 1, 0] = 1
-            info(5, pdgid, "allowed to decay")
-
-    def generate_event(self):
+    def _generate_event(self):
         self.event_call()
-        self.lib.pyhepc(1)
+        self._lib.pyhepc(1)
         return False
-
-
-class Pythia6(PYTHIA6Run):
-    def __init__(self, event_kinematics, seed="random", logfname=None):
-        from impy.definitions import interaction_model_by_tag as models_dict
-
-        interaction_model_def = models_dict["PYTHIA6"]
-        super().__init__(interaction_model_def)
-        self.init_generator(event_kinematics, seed, logfname)

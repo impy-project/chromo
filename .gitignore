@@ -36,3 +36,4 @@ __pycache__
 examples/*.dat
 tests/*.dat
 extra.cfg
+pythia*.tgz
