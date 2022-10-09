@@ -71,10 +71,10 @@ class DpmjetIIIRun(MCRun):
     _output_frame = "center-of-mass"
 
     def __init__(self, event_kinematics, seed="random", logfname=None):
-        super().__init__(seed, logfname)
-
         from impy.util import fortran_chars
         from impy.constants import sec2cm
+
+        super().__init__(seed, logfname)
 
         # Save maximal mass that has been inisialized
         # (DPMJET sometimes crashes if higher mass requested than initialized)
@@ -129,6 +129,7 @@ class DpmjetIIIRun(MCRun):
             # Absolute allowed deviation
             self._lib.pomdls.parmdl[77] = 0.05
 
+        self._set_final_state_particles()
         # Prevent DPMJET from overwriting decay settings
         # self._lib.dtfrpa.ovwtdc = False
         # Set PYTHIA decay flags to follow all changes to MDCY

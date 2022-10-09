@@ -72,6 +72,7 @@ class PHOJETRun(MCRun):
 
     _name = "PhoJet"
     _event_class = PhojetEvent
+    _output_frame = "center-of-mass"
 
     def __init__(self, event_kinematics, seed="random", logfname=None):
         from impy.constants import c
@@ -207,7 +208,7 @@ class PHOJETRun(MCRun):
 
 class Phojet112(PHOJETRun):
     _version = "1.12-35"
-    _library_name = "_phoject112"
+    _library_name = "_phojet112"
 
 
 class Phojet191(PHOJETRun):

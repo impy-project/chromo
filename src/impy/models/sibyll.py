@@ -65,9 +65,10 @@ class SIBYLLRun(MCRun):
     SIBYLL 2.1, 2.3 and 2.3c event generators."""
 
     _name = "SIBYLL"
+    _event_class = SibyllEvent
     _output_frame = "center-of-mass"
 
-    def __init__(self, event_kinematics, seed="random", logfname=None):
+    def __init__(self, event_kinematics, seed=None, logfname=None):
         super().__init__(seed, logfname)
 
         self._lib.s_debug.ndebug = impy_config["sibyll"]["debug_level"]

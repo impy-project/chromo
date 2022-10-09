@@ -10,7 +10,7 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 from abc import ABC, abstractmethod
 import numpy as np
 from impy import impy_config
-from impy.util import info
+from impy.util import info, classproperty
 from impy.kinematics import EventKinematics
 import dataclasses
 import copy
@@ -453,22 +453,13 @@ class RMMARDState:
         return self._seed[self.sequence - 1]
 
 
-# from Python-3.9 onwards, classmethod can be combined
-# with property to replace this, which can then be removed
-class _classproperty:
-    def __init__(self, f):
-        self.f = f
-
-    def __get__(self, obj, owner):
-        return self.f(owner)
-
-
 # =========================================================================
 # MCRun
 # =========================================================================
 class MCRun(ABC):
     #: Prevent creating multiple classes within same python scope
     _is_initialized = []
+    _set_final_state_particles_called = False
 
     def __init__(self, seed, logfname):
         import importlib
@@ -496,19 +487,16 @@ class MCRun(ABC):
 
         self._attach_log(logfname)
 
-        if seed == "random":
+        if seed is None or seed == "random":
             seed = randint(1000000, 10000000)
+        elif isinstance(seed, int):
+            seed = seed
         else:
-            seed = int(seed)
+            raise ValueError(f"Invalid seed {seed}")
 
         info(3, "Using seed:", seed)
 
-        # Initialize random number generator if model uses rmmard
-        if hasattr(self._lib, "init_rmmard"):
-            self._lib.init_rmmard(seed)
-        else:
-            # or store integer seed to initialize generator later
-            self._seed = seed
+        self._seed = seed
 
     def __call__(self, nevents):
         """Generator function (in python sence)
@@ -536,27 +524,31 @@ class MCRun(ABC):
             else:
                 info(0, "Rejection occured")
 
-    @_classproperty
+    @property
+    def seed(self):
+        return self._seed
+
+    @classproperty
     def name(cls):
         """Event generator name"""
         return cls._name
 
-    @_classproperty
+    @classproperty
     def label(cls):
         """Name and version"""
         return f"{cls._name}-{cls._version}"
 
-    @_classproperty
+    @classproperty
     def pyname(cls):
         """Event generator name as it appears in Python code."""
         return cls.__name__
 
-    @_classproperty
+    @classproperty
     def output_frame(cls):
         """Default frame of the output particle stack."""
         return cls._output_frame
 
-    @_classproperty
+    @classproperty
     def version(cls):
         """Event generator version"""
         return cls._version
@@ -719,8 +711,6 @@ class MCRun(ABC):
         else:
             self._lib.impy_closelogfile(self.output_lun)
             self._output_lun = None
-
-    _set_final_state_particles_called = False
 
     def _set_final_state_particles(self):
         """Defines particles as stable for the default 'tau_stable'

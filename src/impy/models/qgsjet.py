@@ -63,13 +63,17 @@ _qgsjet_hadron_classes = _qgsjet01_projectiles
 
 class QGSJetRun(MCRun):
     _name = "QGSJet"
-    _output_frame = "laboratory"
     _event_class = QGSJETEvent
+    _output_frame = "laboratory"
+    # needed to skip set_final_state_particles()
+    _set_final_state_particles_called = True
 
     def _set_stable(self, pdgid, stable):
         import warnings
 
-        warnings.warn("stable particles cannot be changed in QGSJet", RuntimeWarning)
+        warnings.warn(
+            f"stable particles cannot be changed in {self.pyname}", RuntimeWarning
+        )
 
 
 class QGSJetIIRun(QGSJetRun):

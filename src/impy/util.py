@@ -1,6 +1,5 @@
 """Utility module for auxiliary methods and classes."""
 
-from __future__ import print_function
 import inspect
 import os
 from impy import impy_config
@@ -262,3 +261,13 @@ class TaggedFloat:
 
     def __rsub__(self, val):
         return self.__class__(self._reduce(val) - self._value)
+
+
+# from Python-3.9 onwards, classmethod can be combined
+# with property to replace this, which can then be removed
+class classproperty:
+    def __init__(self, f):
+        self.f = f
+
+    def __get__(self, obj, owner):
+        return self.f(owner)
