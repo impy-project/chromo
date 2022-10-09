@@ -46,12 +46,12 @@ class RMMARDSib(RMMARDState):
 
     def _record_state(self, generator):
         super()._record_state(generator)
-        self._gasdev_iset = generator.lib.rndmgas.iset
+        self._gasdev_iset = generator._lib.rndmgas.iset
         return self
 
     def _restore_state(self, generator):
         super()._restore_state(generator)
-        generator.lib.rndmgas.iset = self._gasdev_iset
+        generator._lib.rndmgas.iset = self._gasdev_iset
         return self
 
     def __eq__(self, other: object) -> bool:
@@ -77,9 +77,7 @@ class SIBYLLRun(MCRun):
         # Set the internal state of GASDEV function (rng) to 0
         self._lib.rndmgas.iset = 0
         self._lib.pdg_ini()
-        self.conv_hepevt = (
-            self._lib.sibhep1 if "21" in self._lib.__name__ else self._lib.sibhep3
-        )
+
         self._set_final_state_particles()
         # _set_event_kinematics uses function self._lib.isib_pdg2pid
         # which works only after an initialization call to self._lib.pdg_ini()
@@ -179,7 +177,7 @@ class SIBYLLRun(MCRun):
     def _generate_event(self):
         self._lib.sibyll(self._sibproj, self._iatarg, self._ecm)
         self._lib.decsib()
-        self.conv_hepevt()
+        self._lib.sibhep3()
         return 0  # SIBYLL never rejects
 
     @property
@@ -194,6 +192,12 @@ class SIBYLLRun(MCRun):
 class Sibyll21(SIBYLLRun):
     _version = "2.1"
     _library_name = "_sib21"
+
+    def _generate_event(self):
+        self._lib.sibyll(self._sibproj, self._iatarg, self._ecm)
+        self._lib.decsib()
+        self._lib.sibhep1()
+        return 0  # SIBYLL never rejects
 
 
 class Sibyll23(SIBYLLRun):

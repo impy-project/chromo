@@ -123,7 +123,7 @@ class Sophia20(MCRun):
 
         self._nucleon_code_number = self._lib.icon_pdg_sib(k.p2pdg)
         self._lib.initial(
-            self.nucleon_code_number
+            self._nucleon_code_number
         )  # setting parameters for cross-section
         self._energy_of_nucleon = np.float32(k.pmass2)  # fix roundoff error
         self._energy_of_photon = k.elab

@@ -11,21 +11,20 @@ from .util import (
 )
 
 # generate list of all models in impy.models
-models = get_all_models(im)
+Models = get_all_models(im)
 
 
-def rng_state_test(model):
-
-    if model is im.Sophia20:
+def run_rng_state(Model):
+    if Model is im.Sophia20:
         evt_kin = FixedTarget(13 * TeV, "photon", "proton")
-    elif model is im.UrQMD34:
+    elif Model is im.UrQMD34:
         evt_kin = CenterOfMass(50 * GeV, "proton", "proton")
     else:
         evt_kin = CenterOfMass(13 * TeV, "proton", "proton")
 
-    generator = model(evt_kin, seed=1)
+    generator = Model(evt_kin, seed=1)
     nevents = 10
-    rng_state_file = str(model.name) + "rng_state.dat"
+    rng_state_file = Path(f"{Model.pyname}_rng_state.dat")
 
     # Save a initial state to a variable:
     state0 = generator.random_state.copy()
@@ -59,8 +58,7 @@ def rng_state_test(model):
     with open(rng_state_file, "rb") as pfile:
         generator.random_state = pickle.load(pfile)
 
-    if Path(rng_state_file).exists():
-        Path(rng_state_file).unlink()
+    rng_state_file.unlink()
 
     # And check for equality
     state_equal = None
@@ -71,7 +69,9 @@ def rng_state_test(model):
     assert state_equal, "Restored state from file is different from obtained"
 
 
-@pytest.mark.parametrize("Model", models)
-def test_generator(Model):
+@pytest.mark.parametrize("Model", Models)
+def test_rng_state(Model):
+    if Model is im.Pythia8:
+        pytest.skip("Pythia8 currently does not support rng_state serialization")
     xfail_on_ci_if_model_is_incompatible(Model)
-    run_in_separate_process(rng_state_test, Model)
+    run_in_separate_process(run_rng_state, Model)

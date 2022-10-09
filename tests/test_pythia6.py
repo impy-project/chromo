@@ -9,6 +9,7 @@ from .util import reference_charge, run_in_separate_process
 import pytest
 import pickle
 from particle import literals as lp
+from functools import cache
 
 
 def run_event():
@@ -21,12 +22,17 @@ def run_event():
 
 
 @pytest.fixture
+@cache
 def event():
     return run_in_separate_process(run_event)
 
 
 def test_charge(event):
     expected = reference_charge(event.pid)
+    # skip internal particles unknown to reference_charge
+    ma = np.isnan(expected)
+    assert np.mean(ma) < 0.1
+    event.charge[ma] = np.nan
     assert_allclose(event.charge, expected)
 
 

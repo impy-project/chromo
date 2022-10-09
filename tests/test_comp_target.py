@@ -5,14 +5,20 @@ from collections import Counter
 import pytest
 from multiprocessing import Pool
 from multiprocessing.context import TimeoutError
-from .util import xfail_on_ci_if_model_is_incompatible, get_all_models
+from .util import (
+    xfail_on_ci_if_model_is_incompatible,
+    get_all_models,
+    run_in_separate_process,
+)
 
-# generate list of all models in impy.models
-models = get_all_models(im)
+# generate list of models to test,
+# skip models which do not support nuclei
+Models = get_all_models(im)
+Models = [M for M in Models if M.name not in ("Sophia", "PhoJet")]
 
 
-def run_model(model, evt_kin):
-    gen = model(evt_kin, seed=1)
+def run_model(Model, evt_kin):
+    gen = Model(evt_kin, seed=1)
 
     c = Counter()
     for event in gen(10):
@@ -23,16 +29,12 @@ def run_model(model, evt_kin):
     return c
 
 
-@pytest.mark.parametrize("model", models)
-def test_generators(model):
-    xfail_on_ci_if_model_is_incompatible(model)
-    if model in (
-        im.Sophia20,
-        im.Phojet112,
-        im.Phojet191,
-        im.Phojet193,
-    ):
-        pytest.xfail("Model doesn't support nuclei")
+@pytest.mark.parametrize("Model", Models)
+def test_composite_target(Model):
+    xfail_on_ci_if_model_is_incompatible(Model)
+
+    if Model is im.Pythia8:
+        pytest.skip("Switching beams in Pythia8 is very time-consuming")
 
     projectile = "pi-"
     seed_for_test = 321

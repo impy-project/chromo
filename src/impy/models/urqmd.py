@@ -163,10 +163,12 @@ class UrQMD34(MCRun):
         nstab = self._lib.stables.nstable
         try:
             uid = self._stab.pdg2modid[pdgid][0]
-        except KeyError as e:
-            e.msg += f"\nParticle {pdgid} unknown to UrQMD"
-            info(5, e.msg)
-            raise
+        except KeyError:
+            import warnings
+
+            warnings.warn(f"\nParticle {pdgid} unknown to UrQMD", RuntimeWarning)
+            return
+
         if stable:
             if uid not in stable_ids[:nstab]:
                 self._lib.stables.stabvec[nstab] = uid

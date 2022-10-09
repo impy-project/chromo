@@ -71,11 +71,12 @@ struct Hepevt
     py::array_t<int, py::array::f_style> jmohep;
 };
 
-int charge_from_pid(const ParticleData &pd, int pid)
+double charge_from_pid(const ParticleData &pd, int pid)
 {
     auto pptr = pd.findParticle(pid);
     assert(pptr); // never be a nullptr if charge_from_pid is used on particles produced by Pythia
-    return pptr->charge();
+    // ParticleData returns partice even if anti-particle pid is used
+    return pid == pptr->id() ? pptr->charge() : -pptr->charge();
 }
 
 PYBIND11_MODULE(_pythia8, m)

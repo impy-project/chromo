@@ -44,7 +44,7 @@ def test_generator(Model):
         p2pdg,
     )
 
-    c = run_in_separate_process(run_model, Model, evt_kin, timeout=60)
+    c = run_in_separate_process(run_model, Model, evt_kin)
 
     assert c[211] > 0, "pi+"
     assert c[-211] > 0, "pi-"
