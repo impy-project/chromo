@@ -36,10 +36,10 @@ def test_to_hepmc3(Model):
         assert pa.shape == (2,)
         if np.all(pa == 0):
             continue
-        pa = (pa[0] - 1, pa[1])
         # normalize intervals
         if pa[1] == 0:
-            pa = (pa[0] - 1, pa[0])
+            pa = (pa[0], pa[0])
+        pa = (pa[0] - 1, pa[1])
         unique_vertices.setdefault(pa, []).append(i)
 
     # check that parent ranges do not exceed particle range;
