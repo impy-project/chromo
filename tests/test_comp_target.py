@@ -48,22 +48,10 @@ def test_composite_target(Model):
         "Air without argon",
         seed_for_test,
     )
-    evt_kin = CenterOfMass(7 * TeV, projectile, target)
 
-    if model in (im.UrQMD34,):
-        evt_kin = CenterOfMass(50 * GeV, projectile, target)
+    evt_kin = CenterOfMass(10 * GeV, projectile, target)
 
-    # Some models need to initialize same fortran code, which can only be
-    # initialized once. As a workaround, we run each model in a separate
-    # thread. When running several jobs, maxtasksperchild=1 is needed to
-    # use a fresh interpreter for each task (not needed here, but still).
-    with Pool(1, maxtasksperchild=1) as p:
-        r = p.apply_async(run_model, (model, evt_kin))
-        try:
-            c = r.get(timeout=60)
-        except TimeoutError:
-            # usually happens when model aborts and kills child process
-            raise TimeoutError("check stdout for errors")
+    c = run_in_separate_process(run_model, Model, evt_kin)
 
     assert c[211] > 0, "pi+"
     assert c[-211] > 0, "pi-"
