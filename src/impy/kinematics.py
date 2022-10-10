@@ -107,6 +107,8 @@ class CompositeTarget(object):
         self.component_name = []
 
         for component in component_list:
+            if not isinstance(component, tuple):
+                raise ValueError("Composite target accepts list of 'tuple's")
             if len(component) == 2:
                 self._add_component(component[0], component[1])
             elif len(component) == 3:
