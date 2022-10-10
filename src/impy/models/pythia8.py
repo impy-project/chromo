@@ -15,6 +15,9 @@ class PYTHIA8Event(MCEvent):
     """Wrapper class around HEPEVT particle stack."""
 
     _hepevt = "hepevt"
+    # We actually have daughter info, but since it is redundant, we do not copy
+    # it over from the Pythia event to safe time. The time safed is probably
+    # negligible though, so could be enabled if really necessary.
     _jdahep = None
 
     def _charge_init(self, npart):
@@ -26,24 +29,24 @@ class PYTHIA8Event(MCEvent):
     @property
     def impact_parameter(self):
         """Returns impact parameter for nuclear collisions."""
-        return self._lib.pythia.info.hiinfo.b()
+        return self._lib.pythia.info.hiinfo.b
 
     @property
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
-        return self._lib.pythia.info.hiinfo.nPartProj()
+        return self._lib.pythia.info.hiinfo.nPartProj
 
     @property
     def n_wounded_B(self):
         """Number of wounded nucleons (target) side B"""
-        return self._lib.pythia.info.hiinfo.nPartTarg()
+        return self._lib.pythia.info.hiinfo.nPartTarg
 
     @property
     def n_wounded(self):
         """Number of total wounded nucleons"""
         return (
-            self._lib.pythia.info.hiinfo.nPartProj()
-            + self._lib.pythia.info.hiinfo.nPartTarg()
+            self._lib.pythia.info.hiinfo.nPartProj
+            + self._lib.pythia.info.hiinfo.nPartTarg
         )
 
 
@@ -82,8 +85,10 @@ class Pythia8(MCRun):
         datdir = Path(base_path) / "iamdata" / "Pythia8" / "xmldoc"
         assert datdir.exists(), f"{datdir} does not exist"
 
-        # must delete PYTHIA8DATA from environ if it exists,
-        # since it overrides the Pythia argument
+        # Must delete PYTHIA8DATA from environ if it exists, since it overrides
+        # our argument here. When you install Pythia8 with conda, it sets
+        # PYTHIA8DATA. If that version does not match this version, readString()
+        # or init() may fail.
         if "PYTHIA8DATA" in os.environ:
             del os.environ["PYTHIA8DATA"]
         pythia = self._lib.pythia = self._lib.Pythia(str(datdir), True)
@@ -108,7 +113,7 @@ class Pythia8(MCRun):
         if k.p2_is_nucleus:
             k.p2pdg = AZ2pdg(k.A2, k.Z2)
 
-        # HD: this may or may not be necessary?
+        # HD: is this necessary?
         for pid, a, z in ((k.p1pdg, k.A1, k.Z1), (k.p2pdg, k.A2, k.Z2)):
             if not pythia.particleData.isParticle(pid):
                 # pdgid, p name, ap name, spin, 3*charge, color, mass

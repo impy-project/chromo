@@ -12,8 +12,8 @@ from .util import (
 )
 
 # generate list of models to test,
-# skip models which do not support nuclei
 Models = get_all_models(im)
+# skip models which do not support nuclei
 Models = [M for M in Models if M.name not in ("Sophia", "PhoJet")]
 
 
