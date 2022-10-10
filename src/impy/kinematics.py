@@ -24,20 +24,16 @@ import particle
 def _is_AZ_tuple(arg):
     if isinstance(arg, tuple):
         if len(arg) != 2:
-            raise ValueError(
-                "tuple (A, Z) should have len == 2, but given = {0}".format(arg)
-            )
+            raise ValueError(f"tuple (A, Z) should have len == 2, but given = {arg}")
         if not isinstance(arg[0], int):
             raise ValueError(
-                "1st entry of (A, Z) should be 'int' type, but it is {0} = {1}".format(
-                    type(arg[0]), arg[0]
-                )
+                "1st entry of (A, Z) should be 'int' type, but it is "
+                f"{type(arg[0])} = {arg[0]}"
             )
         if not isinstance(arg[1], int):
             raise ValueError(
-                "2nd entry of (A, Z) should be 'int' type, but it is {0} = {1}".format(
-                    type(arg[1]), arg[1]
-                )
+                "2nd entry of (A, Z) should be 'int' type, but it is "
+                f"{type(arg[1])} = {arg[1]}"
             )
         return True
     else:
@@ -63,14 +59,14 @@ class _FromParticleName:
         try:
             return _FromParticleName.all_pdgs[pname]
         except KeyError:
-            raise ValueError('Particle with name = "{0}" is not found'.format(pname))
+            raise ValueError(f'Particle with name = "{pname}" is not found')
 
     @staticmethod
     def _get_AZ(arg):
         if isinstance(arg, str):
             pdg = particle.pdgid.PDGID(_FromParticleName._get_pdg(arg))
             if (pdg.A is None) or (pdg.Z is None):
-                raise ValueError("'_get_AZ': no (A, Z) data for '{0}'".format(arg))
+                raise ValueError(f"'_get_AZ': no (A, Z) data for '{arg}'")
             else:
                 return pdg.A, pdg.Z
         elif _is_AZ_tuple(arg):
@@ -78,7 +74,7 @@ class _FromParticleName:
         else:
             raise ValueError(
                 "'_get_AZ' accepts 'str' (particle name) or 'tuple' (A, Z)"
-                ", but it received object {0} = {1}".format(type(arg[1]), arg[1])
+                f", but it received object {type(arg[1])} = {arg[1]}"
             )
 
 
@@ -117,9 +113,8 @@ class CompositeTarget(object):
                 self._add_component(component[0], component[1], component[2])
             else:
                 raise ValueError(
-                    "'CompositeTarget': wrong component length = {0} for {1}".format(
-                        len(component), component
-                    )
+                    "'CompositeTarget': wrong component length = "
+                    f"{len(component)} for {component}"
                 )
         self._normalize()
 
@@ -223,7 +218,7 @@ def _get_particle_input_type(arg):
     elif isinstance(arg, CompositeTarget):
         return "composite_target"
     else:
-        raise ValueError("Unmaintained parameter type {0} = {1}".format(type(arg), arg))
+        raise ValueError(f"Unmaintained parameter type {type(arg)} = {arg}")
 
 
 def _normalize_particle(particle):
@@ -527,36 +522,32 @@ class CenterOfMass(EventKinematics):
         super().__init__(ecm=ecm, particle1=particle1, particle2=particle2)
 
 
-class EnergyArg:
-    # total energy type
-    class _TotalEnergyFT:
-        pass
+class TotalEnergy(float):
+    def __new__(cls, value):
+        return float.__new__(cls, value)
 
-    # kinetic energy type
-    class _KinEnergyFT:
-        pass
 
-    # momentum type
-    class _MomentumFT:
-        pass
+class KinEnergy(float):
+    def __new__(cls, value):
+        return float.__new__(cls, value)
 
-    TotalEnergy = _TotalEnergyFT()
-    KinEnergy = _KinEnergyFT()
-    Momentum = _MomentumFT()
+
+class Momentum(float):
+    def __new__(cls, value):
+        return float.__new__(cls, value)
 
 
 class FixedTarget(EventKinematics):
-    def __init__(self, energy, particle1, particle2, energy_arg=EnergyArg.TotalEnergy):
+    def __init__(self, energy, particle1, particle2):
         impy_config["user_frame"] = "laboratory"
 
-        if isinstance(energy_arg, EnergyArg._TotalEnergyFT):
+        if isinstance(energy, TotalEnergy):
             super().__init__(elab=energy, particle1=particle1, particle2=particle2)
-        elif isinstance(energy_arg, EnergyArg._KinEnergyFT):
+        elif isinstance(energy, KinEnergy):
             super().__init__(ekin=energy, particle1=particle1, particle2=particle2)
-        elif isinstance(energy_arg, EnergyArg._MomentumFT):
+        elif isinstance(energy, Momentum):
             super().__init__(plab=energy, particle1=particle1, particle2=particle2)
+        elif isinstance(energy, float):
+            super().__init__(elab=energy, particle1=particle1, particle2=particle2)
         else:
-            raise ValueError(
-                '"energy_arg" accepts only EnergyArg.TotalEnergy'
-                ", EnergyArg.KinEnergy, EnergyArg.Momentum "
-            )
+            raise ValueError("Please use 'float' (in GeV) when specifying energy")
