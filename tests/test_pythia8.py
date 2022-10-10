@@ -1,8 +1,9 @@
 from impy.kinematics import CenterOfMass
 from impy.models import Pythia8
-from impy.constants import GeV, TeV
+from impy.constants import GeV
 import numpy as np
 from numpy.testing import assert_allclose
+from impy.util import AZ2pdg
 from .util import reference_charge, run_in_separate_process
 import pytest
 from particle import literals as lp
@@ -10,9 +11,9 @@ from functools import cache
 
 
 def run_event():
-    ekin = CenterOfMass(1 * TeV, 2212, 2212)
+    ekin = CenterOfMass(10 * GeV, "proton", "proton")
     m = Pythia8(ekin, seed=4)
-    m.set_stable(lp.pi_0.pdgid, False)
+    m.set_stable(lp.pi_0.pdgid, True)
     for event in m(1):
         pass
     return event

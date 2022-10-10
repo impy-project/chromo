@@ -66,7 +66,7 @@ class EposLHC(MCRun):
     _library_name = "_eposlhc"
     _output_frame = "center-of-mass"
 
-    def __init__(self, event_kinematics, seed="random", logfname=None):
+    def __init__(self, event_kinematics, seed=None, logfname=None):
         from os import path
 
         super().__init__(seed, logfname)
@@ -87,7 +87,7 @@ class EposLHC(MCRun):
 
         datdir = path.join(base_path, epos_conf["datdir"])
         self._lib.initializeepos(
-            float(seed),
+            float(self._seed),
             k.ecm,
             datdir,
             len(datdir),

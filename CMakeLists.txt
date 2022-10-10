@@ -311,8 +311,7 @@ file(GLOB pythia8_sources ${cpp_dir}/pythia8307/src/*.cc)
 
 add_library(_pythia8lib STATIC ${pythia8_sources})
 target_include_directories(_pythia8lib PUBLIC ${cpp_dir}/pythia8307/include)
-target_compile_definitions(_pythia8lib
-  PRIVATE XMLDIR="${cpp_dir}/pythia8307/share/Pythia8/xmldoc")
+target_compile_definitions(_pythia8lib PRIVATE XMLDIR="")
 
 pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
 target_link_libraries(_pythia8 PRIVATE _pythia8lib)

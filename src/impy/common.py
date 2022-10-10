@@ -488,15 +488,13 @@ class MCRun(ABC):
         self._attach_log(logfname)
 
         if seed is None or seed == "random":
-            seed = randint(1000000, 10000000)
+            self._seed = randint(1000000, 10000000)
         elif isinstance(seed, int):
-            seed = seed
+            self._seed = seed
         else:
             raise ValueError(f"Invalid seed {seed}")
 
-        info(3, "Using seed:", seed)
-
-        self._seed = seed
+        info(3, "Using seed:", self._seed)
 
     def __call__(self, nevents):
         """Generator function (in python sence)

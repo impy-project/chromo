@@ -29,7 +29,7 @@ class Pythia6(MCRun):
     _event_class = PYTHIA6Event
     _output_frame = "center-of-mass"
 
-    def __init__(self, event_kinematics, seed="random", logfname=None):
+    def __init__(self, event_kinematics, seed=None, logfname=None):
         from impy.constants import sec2cm
 
         super().__init__(seed, logfname)

@@ -80,14 +80,16 @@ class QGSJetIIRun(QGSJetRun):
     """Implements all abstract attributes of MCRun for the
     QGSJET-II-xx series of event generators."""
 
-    def __init__(self, event_kinematics, seed="random", logfname=None):
+    def __init__(self, event_kinematics, seed=None, logfname=None):
         import os.path as path
 
         super().__init__(seed, logfname)
 
         info(5, "Initializing QGSJET-II")
         datdir = path.join(base_path, impy_config["qgsjet"]["datdir"])
-        self._lib.cqgsini(seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"])
+        self._lib.cqgsini(
+            self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
+        )
 
         self._set_event_kinematics(event_kinematics)
 
@@ -147,7 +149,9 @@ class QGSJet01Run(QGSJetRun):
 
         info(5, "Initializing QGSJET01d")
         datdir = path.join(base_path, impy_config["qgsjet"]["datdir"])
-        self._lib.cqgsini(seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"])
+        self._lib.cqgsini(
+            self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
+        )
 
         self._set_event_kinematics(event_kinematics)
 

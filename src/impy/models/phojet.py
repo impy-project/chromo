@@ -74,7 +74,7 @@ class PHOJETRun(MCRun):
     _event_class = PhojetEvent
     _output_frame = "center-of-mass"
 
-    def __init__(self, event_kinematics, seed="random", logfname=None):
+    def __init__(self, event_kinematics, seed=None, logfname=None):
         from impy.constants import c
 
         super().__init__(seed, logfname)

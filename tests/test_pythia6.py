@@ -12,6 +12,12 @@ from particle import literals as lp
 from functools import cache
 
 
+def test_name():
+    assert Pythia6.name == "Pythia"
+    assert Pythia6.version == "6.428"
+    assert Pythia6.label == "Pythia-6.428"
+
+
 def run_event():
     evt_kin = CenterOfMass(1 * TeV, 2212, 2212)
     m = Pythia6(evt_kin, seed=4)
@@ -148,3 +154,13 @@ def run_event_copy():
 
 def test_event_copy():
     run_in_separate_process(run_event_copy)
+
+
+def run_name():
+    ekin = CenterOfMass(1 * TeV, 2212, 2212)
+    m = Pythia6(ekin, seed=4)
+    assert m.label == "Pythia-6.428"
+
+
+def test_instance_name():
+    run_in_separate_process(run_name)

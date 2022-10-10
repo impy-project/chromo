@@ -6,7 +6,9 @@ Created on 19.01.2015
 
 from ..common import MCRun, MCEvent
 from ..util import info, AZ2pdg
-from impy import impy_config
+from impy import impy_config, base_path
+from pathlib import Path
+import os
 
 
 class PYTHIA8Event(MCEvent):
@@ -52,7 +54,7 @@ class Pythia8(MCRun):
     _event_class = PYTHIA8Event
     _output_frame = "center-of-mass"
 
-    def __init__(self, event_kinematics, seed="random", logfname=None):
+    def __init__(self, event_kinematics, seed=None, logfname=None):
         # store stable settings until Pythia instance is created
         self._stable = {}
 
@@ -77,7 +79,14 @@ class Pythia8(MCRun):
         k = event_kinematics
         self._curr_event_kin = k
 
-        pythia = self._lib.pythia = self._lib.Pythia("", True)
+        datdir = Path(base_path) / "iamdata" / "Pythia8" / "xmldoc"
+        assert datdir.exists(), f"{datdir} does not exist"
+
+        # must delete PYTHIA8DATA from environ if it exists,
+        # since it overrides the Pythia argument
+        if "PYTHIA8DATA" in os.environ:
+            del os.environ["PYTHIA8DATA"]
+        pythia = self._lib.pythia = self._lib.Pythia(str(datdir), True)
 
         config = [
             "Random:setSeed = on",
@@ -89,14 +98,9 @@ class Pythia8(MCRun):
         # Add more options from config file
         config += impy_config["pythia8"]["options"]
 
-        for line in config:
-            pythia.readString(line)
-
         if k.p1_is_nucleus or k.p2_is_nucleus:
-            pythia.readString("HeavyIon:SigFitNGen = 0")
-            pythia.readString(
-                "HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0"
-            )
+            config.append("HeavyIon:SigFitNGen = 0")
+            config.append("HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0")
 
         if k.p1_is_nucleus:
             k.p1pdg = AZ2pdg(k.A1, k.A2)
@@ -113,14 +117,20 @@ class Pythia8(MCRun):
                     f"{a * 100 + z}",
                     f"{a * 100 + z}bar",
                     1,
-                    3 * z,
+                    3 * int(z),
                     0,
                     float(a),
                 )
 
-        pythia.readString(f"Beams:idA = {k.p1pdg}")
-        pythia.readString(f"Beams:idB = {k.p2pdg}")
-        pythia.readString(f"Beams:eCM = {k.ecm}")
+        config += [
+            f"Beams:idA = {k.p1pdg}",
+            f"Beams:idB = {k.p2pdg}",
+            f"Beams:eCM = {k.ecm}",
+        ]
+
+        for line in config:
+            if not pythia.readString(line):
+                raise RuntimeError(f"readString('{line}') failed")
 
         if not pythia.init():
             raise RuntimeError("Pythia8 initialization failed")

@@ -1,5 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#include <pybind11/iostream.h>
 #include <Pythia8/Event.h>
 #include <Pythia8/Pythia.h>
 #include <Pythia8/ParticleData.h>
@@ -96,7 +97,7 @@ PYBIND11_MODULE(_pythia8, m)
 
     py::class_<ParticleData>(m, "ParticleData")
         .def("mayDecay", py::overload_cast<int, bool>(&ParticleData::mayDecay))
-        .def("addParticle", py::overload_cast<int, string, string, int, int, int, double, double, double, double, double, bool>(&ParticleData::addParticle), "pdgid"_a, "name"_a, "antiname"_a, "spin"_a = 0, "charge"_a = 0, "color"_a = 0, "mass"_a = 0, "width"_a = 0, "min"_a = 0, "max"_a = 0, "tau"_a = 0, "var_width"_a = false)
+        .def("addParticle", py::overload_cast<int, string, string, int, int, int, double, double, double, double, double, bool>(&ParticleData::addParticle), "pdgid"_a, "name"_a, "antiname"_a, "spinType"_a = 0, "chargeType"_a = 0, "colType"_a = 0, "m0"_a = 0, "mWidth"_a = 0, "mMin"_a = 0, "mMax"_a = 0, "tau0"_a = 0, "varWidth"_a = false)
         .def("isParticle", &ParticleData::isParticle)
         .def("findParticle", py::overload_cast<int>(&ParticleData::findParticle))
 
@@ -158,13 +159,16 @@ PYBIND11_MODULE(_pythia8, m)
 
     py::class_<Event>(m, "Event");
 
+    py::class_<Info>(m, "Info");
+
     py::class_<Pythia>(m, "Pythia")
-        .def(py::init<string, bool>())
-        .def("init", &Pythia::init)
+        .def(py::init<string, bool>(), py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+        .def("init", &Pythia::init, py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
         .def("next", py::overload_cast<>(&Pythia::next))
         .def("readString", &Pythia::readString, "setting"_a, "warn"_a = true)
         .def_readwrite("particleData", &Pythia::particleData)
-        // .def_readonly("info", &Pythia::info)
+        .def_property_readonly("info", [](Pythia &self)
+                               { return self.info; })
         .def_readwrite("event", &Pythia::event)
 
         ;
