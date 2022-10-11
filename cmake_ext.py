@@ -87,37 +87,31 @@ class CMakeBuild(build_ext):
 
         build_args = ["--config", cfg]  # needed by some generators, e.g. on Windows
 
-        if cmake_generator not in (
-            "Unix Makefiles",
-            "MinGW Makefiles",
-            "MSYS Makefiles",
-        ):
-            if self.compiler.compiler_type == "msvc":
-                # CMake allows an arch-in-generator style for backward compatibility
-                contains_arch = any(x in cmake_generator for x in ("ARM", "Win64"))
+        # if cmake_generator in ("Unix Makefiles", "MinGW Makefiles", "MSYS Makefiles"):
+        if self.compiler.compiler_type == "msvc":
+            # CMake allows an arch-in-generator style for backward compatibility
+            contains_arch = any(x in cmake_generator for x in ("ARM", "Win64"))
 
-                # Specify the arch if using MSVC generator, but only if it doesn't
-                # contain a backward-compatibility arch spec already in the
-                # generator name.
-                if not contains_arch:
-                    # Convert distutils Windows platform specifiers to CMake -A arguments
-                    arch = {
-                        "win32": "Win32",
-                        "win-amd64": "x64",
-                        "win-arm32": "ARM",
-                        "win-arm64": "ARM64",
-                    }[self.plat_name]
-                    cmake_args += ["-A", arch]
+            # Specify the arch if using MSVC generator, but only if it doesn't
+            # contain a backward-compatibility arch spec already in the
+            # generator name.
+            if not contains_arch:
+                # Convert distutils Windows platform specifiers to CMake -A arguments
+                arch = {
+                    "win32": "Win32",
+                    "win-amd64": "x64",
+                    "win-arm32": "ARM",
+                    "win-arm64": "ARM64",
+                }[self.plat_name]
+                cmake_args += ["-A", arch]
 
-                cmake_args += [
-                    f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"
-                ]
+            # cmake_args += [f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"]
 
-            elif sys.platform.startswith("darwin"):
-                # Cross-compile support for macOS - respect ARCHFLAGS if set
-                archs = re.findall(r"-arch (\S+)", os.environ.get("ARCHFLAGS", ""))
-                if archs:
-                    cmake_args += [f"-DCMAKE_OSX_ARCHITECTURES={';'.join(archs)}"]
+        elif sys.platform.startswith("darwin"):
+            # Cross-compile support for macOS - respect ARCHFLAGS if set
+            archs = re.findall(r"-arch (\S+)", os.environ.get("ARCHFLAGS", ""))
+            if archs:
+                cmake_args += [f"-DCMAKE_OSX_ARCHITECTURES={';'.join(archs)}"]
 
         # Set CMAKE_BUILD_PARALLEL_LEVEL to control the parallel build level
         # across all generators. CMake 3.12+ only. If not set, use number of
