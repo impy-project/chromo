@@ -15,6 +15,7 @@ def test_taggedfloat():
     assert 1 - tf == TaggedFloat(0)
     assert tf / 2 == TaggedFloat(0.5)
     assert 2 / tf == TaggedFloat(2)
+    assert float(tf) == 1
 
 
 class Foo(TaggedFloat):
@@ -35,3 +36,4 @@ def test_derived():
     assert 1 - d == Foo(0)
     assert d / 2 == Foo(0.5)
     assert 2 / d == Foo(2)
+    assert float(d) == 1

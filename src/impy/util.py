@@ -222,6 +222,9 @@ class TaggedFloat:
     def __repr__(self):
         return f"{self.__class__.__name__}({self._value!r})"
 
+    def __float__(self):
+        return self._value
+
     @classmethod
     def _reduce(cls, other):
         if isinstance(other, (int, float)):
