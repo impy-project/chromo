@@ -17,7 +17,7 @@ the implementation is very "cooked up". We have to discuss this.
 
 import numpy as np
 from impy import pdata, impy_config
-from impy.util import info
+from impy.util import info, TaggedFloat
 import particle
 
 
@@ -524,32 +524,36 @@ class CenterOfMass(EventKinematics):
         super().__init__(ecm=ecm, particle1=particle1, particle2=particle2)
 
 
-class TotalEnergy(float):
-    def __new__(cls, value):
-        return float.__new__(cls, value)
+class TotalEnergy(TaggedFloat):
+    pass
 
 
-class KinEnergy(float):
-    def __new__(cls, value):
-        return float.__new__(cls, value)
+class KinEnergy(TaggedFloat):
+    pass
 
 
-class Momentum(float):
-    def __new__(cls, value):
-        return float.__new__(cls, value)
+class Momentum(TaggedFloat):
+    pass
 
 
 class FixedTarget(EventKinematics):
     def __init__(self, energy, particle1, particle2):
         impy_config["user_frame"] = "laboratory"
 
-        if isinstance(energy, TotalEnergy):
-            super().__init__(elab=energy, particle1=particle1, particle2=particle2)
+        if isinstance(energy, (TotalEnergy, int, float)):
+            super().__init__(
+                elab=float(energy), particle1=particle1, particle2=particle2
+            )
         elif isinstance(energy, KinEnergy):
-            super().__init__(ekin=energy, particle1=particle1, particle2=particle2)
+            super().__init__(
+                ekin=float(energy), particle1=particle1, particle2=particle2
+            )
         elif isinstance(energy, Momentum):
-            super().__init__(plab=energy, particle1=particle1, particle2=particle2)
-        elif isinstance(energy, float):
-            super().__init__(elab=energy, particle1=particle1, particle2=particle2)
+            super().__init__(
+                plab=float(energy), particle1=particle1, particle2=particle2
+            )
         else:
-            raise ValueError("Please use 'float' (in GeV) when specifying energy")
+            raise ValueError(
+                f"{energy!r} is neither a number nor one of "
+                "TotalEnergy, KinEnergy, Momentum"
+            )
