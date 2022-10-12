@@ -37,7 +37,7 @@ def test_hepmc_io(Model):
 
     xfail_on_ci_if_model_is_incompatible(Model)
 
-    events = run_in_separate_process(run, Model, timeout=30)
+    events = run_in_separate_process(run, Model)
     expected = [ev.to_hepmc3() for ev in events]
 
     with pyhepmc.open(test_file, "w") as f:

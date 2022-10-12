@@ -7,12 +7,12 @@ from impy.util import AZ2pdg
 from .util import reference_charge, run_in_separate_process
 import pytest
 from particle import literals as lp
-from functools import cache
+from functools import lru_cache
 
 
 def run_event():
-    ekin = CenterOfMass(10 * GeV, "proton", "proton")
-    m = Pythia8(ekin, seed=4)
+    evt_kin = CenterOfMass(10 * GeV, "proton", "proton")
+    m = Pythia8(evt_kin, seed=4)
     m.set_stable(lp.pi_0.pdgid, True)
     for event in m(1):
         pass
@@ -20,7 +20,7 @@ def run_event():
 
 
 @pytest.fixture
-@cache  # Pythia8 initialization is very slow
+@lru_cache  # Pythia8 initialization is very slow
 def event():
     return run_in_separate_process(run_event)
 
