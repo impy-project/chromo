@@ -7,8 +7,8 @@ import pytest
 
 
 def make_event(Model):
-    ekin = CenterOfMass(1 * TeV, 2212, 2212)
-    m = Model(ekin, seed=1)
+    evt_kin = CenterOfMass(1 * TeV, 2212, 2212)
+    m = Model(evt_kin, seed=1)
     for event in m(100):
         if len(event) > 10:  # to skip elastic events
             break

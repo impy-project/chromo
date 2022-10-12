@@ -18,7 +18,7 @@ def test_phojet():
     p1pdg = -211  # pi-
     p2pdg = 2212  # proton
 
-    ekin = EventKinematics(
+    evt_kin = EventKinematics(
         ecm=7 * TeV,
         particle1=p1pdg,
         particle2=p2pdg,
@@ -28,7 +28,7 @@ def test_phojet():
     # which can only be initialized once, therefore run
     # in separate thread
 
-    gen = Phojet112(ekin)
+    gen = Phojet112(evt_kin)
 
     c = Counter()
     for event in gen(10):

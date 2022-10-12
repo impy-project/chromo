@@ -614,10 +614,10 @@ class MCRun(ABC):
 
     def _update_event_kinematics(self):
         if self._curr_event_kin.composite_target:
-            ekin = self._curr_event_kin
-            if ekin.p2_is_nucleus:
-                ekin.A2, ekin.Z2 = ekin.composite_target._get_random_AZ()
-                self._set_event_kinematics(ekin)
+            evt_kin = self._curr_event_kin
+            if evt_kin.p2_is_nucleus:
+                evt_kin.A2, evt_kin.Z2 = evt_kin.composite_target._get_random_AZ()
+                self._set_event_kinematics(evt_kin)
 
     @property
     def random_state(self):

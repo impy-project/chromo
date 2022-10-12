@@ -11,8 +11,8 @@ from .util import xfail_on_ci_if_model_is_incompatible, get_all_models
 models = get_all_models(im)
 
 
-def run_model(model, ekin):
-    gen = model(ekin, seed=1)
+def run_model(model, evt_kin):
+    gen = model(evt_kin, seed=1)
 
     c = Counter()
     for event in gen(10):
@@ -46,17 +46,17 @@ def test_generators(model):
         "Air without argon",
         seed_for_test,
     )
-    ekin = CenterOfMass(7 * TeV, projectile, target)
+    evt_kin = CenterOfMass(7 * TeV, projectile, target)
 
     if model in (im.UrQMD34,):
-        ekin = CenterOfMass(50 * GeV, projectile, target)
+        evt_kin = CenterOfMass(50 * GeV, projectile, target)
 
     # Some models need to initialize same fortran code, which can only be
     # initialized once. As a workaround, we run each model in a separate
     # thread. When running several jobs, maxtasksperchild=1 is needed to
     # use a fresh interpreter for each task (not needed here, but still).
     with Pool(1, maxtasksperchild=1) as p:
-        r = p.apply_async(run_model, (model, ekin))
+        r = p.apply_async(run_model, (model, evt_kin))
         try:
             c = r.get(timeout=60)
         except TimeoutError:

@@ -15,10 +15,10 @@ models = get_all_models(im)
 
 
 def run(Model):
-    ekin = CenterOfMass(10 * GeV, 2212, 2212)
+    evt_kin = CenterOfMass(10 * GeV, 2212, 2212)
     if Model == im.Sophia20:
-        ekin = FixedTarget(10 * GeV, "photon", "proton")
-    gen = Model(ekin, seed=1)
+        evt_kin = FixedTarget(10 * GeV, "photon", "proton")
+    gen = Model(evt_kin, seed=1)
     return list(gen(3))
 
 
