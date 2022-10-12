@@ -67,6 +67,9 @@ add_compile_definitions(NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
 # generator automatically runs the preprocessor on all Fortran files
 set(CMAKE_Fortran_FLAGS_RELEASE -O3)
 
+# Uncomment when debugging a build:
+#set(CMAKE_VERBOSE_MAKEFILE ON)
+
 # CMake sets -fPIC etc. automatically, add only unusual options
 if (UNIX)
   add_compile_options(
@@ -81,7 +84,14 @@ if (UNIX)
     add_compile_options(
       $<$<COMPILE_LANGUAGE:Fortran>:-Wno-argument-mismatch>)
   endif()
-else() # intel
+else() # Windows MinGW!
+	add_compile_options(
+    -Wno-uninitialized
+    -w
+    $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
+    $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
+	  $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
+  )
   # TODO
   # set(FLAGS -fast -fpe0)
   # set(FLAGSF90 ${FLAGS} -ffree-form -Wobsolescent -fno-second-underscore)
@@ -357,13 +367,49 @@ list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR\.f)
 # cmake does not like filenames with parantheses, but some Fortran files
 # include those. As a workaround, we generate modified source files and
 # renamed copies of the headers. Not elegant, but works. 🤷‍♂️
-execute_process(
-  COMMAND
-  ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py
-  ${CMAKE_CURRENT_BINARY_DIR} ${fortran_dir}/dpmjetIII-19.1/include
-  ${dpmjetIII191_sources}
-  OUTPUT_VARIABLE dpmjetIII191_modded_sources
+
+
+### dpmjetIII191
+file(GLOB dpmjetIII191_sources
+  ${fortran_dir}/dpmjetIII-19.1/src/phojet/*.f
+  ${fortran_dir}/dpmjetIII-19.1/src/pythia/*.f
+  ${fortran_dir}/dpmjetIII-19.1/src/dpmjet/*.f
 )
+
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDM\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMST\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMTE\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR\.f)
+# cmake does not like filenames with parantheses, but some Fortran files
+# include those. As a workaround, we generate modified source files and
+# renamed copies of the headers. Not elegant, but works. 🤷‍♂️
+
+
+if (WIN32)
+# Workaround to workaround :) Windows don't like long lists
+# User temporary file to keep long lists
+  set(temp_dpmjet_file temp.dpmjetIII191)
+  string(REPLACE ";"  " " temp_dpmjet_str "${dpmjetIII191_sources}")
+  file(WRITE ${temp_dpmjet_file} "${temp_dpmjet_str}")
+
+  execute_process(
+    COMMAND
+    ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py 
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${fortran_dir}/dpmjetIII-19.1/include
+    ${CMAKE_SOURCE_DIR}/${temp_dpmjet_file}
+  )
+  file(READ ${temp_dpmjet_file} dpmjetIII191_modded_sources)
+  file(REMOVE ${temp_dpmjet_file})
+else()
+  execute_process(
+    COMMAND
+    ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py
+    ${CMAKE_CURRENT_BINARY_DIR} ${fortran_dir}/dpmjetIII-19.1/include
+    ${dpmjetIII191_sources}
+    OUTPUT_VARIABLE dpmjetIII191_modded_sources
+  )
+endif()
 
 
 f2py_add_module(_dpmjetIII191
@@ -384,7 +430,6 @@ f2py_add_module(_dpmjetIII191
   ${fortran_dir}/dpmjetIII-19.1/include/phojet
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
-  # ${fortran_dir}/dpmjetIII-19.1/include/flinclude
   ${CMAKE_CURRENT_BINARY_DIR}/include
   COMPILE_DEFS
   ${impy_definitions}
@@ -409,7 +454,6 @@ f2py_add_module(_phojet191
   ${fortran_dir}/dpmjetIII-19.1/include/phojet
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
-  # ${fortran_dir}/dpmjetIII-19.1/include/flinclude
   ${CMAKE_CURRENT_BINARY_DIR}/include
   COMPILE_DEFS
   ${impy_definitions}
