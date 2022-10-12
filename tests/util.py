@@ -6,7 +6,6 @@ import os
 from impy import models as im
 from impy.common import MCRun
 import pytest
-from functools import lru_cache
 
 
 def reference_charge(pid):

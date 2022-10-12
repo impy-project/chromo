@@ -20,7 +20,7 @@ def run_event():
 
 
 @pytest.fixture
-@lru_cache  # Pythia8 initialization is very slow
+@lru_cache(maxsize=1)  # Pythia8 initialization is very slow
 def event():
     return run_in_separate_process(run_event)
 

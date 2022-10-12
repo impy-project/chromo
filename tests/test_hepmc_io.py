@@ -40,6 +40,10 @@ def test_hepmc_io(Model):
     events = run_in_separate_process(run, Model)
     expected = [ev.to_hepmc3() for ev in events]
 
+    # Uncomment this to get debugging output. Higher number shows more.
+    # This only works if you compile pyhepmc in debug mode.
+    # pyhepmc.Setup.debug_level = 100
+
     with pyhepmc.open(test_file, "w") as f:
         for event in expected:
             f.write(event)
