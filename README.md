@@ -10,7 +10,7 @@ import impy
 from impy.constants import TeV
 
 # Define the parameters of the collisions
-event_kinematics = impy.kinematics.EventKinematics(ecm=13 * TeV, particle1=2212, particle2=2212)
+event_kinematics = impy.kinematics.CenterOfMass(13 * TeV, "proton", "proton")
 # Create an instance of an event generator
 generator = impy.models.Sibyll23d(event_kinematics)
 
