@@ -274,8 +274,8 @@ class EventKinematics:
         elab=None,
         ekin=None,
         beam=None,
-        particle1=None,
-        particle2=None,
+        particle1,
+        particle2,
     ):
         # Catch input errors
 
@@ -284,25 +284,11 @@ class EventKinematics:
                 "Please provide only one of ecm/plab/elab/ekin/beam arguments"
             )
 
-        if particle1:
-            p1pdg, nuc1_prop, composite_target = _normalize_particle(particle1)
-            if composite_target:
-                raise ValueError("Only 2nd parameter could be composite target")
-        else:
-            raise ValueError(
-                '"particle1" parameter is empty. Please provide one of the following'
-                " accepted argument types: \nparticle name (str), PDG ID (int), or "
-                "nucleus mass & charge (A, Z) tuple"
-            )
+        p1pdg, nuc1_prop, composite_target = _normalize_particle(particle1)
+        if composite_target:
+            raise ValueError("Only 2nd parameter could be composite target")
 
-        if particle2:
-            p2pdg, nuc2_prop, self.composite_target = _normalize_particle(particle2)
-        else:
-            raise ValueError(
-                '"particle2" parameter is empty. Please provide one of the following'
-                " accepted argument types:\nparticle name (str), PDG ID (int),"
-                " nucleus mass & charge (A, Z) tuple, or CompositeTarget object"
-            )
+        p2pdg, nuc2_prop, self.composite_target = _normalize_particle(particle2)
 
         # Store average nucleon mass
         mnuc = 0.5 * (pdata.mass(2212) + pdata.mass(2112))
