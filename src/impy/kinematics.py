@@ -284,6 +284,9 @@ class EventKinematics:
                 "Please provide only one of ecm/plab/elab/ekin/beam arguments"
             )
 
+        self.particle1 = particle1
+        self.particle2 = particle2
+
         p1pdg, nuc1_prop, composite_target = _normalize_particle(particle1)
         if composite_target:
             raise ValueError("Only 2nd parameter could be composite target")

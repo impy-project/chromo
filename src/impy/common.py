@@ -678,18 +678,11 @@ class MCRun(ABC):
 
         cs = 0.0
         for f, iat in frac_air:
-            if prev_kin.p1_is_nucleus:
-                k = EventKinematics(
-                    ecm=prev_kin.ecm,
-                    particle1=(prev_kin.A1, prev_kin.Z2),
-                    particle2=(iat, int(iat / 2)),
-                )
-            else:
-                k = EventKinematics(
-                    ecm=prev_kin.ecm,
-                    particle1=prev_kin.p1pdg,
-                    particle2=(iat, int(iat / 2)),
-                )
+            k = EventKinematics(
+                ecm=prev_kin.ecm,
+                particle1=prev_kin.particle1,
+                particle2=(iat, int(iat / 2)),
+            )
             self._set_event_kinematics(k)
             cs += f * self.sigma_inel(**kwargs)
 
