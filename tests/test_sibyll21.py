@@ -9,8 +9,8 @@ from particle import Particle
 
 
 def event_run():
-    ekin = CenterOfMass(10 * TeV, 2212, 2212)
-    m = Sibyll21(ekin, seed=1)
+    evt_kin = CenterOfMass(10 * TeV, 2212, 2212)
+    m = Sibyll21(evt_kin, seed=1)
     for event in m(1):
         pass
     return event.copy()  # copy is pickleable

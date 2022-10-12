@@ -15,10 +15,10 @@ models = get_all_models(im)
 
 
 def run(Model):
-    ekin = CenterOfMass(10 * GeV, "proton", "proton")
+    evt_kin = CenterOfMass(10 * GeV, "proton", "proton")
     if Model is Sophia20:
-        ekin = CenterOfMass(10 * GeV, "photon", "proton")
-    m = Model(ekin, seed=1)
+        evt_kin = CenterOfMass(10 * GeV, "photon", "proton")
+    m = Model(evt_kin, seed=1)
     for event in m(100):
         if len(event) > 10:  # to skip elastic events
             break

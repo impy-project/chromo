@@ -17,13 +17,13 @@ models = get_all_models(im)
 def rng_state_test(model):
 
     if model is im.Sophia20:
-        ekin = FixedTarget(13 * TeV, "photon", "proton")
+        evt_kin = FixedTarget(13 * TeV, "photon", "proton")
     elif model is im.UrQMD34:
-        ekin = CenterOfMass(50 * GeV, "proton", "proton")
+        evt_kin = CenterOfMass(50 * GeV, "proton", "proton")
     else:
-        ekin = CenterOfMass(13 * TeV, "proton", "proton")
+        evt_kin = CenterOfMass(13 * TeV, "proton", "proton")
 
-    generator = model(ekin, seed=1)
+    generator = model(evt_kin, seed=1)
     nevents = 10
     rng_state_file = str(model.name) + "rng_state.dat"
 

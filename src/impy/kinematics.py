@@ -17,28 +17,23 @@ the implementation is very "cooked up". We have to discuss this.
 
 import numpy as np
 from impy import pdata, impy_config
-from impy.util import info
-import abc
+from impy.util import info, TaggedFloat
 import particle
 
 
 def _is_AZ_tuple(arg):
     if isinstance(arg, tuple):
         if len(arg) != 2:
-            raise ValueError(
-                "tuple (A, Z) should have len == 2, but given = {0}".format(arg)
-            )
+            raise ValueError(f"tuple (A, Z) should have len == 2, but given = {arg}")
         if not isinstance(arg[0], int):
             raise ValueError(
-                "1st entry of (A, Z) should be 'int' type, but it is {0} = {1}".format(
-                    type(arg[0]), arg[0]
-                )
+                "1st entry of (A, Z) should be 'int' type, but it is "
+                f"{type(arg[0])} = {arg[0]}"
             )
         if not isinstance(arg[1], int):
             raise ValueError(
-                "2nd entry of (A, Z) should be 'int' type, but it is {0} = {1}".format(
-                    type(arg[1]), arg[1]
-                )
+                "2nd entry of (A, Z) should be 'int' type, but it is "
+                f"{type(arg[1])} = {arg[1]}"
             )
         return True
     else:
@@ -64,14 +59,14 @@ class _FromParticleName:
         try:
             return _FromParticleName.all_pdgs[pname]
         except KeyError:
-            raise ValueError("Particle with name = {0} is not found".format(pname))
+            raise ValueError(f'Particle with name = "{pname}" is not found')
 
     @staticmethod
     def _get_AZ(arg):
         if isinstance(arg, str):
             pdg = particle.pdgid.PDGID(_FromParticleName._get_pdg(arg))
             if (pdg.A is None) or (pdg.Z is None):
-                raise ValueError("'_get_AZ': no (A, Z) data for '{0}'".format(arg))
+                raise ValueError(f"'_get_AZ': no (A, Z) data for '{arg}'")
             else:
                 return pdg.A, pdg.Z
         elif _is_AZ_tuple(arg):
@@ -79,7 +74,7 @@ class _FromParticleName:
         else:
             raise ValueError(
                 "'_get_AZ' accepts 'str' (particle name) or 'tuple' (A, Z)"
-                ", but it received object {0} = {1}".format(type(arg[1]), arg[1])
+                f", but it received object {type(arg[1])} = {arg[1]}"
             )
 
 
@@ -112,15 +107,16 @@ class CompositeTarget(object):
         self.component_name = []
 
         for component in component_list:
+            if not isinstance(component, tuple):
+                raise ValueError("Composite target accepts list of 'tuple's")
             if len(component) == 2:
                 self._add_component(component[0], component[1])
             elif len(component) == 3:
                 self._add_component(component[0], component[1], component[2])
             else:
                 raise ValueError(
-                    "'CompositeTarget': wrong component length = {0} for {1}".format(
-                        len(component), component
-                    )
+                    "'CompositeTarget': wrong component length = "
+                    f"{len(component)} for {component}"
                 )
         self._normalize()
 
@@ -224,7 +220,7 @@ def _get_particle_input_type(arg):
     elif isinstance(arg, CompositeTarget):
         return "composite_target"
     else:
-        raise ValueError("Unmaintained parameter type {0} = {1}".format(type(arg), arg))
+        raise ValueError(f"Unmaintained parameter type {type(arg)} = {arg}")
 
 
 def _normalize_particle(particle):
@@ -246,7 +242,7 @@ def _normalize_particle(particle):
     return pdg, nuc_prop, composite_target
 
 
-class EventKinematics(abc.ABC):
+class EventKinematics:
     """Handles kinematic variables and conversions between reference frames.
 
     There are different ways to specify a particle collision. For instance
@@ -262,68 +258,40 @@ class EventKinematics(abc.ABC):
         (float) plab     : projectile momentum in lab frame
         (float) elab     : projectile energy in lab frame
         (float) ekin     : projectile kinetic energy in lab frame
-        (float) p1pdg    : PDG ID of the projectile
-        (float) p2pdg    : PDG ID of the target
         (tuple) beam     : Specification as tuple of 4-vectors (np.array)s
-        (tuple) nuc1prop : Projectile nucleus mass & charge (A, Z)
-        (tuple) nuc2prop : Target nucleus mass & charge (A, Z)
+        (tuple) particle1: particle name, PDG ID, or nucleus mass & charge (A, Z)
+                           of the projectile
+        (tuple) particle2: particle name, PDG ID, or nucleus mass & charge (A, Z),
+                           or CompositeTarget of the target
 
     """
 
-    def __init__(*args, **kwargs):
-        raise ValueError(
-            "'EventKinematics' class can not be used directly."
-            + " Use 'FixedTarget' or 'CenterOfMass' instead."
-        )
-
-    def _init(
+    def __init__(
         self,
+        *,
         ecm=None,
         plab=None,
         elab=None,
         ekin=None,
-        p1pdg=None,
-        p2pdg=None,
         beam=None,
-        nuc1_prop=None,
-        nuc2_prop=None,
-        particle1=None,
-        particle2=None,
+        particle1,
+        particle2,
     ):
         # Catch input errors
 
-        if np.sum(np.asarray([ecm, plab, elab, ekin, beam], dtype="bool")) != 1:
-            raise ValueError("Define exclusively one energy/momentum definition")
-
-        if np.sum(np.asarray([p1pdg, nuc1_prop, particle1], dtype="bool")) != 1:
+        if sum(bool(x) for x in [ecm, plab, elab, ekin, beam]) != 1:
             raise ValueError(
-                "Define either particle id, "
-                + "nuclear properties or particle1 for side 1."
+                "Please provide only one of ecm/plab/elab/ekin/beam arguments"
             )
 
-        if np.sum(np.asarray([p2pdg, nuc2_prop, particle2], dtype="bool")) != 1:
-            raise ValueError(
-                "Define either particle id, "
-                + "nuclear properties or particle2 for side 2."
-            )
+        self.particle1 = particle1
+        self.particle2 = particle2
 
-        if not (
-            nuc1_prop is None or (isinstance(nuc1_prop, tuple) and len(nuc1_prop) == 2)
-        ):
-            raise ValueError("Define nuc1_prop as an (A,Z) tuple.")
+        p1pdg, nuc1_prop, composite_target = _normalize_particle(particle1)
+        if composite_target:
+            raise ValueError("Only 2nd parameter could be composite target")
 
-        if not (
-            nuc2_prop is None or (isinstance(nuc2_prop, tuple) and len(nuc2_prop) == 2)
-        ):
-            raise ValueError("Define nuc2_prop as an (A,Z) tuple.")
-
-        if particle1:
-            p1pdg, nuc1_prop, composite_target = _normalize_particle(particle1)
-            if composite_target:
-                raise RuntimeError("Only 2nd parameter could be composite target")
-
-        if particle2:
-            p2pdg, nuc2_prop, self.composite_target = _normalize_particle(particle2)
+        p2pdg, nuc2_prop, self.composite_target = _normalize_particle(particle2)
 
         # Store average nucleon mass
         mnuc = 0.5 * (pdata.mass(2212) + pdata.mass(2112))
@@ -540,12 +508,41 @@ class EventKinematics(abc.ABC):
 
 
 class CenterOfMass(EventKinematics):
-    def __init__(self, energy, particle1, particle2):
+    def __init__(self, ecm, particle1, particle2):
         impy_config["user_frame"] = "center-of-mass"
-        super()._init(ecm=energy, particle1=particle1, particle2=particle2)
+        super().__init__(ecm=ecm, particle1=particle1, particle2=particle2)
+
+
+class TotalEnergy(TaggedFloat):
+    pass
+
+
+class KinEnergy(TaggedFloat):
+    pass
+
+
+class Momentum(TaggedFloat):
+    pass
 
 
 class FixedTarget(EventKinematics):
     def __init__(self, energy, particle1, particle2):
         impy_config["user_frame"] = "laboratory"
-        super()._init(elab=energy, particle1=particle1, particle2=particle2)
+
+        if isinstance(energy, (TotalEnergy, int, float)):
+            super().__init__(
+                elab=float(energy), particle1=particle1, particle2=particle2
+            )
+        elif isinstance(energy, KinEnergy):
+            super().__init__(
+                ekin=float(energy), particle1=particle1, particle2=particle2
+            )
+        elif isinstance(energy, Momentum):
+            super().__init__(
+                plab=float(energy), particle1=particle1, particle2=particle2
+            )
+        else:
+            raise ValueError(
+                f"{energy!r} is neither a number nor one of "
+                "TotalEnergy, KinEnergy, Momentum"
+            )
