@@ -10,12 +10,14 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 from abc import ABC, abstractmethod
 import numpy as np
 from impy import impy_config
-from impy.util import info, classproperty
-from impy.kinematics import EventKinematics
+from .util import info, classproperty, select_parents
+from .constants import quarks_and_diquarks_and_gluons
+from .kinematics import EventKinematics
 import dataclasses
 import copy
 import typing as _tp
 from contextlib import contextmanager
+import warnings
 
 
 # Objects of this type contain all default initialization directions
@@ -122,7 +124,7 @@ class EventData:
             self.vy[arg],
             self.vz[arg],
             self.vt[arg],
-            None,
+            select_parents(arg, self.parents),
             None,
         )
 
@@ -177,7 +179,7 @@ class EventData:
         The final state is generator-specific, but usually contains only
         long-lived particles.
         """
-        return self[self.status == 1]
+        return self._fast_selection(self.status == 1)
 
     def final_state_charged(self):
         """
@@ -187,7 +189,32 @@ class EventData:
         Additionally, this selects only charged particles which can be
         seen by a tracking detector.
         """
-        return self[(self.status == 1) & (self.charge != 0)]
+        return self._fast_selection((self.status == 1) & (self.charge != 0))
+
+    def _fast_selection(self, arg):
+        # This selection is faster than __getitem__, because we skip
+        # parent selection, which is just wasting time if we select only
+        # final state particles.
+        return EventData(
+            self.generator,
+            self.kin,
+            self.frame,
+            self.nevent,
+            self.pid[arg],
+            self.status[arg],
+            self.charge[arg],
+            self.px[arg],
+            self.py[arg],
+            self.pz[arg],
+            self.en[arg],
+            self.m[arg],
+            self.vx[arg],
+            self.vy[arg],
+            self.vz[arg],
+            self.vt[arg],
+            None,
+            None,
+        )
 
     @property
     def pt(self):
@@ -267,28 +294,51 @@ class EventData:
         """
         import pyhepmc  # delay import
 
+        model, version = self.generator
+
         if genevent is None:
             genevent = pyhepmc.GenEvent()
+            genevent.run_info = pyhepmc.GenRunInfo()
+            genevent.run_info.tools = [(model, version, "")]
+
+        # We must apply some workarounds so that HepMC3 conversion and IO works
+        # for all models. This should be revisited once the fundamental issues
+        # with particle histories have been fixed.
+        if model == "Pythia" and version.startswith("8"):
+            # must deselect parton showers in Pythia-8 to use HepMC3 IO
+            mask = True
+            apid = np.abs(self.pid)
+            for pid in quarks_and_diquarks_and_gluons:
+                mask &= apid != pid
+            ev = self[mask]
+        elif model in ("UrQMD", "PhoJet"):
+            # can only save final state until history is fixed
+            warnings.warn(
+                f"{model}-{version}: only final state particles "
+                "available in HepMC3 event",
+                RuntimeWarning,
+            )
+            ev = self.final_state()
+        else:
+            ev = self
 
         genevent.from_hepevt(
-            event_number=self.nevent,
-            px=self.px,
-            py=self.py,
-            pz=self.pz,
-            en=self.en,
-            m=self.m,
-            pid=self.pid,
-            status=self.status,
-            parents=self.parents,
-            children=self.children,
-            vx=self.vx,
-            vy=self.vy,
-            vz=self.vz,
-            vt=self.vt,
+            event_number=ev.nevent,
+            px=ev.px,
+            py=ev.py,
+            pz=ev.pz,
+            en=ev.en,
+            m=ev.m,
+            pid=ev.pid,
+            status=ev.status,
+            parents=ev.parents,
+            children=ev.children,
+            vx=ev.vx,
+            vy=ev.vy,
+            vz=ev.vz,
+            vt=ev.vt,
         )
 
-        genevent.run_info = pyhepmc.GenRunInfo()
-        genevent.run_info.tools = [self.generator + ("",)]
         return genevent
 
     # if all required packages are available, add extra
@@ -460,6 +510,7 @@ class RMMARDState:
 class MCRun(ABC):
     #: Prevent creating multiple classes within same python scope
     _is_initialized = []
+    _restartable = False
     _set_final_state_particles_called = False
     _evt_kin = None
     nevents = 0  # number of generated events so far
@@ -470,7 +521,8 @@ class MCRun(ABC):
 
         # from impy.util import OutputGrabber
 
-        self._abort_if_already_initialized()
+        if not self._restartable:
+            self._abort_if_already_initialized()
 
         assert hasattr(self, "_name")
         assert hasattr(self, "_version")

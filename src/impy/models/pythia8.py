@@ -59,6 +59,7 @@ class Pythia8(MCRun):
     _library_name = "_pythia8"
     _event_class = PYTHIA8Event
     _output_frame = "center-of-mass"
+    _restartable = True
 
     def __init__(self, event_kinematics, seed=None, logfname=None):
         # store stable settings until Pythia instance is created
@@ -67,6 +68,19 @@ class Pythia8(MCRun):
         super().__init__(seed, logfname)
 
         self._lib.hepevt = self._lib.Hepevt()
+
+        datdir = Path(base_path) / "iamdata" / "Pythia8" / "xmldoc"
+        assert datdir.exists(), f"{datdir} does not exist"
+
+        # Must delete PYTHIA8DATA from environ if it exists, since it overrides
+        # our argument here. When you install Pythia8 with conda, it sets
+        # PYTHIA8DATA. If that version does not match this version, readString()
+        # or init() may fail.
+        if "PYTHIA8DATA" in environ:
+            del environ["PYTHIA8DATA"]
+        self._lib.pythia = self._lib.Pythia(str(datdir), True)
+
+        # must come last
         self.event_kinematics = event_kinematics
         self._set_final_state_particles()
 
@@ -79,16 +93,8 @@ class Pythia8(MCRun):
     def _set_event_kinematics(self, k):
         info(5, "Setting event kinematics")
 
-        datdir = Path(base_path) / "iamdata" / "Pythia8" / "xmldoc"
-        assert datdir.exists(), f"{datdir} does not exist"
-
-        # Must delete PYTHIA8DATA from environ if it exists, since it overrides
-        # our argument here. When you install Pythia8 with conda, it sets
-        # PYTHIA8DATA. If that version does not match this version, readString()
-        # or init() may fail.
-        if "PYTHIA8DATA" in environ:
-            del environ["PYTHIA8DATA"]
-        pythia = self._lib.pythia = self._lib.Pythia(str(datdir), True)
+        pythia = self._lib.pythia
+        pythia.settings.resetAll()
 
         if not pythia.particleData.isParticle(k.p1pdg):
             raise ValueError(f"Particle {k.p1pdg} not recognized")
@@ -128,6 +134,7 @@ class Pythia8(MCRun):
             if not pythia.readString(line):
                 raise RuntimeError(f"readString('{line}') failed")
 
+        # calling init several times is allowed
         if not pythia.init():
             raise RuntimeError("Pythia8 initialization failed")
 

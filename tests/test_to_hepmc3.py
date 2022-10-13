@@ -20,7 +20,7 @@ def run(Model):
         evt_kin = CenterOfMass(10 * GeV, "photon", "proton")
     m = Model(evt_kin, seed=1)
     for event in m(100):
-        if len(event) > 10:  # to skip elastic events
+        if len(event) > 10:  # to skip small events
             break
     return event  # MCEvent is pickeable, but restored as EventData
 
@@ -31,6 +31,27 @@ def test_to_hepmc3(Model):
 
     event = run_in_separate_process(run, Model)
 
+    if Model in (im.UrQMD34, im.Phojet112, im.Phojet191, im.Phojet193):
+        hev = event.to_hepmc3()
+        # only final state is stored
+        fs = event.final_state()
+        assert len(hev.particles) == len(fs)
+        for i, p in enumerate(hev.particles):
+            assert p.pid == fs.pid[i]
+            assert p.status == fs.status[i]
+        assert len(hev.vertices) == 0
+        return  # test ends here
+
+    elif Model is im.Pythia8:
+        # parton shower is skipped
+        from impy.constants import quarks_and_diquarks_and_gluons
+
+        ma = True
+        apid = np.abs(event.pid)
+        for p in quarks_and_diquarks_and_gluons:
+            ma &= apid != p
+        event = event[ma]
+
     unique_vertices = {}
     for i, pa in enumerate(event.parents):
         assert pa.shape == (2,)
@@ -40,6 +61,11 @@ def test_to_hepmc3(Model):
         if pa[1] == 0:
             pa = (pa[0], pa[0])
         pa = (pa[0] - 1, pa[1])
+        # in case of overlapping ranges of incoming particles
+        # the earlier vertex keeps them
+        for (a, b) in unique_vertices:
+            if pa != (a, b) and a <= pa[0] < b:
+                pa = b, pa[1]
         unique_vertices.setdefault(pa, []).append(i)
 
     # check that parent ranges do not exceed particle range;
@@ -83,7 +109,7 @@ def test_to_hepmc3(Model):
         assert v.position.z == event.vz[k]
         assert v.position.t == event.vt[k]
 
-    unique_vertices2 = {}
+    hev_vertices = {}
     for v in hev.vertices:
         pi = [p.id - 1 for p in v.particles_in]
         if len(pi) == 1:
@@ -91,6 +117,6 @@ def test_to_hepmc3(Model):
         else:
             pa = (min(pi), max(pi) + 1)
         children = [p.id - 1 for p in v.particles_out]
-        unique_vertices2[pa] = children
+        hev_vertices[pa] = children
 
-    assert unique_vertices == unique_vertices2
+    assert unique_vertices == hev_vertices

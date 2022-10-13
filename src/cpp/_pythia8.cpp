@@ -199,15 +199,21 @@ PYBIND11_MODULE(_pythia8, m)
 
         ;
 
+    py::class_<Settings>(m, "Settings")
+        .def("resetAll", &Settings::resetAll)
+
+        ;
+
     py::class_<Pythia>(m, "Pythia")
         .def(py::init<string, bool>(), py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
         .def("init", &Pythia::init, py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
         .def("next", py::overload_cast<>(&Pythia::next))
         .def("readString", &Pythia::readString, "setting"_a, "warn"_a = true)
         .def_readwrite("particleData", &Pythia::particleData)
+        .def_readwrite("settings", &Pythia::settings)
+        .def_readwrite("event", &Pythia::event)
         .def_property_readonly("info", [](Pythia &self)
                                { return self.info; })
-        .def_readwrite("event", &Pythia::event)
 
         ;
 

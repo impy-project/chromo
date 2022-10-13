@@ -3,6 +3,7 @@
 import inspect
 import os
 from impy import impy_config
+import numpy as np
 
 # Global debug flags that would be nice to have in some sort
 # of config or other ideas?
@@ -271,3 +272,63 @@ class classproperty:
 
     def __get__(self, obj, owner):
         return self.f(owner)
+
+
+def _select_parents(mask, parents):
+    # This algorithm is slow in pure Python and should be
+    # speed up by compiling the logic.
+
+    # attach parentless particles to beam particles,
+    # unless those are also removed
+    fallback = (0, 0)
+    if mask[0] and mask[1]:
+        fallback = (1, 2)
+
+    n = len(parents)
+    indices = np.arange(n)[mask] + 1
+    result = parents[mask]
+    mapping = {old: np.int32(i + 1) for i, old in enumerate(indices)}
+
+    n = len(result)
+    for i in range(n):
+        a = result[i, 0]
+        if a == 0:
+            continue
+        p = mapping.get(a, -1)
+        if p == -1:
+            a, b = fallback
+            result[i, 0] = a
+            result[i, 1] = b
+        elif p != a:
+            q = 0
+            b = result[i, 1]
+            if b > 0:
+                q = mapping.get(b, 0)
+            result[i, 0] = p
+            result[i, 1] = q
+    return result
+
+
+def select_parents(arg, parents):
+    if parents is None:
+        return None
+
+    n = len(parents)
+
+    if isinstance(arg, np.ndarray) and arg.dtype is bool:
+        mask = arg
+    else:
+        mask = np.zeros(n, dtype=bool)
+        mask[arg] = True
+
+    return _select_parents(mask, parents)
+
+
+try:
+    # accelerate with numba if numba is available
+    import numba as nb
+
+    _select_parents = nb.njit(_select_parents)
+
+except ModuleNotFoundError:
+    pass
