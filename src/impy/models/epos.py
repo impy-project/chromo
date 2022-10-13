@@ -105,33 +105,17 @@ class EposLHC(MCRun):
         # Set default stable
         self._set_final_state_particles()
         self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.int32])
-        self._set_event_kinematics(event_kinematics)
+        self.event_kinematics = event_kinematics
         # Turn on particle history
         self._lib.othe1.istmax = 1
 
-    def sigma_inel(self):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        return self._lib.xsection()[1]
+    def _sigma_inel(self, evt_kin):
+        with self._temporary_evt_kin(evt_kin):
+            return self._lib.xsection()[1]
 
-    def _epos_tup(self):
-        """Constructs an tuple of arguments for calls to event generator
-        from given event kinematics object."""
-        k = self._curr_event_kin
-        info(
-            20,
-            "Request EPOS ARGs tuple:\n",
-            (k.ecm, -1.0, k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2),
-        )
-        return (k.ecm, -1.0, k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2)
-
-    def _set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
+    def _set_event_kinematics(self, k):
         info(5, "Setting event kinematics")
-        k = event_kinematics
-        self._curr_event_kin = k
-        self._lib.initeposevt(*self._epos_tup())
+        self._lib.initeposevt(k.ecm, -1.0, k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2)
 
     def _attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""

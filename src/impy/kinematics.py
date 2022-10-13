@@ -17,7 +17,7 @@ the implementation is very "cooked up". We have to discuss this.
 
 import numpy as np
 from impy import pdata, impy_config
-from impy.util import info, TaggedFloat
+from impy.util import info, TaggedFloat, AZ2pdg
 import particle
 
 
@@ -293,42 +293,20 @@ class EventKinematics:
 
         p2pdg, nuc2_prop, self.composite_target = _normalize_particle(particle2)
 
-        # Store average nucleon mass
-        mnuc = 0.5 * (pdata.mass(2212) + pdata.mass(2112))
-
-        # Handle projectile type
-        if p1pdg:
-            pmass1 = pdata.mass(p1pdg)
-            self.A1 = 1
-            self.Z1 = pdata.charge(p1pdg)
-            self.p1pdg = p1pdg
-            self.p1_is_nucleus = False
-            info(20, "Particle 1 identified from PDG ID.")
-        else:
-            pmass1 = mnuc
-            self.p1pdg = 2212
-            self.A1, self.Z1 = nuc1_prop
-            self.p1_is_nucleus = True if self.A1 > 1 else False
-            if self.A1 == 1 and self.Z1 == 0:
-                self.p1pdg = 2112
-            info(20, "Particle 1 is a nucleus.")
-
-        # Handle target type
-        if p2pdg:
-            pmass2 = pdata.mass(p2pdg)
-            self.p2pdg = p2pdg
-            self.A2 = 1
-            self.Z2 = pdata.charge(p2pdg)
-            self.p2_is_nucleus = False
-            info(20, "Particle 2 identified from PDG ID.")
-        else:
-            pmass2 = mnuc
-            self.p2pdg = 2212
-            self.A2, self.Z2 = nuc2_prop
-            self.p2_is_nucleus = True if self.A2 > 1 else False
-            if self.A2 == 1 and self.Z2 == 0:
-                self.p2pdg = 2112
-            info(20, "Particle 2 is a nucleus.")
+        (
+            self.p1pdg,
+            self.A1,
+            self.Z1,
+            self.p1_is_nucleus,
+            pmass1,
+        ) = self._handle_particle(p1pdg, nuc1_prop)
+        (
+            self.p2pdg,
+            self.A2,
+            self.Z2,
+            self.p2_is_nucleus,
+            pmass2,
+        ) = self._handle_particle(p2pdg, nuc2_prop)
 
         info(
             10,
@@ -403,6 +381,27 @@ class EventKinematics:
         }
 
         # self.e_range = []
+
+    @staticmethod
+    def _handle_particle(pdg, nuc_prop):
+        # Handle projectile type
+        if pdg:
+            pmass = pdata.mass(pdg)
+            a = 1
+            z = pdata.charge(pdg)
+            is_nucleus = False
+            info(20, "Particle identified from PDG ID.")
+        else:
+            # average nucleon mass
+            pmass = 0.5 * (pdata.mass(2212) + pdata.mass(2112))
+            a, z = nuc_prop
+            is_nucleus = a > 1
+            if is_nucleus:
+                pdg = AZ2pdg(a, z)
+            else:
+                pdg = 2112 if z == 0 else 2212
+            info(20, "Particle is a nucleus.")
+        return pdg, a, z, is_nucleus, pmass
 
     @property
     def beam_as_4vec(self):

@@ -15,6 +15,7 @@ from impy.kinematics import EventKinematics
 import dataclasses
 import copy
 import typing as _tp
+from contextlib import contextmanager
 
 
 # Objects of this type contain all default initialization directions
@@ -460,6 +461,8 @@ class MCRun(ABC):
     #: Prevent creating multiple classes within same python scope
     _is_initialized = []
     _set_final_state_particles_called = False
+    _evt_kin = None
+    nevents = 0  # number of generated events so far
 
     def __init__(self, seed, logfname):
         import importlib
@@ -476,14 +479,8 @@ class MCRun(ABC):
         assert hasattr(self, "_output_frame")
         self._lib = importlib.import_module(f"impy.models.{self._library_name}")
 
-        # Currently initialized event kinematics
-        self._curr_event_kin = None
-
         # FORTRAN LUN that keeps logfile handle
         self._output_lun = None
-
-        # Number of generated events so far
-        self.nevents = 0
 
         self._attach_log(logfname)
 
@@ -570,11 +567,14 @@ class MCRun(ABC):
         # without additional arguments, or, it can also set
         # internal variables of the model. In both cases the
         # important thing is that _generate_event remains argument-free.
+
+        # This call must not update self.event_kinematics, only the
+        # generator-specific variables.
         pass
 
     def _update_event_kinematics(self):
-        if self._curr_event_kin.composite_target:
-            evt_kin = self._curr_event_kin
+        if self._evt_kin.composite_target:
+            evt_kin = self._evt_kin
             if evt_kin.p2_is_nucleus:
                 evt_kin.A2, evt_kin.Z2 = evt_kin.composite_target._get_random_AZ()
                 self._set_event_kinematics(evt_kin)
@@ -589,11 +589,12 @@ class MCRun(ABC):
 
     @property
     def event_kinematics(self):
-        return self._curr_event_kin
+        return self._evt_kin
 
     @event_kinematics.setter
-    def event_kinematics(self, evtkin):
-        self._set_event_kinematics(evtkin)
+    def event_kinematics(self, evt_kin):
+        self._evt_kin = evt_kin
+        self._set_event_kinematics(evt_kin)
 
     def set_stable(self, pdgid, stable=True):
         """Prevent decay of unstable particles
@@ -617,10 +618,13 @@ class MCRun(ABC):
         """
         self.set_stable(pdgid, False)
 
-    @abstractmethod
-    def sigma_inel(self):
+    def sigma_inel(self, evt_kin=None):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
+        return self._sigma_inel(self.event_kinematics if evt_kin is None else evt_kin)
+
+    @abstractmethod
+    def _sigma_inel(self, evtkin):
         pass
 
     # TODO: Change to generic function for composite target. Make
@@ -633,25 +637,18 @@ class MCRun(ABC):
            precision (int): Anything else then 'default' (str) will set
                             the number of MC trails to that number.
         """
-        from copy import copy
-        from impy.kinematics import EventKinematics
 
         # Make a backup of the current kinematics config
-        prev_kin = copy(self._curr_event_kin)
         frac_air = impy_config["frac_air"]
 
         cs = 0.0
         for f, iat in frac_air:
             k = EventKinematics(
-                ecm=prev_kin.ecm,
-                particle1=prev_kin.particle1,
+                ecm=self.event_kinematics.ecm,
+                particle1=self.event_kinematics.particle1,
                 particle2=(iat, int(iat / 2)),
             )
-            self._set_event_kinematics(k)
-            cs += f * self.sigma_inel()
-
-        # Restore settings
-        self._set_event_kinematics(prev_kin)
+            cs += f * self._sigma_inel(k)
 
         return cs
 
@@ -728,3 +725,10 @@ class MCRun(ABC):
             self._set_stable(111, True)
 
         self._set_final_state_particles_called = True
+
+    @contextmanager
+    def _temporary_evt_kin(self, evt_kin):
+        prev = copy(self.event_kinematics)
+        self.event_kinematics = evt_kin
+        yield
+        self.event_kinematics = prev

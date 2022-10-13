@@ -60,49 +60,11 @@ class Sophia20(MCRun):
 
         # Keep decayed particles in the history:
         self._lib.eg_io.keepdc = impy_config["sophia"]["keep_decayed_particles"]
+        self.event_kinematics = event_kinematics
         self._set_final_state_particles()
-        self._set_event_kinematics(event_kinematics)
 
-    def sigma_inel(self):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target).
-        Currently it returns total cross section.
-        """
-        k = self._curr_event_kin
-
-        if k.p1pdg != 22:
-            info(0, "The first particle must be a photon, but particle pdg = ", k.p1pdg)
-            raise Exception("Input error")
-
-        if k.p2pdg not in [2212, 2112]:
-            info(
-                0,
-                "The second particle must be a proton or neutron, but particle pdg = ",
-                k.p2pdg,
-            )
-            raise Exception("Input error")
-
-        # self.energy_of_photon is the energy in lab frame
-        # where nucleon is at rest and photon is moving
-        total_crossection_id = 3  # 3 is for total crossection
-        # cross section in micro barn
-        return self._lib.crossection(
-            self._energy_of_photon, total_crossection_id, self._nucleon_code_number
-        )
-
-    def sigma_inel_air(self):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        raise Exception("SophiaRun.sigma_inel_air has no implementation")
-
-    def _set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
-
-        info(5, "Setting event kinematics.")
-        info(10, event_kinematics)
-        k = event_kinematics
-
+    @staticmethod
+    def _validate_kinematics(k):
         if k.p1pdg != 22:
             raise ValueError(
                 "Sophia accepts only 'gamma' as a projectile "
@@ -115,18 +77,43 @@ class Sophia20(MCRun):
                 + "but received pdg_id = {0}".format(k.p2pdg)
             )
 
+        # HD: is this necessary?
         if k.p2_is_nucleus:
             raise ValueError(
                 "Sophia accepts only 'proton' or 'neutron' as a target, "
                 + "but received nucleus = ({0}, {1})".format(k.A2, k.Z2)
             )
 
+    def _sigma_inel(self, evt_kin):
+        import warnings
+
+        warnings.warn(
+            "Returns total cross-section instead of inelastic", RuntimeWarning
+        )
+
+        self._validate_kinematics(evt_kin)
+
+        nucleon_code_number = self._lib.icon_pdg_sib(evt_kin.p2pdg)
+        energy_of_photon = self.event_kinematics.elab
+
+        # self.energy_of_photon is the energy in lab frame
+        # where nucleon is at rest and photon is moving
+        total_crossection_id = 3  # 3 is for total crossection
+        # cross section in micro barn
+        return self._lib.crossection(
+            energy_of_photon, total_crossection_id, nucleon_code_number
+        )
+
+    def _set_event_kinematics(self, k):
+        info(5, "Setting event kinematics")
+
+        self._validate_kinematics(k)
+
         self._nucleon_code_number = self._lib.icon_pdg_sib(k.p2pdg)
-        self._lib.initial(
-            self._nucleon_code_number
-        )  # setting parameters for cross-section
-        self._energy_of_nucleon = np.float32(k.pmass2)  # fix roundoff error
-        self._energy_of_photon = k.elab
+
+        # setting parameters for cross-section
+        self._lib.initial(self._nucleon_code_number)
+
         # Here we consider laboratory frame where photon moves along z axis
         # and nucleon is at rest. The angle is counted from z axis.
         # However, because of the definitions in "eventgen" subroutine of
@@ -134,7 +121,6 @@ class Sophia20(MCRun):
         # this angle should be 180 for photon moving along z
         # (and 0 for photon moving in direction opposite to z)
         self._angle_between_nucleon_and_photon = 180
-        self._curr_event_kin = event_kinematics
 
     def _attach_log(self, fname):
         """Routes the output to a file or the stdout."""
@@ -170,10 +156,14 @@ class Sophia20(MCRun):
     def _generate_event(self):
         # Generate event (the final particles and their parameters)
         # by underlying Fortran library
+
+        # fix roundoff error
+        energy_of_nucleon = np.float32(self.event_kinematics.pmass2)
+        energy_of_photon = self.event_kinematics.elab
         self._lib.interaction_type_code = self._lib.eventgen(
             self._nucleon_code_number,
-            self._energy_of_nucleon,
-            self._energy_of_photon,
+            energy_of_nucleon,
+            energy_of_photon,
             self._angle_between_nucleon_and_photon,
         )
 

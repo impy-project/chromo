@@ -125,7 +125,7 @@ class PHOJETRun(MCRun):
         # direct photon interaction (for incoming photons only)
         process_switch[7, 0] = 1
 
-        self._set_event_kinematics(event_kinematics)
+        self.event_kinematics = event_kinematics
         if self._lib.pho_event(-1, self.p1, self.p2)[1]:
             raise Exception(
                 "PHOJET failed to initialize with the current", "event kinematics"
@@ -144,17 +144,15 @@ class PHOJETRun(MCRun):
         # Set ctau threshold in PYTHIA for the default stable list
         self._lib.pydat1.parj[70] = impy_config["tau_stable"] * c * 1e-3  # mm
 
-    def sigma_inel(self):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-
-        info(3, "PHOJET workaround for cross-section", "(need to generate dummy event)")
-        self._lib.pho_event(1, self._curr_event_kin.p1pdg, self._curr_event_kin.p2pdg)
-        return self._lib.powght.siggen[3]
-
-    def sigma_inel_air(self, **kwargs):
-        """PHOJET does not support nuclear targets."""
-        raise Exception("PHOJET does not support nuclear targets.")
+    def _sigma_inel(self, evt_kin):
+        with self._temporary_evt_kin(evt_kin):
+            info(
+                3,
+                "PHOJET workaround for cross-section",
+                "(need   to generate dummy event)",
+            )
+            self._generate_event()
+            return self._lib.powght.siggen[3]
 
     def _set_stable(self, pdgid, stable):
         if abs(pdgid) == 2212:
@@ -162,16 +160,11 @@ class PHOJETRun(MCRun):
         kc = self._lib.pycomp(pdgid)
         self._lib.pydat3.mdcy[kc - 1, 0] = not stable
 
-    def _set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
+    def _set_event_kinematics(self, k):
         info(5, "Setting event kinematics")
 
-        self._curr_event_kin = event_kinematics
-        k = event_kinematics
-
         if k.p1_is_nucleus or k.p2_is_nucleus:
-            raise Exception("PHOJET does not support nuclei.")
+            raise ValueError("PHOJET does not support nuclei.")
 
         self._lib.pho_setpar(1, k.p1pdg, 0, 0.0)
         self._lib.pho_setpar(2, k.p2pdg, 0, 0.0)

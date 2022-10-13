@@ -4,6 +4,8 @@
 #include <Pythia8/Event.h>
 #include <Pythia8/Pythia.h>
 #include <Pythia8/ParticleData.h>
+#include <Pythia8/Info.h>
+#include <Pythia8/HIUserHooks.h>
 #include <array>
 #include <cassert>
 
@@ -22,6 +24,7 @@ struct Hepevt
         phep = py::array_t<double>({5, size});
         vhep = py::array_t<double>({4, size});
         jmohep = py::array_t<int>({2, size});
+        jdahep = py::array_t<int>({2, size});
     }
 
     void fill(const Event &event)
@@ -36,11 +39,13 @@ struct Hepevt
         auto p = phep.mutable_unchecked<2>();
         auto v = vhep.mutable_unchecked<2>();
         auto par = jmohep.mutable_unchecked<2>();
+        auto dau = jdahep.mutable_unchecked<2>();
         int k = 0;
         for (const auto &particle : event)
         {
-            // record starts with internal particle 90,
-            // skip this to start with beam particles
+            // Record starts with internal particle 90,
+            // skip this to start with beam particles.
+            // This results in Fortran-like indices.
             if (k == 0 && particle.id() == 90)
             {
                 --nhep;
@@ -59,6 +64,8 @@ struct Hepevt
             v(3, k) = particle.tProd();
             par(0, k) = particle.mother1();
             par(1, k) = particle.mother2();
+            dau(0, k) = particle.daughter1();
+            dau(1, k) = particle.daughter2();
             ++k;
         }
     }
@@ -70,12 +77,13 @@ struct Hepevt
     py::array_t<double, py::array::f_style> phep;
     py::array_t<double, py::array::f_style> vhep;
     py::array_t<int, py::array::f_style> jmohep;
+    py::array_t<int, py::array::f_style> jdahep;
 };
 
 double charge_from_pid(const ParticleData &pd, int pid)
 {
     auto pptr = pd.findParticle(pid);
-    assert(pptr); // never be a nullptr if charge_from_pid is used on particles produced by Pythia
+    assert(pptr); // never nullptr if charge_from_pid is used on particles produced by Pythia
     // ParticleData returns partice even if anti-particle pid is used
     return pid == pptr->id() ? pptr->charge() : -pptr->charge();
 }
@@ -92,6 +100,7 @@ PYBIND11_MODULE(_pythia8, m)
         .def_readwrite("phep", &Hepevt::phep)
         .def_readwrite("vhep", &Hepevt::vhep)
         .def_readwrite("jmohep", &Hepevt::jmohep)
+        .def_readwrite("jdahep", &Hepevt::jdahep)
 
         ;
 
@@ -159,7 +168,36 @@ PYBIND11_MODULE(_pythia8, m)
 
     py::class_<Event>(m, "Event");
 
-    py::class_<Info>(m, "Info");
+    py::class_<HIInfo>(m, "HIInfo")
+        .def_property_readonly("nPartProj", &HIInfo::nPartProj)
+        .def_property_readonly("nPartTarg", &HIInfo::nPartTarg)
+        .def_property_readonly("b", &HIInfo::b)
+
+        ;
+
+    py::class_<SigmaTotal>(m, "SigmaTotal")
+        .def("calc", &SigmaTotal::calc)
+        .def_property_readonly("sigmaTot", &SigmaTotal::sigmaTot)
+        .def_property_readonly("sigmaEl", &SigmaTotal::sigmaEl)
+        .def_property_readonly("sigmaXB", &SigmaTotal::sigmaXB)
+        .def_property_readonly("sigmaAX", &SigmaTotal::sigmaAX)
+        .def_property_readonly("sigmaXX", &SigmaTotal::sigmaXX)
+        .def_property_readonly("sigmaAXB", &SigmaTotal::sigmaAXB)
+        .def_property_readonly("sigmaND", &SigmaTotal::sigmaND)
+
+        ;
+
+    py::class_<Info>(m, "Info")
+        .def_property_readonly("hiInfo", [](Info &self)
+                               { return self.hiInfo; })
+        .def_property_readonly("sigmaTot", [](Info &self)
+                               { return self.sigmaTotPtr; })
+        .def_property_readonly("isDiffractiveA", &Info::isDiffractiveA)
+        .def_property_readonly("isDiffractiveB", &Info::isDiffractiveB)
+        .def_property_readonly("isDiffractiveC", &Info::isDiffractiveC)
+        .def_property_readonly("isNonDiffractive", &Info::isNonDiffractive)
+
+        ;
 
     py::class_<Pythia>(m, "Pythia")
         .def(py::init<string, bool>(), py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
@@ -173,7 +211,7 @@ PYBIND11_MODULE(_pythia8, m)
 
         ;
 
-    // only vectorize over pid, not over ParticleData
+    // recipe to only vectorize over pid, but not over ParticleData
     m.def("charge_from_pid",
           [](const ParticleData &pd, py::array_t<int> pid)
           { return py::vectorize([&pd](int pid)

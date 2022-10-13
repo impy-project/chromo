@@ -91,23 +91,19 @@ class QGSJetIIRun(QGSJetRun):
             self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
         )
 
-        self._set_event_kinematics(event_kinematics)
+        self.event_kinematics = event_kinematics
 
-    def sigma_inel(self):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        k = self._curr_event_kin
+    def _sigma_inel(self, evt_kin):
         return self._lib.qgsect(
-            self._curr_event_kin.elab, _qgsjet_hadron_classes[abs(k.p1pdg)], k.A1, k.A2
+            evt_kin.elab,
+            _qgsjet_hadron_classes[abs(evt_kin.p1pdg)],
+            evt_kin.A1,
+            evt_kin.A2,
         )
 
-    def _set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target for next event."""
-
+    def _set_event_kinematics(self, k):
         info(5, "Setting event kinematics")
-        k = event_kinematics
-        self._curr_event_kin = k
+
         if abs(k.p1pdg) in _qgsjetII_projectiles:
             self._qgsproj = np.sign(k.p1pdg) * _qgsjetII_projectiles[abs(k.p1pdg)]
         elif k.p1pdg == 111:
@@ -153,17 +149,13 @@ class QGSJet01Run(QGSJetRun):
             self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
         )
 
-        self._set_event_kinematics(event_kinematics)
+        self.event_kinematics = event_kinematics
 
-    def sigma_inel(self):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target).
-
-        Interpolation routine for QGSJET01D cross sections from CORSIKA."""
-
+    def _sigma_inel(self, evt_kin):
+        # Interpolation routine for QGSJET01D cross sections from CORSIKA.
         from scipy.interpolate import UnivariateSpline
 
-        A_target = self._curr_event_kin.A2
+        A_target = evt_kin.A2
         # Projectile ID-1 to access fortran indices directly
         icz = self._qgsproj - 1
         qgsgrid = 10 ** np.arange(1, 11)
@@ -189,15 +181,10 @@ class QGSJet01Run(QGSJetRun):
             np.log(qgsgrid), np.log(cross_section), ext="extrapolate", s=0, k=1
         )
 
-        return np.exp(spl(np.log(self._curr_event_kin.elab)))
+        return np.exp(spl(np.log(evt_kin.elab)))
 
-    def _set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
-
+    def _set_event_kinematics(self, k):
         info(5, "Setting event kinematics")
-        k = event_kinematics
-        self._curr_event_kin = k
 
         if abs(k.p1pdg) in [2212, 2112]:
             self._qgsproj = 2

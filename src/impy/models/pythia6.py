@@ -53,7 +53,7 @@ class Pythia6(MCRun):
         for isub in [11, 12, 13, 28, 53, 68, 92, 93, 94, 95, 96]:
             self._lib.pysubs.msub[isub - 1] = 1
 
-        self._set_event_kinematics(event_kinematics)
+        self.event_kinematics = event_kinematics
 
         # Set default stable
         self._set_final_state_particles()
@@ -63,25 +63,18 @@ class Pythia6(MCRun):
         # # Set ctau threshold in PYTHIA for the default stable list
         self._lib.pydat1.parj[70] = impy_config["tau_stable"] * sec2cm * 10.0  # mm
 
-    def sigma_inel(self):
+    def _sigma_inel(self, evt_kin):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        return self._lib.pyint7.sigt[0, 0, 5]
+        with self._temporary_evt_kin(evt_kin):
+            return self._lib.pyint7.sigt[0, 0, 5]
 
-    def sigma_inel_air(self):
-        """PYTHIA6 does not support nuclear targets."""
-        raise Exception("PYTHIA6 does not support nuclear targets.")
-
-    def _set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
-        k = event_kinematics
-        self._curr_event_kin = k
+    def _set_event_kinematics(self, k):
+        info(5, "Setting event kinematics")
         self.p1_type = pdata.name(k.p1pdg)
         self.p2_type = pdata.name(k.p2pdg)
         self.ecm = k.ecm
         self._lib.pyinit("CMS", self.p1_type, self.p2_type, self.ecm)
-        info(5, "Setting event kinematics")
 
     def _attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""

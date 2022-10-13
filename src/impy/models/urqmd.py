@@ -85,19 +85,14 @@ class UrQMD34(MCRun):
         self._lib.pots.dtimestep = outtim
         self._lib.sys.nsteps = int(0.01 + caltim / self._lib.pots.dtimestep)
         self._lib.inputs.outsteps = int(0.01 + caltim / self._lib.pots.dtimestep)
-        self._set_event_kinematics(event_kinematics)
+        self.event_kinematics = event_kinematics
 
-    def sigma_inel(self):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        return self._lib.ptsigtot()
+    def _sigma_inel(self, evt_kin):
+        with self._temporary_evt_kin(evt_kin):
+            return self._lib.ptsigtot()
 
-    def _set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
-        k = event_kinematics
-        self._curr_event_kin = k
-
+    def _set_event_kinematics(self, k):
+        info(5, "Setting event kinematics")
         if not k.p1_is_nucleus:
             # Special projectile
             self._lib.inputs.prspflg = 1
@@ -143,8 +138,6 @@ class UrQMD34(MCRun):
             self._lib.inputs.eos = 1
             # A hard sphere potential is required for equation of state
             self._lib.options.ctoption[24 - 1] = 0
-
-        info(5, "Setting event kinematics")
 
     def _attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""

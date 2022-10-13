@@ -78,43 +78,41 @@ class SIBYLLRun(MCRun):
         self._lib.rndmgas.iset = 0
         self._lib.pdg_ini()
 
-        self._set_final_state_particles()
-        # _set_event_kinematics uses function self._lib.isib_pdg2pid
+        # This calls _set_event_kinematics which uses self._lib.isib_pdg2pid
         # which works only after an initialization call to self._lib.pdg_ini()
-        # therefore it should be called after this initalization
-        self._set_event_kinematics(event_kinematics)
+        self.event_kinematics = event_kinematics
 
-    def sigma_inel(self):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        k = self._curr_event_kin
+        self._set_final_state_particles()
+
+    def _sigma_inel(self, evt_kin):
         sigproj = None
-        if abs(k.p1pdg) in [2212, 2112, 3112]:
+        if abs(evt_kin.p1pdg) in [2212, 2112, 3112]:
             sigproj = 1
-        elif abs(k.p1pdg) == 211:
+        elif abs(evt_kin.p1pdg) == 211:
             sigproj = 2
-        elif abs(k.p1pdg) == 321:
+        elif abs(evt_kin.p1pdg) == 321:
             sigproj = 3
         else:
-            info(0, "No cross section available for projectile", k.p1pdg)
-            raise Exception("Input error")
+            raise ValueError(
+                f"No cross section available for projectile {evt_kin.p1pdg}"
+            )
 
-        if k.p1_is_nucleus:
-            raise Exception("Nuclear projectiles not supported by SIBYLL.")
+        if evt_kin.p1_is_nucleus:
+            raise ValueError(f"Nuclear projectiles not supported by {self.name}")
 
-        if k.p2_is_nucleus:
+        if evt_kin.p2_is_nucleus:
             # Return production cross section for nuclear target
             try:
-                return self._lib.sib_sigma_hnuc(sigproj, k.A2, self._ecm)[0]
+                return self._lib.sib_sigma_hnuc(sigproj, evt_kin.A2, evt_kin.ecm)[0]
             except AttributeError:
-                return "Nuclear cross section not supported for this SIBYLL version"
+                raise ValueError(f"Nuclear projectiles not supported by {self.label}")
 
-        return self._lib.sib_sigma_hp(sigproj, self._ecm)[2]
+        return self._lib.sib_sigma_hp(sigproj, evt_kin.ecm)[2]
 
     def sigma_inel_air(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        k = self._curr_event_kin
+        k = self.event_kinematics
         sigproj = None
         if abs(k.p1pdg) in [2212, 2112, 3112]:
             sigproj = 1
@@ -125,28 +123,21 @@ class SIBYLLRun(MCRun):
         else:
             info(0, "No cross section available for projectile", k.p1pdg)
             raise Exception("Input error")
-        sigma = self._lib.sib_sigma_hair(sigproj, self._ecm)
-        if not isinstance(sigma, tuple):
-            return sigma
-        else:
+        sigma = self._lib.sib_sigma_hair(sigproj, k.ecm)
+        if isinstance(sigma, tuple):
             return sigma[0]
+        return sigma
 
-    def _set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
-
-        info(5, "Setting event kinematics.")
-        info(10, event_kinematics)
-        k = event_kinematics
+    def _set_event_kinematics(self, k):
+        info(5, "Setting event kinematics")
         if k.p1_is_nucleus:
-            raise Exception("Projectile nuclei not natively supported in SIBYLL")
-        elif k.p2_is_nucleus and k.A2 > 20:
-            print(k.p2_is_nucleus, k.A2)
-            raise Exception("Target nuclei with A>20 not supported in SIBYLL")
+            raise ValueError(
+                f"Projectile nuclei not natively supported in SIBYLL, A = {k.A1}"
+            )
+        if k.p2_is_nucleus and k.A2 > 20:
+            raise ValueError(f"Target with A>20 not supported, A = {k.A2}")
         self._sibproj = self._lib.isib_pdg2pid(k.p1pdg)
         self._iatarg = k.A2
-        self._ecm = k.ecm
-        self._curr_event_kin = event_kinematics
 
     def _attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
@@ -175,7 +166,8 @@ class SIBYLLRun(MCRun):
             idb[sid - 1] = np.abs(idb[sid - 1])
 
     def _generate_event(self):
-        self._lib.sibyll(self._sibproj, self._iatarg, self._ecm)
+        k = self.event_kinematics
+        self._lib.sibyll(self._sibproj, self._iatarg, k.ecm)
         self._lib.decsib()
         self._lib.sibhep3()
         return 0  # SIBYLL never rejects
@@ -194,7 +186,8 @@ class Sibyll21(SIBYLLRun):
     _library_name = "_sib21"
 
     def _generate_event(self):
-        self._lib.sibyll(self._sibproj, self._iatarg, self._ecm)
+        k = self.event_kinematics
+        self._lib.sibyll(self._sibproj, self._iatarg, k.ecm)
         self._lib.decsib()
         self._lib.sibhep1()
         return 0  # SIBYLL never rejects

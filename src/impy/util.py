@@ -45,7 +45,7 @@ def getAZN(pdgid):
 
 
 def AZ2pdg(A, Z):
-    """Conversion of nucleus with mass A and chage Z
+    """Conversion of nucleus with mass A and charge Z
     to PDG nuclear code"""
     # 10LZZZAAAI
     pdg_id = 1000000000

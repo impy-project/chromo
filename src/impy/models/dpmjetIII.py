@@ -83,8 +83,7 @@ class DpmjetIIIRun(MCRun):
         self._max_A1 = event_kinematics.A1
         self._max_A2 = event_kinematics.A2
 
-        self._set_event_kinematics(event_kinematics)
-        k = self._curr_event_kin
+        self.event_kinematics = event_kinematics
         dpm_conf = impy_config["dpmjetIII"]
 
         info(1, "Initializing DPMJET-III")
@@ -106,6 +105,7 @@ class DpmjetIIIRun(MCRun):
             info(3, "DPMJET evap file at", evap_file)
             self._lib.dtimpy.fnevap = fortran_chars(self._lib.dtimpy.fnevap, evap_file)
 
+        k = self.event_kinematics
         self._lib.dt_init(-1, k.plab, k.A1, k.Z1, k.A2, k.Z2, k.p1pdg, iglau=0)
 
         if impy_config["user_frame"] == "center-of-mass":
@@ -139,30 +139,18 @@ class DpmjetIIIRun(MCRun):
         self._lib.pydat1.mstj[22 - 1] = 2
         # # Set ctau threshold in PYTHIA for the default stable list
         self._lib.pydat1.parj[70] = impy_config["tau_stable"] * sec2cm * 10.0  # mm
-        self._sigma_inel_precision = None
 
-    def set_sigma_inel_precision(self, value):
-        """ """
-        if value is None:
-            self._sigma_inel_precision = None
-        elif isinstance(value, int):
-            self._sigma_inel_precision = value
-        else:
-            raise ValueError("precision must be int or None")
-
-    def sigma_inel(self):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        k = self._curr_event_kin
+    def _sigma_inel(self, evt_kin, precision=None):
+        k = evt_kin
         info(10, "Cross section for", k.A1, k.A2, self._lib.idt_icihad(k.p1pdg))
-        if self._sigma_inel_precision is None:
+        if precision is None:
             self._lib.dt_xsglau(
                 k.A1, k.A2, self._lib.idt_icihad(k.p1pdg), 0, 0, k.ecm, 1, 1, 1
             )
         else:
             saved = self._lib.dtglgp.jstatb
             # Set number of trials for Glauber model integration
-            self._lib.dtglgp.jstatb = self._sigma_inel_precision
+            self._lib.dtglgp.jstatb = precision
             self._lib.dt_xsglau(
                 k.A1, k.A2, self._lib.idt_icihad(k.p1pdg), 0, 0, k.ecm, 1, 1, 1
             )
@@ -173,7 +161,7 @@ class DpmjetIIIRun(MCRun):
     def _dpmjet_tup(self):
         """Constructs an tuple of arguments for calls to event generator
         from given event kinematics object."""
-        k = self._curr_event_kin
+        k = self.event_kinematics
         info(
             20,
             "Request DPMJET ARGs tuple:\n",
@@ -181,17 +169,15 @@ class DpmjetIIIRun(MCRun):
         )
         return (k.A1, k.Z1, k.A2, k.Z2, self._lib.idt_icihad(k.p1pdg), k.elab)
 
-    def _set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
+    def _set_event_kinematics(self, k):
+        # nothing to be done here except input validation, since
+        # initialization and event generation is done in _generate_event
         info(5, "Setting event kinematics")
-        assert (
-            event_kinematics.A1 <= self._max_A1 and event_kinematics.A2 <= self._max_A2
-        ), "Maximal initialization mass exceeded {0}/{1}, {2}/{3}".format(
-            event_kinematics.A1, self._max_A1, event_kinematics.A2, self._max_A2
-        )
-
-        self._curr_event_kin = event_kinematics
+        if k.A1 > self._max_A1 or k.A2 > self._max_A2:
+            raise ValueError(
+                "Maximal initialization mass exceeded "
+                f"{k.A1}/{self._max_A1}, {k.A2}/{self._max_A2}"
+            )
 
         # AF: No idea yet, but apparently this functionality was around?!
         # if hasattr(k, 'beam') and hasattr(self._lib, 'init'):

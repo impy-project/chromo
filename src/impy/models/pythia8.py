@@ -5,49 +5,52 @@ Created on 19.01.2015
 """
 
 from ..common import MCRun, MCEvent
-from ..util import info, AZ2pdg
+from ..util import info
 from impy import impy_config, base_path
 from pathlib import Path
-import os
+from os import environ
+import numpy as np
 
 
 class PYTHIA8Event(MCEvent):
     """Wrapper class around HEPEVT particle stack."""
 
     _hepevt = "hepevt"
-    # We actually have daughter info, but since it is redundant, we do not copy
-    # it over from the Pythia event to safe time. The time safed is probably
-    # negligible though, so could be enabled if really necessary.
-    _jdahep = None
 
     def _charge_init(self, npart):
         return self._lib.charge_from_pid(
             self._lib.pythia.particleData, self._lib.hepevt.idhep[:npart]
         )
 
+    def _hiinfo(self):
+        return self._lib.pythia.info.hiInfo
+
     # Nuclear collision parameters
     @property
     def impact_parameter(self):
         """Returns impact parameter for nuclear collisions."""
-        return self._lib.pythia.info.hiinfo.b
+        if self._hiinfo() is not None:
+            return self._hiinfo().b
+        return np.nan
 
     @property
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
-        return self._lib.pythia.info.hiinfo.nPartProj
+        if self._hiinfo() is not None:
+            return self._hiinfo().nPartProj
+        return 0
 
     @property
     def n_wounded_B(self):
         """Number of wounded nucleons (target) side B"""
-        return self._lib.pythia.info.hiinfo.nPartTarg
+        if self._hiinfo() is not None:
+            return self._hiinfo().nPartTarg
+        return 0
 
     @property
     def n_wounded(self):
         """Number of total wounded nucleons"""
-        return (
-            self._lib.pythia.info.hiinfo.nPartProj
-            + self._lib.pythia.info.hiinfo.nPartTarg
-        )
+        return self.n_wounded_A + self.n_wounded_B
 
 
 class Pythia8(MCRun):
@@ -64,23 +67,17 @@ class Pythia8(MCRun):
         super().__init__(seed, logfname)
 
         self._lib.hepevt = self._lib.Hepevt()
-        self._set_event_kinematics(event_kinematics)
+        self.event_kinematics = event_kinematics
         self._set_final_state_particles()
 
-    def sigma_inel(self):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        # Cross section and energy (in mb and GeV)
-        return self._pythia.info.sigmaGen()
+    def _sigma_inel(self, evt_kin):
+        # TODO check that cross section is in mb
+        with self._temporary_evt_kin(evt_kin):
+            cx = self._lib.pythia.info.sigmaTot
+            return cx.sigmaTot - cx.sigmaEl
 
-    def _set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
-
+    def _set_event_kinematics(self, k):
         info(5, "Setting event kinematics")
-
-        k = event_kinematics
-        self._curr_event_kin = k
 
         datdir = Path(base_path) / "iamdata" / "Pythia8" / "xmldoc"
         assert datdir.exists(), f"{datdir} does not exist"
@@ -89,9 +86,15 @@ class Pythia8(MCRun):
         # our argument here. When you install Pythia8 with conda, it sets
         # PYTHIA8DATA. If that version does not match this version, readString()
         # or init() may fail.
-        if "PYTHIA8DATA" in os.environ:
-            del os.environ["PYTHIA8DATA"]
+        if "PYTHIA8DATA" in environ:
+            del environ["PYTHIA8DATA"]
         pythia = self._lib.pythia = self._lib.Pythia(str(datdir), True)
+
+        if not pythia.particleData.isParticle(k.p1pdg):
+            raise ValueError(f"Particle {k.p1pdg} not recognized")
+
+        if not pythia.particleData.isParticle(k.p2pdg):
+            raise ValueError(f"Particle {k.p2pdg} not recognized")
 
         config = [
             "Random:setSeed = on",
@@ -104,28 +107,16 @@ class Pythia8(MCRun):
         config += impy_config["pythia8"]["options"]
 
         if k.p1_is_nucleus or k.p2_is_nucleus:
+            import warnings
+
+            warnings.warn(
+                "Support for nuclei is experimental; event generation takes a long time",
+                RuntimeWarning,
+            )
+
+            # speed-up initialization by not fitting nuclear cross-section
             config.append("HeavyIon:SigFitNGen = 0")
             config.append("HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0")
-
-        if k.p1_is_nucleus:
-            k.p1pdg = AZ2pdg(k.A1, k.A2)
-
-        if k.p2_is_nucleus:
-            k.p2pdg = AZ2pdg(k.A2, k.Z2)
-
-        # HD: is this necessary?
-        for pid, a, z in ((k.p1pdg, k.A1, k.Z1), (k.p2pdg, k.A2, k.Z2)):
-            if not pythia.particleData.isParticle(pid):
-                # pdgid, p name, ap name, spin, 3*charge, color, mass
-                pythia.particleData.addParticle(
-                    pid,
-                    f"{a * 100 + z}",
-                    f"{a * 100 + z}bar",
-                    1,
-                    3 * int(z),
-                    0,
-                    float(a),
-                )
 
         config += [
             f"Beams:idA = {k.p1pdg}",
