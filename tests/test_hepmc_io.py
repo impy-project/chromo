@@ -6,7 +6,7 @@ import pytest
 import pyhepmc
 from .util import (
     run_in_separate_process,
-    xfail_on_ci_if_model_is_incompatible,
+    skip_on_ci_if_model_is_incompatible,
     get_all_models,
 )
 
@@ -35,7 +35,7 @@ def test_hepmc_io(Model):
 
     test_file = Path(f"{Path(__file__).with_suffix('')}_{Model.__name__}.dat")
 
-    xfail_on_ci_if_model_is_incompatible(Model)
+    skip_on_ci_if_model_is_incompatible(Model)
 
     events = run_in_separate_process(run, Model)
     expected = [ev.to_hepmc3() for ev in events]

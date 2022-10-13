@@ -39,7 +39,7 @@ def run_in_separate_process(fn, *args, timeout=60):
 
 
 # remove this when git lfs issue is fixed
-def xfail_on_ci_if_model_is_incompatible(Model):
+def skip_on_ci_if_model_is_incompatible(Model):
     if os.environ.get("CI", False) and Model in (
         im.QGSJet01d,
         im.QGSJetII03,
@@ -52,7 +52,7 @@ def xfail_on_ci_if_model_is_incompatible(Model):
         im.DpmjetIII191,
         im.DpmjetIII193,
     ):
-        pytest.xfail("model cannot succeed on CI, because git lfs does not work")
+        pytest.skip("model cannot succeed on CI, because git lfs does not work")
 
 
 def get_all_models(module):

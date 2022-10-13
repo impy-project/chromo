@@ -4,7 +4,7 @@ from impy.constants import GeV
 from impy.models.sophia import Sophia20
 from .util import (
     run_in_separate_process,
-    xfail_on_ci_if_model_is_incompatible,
+    skip_on_ci_if_model_is_incompatible,
     get_all_models,
 )
 import numpy as np
@@ -27,7 +27,7 @@ def run(Model):
 
 @pytest.mark.parametrize("Model", models)
 def test_to_hepmc3(Model):
-    xfail_on_ci_if_model_is_incompatible(Model)
+    skip_on_ci_if_model_is_incompatible(Model)
 
     event = run_in_separate_process(run, Model)
 

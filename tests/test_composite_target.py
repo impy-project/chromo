@@ -6,7 +6,7 @@ import pytest
 from multiprocessing import Pool
 from multiprocessing.context import TimeoutError
 from .util import (
-    xfail_on_ci_if_model_is_incompatible,
+    skip_on_ci_if_model_is_incompatible,
     get_all_models,
     run_in_separate_process,
 )
@@ -31,7 +31,7 @@ def run_model(Model, evt_kin):
 
 @pytest.mark.parametrize("Model", Models)
 def test_composite_target(Model):
-    xfail_on_ci_if_model_is_incompatible(Model)
+    skip_on_ci_if_model_is_incompatible(Model)
 
     if Model is im.Pythia8:
         pytest.skip("Switching beams in Pythia8 is very time-consuming")

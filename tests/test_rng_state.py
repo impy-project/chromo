@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from .util import (
     run_in_separate_process,
-    xfail_on_ci_if_model_is_incompatible,
+    skip_on_ci_if_model_is_incompatible,
     get_all_models,
 )
 
@@ -73,5 +73,5 @@ def run_rng_state(Model):
 def test_rng_state(Model):
     if Model is im.Pythia8:
         pytest.skip("Pythia8 currently does not support rng_state serialization")
-    xfail_on_ci_if_model_is_incompatible(Model)
+    skip_on_ci_if_model_is_incompatible(Model)
     run_in_separate_process(run_rng_state, Model)
