@@ -1,11 +1,12 @@
-name: Release
+name: WindowsTest
 
 on:
   workflow_dispatch:
 
 jobs:
-  wheels:
+  test:
     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
+
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -13,57 +14,106 @@ jobs:
         os: [windows-latest]
         arch: [native]
         py: [cp39]
-        # os: [ubuntu-latest, windows-latest, macos-latest]
-        # arch: [native, aarch64, universal2]
-        # py: [cp37, cp38, cp39, cp310]
-        # exclude:
-        #   - os: windows-latest
-        #     arch: aarch64
-        #   - os: windows-latest
-        #     arch: universal2
-        #   - os: macos-latest
-        #     arch: aarch64 
-        #   - os: ubuntu-latest
-        #     arch: universal2
-
     steps:
+    
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
 
-      - name: Show environment
-        run: env | grep ^GITHUB
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
 
-      - name: Show CI env
-        run: env | grep ^CI  
+    - uses: awvwgk/setup-fortran@main
+      id: setup-fortran
+      with:
+        compiler: gcc
+        version: 11
 
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
 
-      - if: ${{ matrix.arch == 'aarch64' }}
-        uses: docker/setup-qemu-action@v2 
+    - run: ${{ env.FC }} --version
+      env:
+        FC: ${{ steps.setup-fortran.outputs.fc }}    
 
-      - uses: awvwgk/setup-fortran@main
-        id: setup-fortran
-        with:
-          compiler: gcc
-          version: 11
 
-      - run: ${{ env.FC }} --version
-        env:
-          FC: ${{ steps.setup-fortran.outputs.fc }}     
+    - run: python -m pip install --upgrade pip
+    - name: Installing impy
+      run: |
+        $env:CMAKE_GENERATOR
+        $env:FC
+        python -m pip install --prefer-binary -v .[test]
+      env: 
+        CMAKE_GENERATOR: "MinGW Makefiles"
+        FC: ${{ steps.setup-fortran.outputs.fc }}
+    - run: python -m pytest -vv
 
-      - uses: pypa/cibuildwheel@v2.9.0
-        env:
-          CIBW_BUILD: ${{ matrix.py }}-*
-          CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_SKIP: "*musllinux*"
-          CIBW_TEST_SKIP: "*-macosx_universal2:arm64"
-          CMAKE_GENERATOR: "MinGW Makefiles"
-          FC: ${{ steps.setup-fortran.outputs.fc }}
-          PYTEST_COMMAND: python -m pytest -vv
 
-      - uses: actions/upload-artifact@v3
-        with:
-          path: ./wheelhouse/*.whl 
+# name: Release
+
+# on:
+#   workflow_dispatch:
+
+# jobs:
+#   wheels:
+#     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         os: [windows-latest]
+#         arch: [native]
+#         py: [cp39]
+#         # os: [ubuntu-latest, windows-latest, macos-latest]
+#         # arch: [native, aarch64, universal2]
+#         # py: [cp37, cp38, cp39, cp310]
+#         # exclude:
+#         #   - os: windows-latest
+#         #     arch: aarch64
+#         #   - os: windows-latest
+#         #     arch: universal2
+#         #   - os: macos-latest
+#         #     arch: aarch64 
+#         #   - os: ubuntu-latest
+#         #     arch: universal2
+
+#     steps:
+
+#       - name: Show environment
+#         run: env | grep ^GITHUB
+
+#       - name: Show CI env
+#         run: env | grep ^CI  
+
+#       - uses: actions/checkout@v3
+#         with:
+#           submodules: true
+
+#       - if: ${{ matrix.arch == 'aarch64' }}
+#         uses: docker/setup-qemu-action@v2 
+
+#       - uses: awvwgk/setup-fortran@main
+#         id: setup-fortran
+#         with:
+#           compiler: gcc
+#           version: 11
+
+#       - run: ${{ env.FC }} --version
+#         env:
+#           FC: ${{ steps.setup-fortran.outputs.fc }}     
+
+#       - uses: pypa/cibuildwheel@v2.9.0
+#         env:
+#           CIBW_BUILD: ${{ matrix.py }}-*
+#           CIBW_ARCHS: ${{ matrix.arch }}
+#           CIBW_SKIP: "*musllinux*"
+#           CIBW_TEST_SKIP: "*-macosx_universal2:arm64"
+#           CMAKE_GENERATOR: "MinGW Makefiles"
+#           FC: ${{ steps.setup-fortran.outputs.fc }}
+#           PYTEST_COMMAND: python -m pytest -vv
+
+#       - uses: actions/upload-artifact@v3
+#         with:
+#           path: ./wheelhouse/*.whl 
 
   # sdist:
   #   name: source package
