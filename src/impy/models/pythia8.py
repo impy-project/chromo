@@ -62,9 +62,6 @@ class Pythia8(MCRun):
     _restartable = True
 
     def __init__(self, event_kinematics, seed=None, logfname=None):
-        # store stable settings until Pythia instance is created
-        self._stable = {}
-
         super().__init__(seed, logfname)
 
         self._lib.hepevt = self._lib.Hepevt()
