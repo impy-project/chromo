@@ -55,7 +55,10 @@ def skip_on_ci_if_model_is_incompatible(Model):
         im.DpmjetIII191,
         im.DpmjetIII193,
     ):
-        pytest.skip("model cannot succeed on CI, because git lfs does not work")
+        pytest.skip(
+            "model cannot succeed on CI, because git lfs does not work",
+            allow_module_level=True,
+        )
 
 
 def get_all_models(module):

@@ -4,8 +4,6 @@ from . import config as _config
 
 impy_config = _config.__dict__
 
-from particletools.tables import PYTHIAParticleData
-
 base_path = abspath(dirname(__file__))
 
 
@@ -26,11 +24,6 @@ for dpmmod in ["dpmjetIII", "phojet"]:
         )
 
 impy_config["epos"]["datdir"] = join(base_path, impy_config["epos"]["datdir"])
-
-pdata = PYTHIAParticleData(
-    cache_file=open(join(base_path, impy_config["pdata_cachefile"]), "wb")
-)
-
 
 import impy.models as models  # noqa
 import impy.kinematics as kinematics  # noqa

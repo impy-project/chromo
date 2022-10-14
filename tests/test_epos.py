@@ -3,10 +3,16 @@ from impy.models import EposLHC
 from impy.constants import GeV
 import numpy as np
 from numpy.testing import assert_allclose
-from .util import reference_charge, run_in_separate_process
+from .util import (
+    reference_charge,
+    run_in_separate_process,
+    skip_on_ci_if_model_is_incompatible,
+)
 import pytest
 from particle import literals as lp
 from functools import lru_cache
+
+skip_on_ci_if_model_is_incompatible(EposLHC)
 
 
 def run_pp_collision():

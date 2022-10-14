@@ -6,7 +6,7 @@ Created on 19.01.2015
 
 import numpy as np
 from impy.common import MCRun, MCEvent
-from impy import impy_config, pdata
+from impy import impy_config
 from impy.util import info
 
 
@@ -71,10 +71,24 @@ class Pythia6(MCRun):
 
     def _set_event_kinematics(self, k):
         info(5, "Setting event kinematics")
-        self.p1_type = pdata.name(k.p1pdg)
-        self.p2_type = pdata.name(k.p2pdg)
-        self.ecm = k.ecm
-        self._lib.pyinit("CMS", self.p1_type, self.p2_type, self.ecm)
+        allowed = {
+            2212: "p",
+            -2212: "pbar",
+            2112: "n",
+            -2112: "nbar",
+            321: "K+",
+            -321: "K-",
+            211: "pi+",
+            -211: "pi-",
+            11: "e-",
+            -11: "e+",
+        }
+        codes = []
+        for pdg in (k.p1pdg, k.p2pdg):
+            if pdg not in allowed:
+                raise ValueError(f"invalid input particle {pdg}")
+            codes.append(allowed[pdg])
+        self._lib.pyinit("CMS", *codes, k.ecm)
 
     def _attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""

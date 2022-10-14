@@ -3,9 +3,6 @@
 # Level of verbosity
 debug_level = 1
 
-# Location for cache file for particledata.tables objects
-pdata_cachefile = "impy_pdata_cache.cch"
-
 # For generators which return not successful events:
 # True: retry rejected events until desired number of events reached
 # False: return if event not successful and set event_successful flag

@@ -1,6 +1,7 @@
 # This dependency might be overkill for just reading a few
 # variables. Should be changed at some point.
 from scipy.constants import speed_of_light as _c_SI
+from particle import literals as lp
 
 c = 1e2 * _c_SI
 cm2sec = 1e-2 / _c_SI
@@ -47,3 +48,5 @@ quarks_and_diquarks_and_gluons = (
     5403,
     5503,
 )
+
+nucleon_mass = 0.5 * (lp.proton.mass + lp.neutron.mass)
