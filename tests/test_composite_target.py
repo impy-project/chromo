@@ -1,10 +1,8 @@
-from impy.constants import TeV, GeV
+from impy.constants import GeV
 from impy.kinematics import CenterOfMass, CompositeTarget
 import impy.models as im
 from collections import Counter
 import pytest
-from multiprocessing import Pool
-from multiprocessing.context import TimeoutError
 from .util import (
     skip_on_ci_if_model_is_incompatible,
     get_all_models,
@@ -14,7 +12,7 @@ from .util import (
 # generate list of models to test,
 Models = get_all_models(im)
 # skip models which do not support nuclei
-Models = [M for M in Models if M.name not in ("Sophia", "PhoJet", "Pythia6")]
+Models = [M for M in Models if M.name not in ("Sophia", "PhoJet", "Pythia6", "EposLHC")]
 
 
 def run_model(Model, evt_kin):

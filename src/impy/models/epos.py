@@ -17,8 +17,7 @@ class EPOSEvent(MCEvent):
         super().__init__(generator)
         # EPOS sets parents of beam particles to (-1, -1).
         # We change it to (0, 0)
-        nbeam = np.sum(self.status == 4)
-        self.parents[:nbeam] = 0
+        self.parents[self.status == 4] = 0
 
     def _charge_init(self, npart):
         return self._lib.charge_vect(self._lib.hepevt.idhep[:npart])
@@ -43,7 +42,7 @@ class EPOSEvent(MCEvent):
     @property
     def n_wounded(self):
         """Number of total wounded nucleons"""
-        return self._lib.cevt.npjevt + self._lib.cevt.ntgevt
+        return self.n_wounded_A + self.n_wounded_B
 
     @property
     def n_spectator_A(self):
@@ -71,8 +70,6 @@ class EposLHC(MCRun):
 
         super().__init__(seed, logfname)
 
-        k = event_kinematics
-
         epos_conf = impy_config["epos"]
 
         info(1, "First initialization")
@@ -85,6 +82,7 @@ class EposLHC(MCRun):
             iframe = 2
             self._output_frame = "laboratory"
 
+        k = event_kinematics
         datdir = path.join(base_path, epos_conf["datdir"])
         self._lib.initializeepos(
             float(self._seed),
@@ -104,7 +102,7 @@ class EposLHC(MCRun):
 
         # Set default stable
         self._set_final_state_particles()
-        self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.int32])
+        self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.float32])
         self.event_kinematics = event_kinematics
         # Turn on particle history
         self._lib.othe1.istmax = 1
