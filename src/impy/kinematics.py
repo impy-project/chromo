@@ -16,7 +16,7 @@ the implementation is very "cooked up". We have to discuss this.
 """
 
 import numpy as np
-from impy import impy_config
+from impy import pdata, impy_config
 from impy.util import info, TaggedFloat, AZ2pdg
 from impy.constants import nucleon_mass
 import particle
@@ -386,11 +386,10 @@ class EventKinematics:
     @staticmethod
     def _handle_particle(pdg, nuc_prop):
         # Handle projectile type
-        p = particle.Particle.from_pdgid(pdg)
         if pdg:
-            pmass = p.mass
+            pmass = pdata.mass(pdg)
             a = 1
-            z = p.charge
+            z = pdata.charge(pdg)
             is_nucleus = False
             info(20, "Particle identified from PDG ID.")
         else:
