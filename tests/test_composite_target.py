@@ -12,7 +12,9 @@ from .util import (
 # generate list of models to test,
 Models = get_all_models(im)
 # skip models which do not support nuclei
-Models = [M for M in Models if M.name not in ("Sophia", "PhoJet", "Pythia6", "EposLHC")]
+Models = [
+    M for M in Models if M.name not in ("Sophia", "PhoJet") and M is not im.Pythia6
+]
 
 
 def run_model(Model, evt_kin):
@@ -30,6 +32,9 @@ def run_model(Model, evt_kin):
 @pytest.mark.parametrize("Model", Models)
 def test_composite_target(Model):
     skip_on_ci_if_model_is_incompatible(Model)
+
+    if Model is im.EposLHC:
+        pytest.skip("Bug in EposLHC prevents running with ions")
 
     if Model is im.Pythia8:
         pytest.skip("Switching beams in Pythia8 is very time-consuming")
