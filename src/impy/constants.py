@@ -49,4 +49,4 @@ quarks_and_diquarks_and_gluons = (
     5503,
 )
 
-nucleon_mass = 0.5 * (lp.proton.mass + lp.neutron.mass)
+nucleon_mass = 0.5 * (lp.proton.mass + lp.neutron.mass) / 1e3
