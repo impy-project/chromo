@@ -37,3 +37,4 @@ examples/*.dat
 tests/*.dat
 extra.cfg
 pythia*.tgz
+impy-?.?.?
