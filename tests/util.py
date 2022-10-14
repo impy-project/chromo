@@ -30,10 +30,13 @@ def run_in_separate_process(fn, *args, timeout=60):
         except TimeoutError:
             # usually happens when model aborts and kills child process
             raise TimeoutError("check stdout for errors")
-        # in case there any other exception, run in main thread
-        # to get proper backtrace
-        except Exception:
-            fn(*args)
+
+        # In case there any other exception, it can be useful to run in
+        # main thread to get proper backtrace. Uncomment the following to
+        # enable this.
+
+        # except Exception:
+        #     fn(*args)
 
     return out
 

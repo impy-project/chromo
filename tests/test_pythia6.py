@@ -108,6 +108,7 @@ def test_is_view():
 def test_final_state(event):
     ev1 = event.final_state()
     ev2 = event[event.status == 1]
+    ev2.parents = None  # event.final_state() drops parents
     assert_equal(ev1, ev2)
 
 
@@ -116,6 +117,8 @@ def test_final_state_charged(event):
     ev2 = event[(event.status == 1) & (event.charge != 0)]
     ev3 = event[event.status == 1]
     ev3 = ev3[ev3.charge != 0]
+    ev2.parents = None  # event.final_state() drops parents
+    ev3.parents = None  # event.final_state() drops parents
     assert_equal(ev1, ev2)
     assert_equal(ev1, ev3)
 
