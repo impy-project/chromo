@@ -88,9 +88,9 @@ class Pythia8DecayAfterburner(object):
 def test_decay_afterburner():
     event_kinematics = EventKinematics(
         ecm=200 * GeV,
-        p1pdg=2212,
-        p2pdg=2212
-        # nuc2_prop=(14,7)
+        particle1=2212,
+        particle2=2212
+        # particle2=(14,7)
     )
 
     # Watch out this setting!

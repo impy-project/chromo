@@ -261,3 +261,54 @@ def _check_db_file(remote_file, local_file, checksum):
     if not (Path(local_file).exists() and _file_checksum(local_file) == checksum):
         print(f"Downloading database file {local_file}.")
         _download_file(remote_file, local_file)
+
+
+class TaggedFloat:
+    __slots__ = "_value"
+
+    def __init__(self, val):
+        self._value = float(val)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self._value!r})"
+
+    def __float__(self):
+        return self._value
+
+    @classmethod
+    def _reduce(cls, other):
+        if isinstance(other, (int, float)):
+            return other
+        elif isinstance(other, cls):
+            return other._value
+        raise ValueError("{other!r} is not a number or {cls.__name__}")
+
+    def __eq__(self, other):
+        return self.__class__ is other.__class__ and self._value == other._value
+
+    def __ne__(self, val):
+        return not self == val
+
+    def __mul__(self, val):
+        return self.__class__(self._value * self._reduce(val))
+
+    def __rmul__(self, val):
+        return self * self._reduce(val)
+
+    def __add__(self, val):
+        return self.__class__(self._value + self._reduce(val))
+
+    def __radd__(self, val):
+        return self + self._reduce(val)
+
+    def __truediv__(self, val):
+        return self.__class__(self._value / self._reduce(val))
+
+    def __rtruediv__(self, val):
+        return self.__class__(self._reduce(val) / self._value)
+
+    def __sub__(self, val):
+        return self.__class__(self._value - self._reduce(val))
+
+    def __rsub__(self, val):
+        return self.__class__(self._reduce(val) - self._value)
