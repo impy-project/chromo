@@ -20,7 +20,7 @@ global-exclude *.tgz
 global-exclude *.ipynb
 global-exclude __pycache__
 global-exclude Makefile
-glboal-exclude .*.yaml
+global-exclude .*.yaml
 prune tests
 prune bench
 prune src/cpp/pybind11/docs
