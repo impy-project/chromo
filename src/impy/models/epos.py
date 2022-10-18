@@ -5,8 +5,9 @@ Created on 03.05.2016
 """
 
 import numpy as np
-from impy.common import MCRun, MCEvent
-from impy import impy_config, base_path
+
+from impy import base_path, impy_config
+from impy.common import MCEvent, MCRun
 from impy.util import info
 
 
@@ -92,10 +93,6 @@ class EposLHC(MCRun):
             iframe,
             k.p1pdg,
             k.p2pdg,
-            k.A1,
-            k.Z1,
-            k.A2,
-            k.Z2,
             impy_config["epos"]["debug_level"],
             self._lun,
         )
@@ -104,8 +101,6 @@ class EposLHC(MCRun):
         self._set_final_state_particles()
         self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.float32])
         self.event_kinematics = event_kinematics
-        # Turn on particle history
-        self._lib.othe1.istmax = 1
 
     def _sigma_inel(self, evt_kin):
         with self._temporary_evt_kin(evt_kin):
@@ -113,7 +108,7 @@ class EposLHC(MCRun):
 
     def _set_event_kinematics(self, k):
         info(5, "Setting event kinematics")
-        self._lib.initeposevt(k.ecm, -1.0, k.p1pdg, k.p2pdg, k.A1, k.Z1, k.A2, k.Z2)
+        self._lib.initeposevt(k.ecm, -1.0, k.p1pdg, k.p2pdg)
 
     def _attach_log(self, fname=None):
         """Routes the output to a file or the stdout."""
