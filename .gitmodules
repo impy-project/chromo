@@ -6,4 +6,4 @@
 	url = git@github.com:DPMJET/DPMJET.git
 [submodule "src/cpp/pybind11"]
 	path = src/cpp/pybind11
-	url = https://github.com/pybind/pybind11.git
+	url = git@github.com:pybind/pybind11.git
