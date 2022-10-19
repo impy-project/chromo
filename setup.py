@@ -3,6 +3,7 @@ from setuptools import setup
 import sys
 import subprocess as subp
 import json
+import platform
 
 cwd = Path(__file__).parent
 
@@ -23,7 +24,6 @@ models = [
     "qgs01",
     "qgsII03",
     "qgsII04",
-    "urqmd34",
     "pythia6",
     "sophia",
     "dpmjet306",
@@ -33,6 +33,10 @@ models = [
     "dpmjetIII191",
     "dpmjetIII193",
 ]
+
+# urqmd34 doesn't build correctly on Windows
+if platform.system() != "Windows":
+    models.append("urqmd34")
 
 # for convenience, support building extra models via extra.cfg
 # extra.cfg is not tracked by git, so can be freely modified

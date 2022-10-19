@@ -246,6 +246,7 @@ f2py_add_module(_qgsII04
   ${impy_definitions}
 )
 
+if (NOT WIN32)
 ### urqmd34
 set(urqmd34_sources
   1fluid bessel delpart getmass hepcmp iso numrec pythia6409
@@ -277,6 +278,7 @@ f2py_add_module(_urqmd34
   COMPILE_DEFS
   ${impy_definitions}
 )
+endif()
 
 ### pythia6
 f2py_add_module(_pythia6
