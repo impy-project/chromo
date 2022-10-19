@@ -18,7 +18,7 @@ import os
 import re
 import subprocess as subp
 import sys
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import sysconfig as sc
 
 from setuptools import Extension
@@ -138,7 +138,8 @@ class CMakeBuild(build_ext):
                     cached_value = cache_value(key, s)
                     # Change \ to / in case of Windows
                     disagreement.append(
-                        value.replace("\\", "/") != cached_value.replace("\\", "/")
+                        PureWindowsPath(value).as_posix()
+                        != PureWindowsPath(cached_value).as_posix()
                     )
 
             if any(

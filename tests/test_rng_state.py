@@ -4,7 +4,7 @@ import impy.models as im
 import pickle
 from pathlib import Path
 import pytest
-from util import (
+from .util import (
     run_in_separate_process,
     xfail_on_ci_if_model_is_incompatible,
     get_all_models,
