@@ -346,7 +346,7 @@ class MCEvent(EventData, ABC):
             *phep,
             *vhep,
             parents,
-            children
+            children,
         )
 
         # Apply boosts into frame required by user

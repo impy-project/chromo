@@ -4,7 +4,7 @@ import impy.models as im
 import pickle
 from pathlib import Path
 import pytest
-from .util import (
+from util import (
     run_in_separate_process,
     xfail_on_ci_if_model_is_incompatible,
     get_all_models,
@@ -25,7 +25,7 @@ def rng_state_test(model):
 
     generator = model(evt_kin, seed=1)
     nevents = 10
-    rng_state_file = str(model.name) + "rng_state.dat"
+    rng_state_file = type(generator).__name__ + "_rng_state.dat"
 
     # Save a initial state to a variable:
     state0 = generator.random_state.copy()

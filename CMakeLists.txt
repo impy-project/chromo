@@ -67,8 +67,6 @@ add_compile_definitions(NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
 # generator automatically runs the preprocessor on all Fortran files
 set(CMAKE_Fortran_FLAGS_RELEASE -O3)
 
-# Uncomment when debugging a build:
-#set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # CMake sets -fPIC etc. automatically, add only unusual options
 if (UNIX)
