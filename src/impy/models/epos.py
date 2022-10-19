@@ -1,9 +1,3 @@
-"""
-Created on 03.05.2016
-
-@author: afedynitch
-"""
-
 import numpy as np
 
 from impy import base_path, impy_config

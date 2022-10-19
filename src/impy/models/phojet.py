@@ -1,8 +1,3 @@
-"""
-Created on 15.05.2012
-
-@author: afedynitch
-"""
 from impy.common import MCRun, MCEvent
 from impy import impy_config
 from impy.util import info, fortran_chars
