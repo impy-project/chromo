@@ -387,31 +387,21 @@ list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR\.f)
 # renamed copies of the headers. Not elegant, but works. 🤷‍♂️
 
 
-if (WIN32)
 # Workaround to workaround :) Windows don't like long lists
 # User temporary file to keep long lists
-  set(temp_dpmjet_file temp.dpmjetIII191)
-  string(REPLACE ";"  " " temp_dpmjet_str "${dpmjetIII191_sources}")
-  file(WRITE ${temp_dpmjet_file} "${temp_dpmjet_str}")
+set(temp_dpmjet_file temp.dpmjetIII191)
+string(REPLACE ";"  " " temp_dpmjet_str "${dpmjetIII191_sources}")
+file(WRITE ${temp_dpmjet_file} "${temp_dpmjet_str}")
 
-  execute_process(
-    COMMAND
-    ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py 
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${fortran_dir}/dpmjetIII-19.1/include
-    ${CMAKE_SOURCE_DIR}/${temp_dpmjet_file}
-  )
-  file(READ ${temp_dpmjet_file} dpmjetIII191_modded_sources)
-  file(REMOVE ${temp_dpmjet_file})
-else()
-  execute_process(
-    COMMAND
-    ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py
-    ${CMAKE_CURRENT_BINARY_DIR} ${fortran_dir}/dpmjetIII-19.1/include
-    ${dpmjetIII191_sources}
-    OUTPUT_VARIABLE dpmjetIII191_modded_sources
-  )
-endif()
+execute_process(
+  COMMAND
+  ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py 
+  ${CMAKE_CURRENT_BINARY_DIR}
+  ${fortran_dir}/dpmjetIII-19.1/include
+  ${CMAKE_SOURCE_DIR}/${temp_dpmjet_file}
+)
+file(READ ${temp_dpmjet_file} dpmjetIII191_modded_sources)
+file(REMOVE ${temp_dpmjet_file})
 
 
 f2py_add_module(_dpmjetIII191

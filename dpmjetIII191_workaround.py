@@ -2,7 +2,6 @@ from pathlib import Path
 import re
 import sys
 import shutil
-import platform
 
 this_program = Path(sys.argv[0]).name
 
@@ -21,13 +20,10 @@ if not sys.argv[1:]:  # for testing
     for d in dirs:
         for fn in Path(d).rglob("*.f"):
             src.append(fn)
-# Windows case
-elif len(sys.argv) == 4 and platform.system() == "Windows":
+else:
     with Path(sys.argv[3]).open() as f:
         src = f.read().split()
     cmake_binary_dir, inc_dir = sys.argv[1:3]
-else:
-    cmake_binary_dir, inc_dir, *src = sys.argv[1:]
 
 src = [Path(x) for x in src]
 inc_dir = Path(inc_dir)
@@ -69,8 +65,6 @@ for fn in modded:
 out = list(map(str, unchanged))
 out += list(map(str, modded))
 
-if platform.system() == "Windows":
-    with open(sys.argv[3], "w") as f:
-        f.write(";".join(out).replace("\\", "/"))
-else:
-    sys.stdout.write(";".join(out))
+
+with open(sys.argv[3], "w") as f:
+    f.write(";".join(out).replace("\\", "/"))
