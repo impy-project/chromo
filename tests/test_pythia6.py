@@ -12,8 +12,8 @@ from particle import literals as lp
 
 
 def run_event():
-    ekin = CenterOfMass(1 * TeV, 2212, 2212)
-    m = Pythia6(ekin, seed=4)
+    evt_kin = CenterOfMass(1 * TeV, 2212, 2212)
+    m = Pythia6(evt_kin, seed=4)
     m.set_stable(lp.pi_0.pdgid, False)  # needed to get nonzero vertices
     for event in m(1):
         pass
@@ -59,9 +59,9 @@ def test_parents(event):
 
 
 def run_is_view():
-    ekin = CenterOfMass(10 * GeV, 2212, 2212)
+    evt_kin = CenterOfMass(10 * GeV, 2212, 2212)
 
-    m = Pythia6(ekin, seed=1)
+    m = Pythia6(evt_kin, seed=1)
     for event in m(1):
         pass
 
@@ -99,9 +99,9 @@ def test_final_state_charged(event):
 
 
 def run_pickle():
-    ekin = CenterOfMass(10 * GeV, 2212, 2212)
+    evt_kin = CenterOfMass(10 * GeV, 2212, 2212)
 
-    m = Pythia6(ekin, seed=1)
+    m = Pythia6(evt_kin, seed=1)
     for event in m(1):
         pass
 
@@ -119,8 +119,8 @@ def run_event_copy():
     from impy.models.pythia6 import PYTHIA6Event
     from impy.common import EventData
 
-    ekin = CenterOfMass(1 * TeV, 2212, 2212)
-    m = Pythia6(ekin, seed=4)
+    evt_kin = CenterOfMass(1 * TeV, 2212, 2212)
+    m = Pythia6(evt_kin, seed=4)
     m.set_stable(lp.pi_0.pdgid, False)  # needed to get nonzero vertices
     for event in m(1):
         pass

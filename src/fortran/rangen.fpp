@@ -289,7 +289,8 @@ C-----------------------------------------------------------------------
 
       DOUBLE PRECISION SIMRND
 
-      S_RNDM = real(SIMRND())
+555   S_RNDM = real(SIMRND())
+      IF ((S_RNDM.LE.0E0).OR.(S_RNDM.GE.1E0)) GOTO 555     
 
       RETURN
       END
@@ -314,23 +315,6 @@ C-----------------------------------------------------------------------
       END
 #endif
 
-
-      DOUBLE PRECISION FUNCTION GASDEV(idum)
-C-----------------------------------------------------------------------
-C  SEE SUBROUT. RMMARD
-C  WE USE HERE A SIMPLIFIED FORM OF RMMARD WITH JSEQ=1, LENV=1.
-C  THIS FUNCTON IS CALLED FROM SIBYLL ROUTINES.
-C-----------------------------------------------------------------------
-
-
-      IMPLICIT NONE
-      INTEGER idum
-      DOUBLE PRECISION SIMRND
-
-      GASDEV = SIMRND()
-
-      RETURN
-      END
 
 
 

@@ -12,7 +12,7 @@ from collections import Counter
 
 @pytest.mark.parametrize("model", [QGSJet01d, EposLHC])
 def test_unstable(model):
-    event_kinematics = EventKinematics(ecm=200 * GeV, p1pdg=2212, p2pdg=2212)
+    event_kinematics = EventKinematics(ecm=200 * GeV, particle1=2212, particle2=2212)
 
     # impy_config["user_frame"] = 'laboratory'
     impy_config["tau_stable"] = np.inf

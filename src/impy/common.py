@@ -441,8 +441,7 @@ class RMMARDState:
     _sequence_number: np.ndarray = None
 
     def _record_state(self, generator):
-        data = generator.crranma4
-
+        data = generator.lib.crranma4
         self._c_number = data.c
         self._u_array = data.u
         self._u_i = data.i97
@@ -454,7 +453,7 @@ class RMMARDState:
         return self
 
     def _restore_state(self, generator):
-        data = generator.crranma4
+        data = generator.lib.crranma4
 
         data.c = self._c_number
         data.u = self._u_array
@@ -615,18 +614,18 @@ class MCRun(ABC):
 
     def _update_event_kinematics(self):
         if self._curr_event_kin.composite_target:
-            ekin = self._curr_event_kin
-            if ekin.p2_is_nucleus:
-                ekin.A2, ekin.Z2 = ekin.composite_target._get_random_AZ()
-                self._set_event_kinematics(ekin)
+            evt_kin = self._curr_event_kin
+            if evt_kin.p2_is_nucleus:
+                evt_kin.A2, evt_kin.Z2 = evt_kin.composite_target._get_random_AZ()
+                self._set_event_kinematics(evt_kin)
 
     @property
     def random_state(self):
-        return RMMARDState()._record_state(self.lib)
+        return RMMARDState()._record_state(self)
 
     @random_state.setter
     def random_state(self, rng_state):
-        rng_state._restore_state(self.lib)
+        rng_state._restore_state(self)
 
     @property
     def event_kinematics(self):
@@ -679,18 +678,11 @@ class MCRun(ABC):
 
         cs = 0.0
         for f, iat in frac_air:
-            if prev_kin.p1_is_nucleus:
-                k = EventKinematics(
-                    ecm=prev_kin.ecm,
-                    nuc1_prop=(prev_kin.A1, prev_kin.Z2),
-                    nuc2_prop=(iat, int(iat / 2)),
-                )
-            else:
-                k = EventKinematics(
-                    ecm=prev_kin.ecm,
-                    p1pdg=prev_kin.p1pdg,
-                    nuc2_prop=(iat, int(iat / 2)),
-                )
+            k = EventKinematics(
+                ecm=prev_kin.ecm,
+                particle1=prev_kin.particle1,
+                particle2=(iat, int(iat / 2)),
+            )
             self._set_event_kinematics(k)
             cs += f * self.sigma_inel(**kwargs)
 

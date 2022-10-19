@@ -102,6 +102,7 @@ function (f2py_add_module target_name)
         OUTPUT ${proc_file}
         COMMAND ${CMAKE_Fortran_COMPILER}
         -E -cpp ${src_file} ${fortran_defs} -o ${proc_file}
+        DEPENDS ${src_file}
       )
       list(APPEND processed_files ${proc_file})
     endforeach()

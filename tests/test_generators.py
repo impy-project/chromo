@@ -13,8 +13,8 @@ from .util import (
 models = get_all_models(im)
 
 
-def run_model(model, ekin):
-    gen = model(ekin, seed=1)
+def run_model(model, evt_kin):
+    gen = model(evt_kin, seed=1)
 
     c = Counter()
     for event in gen(10):
@@ -29,9 +29,6 @@ def run_model(model, ekin):
 def test_generator(Model):
     xfail_on_ci_if_model_is_incompatible(Model)
 
-    if Model in (im.Sibyll23d,):
-        pytest.xfail("Sibyll23d is brocken. Something with rng.")
-
     p1pdg = -211  # pi-
     p2pdg = 2212  # proton
     if Model is im.Sophia20:
@@ -41,13 +38,13 @@ def test_generator(Model):
         # The old phojet needs more tweaking for pion-proton (is not related to test)
         p1pdg = 2212  # proton
 
-    ekin = CenterOfMass(
+    evt_kin = CenterOfMass(
         7 * TeV,
         p1pdg,
         p2pdg,
     )
 
-    c = run_in_separate_process(run_model, Model, ekin, timeout=60)
+    c = run_in_separate_process(run_model, Model, evt_kin, timeout=60)
 
     assert c[211] > 0, "pi+"
     assert c[-211] > 0, "pi-"

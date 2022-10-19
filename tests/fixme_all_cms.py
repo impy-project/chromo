@@ -19,14 +19,16 @@ import traceback
 def run_generator(model, nevents):
 
     if model.__name__ == "Sophia20":
-        event_kinematics = EventKinematics(elab=7000 * GeV, p1pdg=22, p2pdg=2212)
+        event_kinematics = EventKinematics(
+            elab=7000 * GeV, particle1=22, particle2=2212
+        )
         impy_config["user_frame"] = "center-of-mass"
     else:
         event_kinematics = EventKinematics(
             ecm=7000 * GeV,
-            p1pdg=2212,
-            p2pdg=2212
-            # nuc2_prop=(14,7)
+            particle1=2212,
+            particle2=2212
+            # particle2=(14,7)
         )
 
         impy_config["user_frame"] = "center-of-mass"

@@ -15,7 +15,7 @@ def test_urqmd():
     # 7 TeV). If you want cosmic ray energies, this should
     # be rather p-N at 10 EeV and lab frame (not yet defined).
 
-    event_kinematics = EventKinematics(ecm=200 * GeV, p1pdg=2112, nuc2_prop=(14, 7))
+    event_kinematics = EventKinematics(ecm=200 * GeV, particle1=2112, particle2=(14, 7))
 
     # impy_config["user_frame"] = 'laboratory'
     # impy_config['tau_stable'] = 1.
