@@ -18,13 +18,14 @@ c for main program
 
 
       subroutine InitializeEpos(seed, emax, datpath, lpath, ifram, 
-     &   ippdg, itpdg, iapro, izpro, iatar, iztar, idebug, iou)
+     &   ippdg, itpdg, idebug, iou)
 c-----------------------------------------------------------------------
 c General initialization of EPOS
+c anfe: accepts nuclear PDG id instead of A, Z combos
 c-----------------------------------------------------------------------      
       include "epos.inc"
       real seed, emax
-      integer lpath, ifram, idpro, idtar, iapro, izpro, iatar, 
+      integer lpath, ifram, iapro, izpro, iatar, 
      &  iztar, idebug, iou
       character(*) datpath
       
@@ -72,6 +73,23 @@ c      open(ifch,file=fnch(1:nfnch),status='unknown')
 
       ecms=emax  !center of mass energy in GeV/c2
       
+      if (ippdg.ge.1000000000) then
+         izpro = mod(ippdg, 1000) / 10
+         iapro = mod(ippdg, 1000000) / 10000
+         ippdg = 2212
+      else
+         izpro = 1
+         iapro = 1
+      endif
+      if (itpdg.ge.1000000000) then
+         iztar = mod(itpdg, 1000) / 10
+         iatar = mod(itpdg, 1000000) / 10000
+         itpdg = 2212
+      else
+         iztar = 1
+         iatar = 1
+      endif
+
       idproj = idtrafo("pdg","nxs",ippdg)
       laproj = izpro      !proj Z
       maproj = iapro      !proj A
@@ -79,17 +97,17 @@ c      open(ifch,file=fnch(1:nfnch),status='unknown')
       latarg = iztar      !targ Z
       matarg = iatar      !targ A
 
-      istmax = 0      !only final particles (istmax=1 includes mother particles)
+      istmax = 1      !only final particles (istmax=1 includes mother particles)
 
       End
 
 
-      subroutine InitEposEvt(ecm, ela, idpro, idtar, iapro, 
-     &   izpro, iatar, iztar)
+      subroutine InitEposEvt(ecm, ela, ippdg, itpdg)
 c-----------------------------------------------------------------------
 c Initialization to be called after changing the energy or beam
 c configuration
 c define either ecm < 0 and ela > 0 or ecm > 0 and ela < 0
+c anfe: accepts nuclear PDG id instead of A, Z combos
 c-----------------------------------------------------------------------      
       include "epos.inc"
       engy = -1.
@@ -100,16 +118,33 @@ c-----------------------------------------------------------------------
 
       ecms=ecm  !center of mass energy in GeV/c2
       elab=ela  ! lab energy
+      
+      if (ippdg.ge.1000000000) then
+         izpro = mod(ippdg, 1000) / 10
+         iapro = mod(ippdg, 1000000) / 10000
+         ippdg = 2212
+      else
+         izpro = 1
+         iapro = 1
+      endif
+      if (itpdg.ge.1000000000) then
+         iztar = mod(itpdg, 1000) / 10
+         iatar = mod(itpdg, 1000000) / 10000
+         itpdg = 2212
+      else
+         iztar = 1
+         iatar = 1
+      endif
 
-      idprojin = idtrafo("pdg","nxs",idpro)
+      idprojin = idtrafo("pdg","nxs",ippdg)
       if (idpro.ne.2212) izpro = -1
       laproj = izpro      !proj Z
       maproj = iapro      !proj A
-      idtargin = idtrafo("pdg","nxs",idtar)
+      idtargin = idtrafo("pdg","nxs",itpdg)
       latarg = iztar      !targ Z
       matarg = iatar      !targ A
 
-      istmax = 0      !only final particles (istmax=1 includes mother particles)
+c anfe why here? istmax = 1      !only final particles (istmax=1 includes mother particles)
       call ainit()
       End
 
@@ -149,8 +184,12 @@ c-----------------------------------------------------------------------
 c Returns charge for partile with PDG ID
 c-----------------------------------------------------------------------
       integer idpdg
-
-      call idchrg(idtrafo("pdg","nxs",idpdg),GetCharge)
+C anfe This is a workaround for nuclear fragments in particle history
+      if (idpdg.eq.90) then
+         GetCharge=0
+      else
+         call idchrg(idtrafo("pdg","nxs",idpdg),GetCharge)
+      endif
       return 
 
       End

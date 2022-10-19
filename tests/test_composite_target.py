@@ -33,9 +33,6 @@ def run_model(Model, evt_kin):
 def test_composite_target(Model):
     skip_on_ci_if_model_is_incompatible(Model)
 
-    if Model is im.EposLHC:
-        pytest.skip("Bug in EposLHC prevents running with ions")
-
     if Model is im.Pythia8:
         pytest.skip("Switching beams in Pythia8 is very time-consuming")
 
