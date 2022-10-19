@@ -20,20 +20,6 @@ from contextlib import contextmanager
 import warnings
 
 
-# Objects of this type contain all default initialization directions
-# for each interaction model and create dictionaries that link the
-# these settings to either the 'tag' or the 'crmc_id'
-@dataclasses.dataclass
-class InteractionModelDef:
-    tag: str
-    name: str
-    version: str
-    crmc_id: int
-    library_name: str
-    EventClass: type
-    output_frame: str
-
-
 @dataclasses.dataclass
 class EventData:
     """
