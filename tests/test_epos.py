@@ -32,7 +32,7 @@ def run_pp_collision():
 
 
 @pytest.fixture
-@lru_cache(maxsize=1)  # EposLHC initialization is very slow
+@lru_cache(maxsize=1)
 def event():
     return run_in_separate_process(run_pp_collision)
 
