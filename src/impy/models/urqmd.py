@@ -1,9 +1,3 @@
-"""
-Created on 17.03.2014
-
-@author: afedynitch
-"""
-
 # Some notes on UrQMD. The model works quite well now. It is slower than anything else,
 # except EPOS maybe. It describes quite okaish the fixed target results and some LHC
 # results. What is a strange feature is that decays of pions, kaons or neutrinos are not

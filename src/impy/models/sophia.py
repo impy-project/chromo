@@ -1,9 +1,3 @@
-"""
-Created on 17.03.2014
-
-@author: afedynitch
-"""
-
 import numpy as np
 from impy.common import MCRun, MCEvent, impy_config
 from impy.util import info
