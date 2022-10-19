@@ -177,30 +177,30 @@ class EventData:
         """
         return self._fast_selection((self.status == 1) & (self.charge != 0))
 
+    def without_parton_shower(self):
+        """
+        Return filtered event without parton shower.
+
+        Pythia generates a parton shower and makes it part of the history.
+        Looking at this is interesting for generator experts, but for most
+        analyses, this is not needed and can be removed from the particle
+        history.
+        """
+        mask = True
+        apid = np.abs(self.pid)
+        for pid in quarks_and_diquarks_and_gluons:
+            mask &= apid != pid
+        return self[mask]
+
     def _fast_selection(self, arg):
         # This selection is faster than __getitem__, because we skip
         # parent selection, which is just wasting time if we select only
         # final state particles.
-        return EventData(
-            self.generator,
-            self.kin,
-            self.frame,
-            self.nevent,
-            self.pid[arg],
-            self.status[arg],
-            self.charge[arg],
-            self.px[arg],
-            self.py[arg],
-            self.pz[arg],
-            self.en[arg],
-            self.m[arg],
-            self.vx[arg],
-            self.vy[arg],
-            self.vz[arg],
-            self.vt[arg],
-            None,
-            None,
-        )
+        save = self.parents
+        self.parents = None
+        event = self[arg]
+        self.parents = save
+        return event
 
     @property
     def pt(self):
@@ -292,11 +292,7 @@ class EventData:
         # with particle histories have been fixed.
         if model == "Pythia" and version.startswith("8"):
             # must deselect parton showers in Pythia-8 to use HepMC3 IO
-            mask = True
-            apid = np.abs(self.pid)
-            for pid in quarks_and_diquarks_and_gluons:
-                mask &= apid != pid
-            ev = self[mask]
+            ev = self.without_parton_shower()
         elif model in ("UrQMD", "PhoJet"):
             # can only save final state until history is fixed
             warnings.warn(
