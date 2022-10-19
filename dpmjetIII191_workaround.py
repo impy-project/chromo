@@ -20,11 +20,11 @@ if not sys.argv[1:]:  # for testing
     for d in dirs:
         for fn in Path(d).rglob("*.f"):
             src.append(fn)
-# Windows case            
+# Windows case
 elif len(sys.argv) == 4:
     with Path(sys.argv[3]).open() as f:
         src = f.read().split()
-    cmake_binary_dir, inc_dir = sys.argv[1:3]     
+    cmake_binary_dir, inc_dir = sys.argv[1:3]
 else:
     cmake_binary_dir, inc_dir, *src = sys.argv[1:]
 
@@ -70,7 +70,7 @@ out += list(map(str, modded))
 
 if Path(sys.argv[3]).exists():
     # Windows case
-    with open(sys.argv[3],'w') as f:
+    with open(sys.argv[3], "w") as f:
         f.write(";".join(out).replace("\\", "/"))
 else:
     sys.stdout.write(";".join(out))
