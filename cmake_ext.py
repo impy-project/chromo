@@ -103,7 +103,7 @@ class CMakeBuild(build_ext):
                     "win-arm32": "ARM",
                     "win-arm64": "ARM64",
                 }[self.plat_name]
-                #cmake_args += ["-A", arch]
+                # cmake_args += ["-A", arch]
 
             # cmake_args += [f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"]
 
@@ -137,8 +137,10 @@ class CMakeBuild(build_ext):
                     key, value = arg[2:].split("=")
                     cached_value = cache_value(key, s)
                     # Change \ to / in case of Windows
-                    disagreement.append(value.replace('\\', '/') != cached_value.replace('\\', '/'))
-                    
+                    disagreement.append(
+                        value.replace("\\", "/") != cached_value.replace("\\", "/")
+                    )
+
             if any(
                 disagreement
                 + [
