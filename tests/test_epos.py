@@ -85,6 +85,5 @@ def run_ion_collision():
     assert event.n_wounded == event.n_wounded_A + event.n_wounded_B
 
 
-@pytest.mark.skip(reason="Bug: EposLHC initialization with nuclei fails")
 def test_ion_collision():
     run_in_separate_process(run_ion_collision)
