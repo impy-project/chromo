@@ -70,6 +70,10 @@ def test_parents(event):
 
 
 def run_pythia_with_nuclei():
+    # The test takes ages because the initialization is extremely long.
+    # This test usually fails because Pythia seldom raises the success flag
+    # and most of the events at lower energies are rejected.
+
     evt_kin = CenterOfMass(10 * GeV, (4, 2), (12, 6))
     m = Pythia8(evt_kin, seed=1)
     for event in m(1):
@@ -83,3 +87,37 @@ def run_pythia_with_nuclei():
 @pytest.mark.skip(reason="it takes forever to generate a nuclear collision")
 def test_nuclear_collision():
     run_in_separate_process(run_pythia_with_nuclei)
+
+
+def run_pythia_change_energy_protons():
+    evt_kin = CenterOfMass(10 * GeV, 2212, 2212)
+    m = Pythia8(evt_kin, seed=1)
+    change_energy_for_protons = 0
+    for event in m(1):
+        change_energy_for_protons += 1
+    m.event_kinematics = CenterOfMass(100 * GeV, 2212, 2212)
+    for event in m(1):
+        change_energy_for_protons += 1
+
+
+def test_changing_beams_proton():
+    run_in_separate_process(run_pythia_change_energy_protons)
+
+
+def run_pythia_change_energy_nuclei():
+    # This test fails
+    evt_kin = CenterOfMass(10 * GeV, 2212, 2212)
+    m = Pythia8(evt_kin, seed=1)
+    change_energy_for_nuclei = 0
+    m.event_kinematics = CenterOfMass(10 * GeV, (4, 2), (12, 6))
+    for event in m(1):
+        change_energy_for_nuclei += 1
+    m.event_kinematics = CenterOfMass(100 * GeV, (4, 2), (12, 6))
+    for event in m(1):
+        change_energy_for_nuclei += 1
+    assert change_energy_for_nuclei == 2
+
+
+@pytest.mark.skip(reason="it takes forever to generate a nuclear collision")
+def test_changing_beams_nuclei(event):
+    run_in_separate_process(run_pythia_change_energy_nuclei)

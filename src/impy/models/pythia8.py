@@ -137,7 +137,16 @@ class Pythia8(MCRun):
         self._lib.pythia.particleData.mayDecay(pdgid, not stable)
 
     def _generate_event(self):
+        import warnings
+
         success = self._lib.pythia.next()
+        if not success:
+            warnings.warn(
+                "PYTHIA8 event rejected. If this warning appears too frequently, "
+                + "the event generator might be not properly configured or "
+                + "used outside of the valid range",
+                RuntimeWarning,
+            )
         if success:
             # We copy over the event record from Pythia's internal buffer to our
             # Hepevt-like object. This is not efficient, but easier to
