@@ -1,5 +1,6 @@
 """Utility module for auxiliary methods and classes."""
 
+import warnings
 import inspect
 import os
 from impy import impy_config
@@ -214,6 +215,23 @@ class OutputGrabber(object):
 
 
 class TaggedFloat:
+    """Floating point type that is distinct from an ordinary float.
+
+    TaggedFloat is a base class to inherit from. We use it to declare
+    that certain numbers have special meaning, e.g.::
+
+        class KineticEnergy(TaggedFloat):
+            pass
+
+    can be used to declare a float-like class which stores kinetic energies,
+    as opposed to another float-like class which stores the total energy or
+    the momentum. Functions with an energy parameter can react differently
+    on a KineticEnergy or TotalEnergy.
+
+    A tagged float only allows arithmetic with its own type or
+    with type-less numbers (int, float).
+    """
+
     __slots__ = "_value"
 
     def __init__(self, val):
@@ -287,7 +305,7 @@ def _select_parents(mask, parents):
     n = len(parents)
     indices = np.arange(n)[mask] + 1
     result = parents[mask]
-    mapping = {old: np.int32(i + 1) for i, old in enumerate(indices)}
+    mapping = {old: i + 1 for i, old in enumerate(indices)}
 
     n = len(result)
     for i in range(n):
@@ -321,7 +339,10 @@ def select_parents(arg, parents):
         mask = np.zeros(n, dtype=bool)
         mask[arg] = True
 
-    return _select_parents(mask, parents)
+    with warnings.catch_warnings():
+        # suppress numba safety warning that we can ignore
+        warnings.simplefilter("ignore")
+        return _select_parents(mask, parents)
 
 
 try:
