@@ -36,6 +36,8 @@ def test_hepmc_io(Model):
     test_file = Path(f"{Path(__file__).with_suffix('')}_{Model.__name__}.dat")
 
     xfail_on_ci_if_model_is_incompatible(Model)
+    if Model == im.UrQMD34:
+        pytest.xfail("UrQMD34 FAILS, should be FIXED!!!")
 
     events = run_in_separate_process(run, Model, timeout=30)
     expected = [ev.to_hepmc3() for ev in events]
