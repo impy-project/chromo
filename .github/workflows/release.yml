@@ -12,8 +12,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         arch: [native, aarch64, universal2]
-        py: [cp39]
-        # py: [cp37, cp38, cp39, cp310]
+        py: [cp37, cp38, cp39, cp310]
         exclude:
           - os: windows-latest
             arch: aarch64
@@ -58,6 +57,7 @@ jobs:
           CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
           PYTEST_COMMAND: python -m pytest -vv
+          CI: trues
 
       - if: ${{ matrix.os != 'windows-latest' }}
         uses: pypa/cibuildwheel@v2.9.0
@@ -66,7 +66,8 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
           CIBW_TEST_SKIP: "*-macosx_universal2:arm64"
-          PYTEST_COMMAND: python -m pytest -vv    
+          PYTEST_COMMAND: python -m pytest -vv  
+          CI: true  
 
       - uses: actions/upload-artifact@v3
         with:
