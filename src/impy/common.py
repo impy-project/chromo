@@ -612,12 +612,21 @@ class MCRun(ABC):
         # after these calls in init_generator
         pass
 
-    def _update_event_kinematics(self):
+    def _set_comp_target(self, nevents):
         if self._curr_event_kin.composite_target:
-            evt_kin = self._curr_event_kin
-            if evt_kin.p2_is_nucleus:
-                evt_kin.A2, evt_kin.Z2 = evt_kin.composite_target._get_random_AZ()
-                self._set_event_kinematics(evt_kin)
+            self._curr_event_kin.composite_target._get_sample(nevents)
+            self._nremaining = nevents
+
+    def _update_event_kinematics(self, nremaining):
+        if self._curr_event_kin.composite_target:
+            # If nremaining haven't changed, because of
+            # rejection do nothing
+            if nremaining != self._nremaining:
+                self._nremaining = nremaining
+                evt_kin = self._curr_event_kin
+                if evt_kin.p2_is_nucleus:
+                    evt_kin.A2, evt_kin.Z2 = evt_kin.composite_target._get_random_AZ()
+                    self._set_event_kinematics(evt_kin)
 
     @property
     def random_state(self):
@@ -770,8 +779,9 @@ class MCRun(ABC):
         # Initialize counters to prevent infinite loops in rejections
         ntrials = 0
         nremaining = nevents
+        self._set_comp_target(self, nevents)
         while nremaining > 0:
-            self._update_event_kinematics()
+            self._update_event_kinematics(nremaining)
             if self.generate_event() == 0:
                 self.nevents += 1
                 yield self._event_class(self)
