@@ -779,7 +779,7 @@ class MCRun(ABC):
         # Initialize counters to prevent infinite loops in rejections
         ntrials = 0
         nremaining = nevents
-        self._set_comp_target(self, nevents)
+        self._set_comp_target(nevents)
         while nremaining > 0:
             self._update_event_kinematics(nremaining)
             if self.generate_event() == 0:
