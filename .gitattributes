@@ -18,3 +18,4 @@ src/impy/iamdata/dpm3/fitpar.dat filter=lfs diff=lfs merge=lfs -text
 src/impy/iamdata/dpm3191/dpmjpar.dat filter=lfs diff=lfs merge=lfs -text
 src/impy/iamdata/dpm3191/dpmjpar.dat_higher_diff filter=lfs diff=lfs merge=lfs -text
 src/impy/iamdata/epos/epos.initl filter=lfs diff=lfs merge=lfs -text
+src/impy/iamdata/Pythia8/* filter=lfs diff=lfs merge=lfs -text

@@ -54,6 +54,7 @@ def skip_on_ci_if_model_is_incompatible(Model):
         im.DpmjetIII306,
         im.DpmjetIII191,
         im.DpmjetIII193,
+        im.Pythia8,
     ):
         pytest.skip(
             "model cannot succeed on CI, because git lfs does not work",
