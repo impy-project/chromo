@@ -3,11 +3,10 @@
 from __future__ import print_function
 import inspect
 import os
-from tqdm import tqdm
-import requests
-import math
-import hashlib
-from pathlib import Path
+import pathlib
+import urllib.request
+import zipfile
+
 
 from impy import impy_config
 
@@ -221,46 +220,127 @@ class OutputGrabber(object):
 
 # Functions to check and download dababase files on github
 
-_impy_dir = Path(__file__).parent
-_github_url = "https://github.com/afedynitch/MCEq/releases/download/builds_on_azure/"
 
+def _download_file(outfile, url):
+    """Download a file from 'url' to 'outfile'"""
+    fname = pathlib.Path(url).name
+    response = urllib.request.urlopen(url)
+    total_size = response.getheader("content-length")
 
-def _download_file(url, outfile):
-    """Downloads a file from github"""
-    # Streaming, so we can iterate over the response.
-    r = requests.get(url, stream=True)
+    min_blocksize = 4096
+    if total_size:
+        total_size = int(total_size)
+        blocksize = max(min_blocksize, total_size // 100)
+    else:
+        blocksize = min_blocksize
 
-    # Total size in bytes.
-    total_size = int(r.headers.get("content-length", 0))
-    block_size = 1024 * 1024
     wrote = 0
     with open(outfile, "wb") as f:
-        for data in tqdm(
-            r.iter_content(block_size),
-            total=math.ceil(total_size // block_size),
-            unit="MB",
-            unit_scale=True,
-        ):
-            wrote = wrote + len(data)
+        while True:
+            data = response.read(blocksize)
+            if not data:
+                break
             f.write(data)
-    if total_size != 0 and wrote != total_size:
-        raise Exception("ERROR, something went wrong")
+            wrote += len(data)
+            if total_size:
+                print(
+                    f"Downloading {fname}: {wrote/total_size*100:.0f}% "
+                    f"done ({wrote/(1024*1024):.0f} Mb) \r",
+                    end=" ",
+                )
+            else:
+                print(
+                    f"Downloading {fname}: {wrote/(1024*1024):.0f} Mb downloaded \r",
+                    end=" ",
+                )
+    print()
+    if total_size and wrote != total_size:
+        raise ConnectionError(f"{fname} has not been downloaded")
+    return True
 
 
-def _file_checksum(filename):
-    """Calculates file checksum"""
-    hash_var = hashlib.sha256()
-    block_size = 1024 * 1024
-    with open(filename, "rb") as file:
-        for byte_block in iter(lambda: file.read(block_size), b""):
-            hash_var.update(byte_block)
-    return hash_var.hexdigest()
+class _meta_cache_file(type):
+    @property
+    def cache_file(self):
+        return self._cache_file
+
+    @cache_file.setter
+    def cache_file(self, value):
+        self._cache_file = pathlib.Path(value)
+        if not self._cache_file.exists():
+            with open(self._cache_file, "w"):
+                pass
 
 
-def _check_db_file(remote_file, local_file, checksum):
-    if not (Path(local_file).exists() and _file_checksum(local_file) == checksum):
-        print(f"Downloading database file {local_file}.")
-        _download_file(remote_file, local_file)
+class CachedPath(pathlib.Path, metaclass=_meta_cache_file):
+    """Class for checking and downloading a file"""
+
+    _flavour = (
+        pathlib._PosixFlavour() if os.name == "posix" else pathlib._WindowsFlavour()
+    )
+    _cache_file = None
+
+    def __new__(cls, local_path, remote_path):
+        path = super().__new__(cls, local_path)
+        if not (path.exists() and path._is_cached()):
+            if _download_file(path, remote_path):
+                with open(cls._cache_file, "a") as f:
+                    f.write(f"{pathlib.PureWindowsPath(path).as_posix()}\n")
+        return path
+
+    def _is_cached(self):
+        if self._cache_file:
+            check_file = pathlib.PureWindowsPath(self).as_posix()
+            with open(self._cache_file, "r") as f:
+                for line in f:
+                    if check_file == line.strip():
+                        return True
+        else:
+            raise RuntimeError(
+                "Cache file isn't specified: user CachedPath.cache_file = 'filename'"
+            )
+        return False
+
+
+class PathFromZip:
+    def __init__(self, zip_file, base_dir="./"):
+        self.zip_file = zip_file
+        self.base_dir = pathlib.Path(base_dir)
+
+    def __call__(self, file_path):
+        self.file_path = pathlib.Path(file_path)
+        full_path = self.base_dir / self.file_path
+        if not full_path.exists():
+            if not self._get_from_zip():
+                raise RuntimeError(
+                    f"PathFromZip: no '{file_path}' in '{self.zip_file}'"
+                )
+        return full_path
+
+    def _get_from_zip(self):
+        file_in_zip = pathlib.PureWindowsPath(self.file_path).as_posix()
+        with zipfile.ZipFile(self.zip_file, "r") as zf:
+            for entry in zf.infolist():
+                if file_in_zip == entry.filename:
+                    zf.extract(entry.filename, self.base_dir)
+                    return True
+        return False
+
+
+# Assumed usage
+# impy_dir = Path(__file__).parent
+
+# base_url = "https://github.com/afedynitch/MCEq/releases/download/"
+# release_tag = "builds_on_azure/"
+# zip_fname = "zipped_files.zip"
+# github_url = base_url + release_tag + zip_fname
+
+# # Set file containing cache (list of successfully downloaded files)
+# CachedPath.cache_file = impy_dir / "cache_file.dat"
+# zfiles = CachedPath(impy_dir / "zipped_files.zip", github_url)
+# base_dir = impy_dir
+# check_path = PathFromZip(zfiles, base_dir)
+# some_file_on_disk = check_path("path_in_zip")
 
 
 class TaggedFloat:
