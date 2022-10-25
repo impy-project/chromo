@@ -1,6 +1,6 @@
 """Utility module for auxiliary methods and classes."""
 
-from __future__ import print_function
+import warnings
 import inspect
 import os
 import pathlib
@@ -9,6 +9,7 @@ import zipfile
 
 
 from impy import impy_config
+import numpy as np
 
 # Global debug flags that would be nice to have in some sort
 # of config or other ideas?
@@ -51,7 +52,7 @@ def getAZN(pdgid):
 
 
 def AZ2pdg(A, Z):
-    """Conversion of nucleus with mass A and chage Z
+    """Conversion of nucleus with mass A and charge Z
     to PDG nuclear code"""
     # 10LZZZAAAI
     pdg_id = 1000000000
@@ -344,6 +345,23 @@ class PathFromZip:
 
 
 class TaggedFloat:
+    """Floating point type that is distinct from an ordinary float.
+
+    TaggedFloat is a base class to inherit from. We use it to declare
+    that certain numbers have special meaning, e.g.::
+
+        class KineticEnergy(TaggedFloat):
+            pass
+
+    can be used to declare a float-like class which stores kinetic energies,
+    as opposed to another float-like class which stores the total energy or
+    the momentum. Functions with an energy parameter can react differently
+    on a KineticEnergy or TotalEnergy.
+
+    A tagged float only allows arithmetic with its own type or
+    with type-less numbers (int, float).
+    """
+
     __slots__ = "_value"
 
     def __init__(self, val):
@@ -392,3 +410,76 @@ class TaggedFloat:
 
     def __rsub__(self, val):
         return self.__class__(self._reduce(val) - self._value)
+
+
+# from Python-3.9 onwards, classmethod can be combined
+# with property to replace this, which can then be removed
+class classproperty:
+    def __init__(self, f):
+        self.f = f
+
+    def __get__(self, obj, owner):
+        return self.f(owner)
+
+
+def _select_parents(mask, parents):
+    # This algorithm is slow in pure Python and should be
+    # speed up by compiling the logic.
+
+    # attach parentless particles to beam particles,
+    # unless those are also removed
+    fallback = (0, 0)
+    if mask[0] and mask[1]:
+        fallback = (1, 2)
+
+    n = len(parents)
+    indices = np.arange(n)[mask] + 1
+    result = parents[mask]
+    mapping = {old: i + 1 for i, old in enumerate(indices)}
+
+    n = len(result)
+    for i in range(n):
+        a = result[i, 0]
+        if a == 0:
+            continue
+        p = mapping.get(a, -1)
+        if p == -1:
+            a, b = fallback
+            result[i, 0] = a
+            result[i, 1] = b
+        elif p != a:
+            q = 0
+            b = result[i, 1]
+            if b > 0:
+                q = mapping.get(b, 0)
+            result[i, 0] = p
+            result[i, 1] = q
+    return result
+
+
+def select_parents(arg, parents):
+    if parents is None:
+        return None
+
+    n = len(parents)
+
+    if isinstance(arg, np.ndarray) and arg.dtype is bool:
+        mask = arg
+    else:
+        mask = np.zeros(n, dtype=bool)
+        mask[arg] = True
+
+    with warnings.catch_warnings():
+        # suppress numba safety warning that we can ignore
+        warnings.simplefilter("ignore")
+        return _select_parents(mask, parents)
+
+
+try:
+    # accelerate with numba if numba is available
+    import numba as nb
+
+    _select_parents = nb.njit(_select_parents)
+
+except ModuleNotFoundError:
+    pass

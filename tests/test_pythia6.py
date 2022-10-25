@@ -9,6 +9,23 @@ from .util import reference_charge, run_in_separate_process
 import pytest
 import pickle
 from particle import literals as lp
+from functools import lru_cache
+
+
+def test_name():
+    assert Pythia6.name == "Pythia"
+    assert Pythia6.version == "6.428"
+    assert Pythia6.label == "Pythia-6.428"
+
+
+def run_name():
+    evt_kin = CenterOfMass(1 * TeV, 2212, 2212)
+    m = Pythia6(evt_kin, seed=4)
+    assert m.label == "Pythia-6.428"
+
+
+def test_instance_name():
+    run_in_separate_process(run_name)
 
 
 def run_event():
@@ -21,12 +38,17 @@ def run_event():
 
 
 @pytest.fixture
+@lru_cache(maxsize=1)
 def event():
     return run_in_separate_process(run_event)
 
 
 def test_charge(event):
     expected = reference_charge(event.pid)
+    # skip internal particles unknown to reference_charge
+    ma = np.isnan(expected)
+    assert np.mean(ma) < 0.1
+    event.charge[ma] = np.nan
     assert_allclose(event.charge, expected)
 
 
@@ -86,6 +108,7 @@ def test_is_view():
 def test_final_state(event):
     ev1 = event.final_state()
     ev2 = event[event.status == 1]
+    ev2.parents = None  # event.final_state() drops parents
     assert_equal(ev1, ev2)
 
 
@@ -94,6 +117,8 @@ def test_final_state_charged(event):
     ev2 = event[(event.status == 1) & (event.charge != 0)]
     ev3 = event[event.status == 1]
     ev3 = ev3[ev3.charge != 0]
+    ev2.parents = None  # event.final_state() drops parents
+    ev3.parents = None  # event.final_state() drops parents
     assert_equal(ev1, ev2)
     assert_equal(ev1, ev3)
 
