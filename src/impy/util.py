@@ -313,17 +313,6 @@ class PathFromZip:
             CachedPath.cache_file = cache_downloaded
 
     def __call__(self, path_in_zip, base_path="./"):
-        if self.remote_zip:
-            self.zip_file = CachedPath(self.local_zip, self.remote_zip)
-        else:
-            if self.local_zip.exists():
-                self.zip_file = self.local_zip
-            else:
-                raise RuntimeError(f"PathFromZip: '{self.local_zip}' doesn't exist")
-
-        if not zipfile.is_zipfile(self.zip_file):
-            raise RuntimeError(f"PathFromZip: '{self.zip_file}' is not zip file")
-
         self.base_path = pathlib.Path(base_path)
         self.path_in_zip = pathlib.Path(path_in_zip)
         full_path = self.base_path / self.path_in_zip
@@ -335,6 +324,17 @@ class PathFromZip:
         return full_path
 
     def _get_from_zip(self):
+        if self.remote_zip:
+            self.zip_file = CachedPath(self.local_zip, self.remote_zip)
+        else:
+            if self.local_zip.exists():
+                self.zip_file = self.local_zip
+            else:
+                raise RuntimeError(f"PathFromZip: '{self.local_zip}' doesn't exist")
+
+        if not zipfile.is_zipfile(self.zip_file):
+            raise RuntimeError(f"PathFromZip: '{self.zip_file}' is not zip file")
+
         path_in_zip = pathlib.PureWindowsPath(self.path_in_zip).as_posix()
         with zipfile.ZipFile(self.zip_file, "r") as zf:
             files_to_extract = []

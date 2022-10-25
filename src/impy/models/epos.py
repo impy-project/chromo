@@ -1,6 +1,6 @@
 import numpy as np
 
-from impy import base_path, impy_config
+from impy import base_path, impy_config, _check_impy_data_path
 from impy.common import MCEvent, MCRun
 from impy.util import info
 
@@ -78,7 +78,7 @@ class EposLHC(MCRun):
             self._output_frame = "laboratory"
 
         k = event_kinematics
-        datdir = path.join(base_path, epos_conf["datdir"])
+        datdir = _check_impy_data_path(path.join(base_path, epos_conf["datdir"]))
         self._lib.initializeepos(
             float(self._seed),
             k.ecm,

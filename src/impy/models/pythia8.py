@@ -1,6 +1,6 @@
 from ..common import MCRun, MCEvent
 from ..util import info
-from impy import impy_config, base_path
+from impy import impy_config, base_path, _check_impy_data_path
 from pathlib import Path
 from os import environ
 import numpy as np
@@ -60,8 +60,9 @@ class Pythia8(MCRun):
 
         self._lib.hepevt = self._lib.Hepevt()
 
-        datdir = Path(base_path) / "iamdata" / "Pythia8" / "xmldoc"
-        assert datdir.exists(), f"{datdir} does not exist"
+        datdir = _check_impy_data_path(
+            Path(base_path) / "iamdata" / "Pythia8" / "xmldoc"
+        )
 
         # Must delete PYTHIA8DATA from environ if it exists, since it overrides
         # our argument here. When you install Pythia8 with conda, it sets
