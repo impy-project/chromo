@@ -304,28 +304,49 @@ class CachedPath(pathlib.Path, metaclass=_meta_cache_file):
 
 
 class PathFromZip:
-    def __init__(self, zip_file, base_dir="./"):
-        self.zip_file = zip_file
-        self.base_dir = pathlib.Path(base_dir)
+    def __init__(self, local_zip, remote_zip=None, cache_downloaded=None):
+        self.local_zip = pathlib.Path(local_zip)
+        self.remote_zip = remote_zip
+        if self.remote_zip:
+            if not cache_downloaded:
+                raise RuntimeError("PathFromZip: 'cache_downloaded' is emtpy")
+            CachedPath.cache_file = cache_downloaded
 
-    def __call__(self, file_path):
-        self.file_path = pathlib.Path(file_path)
-        full_path = self.base_dir / self.file_path
+    def __call__(self, path_in_zip, base_path="./"):
+        if self.remote_zip:
+            self.zip_file = CachedPath(self.local_zip, self.remote_zip)
+        else:
+            if self.local_zip.exists():
+                self.zip_file = self.local_zip
+            else:
+                raise RuntimeError(f"PathFromZip: '{self.local_zip}' doesn't exist")
+
+        if not zipfile.is_zipfile(self.zip_file):
+            raise RuntimeError(f"PathFromZip: '{self.zip_file}' is not zip file")
+
+        self.base_path = pathlib.Path(base_path)
+        self.path_in_zip = pathlib.Path(path_in_zip)
+        full_path = self.base_path / self.path_in_zip
         if not full_path.exists():
             if not self._get_from_zip():
                 raise RuntimeError(
-                    f"PathFromZip: no '{file_path}' in '{self.zip_file}'"
+                    f"PathFromZip: '{path_in_zip}' isn't found in '{self.zip_file}'"
                 )
         return full_path
 
     def _get_from_zip(self):
-        file_in_zip = pathlib.PureWindowsPath(self.file_path).as_posix()
+        path_in_zip = pathlib.PureWindowsPath(self.path_in_zip).as_posix()
         with zipfile.ZipFile(self.zip_file, "r") as zf:
-            for entry in zf.infolist():
-                if file_in_zip == entry.filename:
-                    zf.extract(entry.filename, self.base_dir)
-                    return True
-        return False
+            files_to_extract = []
+            for file in zf.namelist():
+                if file.startswith(path_in_zip):
+                    files_to_extract.append(file)
+            if files_to_extract:
+                zf.extractall(path=self.base_path, members=files_to_extract)
+        if files_to_extract:
+            return True
+        else:
+            return False
 
 
 # Assumed usage
@@ -334,14 +355,15 @@ class PathFromZip:
 # base_url = "https://github.com/afedynitch/MCEq/releases/download/"
 # release_tag = "builds_on_azure/"
 # zip_fname = "zipped_files.zip"
-# github_url = base_url + release_tag + zip_fname
+# remote_zip_file = base_url + release_tag + zip_fname
 
-# # Set file containing cache (list of successfully downloaded files)
-# CachedPath.cache_file = impy_dir / "cache_file.dat"
-# zfiles = CachedPath(impy_dir / "zipped_files.zip", github_url)
-# base_dir = impy_dir
-# check_path = PathFromZip(zfiles, base_dir)
-# some_file_on_disk = check_path("path_in_zip")
+# local_zip_file = impy_dir / "impy_iamdata.zip"
+# remote_zip_file = github_url
+# cache_file = impy_dir / "cache_downloaded_files.cch"
+
+# # Extract files from 'local_zip_file' downloaded from 'remote_zip_file'
+# get_data_path = PathFromZip(local_zip_file, remote_zip_file, cache_file)
+# some_path_on_disk = get_data_path("path_in_zip", impy_dir))
 
 
 class TaggedFloat:
