@@ -6,6 +6,8 @@ import os
 import pathlib
 import urllib.request
 import zipfile
+import json
+import hashlib
 
 
 from impy import impy_config
@@ -222,10 +224,25 @@ class OutputGrabber(object):
 # Functions to check and download dababase files on github
 
 
+def _file_checksum(filename):
+    """Calculates file checksum"""
+    hash_var = hashlib.sha256()
+    block_size = 1024 * 1024
+    with open(filename, "rb") as file:
+        for byte_block in iter(lambda: file.read(block_size), b""):
+            hash_var.update(byte_block)
+    return hash_var.hexdigest()
+
+
 def _download_file(outfile, url):
     """Download a file from 'url' to 'outfile'"""
     fname = pathlib.Path(url).name
-    response = urllib.request.urlopen(url)
+    try:
+        response = urllib.request.urlopen(url)
+    except BaseException:
+        raise ConnectionError(
+            f"_download_file: probably something wrong with url = '{url}'"
+        )
     total_size = response.getheader("content-length")
 
     min_blocksize = 4096
@@ -260,110 +277,109 @@ def _download_file(outfile, url):
     return True
 
 
-class _meta_cache_file(type):
-    @property
-    def cache_file(self):
-        return self._cache_file
+def _check_model_data_files(model_dir, impy_path, check_version=False):
+    """Checks the existence of data files in model_dir
+    in accordance to iamdata_content.json database
 
-    @cache_file.setter
-    def cache_file(self, value):
-        self._cache_file = pathlib.Path(value)
-        if not self._cache_file.exists():
-            with open(self._cache_file, "w"):
-                pass
+    Example of usage:
+
+    impy_path = "/full/path/to/impy/src/impy"
+    model_dir = "dpm3"
+    _check_model_data_files(model_dir, impy_path, check_version=True)
+    """
+
+    iamdata_dir = pathlib.Path(impy_path) / "iamdata"
+
+    js_file = iamdata_dir / "iamdata_content.json"
+    if (js_file).exists():
+        with open(js_file) as jf:
+            data = json.load(jf)
+    else:
+        raise RuntimeError(f"_check_model_data_files: {js_file.as_posix()} not found")
+
+    models = []
+    for model in data:
+        models.append(model)
+
+    if model_dir not in models:
+        raise RuntimeError(
+            f"_check_model_data_files: No records for '{model_dir}'"
+            f"\nKnown directories {models}"
+        )
+
+    for fname in data[f"{model_dir}"]["data_files"]:
+        if not (iamdata_dir / fname).exists():
+            url = data[f"{model_dir}"]["url"]
+            model_zip = iamdata_dir / pathlib.Path(url).name
+            if _download_file(model_zip, url):
+                if check_version:
+                    if _file_checksum(model_zip) != data[f"{model_dir}"]["sha_256"]:
+                        raise RuntimeError(
+                            f"_check_model_data_files: Downloaded '{model_zip}'"
+                            f"has different checksum"
+                        )
+
+                if zipfile.is_zipfile(model_zip):
+                    with zipfile.ZipFile(model_zip, "r") as zf:
+                        zf.extractall(iamdata_dir.as_posix())
+                    model_zip.unlink()
+            if not (iamdata_dir / fname).exists():
+                raise RuntimeError(f"_check_model_data_files: No file {fname} in {url}")
 
 
-class CachedPath(pathlib.Path, metaclass=_meta_cache_file):
-    """Class for checking and downloading a file"""
+# Function to create zip files of data
 
-    _flavour = (
-        pathlib._PosixFlavour() if os.name == "posix" else pathlib._WindowsFlavour()
-    )
-    _cache_file = None
 
-    def __new__(cls, local_path, remote_path):
-        path = super().__new__(cls, local_path)
-        if not (path.exists() and path._is_cached()):
-            if _download_file(path, remote_path):
-                with open(cls._cache_file, "a") as f:
-                    f.write(f"{pathlib.PureWindowsPath(path).as_posix()}\n")
-        return path
+def _create_iamdata_content(
+    path_to_iamdata,
+    version="",
+    preliminary_url="https://github.com/impy-project/impy.git/",
+    create_zip_files=False,
+):
+    """The '_create_iamdata_content' is a function
+    for creation of iamdata_content.json
+    and zip files for each directory model if create_zip_files=True
+    The files are created in 'path_to_iamdata'
 
-    def _is_cached(self):
-        if self._cache_file:
-            check_file = pathlib.PureWindowsPath(self).as_posix()
-            with open(self._cache_file, "r") as f:
-                for line in f:
-                    if check_file == line.strip():
-                        return True
+    Example of usage:
+    path_to_iamdata = "/full/path/to/impy/src/impy/iamdata"
+    _create_iamdata_content(path_to_iamdata, version="1", create_zip_files=True)
+    """
+
+    # Get list of files
+    p = pathlib.Path(path_to_iamdata)
+    db_file = dict()
+    for i in p.glob("**/*"):
+        rel_path = i.relative_to(p)
+        if rel_path.parts[0].startswith("."):
+            continue
+        if db_file.get(rel_path.parts[0], None) is None:
+            if len(rel_path.parts) > 1:
+                db_file[rel_path.parts[0]] = [rel_path.as_posix()]
         else:
-            raise RuntimeError(
-                "Cache file isn't specified: user CachedPath.cache_file = 'filename'"
-            )
-        return False
+            if len(rel_path.parts) > 1:
+                db_file.get(rel_path.parts[0]).append(rel_path.as_posix())
 
+    content = dict()
+    for model in db_file:
+        sha_256 = ""
+        if create_zip_files:
+            zip_file = p / ".created_zips" / f"{model}_v{version}.zip"
+            zip_file.parent.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(zip_file, mode="w") as archive:
+                for file in db_file[model]:
+                    archive.write(p / file, arcname=file)
+            sha_256 = _file_checksum(zip_file)
 
-class PathFromZip:
-    def __init__(self, local_zip, remote_zip=None, cache_downloaded=None):
-        self.local_zip = pathlib.Path(local_zip)
-        self.remote_zip = remote_zip
-        if self.remote_zip:
-            if not cache_downloaded:
-                raise RuntimeError("PathFromZip: 'cache_downloaded' is emtpy")
-            CachedPath.cache_file = cache_downloaded
+        content[model] = {
+            "version": f"{version}",
+            "sha_256": f"{sha_256}",
+            "url": f"{preliminary_url}{model}_v{version}.zip",
+            "data_files": db_file[model],
+        }
 
-    def __call__(self, path_in_zip, base_path="./"):
-        self.base_path = pathlib.Path(base_path)
-        self.path_in_zip = pathlib.Path(path_in_zip)
-        full_path = self.base_path / self.path_in_zip
-        if not full_path.exists():
-            if not self._get_from_zip():
-                raise RuntimeError(
-                    f"PathFromZip: '{path_in_zip}' isn't found in '{self.zip_file}'"
-                )
-        return full_path
-
-    def _get_from_zip(self):
-        if self.remote_zip:
-            self.zip_file = CachedPath(self.local_zip, self.remote_zip)
-        else:
-            if self.local_zip.exists():
-                self.zip_file = self.local_zip
-            else:
-                raise RuntimeError(f"PathFromZip: '{self.local_zip}' doesn't exist")
-
-        if not zipfile.is_zipfile(self.zip_file):
-            raise RuntimeError(f"PathFromZip: '{self.zip_file}' is not zip file")
-
-        path_in_zip = pathlib.PureWindowsPath(self.path_in_zip).as_posix()
-        with zipfile.ZipFile(self.zip_file, "r") as zf:
-            files_to_extract = []
-            for file in zf.namelist():
-                if file.startswith(path_in_zip):
-                    files_to_extract.append(file)
-            if files_to_extract:
-                zf.extractall(path=self.base_path, members=files_to_extract)
-        if files_to_extract:
-            return True
-        else:
-            return False
-
-
-# Assumed usage
-# impy_dir = Path(__file__).parent
-
-# base_url = "https://github.com/afedynitch/MCEq/releases/download/"
-# release_tag = "builds_on_azure/"
-# zip_fname = "zipped_files.zip"
-# remote_zip_file = base_url + release_tag + zip_fname
-
-# local_zip_file = impy_dir / "impy_iamdata.zip"
-# remote_zip_file = github_url
-# cache_file = impy_dir / "cache_downloaded_files.cch"
-
-# # Extract files from 'local_zip_file' downloaded from 'remote_zip_file'
-# get_data_path = PathFromZip(local_zip_file, remote_zip_file, cache_file)
-# some_path_on_disk = get_data_path("path_in_zip", impy_dir))
+    with open(p / "iamdata_content.json", "w") as fp:
+        json.dump(content, fp, sort_keys=True, indent=4)
 
 
 class TaggedFloat:
