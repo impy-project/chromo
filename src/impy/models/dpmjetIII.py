@@ -1,6 +1,7 @@
 from impy.common import MCRun, MCEvent
-from impy import impy_config, _check_impy_data_path
-from impy.util import info
+from impy import impy_config
+from impy.util import info, _check_model_data_files
+import pathlib
 
 
 class DpmjetIIIEvent(MCEvent):
@@ -81,21 +82,25 @@ class DpmjetIIIRun(MCRun):
         dpm_conf = impy_config["dpmjetIII"]
 
         info(1, "Initializing DPMJET-III")
+
+        _check_model_data_files(
+            pathlib.Path(dpm_conf["dat_dir"][self.version]).parts[-1]
+        )
         # Set the dpmjpar.dat file
         if hasattr(self._lib, "pomdls") and hasattr(self._lib.pomdls, "parfn"):
-            pfile = _check_impy_data_path(dpm_conf["param_file"][self.version])
+            pfile = dpm_conf["param_file"][self.version]
             info(3, "DPMJET parameter file at", pfile)
             self._lib.pomdls.parfn = fortran_chars(self._lib.pomdls.parfn, pfile)
 
         # Set the data directory for the other files
         if hasattr(self._lib, "poinou") and hasattr(self._lib.poinou, "datdir"):
-            pfile = _check_impy_data_path(dpm_conf["dat_dir"][self.version])
+            pfile = dpm_conf["dat_dir"][self.version]
             info(3, "DPMJET data dir is at", pfile)
             self._lib.poinou.datdir = fortran_chars(self._lib.poinou.datdir, pfile)
             self._lib.poinou.lendir = len(pfile)
 
         if hasattr(self._lib, "dtimpy"):
-            evap_file = _check_impy_data_path(dpm_conf["evap_file"][self.version])
+            evap_file = dpm_conf["evap_file"][self.version]
             info(3, "DPMJET evap file at", evap_file)
             self._lib.dtimpy.fnevap = fortran_chars(self._lib.dtimpy.fnevap, evap_file)
 

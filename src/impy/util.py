@@ -277,17 +277,17 @@ def _download_file(outfile, url):
     return True
 
 
-def _check_model_data_files(model_dir, impy_path, check_version=False):
+def _check_model_data_files(model_dir, check_version=False):
     """Checks the existence of data files in model_dir
     in accordance to iamdata_content.json database
 
     Example of usage:
 
-    impy_path = "/full/path/to/impy/src/impy"
     model_dir = "dpm3"
-    _check_model_data_files(model_dir, impy_path, check_version=True)
+    _check_model_data_files(model_dir, check_version=True)
     """
 
+    impy_path = pathlib.Path(__file__).parent.absolute()
     iamdata_dir = pathlib.Path(impy_path) / "iamdata"
 
     js_file = iamdata_dir / "iamdata_content.json"

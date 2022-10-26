@@ -1,7 +1,7 @@
 import numpy as np
 from impy.common import MCRun, MCEvent
-from impy import impy_config, base_path, _check_impy_data_path
-from impy.util import info
+from impy import impy_config, base_path
+from impy.util import info, _check_model_data_files
 
 
 class QGSJETEvent(MCEvent):
@@ -81,9 +81,9 @@ class QGSJetIIRun(QGSJetRun):
         super().__init__(seed, logfname)
 
         info(5, "Initializing QGSJET-II")
-        datdir = _check_impy_data_path(
-            path.join(base_path, impy_config["qgsjet"]["datdir"])
-        )
+        _check_model_data_files("qgsjet")
+        datdir = path.join(base_path, impy_config["qgsjet"]["datdir"])
+
         self._lib.cqgsini(
             self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
         )
@@ -141,9 +141,8 @@ class QGSJet01Run(QGSJetRun):
         super().__init__(seed, logfname)
 
         info(5, "Initializing QGSJET01d")
-        datdir = _check_impy_data_path(
-            path.join(base_path, impy_config["qgsjet"]["datdir"])
-        )
+        _check_model_data_files("qgsjet")
+        datdir = path.join(base_path, impy_config["qgsjet"]["datdir"])
         self._lib.cqgsini(
             self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
         )
