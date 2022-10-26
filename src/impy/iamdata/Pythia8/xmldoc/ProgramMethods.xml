@@ -1,17 +1,3 @@
-<chapter name="Program Methods"> 
- 
-<h2>Program Methods</h2> 
- 
-This is an alphabetical index of all methods that are documented 
-elsewhere on these pages, beginning with the few methods that 
-do not belong to a class. Many of them are only intended for experts, 
-while undocumented ones are only for code authors. 
- 
-<p/> 
-The index is constructed dynamically from the methods described 
-on the other webpages, as part of the conversion from xml to 
-html and php. Therefore this xml page is only a dummy one. 
- 
-</chapter> 
- 
-<!-- Copyright (C) 2022 Torbjorn Sjostrand --> 
+version https://git-lfs.github.com/spec/v1
+oid sha256:d5d4aa9ad4bc5536bbf3ff68a9ea863c4f1591012499f5424307cd719e6bb2f2
+size 575
