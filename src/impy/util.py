@@ -331,7 +331,7 @@ def _check_model_data_files(model_dir, impy_path, check_version=False):
 
 
 def _create_iamdata_content(
-    path_to_iamdata,
+    impy_path,
     version="",
     preliminary_url="https://github.com/impy-project/impy.git/",
     create_zip_files=False,
@@ -342,12 +342,12 @@ def _create_iamdata_content(
     The files are created in 'path_to_iamdata'
 
     Example of usage:
-    path_to_iamdata = "/full/path/to/impy/src/impy/iamdata"
+    impy_path = "/full/path/to/impy/src/impy"
     _create_iamdata_content(path_to_iamdata, version="1", create_zip_files=True)
     """
 
     # Get list of files
-    p = pathlib.Path(path_to_iamdata)
+    p = pathlib.Path(impy_path) / "iamdata"
     db_file = dict()
     for i in p.glob("**/*"):
         rel_path = i.relative_to(p)
