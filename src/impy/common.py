@@ -10,11 +10,14 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 from abc import ABC, abstractmethod
 import numpy as np
 from impy import impy_config
-from impy.util import info
-from impy.kinematics import EventKinematics
+from .util import info, classproperty, select_parents
+from .constants import quarks_and_diquarks_and_gluons
+from .kinematics import EventKinematics
 import dataclasses
 import copy
 import typing as _tp
+from contextlib import contextmanager
+import warnings
 
 
 @dataclasses.dataclass
@@ -107,7 +110,7 @@ class EventData:
             self.vy[arg],
             self.vz[arg],
             self.vt[arg],
-            None,
+            select_parents(arg, self.parents),
             None,
         )
 
@@ -162,7 +165,7 @@ class EventData:
         The final state is generator-specific, but usually contains only
         long-lived particles.
         """
-        return self[self.status == 1]
+        return self._fast_selection(self.status == 1)
 
     def final_state_charged(self):
         """
@@ -172,7 +175,32 @@ class EventData:
         Additionally, this selects only charged particles which can be
         seen by a tracking detector.
         """
-        return self[(self.status == 1) & (self.charge != 0)]
+        return self._fast_selection((self.status == 1) & (self.charge != 0))
+
+    def without_parton_shower(self):
+        """
+        Return filtered event without parton shower.
+
+        Pythia generates a parton shower and makes it part of the history.
+        Looking at this is interesting for generator experts, but for most
+        analyses, this is not needed and can be removed from the particle
+        history.
+        """
+        mask = True
+        apid = np.abs(self.pid)
+        for pid in quarks_and_diquarks_and_gluons:
+            mask &= apid != pid
+        return self[mask]
+
+    def _fast_selection(self, arg):
+        # This selection is faster than __getitem__, because we skip
+        # parent selection, which is just wasting time if we select only
+        # final state particles.
+        save = self.parents
+        self.parents = None
+        event = self[arg]
+        self.parents = save
+        return event
 
     @property
     def pt(self):
@@ -252,28 +280,47 @@ class EventData:
         """
         import pyhepmc  # delay import
 
+        model, version = self.generator
+
         if genevent is None:
             genevent = pyhepmc.GenEvent()
+            genevent.run_info = pyhepmc.GenRunInfo()
+            genevent.run_info.tools = [(model, version, "")]
+
+        # We must apply some workarounds so that HepMC3 conversion and IO works
+        # for all models. This should be revisited once the fundamental issues
+        # with particle histories have been fixed.
+        if model == "Pythia" and version.startswith("8"):
+            # must deselect parton showers in Pythia-8 to use HepMC3 IO
+            ev = self.without_parton_shower()
+        elif model in ("UrQMD", "PhoJet"):
+            # can only save final state until history is fixed
+            warnings.warn(
+                f"{model}-{version}: only final state particles "
+                "available in HepMC3 event",
+                RuntimeWarning,
+            )
+            ev = self.final_state()
+        else:
+            ev = self
 
         genevent.from_hepevt(
-            event_number=self.nevent,
-            px=self.px,
-            py=self.py,
-            pz=self.pz,
-            en=self.en,
-            m=self.m,
-            pid=self.pid,
-            status=self.status,
-            parents=self.parents,
-            children=self.children,
-            vx=self.vx,
-            vy=self.vy,
-            vz=self.vz,
-            vt=self.vt,
+            event_number=ev.nevent,
+            px=ev.px,
+            py=ev.py,
+            pz=ev.pz,
+            en=ev.en,
+            m=ev.m,
+            pid=ev.pid,
+            status=ev.status,
+            parents=ev.parents,
+            children=ev.children,
+            vx=ev.vx,
+            vy=ev.vy,
+            vz=ev.vz,
+            vt=ev.vt,
         )
 
-        genevent.run_info = pyhepmc.GenRunInfo()
-        genevent.run_info.tools = [self.generator + ("",)]
         return genevent
 
     # if all required packages are available, add extra
@@ -319,7 +366,8 @@ class MCEvent(EventData, ABC):
         generator:
             Generator instance.
         """
-        self._lib = generator.lib  # used by _charge_init and generator-specific methods
+        # used by _charge_init and generator-specific methods
+        self._lib = generator._lib
 
         evt = getattr(self._lib, self._hepevt)
 
@@ -368,67 +416,6 @@ class MCEvent(EventData, ABC):
         return (EventData,)
 
 
-# =========================================================================
-# Settings
-# =========================================================================
-class Settings(ABC):
-    """Custom classes derived from this template allow to set certain low
-    level variables in the generators before or after initialization, or for
-    each event.
-
-    Note::
-
-        This is only relevant for model developers rather than end users.
-
-    """
-
-    def __init__(self, lib):
-        self.lib = lib
-        # No idea what this was..
-        # self.override_projectile = None
-
-    @property
-    def label(self):
-        """String of the class name for logging."""
-        return self.__class__.__name__
-
-    @abstractmethod
-    def enable(self):
-        """Code, acting on the FORTRAN library :attr:`self.lib` that
-        activates some sort of setting."""
-        pass
-
-    @abstractmethod
-    def reset(self):
-        """Code, acting on the FORTRAN library :attr:`self.lib` that
-        removes the effect of the activation. 'Reset to default'"""
-        pass
-
-    @abstractmethod
-    def set_current_value(self, value):
-        """Define if you inted to vary some parameter in between
-        events."""
-        pass
-
-    def __eq__(self, other_instance):
-        return not self.__ne__(other_instance)
-
-    def __ne__(self, other_instance):
-        if self.__class__.__name__ != other_instance.__class__.__name__:
-            return True
-
-        other_attr = other_instance.__dict__
-
-        for attr, value in self.__dict__.items():
-            if attr == "lib":
-                continue
-            elif attr not in other_attr.keys():
-                return True
-            elif value != other_attr[attr]:
-                return True
-        return False
-
-
 @dataclasses.dataclass
 class RMMARDState:
     _c_number: np.ndarray = None
@@ -441,7 +428,7 @@ class RMMARDState:
     _sequence_number: np.ndarray = None
 
     def _record_state(self, generator):
-        data = generator.lib.crranma4
+        data = generator._lib.crranma4
         self._c_number = data.c
         self._u_array = data.u
         self._u_i = data.i97
@@ -453,7 +440,7 @@ class RMMARDState:
         return self
 
     def _restore_state(self, generator):
-        data = generator.lib.crranma4
+        data = generator._lib.crranma4
 
         data.c = self._c_number
         data.u = self._u_array
@@ -505,88 +492,98 @@ class RMMARDState:
 class MCRun(ABC):
     #: Prevent creating multiple classes within same python scope
     _is_initialized = []
+    _restartable = False
+    _set_final_state_particles_called = False
+    _evt_kin = None
+    nevents = 0  # number of generated events so far
 
-    def __init__(self, interaction_model_def, settings_dict=dict(), **kwargs):
+    def __init__(self, seed, logfname):
         import importlib
+        from random import randint
 
         # from impy.util import OutputGrabber
 
-        # Import library from library name
-        self.lib = importlib.import_module(
-            "impy.models." + interaction_model_def.library_name
-        )
+        if not self._restartable:
+            self._abort_if_already_initialized()
 
-        # Save definitions from namedtuple into attributes
-        self.library_name = interaction_model_def.library_name
-        self._event_class = interaction_model_def.EventClass
-        self._name = interaction_model_def.name
-        self._version = interaction_model_def.version
-        self._output_frame = interaction_model_def.output_frame
-        if "label" not in kwargs:
-            self._label = self._name + " " + self._version
-        else:
-            self._label = kwargs["label"]
-
-        # Currently initialized event kinematics
-        self._curr_event_kin = None
-
-        # Not yet clear how to handle these
-        self.setting_dict = settings_dict
+        assert hasattr(self, "_name")
+        assert hasattr(self, "_version")
+        assert hasattr(self, "_library_name")
+        assert hasattr(self, "_event_class")
+        assert hasattr(self, "_output_frame")
+        self._lib = importlib.import_module(f"impy.models.{self._library_name}")
 
         # FORTRAN LUN that keeps logfile handle
-        self.output_lun = None
+        self._output_lun = None
 
-        # Number of generated events so far
-        self.nevents = 0
+        self._attach_log(logfname)
 
-    def __enter__(self):
-        """TEMP: It would be good to actually use the with construct to
-        open and close logfiles on init."""
-        # TODO: this is a bug.
-        self.attach_log(None)
-        return self
+        if seed is None or seed == "random":
+            self._seed = randint(1000000, 10000000)
+        elif isinstance(seed, int):
+            self._seed = seed
+        else:
+            raise ValueError(f"Invalid seed {seed}")
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        """This needs to be tested in more complex scenarios..."""
-        self.close_logfile()
+        info(3, "Using seed:", self._seed)
 
-    @property
-    def label(self):
-        """Name + version or custom via keyword arg"""
-        return self._label
-
-    @property
-    def output_frame(self):
-        """Default frame of the output particle stack."""
-        return self._output_frame
-
-    @property
-    def name(self):
-        """Event generator name"""
-        return self._name
-
-    @property
-    def version(self):
-        """Event generator version"""
-        return self._version
-
-    @abstractmethod
-    def init_generator(self, event_kinematics, seed="random"):
-        """Initializes event generator.
-
-        The maximal energy and particle masses from the event_kinematics
-        object define the maximal range, i.e. the energy requested in subsequent
-        `_set_event_kinematics` calls should not exceed the one provided here.
-
-        Args:
-            event_kinematics (object): maximal energy and masses for subsequent runs
-            seed (int)               : random seed, at least 8 digit int
-
+    def __call__(self, nevents):
+        """Generator function (in python sence)
+        which launches the underlying event generator
+        and returns its the result (event) as MCEvent object
         """
-        pass
+        assert self._set_final_state_particles_called
+        retry_on_rejection = impy_config["retry_on_rejection"]
+        # Initialize counters to prevent infinite loops in rejections
+        ntrials = 0
+        nremaining = nevents
+        while nremaining > 0:
+            self._update_event_kinematics()
+            if self._generate_event() == 0:
+                self.nevents += 1
+                yield self._event_class(self)
+                nremaining -= 1
+                ntrials += 1
+            elif retry_on_rejection:
+                info(10, "Rejection occured. Retrying..")
+                ntrials += 1
+                continue
+            elif ntrials > 2 * nevents:
+                raise Exception("Things run bad. Check your input.")
+            else:
+                info(0, "Rejection occured")
+
+    @property
+    def seed(self):
+        return self._seed
+
+    @classproperty
+    def name(cls):
+        """Event generator name"""
+        return cls._name
+
+    @classproperty
+    def label(cls):
+        """Name and version"""
+        return f"{cls._name}-{cls._version}"
+
+    @classproperty
+    def pyname(cls):
+        """Event generator name as it appears in Python code."""
+        return cls.__name__
+
+    @classproperty
+    def output_frame(cls):
+        """Default frame of the output particle stack."""
+        return cls._output_frame
+
+    @classproperty
+    def version(cls):
+        """Event generator version"""
+        return cls._version
 
     @abstractmethod
-    def generate_event(self):
+    def _generate_event(self):
         """The method to generate a new event.
 
         Returns:
@@ -596,25 +593,22 @@ class MCRun(ABC):
 
     @abstractmethod
     def _set_event_kinematics(self, evtkin):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event.
+        # Set new combination of energy, momentum, projectile
+        # and target combination for next event.
 
-        Either, this method defines some derived variables
-        that generate_event() can use to generate new events
-        without additional arguments, or, it can also set
-        internal variables of the model. In both cases the
-        important thing is that generate_event remains argument-free.
-        """
-        # _set_event_kinematics may call library functions,
-        # which work correctly only after calling other
-        # (initializing) library functions.
-        # Therefore _set_event_kinematics should only be called
-        # after these calls in init_generator
+        # Either, this method defines some derived variables
+        # that _generate_event() can use to generate new events
+        # without additional arguments, or, it can also set
+        # internal variables of the model. In both cases the
+        # important thing is that _generate_event remains argument-free.
+
+        # This call must not update self.event_kinematics, only the
+        # generator-specific variables.
         pass
 
     def _update_event_kinematics(self):
-        if self._curr_event_kin.composite_target:
-            evt_kin = self._curr_event_kin
+        if self._evt_kin.composite_target:
+            evt_kin = self._evt_kin
             if evt_kin.p2_is_nucleus:
                 evt_kin.A2, evt_kin.Z2 = evt_kin.composite_target._get_random_AZ()
                 self._set_event_kinematics(evt_kin)
@@ -629,13 +623,13 @@ class MCRun(ABC):
 
     @property
     def event_kinematics(self):
-        return self._curr_event_kin
+        return self._evt_kin
 
     @event_kinematics.setter
-    def event_kinematics(self, evtkin):
-        self._set_event_kinematics(evtkin)
+    def event_kinematics(self, evt_kin):
+        self._evt_kin = evt_kin
+        self._set_event_kinematics(evt_kin)
 
-    @abstractmethod
     def set_stable(self, pdgid, stable=True):
         """Prevent decay of unstable particles
 
@@ -643,7 +637,12 @@ class MCRun(ABC):
             pdgid (int)        : PDG ID of the particle
             stable (bool)      : If `False`, particle is allowed to decay
         """
-        pass
+        # put common code here
+        if stable:
+            info(5, pdgid, "allowed to decay")
+        else:
+            info(5, "defining", pdgid, "as stable particle")
+        self._set_stable(pdgid, stable)
 
     def set_unstable(self, pdgid):
         """Convenience funtion for `self.set_stable(..., stable=False)`
@@ -651,17 +650,20 @@ class MCRun(ABC):
         Args:
             pdgid(int)         : PDG ID of the particle
         """
-        self.set_stable(pdgid, stable=False)
+        self.set_stable(pdgid, False)
 
-    @abstractmethod
-    def sigma_inel(self, **kwargs):
+    def sigma_inel(self, evt_kin=None):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
+        return self._sigma_inel(self.event_kinematics if evt_kin is None else evt_kin)
+
+    @abstractmethod
+    def _sigma_inel(self, evtkin):
         pass
 
     # TODO: Change to generic function for composite target. Make
     # exception for air
-    def sigma_inel_air(self, **kwargs):
+    def sigma_inel_air(self):
         """Hadron-air production cross sections according to current
         event setup (energy, projectile).
 
@@ -669,46 +671,41 @@ class MCRun(ABC):
            precision (int): Anything else then 'default' (str) will set
                             the number of MC trails to that number.
         """
-        from copy import copy
-        from impy.kinematics import EventKinematics
 
         # Make a backup of the current kinematics config
-        prev_kin = copy(self._curr_event_kin)
         frac_air = impy_config["frac_air"]
 
         cs = 0.0
         for f, iat in frac_air:
             k = EventKinematics(
-                ecm=prev_kin.ecm,
-                particle1=prev_kin.particle1,
+                ecm=self.event_kinematics.ecm,
+                particle1=self.event_kinematics.particle1,
                 particle2=(iat, int(iat / 2)),
             )
-            self._set_event_kinematics(k)
-            cs += f * self.sigma_inel(**kwargs)
-
-        # Restore settings
-        self._set_event_kinematics(prev_kin)
+            cs += f * self._sigma_inel(k)
 
         return cs
 
     @abstractmethod
-    def attach_log(self, fname):
+    def _attach_log(self, fname):
         """Routes the output to a file or the stdout."""
         pass
 
+    @abstractmethod
+    def _set_stable(self, pidid, stable):
+        ...
+
     def _abort_if_already_initialized(self):
-        """The first initialization should not be run more than
-        once. This method should be called in the beginning of each
-        init_generator() implementation.
-        """
+        # The first initialization should not be run more than
+        # once.
         message = """
         Don't run initialization multiple times for the same generator. This
         is a limitation of fortran libraries since all symbols are by default
         in global scope. Multiple instances can be created in mupliple threads
         or "python executables" using Pool in multiprocessing etc."""
 
-        assert self.library_name not in self._is_initialized, message
-        self._is_initialized.append(self.library_name)
+        assert self._library_name not in self._is_initialized, message
+        self._is_initialized.append(self._library_name)
 
     def _attach_fortran_logfile(self, fname):
         """Chooses a random LUN between 20 - 100 and returns a FORTRAN
@@ -724,27 +721,27 @@ class MCRun(ABC):
 
         path.abspath(fname)
         # Create a random fortran output unit
-        self.output_lun = randint(20, 100)
-        self.lib.impy_openlogfile(path.abspath(fname), self.output_lun)
-        return self.output_lun
+        self._output_lun = randint(20, 100)
+        self._lib.impy_openlogfile(path.abspath(fname), self.output_lun)
+        return self._output_lun
 
-    def close_logfile(self):
+    def _close_logfile(self):
         """Constructed for closing C++ and FORTRAN log files"""
         if "pythia8" not in self._label:
-            self.close_fortran_logfile()
+            self._close_fortran_logfile()
         else:
             # self.close_cc_logfile()
             pass
 
-    def close_fortran_logfile(self):
+    def _close_fortran_logfile(self):
         """FORTRAN LUN has to be released when finished to flush buffers."""
         if self.output_lun is None:
             info(2, "Output went not to file.")
         else:
-            self.lib.impy_closelogfile(self.output_lun)
-            self.output_lun = None
+            self._lib.impy_closelogfile(self.output_lun)
+            self._output_lun = None
 
-    def _define_default_fs_particles(self):
+    def _set_final_state_particles(self):
         """Defines particles as stable for the default 'tau_stable'
         value in the config."""
         # info(5, 'Setting default particles stable with lifetime <',
@@ -756,32 +753,16 @@ class MCRun(ABC):
         info(5, "Setting following particles to be stable:", impy_config["stable_list"])
 
         for pdgid in impy_config["stable_list"]:
-            self.set_stable(pdgid)
+            self._set_stable(pdgid, True)
 
         if impy_config["pi0_stable"]:
-            self.set_stable(111)
+            self._set_stable(111, True)
 
-    def __call__(self, nevents):
-        """Generator function (in python sence)
-        which launches the underlying event generator
-        and returns its the result (event) as MCEvent object
-        """
-        retry_on_rejection = impy_config["retry_on_rejection"]
-        # Initialize counters to prevent infinite loops in rejections
-        ntrials = 0
-        nremaining = nevents
-        while nremaining > 0:
-            self._update_event_kinematics()
-            if self.generate_event() == 0:
-                self.nevents += 1
-                yield self._event_class(self)
-                nremaining -= 1
-                ntrials += 1
-            elif retry_on_rejection:
-                info(10, "Rejection occured. Retrying..")
-                ntrials += 1
-                continue
-            elif ntrials > 2 * nevents:
-                raise Exception("Things run bad. Check your input.")
-            else:
-                info(0, "Rejection occured")
+        self._set_final_state_particles_called = True
+
+    @contextmanager
+    def _temporary_evt_kin(self, evt_kin):
+        prev = copy(self.event_kinematics)
+        self.event_kinematics = evt_kin
+        yield
+        self.event_kinematics = prev

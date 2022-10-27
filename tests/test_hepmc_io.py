@@ -6,7 +6,7 @@ import pytest
 import pyhepmc
 from .util import (
     run_in_separate_process,
-    xfail_on_ci_if_model_is_incompatible,
+    skip_on_ci_if_model_is_incompatible,
     get_all_models,
 )
 
@@ -35,12 +35,14 @@ def test_hepmc_io(Model):
 
     test_file = Path(f"{Path(__file__).with_suffix('')}_{Model.__name__}.dat")
 
-    xfail_on_ci_if_model_is_incompatible(Model)
-    if Model == im.UrQMD34:
-        pytest.xfail("UrQMD34 FAILS, should be FIXED!!!")
+    skip_on_ci_if_model_is_incompatible(Model)
 
-    events = run_in_separate_process(run, Model, timeout=30)
+    events = run_in_separate_process(run, Model)
     expected = [ev.to_hepmc3() for ev in events]
+
+    # Uncomment this to get debugging output. Higher number shows more.
+    # This only works if you compile pyhepmc in debug mode.
+    # pyhepmc.Setup.debug_level = 100
 
     with pyhepmc.open(test_file, "w") as f:
         for event in expected:

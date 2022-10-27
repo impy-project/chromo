@@ -16,10 +16,10 @@ def reference_charge(pid):
     try:
         return Particle.from_pdgid(pid).charge
     except (ParticleNotFound, InvalidParticle):
-        return 0
+        return np.nan
 
 
-def run_in_separate_process(fn, *args, timeout=30):
+def run_in_separate_process(fn, *args, timeout=60):
     # Some models need to initialize same fortran code, which can only be
     # initialized once. As a workaround, we run each model in a separate
     # thread. When running several jobs, maxtasksperchild=1 is needed to
@@ -32,11 +32,18 @@ def run_in_separate_process(fn, *args, timeout=30):
             # usually happens when model aborts and kills child process
             raise TimeoutError("check stdout for errors")
 
+        # In case there any other exception, it can be useful to run in
+        # main thread to get proper backtrace. Uncomment the following to
+        # enable this.
+
+        # except Exception:
+        #     fn(*args)
+
     return out
 
 
 # remove this when git lfs issue is fixed
-def xfail_on_ci_if_model_is_incompatible(Model):
+def skip_on_ci_if_model_is_incompatible(Model):
     if os.environ.get("CI", False) and Model in (
         im.QGSJet01d,
         im.QGSJetII03,
@@ -48,8 +55,12 @@ def xfail_on_ci_if_model_is_incompatible(Model):
         im.DpmjetIII306,
         im.DpmjetIII191,
         im.DpmjetIII193,
+        im.Pythia8,
     ):
-        pytest.xfail("model cannot succeed on CI, because git lfs does not work")
+        pytest.skip(
+            "model cannot succeed on CI, because git lfs does not work",
+            allow_module_level=True,
+        )
 
 
 def get_all_models(module):

@@ -1,0 +1,30 @@
+include *.py
+include *.cmake
+include pyproject.toml
+include CMakeLists.txt
+recursive-include src/impy/iamdata *
+recursive-include src/f2py *
+recursive-include src/fortran *
+recursive-include src/cpp/pybind11/include *
+include src/cpp/pybind11/CMakeLists.txt
+include src/cpp/pybind11/LICENSE
+include src/cpp/pybind11/tools/*
+include src/cpp/_pythia8.cpp
+recursive-include src/cpp/pythia8307/include *
+recursive-include src/cpp/pythia8307/src *
+include src/cpp/pythia8307/COPYING
+include src/cpp/pythia8307/AUTHORS
+
+global-exclude .git*
+global-exclude *.tgz
+global-exclude *.ipynb
+global-exclude __pycache__
+global-exclude Makefile
+global-exclude .*.yaml
+prune tests
+prune bench
+prune build
+prune src/cpp/pybind11/docs
+prune src/cpp/pybind11/tests
+prune src/cpp/pybind11/pybind11
+prune src/cpp/pybind11/.github

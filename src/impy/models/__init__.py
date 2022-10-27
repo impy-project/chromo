@@ -13,9 +13,7 @@ from impy.models.dpmjetIII import DpmjetIII191, DpmjetIII193
 from impy.models.phojet import Phojet112, Phojet191, Phojet193
 from impy.models.urqmd import UrQMD34
 from impy.models.pythia6 import Pythia6
-
-# - Currently not working -
-# from impy.models.pythia8 import Pythia8
+from impy.models.pythia8 import Pythia8
 
 __all__ = (
     "Sophia20",
@@ -35,4 +33,5 @@ __all__ = (
     "Phojet193",
     "UrQMD34",
     "Pythia6",
+    "Pythia8",
 )

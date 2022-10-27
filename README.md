@@ -54,7 +54,7 @@ To build from source (the **recursive** flag is important to check out submodule
 
     git clone --recursive https://github.com/impy-project/impy
     cd impy
-    pip install -v -e .
+    pip install --no-build-isolation --prefer-binary -v -e .
 
 This takes a while. The command `pip install -v -e .` installs the package in editable mode (for developing the Python layer) and with verbose output, so that you can watch the compilation happening. Warnings can be ignored, but watch out for errors.
 
@@ -64,7 +64,14 @@ To run the tests or try the examples, it is convenient use this modified `pip in
 
 This installs impy and additional optional Python packages to run tests and examples.
 
-If installation from source fails, please look into the subsection below which explains how to install in impy in a verified docker environment. The docker environment has a properly set up environment verified by us, so that the installation is guaranteed to succeed.
+#### Known issues
+
+- On OSX
+    - You need to install gcc and gfortran with homebrew, and you need to set those compilers explicitly. If you have gcc-12, do `CC=gcc-12 CXX=g++-12 pip install ...`
+    - Apple introduced a bug in the Xcode Command Line Tools Version 14 which produces a linker error when compiling C++ code with gcc. Until this is fixed, the workaround is to downgrade to 13.4, use this link https://download.developer.apple.com/Developer_Tools/Command_Line_Tools_for_Xcode_13.4/Command_Line_Tools_for_Xcode_13.4.dmg and turn off automatic updates in the System Settings, because otherwise your Mac will upgrade to 14 again.
+- setuptools > 60 does not seem to work. Downgrade with `pip install setuptools<60` if you experience problems.
+
+If you cannot fix the installation with these hints, please look into the subsection below which explains how to install in impy in a verified docker environment. The docker environment has a properly set up environment verified by us, so that the installation is guaranteed to succeed.
 
 ### From source in Docker
 
@@ -135,7 +142,6 @@ There are two ways to interact with the code.
 - SOPHIA (needs update)
 - DPMJET-II (also needs update but model deprecated)
 - UrQMD 3.4
-
 
 ## Authors:
 

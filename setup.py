@@ -2,7 +2,6 @@ from pathlib import Path
 from setuptools import setup
 import sys
 import subprocess as subp
-import json
 import platform
 
 cwd = Path(__file__).parent
@@ -10,10 +9,11 @@ cwd = Path(__file__).parent
 sys.path.append(str(cwd))
 from cmake_ext import CMakeExtension, CMakeBuild  # noqa: E402
 
-# make sure that submodules are up-to-date,
-# it is a common error to forget this when
-# switching between development branches
-# subp.check_call(["git", "submodule", "update"])
+if (cwd / ".git").exists():
+    # make sure that submodules are up-to-date,
+    # it is a common error to forget this when
+    # switching between development branches
+    subp.check_call(["git", "submodule", "update"])
 
 models = [
     "eposlhc",
@@ -32,6 +32,7 @@ models = [
     "phojet193",
     "dpmjetIII191",
     "dpmjetIII193",
+    "pythia8",
 ]
 
 # urqmd34 doesn't build correctly on Windows

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(impylib LANGUAGES C Fortran)
+project(impylib LANGUAGES C CXX Fortran)
 
 set(BUILD_dev_dpmjetIII193 CACHE 
   PATH "source directory for dev_dpmjetIII193")
@@ -8,17 +8,17 @@ option(BUILD_sib23c00 OFF)
 option(BUILD_sib23c02 OFF)
 option(BUILD_sib23c03 OFF)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
+add_subdirectory(${CMAKE_SOURCE_DIR}/src/cpp/pybind11)
+
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src/cpp/pybind11/tools)
 include(CMakePrintHelpers)
 include(F2Py)
-include(FindPythonLibsNew)
-
-if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-  message(
-    WARNING
-      "You should call this through setup.py so that all variables are set; e.g. python setup.py develop"
-  )
-endif()
+find_package(pybind11 CONFIG)
 
 # cannot use find_package(Python), we need PythonLibsNew from pybind11
 find_package(PythonLibsNew REQUIRED)
@@ -43,6 +43,20 @@ if (NOT NUMPY_INCLUDE_DIRS)
   )
   set(NUMPY_INCLUDE_DIRS "${_numpy_directory}" CACHE STRING "NumPy source directory location" FORCE)
 endif()
+
+macro(use_alternate_linker_if_available linker)
+  find_program(LINKER_EXECUTABLE ld.${linker})
+  if(LINKER_EXECUTABLE)
+    message(STATUS "Linker detected: ${linker} (${LINKER_EXECUTABLE})")
+    if(CLANG AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 12.0.0)
+      add_link_options(-ld-path=${linker})
+    elseif(GCC AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 12.0.0)
+      add_link_options(-ld-path=${linker})
+    endif()
+  endif()
+endmacro()
+
+use_alternate_linker_if_available(mold)
 
 # Print out the discovered paths
 cmake_print_variables(PYTHON_EXECUTABLE)
@@ -98,6 +112,7 @@ endif()
 ### common for all models
 set(impy_definitions IMPY)
 set(fortran_dir ${CMAKE_SOURCE_DIR}/src/fortran)
+set(cpp_dir ${CMAKE_SOURCE_DIR}/src/cpp)
 set(f2py_dir ${CMAKE_SOURCE_DIR}/src/f2py)
 # Copy fortranobject.c to get rid of deep folder nesting
 configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c fortranobject.c COPYONLY)
@@ -292,6 +307,44 @@ f2py_add_module(_pythia6
   COMPILE_DEFS
   ${impy_definitions}
 )
+
+### pythia8
+# About the license and how it affects impy. 
+# Pythia-8 is licensed under GPL-v2 or higher, which means GPL-v3
+# applies. An excerprt from GPL-v3:
+
+# >  A compilation of a covered work with other separate and independent
+# > works, which are not by their nature extensions of the covered work,
+# > and which are not combined with it such as to form a larger program,
+# > in or on a volume of a storage or distribution medium, is called an
+# > "aggregate" if the compilation and its resulting copyright are not
+# > used to limit the access or legal rights of the compilation's users
+# > beyond what the individual works permit.  Inclusion of a covered work
+# > in an aggregate does not cause this License to apply to the other
+# > parts of the aggregate.
+#
+# Our legal position is that impy is an "aggregate". It is not adding
+# functionality to Pythia-8 nor is it modifying the original source. The
+# Pythia-8 library is redistributed by us under its original license, which is
+# allowed. impy is merely a way to steer Pythia-8 and to provide its output in a
+# particular format. The Pythia-8 authors are free to take some of our code and
+# make it GPL code, they can do that anyway, but we have still free to
+# distribute the code that we write under a less restrictive license.
+#
+# To strengthen this position, we compile the original Pythia-8 code into
+# a shared library to which we only link. This makes clear where the boundary
+# between impy and Pythia-8 is.
+
+file(GLOB pythia8_sources ${cpp_dir}/pythia8307/src/*.cc)
+
+add_library(libpythia8 SHARED ${pythia8_sources})
+set_target_properties(libpythia8 PROPERTIES OUTPUT_NAME pythia8)
+target_include_directories(libpythia8 PUBLIC ${cpp_dir}/pythia8307/include)
+# we don't use this, we must set xmldir at runtime
+target_compile_definitions(libpythia8 PRIVATE XMLDIR="")
+
+pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
+target_link_libraries(_pythia8 PRIVATE libpythia8)
 
 ### sophia
 f2py_add_module(_sophia
@@ -512,6 +565,7 @@ f2py_add_module(_phojet193
   COMPILE_DEFS
   ${impy_definitions}
 )
+
 
 ##### extra optional models follow below ######
 
