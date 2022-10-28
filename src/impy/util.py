@@ -267,7 +267,7 @@ def _download_file(outfile, url):
     return True
 
 
-def _check_data_dir(url):
+def _cached_data_dir(url):
     impy_path = pathlib.Path(__file__).parent.absolute()
     base_dir = pathlib.Path(impy_path) / "iamdata"
 
@@ -292,6 +292,7 @@ def _check_data_dir(url):
             vfile.unlink
         with open(version_file, "w") as vf:
             vf.write(url)
+    return model_dir
 
 
 class TaggedFloat:
