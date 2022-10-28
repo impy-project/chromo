@@ -4,10 +4,10 @@ import warnings
 import inspect
 import os
 import pathlib
+from pathlib import Path
 import urllib.request
 import zipfile
-import json
-import hashlib
+import shutil
 
 
 from impy import impy_config
@@ -224,16 +224,6 @@ class OutputGrabber(object):
 # Functions to check and download dababase files on github
 
 
-def _file_checksum(filename):
-    """Calculates file checksum"""
-    hash_var = hashlib.sha256()
-    block_size = 1024 * 1024
-    with open(filename, "rb") as file:
-        for byte_block in iter(lambda: file.read(block_size), b""):
-            hash_var.update(byte_block)
-    return hash_var.hexdigest()
-
-
 def _download_file(outfile, url):
     """Download a file from 'url' to 'outfile'"""
     fname = pathlib.Path(url).name
@@ -277,109 +267,31 @@ def _download_file(outfile, url):
     return True
 
 
-def _check_model_data_files(model_dir, check_version=False):
-    """Checks the existence of data files in model_dir
-    in accordance to iamdata_content.json database
-
-    Example of usage:
-
-    model_dir = "dpm3"
-    _check_model_data_files(model_dir, check_version=True)
-    """
-
+def _check_data_dir(url):
     impy_path = pathlib.Path(__file__).parent.absolute()
-    iamdata_dir = pathlib.Path(impy_path) / "iamdata"
+    base_dir = pathlib.Path(impy_path) / "iamdata"
 
-    js_file = iamdata_dir / "iamdata_content.json"
-    if (js_file).exists():
-        with open(js_file) as jf:
-            data = json.load(jf)
-    else:
-        raise RuntimeError(f"_check_model_data_files: {js_file.as_posix()} not found")
+    vname = Path(url).stem
+    model_dir = base_dir / vname.split("_v")[0]
+    version_file = model_dir / vname
+    if not version_file.exists():
+        zip_file = base_dir / Path(url).name
+        temp_dir = Path(model_dir.parent / f".{model_dir.name}")
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        if model_dir.exists():
+            shutil.move(model_dir, temp_dir)
+        if _download_file(zip_file, url):
+            if zipfile.is_zipfile(zip_file):
+                with zipfile.ZipFile(zip_file, "r") as zf:
+                    zf.extractall(base_dir.as_posix())
+                zip_file.unlink()
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
-    models = []
-    for model in data:
-        models.append(model)
-
-    if model_dir not in models:
-        raise RuntimeError(
-            f"_check_model_data_files: No records for '{model_dir}'"
-            f"\nKnown directories {models}"
-        )
-
-    for fname in data[f"{model_dir}"]["data_files"]:
-        if not (iamdata_dir / fname).exists():
-            url = data[f"{model_dir}"]["url"]
-            model_zip = iamdata_dir / pathlib.Path(url).name
-            if _download_file(model_zip, url):
-                if check_version:
-                    if _file_checksum(model_zip) != data[f"{model_dir}"]["sha_256"]:
-                        raise RuntimeError(
-                            f"_check_model_data_files: Downloaded '{model_zip}'"
-                            f"has different checksum"
-                        )
-
-                if zipfile.is_zipfile(model_zip):
-                    with zipfile.ZipFile(model_zip, "r") as zf:
-                        zf.extractall(iamdata_dir.as_posix())
-                    model_zip.unlink()
-            if not (iamdata_dir / fname).exists():
-                raise RuntimeError(f"_check_model_data_files: No file {fname} in {url}")
-
-
-# Function to create zip files of data
-
-
-def _create_iamdata_content(
-    impy_path,
-    version="",
-    preliminary_url="https://github.com/impy-project/impy.git/",
-    create_zip_files=False,
-):
-    """The '_create_iamdata_content' is a function
-    for creation of iamdata_content.json
-    and zip files for each directory model if create_zip_files=True
-    The files are created in 'path_to_iamdata'
-
-    Example of usage:
-    impy_path = "/full/path/to/impy/src/impy"
-    _create_iamdata_content(path_to_iamdata, version="1", create_zip_files=True)
-    """
-
-    # Get list of files
-    p = pathlib.Path(impy_path) / "iamdata"
-    db_file = dict()
-    for i in p.glob("**/*"):
-        rel_path = i.relative_to(p)
-        if rel_path.parts[0].startswith("."):
-            continue
-        if db_file.get(rel_path.parts[0], None) is None:
-            if len(rel_path.parts) > 1:
-                db_file[rel_path.parts[0]] = [rel_path.as_posix()]
-        else:
-            if len(rel_path.parts) > 1:
-                db_file.get(rel_path.parts[0]).append(rel_path.as_posix())
-
-    content = dict()
-    for model in db_file:
-        sha_256 = ""
-        if create_zip_files:
-            zip_file = p / ".created_zips" / f"{model}_v{version}.zip"
-            zip_file.parent.mkdir(parents=True, exist_ok=True)
-            with zipfile.ZipFile(zip_file, mode="w") as archive:
-                for file in db_file[model]:
-                    archive.write(p / file, arcname=file)
-            sha_256 = _file_checksum(zip_file)
-
-        content[model] = {
-            "version": f"{version}",
-            "sha_256": f"{sha_256}",
-            "url": f"{preliminary_url}{model}_v{version}.zip",
-            "data_files": db_file[model],
-        }
-
-    with open(p / "iamdata_content.json", "w") as fp:
-        json.dump(content, fp, sort_keys=True, indent=4)
+        version_glob = vname.split("_v")[0]
+        for vfile in model_dir.glob(f"{version_glob}_v*"):
+            vfile.unlink
+        with open(version_file, "w") as vf:
+            vf.write(url)
 
 
 class TaggedFloat:
