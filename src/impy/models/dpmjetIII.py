@@ -1,7 +1,8 @@
 from impy.common import MCRun, MCEvent
 from impy import impy_config
-from impy.util import info, _check_model_data_files
-import pathlib
+from impy.util import info  # ,_check_data_dir
+
+# import pathlib
 
 
 class DpmjetIIIEvent(MCEvent):
@@ -83,9 +84,12 @@ class DpmjetIIIRun(MCRun):
 
         info(1, "Initializing DPMJET-III")
 
-        _check_model_data_files(
-            pathlib.Path(dpm_conf["dat_dir"][self.version]).parts[-1]
-        )
+        # dpmjet_ver = pathlib.Path(dpm_conf["dat_dir"][self.version]).parts[-1]
+        # if dpmjet_ver == "dpm3":
+        #     _check_data_dir("url/for/dpm3_v001.zip")
+        # else:
+        #     _check_data_dir("url/for/dpm3191_v001.zip")
+
         # Set the dpmjpar.dat file
         if hasattr(self._lib, "pomdls") and hasattr(self._lib.pomdls, "parfn"):
             pfile = dpm_conf["param_file"][self.version]

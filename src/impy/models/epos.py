@@ -2,7 +2,7 @@ import numpy as np
 
 from impy import base_path, impy_config
 from impy.common import MCEvent, MCRun
-from impy.util import info, _check_model_data_files
+from impy.util import info  # , _check_data_dir
 
 
 class EPOSEvent(MCEvent):
@@ -79,7 +79,7 @@ class EposLHC(MCRun):
 
         k = event_kinematics
 
-        _check_model_data_files("epos")
+        # _check_data_dir("url/for/epos_v001.zip")
         datdir = path.join(base_path, epos_conf["datdir"])
         self._lib.initializeepos(
             float(self._seed),
