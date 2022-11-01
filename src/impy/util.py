@@ -268,6 +268,13 @@ def _download_file(outfile, url):
 
 
 def _cached_data_dir(url):
+    """Checks for existence of version file
+    "model_name_vxxx.zip". Downloads and unpacks
+    zip file from url in case the file is not found
+
+    Args:
+        url (str): url for zip file
+    """
     impy_path = pathlib.Path(__file__).parent.absolute()
     base_dir = pathlib.Path(impy_path) / "iamdata"
 

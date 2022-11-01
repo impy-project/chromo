@@ -1,8 +1,7 @@
 from ..common import MCRun, MCEvent
 from ..util import info
 from impy import impy_config, base_path
-
-# from impy.util import  _cached_data_dir
+from impy.util import _cached_data_dir
 from pathlib import Path
 from os import environ
 import numpy as np
@@ -62,7 +61,10 @@ class Pythia8(MCRun):
 
         self._lib.hepevt = self._lib.Hepevt()
 
-        # _cached_data_dir("url/for/Pythia8_v001.zip")
+        _cached_data_dir(
+            "https://github.com/impy-project/impy/releases/download"
+            "/zipped_data_v1.0/Pythia8_v001.zip"
+        )
         datdir = Path(base_path) / "iamdata" / "Pythia8" / "xmldoc"
 
         # Must delete PYTHIA8DATA from environ if it exists, since it overrides
