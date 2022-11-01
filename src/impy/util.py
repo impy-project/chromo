@@ -277,6 +277,7 @@ def _cached_data_dir(url):
     """
     impy_path = pathlib.Path(__file__).parent.absolute()
     base_dir = pathlib.Path(impy_path) / "iamdata"
+    base_dir.mkdir(parents=True, exist_ok=True)
 
     vname = Path(url).stem
     model_dir = base_dir / vname.split("_v")[0]
