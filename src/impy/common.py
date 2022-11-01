@@ -293,7 +293,7 @@ class EventData:
         if model == "Pythia" and version.startswith("8"):
             # must deselect parton showers in Pythia-8 to use HepMC3 IO
             ev = self.without_parton_shower()
-        elif model in ("UrQMD", "PhoJet"):
+        elif model in ("UrQMD", "DPMJET-III"):
             # can only save final state until history is fixed
             warnings.warn(
                 f"{model}-{version}: only final state particles "
