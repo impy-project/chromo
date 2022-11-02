@@ -18,13 +18,14 @@ import os
 import re
 import subprocess as subp
 import sys
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 import sysconfig as sc
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
 
 cwd = Path(__file__).parent
+
 
 # Normal print does not work while CMakeBuild is running
 def force_print(msg):
@@ -131,24 +132,19 @@ class CMakeBuild(build_ext):
                 s = f.read()
             cached_generator = cache_value("CMAKE_GENERATOR", s)
             cached_cfg = cache_value("CMAKE_BUILD_TYPE", s)
-            disagreement = []
+            disagreement = [
+                (cmake_generator and cached_generator != cmake_generator),
+                cached_cfg != cfg,
+            ]
             for arg in cmake_args:
                 if arg.startswith("-D"):
                     key, value = arg[2:].split("=")
                     cached_value = cache_value(key, s)
                     # Change \ to / in case of Windows
                     disagreement.append(
-                        PureWindowsPath(value).as_posix()
-                        != PureWindowsPath(cached_value).as_posix()
+                        Path(value).absolute() != Path(cached_value).absolute()
                     )
-
-            if any(
-                disagreement
-                + [
-                    (cmake_generator and cached_generator != cmake_generator),
-                    cached_cfg != cfg,
-                ]
-            ):
+            if any(disagreement):
                 cmake_cache.unlink()
 
         # run cmake setup only once
