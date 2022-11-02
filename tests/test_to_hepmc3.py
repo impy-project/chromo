@@ -1,4 +1,4 @@
-from impy.kinematics import CenterOfMass, FixedTarget
+from impy.kinematics import CenterOfMass
 from impy import models as im
 from impy.constants import GeV
 from impy.models.sophia import Sophia20
@@ -72,9 +72,10 @@ def test_to_hepmc3(Model):
     nmax = len(event.px)
     for i, (a, b) in enumerate(unique_vertices):
         assert a >= 0 or a == -1
-        assert (
-            b <= nmax
-        ), f"vertex {i} has parent range {(a, b)} which exceeds particle record nmax={nmax}"
+        assert b <= nmax, (
+            f"vertex {i} has parent range {(a, b)} which "
+            f"exceeds particle record nmax={nmax}"
+        )
 
     # not all vertices have locations different from zero,
     # create unique fake vertex locations for testing
