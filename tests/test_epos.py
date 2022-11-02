@@ -38,7 +38,11 @@ def test_charge(event):
     expected = reference_charge(event.pid)
     # skip internal particles unknown to reference_charge
     ma = np.isnan(expected)
-    assert np.mean(ma) < 0.3
+    # EPOS has lots of unknown generator-specific particles.
+    # For these, NaN is returned. We just check here whether
+    # the fraction is not 100 %, that cannot be, since at least
+    # final state particles cannot be generator-specific.
+    assert np.mean(ma) < 0.8
     event.charge[ma] = np.nan
     assert_allclose(event.charge, expected)
 

@@ -29,7 +29,8 @@ def test_to_hepmc3(Model):
 
     event = run_in_separate_process(run, Model)
 
-    if Model in (im.UrQMD34, im.Phojet112, im.Phojet191, im.Phojet193):
+    # special case for models that only have final-state particles
+    if Model is im.UrQMD34 or Model.name in ("PhoJet", "DPMJET-III"):
         hev = event.to_hepmc3()
         # only final state is stored
         fs = event.final_state()
@@ -39,7 +40,7 @@ def test_to_hepmc3(Model):
             assert p.status == fs.status[i]
         assert len(hev.vertices) == 0
         return  # test ends here
-
+    # special case for Pythia8, which does not contain the parton show
     elif Model is im.Pythia8:
         # parton shower is skipped
         from impy.constants import quarks_and_diquarks_and_gluons
