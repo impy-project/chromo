@@ -61,4 +61,6 @@ jobs:
         version: 11
     - run: python -m pip install --upgrade pip
     - run: python -m pip install --prefer-binary -v .[test]
-    - run: env no_proxy='*' python -m pytest -vv
+    - run: python -m pytest -vv
+      env:
+            no_proxy: '*'
