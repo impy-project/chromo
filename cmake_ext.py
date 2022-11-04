@@ -103,7 +103,7 @@ class CMakeBuild(build_ext):
                     "win-arm32": "ARM",
                     "win-arm64": "ARM64",
                 }[self.plat_name]
-                cmake_args += ["-A", arch]
+                # cmake_args += ["-A", arch]
 
             cmake_args += [f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"]
 
