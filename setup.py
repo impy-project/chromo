@@ -12,7 +12,7 @@ if (cwd / ".git").exists():
     # make sure that submodules are up-to-date,
     # it is a common error to forget this when
     # switching between development branches
-    subp.check_call(["git", "submodule", "update"])
+    subp.call(["git", "submodule", "update"])
 
 models = [
     "eposlhc",
