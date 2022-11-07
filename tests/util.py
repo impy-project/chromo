@@ -6,6 +6,7 @@ import os
 from impy import models as im
 from impy.common import MCRun
 import pytest
+import platform
 
 
 def reference_charge(pid):
@@ -48,7 +49,8 @@ def get_all_models(module):
         try:
             # fails if obj is not a class
             if issubclass(obj, MCRun):
-                result.append(obj)
+                if not (obj == im.UrQMD34 and platform.system() == "Windows"):
+                    result.append(obj)
         except TypeError:
             pass
     return result

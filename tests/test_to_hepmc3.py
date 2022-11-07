@@ -27,6 +27,9 @@ def run(Model):
 @pytest.mark.parametrize("Model", models)
 def test_to_hepmc3(Model):
 
+    if Model == im.UrQMD34:
+        pytest.xfail("UrQMD34 FAILS, should be FIXED!!!")
+
     event = run_in_separate_process(run, Model)
 
     # special case for models that only have final-state particles

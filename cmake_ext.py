@@ -33,7 +33,7 @@ def force_print(msg):
 
 
 def cache_value(key, s):
-    m = re.search(key + r":[A-Z]+=([^\s]*)", s)
+    m = re.search(key + r":[A-Z]+=(.*)" + "$", s, flags=re.MULTILINE)
     assert m, f"{key} is not a cached cmake variable"
     return m.group(1)
 
@@ -88,6 +88,7 @@ class CMakeBuild(build_ext):
 
         build_args = ["--config", cfg]  # needed by some generators, e.g. on Windows
 
+        # if cmake_generator in ("Unix Makefiles", "MinGW Makefiles", "MSYS Makefiles"):
         if self.compiler.compiler_type == "msvc":
             # CMake allows an arch-in-generator style for backward compatibility
             contains_arch = any(x in cmake_generator for x in ("ARM", "Win64"))
@@ -105,7 +106,7 @@ class CMakeBuild(build_ext):
                 }[self.plat_name]
                 # cmake_args += ["-A", arch]
 
-            cmake_args += [f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"]
+            # cmake_args += [f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"]
 
         elif sys.platform.startswith("darwin"):
             # Cross-compile support for macOS - respect ARCHFLAGS if set
