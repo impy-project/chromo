@@ -86,7 +86,7 @@ class CompositeTarget(object):
 
     from numpy.random import default_rng
 
-    def __init__(self, component_list, label="", random_state=None, nevents=None):
+    def __init__(self, component_list, label="", random_state=None):
 
         if random_state is None:
             self.rng = self.default_rng()
@@ -119,11 +119,6 @@ class CompositeTarget(object):
                     f"{len(component)} for {component}"
                 )
         self._normalize()
-
-        # Get a sample from distribution to output in ordered way
-        self._is_ordered = False
-        if nevents:
-            self._get_sample(nevents)
 
     def _add_component(self, az, fraction, name=""):
         A, Z = _FromParticleName._get_AZ(az)
@@ -189,47 +184,9 @@ class CompositeTarget(object):
         max_ind = a_val.index(max(a_val))
         return self.component_A[max_ind], self.component_Z[max_ind]
 
-    def _get_sample(self, nevt):
-        """Get counts for each realization from self.component_fractions distribution
-        for 'nevt' events"""
-        diff_dist = np.zeros((len(self.component_fractions),), dtype=np.int64)
-        for i in range(nevt):
-            ic = self.rng.choice(self.ncomponents, 1, p=self.component_fractions)[0]
-            diff_dist[ic] += 1
-        self._diff_dist = np.append(diff_dist, 0)
-        self._is_ordered = True
-
-    def _get_next_event_index(self):
-        diff_dist = self._diff_dist
-        j = diff_dist[-1]
-        n = len(diff_dist) - 1
-        res = None
-        if j < n:
-            while j < n and diff_dist[j] == 0:
-                j += 1
-            if j < n:
-                res = j
-            if diff_dist[j] > 0:
-                diff_dist[j] -= 1
-
-        diff_dist[-1] = j
-        return res
-
     def _get_random_AZ(self):
-        """Return randomly an (A, Z) tuple according to the component fraction.
-        Event generators cannot effetively switch from one to another target,
-        therefore components are taken from a precalculated sample in ordered way,
-        i.e. all events giving nucleous of type A,then all events giving nucleous
-        of type B, etc. If sample is exhausted, the components are produced in
-        random order.
-        """
-        if self._is_ordered:
-            ic = self._get_next_event_index()
-            if ic is None:
-                self._is_ordered = False
-                ic = self.rng.choice(self.ncomponents, 1, p=self.component_fractions)[0]
-        else:
-            ic = self.rng.choice(self.ncomponents, 1, p=self.component_fractions)[0]
+        """Return randomly an (A, Z) tuple according to the component fraction."""
+        ic = self.rng.choice(self.ncomponents, 1, p=self.component_fractions)[0]
         return self.component_A[ic], self.component_Z[ic]
 
     def __str__(self):

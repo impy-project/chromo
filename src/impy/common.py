@@ -614,19 +614,30 @@ class MCRun(ABC):
 
     def _set_comp_target(self, nevents):
         if self._curr_event_kin.composite_target:
-            self._curr_event_kin.composite_target._get_sample(nevents)
             self._nremaining = nevents
+            self._target_ind = self._gen_target_ind(nevents)
+
+    def _gen_target_ind(self, nevents):
+        ctarget = self._curr_event_kin.composite_target
+        sample = ctarget.rng.multinomial(nevents, ctarget.component_fractions)
+
+        for cindex, ntimes in enumerate(sample):
+            for _ in range(ntimes):
+                yield cindex
 
     def _update_event_kinematics(self, nremaining):
+        if nremaining == self._nremaining:
+            return
+
         if self._curr_event_kin.composite_target:
-            # If nremaining haven't changed, because of
-            # rejection do nothing
-            if nremaining != self._nremaining:
-                self._nremaining = nremaining
-                evt_kin = self._curr_event_kin
-                if evt_kin.p2_is_nucleus:
-                    evt_kin.A2, evt_kin.Z2 = evt_kin.composite_target._get_random_AZ()
-                    self._set_event_kinematics(evt_kin)
+            ctarget = self._curr_event_kin.composite_target
+            self._nremaining = nremaining
+            evt_kin = self._curr_event_kin
+            if evt_kin.p2_is_nucleus:
+                ic = next(self._target_ind)
+                evt_kin.A2 = ctarget.component_A[ic]
+                evt_kin.Z2 = ctarget.component_Z[ic]
+                self._set_event_kinematics(evt_kin)
 
     @property
     def random_state(self):
