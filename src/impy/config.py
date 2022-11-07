@@ -1,10 +1,15 @@
 # Impy configuration file
+from pathlib import Path
 
 # Level of verbosity
 debug_level = 1
 
 # Location for cache file for particledata.tables objects
 pdata_cachefile = "impy_pdata_cache.cch"
+data_url = "https://github.com/impy-project/impy/releases/download/zipped_data_v1.0"
+data_version = "001"
+data_path = Path(__file__).parent.absolute() / "iamdata"
+
 
 # For generators which return not successful events:
 # True: retry rejected events until desired number of events reached
@@ -73,7 +78,7 @@ epos = {
     "has_boosts": True,
     "has_hepevt": True,
     "int_support": ["hh", "hA", "AA", "gg", "gh", "gA"],
-    "datdir": "iamdata/epos/",
+    "datdir": "epos",
     "debug_level": 0,
     "projectiles": {
         "LHC": [
@@ -154,22 +159,22 @@ dpmjetIII = {
     # maximal energy for cross section table initialization
     "debug_level": 0,
     "dat_dir": {
-        "3.0-6": "iamdata/dpm3/",
-        "19.1": "iamdata/dpm3191/",
-        "19.2": "iamdata/dpm3191/",
-        "19.3": "iamdata/dpm3191/",
+        "3.0-6": "dpm3",
+        "19.1": "dpm3191",
+        "19.2": "dpm3191",
+        "19.3": "dpm3191",
     },
     "param_file": {
-        "3.0-6": "iamdata/dpm3/fitpar.dat",
-        "19.1": "iamdata/dpm3191/dpmjpar.dat",
-        "19.2": "iamdata/dpm3191/dpmjpar.dat",
-        "19.3": "iamdata/dpm3191/dpmjpar.dat",
+        "3.0-6": "fitpar.dat",
+        "19.1": "dpmjpar.dat",
+        "19.2": "dpmjpar.dat",
+        "19.3": "dpmjpar.dat",
     },
     "evap_file": {
-        "3.0-6": "iamdata/dpm3/dpmjet.dat",
-        "19.1": "iamdata/dpm3191/dpmjet.dat",
-        "19.2": "iamdata/dpm3191/dpmjet.dat",
-        "19.3": "iamdata/dpm3191/dpmjet.dat",
+        "3.0-6": "dpmjet.dat",
+        "19.1": "dpmjet.dat",
+        "19.2": "dpmjet.dat",
+        "19.3": "dpmjet.dat",
     },
     "projectiles": {
         "3.0-6": [2212, 2112, 321, -321, 211, -211, -2212],
@@ -253,16 +258,16 @@ phojet = {
     "int_support": ["hh", "gg", "gh"],
     "debug_level": 0,
     "dat_dir": {
-        "1.12-35": "iamdata/dpm3/",
-        "19.1": "iamdata/dpm3191/",
-        "19.2": "iamdata/dpm3191/",
-        "19.3": "iamdata/dpm3191/",
+        "1.12-35": "dpm3",
+        "19.1": "dpm3191",
+        "19.2": "dpm3191",
+        "19.3": "dpm3191",
     },
     "param_file": {
-        "1.12-35": "iamdata/dpm3/fitpar.dat",
-        "19.1": "iamdata/dpm3191/dpmjpar.dat",
-        "19.2": "iamdata/dpm3191/dpmjpar.dat",
-        "19.3": "iamdata/dpm3191/dpmjpar.dat",
+        "1.12-35": "fitpar.dat",
+        "19.1": "dpmjpar.dat",
+        "19.2": "dpmjpar.dat",
+        "19.3": "dpmjpar.dat",
     },
     "projectiles": {
         "last": [
@@ -296,7 +301,7 @@ qgsjet = {
     "has_boosts": False,
     "has_hepevt": True,
     "int_support": ["hh", "hA", "AA"],
-    "datdir": "iamdata/qgsjet/",
+    "datdir": "qgsjet",
     "debug_level": 0,
     "projectiles": {
         "II-03": [2212, 2112, 321, -321, 211, -211, 130, -2212, -2112],

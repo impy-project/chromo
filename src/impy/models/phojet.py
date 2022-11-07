@@ -1,6 +1,6 @@
 from impy.common import MCRun, MCEvent
 from impy import impy_config
-from impy.util import info, fortran_chars
+from impy.util import info, fortran_chars, _cached_data_dir
 
 
 class PhojetEvent(MCEvent):
@@ -81,15 +81,17 @@ class PHOJETRun(MCRun):
         init_flag = -2 if "dpmjetIII" in self._lib.__name__ else -1
 
         pho_conf = impy_config["phojet"]
+
+        data_dir = _cached_data_dir(pho_conf["dat_dir"][self.version])
         # Set the dpmjpar.dat file
         if hasattr(self._lib, "pomdls") and hasattr(self._lib.pomdls, "parfn"):
-            pfile = pho_conf["param_file"][self.version]
+            pfile = data_dir + pho_conf["param_file"][self.version]
             info(3, "PHOJET parameter file at", pfile)
             self._lib.pomdls.parfn = fortran_chars(self._lib.pomdls.parfn, pfile)
 
         # Set the data directory for the other files
         if hasattr(self._lib, "poinou") and hasattr(self._lib.poinou, "datdir"):
-            pfile = pho_conf["dat_dir"][self.version]
+            pfile = data_dir
             info(3, "PHOJET data dir is at", pfile)
             self._lib.poinou.datdir = fortran_chars(self._lib.poinou.datdir, pfile)
             self._lib.poinou.lendir = len(pfile)

@@ -1,6 +1,6 @@
 import numpy as np
 from impy.common import MCRun, MCEvent
-from impy import impy_config, base_path
+from impy import impy_config
 from impy.util import info, _cached_data_dir
 
 
@@ -76,17 +76,12 @@ class QGSJetIIRun(QGSJetRun):
     QGSJET-II-xx series of event generators."""
 
     def __init__(self, event_kinematics, seed=None, logfname=None):
-        import os.path as path
 
         super().__init__(seed, logfname)
 
         info(5, "Initializing QGSJET-II")
-        _cached_data_dir(
-            "https://github.com/impy-project/impy/releases/download"
-            "/zipped_data_v1.0/qgsjet_v001.zip"
-        )
-        datdir = path.join(base_path, impy_config["qgsjet"]["datdir"])
 
+        datdir = _cached_data_dir(impy_config["qgsjet"]["datdir"])
         self._lib.cqgsini(
             self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
         )
@@ -139,18 +134,11 @@ class QGSJet01Run(QGSJetRun):
     QGSJET-01c legacy event generators."""
 
     def __init__(self, event_kinematics, seed="random", logfname=None):
-        from os import path
-
         super().__init__(seed, logfname)
 
         info(5, "Initializing QGSJET01d")
 
-        _cached_data_dir(
-            "https://github.com/impy-project/impy/releases/download"
-            "/zipped_data_v1.0/qgsjet_v001.zip"
-        )
-
-        datdir = path.join(base_path, impy_config["qgsjet"]["datdir"])
+        datdir = _cached_data_dir(impy_config["qgsjet"]["datdir"])
         self._lib.cqgsini(
             self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
         )

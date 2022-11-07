@@ -266,7 +266,7 @@ def _download_file(outfile, url):
     return True
 
 
-def _cached_data_dir(url):
+def _cached_data_dir(data_dir):
     """Checks for existence of version file
     "model_name_vxxx.zip". Downloads and unpacks
     zip file from url in case the file is not found
@@ -274,12 +274,16 @@ def _cached_data_dir(url):
     Args:
         url (str): url for zip file
     """
-    impy_path = Path(__file__).parent.absolute()
-    base_dir = Path(impy_path) / "iamdata"
+
+    data_url = impy_config["data_url"]
+    data_version = impy_config["data_version"]
+    url = f"{data_url}/{data_dir}_v{data_version}.zip"
+
+    base_dir = impy_config["data_path"]
     base_dir.mkdir(parents=True, exist_ok=True)
 
     vname = Path(url).stem
-    model_dir = base_dir / vname.split("_v")[0]
+    model_dir = base_dir / data_dir
     version_file = model_dir / vname
     if not version_file.exists():
         zip_file = base_dir / Path(url).name
@@ -299,7 +303,7 @@ def _cached_data_dir(url):
             vfile.unlink
         with open(version_file, "w") as vf:
             vf.write(url)
-    return model_dir
+    return str(model_dir) + "/"
 
 
 class TaggedFloat:
