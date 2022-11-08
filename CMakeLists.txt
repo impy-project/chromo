@@ -348,7 +348,7 @@ target_link_libraries(_pythia8 PRIVATE libpythia8)
 if (WIN32)
 find_package(dlfcn-win32 REQUIRED)
 set(CMAKE_DL_LIBS dlfcn-win32::dl)
-target_link_libraries(_pythia8 PRIVATE ${CMAKE_DL_LIBS})
+target_link_libraries(libpythia8 PRIVATE ${CMAKE_DL_LIBS})
 endif()
 
 ### sophia
