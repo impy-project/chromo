@@ -103,6 +103,7 @@ else() # Windows MinGW!
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
 	  $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
+    $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
   )
   # TODO
   # set(FLAGS -fast -fpe0)
