@@ -34,12 +34,12 @@ models = [
     "phojet193",
     "dpmjetIII191",
     "dpmjetIII193",
+    "pythia8",
 ]
 
 # urqmd34 doesn't build correctly on Windows
 if platform.system() != "Windows":
     models.append("urqmd34")
-    models.append("pythia8")
 
 # for convenience, support building extra models via extra.cfg
 # extra.cfg is not tracked by git, so can be freely modified
