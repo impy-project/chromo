@@ -64,7 +64,7 @@ jobs:
       if: ${{ matrix.os != 'windows-latest' }}
 
     - if: ${{ matrix.os == 'windows-latest' }}
-      run: >
+      run: |
         curl -LJO https://github.com/dlfcn-win32/dlfcn-win32/archive/refs/heads/master.zip
         unzip dlfcn-win32-master.zip
         python -m pip install cmake
