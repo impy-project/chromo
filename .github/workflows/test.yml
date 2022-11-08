@@ -73,6 +73,8 @@ jobs:
       run: >   
         cmake -S ./dlfcn-win32-master -B ./build_dlfcn -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_INSTALL_PREFIX="/c/ProgramData/Chocolatey/lib/mingw/tools/install/mingw64"
+        -DCMAKE_PREFIX_PATH="/c/ProgramData/Chocolatey/lib/mingw/tools/install/mingw64"
+        -DCMAKE_MODULE_PATH="/c/ProgramData/Chocolatey/lib/mingw/tools/install/mingw64"
     - if: ${{ matrix.os == 'windows-latest' }}
       run: |  
         cmake --build ./build_dlfcn
