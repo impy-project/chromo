@@ -81,7 +81,7 @@ class QGSJetIIRun(QGSJetRun):
 
         info(5, "Initializing QGSJET-II")
 
-        datdir = _cached_data_dir(impy_config["qgsjet"]["datdir"])
+        datdir = _cached_data_dir("qgsjet")
         self._lib.cqgsini(
             self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
         )
@@ -138,7 +138,7 @@ class QGSJet01Run(QGSJetRun):
 
         info(5, "Initializing QGSJET01d")
 
-        datdir = _cached_data_dir(impy_config["qgsjet"]["datdir"])
+        datdir = _cached_data_dir("qgsjet")
         self._lib.cqgsini(
             self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
         )

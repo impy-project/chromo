@@ -63,8 +63,6 @@ class EposLHC(MCRun):
     def __init__(self, event_kinematics, seed=None, logfname=None):
         super().__init__(seed, logfname)
 
-        epos_conf = impy_config["epos"]
-
         info(1, "First initialization")
         self._lib.aaset(0)
 
@@ -77,7 +75,7 @@ class EposLHC(MCRun):
 
         k = event_kinematics
 
-        datdir = _cached_data_dir(epos_conf["datdir"])
+        datdir = _cached_data_dir("epos")
         self._lib.initializeepos(
             float(self._seed),
             k.ecm,

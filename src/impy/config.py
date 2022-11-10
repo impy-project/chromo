@@ -1,14 +1,10 @@
 # Impy configuration file
-from pathlib import Path
 
 # Level of verbosity
 debug_level = 1
 
 # Location for cache file for particledata.tables objects
 pdata_cachefile = "impy_pdata_cache.cch"
-data_url = "https://github.com/impy-project/impy/releases/download/zipped_data_v1.0"
-data_version = "001"
-data_path = Path(__file__).parent.absolute() / "iamdata"
 
 
 # For generators which return not successful events:

@@ -275,11 +275,11 @@ def _cached_data_dir(data_dir):
         url (str): url for zip file
     """
 
-    data_url = impy_config["data_url"]
-    data_version = impy_config["data_version"]
+    data_url = "https://github.com/impy-project/impy/releases/download/zipped_data_v1.0"
+    data_version = "001"
     url = f"{data_url}/{data_dir}_v{data_version}.zip"
 
-    base_dir = impy_config["data_path"]
+    base_dir = Path(__file__).parent.absolute() / "iamdata"
     base_dir.mkdir(parents=True, exist_ok=True)
 
     vname = Path(url).stem

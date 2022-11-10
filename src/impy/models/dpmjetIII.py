@@ -78,15 +78,23 @@ class DpmjetIIIRun(MCRun):
         self._max_A2 = event_kinematics.A2
 
         self.event_kinematics = event_kinematics
-        dpm_conf = impy_config["dpmjetIII"]
 
         info(1, "Initializing DPMJET-III")
 
-        data_dir = _cached_data_dir(dpm_conf["dat_dir"][self.version])
+        if self.version == "3.0-6":
+            dat_dir_name = "dpm3"
+            param_file_name = "fitpar.dat"
+            evap_file_name = "dpmjet.dat"
+        else:
+            dat_dir_name = "dpm3191"
+            param_file_name = "dpmjpar.dat"
+            evap_file_name = "dpmjet.dat"
+
+        data_dir = _cached_data_dir(dat_dir_name)
 
         # Set the dpmjpar.dat file
         if hasattr(self._lib, "pomdls") and hasattr(self._lib.pomdls, "parfn"):
-            pfile = data_dir + dpm_conf["param_file"][self.version]
+            pfile = data_dir + param_file_name
             info(3, "DPMJET parameter file at", pfile)
             self._lib.pomdls.parfn = fortran_chars(self._lib.pomdls.parfn, pfile)
 
@@ -98,7 +106,7 @@ class DpmjetIIIRun(MCRun):
             self._lib.poinou.lendir = len(pfile)
 
         if hasattr(self._lib, "dtimpy"):
-            evap_file = data_dir + dpm_conf["evap_file"][self.version]
+            evap_file = data_dir + evap_file_name
             info(3, "DPMJET evap file at", evap_file)
             self._lib.dtimpy.fnevap = fortran_chars(self._lib.dtimpy.fnevap, evap_file)
 
