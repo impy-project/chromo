@@ -6,6 +6,7 @@ import os
 from impy import models as im
 from impy.common import MCRun
 import pytest
+import platform
 
 
 def reference_charge(pid):
@@ -15,10 +16,10 @@ def reference_charge(pid):
     try:
         return Particle.from_pdgid(pid).charge
     except (ParticleNotFound, InvalidParticle):
-        return 0
+        return np.nan
 
 
-def run_in_separate_process(fn, *args, timeout=30):
+def run_in_separate_process(fn, *args, timeout=60):
     # Some models need to initialize same fortran code, which can only be
     # initialized once. As a workaround, we run each model in a separate
     # thread. When running several jobs, maxtasksperchild=1 is needed to
@@ -31,34 +32,27 @@ def run_in_separate_process(fn, *args, timeout=30):
             # usually happens when model aborts and kills child process
             raise TimeoutError("check stdout for errors")
 
+        # In case there any other exception, it can be useful to run in
+        # main thread to get proper backtrace. Uncomment the following to
+        # enable this.
+
+        # except Exception:
+        #     fn(*args)
+
     return out
-
-
-# remove this when git lfs issue is fixed
-def xfail_on_ci_if_model_is_incompatible(Model):
-    if os.environ.get("CI", False) and Model in (
-        im.QGSJet01d,
-        im.QGSJetII03,
-        im.QGSJetII04,
-        im.Phojet191,
-        im.Phojet112,
-        im.Phojet193,
-        im.EposLHC,
-        im.DpmjetIII306,
-        im.DpmjetIII191,
-        im.DpmjetIII193,
-    ):
-        pytest.xfail("model cannot succeed on CI, because git lfs does not work")
 
 
 def get_all_models(module):
     result = []
+    removed_from_tests = [im.UrQMD34, im.Pythia8]
     for key in dir(module):
         obj = getattr(module, key)
         try:
             # fails if obj is not a class
             if issubclass(obj, MCRun):
-                result.append(obj)
+                removed_from_tests
+                if not (obj in removed_from_tests and platform.system() == "Windows"):
+                    result.append(obj)
         except TypeError:
             pass
     return result

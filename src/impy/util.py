@@ -1,9 +1,16 @@
 """Utility module for auxiliary methods and classes."""
 
-from __future__ import print_function
+import warnings
 import inspect
 import os
+from pathlib import Path
+import urllib.request
+import zipfile
+import shutil
+
+
 from impy import impy_config
+import numpy as np
 
 # Global debug flags that would be nice to have in some sort
 # of config or other ideas?
@@ -46,7 +53,7 @@ def getAZN(pdgid):
 
 
 def AZ2pdg(A, Z):
-    """Conversion of nucleus with mass A and chage Z
+    """Conversion of nucleus with mass A and charge Z
     to PDG nuclear code"""
     # 10LZZZAAAI
     pdg_id = 1000000000
@@ -213,7 +220,106 @@ class OutputGrabber(object):
             self.capturedtext += char
 
 
+# Functions to check and download dababase files on github
+
+
+def _download_file(outfile, url):
+    """Download a file from 'url' to 'outfile'"""
+    fname = Path(url).name
+    try:
+        response = urllib.request.urlopen(url)
+    except BaseException:
+        raise ConnectionError(
+            f"_download_file: probably something wrong with url = '{url}'"
+        )
+    total_size = response.getheader("content-length")
+
+    min_blocksize = 4096
+    if total_size:
+        total_size = int(total_size)
+        blocksize = max(min_blocksize, total_size // 100)
+    else:
+        blocksize = min_blocksize
+
+    wrote = 0
+    with open(outfile, "wb") as f:
+        while True:
+            data = response.read(blocksize)
+            if not data:
+                break
+            f.write(data)
+            wrote += len(data)
+            if total_size:
+                print(
+                    f"Downloading {fname}: {wrote/total_size*100:.0f}% "
+                    f"done ({wrote/(1024*1024):.0f} Mb) \r",
+                    end=" ",
+                )
+            else:
+                print(
+                    f"Downloading {fname}: {wrote/(1024*1024):.0f} Mb downloaded \r",
+                    end=" ",
+                )
+    print()
+    if total_size and wrote != total_size:
+        raise ConnectionError(f"{fname} has not been downloaded")
+    return True
+
+
+def _cached_data_dir(url):
+    """Checks for existence of version file
+    "model_name_vxxx.zip". Downloads and unpacks
+    zip file from url in case the file is not found
+
+    Args:
+        url (str): url for zip file
+    """
+
+    base_dir = Path(__file__).parent.absolute() / "iamdata"
+    base_dir.mkdir(parents=True, exist_ok=True)
+
+    vname = Path(url).stem
+    model_dir = base_dir / vname.split("_v")[0]
+    version_file = model_dir / vname
+    if not version_file.exists():
+        zip_file = base_dir / Path(url).name
+        temp_dir = Path(model_dir.parent / f".{model_dir.name}")
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        if model_dir.exists():
+            shutil.move(model_dir, temp_dir)
+        if _download_file(zip_file, url):
+            if zipfile.is_zipfile(zip_file):
+                with zipfile.ZipFile(zip_file, "r") as zf:
+                    zf.extractall(base_dir.as_posix())
+                zip_file.unlink()
+                shutil.rmtree(temp_dir, ignore_errors=True)
+
+        version_glob = vname.split("_v")[0]
+        for vfile in model_dir.glob(f"{version_glob}_v*"):
+            vfile.unlink
+        with open(version_file, "w") as vf:
+            vf.write(url)
+    return str(model_dir) + "/"
+
+
 class TaggedFloat:
+    """Floating point type that is distinct from an ordinary float.
+
+    TaggedFloat is a base class to inherit from. We use it to declare
+    that certain numbers have special meaning, e.g.::
+
+        class KineticEnergy(TaggedFloat):
+            pass
+
+    can be used to declare a float-like class which stores kinetic energies,
+    as opposed to another float-like class which stores the total energy or
+    the momentum. Functions with an energy parameter can react differently
+    on a KineticEnergy or TotalEnergy.
+
+    A tagged float only allows arithmetic with its own type or
+    with type-less numbers (int, float).
+    """
+
     __slots__ = "_value"
 
     def __init__(self, val):
@@ -262,3 +368,76 @@ class TaggedFloat:
 
     def __rsub__(self, val):
         return self.__class__(self._reduce(val) - self._value)
+
+
+# from Python-3.9 onwards, classmethod can be combined
+# with property to replace this, which can then be removed
+class classproperty:
+    def __init__(self, f):
+        self.f = f
+
+    def __get__(self, obj, owner):
+        return self.f(owner)
+
+
+def _select_parents(mask, parents):
+    # This algorithm is slow in pure Python and should be
+    # speed up by compiling the logic.
+
+    # attach parentless particles to beam particles,
+    # unless those are also removed
+    fallback = (0, 0)
+    if mask[0] and mask[1]:
+        fallback = (1, 2)
+
+    n = len(parents)
+    indices = np.arange(n)[mask] + 1
+    result = parents[mask]
+    mapping = {old: i + 1 for i, old in enumerate(indices)}
+
+    n = len(result)
+    for i in range(n):
+        a = result[i, 0]
+        if a == 0:
+            continue
+        p = mapping.get(a, -1)
+        if p == -1:
+            a, b = fallback
+            result[i, 0] = a
+            result[i, 1] = b
+        elif p != a:
+            q = 0
+            b = result[i, 1]
+            if b > 0:
+                q = mapping.get(b, 0)
+            result[i, 0] = p
+            result[i, 1] = q
+    return result
+
+
+def select_parents(arg, parents):
+    if parents is None:
+        return None
+
+    n = len(parents)
+
+    if isinstance(arg, np.ndarray) and arg.dtype is bool:
+        mask = arg
+    else:
+        mask = np.zeros(n, dtype=bool)
+        mask[arg] = True
+
+    with warnings.catch_warnings():
+        # suppress numba safety warning that we can ignore
+        warnings.simplefilter("ignore")
+        return _select_parents(mask, parents)
+
+
+try:
+    # accelerate with numba if numba is available
+    import numba as nb
+
+    _select_parents = nb.njit(_select_parents)
+
+except ModuleNotFoundError:
+    pass

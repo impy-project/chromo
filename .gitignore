@@ -34,5 +34,9 @@ __pycache__
 .pytest_cache
 .benchmarks
 examples/*.dat
+examples/*.root
 tests/*.dat
 extra.cfg
+pythia*.tgz
+impy-?.?.?
+src/impy/iamdata

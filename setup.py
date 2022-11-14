@@ -2,17 +2,20 @@ from pathlib import Path
 from setuptools import setup
 import sys
 import subprocess as subp
-import json
+import platform
+import os
 
 cwd = Path(__file__).parent
 
 sys.path.append(str(cwd))
 from cmake_ext import CMakeExtension, CMakeBuild  # noqa: E402
 
-# make sure that submodules are up-to-date,
-# it is a common error to forget this when
-# switching between development branches
-subp.check_call(["git", "submodule", "update"])
+if not os.environ.get("CI", False):
+    if (cwd / ".git").exists():
+        # make sure that submodules are up-to-date,
+        # it is a common error to forget this when
+        # switching between development branches
+        subp.check_call(["git", "submodule", "update"])
 
 models = [
     "eposlhc",
@@ -23,7 +26,6 @@ models = [
     "qgs01",
     "qgsII03",
     "qgsII04",
-    "urqmd34",
     "pythia6",
     "sophia",
     "dpmjet306",
@@ -33,6 +35,11 @@ models = [
     "dpmjetIII191",
     "dpmjetIII193",
 ]
+
+# urqmd34 doesn't build correctly on Windows
+if platform.system() != "Windows":
+    models.append("urqmd34")
+    models.append("pythia8")
 
 # for convenience, support building extra models via extra.cfg
 # extra.cfg is not tracked by git, so can be freely modified

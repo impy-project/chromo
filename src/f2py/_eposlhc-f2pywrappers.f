@@ -1905,7 +1905,7 @@ C     It contains Fortran 77 wrappers to fortran functions.
 
       subroutine f2pyinitproducetab(setupfunc)
       external setupfunc
-      logical producetables
+      real producetables
       common /producetab/ producetables
       call setupfunc(producetables)
       end

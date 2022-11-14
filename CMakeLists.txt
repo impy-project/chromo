@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(impylib LANGUAGES C Fortran)
+project(impylib LANGUAGES C CXX Fortran)
 
 set(BUILD_dev_dpmjetIII193 CACHE 
   PATH "source directory for dev_dpmjetIII193")
@@ -8,17 +8,17 @@ option(BUILD_sib23c00 OFF)
 option(BUILD_sib23c02 OFF)
 option(BUILD_sib23c03 OFF)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
+add_subdirectory(${CMAKE_SOURCE_DIR}/src/cpp/pybind11)
+
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src/cpp/pybind11/tools)
 include(CMakePrintHelpers)
 include(F2Py)
-include(FindPythonLibsNew)
-
-if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-  message(
-    WARNING
-      "You should call this through setup.py so that all variables are set; e.g. python setup.py develop"
-  )
-endif()
+find_package(pybind11 CONFIG)
 
 # cannot use find_package(Python), we need PythonLibsNew from pybind11
 find_package(PythonLibsNew REQUIRED)
@@ -44,6 +44,20 @@ if (NOT NUMPY_INCLUDE_DIRS)
   set(NUMPY_INCLUDE_DIRS "${_numpy_directory}" CACHE STRING "NumPy source directory location" FORCE)
 endif()
 
+macro(use_alternate_linker_if_available linker)
+  find_program(LINKER_EXECUTABLE ld.${linker})
+  if(LINKER_EXECUTABLE)
+    message(STATUS "Linker detected: ${linker} (${LINKER_EXECUTABLE})")
+    if(CLANG AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 12.0.0)
+      add_link_options(-ld-path=${linker})
+    elseif(GCC AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 12.0.0)
+      add_link_options(-ld-path=${linker})
+    endif()
+  endif()
+endmacro()
+
+use_alternate_linker_if_available(mold)
+
 # Print out the discovered paths
 cmake_print_variables(PYTHON_EXECUTABLE)
 cmake_print_variables(PYTHON_INCLUDE_DIRS)
@@ -67,6 +81,7 @@ add_compile_definitions(NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
 # generator automatically runs the preprocessor on all Fortran files
 set(CMAKE_Fortran_FLAGS_RELEASE -O3)
 
+
 # CMake sets -fPIC etc. automatically, add only unusual options
 if (UNIX)
   add_compile_options(
@@ -81,7 +96,15 @@ if (UNIX)
     add_compile_options(
       $<$<COMPILE_LANGUAGE:Fortran>:-Wno-argument-mismatch>)
   endif()
-else() # intel
+else() # Windows MinGW!
+	add_compile_options(
+    -Wno-uninitialized
+    -w
+    $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
+    $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
+	  $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
+    $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
+  )
   # TODO
   # set(FLAGS -fast -fpe0)
   # set(FLAGSF90 ${FLAGS} -ffree-form -Wobsolescent -fno-second-underscore)
@@ -90,6 +113,7 @@ endif()
 ### common for all models
 set(impy_definitions IMPY)
 set(fortran_dir ${CMAKE_SOURCE_DIR}/src/fortran)
+set(cpp_dir ${CMAKE_SOURCE_DIR}/src/cpp)
 set(f2py_dir ${CMAKE_SOURCE_DIR}/src/f2py)
 # Copy fortranobject.c to get rid of deep folder nesting
 configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c fortranobject.c COPYONLY)
@@ -238,6 +262,7 @@ f2py_add_module(_qgsII04
   ${impy_definitions}
 )
 
+if (NOT WIN32)
 ### urqmd34
 set(urqmd34_sources
   1fluid bessel delpart getmass hepcmp iso numrec pythia6409
@@ -269,6 +294,7 @@ f2py_add_module(_urqmd34
   COMPILE_DEFS
   ${impy_definitions}
 )
+endif()
 
 ### pythia6
 f2py_add_module(_pythia6
@@ -282,6 +308,56 @@ f2py_add_module(_pythia6
   COMPILE_DEFS
   ${impy_definitions}
 )
+
+### pythia8
+# About the license and how it affects impy. 
+# Pythia-8 is licensed under GPL-v2 or higher, which means GPL-v3
+# applies. An excerprt from GPL-v3:
+
+# >  A compilation of a covered work with other separate and independent
+# > works, which are not by their nature extensions of the covered work,
+# > and which are not combined with it such as to form a larger program,
+# > in or on a volume of a storage or distribution medium, is called an
+# > "aggregate" if the compilation and its resulting copyright are not
+# > used to limit the access or legal rights of the compilation's users
+# > beyond what the individual works permit.  Inclusion of a covered work
+# > in an aggregate does not cause this License to apply to the other
+# > parts of the aggregate.
+#
+# Our legal position is that impy is an "aggregate". It is not adding
+# functionality to Pythia-8 nor is it modifying the original source. The
+# Pythia-8 library is redistributed by us under its original license, which is
+# allowed. impy is merely a way to steer Pythia-8 and to provide its output in a
+# particular format. The Pythia-8 authors are free to take some of our code and
+# make it GPL code, they can do that anyway, but we have still free to
+# distribute the code that we write under a less restrictive license.
+#
+# To strengthen this position, we compile the original Pythia-8 code into
+# a shared library to which we only link. This makes clear where the boundary
+# between impy and Pythia-8 is.
+if (NOT WIN32)
+file(GLOB pythia8_sources ${cpp_dir}/pythia8307/src/*.cc)
+
+add_library(libpythia8 SHARED ${pythia8_sources})
+set_target_properties(libpythia8 PROPERTIES OUTPUT_NAME pythia8)
+target_include_directories(libpythia8 PUBLIC ${cpp_dir}/pythia8307/include)
+# we don't use this, we must set xmldir at runtime
+target_compile_definitions(libpythia8 PRIVATE XMLDIR="")
+
+pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
+target_link_libraries(_pythia8 PRIVATE libpythia8)
+endif()
+
+
+# This part is needed when we figure out the problem with
+# building Pythia8 on Windows 
+# if (WIN32)
+# find_package(dlfcn-win32 REQUIRED)
+# set(CMAKE_DL_LIBS dlfcn-win32::dl)
+# target_link_libraries(libpythia8 PRIVATE ${CMAKE_DL_LIBS})
+# target_link_libraries(_pythia8 PRIVATE ${CMAKE_DL_LIBS})
+# target_link_libraries(_pythia8 PRIVATE "-static")
+# endif()
 
 ### sophia
 f2py_add_module(_sophia
@@ -359,13 +435,39 @@ list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR\.f)
 # cmake does not like filenames with parantheses, but some Fortran files
 # include those. As a workaround, we generate modified source files and
 # renamed copies of the headers. Not elegant, but works. 🤷‍♂️
+
+
+### dpmjetIII191
+file(GLOB dpmjetIII191_sources
+  ${fortran_dir}/dpmjetIII-19.1/src/phojet/*.f
+  ${fortran_dir}/dpmjetIII-19.1/src/pythia/*.f
+  ${fortran_dir}/dpmjetIII-19.1/src/dpmjet/*.f
+)
+
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDM\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMST\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMTE\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR\.f)
+# cmake does not like filenames with parantheses, but some Fortran files
+# include those. As a workaround, we generate modified source files and
+# renamed copies of the headers. Not elegant, but works. 🤷‍♂️
+
+
+# Workaround to workaround :) Windows don't like long lists
+# User temporary file to keep long lists
+set(temp_dpmjet_file temp.dpmjetIII191)
+string(REPLACE ";"  " " temp_dpmjet_str "${dpmjetIII191_sources}")
+file(WRITE ${temp_dpmjet_file} "${temp_dpmjet_str}")
+
 execute_process(
   COMMAND
-  ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py
-  ${CMAKE_CURRENT_BINARY_DIR} ${fortran_dir}/dpmjetIII-19.1/include
-  ${dpmjetIII191_sources}
-  OUTPUT_VARIABLE dpmjetIII191_modded_sources
+  ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py 
+  ${CMAKE_CURRENT_BINARY_DIR}
+  ${fortran_dir}/dpmjetIII-19.1/include
+  ${CMAKE_SOURCE_DIR}/${temp_dpmjet_file}
 )
+file(READ ${temp_dpmjet_file} dpmjetIII191_modded_sources)
+file(REMOVE ${temp_dpmjet_file})
 
 
 f2py_add_module(_dpmjetIII191
@@ -386,7 +488,6 @@ f2py_add_module(_dpmjetIII191
   ${fortran_dir}/dpmjetIII-19.1/include/phojet
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
-  # ${fortran_dir}/dpmjetIII-19.1/include/flinclude
   ${CMAKE_CURRENT_BINARY_DIR}/include
   COMPILE_DEFS
   ${impy_definitions}
@@ -411,7 +512,6 @@ f2py_add_module(_phojet191
   ${fortran_dir}/dpmjetIII-19.1/include/phojet
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
-  # ${fortran_dir}/dpmjetIII-19.1/include/flinclude
   ${CMAKE_CURRENT_BINARY_DIR}/include
   COMPILE_DEFS
   ${impy_definitions}
@@ -478,6 +578,7 @@ f2py_add_module(_phojet193
   COMPILE_DEFS
   ${impy_definitions}
 )
+
 
 ##### extra optional models follow below ######
 

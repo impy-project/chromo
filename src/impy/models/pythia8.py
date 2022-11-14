@@ -1,256 +1,160 @@
-"""
-Created on 19.01.2015
-
-@author: afedynitch
-"""
-
-import numpy as np
-from impy.common import MCRun, MCEvent
+from ..common import MCRun, MCEvent
+from ..util import info
 from impy import impy_config
-from impy.util import info, AZ2pdg
-from argparse import Namespace
+from impy.util import _cached_data_dir
+from os import environ
+import numpy as np
 
 
 class PYTHIA8Event(MCEvent):
     """Wrapper class around HEPEVT particle stack."""
 
-    _len_evt = 300000
+    _hepevt = "hepevt"
 
-    _hepevt = "_hepevt"
-    _hepevt = Namespace(
-        phep=np.zeros((5, _len_evt)),
-        vhep=np.zeros((4, _len_evt)),
-        isthep=np.zeros(_len_evt, dtype=np.int32),
-        idhep=np.zeros(_len_evt, dtype=np.int32),
-        jmohep=np.zeros((2, _len_evt), dtype=np.int32),
-        jdahep=np.zeros((2, _len_evt), dtype=np.int32),
-    )
+    def _charge_init(self, npart):
+        return self._lib.charge_from_pid(
+            self._lib.pythia.particleData, self._lib.hepevt.idhep[:npart]
+        )
 
-    def __init__(self, lib, event_kinematics, event_frame):
-        # The following implementation is horrible and just a prototype
-        # should move to fortran or C++ if performance issue
-        self.n_events += 1
-        for i, p in enumerate(lib.event):
-            self._hepevt.status[i] = p.status()
-            self._hepevt.idhep[i] = p.id()
-            self._hepevt.vhep[:, i] = (p.xProd(), p.yProd(), p.zProd(), p.tProd())
-            self._hepevt.phep[:, i] = (p.px(), p.py(), p.pz(), p.e(), p.m())
-            self._hepevt.jmohep[:, i] = p.mother1(), p.mother2()
-            self._hepevt.jdahep[:, i] = p.daughter1(), p.daughter2()
-
-        # hack: use self instead of lib
-        super().__init__(self, event_kinematics, event_frame)
-        self._lib = lib  # set _lib correctly
-
-    def _charge_init(self):
-        return np.fromiter((p.charge() for p in self._lib.event), np.double)
+    def _hiinfo(self):
+        return self._lib.pythia.info.hiInfo
 
     # Nuclear collision parameters
     @property
     def impact_parameter(self):
         """Returns impact parameter for nuclear collisions."""
-        return self._lib.info.hiinfo.b()
+        if self._hiinfo() is not None:
+            return self._hiinfo().b
+        return np.nan
 
     @property
     def n_wounded_A(self):
         """Number of wounded nucleons side A"""
-        return self._lib.info.hiinfo.nPartProj()
+        if self._hiinfo() is not None:
+            return self._hiinfo().nPartProj
+        return 0
 
     @property
     def n_wounded_B(self):
         """Number of wounded nucleons (target) side B"""
-        return self._lib.info.hiinfo.nPartTarg()
+        if self._hiinfo() is not None:
+            return self._hiinfo().nPartTarg
+        return 0
 
     @property
     def n_wounded(self):
         """Number of total wounded nucleons"""
-        return self._lib.info.hiinfo.nPartProj() + self._lib.info.hiinfo.nPartTarg()
+        return self.n_wounded_A + self.n_wounded_B
 
 
-class PYTHIA8Run(MCRun):
-    """Implements all abstract attributes of MCRun for the
-    EPOS-LHC series of event generators."""
+class Pythia8(MCRun):
+    _name = "Pythia"
+    _version = "8.307"
+    _library_name = "_pythia8"
+    _event_class = PYTHIA8Event
+    _output_frame = "center-of-mass"
+    _restartable = True
+    _data_url = (
+        "https://github.com/impy-project/impy"
+        + "/releases/download/zipped_data_v1.0/Pythia8_v001.zip"
+    )
 
-    def sigma_inel(self, *args, **kwargs):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        # Cross section and energy (in mb and GeV)
-        return self.lib.info.sigmaGen()
+    def __init__(self, event_kinematics, seed=None, logfname=None):
+        super().__init__(seed, logfname)
 
-    def _set_event_kinematics(self, event_kinematics):
-        """Set new combination of energy, momentum, projectile
-        and target combination for next event."""
-        k = event_kinematics
-        self._curr_event_kin = k
+        self._lib.hepevt = self._lib.Hepevt()
 
-        # create new object
-        self.lib = self.cpp_lib.Pythia()
-        # Replay initialization strings
-        for param_string in self.save_init_strings:
-            self.lib.readString(param_string)
-        # Replay stable history
-        for pdgid in self.stable_history:
-            self.set_stable(pdgid, self.stable_history[pdgid])
+        datdir = _cached_data_dir(self._data_url) + "xmldoc"
 
-        if k.p1_is_nucleus or k.p2_is_nucleus:
-            self.lib.readString("HeavyIon:SigFitNGen = 0")
-            self.lib.readString(
-                "HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0"
-            )
-        if k.p1_is_nucleus:
-            k.p1pdg = AZ2pdg(k.A1, k.A2)
-            # pdgid, p name, ap name, spin, 3*charge, color, mass
-            self.lib.particleData.addParticle(
-                k.p1pdg,
-                str(k.A1 * 100 + k.Z1),
-                str(k.A1 * 100 + k.Z1) + "bar",
-                1,
-                3 * k.Z1,
-                0,
-                float(k.A1),
-            )
-        if k.p2_is_nucleus:
-            k.p2pdg = AZ2pdg(k.A2, k.Z2)
-            # pdgid, p name, ap name, spin, 3*charge, color, mass
-            self.lib.particleData.addParticle(
-                k.p2pdg,
-                str(k.A2 * 100 + k.Z2),
-                str(k.A2 * 100 + k.Z2) + "bar",
-                1,
-                3 * k.Z2,
-                0,
-                float(k.A2),
-            )
+        # Must delete PYTHIA8DATA from environ if it exists, since it overrides
+        # our argument here. When you install Pythia8 with conda, it sets
+        # PYTHIA8DATA. If that version does not match this version, readString()
+        # or init() may fail.
+        if "PYTHIA8DATA" in environ:
+            del environ["PYTHIA8DATA"]
+        self._lib.pythia = self._lib.Pythia(datdir, True)
 
-        self.lib.readString("Beams:idA = {0}".format(k.p1pdg))
-        self.lib.readString("Beams:idB = {0}".format(k.p2pdg))
-        self.lib.readString("Beams:eCM = {0}".format(k.ecm))
-        # Set default stable
-        self._define_default_fs_particles()
+        # must come last
+        self.event_kinematics = event_kinematics
+        self._set_final_state_particles()
 
-        self.lib.init()
+    def _sigma_inel(self, evt_kin):
+        # TODO check that cross section is in mb
+        with self._temporary_evt_kin(evt_kin):
+            cx = self._lib.pythia.info.sigmaTot
+            return cx.sigmaTot - cx.sigmaEl
 
+    def _set_event_kinematics(self, k):
         info(5, "Setting event kinematics")
 
-    # def attach_log(self, fname):
-    #     """Routes the output to a file or the stdout."""
+        pythia = self._lib.pythia
+        pythia.settings.resetAll()
 
-    #     import os, sys, threading
+        if not pythia.particleData.isParticle(k.p1pdg):
+            raise ValueError(f"Particle {k.p1pdg} not recognized")
 
-    #     fname = impy_config['output_log'] if fname is None else fname
-    #     # info(1, 'Not implemented at this stage')
+        if not pythia.particleData.isParticle(k.p2pdg):
+            raise ValueError(f"Particle {k.p2pdg} not recognized")
 
-    #     os.dup2(self.stdout_pipe[1], self.stdout_fileno)
-    #     os.close(self.stdout_pipe[1])
-
-    #     captured_stdout = ''
-
-    #     t = threading.Thread(target=self.drain_pipe(captured_stdout))
-    #     t.start()
-
-    #     print 'Captured stdout \n{:s}'.format(captured_stdout)
-    #     print len(captured_stdout)
-
-    #     self._attach_cc_logfile(captured_stdout, fname)
-
-    # def drain_pipe(self, captured_stdout):
-    #     import os
-    #     while True:
-    #         data = os.read(self.stdout_pipe[0], 1024)
-    #         if not data:
-    #             break
-    #         captured_stdout += data
-
-    # def _attach_cc_logfile(self, captured_stdout, fname):
-    #     """Writes captured stdout into the file given"""
-    #     with open(fname, 'w') as f:
-    #         f.write(captured_stdout)
-
-    # def close_cc_logfile(self):
-    #     """Properly close duplicates and correctly restore stdout"""
-    #     import os, threading
-    #     os.close(self.stdout_fileno)
-
-    #     os.close(self.stdout_pipe[0])
-    #     os.dup2(self.stdout_save, self.stdout_fileno)
-    #     os.close(self.stdout_save)
-
-    def attach_log(self, fname):
-        # from impy.util import OutputGrabber
-
-        fname = impy_config["output_log"] if fname is None else fname
-        # info(1, 'Not implemented at this stage')
-
-        # out = OutputGrabber()
-
-        # out.start()
-        # print out.capturedtext
-        # with open(fname, 'w') as f:
-        #     f.write(out.capturedtext)
-
-        # out.stop()
-
-    def init_generator(self, event_kinematics, seed="random", logfname=None):
-        from random import randint
-
-        self._abort_if_already_initialized()
-
-        if seed == "random":
-            seed = randint(1000000, 10000000)
-        else:
-            seed = int(seed)
-        info(5, "Using seed:", seed)
-
-        # Since a Pythia 8 instance is an object unlike in the case
-        # of the Fortran stuff where the import of self.lib generates
-        # the object, we will backup the library
-        self.cpp_lib = self.lib
-        self.lib = None
-        # The object/instance is created each time event_kinematics is
-        # set, since Pythia8 ATM does not support changing beams or
-        # energies at runtime.
-        # Super cool workaround but not very performant!
-
-        self.save_init_strings = [
+        config = [
             "Random:setSeed = on",
-            "Random:seed = " + str(seed),
+            f"Random:seed = {self._seed}",
             # Specify energy in center of mass
             "Beams:frameType = 1",
-            # Minimum bias events
-            "SoftQCD:all = on",
+            "SoftQCD:inelastic = on",
+        ]
+        # Add more options from config file
+        config += impy_config["pythia8"]["options"]
+
+        if k.p1_is_nucleus or k.p2_is_nucleus:
+            import warnings
+
+            warnings.warn(
+                "Support for nuclei is experimental; event generation takes a long time",
+                RuntimeWarning,
+            )
+
+            # speed-up initialization by not fitting nuclear cross-section
+            config.append("HeavyIon:SigFitNGen = 0")
+            config.append("HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0")
+
+        config += [
+            f"Beams:idA = {k.p1pdg}",
+            f"Beams:idB = {k.p2pdg}",
+            f"Beams:eCM = {k.ecm}",
         ]
 
-        # Add more options from config file
-        for param_string in impy_config["pythia8"]["options"]:
-            info(5, "Using Pythia 8 parameter:", param_string)
-            self.save_init_strings.append(param_string)
+        for line in config:
+            if not pythia.readString(line):
+                raise RuntimeError(f"readString('{line}') failed")
 
-        self.attach_log(fname=logfname)
+        # calling init several times is allowed
+        if not pythia.init():
+            raise RuntimeError("Pythia8 initialization failed")
 
-        # Create history for particle decay settings
-        # since changing energy changes resets the stable settings
-        self.stable_history = {}
+    def _attach_log(self, fname):
+        # not implemented
+        pass
 
-        # self._set_event_kinematics(event_kinematics)
+    def _set_stable(self, pdgid, stable):
+        self._lib.pythia.particleData.mayDecay(pdgid, not stable)
 
-    def set_stable(self, pdgid, stable=True):
+    def _generate_event(self):
+        import warnings
 
-        may_decay = not stable
-        if self.lib is not None:
-            self.lib.particleData.mayDecay(pdgid, may_decay)
-
-        info(5, pdgid, "allowed to decay: ", may_decay)
-
-        self.stable_history[pdgid] = stable
-
-    def generate_event(self):
-        return not self.lib.next()
-
-
-class Pythia8(PYTHIA8Run):
-    def __init__(self, event_kinematics, seed="random", logfname=None):
-        from impy.definitions import interaction_model_by_tag as models_dict
-
-        interaction_model_def = models_dict["PYTHIA8"]
-        super().__init__(interaction_model_def)
-        self.init_generator(event_kinematics, seed, logfname)
+        success = self._lib.pythia.next()
+        if not success:
+            warnings.warn(
+                "PYTHIA8 event rejected. If this warning appears too frequently, "
+                + "the event generator might be not properly configured or "
+                + "used outside of the valid range",
+                RuntimeWarning,
+            )
+        if success:
+            # We copy over the event record from Pythia's internal buffer to our
+            # Hepevt-like object. This is not efficient, but easier to
+            # implement. The time needed to copy the record is small compared to
+            # the time needed to generate the event. If this turns out to be a
+            # bottleneck, we need to make Hepevt a view of the interval record.
+            self._lib.hepevt.fill(self._lib.pythia.event)
+        return not success

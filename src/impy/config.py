@@ -6,6 +6,7 @@ debug_level = 1
 # Location for cache file for particledata.tables objects
 pdata_cachefile = "impy_pdata_cache.cch"
 
+
 # For generators which return not successful events:
 # True: retry rejected events until desired number of events reached
 # False: return if event not successful and set event_successful flag
@@ -73,7 +74,6 @@ epos = {
     "has_boosts": True,
     "has_hepevt": True,
     "int_support": ["hh", "hA", "AA", "gg", "gh", "gA"],
-    "datdir": "iamdata/epos/",
     "debug_level": 0,
     "projectiles": {
         "LHC": [
@@ -153,24 +153,6 @@ dpmjetIII = {
     "int_support": ["hh", "hA", "AA", "gg", "gh", "gA"],
     # maximal energy for cross section table initialization
     "debug_level": 0,
-    "dat_dir": {
-        "3.0-6": "iamdata/dpm3/",
-        "19.1": "iamdata/dpm3191/",
-        "19.2": "iamdata/dpm3191/",
-        "19.3": "iamdata/dpm3191/",
-    },
-    "param_file": {
-        "3.0-6": "iamdata/dpm3/fitpar.dat",
-        "19.1": "iamdata/dpm3191/dpmjpar.dat",
-        "19.2": "iamdata/dpm3191/dpmjpar.dat",
-        "19.3": "iamdata/dpm3191/dpmjpar.dat",
-    },
-    "evap_file": {
-        "3.0-6": "iamdata/dpm3/dpmjet.dat",
-        "19.1": "iamdata/dpm3191/dpmjet.dat",
-        "19.2": "iamdata/dpm3191/dpmjet.dat",
-        "19.3": "iamdata/dpm3191/dpmjet.dat",
-    },
     "projectiles": {
         "3.0-6": [2212, 2112, 321, -321, 211, -211, -2212],
         "19.1": [
@@ -252,18 +234,6 @@ phojet = {
     "has_boosts": True,
     "int_support": ["hh", "gg", "gh"],
     "debug_level": 0,
-    "dat_dir": {
-        "1.12-35": "iamdata/dpm3/",
-        "19.1": "iamdata/dpm3191/",
-        "19.2": "iamdata/dpm3191/",
-        "19.3": "iamdata/dpm3191/",
-    },
-    "param_file": {
-        "1.12-35": "iamdata/dpm3/fitpar.dat",
-        "19.1": "iamdata/dpm3191/dpmjpar.dat",
-        "19.2": "iamdata/dpm3191/dpmjpar.dat",
-        "19.3": "iamdata/dpm3191/dpmjpar.dat",
-    },
     "projectiles": {
         "last": [
             2212,
@@ -296,7 +266,6 @@ qgsjet = {
     "has_boosts": False,
     "has_hepevt": True,
     "int_support": ["hh", "hA", "AA"],
-    "datdir": "iamdata/qgsjet/",
     "debug_level": 0,
     "projectiles": {
         "II-03": [2212, 2112, 321, -321, 211, -211, 130, -2212, -2112],
