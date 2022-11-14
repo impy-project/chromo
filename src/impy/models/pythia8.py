@@ -54,14 +54,17 @@ class Pythia8(MCRun):
     _event_class = PYTHIA8Event
     _output_frame = "center-of-mass"
     _restartable = True
-    _dat_dir_name = "Pythia8"
+    _data_url = (
+        "https://github.com/impy-project/impy"
+        + "/releases/download/zipped_data_v1.0/Pythia8_v001.zip"
+    )
 
     def __init__(self, event_kinematics, seed=None, logfname=None):
         super().__init__(seed, logfname)
 
         self._lib.hepevt = self._lib.Hepevt()
 
-        datdir = _cached_data_dir(self._dat_dir_name) + "xmldoc"
+        datdir = _cached_data_dir(self._data_url) + "xmldoc"
 
         # Must delete PYTHIA8DATA from environ if it exists, since it overrides
         # our argument here. When you install Pythia8 with conda, it sets

@@ -266,7 +266,7 @@ def _download_file(outfile, url):
     return True
 
 
-def _cached_data_dir(data_dir):
+def _cached_data_dir(url):
     """Checks for existence of version file
     "model_name_vxxx.zip". Downloads and unpacks
     zip file from url in case the file is not found
@@ -275,15 +275,11 @@ def _cached_data_dir(data_dir):
         url (str): url for zip file
     """
 
-    data_url = "https://github.com/impy-project/impy/releases/download/zipped_data_v1.0"
-    data_version = "001"
-    url = f"{data_url}/{data_dir}_v{data_version}.zip"
-
     base_dir = Path(__file__).parent.absolute() / "iamdata"
     base_dir.mkdir(parents=True, exist_ok=True)
 
     vname = Path(url).stem
-    model_dir = base_dir / data_dir
+    model_dir = base_dir / vname.split("_v")[0]
     version_file = model_dir / vname
     if not version_file.exists():
         zip_file = base_dir / Path(url).name

@@ -63,9 +63,12 @@ class DpmjetIIIRun(MCRun):
     _name = "DPMJET-III"
     _event_class = DpmjetIIIEvent
     _output_frame = "center-of-mass"
-    _dat_dir_name = "dpm3191"
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
+    _data_url = (
+        "https://github.com/impy-project/impy"
+        + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
+    )
 
     def __init__(self, event_kinematics, seed=None, logfname=None):
         from impy.util import fortran_chars
@@ -84,7 +87,7 @@ class DpmjetIIIRun(MCRun):
 
         info(1, "Initializing DPMJET-III")
 
-        data_dir = _cached_data_dir(self._dat_dir_name)
+        data_dir = _cached_data_dir(self._data_url)
 
         # Set the dpmjpar.dat file
         if hasattr(self._lib, "pomdls") and hasattr(self._lib.pomdls, "parfn"):
@@ -230,8 +233,11 @@ class DpmjetIII193(DpmjetIIIRun):
 class DpmjetIII306(DpmjetIIIRun):
     _version = "3.0-6"
     _library_name = "_dpmjet306"
-    _dat_dir_name = "dpm3"
     _param_file_name = "fitpar.dat"
+    _data_url = (
+        "https://github.com/impy-project/impy"
+        + "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
+    )
 
 
 class DpmjetIII193_DEV(DpmjetIIIRun):

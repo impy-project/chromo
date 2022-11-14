@@ -59,7 +59,10 @@ class EposLHC(MCRun):
     _event_class = EPOSEvent
     _library_name = "_eposlhc"
     _output_frame = "center-of-mass"
-    _dat_dir_name = "epos"
+    _data_url = (
+        "https://github.com/impy-project/impy"
+        + "/releases/download/zipped_data_v1.0/epos_v001.zip"
+    )
 
     def __init__(self, event_kinematics, seed=None, logfname=None):
         super().__init__(seed, logfname)
@@ -76,7 +79,7 @@ class EposLHC(MCRun):
 
         k = event_kinematics
 
-        datdir = _cached_data_dir(self._dat_dir_name)
+        datdir = _cached_data_dir(self._data_url)
         self._lib.initializeepos(
             float(self._seed),
             k.ecm,

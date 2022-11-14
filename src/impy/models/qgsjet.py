@@ -62,7 +62,10 @@ class QGSJetRun(MCRun):
     _output_frame = "laboratory"
     # needed to skip set_final_state_particles()
     _set_final_state_particles_called = True
-    _dat_dir_name = "qgsjet"
+    _data_url = (
+        "https://github.com/impy-project/impy"
+        + "/releases/download/zipped_data_v1.0/qgsjet_v001.zip"
+    )
 
     def _set_stable(self, pdgid, stable):
         import warnings
@@ -82,7 +85,7 @@ class QGSJetIIRun(QGSJetRun):
 
         info(5, "Initializing QGSJET-II")
 
-        datdir = _cached_data_dir(self._dat_dir_name)
+        datdir = _cached_data_dir(self._data_url)
         self._lib.cqgsini(
             self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
         )
@@ -139,7 +142,7 @@ class QGSJet01Run(QGSJetRun):
 
         info(5, "Initializing QGSJET01d")
 
-        datdir = _cached_data_dir(self._dat_dir_name)
+        datdir = _cached_data_dir(self._data_url)
         self._lib.cqgsini(
             self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
         )
