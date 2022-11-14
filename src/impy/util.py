@@ -3,6 +3,12 @@
 import warnings
 import inspect
 import os
+from pathlib import Path
+import urllib.request
+import zipfile
+import shutil
+
+
 from impy import impy_config
 import numpy as np
 
@@ -212,6 +218,88 @@ class OutputGrabber(object):
             if not char or self.escape_char in char:
                 break
             self.capturedtext += char
+
+
+# Functions to check and download dababase files on github
+
+
+def _download_file(outfile, url):
+    """Download a file from 'url' to 'outfile'"""
+    fname = Path(url).name
+    try:
+        response = urllib.request.urlopen(url)
+    except BaseException:
+        raise ConnectionError(
+            f"_download_file: probably something wrong with url = '{url}'"
+        )
+    total_size = response.getheader("content-length")
+
+    min_blocksize = 4096
+    if total_size:
+        total_size = int(total_size)
+        blocksize = max(min_blocksize, total_size // 100)
+    else:
+        blocksize = min_blocksize
+
+    wrote = 0
+    with open(outfile, "wb") as f:
+        while True:
+            data = response.read(blocksize)
+            if not data:
+                break
+            f.write(data)
+            wrote += len(data)
+            if total_size:
+                print(
+                    f"Downloading {fname}: {wrote/total_size*100:.0f}% "
+                    f"done ({wrote/(1024*1024):.0f} Mb) \r",
+                    end=" ",
+                )
+            else:
+                print(
+                    f"Downloading {fname}: {wrote/(1024*1024):.0f} Mb downloaded \r",
+                    end=" ",
+                )
+    print()
+    if total_size and wrote != total_size:
+        raise ConnectionError(f"{fname} has not been downloaded")
+    return True
+
+
+def _cached_data_dir(url):
+    """Checks for existence of version file
+    "model_name_vxxx.zip". Downloads and unpacks
+    zip file from url in case the file is not found
+
+    Args:
+        url (str): url for zip file
+    """
+
+    base_dir = Path(__file__).parent.absolute() / "iamdata"
+    base_dir.mkdir(parents=True, exist_ok=True)
+
+    vname = Path(url).stem
+    model_dir = base_dir / vname.split("_v")[0]
+    version_file = model_dir / vname
+    if not version_file.exists():
+        zip_file = base_dir / Path(url).name
+        temp_dir = Path(model_dir.parent / f".{model_dir.name}")
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        if model_dir.exists():
+            shutil.move(model_dir, temp_dir)
+        if _download_file(zip_file, url):
+            if zipfile.is_zipfile(zip_file):
+                with zipfile.ZipFile(zip_file, "r") as zf:
+                    zf.extractall(base_dir.as_posix())
+                zip_file.unlink()
+                shutil.rmtree(temp_dir, ignore_errors=True)
+
+        version_glob = vname.split("_v")[0]
+        for vfile in model_dir.glob(f"{version_glob}_v*"):
+            vfile.unlink
+        with open(version_file, "w") as vf:
+            vf.write(url)
+    return str(model_dir) + "/"
 
 
 class TaggedFloat:

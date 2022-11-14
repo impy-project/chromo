@@ -2,7 +2,6 @@ from pathlib import Path
 import re
 import sys
 import shutil
-import os
 
 this_program = Path(sys.argv[0]).name
 
@@ -22,14 +21,16 @@ if not sys.argv[1:]:  # for testing
         for fn in Path(d).rglob("*.f"):
             src.append(fn)
 else:
-    cmake_binary_dir, inc_dir, *src = sys.argv[1:]
+    with Path(sys.argv[3]).open() as f:
+        src = f.read().split()
+    cmake_binary_dir, inc_dir = sys.argv[1:3]
 
 src = [Path(x) for x in src]
 inc_dir = Path(inc_dir)
 cmake_binary_dir = Path(cmake_binary_dir)
 
 dst_include = cmake_binary_dir / "include"
-dst_include.mkdir(exist_ok=True)
+dst_include.mkdir(parents=True, exist_ok=True)
 for fn in inc_dir.rglob("(*)"):
     shutil.copy(fn, dst_include / fn.name[1:-1])
 
@@ -64,4 +65,6 @@ for fn in modded:
 out = list(map(str, unchanged))
 out += list(map(str, modded))
 
-sys.stdout.write(";".join(out))
+
+with open(sys.argv[3], "w") as f:
+    f.write(";".join(out).replace("\\", "/"))

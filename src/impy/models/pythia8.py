@@ -1,7 +1,7 @@
 from ..common import MCRun, MCEvent
 from ..util import info
-from impy import impy_config, base_path
-from pathlib import Path
+from impy import impy_config
+from impy.util import _cached_data_dir
 from os import environ
 import numpy as np
 
@@ -54,14 +54,17 @@ class Pythia8(MCRun):
     _event_class = PYTHIA8Event
     _output_frame = "center-of-mass"
     _restartable = True
+    _data_url = (
+        "https://github.com/impy-project/impy"
+        + "/releases/download/zipped_data_v1.0/Pythia8_v001.zip"
+    )
 
     def __init__(self, event_kinematics, seed=None, logfname=None):
         super().__init__(seed, logfname)
 
         self._lib.hepevt = self._lib.Hepevt()
 
-        datdir = Path(base_path) / "iamdata" / "Pythia8" / "xmldoc"
-        assert datdir.exists(), f"{datdir} does not exist"
+        datdir = _cached_data_dir(self._data_url) + "xmldoc"
 
         # Must delete PYTHIA8DATA from environ if it exists, since it overrides
         # our argument here. When you install Pythia8 with conda, it sets
@@ -69,7 +72,7 @@ class Pythia8(MCRun):
         # or init() may fail.
         if "PYTHIA8DATA" in environ:
             del environ["PYTHIA8DATA"]
-        self._lib.pythia = self._lib.Pythia(str(datdir), True)
+        self._lib.pythia = self._lib.Pythia(datdir, True)
 
         # must come last
         self.event_kinematics = event_kinematics

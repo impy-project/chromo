@@ -81,6 +81,7 @@ add_compile_definitions(NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
 # generator automatically runs the preprocessor on all Fortran files
 set(CMAKE_Fortran_FLAGS_RELEASE -O3)
 
+
 # CMake sets -fPIC etc. automatically, add only unusual options
 if (UNIX)
   add_compile_options(
@@ -95,7 +96,15 @@ if (UNIX)
     add_compile_options(
       $<$<COMPILE_LANGUAGE:Fortran>:-Wno-argument-mismatch>)
   endif()
-else() # intel
+else() # Windows MinGW!
+	add_compile_options(
+    -Wno-uninitialized
+    -w
+    $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
+    $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
+	  $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
+    $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
+  )
   # TODO
   # set(FLAGS -fast -fpe0)
   # set(FLAGSF90 ${FLAGS} -ffree-form -Wobsolescent -fno-second-underscore)
@@ -253,6 +262,7 @@ f2py_add_module(_qgsII04
   ${impy_definitions}
 )
 
+if (NOT WIN32)
 ### urqmd34
 set(urqmd34_sources
   1fluid bessel delpart getmass hepcmp iso numrec pythia6409
@@ -284,6 +294,7 @@ f2py_add_module(_urqmd34
   COMPILE_DEFS
   ${impy_definitions}
 )
+endif()
 
 ### pythia6
 f2py_add_module(_pythia6
@@ -324,7 +335,7 @@ f2py_add_module(_pythia6
 # To strengthen this position, we compile the original Pythia-8 code into
 # a shared library to which we only link. This makes clear where the boundary
 # between impy and Pythia-8 is.
-
+if (NOT WIN32)
 file(GLOB pythia8_sources ${cpp_dir}/pythia8307/src/*.cc)
 
 add_library(libpythia8 SHARED ${pythia8_sources})
@@ -335,6 +346,18 @@ target_compile_definitions(libpythia8 PRIVATE XMLDIR="")
 
 pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
 target_link_libraries(_pythia8 PRIVATE libpythia8)
+endif()
+
+
+# This part is needed when we figure out the problem with
+# building Pythia8 on Windows 
+# if (WIN32)
+# find_package(dlfcn-win32 REQUIRED)
+# set(CMAKE_DL_LIBS dlfcn-win32::dl)
+# target_link_libraries(libpythia8 PRIVATE ${CMAKE_DL_LIBS})
+# target_link_libraries(_pythia8 PRIVATE ${CMAKE_DL_LIBS})
+# target_link_libraries(_pythia8 PRIVATE "-static")
+# endif()
 
 ### sophia
 f2py_add_module(_sophia
@@ -412,13 +435,39 @@ list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR\.f)
 # cmake does not like filenames with parantheses, but some Fortran files
 # include those. As a workaround, we generate modified source files and
 # renamed copies of the headers. Not elegant, but works. 🤷‍♂️
+
+
+### dpmjetIII191
+file(GLOB dpmjetIII191_sources
+  ${fortran_dir}/dpmjetIII-19.1/src/phojet/*.f
+  ${fortran_dir}/dpmjetIII-19.1/src/pythia/*.f
+  ${fortran_dir}/dpmjetIII-19.1/src/dpmjet/*.f
+)
+
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDM\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMST\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMTE\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR\.f)
+# cmake does not like filenames with parantheses, but some Fortran files
+# include those. As a workaround, we generate modified source files and
+# renamed copies of the headers. Not elegant, but works. 🤷‍♂️
+
+
+# Workaround to workaround :) Windows don't like long lists
+# User temporary file to keep long lists
+set(temp_dpmjet_file temp.dpmjetIII191)
+string(REPLACE ";"  " " temp_dpmjet_str "${dpmjetIII191_sources}")
+file(WRITE ${temp_dpmjet_file} "${temp_dpmjet_str}")
+
 execute_process(
   COMMAND
-  ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py
-  ${CMAKE_CURRENT_BINARY_DIR} ${fortran_dir}/dpmjetIII-19.1/include
-  ${dpmjetIII191_sources}
-  OUTPUT_VARIABLE dpmjetIII191_modded_sources
+  ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py 
+  ${CMAKE_CURRENT_BINARY_DIR}
+  ${fortran_dir}/dpmjetIII-19.1/include
+  ${CMAKE_SOURCE_DIR}/${temp_dpmjet_file}
 )
+file(READ ${temp_dpmjet_file} dpmjetIII191_modded_sources)
+file(REMOVE ${temp_dpmjet_file})
 
 
 f2py_add_module(_dpmjetIII191
@@ -439,7 +488,6 @@ f2py_add_module(_dpmjetIII191
   ${fortran_dir}/dpmjetIII-19.1/include/phojet
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
-  # ${fortran_dir}/dpmjetIII-19.1/include/flinclude
   ${CMAKE_CURRENT_BINARY_DIR}/include
   COMPILE_DEFS
   ${impy_definitions}
@@ -464,7 +512,6 @@ f2py_add_module(_phojet191
   ${fortran_dir}/dpmjetIII-19.1/include/phojet
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
-  # ${fortran_dir}/dpmjetIII-19.1/include/flinclude
   ${CMAKE_CURRENT_BINARY_DIR}/include
   COMPILE_DEFS
   ${impy_definitions}

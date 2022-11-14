@@ -6,13 +6,10 @@ from numpy.testing import assert_allclose
 from .util import (
     reference_charge,
     run_in_separate_process,
-    skip_on_ci_if_model_is_incompatible,
 )
 import pytest
 from particle import literals as lp
 from functools import lru_cache
-
-skip_on_ci_if_model_is_incompatible(EposLHC)
 
 
 def run_pp_collision():
@@ -41,7 +38,11 @@ def test_charge(event):
     expected = reference_charge(event.pid)
     # skip internal particles unknown to reference_charge
     ma = np.isnan(expected)
-    assert np.mean(ma) < 0.3
+    # EPOS has lots of unknown generator-specific particles.
+    # For these, NaN is returned. We just check here whether
+    # the fraction is not 100 %, that cannot be, since at least
+    # final state particles cannot be generator-specific.
+    assert np.mean(ma) < 0.8
     event.charge[ma] = np.nan
     assert_allclose(event.charge, expected)
 

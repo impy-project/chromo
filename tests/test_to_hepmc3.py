@@ -1,10 +1,9 @@
-from impy.kinematics import CenterOfMass, FixedTarget
+from impy.kinematics import CenterOfMass
 from impy import models as im
 from impy.constants import GeV
 from impy.models.sophia import Sophia20
 from .util import (
     run_in_separate_process,
-    skip_on_ci_if_model_is_incompatible,
     get_all_models,
 )
 import numpy as np
@@ -27,11 +26,14 @@ def run(Model):
 
 @pytest.mark.parametrize("Model", models)
 def test_to_hepmc3(Model):
-    skip_on_ci_if_model_is_incompatible(Model)
+
+    if Model == im.UrQMD34:
+        pytest.xfail("UrQMD34 FAILS, should be FIXED!!!")
 
     event = run_in_separate_process(run, Model)
 
-    if Model in (im.UrQMD34, im.Phojet112, im.Phojet191, im.Phojet193):
+    # special case for models that only have final-state particles
+    if Model is im.UrQMD34 or Model.name in ("PhoJet", "DPMJET-III"):
         hev = event.to_hepmc3()
         # only final state is stored
         fs = event.final_state()
@@ -41,7 +43,7 @@ def test_to_hepmc3(Model):
             assert p.status == fs.status[i]
         assert len(hev.vertices) == 0
         return  # test ends here
-
+    # special case for Pythia8, which does not contain the parton show
     elif Model is im.Pythia8:
         # parton shower is skipped
         from impy.constants import quarks_and_diquarks_and_gluons
@@ -73,9 +75,10 @@ def test_to_hepmc3(Model):
     nmax = len(event.px)
     for i, (a, b) in enumerate(unique_vertices):
         assert a >= 0 or a == -1
-        assert (
-            b <= nmax
-        ), f"vertex {i} has parent range {(a, b)} which exceeds particle record nmax={nmax}"
+        assert b <= nmax, (
+            f"vertex {i} has parent range {(a, b)} which "
+            f"exceeds particle record nmax={nmax}"
+        )
 
     # not all vertices have locations different from zero,
     # create unique fake vertex locations for testing

@@ -26,13 +26,14 @@ from setuptools.command.build_ext import build_ext
 
 cwd = Path(__file__).parent
 
+
 # Normal print does not work while CMakeBuild is running
 def force_print(msg):
     subp.run(["echo", msg])
 
 
 def cache_value(key, s):
-    m = re.search(key + r":[A-Z]+=([^\s]*)", s)
+    m = re.search(key + r":[A-Z]+=(.*)" + "$", s, flags=re.MULTILINE)
     assert m, f"{key} is not a cached cmake variable"
     return m.group(1)
 
@@ -87,6 +88,7 @@ class CMakeBuild(build_ext):
 
         build_args = ["--config", cfg]  # needed by some generators, e.g. on Windows
 
+        # if cmake_generator in ("Unix Makefiles", "MinGW Makefiles", "MSYS Makefiles"):
         if self.compiler.compiler_type == "msvc":
             # CMake allows an arch-in-generator style for backward compatibility
             contains_arch = any(x in cmake_generator for x in ("ARM", "Win64"))
@@ -102,9 +104,9 @@ class CMakeBuild(build_ext):
                     "win-arm32": "ARM",
                     "win-arm64": "ARM64",
                 }[self.plat_name]
-                cmake_args += ["-A", arch]
+                # cmake_args += ["-A", arch]
 
-            cmake_args += [f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"]
+            # cmake_args += [f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"]
 
         elif sys.platform.startswith("darwin"):
             # Cross-compile support for macOS - respect ARCHFLAGS if set
@@ -128,22 +130,22 @@ class CMakeBuild(build_ext):
         if cmake_cache.exists():
             with cmake_cache.open() as f:
                 s = f.read()
-                cached_generator = cache_value("CMAKE_GENERATOR", s)
-                cached_cfg = cache_value("CMAKE_BUILD_TYPE", s)
-                disagreement = []
-                for arg in cmake_args:
-                    if arg.startswith("-D"):
-                        key, value = arg[2:].split("=")
-                        cached_value = cache_value(key, s)
-                        disagreement.append(value != cached_value)
-                if any(
-                    disagreement
-                    + [
-                        (cmake_generator and cached_generator != cmake_generator),
-                        cached_cfg != cfg,
-                    ]
-                ):
-                    cmake_cache.unlink()
+            cached_generator = cache_value("CMAKE_GENERATOR", s)
+            cached_cfg = cache_value("CMAKE_BUILD_TYPE", s)
+            disagreement = [
+                (cmake_generator and cached_generator != cmake_generator),
+                cached_cfg != cfg,
+            ]
+            for arg in cmake_args:
+                if arg.startswith("-D"):
+                    key, value = arg[2:].split("=")
+                    cached_value = cache_value(key, s)
+                    # Change \ to / in case of Windows
+                    disagreement.append(
+                        Path(value).absolute() != Path(cached_value).absolute()
+                    )
+            if any(disagreement):
+                cmake_cache.unlink()
 
         # run cmake setup only once
         if not cmake_cache.exists():

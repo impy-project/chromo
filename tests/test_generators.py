@@ -5,7 +5,6 @@ from collections import Counter
 import pytest
 from .util import (
     run_in_separate_process,
-    skip_on_ci_if_model_is_incompatible,
     get_all_models,
 )
 
@@ -27,8 +26,6 @@ def run_model(Model, evt_kin):
 
 @pytest.mark.parametrize("Model", models)
 def test_generator(Model):
-    skip_on_ci_if_model_is_incompatible(Model)
-
     p1pdg = -211  # pi-
     p2pdg = 2212  # proton
     if Model is im.Sophia20:

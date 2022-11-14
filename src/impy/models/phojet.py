@@ -1,6 +1,6 @@
 from impy.common import MCRun, MCEvent
 from impy import impy_config
-from impy.util import info, fortran_chars
+from impy.util import info, fortran_chars, _cached_data_dir
 
 
 class PhojetEvent(MCEvent):
@@ -68,6 +68,11 @@ class PHOJETRun(MCRun):
     _name = "PhoJet"
     _event_class = PhojetEvent
     _output_frame = "center-of-mass"
+    _param_file_name = "dpmjpar.dat"
+    _data_url = (
+        "https://github.com/impy-project/impy"
+        + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
+    )
 
     def __init__(self, event_kinematics, seed=None, logfname=None):
         from impy.constants import c
@@ -81,15 +86,17 @@ class PHOJETRun(MCRun):
         init_flag = -2 if "dpmjetIII" in self._lib.__name__ else -1
 
         pho_conf = impy_config["phojet"]
+
+        data_dir = _cached_data_dir(self._data_url)
         # Set the dpmjpar.dat file
         if hasattr(self._lib, "pomdls") and hasattr(self._lib.pomdls, "parfn"):
-            pfile = pho_conf["param_file"][self.version]
+            pfile = data_dir + self._param_file_name
             info(3, "PHOJET parameter file at", pfile)
             self._lib.pomdls.parfn = fortran_chars(self._lib.pomdls.parfn, pfile)
 
         # Set the data directory for the other files
         if hasattr(self._lib, "poinou") and hasattr(self._lib.poinou, "datdir"):
-            pfile = pho_conf["dat_dir"][self.version]
+            pfile = data_dir
             info(3, "PHOJET data dir is at", pfile)
             self._lib.poinou.datdir = fortran_chars(self._lib.poinou.datdir, pfile)
             self._lib.poinou.lendir = len(pfile)
@@ -199,6 +206,11 @@ class PHOJETRun(MCRun):
 class Phojet112(PHOJETRun):
     _version = "1.12-35"
     _library_name = "_phojet112"
+    _param_file_name = "fitpar.dat"
+    _data_url = (
+        "https://github.com/impy-project/impy"
+        + "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
+    )
 
 
 class Phojet191(PHOJETRun):
