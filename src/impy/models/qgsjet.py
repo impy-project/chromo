@@ -62,6 +62,7 @@ class QGSJetRun(MCRun):
     _output_frame = "laboratory"
     # needed to skip set_final_state_particles()
     _set_final_state_particles_called = True
+    _dat_dir_name = "qgsjet"
 
     def _set_stable(self, pdgid, stable):
         import warnings
@@ -81,7 +82,7 @@ class QGSJetIIRun(QGSJetRun):
 
         info(5, "Initializing QGSJET-II")
 
-        datdir = _cached_data_dir("qgsjet")
+        datdir = _cached_data_dir(self._dat_dir_name)
         self._lib.cqgsini(
             self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
         )
@@ -138,7 +139,7 @@ class QGSJet01Run(QGSJetRun):
 
         info(5, "Initializing QGSJET01d")
 
-        datdir = _cached_data_dir("qgsjet")
+        datdir = _cached_data_dir(self._dat_dir_name)
         self._lib.cqgsini(
             self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
         )

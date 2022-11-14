@@ -68,6 +68,8 @@ class PHOJETRun(MCRun):
     _name = "PhoJet"
     _event_class = PhojetEvent
     _output_frame = "center-of-mass"
+    _dat_dir_name = "dpm3191"
+    _param_file_name = "dpmjpar.dat"
 
     def __init__(self, event_kinematics, seed=None, logfname=None):
         from impy.constants import c
@@ -82,17 +84,10 @@ class PHOJETRun(MCRun):
 
         pho_conf = impy_config["phojet"]
 
-        if self.version == "1.12-35":
-            dat_dir_name = "dpm3"
-            param_file_name = "fitpar.dat"
-        else:
-            dat_dir_name = "dpm3191"
-            param_file_name = "dpmjpar.dat"
-
-        data_dir = _cached_data_dir(dat_dir_name)
+        data_dir = _cached_data_dir(self._dat_dir_name)
         # Set the dpmjpar.dat file
         if hasattr(self._lib, "pomdls") and hasattr(self._lib.pomdls, "parfn"):
-            pfile = data_dir + param_file_name
+            pfile = data_dir + self._param_file_name
             info(3, "PHOJET parameter file at", pfile)
             self._lib.pomdls.parfn = fortran_chars(self._lib.pomdls.parfn, pfile)
 
@@ -208,6 +203,8 @@ class PHOJETRun(MCRun):
 class Phojet112(PHOJETRun):
     _version = "1.12-35"
     _library_name = "_phojet112"
+    _dat_dir_name = "dpm3"
+    _param_file_name = "fitpar.dat"
 
 
 class Phojet191(PHOJETRun):
