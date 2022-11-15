@@ -537,8 +537,9 @@ class MCRun(ABC):
         # Initialize counters to prevent infinite loops in rejections
         ntrials = 0
         nremaining = nevents
+        self._set_comp_target(nevents)
         while nremaining > 0:
-            self._update_event_kinematics()
+            self._update_event_kinematics(nremaining)
             if self._generate_event() == 0:
                 self.nevents += 1
                 yield self._event_class(self)
@@ -606,11 +607,32 @@ class MCRun(ABC):
         # generator-specific variables.
         pass
 
-    def _update_event_kinematics(self):
+    def _set_comp_target(self, nevents):
         if self._evt_kin.composite_target:
+            setattr(self, "_nremaining", nevents)
+            setattr(self, "_target_ind", self._gen_target_ind(nevents))
+
+    def _gen_target_ind(self, nevents):
+        ctarget = self._evt_kin.composite_target
+        sample = ctarget.rng.multinomial(nevents, ctarget.component_fractions)
+
+        for cindex, ntimes in enumerate(sample):
+            for _ in range(ntimes):
+                yield cindex
+
+    def _update_event_kinematics(self, nremaining):
+        if self._evt_kin.composite_target:
+
+            if nremaining == self._nremaining:
+                return
+
+            ctarget = self._evt_kin.composite_target
+            self._nremaining = nremaining
             evt_kin = self._evt_kin
             if evt_kin.p2_is_nucleus:
-                evt_kin.A2, evt_kin.Z2 = evt_kin.composite_target._get_random_AZ()
+                ic = next(self._target_ind)
+                evt_kin.A2 = ctarget.component_A[ic]
+                evt_kin.Z2 = ctarget.component_Z[ic]
                 self._set_event_kinematics(evt_kin)
 
     @property
