@@ -4,77 +4,75 @@ on:
   workflow_dispatch:
 
 jobs:
-  wheels:
-    name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        arch: [native]
-        py: [cp37]
-        # os: [ubuntu-latest, windows-latest, macos-latest]
-        # arch: [native, aarch64, universal2]
-        # py: [cp37, cp38, cp39, cp310]
-        # exclude:
-        #   - os: windows-latest
-        #     arch: aarch64
-        #   - os: windows-latest
-        #     arch: universal2
-        #   - os: macos-latest
-        #     arch: aarch64 
-        #   - os: ubuntu-latest
-        #     arch: universal2
-    steps:
-# Step for debugging    
-      - name: Show environment
-        run: env | grep ^GITHUB
-# Step for debugging
-      - name: Show CI env
-        run: env | grep ^CI  
+#   wheels:
+#     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         os: [ubuntu-latest, windows-latest, macos-latest]
+#         arch: [native, aarch64, universal2]
+#         py: [cp37, cp38, cp39, cp310]
+#         exclude:
+#           - os: windows-latest
+#             arch: aarch64
+#           - os: windows-latest
+#             arch: universal2
+#           - os: macos-latest
+#             arch: aarch64 
+#           - os: ubuntu-latest
+#             arch: universal2
+#     steps:
+# # Step for debugging    
+#       - name: Show environment
+#         run: env | grep ^GITHUB
+# # Step for debugging
+#       - name: Show CI env
+#         run: env | grep ^CI  
 
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
+#       - uses: actions/checkout@v3
+#         with:
+#           submodules: true
 
-      - if: ${{ matrix.arch == 'aarch64' }}
-        uses: docker/setup-qemu-action@v2 
+#       - if: ${{ matrix.arch == 'aarch64' }}
+#         uses: docker/setup-qemu-action@v2 
 
-      - uses: awvwgk/setup-fortran@main
-        id: setup-fortran
-        with:
-          compiler: gcc
-          version: 11
+#       - uses: awvwgk/setup-fortran@main
+#         id: setup-fortran
+#         with:
+#           compiler: gcc
+#           version: 11
 
-# Step for debugging
-      - run: ${{ env.FC }} --version
-        env:
-          FC: ${{ steps.setup-fortran.outputs.fc }}     
+# # Step for debugging
+#       - run: ${{ env.FC }} --version
+#         env:
+#           FC: ${{ steps.setup-fortran.outputs.fc }}     
 
-      - if: ${{ matrix.os == 'windows-latest' }}
-        uses: pypa/cibuildwheel@v2.9.0
-        env:
-          CIBW_BUILD: ${{ matrix.py }}-*
-          CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_SKIP: "*musllinux*"
-          CMAKE_GENERATOR: "MinGW Makefiles"
-          FC: ${{ steps.setup-fortran.outputs.fc }}
-          CI: true
+#       - if: ${{ matrix.os == 'windows-latest' }}
+#         uses: pypa/cibuildwheel@v2.9.0
+#         env:
+#           CIBW_BUILD_VERBOSITY: 3
+#           CIBW_BUILD: ${{ matrix.py }}-*
+#           CIBW_ARCHS: ${{ matrix.arch }}
+#           CIBW_SKIP: "*musllinux*"
+#           CMAKE_GENERATOR: "MinGW Makefiles"
+#           FC: ${{ steps.setup-fortran.outputs.fc }}
+#           CI: true
 
-      - if: ${{ matrix.os != 'windows-latest' }}
-        uses: pypa/cibuildwheel@v2.9.0
-        env:
-          # Check setuptools version
-          CIBW_BUILD_VERBOSITY: 3
-          CIBW_BUILD: ${{ matrix.py }}-*
-          CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_SKIP: "*musllinux*"
-          CIBW_TEST_SKIP: "*-macosx_universal2:arm64" 
-          CI: true  
+#       - if: ${{ matrix.os != 'windows-latest' }}
+#         uses: pypa/cibuildwheel@v2.9.0
+#         env:
+#           # Check setuptools version
+#           CIBW_BUILD_VERBOSITY: 3
+#           CIBW_BUILD: ${{ matrix.py }}-*
+#           CIBW_ARCHS: ${{ matrix.arch }}
+#           CIBW_SKIP: "*musllinux*"
+#           CIBW_TEST_SKIP: "*-macosx_universal2:arm64" 
+#           CI: true  
 
-      - uses: actions/upload-artifact@v3
-        with:
-          path: ./wheelhouse/*.whl 
+#       - uses: actions/upload-artifact@v3
+#         with:
+#           path: ./wheelhouse/*.whl 
 
   sdist:
     name: source package
@@ -92,7 +90,7 @@ jobs:
       - run: python -m pip install --upgrade pip wheel
       - run: python setup.py sdist
 
-      - run: python -m pip install --prefer-binary -v dist/impy-*
+      - run: python -m pip install --prefer-binary -v dist/impy-* [test]
       - run: python -m pip install pytest
       - run: python -m pytest -vv
 
