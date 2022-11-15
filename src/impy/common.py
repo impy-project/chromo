@@ -611,8 +611,6 @@ class MCRun(ABC):
         if self._evt_kin.composite_target:
             setattr(self, "_nremaining", nevents)
             setattr(self, "_target_ind", self._gen_target_ind(nevents))
-            # self._nremaining = nevents
-            # self._target_ind = self._gen_target_ind(nevents)
 
     def _gen_target_ind(self, nevents):
         ctarget = self._evt_kin.composite_target
