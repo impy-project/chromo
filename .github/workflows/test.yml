@@ -1,10 +1,14 @@
 name: Test
 
+# Temporary switch off 
 on:
-  pull_request:
-    paths-ignore:
-      - 'doc/**'
-      - 'README.*'
+  workflow_dispatch:
+
+# on:
+#   pull_request:
+#     paths-ignore:
+#       - 'doc/**'
+#       - 'README.*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref }}
