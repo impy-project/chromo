@@ -1,5 +1,3 @@
-# This file was taken from pybind11.
-
 # - Find python libraries
 # This module finds the libraries corresponding to the Python interpreter
 # FindPythonInterp provides.
@@ -59,6 +57,8 @@ endif()
 
 if(PythonLibsNew_FIND_QUIETLY)
   set(_pythonlibs_quiet QUIET)
+else()
+  set(_pythonlibs_quiet "")
 endif()
 
 if(PythonLibsNew_FIND_REQUIRED)
@@ -92,7 +92,7 @@ endif()
 
 # Use the Python interpreter to find the libs.
 if(NOT PythonLibsNew_FIND_VERSION)
-  set(PythonLibsNew_FIND_VERSION "")
+  set(PythonLibsNew_FIND_VERSION "3.6")
 endif()
 
 find_package(PythonInterp ${PythonLibsNew_FIND_VERSION} ${_pythonlibs_required}
@@ -151,6 +151,7 @@ if(NOT _PYTHON_SUCCESS MATCHES 0)
   return()
 endif()
 
+# Can manually set values when cross-compiling
 macro(_PYBIND11_GET_IF_UNDEF lst index name)
   if(NOT DEFINED "${name}")
     list(GET "${lst}" "${index}" "${name}")
@@ -174,14 +175,17 @@ _pybind11_get_if_undef(_PYTHON_VALUES 7 PYTHON_LIBRARY_SUFFIX)
 _pybind11_get_if_undef(_PYTHON_VALUES 8 PYTHON_LIBDIR)
 _pybind11_get_if_undef(_PYTHON_VALUES 9 PYTHON_MULTIARCH)
 
-find_package_message(PYTHON "_PYTHON_VALUES =: ${_PYTHON_VALUES}"
+find_package_message(PYTHON "DDDEBUG _PYTHON_VALUES =: ${_PYTHON_VALUES}"
                      "${_PYTHON_VALUES}")
-find_package_message(PYTHON "PYTHON_LIBDIR =: ${PYTHON_LIBDIR}"
+find_package_message(PYTHON "DDDEBUG PYTHON_LIBDIR =: ${PYTHON_LIBDIR}"
 "${PYTHON_LIBDIR}")                     
 
 # Make sure the Python has the same pointer-size as the chosen compiler
 # Skip if CMAKE_SIZEOF_VOID_P is not defined
-if(CMAKE_SIZEOF_VOID_P AND (NOT "${PYTHON_SIZEOF_VOID_P}" STREQUAL "${CMAKE_SIZEOF_VOID_P}"))
+# This should be skipped for (non-Apple) cross-compiles (like EMSCRIPTEN)
+if(NOT CMAKE_CROSSCOMPILING
+   AND CMAKE_SIZEOF_VOID_P
+   AND (NOT "${PYTHON_SIZEOF_VOID_P}" STREQUAL "${CMAKE_SIZEOF_VOID_P}"))
   if(PythonLibsNew_FIND_REQUIRED)
     math(EXPR _PYTHON_BITS "${PYTHON_SIZEOF_VOID_P} * 8")
     math(EXPR _CMAKE_BITS "${CMAKE_SIZEOF_VOID_P} * 8")
@@ -252,10 +256,10 @@ else()
     PATHS ${_PYTHON_LIBS_SEARCH}
     NO_DEFAULT_PATH)
 
-  # If all else fails, just set the name/version and let the linker figure out the path.
-  message("HHHHH PYTHON_LIBRARY = ${PYTHON_LIBRARY}")
+  # CI doesn't work at this place - change to just warning
+  message("DDDDEBUG PYTHON_LIBRARY = ${PYTHON_LIBRARY}")
   if(NOT PYTHON_LIBRARY)
-     message("HHHHH111 PYTHON_LIBRARY = ${PYTHON_LIBRARY}")
+     message("DDDDEBUG111 PYTHON_LIBRARY = ${PYTHON_LIBRARY}")
      message(WARNING "Python library not found (this may be ok)")
   endif()
 endif()

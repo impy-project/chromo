@@ -65,7 +65,6 @@ jobs:
         uses: pypa/cibuildwheel@v2.9.0
         env:
           # Check setuptools version
-          CIBW_CONFIG_SETTINGS: "-vvv"
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
