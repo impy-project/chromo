@@ -56,7 +56,8 @@ jobs:
           CIBW_SKIP: "*musllinux*"
           CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
-          PYTEST_COMMAND: python -m pytest -vv
+          CIBW_TEST_REQUIRES: pytest pyhepmc>=2.7.3
+          CIBW_TEST_COMMAND: python -m pytest -vv
           CI: true
 
       - if: ${{ matrix.os != 'windows-latest' }}
@@ -67,7 +68,8 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
           CIBW_TEST_SKIP: "*-macosx_universal2:arm64"
-          PYTEST_COMMAND: python -m pytest -vv  
+          CIBW_TEST_REQUIRES: pytest pyhepmc>=2.7.3
+          CIBW_TEST_COMMAND: python -m pytest -vv 
           CI: true  
 
       - uses: actions/upload-artifact@v3
