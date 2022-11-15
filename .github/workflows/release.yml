@@ -10,18 +10,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        arch: [native, aarch64, universal2]
-        py: [cp37, cp38, cp39, cp310]
-        exclude:
-          - os: windows-latest
-            arch: aarch64
-          - os: windows-latest
-            arch: universal2
-          - os: macos-latest
-            arch: aarch64 
-          - os: ubuntu-latest
-            arch: universal2
+        os: [ubuntu-latest]
+        arch: [native]
+        py: [cp37]
+        # os: [ubuntu-latest, windows-latest, macos-latest]
+        # arch: [native, aarch64, universal2]
+        # py: [cp37, cp38, cp39, cp310]
+        # exclude:
+        #   - os: windows-latest
+        #     arch: aarch64
+        #   - os: windows-latest
+        #     arch: universal2
+        #   - os: macos-latest
+        #     arch: aarch64 
+        #   - os: ubuntu-latest
+        #     arch: universal2
     steps:
 # Step for debugging    
       - name: Show environment
