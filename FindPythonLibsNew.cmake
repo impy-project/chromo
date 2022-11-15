@@ -253,8 +253,10 @@ else()
     NO_DEFAULT_PATH)
 
   # If all else fails, just set the name/version and let the linker figure out the path.
+  message("HHHHH PYTHON_LIBRARY = ${PYTHON_LIBRARY}")
   if(NOT PYTHON_LIBRARY)
-    set(PYTHON_LIBRARY python${PYTHON_LIBRARY_SUFFIX})
+     message("HHHHH111 PYTHON_LIBRARY = ${PYTHON_LIBRARY}")
+     message(WARNING "Python library not found (this may be ok)")
   endif()
 endif()
 
