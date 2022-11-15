@@ -137,25 +137,33 @@ if(NOT _PYTHON_SUCCESS MATCHES 0)
   return()
 endif()
 
+macro(_PYBIND11_GET_IF_UNDEF lst index name)
+  if(NOT DEFINED "${name}")
+    list(GET "${lst}" "${index}" "${name}")
+  endif()
+endmacro()
+
 # Convert the process output into a list
 if(WIN32)
   string(REGEX REPLACE "\\\\" "/" _PYTHON_VALUES ${_PYTHON_VALUES})
 endif()
 string(REGEX REPLACE ";" "\\\\;" _PYTHON_VALUES ${_PYTHON_VALUES})
 string(REGEX REPLACE "\n" ";" _PYTHON_VALUES ${_PYTHON_VALUES})
-list(GET _PYTHON_VALUES 0 _PYTHON_VERSION_LIST)
-list(GET _PYTHON_VALUES 1 PYTHON_PREFIX)
-list(GET _PYTHON_VALUES 2 PYTHON_INCLUDE_DIR)
-list(GET _PYTHON_VALUES 3 PYTHON_SITE_PACKAGES)
-list(GET _PYTHON_VALUES 4 PYTHON_MODULE_EXTENSION)
-list(GET _PYTHON_VALUES 5 PYTHON_IS_DEBUG)
-list(GET _PYTHON_VALUES 6 PYTHON_SIZEOF_VOID_P)
-list(GET _PYTHON_VALUES 7 PYTHON_LIBRARY_SUFFIX)
-list(GET _PYTHON_VALUES 8 PYTHON_LIBDIR)
-list(GET _PYTHON_VALUES 9 PYTHON_MULTIARCH)
+_pybind11_get_if_undef(_PYTHON_VALUES 0 _PYTHON_VERSION_LIST)
+_pybind11_get_if_undef(_PYTHON_VALUES 1 PYTHON_PREFIX)
+_pybind11_get_if_undef(_PYTHON_VALUES 2 PYTHON_INCLUDE_DIR)
+_pybind11_get_if_undef(_PYTHON_VALUES 3 PYTHON_SITE_PACKAGES)
+_pybind11_get_if_undef(_PYTHON_VALUES 4 PYTHON_MODULE_EXTENSION)
+_pybind11_get_if_undef(_PYTHON_VALUES 5 PYTHON_IS_DEBUG)
+_pybind11_get_if_undef(_PYTHON_VALUES 6 PYTHON_SIZEOF_VOID_P)
+_pybind11_get_if_undef(_PYTHON_VALUES 7 PYTHON_LIBRARY_SUFFIX)
+_pybind11_get_if_undef(_PYTHON_VALUES 8 PYTHON_LIBDIR)
+_pybind11_get_if_undef(_PYTHON_VALUES 9 PYTHON_MULTIARCH)
 
 find_package_message(PYTHON "_PYTHON_VALUES =: ${_PYTHON_VALUES}"
                      "${_PYTHON_VALUES}")
+find_package_message(PYTHON "PYTHON_LIBDIR =: ${PYTHON_LIBDIR}"
+"${PYTHON_LIBDIR}")                     
 
 # Make sure the Python has the same pointer-size as the chosen compiler
 # Skip if CMAKE_SIZEOF_VOID_P is not defined
