@@ -103,6 +103,7 @@ else() # Windows MinGW!
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
 	  $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
+    $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
   )
   # TODO
   # set(FLAGS -fast -fpe0)
@@ -334,7 +335,7 @@ f2py_add_module(_pythia6
 # To strengthen this position, we compile the original Pythia-8 code into
 # a shared library to which we only link. This makes clear where the boundary
 # between impy and Pythia-8 is.
-
+if (NOT WIN32)
 file(GLOB pythia8_sources ${cpp_dir}/pythia8307/src/*.cc)
 
 add_library(libpythia8 SHARED ${pythia8_sources})
@@ -345,6 +346,18 @@ target_compile_definitions(libpythia8 PRIVATE XMLDIR="")
 
 pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
 target_link_libraries(_pythia8 PRIVATE libpythia8)
+endif()
+
+
+# This part is needed when we figure out the problem with
+# building Pythia8 on Windows 
+# if (WIN32)
+# find_package(dlfcn-win32 REQUIRED)
+# set(CMAKE_DL_LIBS dlfcn-win32::dl)
+# target_link_libraries(libpythia8 PRIVATE ${CMAKE_DL_LIBS})
+# target_link_libraries(_pythia8 PRIVATE ${CMAKE_DL_LIBS})
+# target_link_libraries(_pythia8 PRIVATE "-static")
+# endif()
 
 ### sophia
 f2py_add_module(_sophia

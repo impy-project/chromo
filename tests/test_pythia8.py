@@ -8,6 +8,12 @@ from .util import reference_charge, run_in_separate_process
 import pytest
 from particle import literals as lp
 from functools import lru_cache
+import sys
+
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="Pythia8 does not run on windows"
+)
 
 
 def run_pp_collision():

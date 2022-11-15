@@ -2,10 +2,8 @@ from particle import Particle, ParticleNotFound, InvalidParticle
 import typing as _tp
 import numpy as np
 from multiprocessing import Pool
-import os
 from impy import models as im
 from impy.common import MCRun
-import pytest
 import platform
 
 
@@ -44,12 +42,14 @@ def run_in_separate_process(fn, *args, timeout=60):
 
 def get_all_models(module):
     result = []
+    removed_from_tests = [im.UrQMD34, im.Pythia8]
     for key in dir(module):
         obj = getattr(module, key)
         try:
             # fails if obj is not a class
             if issubclass(obj, MCRun):
-                if not (obj == im.UrQMD34 and platform.system() == "Windows"):
+                removed_from_tests
+                if not (obj in removed_from_tests and platform.system() == "Windows"):
                     result.append(obj)
         except TypeError:
             pass

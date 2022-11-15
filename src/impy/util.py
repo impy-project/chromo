@@ -3,7 +3,6 @@
 import warnings
 import inspect
 import os
-import pathlib
 from pathlib import Path
 import urllib.request
 import zipfile
@@ -226,7 +225,7 @@ class OutputGrabber(object):
 
 def _download_file(outfile, url):
     """Download a file from 'url' to 'outfile'"""
-    fname = pathlib.Path(url).name
+    fname = Path(url).name
     try:
         response = urllib.request.urlopen(url)
     except BaseException:
@@ -275,8 +274,8 @@ def _cached_data_dir(url):
     Args:
         url (str): url for zip file
     """
-    impy_path = pathlib.Path(__file__).parent.absolute()
-    base_dir = pathlib.Path(impy_path) / "iamdata"
+
+    base_dir = Path(__file__).parent.absolute() / "iamdata"
     base_dir.mkdir(parents=True, exist_ok=True)
 
     vname = Path(url).stem
@@ -300,7 +299,7 @@ def _cached_data_dir(url):
             vfile.unlink
         with open(version_file, "w") as vf:
             vf.write(url)
-    return model_dir
+    return str(model_dir) + "/"
 
 
 class TaggedFloat:
