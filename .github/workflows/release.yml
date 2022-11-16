@@ -42,7 +42,7 @@ jobs:
           FC: ${{ steps.setup-fortran.outputs.fc }}     
 
       - if: ${{ matrix.os == 'windows-latest' }}
-        uses: pypa/cibuildwheel@latest
+        uses: pypa/cibuildwheel@v2.11.2
         env:
           CIBW_BUILD_VERBOSITY: 3
           CIBW_BUILD: ${{ matrix.py }}-*
@@ -52,7 +52,7 @@ jobs:
           FC: ${{ steps.setup-fortran.outputs.fc }}
 
       - if: ${{ matrix.os != 'windows-latest' }}
-        uses: pypa/cibuildwheel@latest
+        uses: pypa/cibuildwheel@v2.11.2
         env:
           # Check setuptools version
           CIBW_BUILD_VERBOSITY: 3
