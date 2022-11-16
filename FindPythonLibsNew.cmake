@@ -175,11 +175,6 @@ _pybind11_get_if_undef(_PYTHON_VALUES 7 PYTHON_LIBRARY_SUFFIX)
 _pybind11_get_if_undef(_PYTHON_VALUES 8 PYTHON_LIBDIR)
 _pybind11_get_if_undef(_PYTHON_VALUES 9 PYTHON_MULTIARCH)
 
-find_package_message(PYTHON "DDDEBUG _PYTHON_VALUES =: ${_PYTHON_VALUES}"
-                     "${_PYTHON_VALUES}")
-find_package_message(PYTHON "DDDEBUG PYTHON_LIBDIR =: ${PYTHON_LIBDIR}"
-"${PYTHON_LIBDIR}")                     
-
 # Make sure the Python has the same pointer-size as the chosen compiler
 # Skip if CMAKE_SIZEOF_VOID_P is not defined
 # This should be skipped for (non-Apple) cross-compiles (like EMSCRIPTEN)
@@ -257,9 +252,7 @@ else()
     NO_DEFAULT_PATH)
 
   # CI doesn't work at this place - change to just warning
-  message("DDDDEBUG PYTHON_LIBRARY = ${PYTHON_LIBRARY}")
   if(NOT PYTHON_LIBRARY)
-     message("DDDDEBUG111 PYTHON_LIBRARY = ${PYTHON_LIBRARY}")
      message(WARNING "Python library not found (this may be ok)")
   endif()
 endif()

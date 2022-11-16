@@ -10,12 +10,7 @@ cwd = Path(__file__).parent
 sys.path.append(str(cwd))
 from cmake_ext import CMakeExtension, CMakeBuild  # noqa: E402
 
-if not os.environ.get("CI", False):
-    if (cwd / ".git").exists():
-        # make sure that submodules are up-to-date,
-        # it is a common error to forget this when
-        # switching between development branches
-        subp.check_call(["git", "submodule", "update"])
+subp.call(["git", "submodule", "update"])
 
 models = [
     "eposlhc",

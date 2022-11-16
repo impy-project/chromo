@@ -23,13 +23,6 @@ jobs:
           - os: ubuntu-latest
             arch: universal2
     steps:
-# Step for debugging    
-      - name: Show environment
-        run: env | grep ^GITHUB
-# Step for debugging
-      - name: Show CI env
-        run: env | grep ^CI  
-
       - uses: actions/checkout@v3
         with:
           submodules: true
@@ -57,7 +50,6 @@ jobs:
           CIBW_SKIP: "*musllinux*"
           CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
-          CI: true
 
       - if: ${{ matrix.os != 'windows-latest' }}
         uses: pypa/cibuildwheel@v2.9.0
@@ -68,7 +60,6 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
           CIBW_TEST_SKIP: "*-macosx_universal2:arm64" 
-          CI: true  
 
       - uses: actions/upload-artifact@v3
         with:
