@@ -13,7 +13,7 @@ jobs:
         # os: [macos-latest]
         # arch: [native]
         # py: [cp39]
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-12]
         arch: [native, aarch64, universal2]
         py: [cp37, cp38, cp39, cp310]
         exclude:
