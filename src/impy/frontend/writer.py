@@ -62,9 +62,9 @@ class RootFile:
         # for pdg in quarks_and_diquarks_and_gluons:
         #     mask &= apid != pdg
         # skip beam particles
-        mask = np.ones(len(event), bool)
-        mask[:2] = False
-        event = event[mask]
+        # mask = np.ones(len(event), bool)
+        # mask[:2] = False
+        # event = event[mask]
         a = self._ievent
         self._ievent += len(event)
         b = self._ievent
