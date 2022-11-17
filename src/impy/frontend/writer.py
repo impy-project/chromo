@@ -39,8 +39,6 @@ class RootFile:
     def _write_buffers(self):
         import awkward as ak
 
-        breakpoint()
-
         lengths = self._lengths
         b = self._ievent
         chunk = {
