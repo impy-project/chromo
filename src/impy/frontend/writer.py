@@ -1,14 +1,16 @@
-import awkward as ak
-import uproot
 import numpy as np
+import contextlib
+import gzip
 
 BUFFER_SIZE = 100000
 INT_TYPE = np.int32
 FLOAT_TYPE = np.float32
 
 
-class RootWriter:
+class RootFile:
     def __init__(self, file):
+        import uproot
+
         self._file = uproot.recreate(file)
         self._tree = None
         self._buffers = {
@@ -21,7 +23,7 @@ class RootWriter:
             "vz": np.empty(BUFFER_SIZE, FLOAT_TYPE),
             "pid": np.empty(BUFFER_SIZE, INT_TYPE),
             "status": np.empty(BUFFER_SIZE, INT_TYPE),
-            "par": np.empty(BUFFER_SIZE, INT_TYPE),
+            "parent": np.empty(BUFFER_SIZE, INT_TYPE),
         }
         self._lengths = []
         self._ievent = 0
@@ -31,10 +33,12 @@ class RootWriter:
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self._ievent > 0:
-            self._write()
+            self._write_buffers()
         self._file.close()
 
-    def _write(self):
+    def _write_buffers(self):
+        import awkward as ak
+
         lengths = self._lengths
         b = self._ievent
         chunk = {
@@ -51,7 +55,7 @@ class RootWriter:
         else:
             self._tree.extend(chunk)
 
-    def __call__(self, event):
+    def write(self, event):
         b = self._ievent
         # apid = np.abs(event.pid)
         # for pdg in quarks_and_diquarks_and_gluons:
@@ -64,27 +68,29 @@ class RootWriter:
         b += len(event)
         self._lengths.append(b - a)
         for key, val in self._buffers.items():
-            if key == "par":
+            if key == "parent":
                 val[a:b] = event.parents[:, 0] - 1
-            val[a:b] = getattr(event, key)
+            else:
+                val[a:b] = getattr(event, key)
 
         if b > BUFFER_SIZE // 2:
-            self._write()
+            self._write_buffers()
             self._lengths = []
             self._ievent = 0
 
 
-class HepmcWriter:
-    pass
+@contextlib.contextmanager
+def hepmc(file):
+    from pyhepmc.io import _WrappedWriter, WriterAscii, pyiostream
+
+    op = open
+    if file.suffix == ".gz":
+        op = gzip.open
+    with op(file, "wb") as f:
+        with pyiostream(f) as io:
+            with _WrappedWriter(io, None, WriterAscii) as w:
+                yield w
 
 
-class HepmcGZWriter:
-    pass
-
-
-class LHEWriter:
-    pass
-
-
-class LHEGZWriter:
-    pass
+def lhe(file, mode):
+    raise SystemExit("LHE not yet supported")

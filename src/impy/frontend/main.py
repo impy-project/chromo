@@ -37,11 +37,11 @@ MODELS = {
 VALID_MODELS = ", ".join(f"{k}={v.label}" for (k, v) in MODELS.items())
 
 FORMATS = {
-    "hepmc": writer.HepmcWriter,
-    "hepmcgz": writer.HepmcGZWriter,
-    "root": writer.RootWriter,
-    "lhe": writer.LHEWriter,
-    "lhegz": writer.LHEGZWriter,
+    "hepmc": writer.hepmc,
+    "hepmcgz": writer.hepmc,
+    "root": writer.RootFile,
+    "lhe": writer.lhe,
+    "lhegz": writer.lhe,
 }
 VALID_FORMATS = f"{{{', '.join(FORMATS)}}}"
 
@@ -49,6 +49,7 @@ VALID_FORMATS = f"{{{', '.join(FORMATS)}}}"
 def extension(format):
     if format.endswith("gz"):
         return format[:-2] + ".gz"
+    return format
 
 
 def process_particle(x):
@@ -75,7 +76,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--version", action="store_true", help="print version")
     parser.add_argument(
-        "-o", "--output", type=str, default="", help=f"output format {VALID_FORMATS}"
+        "-o", "--output", default="", help=f"output format {VALID_FORMATS}"
     )
     parser.add_argument(
         "-s",
@@ -91,7 +92,7 @@ def main():
         default=1,
         help="number of collisions (default is 1)",
     )
-    parser.add_argument("-m", "--model", type=int, default=0, help=VALID_MODELS)
+    parser.add_argument("-m", "--model", default=0, help=VALID_MODELS)
     parser.add_argument(
         "-p",
         "--projectile-momentum",
@@ -108,13 +109,13 @@ def main():
     )
     parser.add_argument("-S", "--sqrts", type=float, default=0, help="sqrt(s) in GeV")
     parser.add_argument(
-        "-i", "--projectile-id", type=str, default=2212, help="PDG ID or particle name"
+        "-i", "--projectile-id", default=2212, help="PDG ID or particle name"
     )
     parser.add_argument(
-        "-I", "--target-id", type=str, default=2212, help="PDG ID or particle name"
+        "-I", "--target-id", default=2212, help="PDG ID or particle name"
     )
     parser.add_argument(
-        "-f", "--out", type=str, help="Output file name (generated if none provided)"
+        "-f", "--out", help="Output file name (generated if none provided)"
     )
 
     args = parser.parse_args()
@@ -123,9 +124,20 @@ def main():
         raise SystemExit(f"impy v{version}")
 
     try:
-        Model = MODELS[args.model]
+        model_number = int(args.model)
+        Model = MODELS[model_number]
     except KeyError:
-        raise SystemExit(f"invaid model {VALID_MODELS}")
+        raise SystemExit(f"model {args.model} is invalid {VALID_MODELS}")
+    except ValueError:
+        matches = []
+        x = args.model.lower()
+        for M in MODELS.values():
+            if x in M.label.lower():
+                matches.append(M)
+        if len(matches) == 1:
+            Model = matches[0]
+        else:
+            raise SystemExit(f"model {args.model} is invalid {VALID_MODELS}")
 
     max_seed = int(1e9)
     if args.seed <= 0:
@@ -168,33 +180,41 @@ def main():
     elif p2 == 0:  # fixed target mode
         evt_kin = FixedTarget(Momentum(p1), pid1, pid2)
 
-    if args.out:  # filename
-        format = "".join(x[1:] for x in args.out.suffixes[-2:])
-        if format and args.output and format != args.output:
-            raise SystemExit(
-                f"File extension of {args.out} does not match {args.output}"
-            )
-        if not args.output:
-            args.output = format or "hepmcgz"
+    if args.out == "-":
+        args.output = "hepmc"
     else:
-        # generate filename like CRMC
-        ext = extension(args.output)
-        p1 = particle_name(pid1)
-        p2 = particle_name(pid2)
-        mom = (sqrts or p1) / GeV
-        fn = f"impy_{Model.name}_{args.seed}_{p1}_{p2}_{mom}.{ext}"
-        odir = os.environ.get("CRMC_OUT", ".")
-        args.out = Path(odir) / fn
+        if args.out:  # filename
+            args.out = Path(args.out)
+            format = "".join(x[1:] for x in args.out.suffixes[-2:])
+            if format and args.output and format != args.output:
+                raise SystemExit(
+                    f"File extension of {args.out} does not match {args.output}"
+                )
+            if not args.output:
+                args.output = format or "hepmcgz"
+        else:
+            if not args.output:
+                args.output = "hepmcgz"
+            # generate filename like CRMC
+            ext = extension(args.output)
+            p1 = particle_name(pid1)
+            p2 = particle_name(pid2)
+            mom = (sqrts or p1) / GeV
+            fn = f"impy_{Model.pyname}_{args.seed}_{p1}_{p2}_{mom}.{ext}"
+            odir = os.environ.get("CRMC_OUT", ".")
+            args.out = Path(odir) / fn
 
-    if not args.out.suffixes[-2:]:
-        ext = args.output
-        if ext.endswith("gz"):
-            ext = ext[:-2] + ".gz"
-        args.out = Path(args.out).with_suffix(ext)
+        if not args.out.suffixes[-2:]:
+            ext = "." + args.output
+            if ext.endswith("gz"):
+                ext = ext[:-2] + ".gz"
+            args.out = Path(args.out).with_suffix(ext)
 
     model = Model(evt_kin, seed=args.seed)
 
-    Writer = FORMATS[args.output]
-    with Writer(args.out) as writer:
+    file_open = FORMATS[args.output]
+    with file_open(args.out) as f:
         for event in model(args.number):
-            writer(event)
+            f.write(event)
+
+    print(args.number, "events generated")
