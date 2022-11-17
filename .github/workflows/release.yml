@@ -10,18 +10,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        arch: [native, aarch64, universal2]
-        py: [cp37, cp38, cp39, cp310]
-        exclude:
-          - os: windows-latest
-            arch: aarch64
-          - os: windows-latest
-            arch: universal2
-          - os: macos-latest
-            arch: aarch64
-          - os: ubuntu-latest
-            arch: universal2
+        os: [macos-latest]
+        arch: [native]
+        py: [cp39]
+
+        # os: [ubuntu-latest, windows-latest, macos-latest]
+        # arch: [native, aarch64, universal2]
+        # py: [cp37, cp38, cp39, cp310]
+        # exclude:
+        #   - os: windows-latest
+        #     arch: aarch64
+        #   - os: windows-latest
+        #     arch: universal2
+        #   - os: macos-latest
+        #     arch: aarch64
+        #   - os: macos-latest
+        #     arch: universal2
+        #     py: cp37
+        #   - os: ubuntu-latest
+        #     arch: universal2
     steps:
       - uses: actions/checkout@v3
         with:
@@ -30,16 +37,17 @@ jobs:
       - if: ${{ matrix.arch == 'aarch64' }}
         uses: docker/setup-qemu-action@v2
 
-      - uses: awvwgk/setup-fortran@main
+      - if: ${{ matrix.os != 'macos-latest' }}
+        uses: awvwgk/setup-fortran@main
         id: setup-fortran
         with:
           compiler: gcc
-          version: 12
+          version: 11
 
 # Step for debugging
-      - run: ${{ env.FC }} --version
-        env:
-          FC: ${{ steps.setup-fortran.outputs.fc }}
+      # - run: ${{ env.FC }} --version
+      #   env:
+      #     FC: ${{ steps.setup-fortran.outputs.fc }}
 
       - if: ${{ matrix.os == 'windows-latest' }}
         uses: pypa/cibuildwheel@v2.11.2
@@ -51,7 +59,30 @@ jobs:
           CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
 
-      - if: ${{ matrix.os != 'windows-latest' }}
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        uses: pypa/cibuildwheel@v2.11.2
+        env:
+          # Check setuptools version
+          CIBW_BUILD_VERBOSITY: 3
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_SKIP: "*musllinux*"
+
+      - if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          ln -fs /usr/local/bin/gfortran-12 /usr/local/bin/gfortran
+          export FC=gfortran
+          FC=gfortran
+          export CC=gcc
+          CC=gcc
+          export CXX=g++
+          CXX=g++
+          which gfortran
+          which gcc
+          which g++
+
+
+      - if: ${{ matrix.os == 'macos-latest' }}
         uses: pypa/cibuildwheel@v2.11.2
         env:
           # Check setuptools version
