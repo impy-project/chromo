@@ -1,18 +1,19 @@
-from .version import __version__  # noqa
-from os.path import join, abspath, dirname
+from .version import __version__
+from pathlib import Path
 from . import config as _config
-
-impy_config = _config.__dict__
-
 from particletools.tables import PYTHIAParticleData
 
-base_path = abspath(dirname(__file__))
+impy_config = _config.__dict__
+base_path = Path(__file__).parent.absolute()
 
 pdata = PYTHIAParticleData(
-    cache_file=open(join(base_path, impy_config["pdata_cachefile"]), "wb")
+    cache_file=open(base_path / impy_config["pdata_cachefile"], "wb")
 )
 
+# these must be after pdata for now
+# FIXME code should not depend on import order (HD)
+from . import models  # noqa
+from . import kinematics  # noqa
+from . import constants  # noqa
 
-import impy.models as models  # noqa
-import impy.kinematics as kinematics  # noqa
-import impy.constants as constants  # noqa
+__all__ = ["models", "kinematics", "constants", "__version__"]
