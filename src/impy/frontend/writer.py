@@ -39,6 +39,8 @@ class RootFile:
     def _write_buffers(self):
         import awkward as ak
 
+        breakpoint()
+
         lengths = self._lengths
         b = self._ievent
         chunk = {
@@ -54,9 +56,10 @@ class RootFile:
             self._tree = self._file["event"]
         else:
             self._tree.extend(chunk)
+        self._ievent = 0
+        self._lengths = []
 
     def write(self, event):
-        b = self._ievent
         # apid = np.abs(event.pid)
         # for pdg in quarks_and_diquarks_and_gluons:
         #     mask &= apid != pdg
@@ -64,8 +67,9 @@ class RootFile:
         mask = np.ones(len(event), bool)
         mask[:2] = False
         event = event[mask]
-        a = b
-        b += len(event)
+        a = self._ievent
+        self._ievent += len(event)
+        b = self._ievent
         self._lengths.append(b - a)
         for key, val in self._buffers.items():
             if key == "parent":
