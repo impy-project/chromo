@@ -33,8 +33,10 @@ impy/tests/*.pkl
 __pycache__
 .pytest_cache
 .benchmarks
-examples/*.dat
-examples/*.root
+*.dat
+*.hepmc
+*.root
+*.gz
 tests/*.dat
 extra.cfg
 pythia*.tgz
