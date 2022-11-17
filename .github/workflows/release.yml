@@ -19,7 +19,7 @@ jobs:
           - os: windows-latest
             arch: universal2
           - os: macos-latest
-            arch: aarch64 
+            arch: aarch64
           - os: ubuntu-latest
             arch: universal2
     steps:
@@ -28,7 +28,7 @@ jobs:
           submodules: true
 
       - if: ${{ matrix.arch == 'aarch64' }}
-        uses: docker/setup-qemu-action@v2 
+        uses: docker/setup-qemu-action@v2
 
       - uses: awvwgk/setup-fortran@main
         id: setup-fortran
@@ -39,7 +39,7 @@ jobs:
 # Step for debugging
       - run: ${{ env.FC }} --version
         env:
-          FC: ${{ steps.setup-fortran.outputs.fc }}     
+          FC: ${{ steps.setup-fortran.outputs.fc }}
 
       - if: ${{ matrix.os == 'windows-latest' }}
         uses: pypa/cibuildwheel@v2.11.2
@@ -64,7 +64,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          path: ./wheelhouse/*.whl 
+          path: ./wheelhouse/*.whl
 
   sdist:
     name: source package
@@ -122,7 +122,7 @@ jobs:
 #         arch: [native]
 #         py: [cp39]
 #     steps:
-    
+
 #     - uses: actions/checkout@v3
 #       with:
 #         submodules: true
@@ -140,7 +140,7 @@ jobs:
 
 #     - run: ${{ env.FC }} --version
 #       env:
-#         FC: ${{ steps.setup-fortran.outputs.fc }}    
+#         FC: ${{ steps.setup-fortran.outputs.fc }}
 
 
 #     - run: python -m pip install --upgrade pip
@@ -149,7 +149,7 @@ jobs:
 #         $env:CMAKE_GENERATOR
 #         $env:FC
 #         python -m pip install --prefer-binary -v .[test]
-#       env: 
+#       env:
 #         CMAKE_GENERATOR: "MinGW Makefiles"
 #         FC: ${{ steps.setup-fortran.outputs.fc }}
 #     - run: python -m pytest -vv
