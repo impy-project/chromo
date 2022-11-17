@@ -37,7 +37,6 @@ __pycache__
 *.hepmc
 *.root
 *.gz
-tests/*.dat
 extra.cfg
 pythia*.tgz
 impy-?.?.?
