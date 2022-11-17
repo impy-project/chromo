@@ -10,24 +10,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: [macos-latest]
-        # arch: [native]
-        # py: [cp39]
-        os: [ubuntu-latest, windows-latest, macos-12]
-        arch: [native, aarch64, universal2]
-        py: [cp37, cp38, cp39, cp310]
-        exclude:
-          - os: windows-latest
-            arch: aarch64
-          - os: windows-latest
-            arch: universal2
-          - os: macos-latest
-            arch: aarch64
-          - os: macos-latest
-            arch: universal2
-            py: cp37
-          - os: ubuntu-latest
-            arch: universal2
+        os: [macos-12]
+        arch: [native, universal2]
+        py: [cp39]
+        # os: [ubuntu-latest, windows-latest, macos-12]
+        # arch: [native, aarch64, universal2]
+        # py: [cp37, cp38, cp39, cp310]
+        # exclude:
+        #   - os: windows-latest
+        #     arch: aarch64
+        #   - os: windows-latest
+        #     arch: universal2
+        #   - os: macos-latest
+        #     arch: aarch64
+        #   - os: macos-latest
+        #     arch: universal2
+        #     py: cp37
+        #   - os: ubuntu-latest
+        #     arch: universal2
     steps:
       - uses: actions/checkout@v3
         with:
@@ -36,7 +36,7 @@ jobs:
       - if: ${{ matrix.arch == 'aarch64' }}
         uses: docker/setup-qemu-action@v2
 
-      - if: ${{ matrix.os != 'macos-latest' }}
+      - if: ${{ matrix.os != 'macos-12' }}
         uses: awvwgk/setup-fortran@main
         id: setup-fortran
         with:
@@ -67,7 +67,7 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
 
-      - if: ${{ matrix.os == 'macos-latest' }}
+      - if: ${{ matrix.os == 'macos-12' }}
         run: |
           ln -fs /usr/local/bin/gfortran-12 /usr/local/bin/gfortran
           export FC=gfortran
@@ -81,7 +81,7 @@ jobs:
           which g++
 
 
-      - if: ${{ matrix.os == 'macos-latest' }}
+      - if: ${{ matrix.os == 'macos-12' }}
         uses: pypa/cibuildwheel@v2.11.2
         env:
           # Check setuptools version
@@ -96,28 +96,28 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
 
-  sdist:
-    name: source package
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
+  # sdist:
+  #   name: source package
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         submodules: true
 
-      - uses: actions/setup-python@v4
-        name: Install Python
-        with:
-          python-version: '3.9'
+  #     - uses: actions/setup-python@v4
+  #       name: Install Python
+  #       with:
+  #         python-version: '3.9'
 
-      - run: python -m pip install --upgrade pip wheel
-      - run: python setup.py sdist
-      - run: python -m pip install --prefer-binary -v `echo dist/impy-*`[test]
-      - run: python -m pip install pytest
-      - run: python -m pytest -vv
+  #     - run: python -m pip install --upgrade pip wheel
+  #     - run: python setup.py sdist
+  #     - run: python -m pip install --prefer-binary -v `echo dist/impy-*`[test]
+  #     - run: python -m pip install pytest
+  #     - run: python -m pytest -vv
 
-      - uses: actions/upload-artifact@v3
-        with:
-          path: dist/*.tar.gz
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         path: dist/*.tar.gz
 
   # upload:
   #   needs: [wheels, sdist]
