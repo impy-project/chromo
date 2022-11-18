@@ -1,3 +1,3 @@
-from .frontend import main
+from .cli import main
 
-main.main()
+main()

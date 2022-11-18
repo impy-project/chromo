@@ -6,11 +6,11 @@ CRMC (Cosmic Ray Monte Carlo package) https://web.ikp.kit.edu/rulrich/crmc.html
 
 import argparse
 import os
-from impy import models, __version__ as version
-from impy.kinematics import CenterOfMass, FixedTarget, Momentum, _FromParticleName
-from impy.util import AZ2pdg
-from impy.constants import MeV, GeV
-from . import writer
+from . import models, __version__ as version
+from .kinematics import CenterOfMass, FixedTarget, Momentum, _FromParticleName
+from .util import AZ2pdg
+from .constants import MeV, GeV
+from .writer import Root
 from pathlib import Path
 from particle import Particle
 from math import sqrt
@@ -36,13 +36,13 @@ MODELS = {
 }
 VALID_MODELS = ", ".join(f"{k}={v.label}" for (k, v) in MODELS.items())
 
-FORMATS = {
-    "hepmc": writer.hepmc,
-    "hepmcgz": writer.hepmc,
-    "root": writer.RootFile,
-    "lhe": writer.lhe,
-    "lhegz": writer.lhe,
-}
+FORMATS = (
+    "hepmc",
+    "hepmcgz",
+    "root",
+    # "lhe",
+    # "lhegz",
+)
 VALID_FORMATS = f"{{{', '.join(FORMATS)}}}"
 
 
@@ -64,6 +64,7 @@ def process_particle(x):
         pass
 
     # handle any special names recognised by CRMC here
+    # ...
 
     return _FromParticleName._get_pdg(x)
 
@@ -121,7 +122,7 @@ def main():
     args = parser.parse_args()
 
     if args.version:
-        raise SystemExit(f"impy v{version}")
+        raise SystemExit(f"impy {version}")
 
     try:
         model_number = int(args.model)
@@ -183,18 +184,20 @@ def main():
     if args.out == "-":
         args.output = "hepmc"
     else:
-        if args.out:  # filename
+        if args.out:  # filename was provided
             args.out = Path(args.out)
+            # try get format from filename extension
             format = "".join(x[1:] for x in args.out.suffixes[-2:])
+            # check if both format and args.output are defined and are different
             if format and args.output and format != args.output:
                 raise SystemExit(
                     f"File extension of {args.out} does not match {args.output}"
                 )
             if not args.output:
-                args.output = format or "hepmcgz"
-        else:
+                args.output = format or "hepmc"
+        else:  # no filename provided
             if not args.output:
-                args.output = "hepmcgz"
+                args.output = "hepmc"
             # generate filename like CRMC
             ext = extension(args.output)
             p1 = particle_name(pid1)
@@ -210,11 +213,24 @@ def main():
                 ext = ext[:-2] + ".gz"
             args.out = Path(args.out).with_suffix(ext)
 
+    if args.output not in FORMATS:
+        raise SystemExit(f"unknown format {args.output} {VALID_FORMATS}")
+
     model = Model(evt_kin, seed=args.seed)
 
-    file_open = FORMATS[args.output]
-    with file_open(args.out) as f:
+    if args.output.startswith("hepmc"):
+        import pyhepmc
+
+        writer = pyhepmc.open(args.out, "w")
+    elif args.output == "root":
+        writer = Root(args.out)
+
+    with writer as w:
         for event in model(args.number):
-            f.write(event)
+            w.write(event)
 
     print(args.number, "events generated")
+
+
+if __name__ == "__main__":
+    main()
