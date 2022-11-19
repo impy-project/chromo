@@ -165,7 +165,8 @@ def parse_arguments():
             raise SystemExit(f"Error: model {args.model} is invalid {VALID_MODELS}")
         else:
             raise SystemExit(
-                f"Error: model {args.model} is ambiguous, " f"matches: {matches}"
+                f"Error: model {args.model} is ambiguous, "
+                f"matches {', '.join(v.label for v in matches)}"
             )
 
     args.projectile_id = process_particle(args.projectile_id)

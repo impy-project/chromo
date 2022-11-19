@@ -26,13 +26,24 @@ def format_matches_extension(p):
             assert tree.num_entries > 0
 
 
-def run(*cmd, returncode=0, stdout=None, file=None, checks=(format_matches_extension,)):
+def run(
+    *cmd,
+    returncode=0,
+    stdout=None,
+    stderr=None,
+    file=None,
+    checks=(format_matches_extension,),
+):
     r = subp.run((sys.executable, "-m", "impy") + cmd, capture_output=True)
     assert r.returncode == returncode, r.stderr.decode()
     match = None
     if stdout is not None:
         actual = r.stdout.decode()
         match = re.search(stdout, actual)
+        assert match, actual
+    if stderr is not None:
+        actual = r.stderr.decode()
+        match = re.search(stderr, actual)
         assert match, actual
     if file:
         if match is not None:
@@ -112,7 +123,7 @@ def test_number_2():
         ("sib21", im.Sibyll21),
     ),
 )
-def test_model(spec, Model):
+def test_model_1(spec, Model):
     run(
         "-S",
         "100",
@@ -122,6 +133,24 @@ def test_model(spec, Model):
         spec,
         stdout=f"Model: {Model.label}",
         file=f"impy_{Model.pyname.lower()}_1_2212_2212_100.hepmc",
+    )
+
+
+def test_model_2():
+    run(
+        "-m",
+        "py8",
+        returncode=1,
+        stderr="Error: model py8 is ambiguous, matches Pythia-6.428, Pythia-8.307",
+    )
+
+
+def test_model_3():
+    run(
+        "-m",
+        "sib",
+        returncode=1,
+        stderr="Error: model sib is ambiguous, matches SIBYLL-2.1, SIBYLL-2.3, SIBYLL-2.3c, SIBYLL-2.3d",
     )
 
 
