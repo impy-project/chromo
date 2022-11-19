@@ -102,6 +102,9 @@ class Pythia8(MCRun):
             # Specify energy in center of mass
             "Beams:frameType = 1",
             "SoftQCD:inelastic = on",
+            # reduce verbosity
+            "Print:quiet = on",
+            "Next:numberCount = 0",  # do not print progress
         ]
         # Add more options from config file
         config += impy_config["pythia8"]["options"]
