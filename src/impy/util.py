@@ -226,6 +226,15 @@ class OutputGrabber(object):
 
 def _download_file(outfile, url):
     """Download a file from 'url' to 'outfile'"""
+    from rich.progress import (
+        Progress,
+        TextColumn,
+        BarColumn,
+        SpinnerColumn,
+        DownloadColumn,
+        TimeRemainingColumn,
+    )
+
     fname = Path(url).name
     try:
         response = urllib.request.urlopen(url)
@@ -243,28 +252,26 @@ def _download_file(outfile, url):
         blocksize = min_blocksize
 
     wrote = 0
-    with open(outfile, "wb") as f:
-        while True:
-            data = response.read(blocksize)
-            if not data:
-                break
-            f.write(data)
-            wrote += len(data)
-            if total_size:
-                print(
-                    f"Downloading {fname}: {wrote/total_size*100:.0f}% "
-                    f"done ({wrote/(1024*1024):.0f} Mb) \r",
-                    end=" ",
-                )
-            else:
-                print(
-                    f"Downloading {fname}: {wrote/(1024*1024):.0f} Mb downloaded \r",
-                    end=" ",
-                )
-    print()
+    with Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn() if total_size else SpinnerColumn(),
+        DownloadColumn(),
+        TimeRemainingColumn(),
+        transient=True,
+    ) as bar:
+        task_id = bar.add_task(f"Downloading {fname}", total=total_size)
+
+        with open(outfile, "wb") as f:
+            chunk = True
+            while chunk:
+                chunk = response.read(blocksize)
+                f.write(chunk)
+                nchunk = len(chunk)
+                wrote += nchunk
+                bar.advance(task_id, nchunk)
+
     if total_size and wrote != total_size:
         raise ConnectionError(f"{fname} has not been downloaded")
-    return True
 
 
 def _cached_data_dir(url):
@@ -288,12 +295,12 @@ def _cached_data_dir(url):
         shutil.rmtree(temp_dir, ignore_errors=True)
         if model_dir.exists():
             shutil.move(model_dir, temp_dir)
-        if _download_file(zip_file, url):
-            if zipfile.is_zipfile(zip_file):
-                with zipfile.ZipFile(zip_file, "r") as zf:
-                    zf.extractall(base_dir.as_posix())
-                zip_file.unlink()
-                shutil.rmtree(temp_dir, ignore_errors=True)
+        _download_file(zip_file, url)
+        if zipfile.is_zipfile(zip_file):
+            with zipfile.ZipFile(zip_file, "r") as zf:
+                zf.extractall(base_dir.as_posix())
+            zip_file.unlink()
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
         version_glob = vname.split("_v")[0]
         for vfile in model_dir.glob(f"{version_glob}_v*"):
@@ -483,32 +490,3 @@ def get_all_models(skip=None):
             pass
 
     return result
-
-
-def track(seq, total=None):
-    try:
-        from rich.progress import track
-
-        for x in track(seq, total=total):
-            yield x
-
-        return
-    except ModuleNotFoundError:
-        pass
-
-    if total:
-        step = total // 100
-        count = 0
-        for i, x in enumerate(seq):
-            if i % step == 0:
-                count += 1
-                print(f"\rWorking... {count} %", end="")
-            yield x
-        print("\rWorking... 100 %")
-        return
-
-    disp = "|", "/", "-", "\\"
-    for i, x in enumerate(seq):
-        print(f"\rWorking... {disp[i % 4]}")
-        yield x
-    print("\r                 ")

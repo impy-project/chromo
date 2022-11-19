@@ -8,12 +8,34 @@ import argparse
 import os
 from . import models, __version__ as version
 from .kinematics import CenterOfMass, FixedTarget, Momentum, _FromParticleName
-from .util import AZ2pdg, tolerant_string_match, get_all_models, track
+from .util import AZ2pdg, tolerant_string_match, get_all_models
 from .constants import MeV, GeV
 from .writer import Root
 from pathlib import Path
 from particle import Particle
 from math import sqrt
+from rich.progress import (
+    Progress,
+    ProgressColumn,
+    Task,
+    BarColumn,
+    MofNCompleteColumn,
+    TimeRemainingColumn,
+    TaskProgressColumn,
+)
+from rich.text import Text
+
+
+class SpeedColumn(ProgressColumn):
+    """Renders generation speed."""
+
+    def render(self, task: "Task") -> Text:
+        """Show generation speed."""
+        speed = task.finished_speed or task.speed
+        if speed is None:
+            return Text("?", style="progress.data.speed")
+        return Text(f"{speed:.0f}/s", style="progress.data.speed")
+
 
 # Only add numbers here of models that to match CRMC.
 # Impy models which are not in CRMC should not be added here.
@@ -133,6 +155,7 @@ def parse_arguments():
     args = parser.parse_args()
 
     if args.version:
+        print(f"impy {version}")
         raise SystemExit
 
     max_seed = int(1e9)  # EPOS requirement
@@ -237,24 +260,39 @@ def parse_arguments():
 
 
 def main():
-    print(f"impy {version}")
+    from rich.console import Console
+    from rich.panel import Panel
 
     args = parse_arguments()
 
-    print(f"  Model: {args.model.label}")
-    print(f"  Collisions: {args.number}")
-    p = Particle.from_pdgid(args.projectile_id)
-    print(f"  Projectile: {p.name} ({args.projectile_id})")
-    p = Particle.from_pdgid(args.target_id)
-    print(f"  Target: {p.name} ({args.target_id})")
-    print(f"  Seed: {args.seed}")
+    p1 = Particle.from_pdgid(args.projectile_id)
+    p2 = Particle.from_pdgid(args.target_id)
     pr = args.projectile_momentum
     ta = args.target_momentum
+
+    msg = f"""\
+  [repr.str]Model[/repr.str]\t\t[bold]{args.model.label}[/bold]
+  [repr.str]Collisions[/repr.str]\t[repr.number]{args.number}[/repr.number]
+  [repr.str]Projectile[/repr.str]\t[bold]{p1.name}[/bold]\
+ ([repr.number]{args.projectile_id}[/repr.number])
+  [repr.str]Target[/repr.str]\t[bold]{p2.name}[/bold]\
+ ([repr.number]{args.target_id}[/repr.number])
+  [repr.str]Seed[/repr.str]\t\t[repr.number]{args.seed}[/repr.number]\
+"""
     if pr != 0 or ta != 0:
-        print(f"  Projectile momentum: {pr:g} GeV/c")
-        print(f"  Target momentum: {ta:g} GeV/c")
-    print(f"  sqrt(s): {args.sqrts:g} GeV")
-    print(f"  Format: {args.output}")
+        msg += f"""
+  [repr.str]Projectile momentum[/repr.str]\t[magenta]{pr:g} GeV/c[/magenta]
+  [repr.str]Target momentum[/repr.str]\t[magenta]{ta:g} GeV/c[/magenta]\
+"""
+    msg += f"""
+  [repr.str]sqrt(s)[/repr.str]\t[magenta]{args.sqrts:g} GeV[/magenta]
+  [repr.str]Format[/repr.str]\t{args.output}\
+"""
+
+    console = Console()
+    console.print(
+        Panel(msg, title=f"[bold]impy [green]{version}[/green][/bold]", width=78)
+    )
 
     if pr > 0 and ta == 0:  # fixed target mode
         evt_kin = FixedTarget(Momentum(pr), args.projectile_id, args.target_id)
@@ -270,9 +308,24 @@ def main():
 
     model = args.model(evt_kin)
 
+    task_id = None
     with writer as w:
-        for event in track(model(args.number), total=args.number):
-            w.write(event)
+        # workaround: several models generate extra print when first
+        # event is generated, this interferes with progress bar so we
+        # create bar only after second event is generated
+        with Progress(
+            MofNCompleteColumn(),
+            BarColumn(),
+            TaskProgressColumn(),
+            "ETA",
+            TimeRemainingColumn(elapsed_when_finished=True),
+            SpeedColumn(),
+        ) as bar:
+            for event in model(args.number):
+                w.write(event)
+                if task_id is None:
+                    task_id = bar.add_task("", total=args.number)
+                bar.advance(task_id, 1)
 
 
 if __name__ == "__main__":
