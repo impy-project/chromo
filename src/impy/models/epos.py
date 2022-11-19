@@ -67,7 +67,6 @@ class EposLHC(MCRun):
     def __init__(self, event_kinematics, seed=None, logfname=None):
         super().__init__(seed, logfname)
 
-        info(1, "First initialization")
         self._lib.aaset(0)
 
         if impy_config["user_frame"] == "center-of-mass":
@@ -102,7 +101,6 @@ class EposLHC(MCRun):
             return self._lib.xsection()[1]
 
     def _set_event_kinematics(self, k):
-        info(5, "Setting event kinematics")
         self._lib.initeposevt(k.ecm, -1.0, k.p1pdg, k.p2pdg)
 
     def _attach_log(self, fname=None):
