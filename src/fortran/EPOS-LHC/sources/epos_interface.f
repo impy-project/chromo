@@ -46,9 +46,8 @@ c      ionudi=3              !count diffraction without excitation as elastic
       iecho=0                     !"silent" reading mode
 
       nfnnx=lpath   
-      fnnx=datpath                    ! path to main epos subdirectory
-      print *, datpath, lpath
-      nfnii=lpath + 10                            ! epos tab file name lenght
+      fnnx=datpath                        ! path to main epos subdirectory
+      nfnii=lpath + 10                    ! epos tab file name lenght
       fnii=fnnx(1:nfnnx) // "epos.initl"  ! epos tab file name
       nfnid=lpath + 10
       fnid=fnnx(1:nfnnx) // "epos.inidi"
