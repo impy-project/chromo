@@ -53,7 +53,7 @@ stable_list = [
 ]  # default stable list with stable lifetime = 10e-12
 
 # Set pi0 to stable by default (often used as default)
-pi0_stable = True
+pi0_stable = False
 
 # Apply initial array slicing (Advanced option)
 # True (default): Expose the event variables as truncated views, i.e. event.en[0:npart]
