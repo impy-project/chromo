@@ -3,6 +3,7 @@
 import warnings
 import inspect
 import os
+import platform
 from pathlib import Path
 import urllib.request
 import zipfile
@@ -441,3 +442,44 @@ try:
 
 except ModuleNotFoundError:
     pass
+
+
+def tolerant_string_match(a, b):
+    """
+    Return True if all characters in appear also in b in same order.
+
+    This algorithm is slow and should only be used were speed does
+    not matter.
+    """
+    last = 0
+    for c in a:
+        i = b.find(c)
+        if i == -1:
+            return False
+        if i < last:
+            return False
+        last = i
+    return True
+
+
+def get_all_models(skip=None):
+    from . import models
+    from .common import MCRun
+
+    if skip is None:
+        skip = []
+    if platform.system() == "Windows":
+        skip += [models.UrQMD34, models.Pythia8]
+
+    result = []
+    for key in dir(models):
+        obj = getattr(models, key)
+        if skip and obj in skip:
+            continue
+        try:
+            if issubclass(obj, MCRun):  # fails if obj is not a class
+                result.append(obj)
+        except TypeError:
+            pass
+
+    return result

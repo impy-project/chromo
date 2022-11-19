@@ -2,15 +2,13 @@ from impy.kinematics import CenterOfMass
 from impy import models as im
 from impy.constants import GeV
 from impy.models.sophia import Sophia20
-from .util import (
-    run_in_separate_process,
-    get_all_models,
-)
+from .util import run_in_separate_process
+from impy.util import get_all_models
 import numpy as np
 import pytest
 
 # generate list of all models in impy.models
-models = get_all_models(im)
+models = get_all_models()
 
 
 def run(Model):

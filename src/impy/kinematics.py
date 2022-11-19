@@ -51,9 +51,23 @@ class _FromParticleName:
         Higgs=25,
         proton=2212,
         antiproton=-2212,
+        p=2212,
+        pbar=-2212,
         neutron=2112,
         antineutron=-2112,
+        n=2112,
+        nbar=-2112,
+        C=all_pdgs["C12"],
+        N=all_pdgs["N14"],
+        O=all_pdgs["O16"],
+        Pb=all_pdgs["Pb206"],
+        He=all_pdgs["He4"],
+        Ne=all_pdgs["Ne20"],
+        Ar=all_pdgs["Ar40"],
+        Xe=all_pdgs["Xe131"],
     )
+    all_pdgs["p~"] = all_pdgs["pbar"]
+    all_pdgs["n~"] = all_pdgs["nbar"]
 
     @staticmethod
     def _get_pdg(pname):

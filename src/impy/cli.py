@@ -8,16 +8,16 @@ import argparse
 import os
 from . import models, __version__ as version
 from .kinematics import CenterOfMass, FixedTarget, Momentum, _FromParticleName
-from .util import AZ2pdg
+from .util import AZ2pdg, tolerant_string_match, get_all_models
 from .constants import MeV, GeV
 from .writer import Root
 from pathlib import Path
 from particle import Particle
 from math import sqrt
 
+# Only add numbers here of models that to match CRMC.
+# Impy models which are not in CRMC should not be added here.
 MODELS = {
-    # TODO add more numbers with our unique models
-    # numbers must match definition in CRMC
     0: models.EposLHC,
     # 1: models.Epos199,
     2: models.QGSJet01d,
@@ -30,11 +30,11 @@ MODELS = {
     11: models.QGSJetII03,
     # in CRMC 12 refers to different DPMJet versions
     12: models.DpmjetIII306,
-    # models which are not in CRMC shoud use numbers upward of 20,
-    # in case CRMC adds a few more
-    20: models.Pythia8,
 }
 VALID_MODELS = ", ".join(f"{k}={v.label}" for (k, v) in MODELS.items())
+VALID_MODELS += ", ".join(
+    {v.label for v in get_all_models() if v not in MODELS.values()}
+)
 
 FORMATS = (
     "hepmc",
@@ -73,12 +73,9 @@ def particle_name(pid):
     return Particle.from_pdgid(pid).programmatic_name
 
 
-def main():
+def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--version", action="store_true", help="print version")
-    parser.add_argument(
-        "-o", "--output", default="", help=f"output format {VALID_FORMATS}"
-    )
     parser.add_argument(
         "-s",
         "--seed",
@@ -93,7 +90,12 @@ def main():
         default=1,
         help="number of collisions (default is 1)",
     )
-    parser.add_argument("-m", "--model", default=0, help=VALID_MODELS)
+    parser.add_argument(
+        "-m",
+        "--model",
+        default=0,
+        help=f"select model via number or name with tolerant matching {VALID_MODELS}",
+    )
     parser.add_argument(
         "-p",
         "--projectile-momentum",
@@ -110,10 +112,19 @@ def main():
     )
     parser.add_argument("-S", "--sqrts", type=float, default=0, help="sqrt(s) in GeV")
     parser.add_argument(
-        "-i", "--projectile-id", default=2212, help="PDG ID or particle name"
+        "-i",
+        "--projectile-id",
+        default=2212,
+        help="PDG ID or particle name, default is proton",
     )
     parser.add_argument(
-        "-I", "--target-id", default=2212, help="PDG ID or particle name"
+        "-I",
+        "--target-id",
+        default=2212,
+        help="PDG ID or particle name, default is proton",
+    )
+    parser.add_argument(
+        "-o", "--output", default="", help=f"output format {VALID_FORMATS}"
     )
     parser.add_argument(
         "-f", "--out", help="Output file name (generated if none provided)"
@@ -122,67 +133,71 @@ def main():
     args = parser.parse_args()
 
     if args.version:
-        raise SystemExit(f"impy {version}")
+        raise SystemExit
 
-    try:
-        model_number = int(args.model)
-        Model = MODELS[model_number]
-    except KeyError:
-        raise SystemExit(f"model {args.model} is invalid {VALID_MODELS}")
-    except ValueError:
-        matches = []
-        x = args.model.lower()
-        for M in MODELS.values():
-            if x in M.label.lower():
-                matches.append(M)
-        if len(matches) == 1:
-            Model = matches[0]
-        else:
-            raise SystemExit(f"model {args.model} is invalid {VALID_MODELS}")
-
-    max_seed = int(1e9)
+    max_seed = int(1e9)  # EPOS requirement
     if args.seed <= 0:
         args.seed = int.from_bytes(os.urandom(4), "little")
         args.seed %= max_seed
     else:
         if args.seed > max_seed:
-            raise ValueError(f"{args.seed} is larger than maximum seed ({max_seed})")
+            raise SystemExit(
+                f"Error: {args.seed} is larger " f"than maximum seed ({max_seed})"
+            )
 
     if args.number <= 0:
-        raise SystemExit(f"invalid number of events {args.number}")
+        raise SystemExit("Error number must be positive")
 
-    pid1 = process_particle(args.projectile_id)
-    pid2 = process_particle(args.target_id)
+    try:
+        model_number = int(args.model)
+        Model = MODELS[model_number]
+    except KeyError:
+        raise SystemExit(f"Error: model {args.model} is invalid {VALID_MODELS}")
+    except ValueError:
+        matches = []
+        x = args.model.lower()
+        for M in get_all_models():
+            if tolerant_string_match(x, M.label.lower()):
+                matches.append(M)
+        if len(matches) == 1:
+            Model = matches[0]
+        elif len(matches) == 0:
+            raise SystemExit(f"Error: model {args.model} is invalid {VALID_MODELS}")
+        else:
+            raise SystemExit(
+                f"Error: model {args.model} is ambiguous, " f"matches: {matches}"
+            )
 
-    p1 = args.projectile_momentum * GeV
-    p2 = args.target_momentum * GeV
-    sqrts = args.sqrts * GeV
-    if sqrts < 0:
-        raise SystemExit(f"sqrt(s) is negative {sqrts/GeV} GeV")
-    if p1 != 0 or p2 != 0 and sqrts != 0:
-        raise SystemExit("either set sqrts or momenta, not both")
-    if p1 == 0 and p2 == 0 and sqrts == 0:
-        raise SystemExit("no energy or momenta specified")
+    args.projectile_id = process_particle(args.projectile_id)
+    args.target_id = process_particle(args.target_id)
 
-    if p1 != 0 and p2 != 0:
-        # both momenta are non-zero, compute sqrt(s)
-        m1 = Particle.from_pdgid(pid1).mass * MeV
-        m2 = Particle.from_pdgid(pid2).mass * MeV
-        e1 = sqrt(m1**2 + p1**2)
-        e2 = sqrt(m2**2 + p2**2)
+    args.projectile_momentum *= GeV
+    args.target_momentum *= GeV
+    args.sqrts *= GeV
+    pr = args.projectile_momentum
+    ta = args.target_momentum
+    if args.sqrts < 0:
+        raise SystemExit(f"Error: sqrt(s) is negative {args.sqrts/GeV} GeV")
+    if (pr != 0 or ta != 0) and args.sqrts != 0:
+        raise SystemExit("Error: either set sqrts or momenta, but not both")
+    if pr == 0 and ta == 0 and args.sqrts == 0:
+        raise SystemExit("Error: no energy (-S) or momenta specified (-p, -P)")
+
+    if pr != 0 or ta != 0:
+        # compute sqrt(s)
+        m1 = Particle.from_pdgid(args.projectile_id).mass * MeV
+        m2 = Particle.from_pdgid(args.target_id).mass * MeV
+        e1 = sqrt(m1**2 + pr**2)
+        e2 = sqrt(m2**2 + ta**2)
         # TODO use the numerically stable formula instead
-        s = (e1 + e2) ** 2 - (p1 + p2) ** 2
+        s = (e1 + e2) ** 2 - (pr + ta) ** 2
         if s <= 0:
-            raise SystemExit("s <= 0")
-        sqrts = sqrt(s)
-
-    if sqrts > 0:  # cms mode
-        evt_kin = CenterOfMass(sqrts, pid1, pid2)
-    elif p2 == 0:  # fixed target mode
-        evt_kin = FixedTarget(Momentum(p1), pid1, pid2)
+            raise SystemExit("Error: s <= 0")
+        args.sqrts = sqrt(s)
 
     if args.out == "-":
         args.output = "hepmc"
+        raise SystemExit("Error: output to stdout not yet supported")
     else:
         if args.out:  # filename was provided
             args.out = Path(args.out)
@@ -191,7 +206,7 @@ def main():
             # check if both format and args.output are defined and are different
             if format and args.output and format != args.output:
                 raise SystemExit(
-                    f"File extension of {args.out} does not match {args.output}"
+                    f"Error: File extension of {args.out} does not match {args.output}"
                 )
             if not args.output:
                 args.output = format or "hepmc"
@@ -200,10 +215,10 @@ def main():
                 args.output = "hepmc"
             # generate filename like CRMC
             ext = extension(args.output)
-            p1 = particle_name(pid1)
-            p2 = particle_name(pid2)
-            mom = (sqrts or p1) / GeV
-            fn = f"impy_{Model.pyname}_{args.seed}_{p1}_{p2}_{mom}.{ext}"
+            pid1 = args.projectile_id
+            pid2 = args.target_id
+            en = f"{args.sqrts / GeV:.0f}"
+            fn = f"impy_{Model.pyname.lower()}_{args.seed}_{pid1}_{pid2}_{en}.{ext}"
             odir = os.environ.get("CRMC_OUT", ".")
             args.out = Path(odir) / fn
 
@@ -214,9 +229,36 @@ def main():
             args.out = Path(args.out).with_suffix(ext)
 
     if args.output not in FORMATS:
-        raise SystemExit(f"unknown format {args.output} {VALID_FORMATS}")
+        raise SystemExit(f"Error: unknown format {args.output} {VALID_FORMATS}")
 
-    model = Model(evt_kin, seed=args.seed)
+    args.model = Model
+    return args
+
+
+def main():
+    print(f"impy {version}")
+
+    args = parse_arguments()
+
+    print(f"  Model: {args.model.label}")
+    print(f"  Collisions: {args.number}")
+    p = Particle.from_pdgid(args.projectile_id)
+    print(f"  Projectile: {p.name} ({args.projectile_id})")
+    p = Particle.from_pdgid(args.target_id)
+    print(f"  Target: {p.name} ({args.target_id})")
+    print(f"  Seed: {args.seed}")
+    pr = args.projectile_momentum
+    ta = args.target_momentum
+    if pr != 0 or ta != 0:
+        print(f"  Projectile momentum: {pr:g} GeV/c")
+        print(f"  Target momentum: {ta:g} GeV/c")
+    print(f"  sqrt(s): {args.sqrts:g} GeV")
+    print(f"  Format: {args.output}")
+
+    if pr > 0 and ta == 0:  # fixed target mode
+        evt_kin = FixedTarget(Momentum(pr), args.projectile_id, args.target_id)
+    else:  # cms mode
+        evt_kin = CenterOfMass(args.sqrts, args.projectile_id, args.target_id)
 
     if args.output.startswith("hepmc"):
         import pyhepmc
@@ -225,11 +267,11 @@ def main():
     elif args.output == "root":
         writer = Root(args.out)
 
+    model = args.model(evt_kin)
+
     with writer as w:
         for event in model(args.number):
             w.write(event)
-
-    print(args.number, "events generated")
 
 
 if __name__ == "__main__":
