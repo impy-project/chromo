@@ -105,7 +105,7 @@ class Root:
                 val[a:b] = getattr(event, key)
 
         if b > BUFFER_SIZE // 2:
-            self._write_particle_buffers()
+            self._write_buffers()
             self._lengths = []
             self._iparticle = 0
 

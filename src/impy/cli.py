@@ -8,7 +8,7 @@ import argparse
 import os
 from . import models, __version__ as version
 from .kinematics import CenterOfMass, FixedTarget, Momentum, _FromParticleName
-from .util import AZ2pdg, tolerant_string_match, get_all_models
+from .util import AZ2pdg, tolerant_string_match, get_all_models, track
 from .constants import MeV, GeV
 from .writer import Root
 from pathlib import Path
@@ -271,7 +271,7 @@ def main():
     model = args.model(evt_kin)
 
     with writer as w:
-        for event in model(args.number):
+        for event in track(model(args.number), total=args.number):
             w.write(event)
 
 

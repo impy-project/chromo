@@ -483,3 +483,32 @@ def get_all_models(skip=None):
             pass
 
     return result
+
+
+def track(seq, total=None):
+    try:
+        from rich.progress import track
+
+        for x in track(seq, total=total):
+            yield x
+
+        return
+    except ModuleNotFoundError:
+        pass
+
+    if total:
+        step = total // 100
+        count = 0
+        for i, x in enumerate(seq):
+            if i % step == 0:
+                count += 1
+                print(f"\rWorking... {count} %", end="")
+            yield x
+        print("\rWorking... 100 %")
+        return
+
+    disp = "|", "/", "-", "\\"
+    for i, x in enumerate(seq):
+        print(f"\rWorking... {disp[i % 4]}")
+        yield x
+    print("\r                 ")
