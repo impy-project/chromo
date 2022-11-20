@@ -9,6 +9,7 @@ from impy.cli import MODELS
 from particle import Particle
 import pyhepmc
 import uproot
+import platform
 
 IMPY_VERSION = f"impy {version}"
 
@@ -135,6 +136,9 @@ def test_model_1(spec, Model):
     )
 
 
+@pytest.mark.skipif(
+    platform.system() == "Windows", reason="Pythia-8 not available on Windows"
+)
 def test_model_2():
     run(
         "-m",
