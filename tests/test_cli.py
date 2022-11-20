@@ -40,11 +40,11 @@ def run(
     if stdout is not None:
         actual = r.stdout.decode()
         match = re.search(stdout, actual)
-        assert match, actual
+        assert match, "\n" + actual
     if stderr is not None:
         actual = r.stderr.decode()
         match = re.search(stderr, actual)
-        assert match, actual
+        assert match, "\n" + actual
     if file:
         if match is not None:
             p = Path(file.format(*match.groups()))
@@ -67,9 +67,7 @@ def test_minimum():
     run(
         "-S",
         "100",
-        stdout="""\
-  Seed: ([0-9]+)
-""",
+        stdout="Seed[ \t]*([0-9]+)",
         file="impy_eposlhc_{0}_2212_2212_100.hepmc",
     )
 
@@ -81,7 +79,7 @@ def test_seed_1(seed):
         "100",
         "-s",
         f"{seed}",
-        stdout="Seed: ([0-9]+)",
+        stdout="Seed[ \t]*([0-9]+)",
         file="impy_eposlhc_{0}_2212_2212_100.hepmc",
     )
 
@@ -92,7 +90,7 @@ def test_seed_2():
         "100",
         "-s",
         "123",
-        stdout="Seed: 123",
+        stdout="Seed[ \t]*123",
         file="impy_eposlhc_123_2212_2212_100.hepmc",
     )
 
@@ -105,7 +103,7 @@ def test_number_1():
         "1",
         "-n",
         "123",
-        stdout="Collisions: 123",
+        stdout="Collisions[ \t]*123",
         file="impy_eposlhc_1_2212_2212_100.hepmc",
     )
 
@@ -132,7 +130,7 @@ def test_model_1(spec, Model):
         "1",
         "-m",
         spec,
-        stdout=f"Model: {Model.label}",
+        stdout=f"Model[ \t]*{Model.label}",
         file=f"impy_{Model.pyname.lower()}_1_2212_2212_100.hepmc",
     )
 
@@ -179,7 +177,7 @@ def test_projectile(spec, expected):
         "1",
         "-i",
         spec,
-        stdout=f"Projectile: {name} \\({expected}\\)",
+        stdout=f"Projectile[ \t]*{name} \\({expected}\\)",
         file=f"impy_eposlhc_1_{expected}_2212_100.hepmc",
     )
 
@@ -202,7 +200,7 @@ def test_target(spec, expected):
         "1",
         "-I",
         spec,
-        stdout=f"Target: {p.name} \\({expected}\\)",
+        stdout=f"Target[ \t]*{p.name} \\({expected}\\)",
         file=f"impy_eposlhc_1_2212_{expected}_100.hepmc",
     )
 
@@ -213,7 +211,7 @@ def test_momentum_1():
         "1",
         "-p 1000",
         "-P -1000",
-        stdout="sqrt\\(s\\): 2000 GeV",
+        stdout="sqrt\\(s\\)[ \t]*2000 GeV",
         file="impy_eposlhc_1_2212_2212_2000.hepmc",
     )
 
@@ -225,9 +223,9 @@ def test_momentum_2():
         "-p 1000",
         "-P 0",
         stdout="""\
-  Projectile momentum: 1000 GeV/c
-  Target momentum: 0 GeV/c
-  sqrt\\(s\\): 43.3394 GeV\
+[ |]*Projectile momentum[ \t]*1000 GeV/c *|
+[ |]*Target momentum[ \t]*0 GeV/c *|
+[ |]*sqrt\\(s\\)[ \t]*43.3394 GeV\
 """,
         file="impy_eposlhc_1_2212_2212_43.hepmc",
     )
@@ -239,7 +237,7 @@ def test_format_1():
         "1",
         "-S",
         "100",
-        stdout="Format: hepmc",
+        stdout="Format[ \t]*hepmc",
         file="impy_eposlhc_1_2212_2212_100.hepmc",
     )
 
@@ -257,6 +255,6 @@ def test_format_2(format):
         "100",
         "-o",
         format,
-        stdout=f"Format: {format}",
+        stdout=f"Format[ \t]*{format}",
         file=f"impy_eposlhc_1_2212_2212_100.{ext}",
     )
