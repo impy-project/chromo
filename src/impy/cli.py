@@ -37,8 +37,8 @@ class SpeedColumn(ProgressColumn):
         return Text(f"{speed:.0f}/s", style="progress.data.speed")
 
 
-# Only add numbers here of models that to match CRMC.
-# Impy models which are not in CRMC should not be added here.
+# Only add numbers here for models in CRMC.
+# Impy-exclusive models do not get a number and should not be added here.
 MODELS = {
     0: models.EposLHC,
     # 1: models.Epos199,
@@ -53,10 +53,15 @@ MODELS = {
     # in CRMC 12 refers to different DPMJet versions
     12: models.DpmjetIII306,
 }
-VALID_MODELS = ", ".join(f"{k}={v.label}" for (k, v) in MODELS.items())
-VALID_MODELS += ", ".join(
-    {v.label for v in get_all_models() if v not in MODELS.values()}
-)
+VALID_MODELS = []
+for M in get_all_models():
+    for k, v in MODELS.items():
+        if v is M:
+            VALID_MODELS.append(f"{M.label} [{k}]")
+            break
+    else:
+        VALID_MODELS.append(M.label)
+VALID_MODELS = ", ".join(sorted(VALID_MODELS))
 
 FORMATS = (
     "hepmc",
@@ -103,7 +108,7 @@ def parse_arguments():
         "--seed",
         type=int,
         default=0,
-        help="seed between 1 and 2**31 (default is 0, which generates random seed)",
+        help="seed between 1 and 1e9 (default is 0, which generates random seed)",
     )
     parser.add_argument(
         "-n",
@@ -161,36 +166,48 @@ def parse_arguments():
     max_seed = int(1e9)  # EPOS requirement
     if args.seed <= 0:
         args.seed = int.from_bytes(os.urandom(4), "little")
-        args.seed %= max_seed
-    else:
-        if args.seed > max_seed:
-            raise SystemExit(
-                f"Error: {args.seed} is larger " f"than maximum seed ({max_seed})"
-            )
+        args.seed %= max_seed  # result of modulus is always positive
+    elif args.seed > max_seed:
+        raise SystemExit(
+            f"Error: {args.seed} is larger " f"than maximum seed ({max_seed})"
+        )
 
     if args.number <= 0:
-        raise SystemExit("Error number must be positive")
+        raise SystemExit("Error: number must be positive")
 
     try:
         model_number = int(args.model)
         Model = MODELS[model_number]
     except KeyError:
-        raise SystemExit(f"Error: model {args.model} is invalid {VALID_MODELS}")
+        raise SystemExit(f"Error: model number {args.model} is invalid {VALID_MODELS}")
     except ValueError:
+        # args.model is not a number.
+        # Find model that matches spec.
         matches = []
         x = args.model.lower()
         for M in get_all_models():
-            if tolerant_string_match(x, M.label.lower()):
+            y = M.label.lower()
+            # If exact match found, stop search. This rule is necessary to e.g. select
+            # Sibyll-2.3, since Sibyll-2.3d would also match otherwise, always leading to
+            # ambiguity.
+            if x == y:
+                Model = M
+                break
+            if tolerant_string_match(x, y):
                 matches.append(M)
-        if len(matches) == 1:
-            Model = matches[0]
-        elif len(matches) == 0:
-            raise SystemExit(f"Error: model {args.model} is invalid {VALID_MODELS}")
         else:
-            raise SystemExit(
-                f"Error: model {args.model} is ambiguous, "
-                f"matches {', '.join(v.label for v in matches)}"
-            )
+            if len(matches) == 1:
+                Model = matches[0]
+            elif len(matches) == 0:
+                raise SystemExit(
+                    f"Error: model {args.model} has no match {VALID_MODELS}"
+                )
+            else:
+                raise SystemExit(
+                    f"Error: model {args.model} is ambiguous, "
+                    f"matches {', '.join(v.label for v in matches)}"
+                )
+    args.model = Model
 
     args.projectile_id = process_particle(args.projectile_id)
     args.target_id = process_particle(args.target_id)
@@ -255,7 +272,6 @@ def parse_arguments():
     if args.output not in FORMATS:
         raise SystemExit(f"Error: unknown format {args.output} {VALID_FORMATS}")
 
-    args.model = Model
     return args
 
 

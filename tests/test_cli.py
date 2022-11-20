@@ -121,6 +121,7 @@ def test_number_2():
         ("eposlhc", im.EposLHC),
         ("sib23d", im.Sibyll23d),
         ("sib21", im.Sibyll21),
+        ("sibyll-2.3", im.Sibyll23),
     ),
 )
 def test_model_1(spec, Model):
@@ -150,7 +151,10 @@ def test_model_3():
         "-m",
         "sib",
         returncode=1,
-        stderr="Error: model sib is ambiguous, matches SIBYLL-2.1, SIBYLL-2.3, SIBYLL-2.3c, SIBYLL-2.3d",
+        stderr=(
+            "Error: model sib is ambiguous, matches SIBYLL-2.1, SIBYLL-2.3, "
+            "SIBYLL-2.3c, SIBYLL-2.3d"
+        ),
     )
 
 
