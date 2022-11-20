@@ -476,7 +476,7 @@ def get_all_models(skip=None):
     if skip is None:
         skip = []
     if platform.system() == "Windows":
-        skip += [models.UrQMD34, models.Pythia8]
+        skip = list(skip) + [models.UrQMD34, models.Pythia8]
 
     result = []
     for key in dir(models):
