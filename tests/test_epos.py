@@ -88,3 +88,26 @@ def run_ion_collision():
 
 def test_ion_collision():
     run_in_separate_process(run_ion_collision)
+
+
+def run_set_stable(stable):
+    evt_kin = CenterOfMass(10 * GeV, "proton", "proton")
+    m = EposLHC(evt_kin, seed=4)
+    for pid, s in stable.items():
+        m.set_stable(pid, s)
+    print("stable", m._get_stable())
+    for event in m(1):
+        pass
+    return event
+
+
+def test_set_stable():
+    pid = lp.pi_0.pdgid
+    ev1 = run_in_separate_process(run_set_stable, {pid: True})
+    ev2 = run_in_separate_process(run_set_stable, {pid: False})
+
+    # ev1 contains final state pi0
+    assert np.any(ev1.pid[ev1.status == 1] == pid)
+
+    # ev2 does not contains final state pi0
+    assert np.all(ev2.pid[ev2.status == 1] != pid)

@@ -116,10 +116,38 @@ class EposLHC(MCRun):
         self._lun = lun
 
     def _set_stable(self, pdgid, stable):
+        # EPOS decays all unstable particles by default. It uses a nodcy common block
+        # to prevent decay of particles. The common block contains the array
+        # nody and the length nrnody. The array stores the absolute EPOS index of
+        # a particle that should not be decayed.
+
+        idx = self._lib.idtrafo("pdg", "nxs", pdgid)
+
+        c = self._lib.nodcy  # common block
         if stable:
-            self._lib.setstable(pdgid)
+            # append to nodcy.nody array
+            if c.nrnody == len(c.nody):
+                raise RuntimeError(
+                    f"maximum number of stable particles reached ({c.nrnody})"
+                )
+            c.nody[c.nrnody] = idx
+            c.nrnody += 1
         else:
-            self._lib.setunstable(pdgid)
+            # find and remove entry from nodcy.nody array
+            for i in range(c.nrnody):
+                if c.nody[i] == idx:
+                    c.nrnody -= 1
+                    for j in range(i, c.nrnody):
+                        c.nody[j] = c.nody[j + 1]
+                    break
+
+    def _get_stable(self):
+        result = []
+        c = self._lib.nodcy  # common block
+        for i in range(c.nrnody):
+            pid = self._lib.idtrafo("nxs", "pdg", c.nody[i])
+            result.append(pid)
+        return result
 
     def _generate_event(self):
         self._lib.aepos(-1)

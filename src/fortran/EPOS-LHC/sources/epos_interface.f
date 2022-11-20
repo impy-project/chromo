@@ -16,7 +16,7 @@ c for main program
       isho   = ish
       end
 
-
+c-----------------------------------------------------------------------
       subroutine InitializeEpos(seed, emax, datpath, lpath, ifram, 
      &   ippdg, itpdg, idebug, iou)
 c-----------------------------------------------------------------------
@@ -100,7 +100,7 @@ c      open(ifch,file=fnch(1:nfnch),status='unknown')
 
       End
 
-
+c-----------------------------------------------------------------------
       subroutine InitEposEvt(ecm, ela, ippdg, itpdg)
 c-----------------------------------------------------------------------
 c Initialization to be called after changing the energy or beam
@@ -147,40 +147,10 @@ c anfe why here? istmax = 1      !only final particles (istmax=1 includes mother
       call ainit()
       End
 
-      subroutine SetStable(idpdg)
 c-----------------------------------------------------------------------
-c Sets particles as stable
-c-----------------------------------------------------------------------
-
-      include "epos.inc"
-
-      nrnody=nrnody+1
-      nody(nrnody)=idtrafo("pdg","nxs",idpdg)
-
-      End
-
-      subroutine SetUnstable(idpdg)
-c-----------------------------------------------------------------------
-c Sets particles as stable
-c-----------------------------------------------------------------------
-
-      include "epos.inc"
-      
-      newcount = 1
-      do i = 1, nrnody
-C        print *, 'i=',i, idtrafo("nxs","pdg", nody(i))
-        if (abs(idtrafo("nxs","pdg", nody(i))).ne.abs(idpdg)) then
-          nody(newcount) = nody(i)
-          newcount = newcount + 1
-        end if
-      end do
-      nrnody = newcount
-
-      End
-
       real function GetCharge(idpdg)
 c-----------------------------------------------------------------------
-c Returns charge for partile with PDG ID
+c Returns charge for particle with PDG ID
 c-----------------------------------------------------------------------
       integer idpdg
 C anfe This is a workaround for nuclear fragments in particle history
