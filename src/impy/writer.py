@@ -12,7 +12,7 @@ FLOAT_TYPE = np.float32
 #   - Branch n instead of nPart, name cannot be chosen in uproot
 #   - ImpactParameter renamed to impact
 #   - Branch E is redundant, we skip this to save space
-#   - Extra branches vx, vy, vz, parent
+#   - Extra branches: parent
 class Root:
     def __init__(self, file):
         import uproot
@@ -41,9 +41,14 @@ class Root:
             "py": np.empty(BUFFER_SIZE, FLOAT_TYPE),
             "pz": np.empty(BUFFER_SIZE, FLOAT_TYPE),
             "m": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-            "vx": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-            "vy": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-            "vz": np.empty(BUFFER_SIZE, FLOAT_TYPE),
+            # TODO Make writing vertex locations configurable. By default, the vertex
+            # locations are not interesting and so we don't write them. Long-lived
+            # particles are final state, and there is no interesting information in the
+            # vertices of very short-lived particles.
+            #   "vx": np.empty(BUFFER_SIZE, FLOAT_TYPE),
+            #   "vy": np.empty(BUFFER_SIZE, FLOAT_TYPE),
+            #   "vz": np.empty(BUFFER_SIZE, FLOAT_TYPE),
+            #   "vt": np.empty(BUFFER_SIZE, FLOAT_TYPE),
             "pdgid": np.empty(BUFFER_SIZE, INT_TYPE),
             "status": np.empty(BUFFER_SIZE, INT_TYPE),
             "parent": np.empty(BUFFER_SIZE, INT_TYPE),

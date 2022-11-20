@@ -288,12 +288,10 @@ def main():
 
     msg = f"""\
   [repr.str]Model[/repr.str]\t\t[bold]{args.model.label}[/bold]
-  [repr.str]Collisions[/repr.str]\t[repr.number]{args.number}[/repr.number]
   [repr.str]Projectile[/repr.str]\t[bold]{p1.name}[/bold]\
  ([repr.number]{args.projectile_id}[/repr.number])
   [repr.str]Target[/repr.str]\t[bold]{p2.name}[/bold]\
- ([repr.number]{args.target_id}[/repr.number])
-  [repr.str]Seed[/repr.str]\t\t[repr.number]{args.seed}[/repr.number]\
+ ([repr.number]{args.target_id}[/repr.number])\
 """
     if pr != 0 or ta != 0:
         msg += f"""
@@ -302,6 +300,8 @@ def main():
 """
     msg += f"""
   [repr.str]sqrt(s)[/repr.str]\t[magenta]{args.sqrts:g} GeV[/magenta]
+  [repr.str]Collisions[/repr.str]\t[repr.number]{args.number}[/repr.number]
+  [repr.str]Seed[/repr.str]\t\t[repr.number]{args.seed}[/repr.number]
   [repr.str]Format[/repr.str]\t{args.output}\
 """
 
