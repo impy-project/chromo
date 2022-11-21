@@ -29,6 +29,20 @@ jobs:
         #   - os: ubuntu-latest
         #     arch: universal2
     steps:
+
+      - if: ${{ matrix.os == 'macos-12' }}
+        run: |
+          curl -LJO https://github.com/fxcoudert/gfortran-for-macOS/releases/download/12.1-monterey/gfortran-Intel-12.1-Monterey.dmg
+          hdiutil attach gfortran-Intel-12.1-Monterey.dmg
+          sudo installer -package /Volumes/gfortran-Intel-12.1-Monterey/gfortran-Intel-12.1-Monterey/gfortran.pkg -target /
+          sudo hdiutil detach /Volumes/gfortran-Intel-12.1-Monterey
+          export FC=gfortran
+          FC=gfortran
+          which gfortran
+          which gcc
+          which g++
+
+
       - uses: actions/checkout@v3
         with:
           submodules: true
@@ -66,20 +80,6 @@ jobs:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
-
-      - if: ${{ matrix.os == 'macos-12' }}
-        run: |
-          ln -fs /usr/local/bin/gfortran-12 /usr/local/bin/gfortran
-          export FC=gfortran
-          FC=gfortran
-          export CC=gcc
-          CC=gcc
-          export CXX=g++
-          CXX=g++
-          which gfortran
-          which gcc
-          which g++
-
 
       - if: ${{ matrix.os == 'macos-12' }}
         uses: pypa/cibuildwheel@v2.11.2
