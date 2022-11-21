@@ -118,8 +118,8 @@ class EposLHC(MCRun):
     def _set_stable(self, pdgid, stable):
         # EPOS decays all unstable particles by default. It uses a nodcy common block
         # to prevent decay of particles. The common block contains the array
-        # nody and the length nrnody. The array stores the absolute EPOS index of
-        # a particle that should not be decayed.
+        # nody and the length nrnody. The array holds EPOS particle ids of
+        # particles that should not be decayed.
 
         idx = self._lib.idtrafo("pdg", "nxs", pdgid)
 
