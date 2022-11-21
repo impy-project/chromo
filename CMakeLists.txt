@@ -87,6 +87,7 @@ if (UNIX)
   add_compile_options(
     -Wno-uninitialized
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
+    $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
   )
   if (APPLE)
@@ -100,6 +101,7 @@ else() # Windows MinGW!
 	add_compile_options(
     -Wno-uninitialized
     -w
+    $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
 	  $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
