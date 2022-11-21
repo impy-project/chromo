@@ -96,10 +96,6 @@ def process_particle(x):
     return _FromParticleName._get_pdg(x)
 
 
-def particle_name(pid):
-    return Particle.from_pdgid(pid).programmatic_name
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--version", action="store_true", help="print version")
@@ -182,7 +178,7 @@ def parse_arguments():
         raise SystemExit(f"Error: model number {args.model} is invalid {VALID_MODELS}")
     except ValueError:
         # args.model is not a number.
-        # Find model that matches spec.
+        # Find model that matches string spec.
         matches = []
         x = args.model.lower()
         for M in get_all_models():
@@ -200,11 +196,11 @@ def parse_arguments():
                 Model = matches[0]
             elif len(matches) == 0:
                 raise SystemExit(
-                    f"Error: model {args.model} has no match {VALID_MODELS}"
+                    f"Error: model spec {args.model} has no match {VALID_MODELS}"
                 )
             else:
                 raise SystemExit(
-                    f"Error: model {args.model} is ambiguous, "
+                    f"Error: model spec {args.model} is ambiguous, "
                     f"matches {', '.join(v.label for v in matches)}"
                 )
     args.model = Model
