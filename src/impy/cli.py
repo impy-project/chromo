@@ -70,7 +70,7 @@ FORMATS = (
     # "lhe",
     # "lhegz",
 )
-VALID_FORMATS = f"{{{', '.join(FORMATS)}}}"
+VALID_FORMATS = f"{', '.join(FORMATS)}"
 
 
 def extension(format):
@@ -117,7 +117,10 @@ def parse_arguments():
         "-m",
         "--model",
         default=0,
-        help=f"select model via number or name with tolerant matching {VALID_MODELS}",
+        help=(
+            f"select model via number or via tolerant string match (case-insensitive), "
+            f"allowed values: {VALID_MODELS}"
+        ),
     )
     parser.add_argument(
         "-p",
@@ -138,19 +141,25 @@ def parse_arguments():
         "-i",
         "--projectile-id",
         default=2212,
-        help="PDG ID or particle name, default is proton",
+        help="PDG ID or particle name (default is proton)",
     )
     parser.add_argument(
         "-I",
         "--target-id",
         default=2212,
-        help="PDG ID or particle name, default is proton",
+        help="PDG ID or particle name (default is proton)",
     )
     parser.add_argument(
-        "-o", "--output", default="", help=f"output format {VALID_FORMATS}"
+        "-o",
+        "--output",
+        default="",
+        help=f"output format: {VALID_FORMATS} (default is hepmc)",
     )
     parser.add_argument(
-        "-f", "--out", help="Output file name (generated if none provided)"
+        "-f",
+        "--out",
+        help="output file name (generated if none provided); "
+        "format is guessed from the file extension if --output is not specified",
     )
 
     args = parser.parse_args()
@@ -218,7 +227,8 @@ def parse_arguments():
     if (pr != 0 or ta != 0) and args.sqrts != 0:
         raise SystemExit("Error: either set sqrts or momenta, but not both")
     if pr == 0 and ta == 0 and args.sqrts == 0:
-        raise SystemExit("Error: no energy (-S) or momenta specified (-p, -P)")
+        parser.print_help()
+        raise SystemExit
 
     if pr != 0 or ta != 0:
         # compute sqrt(s)
