@@ -18,13 +18,14 @@ def run_pp_collision():
     m.set_stable(lp.pi_0.pdgid, True)
     for event in m(1):
         pass
+    return event
 
-    # some methods only work on original event
-    assert event.impact_parameter > 0
-    assert event.n_wounded_A == 1
-    assert event.n_wounded_B == 1
-    assert event.n_wounded == 2
 
+def run_ab_collision():
+    evt_kin = CenterOfMass(10 * GeV, (4, 2), (12, 6))
+    m = EposLHC(evt_kin, seed=1)
+    for event in m(1):
+        pass
     return event
 
 
@@ -32,6 +33,29 @@ def run_pp_collision():
 @lru_cache(maxsize=1)
 def event():
     return run_in_separate_process(run_pp_collision)
+
+
+@pytest.fixture
+@lru_cache(maxsize=1)
+def event_ion():
+    return run_in_separate_process(run_ab_collision)
+
+
+def test_impact_parameter(event, event_ion):
+    # EPOS defines an impact parameter also for pp
+    assert event.impact_parameter > 0
+    assert event_ion.impact_parameter > 0
+
+
+def test_n_wounded(event):
+    # TODO Pythia8 returns (0, 0) for pp collision, perhaps unify the response
+    assert event.n_wounded == (1, 1)
+
+
+@pytest.mark.xfail(reason="FIXME: n_wounded always seems to return (1, 1) for EPOS")
+def test_n_wounded_ion(event_ion):
+    assert event_ion.n_wounded[0] > 1
+    assert event_ion.n_wounded[1] > 1
 
 
 def test_charge(event):
@@ -73,21 +97,6 @@ def test_parents(event):
 
     # some particles have multiple parents
     assert sum(x[0] > 0 and x[1] > 0 for x in event.parents) > 0
-
-
-def run_ion_collision():
-    evt_kin = CenterOfMass(10 * GeV, (4, 2), (12, 6))
-    m = EposLHC(evt_kin, seed=1)
-    for event in m(1):
-        pass
-    assert event.impact_parameter > 0
-    assert event.n_wounded_A > 0
-    assert event.n_wounded_B > 0
-    assert event.n_wounded == event.n_wounded_A + event.n_wounded_B
-
-
-def test_ion_collision():
-    run_in_separate_process(run_ion_collision)
 
 
 def run_set_stable(stable):

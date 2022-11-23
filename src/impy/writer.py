@@ -13,25 +13,26 @@ FLOAT_TYPE = np.float32
 #   - ImpactParameter renamed to impact
 #   - Branch E is redundant, we skip this to save space
 #   - Extra branches: parent
+# By default, the vertex locations are not interesting and so we don't write them.
+# Long-lived particles are final state, and there is no interesting information in the
+# vertices of very short-lived particles.
 class Root:
-    def __init__(self, file):
+    def __init__(self, file, config, cross_section, write_vertices=False):
         import uproot
 
-        # TODO also write header once
-        # Seed
-        # ProjectileId
-        # ProjectileMomentum
-        # TargetId
-        # TargetMomentum
-        # HEModel
-        # sigmaPairTot
-        # sigmaPairInel
-        # sigmaPairEl
-        # sigmaTot
-        # sigmaInel
-        # sigmaEl
+        header = {
+            "seed": config.seed,
+            "projectile_id": config.projectile_id,
+            "projectile_momentum": config.projectile_momentum,
+            "target_id": config.target_id,
+            "target_momentum": config.target_momentum,
+            "model": config.model.label,
+        }
+        header.update(cross_section._asdict())
 
         self._file = uproot.recreate(file)
+        self._file["header"] = header
+
         self._tree = None
         self._event_buffers = {
             "impact": np.empty(BUFFER_SIZE, FLOAT_TYPE),
@@ -41,18 +42,19 @@ class Root:
             "py": np.empty(BUFFER_SIZE, FLOAT_TYPE),
             "pz": np.empty(BUFFER_SIZE, FLOAT_TYPE),
             "m": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-            # TODO Make writing vertex locations configurable. By default, the vertex
-            # locations are not interesting and so we don't write them. Long-lived
-            # particles are final state, and there is no interesting information in the
-            # vertices of very short-lived particles.
-            #   "vx": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-            #   "vy": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-            #   "vz": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-            #   "vt": np.empty(BUFFER_SIZE, FLOAT_TYPE),
             "pdgid": np.empty(BUFFER_SIZE, INT_TYPE),
             "status": np.empty(BUFFER_SIZE, INT_TYPE),
             "parent": np.empty(BUFFER_SIZE, INT_TYPE),
         }
+        if write_vertices:
+            self._particle_buffers.update(
+                {
+                    "vx": np.empty(BUFFER_SIZE, FLOAT_TYPE),
+                    "vy": np.empty(BUFFER_SIZE, FLOAT_TYPE),
+                    "vz": np.empty(BUFFER_SIZE, FLOAT_TYPE),
+                    "vt": np.empty(BUFFER_SIZE, FLOAT_TYPE),
+                }
+            )
         self._lengths = []
         self._iparticle = 0
 

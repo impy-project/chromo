@@ -10,7 +10,7 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 from abc import ABC, abstractmethod
 import numpy as np
 from impy import impy_config
-from .util import info, classproperty, select_parents
+from .util import info, classproperty, select_parents, naneq
 from .constants import quarks_and_diquarks_and_gluons
 from .kinematics import EventKinematics
 import dataclasses
@@ -18,6 +18,23 @@ import copy
 import typing as _tp
 from contextlib import contextmanager
 import warnings
+
+
+@dataclasses.dataclass
+class CrossSectionData:
+    total: float
+    inelastic: float
+    elastic: float
+    diffractive_ax: float
+    diffractive_xb: float
+    diffractive_xx: float
+    diffractive_axb: float
+    non_diffractive: float
+
+
+# Do we need EventData.n_spectators in addition to EventData.n_wounded?
+# n_spectators can be computed from n_wounded as number_of_nucleons - n_wounded
+# If we want this, it should be computed dynamically via a property.
 
 
 @dataclasses.dataclass
@@ -35,6 +52,10 @@ class EventData:
         Current event frame (Lorentz frame).
     nevent: int
         Which event in the sequence.
+    impact_parameter: float
+        Impact parameter for nuclear collisions in mm.
+    n_wounded: (int, int)
+        Number of wounded nucleons on sides A and B.
     pid: 1D array of int
         PDG IDs of the particles.
     status: 1D array of int
@@ -72,6 +93,8 @@ class EventData:
     kin: EventKinematics
     frame: str
     nevent: int
+    impact_parameter: float
+    n_wounded: _tp.Tuple[int, int]
     pid: np.ndarray
     status: np.ndarray
     charge: np.ndarray
@@ -98,6 +121,8 @@ class EventData:
             self.kin,
             self.frame,
             self.nevent,
+            self.impact_parameter,
+            self.n_wounded,
             self.pid[arg],
             self.status[arg],
             self.charge[arg],
@@ -128,6 +153,8 @@ class EventData:
             self.kin == other.kin
             and self.frame == other.frame
             and self.nevent == other.nevent
+            and naneq(self.impact_parameter, other.impact_parameter)
+            and self.n_wounded == other.n_wounded
             and np.all(
                 (self.pid == other.pid)
                 & (self.status == other.status)
@@ -388,6 +415,8 @@ class MCEvent(EventData, ABC):
             generator.event_kinematics,
             user_frame,
             int(getattr(evt, self._nevhep)),
+            self._get_impact_parameter(),
+            self._get_n_wounded(),
             getattr(evt, self._idhep)[sel],
             getattr(evt, self._isthep)[sel],
             self._charge_init(npart),
@@ -404,6 +433,14 @@ class MCEvent(EventData, ABC):
     def _charge_init(self, npart):
         # override this in derived to get charge info
         ...
+
+    def _get_impact_parameter(self):
+        # override this in derived
+        return np.nan
+
+    def _get_n_wounded(self):
+        # override this in derived
+        return (0, 0)
 
     # MCEvent is not pickleable, but EventData is. For convenience, we
     # make it so that MCEvent can be saved and is restored as EventData.
@@ -533,26 +570,25 @@ class MCRun(ABC):
         and returns its the result (event) as MCEvent object
         """
         assert self._set_final_state_particles_called
-        retry_on_rejection = impy_config["retry_on_rejection"]
-        # Initialize counters to prevent infinite loops in rejections
-        ntrials = 0
-        nremaining = nevents
-        self._set_comp_target(nevents)
-        while nremaining > 0:
-            self._update_event_kinematics(nremaining)
-            if self._generate_event() == 0:
-                self.nevents += 1
-                yield self._event_class(self)
-                nremaining -= 1
-                ntrials += 1
-            elif retry_on_rejection:
-                info(10, "Rejection occured. Retrying..")
-                ntrials += 1
-                continue
-            elif ntrials > 2 * nevents:
-                raise Exception("Things run bad. Check your input.")
-            else:
-                info(0, "Rejection occured")
+        nretries = 0
+        for nev in self._composite_plan(nevents):
+            while nev > 0:
+                success = self._generate_event()
+                if success:
+                    nretries = 0
+                    self.nevents += 1
+                    nev -= 1
+                    yield self._event_class(self)
+                    continue
+                nretries += 1
+                if nretries > 5:
+                    warnings.warn(
+                        "Event was rejected 5 times in a row. The event generator "
+                        "may be misconfigured or used outside of its valid range",
+                        RuntimeWarning,
+                    )
+                if nretries > 20:
+                    raise RuntimeError("More than 20 retries, aborting")
 
     @property
     def seed(self):
@@ -607,33 +643,18 @@ class MCRun(ABC):
         # generator-specific variables.
         pass
 
-    def _set_comp_target(self, nevents):
-        if self._evt_kin.composite_target:
-            setattr(self, "_nremaining", nevents)
-            setattr(self, "_target_ind", self._gen_target_ind(nevents))
-
-    def _gen_target_ind(self, nevents):
+    def _composite_plan(self, nevents):
         ctarget = self._evt_kin.composite_target
-        sample = ctarget.rng.multinomial(nevents, ctarget.component_fractions)
-
-        for cindex, ntimes in enumerate(sample):
-            for _ in range(ntimes):
-                yield cindex
-
-    def _update_event_kinematics(self, nremaining):
-        if self._evt_kin.composite_target:
-
-            if nremaining == self._nremaining:
-                return
-
-            ctarget = self._evt_kin.composite_target
-            self._nremaining = nremaining
-            evt_kin = self._evt_kin
-            if evt_kin.p2_is_nucleus:
-                ic = next(self._target_ind)
-                evt_kin.A2 = ctarget.component_A[ic]
-                evt_kin.Z2 = ctarget.component_Z[ic]
-                self._set_event_kinematics(evt_kin)
+        if ctarget is None:
+            yield nevents
+        else:
+            ncomponent = ctarget.rng.multinomial(nevents, ctarget.component_fractions)
+            ek = copy.copy(self.event_kinematics)
+            for a, z, nev in zip(ctarget.component_A, ctarget.component_Z, ncomponent):
+                ek.A2 = a
+                ek.Z2 = z
+                with self._temporary_evt_kin(ek):
+                    yield nev
 
     @property
     def random_state(self):
@@ -674,13 +695,19 @@ class MCRun(ABC):
         """
         self.set_stable(pdgid, False)
 
-    def sigma_inel(self, evt_kin=None):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        return self._sigma_inel(self.event_kinematics if evt_kin is None else evt_kin)
+    def cross_section(self, evt_kin=None):
+        """Cross sections according to current setup.
+
+        Parameters
+        ----------
+        evt_kin : EventKinematics, optional
+            If provided, calculate cross-section for EventKinematics.
+            Otherwise return values for current setup.
+        """
+        return self._cross_section(evt_kin)
 
     @abstractmethod
-    def _sigma_inel(self, evtkin):
+    def _cross_section(self, evt_kin):
         pass
 
     # TODO: Change to generic function for composite target. Make
@@ -784,7 +811,10 @@ class MCRun(ABC):
 
     @contextmanager
     def _temporary_evt_kin(self, evt_kin):
-        prev = copy(self.event_kinematics)
-        self.event_kinematics = evt_kin
-        yield
-        self.event_kinematics = prev
+        if evt_kin is None:
+            yield
+        else:
+            prev = copy.copy(self.event_kinematics)
+            self.event_kinematics = evt_kin
+            yield
+            self.event_kinematics = prev

@@ -1,5 +1,4 @@
-from ..common import MCRun, MCEvent
-from ..util import info
+from impy.common import MCRun, MCEvent, CrossSectionData
 from impy import impy_config
 from impy.util import _cached_data_dir
 from os import environ
@@ -16,35 +15,17 @@ class PYTHIA8Event(MCEvent):
             self._lib.pythia.particleData, self._lib.hepevt.idhep[:npart]
         )
 
-    def _hiinfo(self):
-        return self._lib.pythia.info.hiInfo
+    def _get_impact_parameter(self):
+        hi = self._lib.pythia.info.hiInfo
+        if hi is None:
+            return np.nan
+        return hi.b
 
-    # Nuclear collision parameters
-    @property
-    def impact_parameter(self):
-        """Returns impact parameter for nuclear collisions."""
-        if self._hiinfo() is not None:
-            return self._hiinfo().b
-        return np.nan
-
-    @property
-    def n_wounded_A(self):
-        """Number of wounded nucleons side A"""
-        if self._hiinfo() is not None:
-            return self._hiinfo().nPartProj
-        return 0
-
-    @property
-    def n_wounded_B(self):
-        """Number of wounded nucleons (target) side B"""
-        if self._hiinfo() is not None:
-            return self._hiinfo().nPartTarg
-        return 0
-
-    @property
-    def n_wounded(self):
-        """Number of total wounded nucleons"""
-        return self.n_wounded_A + self.n_wounded_B
+    def _get_n_wounded(self):
+        hi = self._lib.pythia.info.hiInfo
+        if hi is None:
+            return (0, 0)
+        return hi.nPartProj, hi.nPartTarg
 
 
 class Pythia8(MCRun):
@@ -78,15 +59,22 @@ class Pythia8(MCRun):
         self.event_kinematics = event_kinematics
         self._set_final_state_particles()
 
-    def _sigma_inel(self, evt_kin):
+    def _cross_section(self, evt_kin):
         # TODO check that cross section is in mb
         with self._temporary_evt_kin(evt_kin):
-            cx = self._lib.pythia.info.sigmaTot
-            return cx.sigmaTot - cx.sigmaEl
+            st = self._lib.pythia.info.sigmaTot
+            return CrossSectionData(
+                st.sigmaTot,
+                st.sigmaTot - st.sigmaEl,
+                st.sigmaEl,
+                st.sigmaAX,
+                st.sigmaXB,
+                st.sigmaXX,
+                st.sigmaAXB,
+                st.sigmaND,
+            )
 
     def _set_event_kinematics(self, k):
-        info(5, "Setting event kinematics")
-
         pythia = self._lib.pythia
         pythia.settings.resetAll()
 
@@ -143,16 +131,7 @@ class Pythia8(MCRun):
         self._lib.pythia.particleData.mayDecay(pdgid, not stable)
 
     def _generate_event(self):
-        import warnings
-
         success = self._lib.pythia.next()
-        if not success:
-            warnings.warn(
-                "PYTHIA8 event rejected. If this warning appears too frequently, "
-                + "the event generator might be not properly configured or "
-                + "used outside of the valid range",
-                RuntimeWarning,
-            )
         if success:
             # We copy over the event record from Pythia's internal buffer to our
             # Hepevt-like object. This is not efficient, but easier to
@@ -160,4 +139,4 @@ class Pythia8(MCRun):
             # the time needed to generate the event. If this turns out to be a
             # bottleneck, we need to make Hepevt a view of the interval record.
             self._lib.hepevt.fill(self._lib.pythia.event)
-        return not success
+        return success

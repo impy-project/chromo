@@ -1,5 +1,4 @@
 import subprocess as subp
-import sys
 from impy import __version__ as version
 from impy import models as im
 import re
@@ -35,7 +34,7 @@ def run(
     file=None,
     checks=(format_matches_extension,),
 ):
-    r = subp.run((sys.executable, "-m", "impy") + cmd, capture_output=True)
+    r = subp.run(("impy",) + cmd, capture_output=True)
     assert r.returncode == returncode, r.stderr.decode()
     match = None
     if stdout is not None:
@@ -58,6 +57,10 @@ def run(
                 check(p)
 
         p.unlink()
+
+
+def test_nothing():
+    run(stdout="usage: impy")
 
 
 def test_version():
@@ -144,7 +147,7 @@ def test_model_2():
         "-m",
         "py8",
         returncode=1,
-        stderr="Error: model py8 is ambiguous, matches Pythia-6.428, Pythia-8.307",
+        stderr="Error: model=py8 is ambiguous, matches Pythia-6.428, Pythia-8.307",
     )
 
 
@@ -154,7 +157,7 @@ def test_model_3():
         "sib",
         returncode=1,
         stderr=(
-            "Error: model sib is ambiguous, matches SIBYLL-2.1, SIBYLL-2.3, "
+            "Error: model=sib is ambiguous, matches SIBYLL-2.1, SIBYLL-2.3, "
             "SIBYLL-2.3c, SIBYLL-2.3d"
         ),
     )

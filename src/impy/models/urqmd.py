@@ -7,7 +7,7 @@
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
 import numpy as np
-from impy.common import MCRun, MCEvent, impy_config
+from impy.common import MCRun, MCEvent, impy_config, CrossSectionData
 from impy.util import info
 
 
@@ -17,10 +17,7 @@ class UrQMDEvent(MCEvent):
     def _charge_init(self, npart):
         return self._lib.uqchg.ichg[:npart]
 
-    # Nuclear collision parameters
-    @property
-    def impact_parameter(self):
-        """Returns impact parameter for nuclear collisions."""
+    def _get_impact_parameter(self):
         return self._lib.rsys.bimp
 
 
@@ -81,9 +78,10 @@ class UrQMD34(MCRun):
         self._lib.inputs.outsteps = int(0.01 + caltim / self._lib.pots.dtimestep)
         self.event_kinematics = event_kinematics
 
-    def _sigma_inel(self, evt_kin):
+    def _cross_section(self, evt_kin):
         with self._temporary_evt_kin(evt_kin):
-            return self._lib.ptsigtot()
+            tot = self._lib.ptsigtot()
+        return CrossSectionData(tot, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan)
 
     def _set_event_kinematics(self, k):
         info(5, "Setting event kinematics")
@@ -178,4 +176,4 @@ class UrQMD34(MCRun):
         self._lib.urqmd(0)
         # Convert URQMD event to HEPEVT
         self._lib.chepevt()
-        return False
+        return True

@@ -10,7 +10,7 @@ from . import models, __version__ as version
 from .kinematics import CenterOfMass, FixedTarget, Momentum, _FromParticleName
 from .util import AZ2pdg, tolerant_string_match, get_all_models
 from .constants import MeV, GeV
-from .writer import Root
+from impy import writer
 from pathlib import Path
 from particle import Particle
 from math import sqrt
@@ -205,11 +205,11 @@ def parse_arguments():
                 Model = matches[0]
             elif len(matches) == 0:
                 raise SystemExit(
-                    f"Error: model spec {args.model} has no match {VALID_MODELS}"
+                    f"Error: model={args.model} has no match {VALID_MODELS}"
                 )
             else:
                 raise SystemExit(
-                    f"Error: model spec {args.model} is ambiguous, "
+                    f"Error: model={args.model} is ambiguous, "
                     f"matches {', '.join(v.label for v in matches)}"
                 )
     args.model = Model
@@ -321,17 +321,19 @@ def main():
     else:  # cms mode
         evt_kin = CenterOfMass(args.sqrts, args.projectile_id, args.target_id)
 
+    model = args.model(evt_kin)
+
     if args.output.startswith("hepmc"):
         import pyhepmc
 
-        writer = pyhepmc.open(args.out, "w")
+        ofile = pyhepmc.open(args.out, "w")
     elif args.output == "root":
-        writer = Root(args.out)
-
-    model = args.model(evt_kin)
+        ofile = writer.Root(args.out, args, model.cross_section())
+    elif args.output == "pdf":
+        ofile = writer.Pdf(args.out)
 
     task_id = None
-    with writer as w:
+    with ofile as f:
         # workaround: several models generate extra print when first
         # event is generated, this interferes with progress bar so we
         # create bar only after second event is generated
@@ -344,7 +346,7 @@ def main():
             SpeedColumn(),
         ) as bar:
             for event in model(args.number):
-                w.write(event)
+                f.write(event)
                 if task_id is None:
                     task_id = bar.add_task("", total=args.number)
                 bar.advance(task_id, 1)

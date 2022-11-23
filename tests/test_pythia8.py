@@ -22,13 +22,6 @@ def run_pp_collision():
     m.set_stable(lp.pi_0.pdgid, True)
     for event in m(1):
         pass
-
-    # some methods only work on original event
-    assert np.isnan(event.impact_parameter)
-    assert event.n_wounded_A == 0
-    assert event.n_wounded_B == 0
-    assert event.n_wounded == 0
-
     return event
 
 
@@ -36,6 +29,15 @@ def run_pp_collision():
 @lru_cache(maxsize=1)  # Pythia8 initialization is very slow
 def event():
     return run_in_separate_process(run_pp_collision)
+
+
+def test_impact_parameter(event):
+    assert np.isnan(event.impact_parameter)
+
+
+def test_n_wounded(event):
+    # TODO EPOS returns (1, 1) for pp collision, perhaps unify the response
+    assert event.n_wounded == (0, 0)
 
 
 def test_charge(event):

@@ -339,7 +339,7 @@ class EventKinematics:
         # Input specification in lab frame
         elif elab:
             if not (elab > pmass1):
-                raise RuntimeError("Lab. energy > particle mass required.")
+                raise ValueError("Lab. energy > particle mass required.")
             self.elab = elab
             self.plab = self._e2p(self.elab, pmass1)
             self.ecm = np.sqrt(2.0 * self.elab * pmass2 + pmass2**2 + pmass1**2)
@@ -374,9 +374,7 @@ class EventKinematics:
                 self.plab,
             )
         else:
-            raise Exception(
-                self.__class__.__name__ + "::init(): Define at least ecm or plab"
-            )
+            raise ValueError("Define at least ecm or plab")
 
         self.pmass1 = pmass1
         self.pmass2 = pmass2

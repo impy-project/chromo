@@ -490,3 +490,17 @@ def get_all_models(skip=None):
             pass
 
     return result
+
+
+def naneq(a, b):
+    """
+    Return True if a == b or if a and b are both NaN.
+
+    Parameters
+    ----------
+    a : float
+        First float.
+    b : float
+        Second float.
+    """
+    return a == b or (np.isnan(a) and np.isnan(b))

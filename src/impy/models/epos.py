@@ -1,7 +1,7 @@
 import numpy as np
 
 from impy import impy_config
-from impy.common import MCEvent, MCRun
+from impy.common import MCEvent, MCRun, CrossSectionData
 from impy.util import info, _cached_data_dir
 
 
@@ -17,37 +17,12 @@ class EPOSEvent(MCEvent):
     def _charge_init(self, npart):
         return self._lib.charge_vect(self._lib.hepevt.idhep[:npart])
 
-    # Nuclear collision parameters
-    @property
-    def impact_parameter(self):
-        """Returns impact parameter for nuclear collisions."""
+    def _get_impact_parameter(self):
         # return self._lib.nuc3.bimp
-        return self._lib.cevt.bimevt
+        return float(self._lib.cevt.bimevt)
 
-    @property
-    def n_wounded_A(self):
-        """Number of wounded nucleons side A"""
-        return self._lib.cevt.npjevt
-
-    @property
-    def n_wounded_B(self):
-        """Number of wounded nucleons (target) side B"""
-        return self._lib.cevt.ntgevt
-
-    @property
-    def n_wounded(self):
-        """Number of total wounded nucleons"""
-        return self.n_wounded_A + self.n_wounded_B
-
-    @property
-    def n_spectator_A(self):
-        """Number of spectator nucleons side A"""
-        return self._lib.cevt.npnevt + self._lib.cevt.nppevt
-
-    @property
-    def n_spectator_B(self):
-        """Number of spectator nucleons (target) side B"""
-        return self._lib.cevt.ntnevt + self._lib.cevt.ntpevt
+    def _get_n_wounded(self):
+        return int(self._lib.cevt.npjevt), int(self._lib.cevt.ntgevt)
 
 
 class EposLHC(MCRun):
@@ -96,9 +71,12 @@ class EposLHC(MCRun):
         self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.float32])
         self.event_kinematics = event_kinematics
 
-    def _sigma_inel(self, evt_kin):
+    def _cross_section(self, evt_kin):
         with self._temporary_evt_kin(evt_kin):
-            return self._lib.xsection()[1]
+            total, inel, el, dd, sd = self._lib.xsection()
+            return CrossSectionData(
+                total, inel, el, sd / 2, sd / 2, dd, np.nan, inel - sd - dd
+            )
 
     def _set_event_kinematics(self, k):
         self._lib.initeposevt(k.ecm, -1.0, k.p1pdg, k.p2pdg)
@@ -153,4 +131,4 @@ class EposLHC(MCRun):
         self._lib.aepos(-1)
         self._lib.afinal()
         self._lib.hepmcstore()
-        return False
+        return True
