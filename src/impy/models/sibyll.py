@@ -69,6 +69,9 @@ class SIBYLLRun(MCRun):
         self._set_final_state_particles()
 
     def _cross_section(self, evt_kin):
+        if evt_kin is None:
+            evt_kin = self.event_kinematics
+
         sigproj = None
         if abs(evt_kin.p1pdg) in [2212, 2112, 3112]:
             sigproj = 1
@@ -87,12 +90,21 @@ class SIBYLLRun(MCRun):
         if evt_kin.p2_is_nucleus:
             # Return production cross section for nuclear target
             try:
-                inel = self._lib.sib_sigma_hnuc(sigproj, evt_kin.A2, evt_kin.ecm)[0]
+                s = self._lib.sib_sigma_hnuc(sigproj, evt_kin.A2, evt_kin.ecm)
             except AttributeError:
                 raise ValueError(f"Nuclear projectiles not supported by {self.label}")
         else:
-            inel = self._lib.sib_sigma_hp(sigproj, evt_kin.ecm)[2]
-        return CrossSectionData._from_inel(inel)
+            s = self._lib.sib_sigma_hp(sigproj, evt_kin.ecm)
+        # TODO this needs a test
+        return CrossSectionData(
+            total=s[0],
+            elastic=s[1],
+            inelastic=s[2],
+            diffractive_xb=s[3] / 3,
+            diffractive_ax=s[3] / 3,
+            diffractive_xx=s[3] / 3,
+            diffractive_axb=0,
+        )
 
     def sigma_inel_air(self):
         """Inelastic cross section according to current

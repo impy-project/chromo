@@ -15,7 +15,7 @@ IMPY_VERSION = f"impy {version}"
 
 def format_matches_extension(p):
     ext = p.suffixes
-    _, model, seed, pid1, pid2, en = p.stem.split("_")
+    _, model, seed, pid1, pid2, en, *rest = p.stem.split("_")
     if ext[0] == ".hepmc":
         with pyhepmc.open(p) as f:
             event = f.read()
@@ -276,5 +276,5 @@ def test_format_3():
         "-o",
         "svg",
         stdout="Format[ \t]*svg",
-        file="impy_eposlhc_1_2212_2212_100_0.svg",
+        file="impy_eposlhc_1_2212_2212_100_000.svg",
     )

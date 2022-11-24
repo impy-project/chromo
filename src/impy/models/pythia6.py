@@ -68,7 +68,6 @@ class Pythia6(MCRun):
                 diffractive_ax=s[3],
                 diffractive_xx=s[4],
                 diffractive_axb=0,
-                non_diffractive=s[5],
             )
         return c
 

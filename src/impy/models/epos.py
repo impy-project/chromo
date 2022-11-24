@@ -82,7 +82,6 @@ class EposLHC(MCRun):
                 diffractive_ax=sd / 2,  # this is an approximation
                 diffractive_xx=dd,
                 diffractive_axb=0,
-                non_diffractive=inel - sd - dd,
             )
 
     def _set_event_kinematics(self, k):

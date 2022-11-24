@@ -53,8 +53,6 @@ class CrossSectionData:
     diffractive_axb : float
         Central diffractive cross-section (e.g.
         pomeron-pomeron interaction.)
-    non_diffractive : float
-        Inelastic cross-section minus diffractive cross-section.
     """
 
     total: float = np.nan
@@ -64,7 +62,16 @@ class CrossSectionData:
     diffractive_ax: float = np.nan
     diffractive_xx: float = np.nan
     diffractive_axb: float = np.nan
-    non_diffractive: float = np.nan
+
+    @property
+    def non_diffractive(self):
+        return (
+            self.inelastic
+            - self.diffractive_xb
+            - self.diffractive_ax
+            - self.diffractive_xx
+            - self.diffractive_axb
+        )
 
     def __eq__(self, other):
         at = dataclasses.astuple(self)

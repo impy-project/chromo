@@ -184,22 +184,35 @@ class Svg:
 
 class Hepmc:
     def __init__(self, file, config, cross_section):
-        import pyhepmc
+        from pyhepmc._core import pyiostream
+        from pyhepmc.io import _WrappedWriter, WriterAscii
+        import gzip
+
+        if file.suffix == ".gz":
+            op = gzip.open
+        else:
+            op = open
 
         # TODO add metadata to GenRunInfo, needs
         # fix in pyhepmc
+        # TODO fix this in pyhepmc, we should be able
+        # to use the public API and not these secrets
 
-        self._file = pyhepmc.open(file, "w")
+        self._file = op(file, "wb")
+        self._ios = pyiostream(self._file)
+        self._writer = _WrappedWriter(self._ios, None, WriterAscii)
 
     def __enter__(self):
-        self._file = self._file.__enter__()
-        return self._file
+        return self._writer
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        return self._file.__exit__(exc_type, exc_value, traceback)
+    def __exit__(self, *args):
+        self._writer.__exit__(*args)
+        self._ios.__exit__(*args)
+        self._file.__exit__(*args)
+        return True
 
     def write(self, event):
-        self._file.write(event)
+        self._writer.write(event)
 
 
 def lhe(file):
