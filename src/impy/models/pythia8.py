@@ -70,7 +70,6 @@ class Pythia8(MCRun):
                 st.sigmaXB,
                 st.sigmaXX,
                 st.sigmaAXB,
-                st.sigmaND,
             )
 
     def _set_event_kinematics(self, k):
