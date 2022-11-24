@@ -249,7 +249,7 @@ def parse_arguments():
     else:
         if args.out:  # filename was provided
             args.out = Path(args.out)
-            # try get format from filename extension
+            # try to get format from filename extension
             format = "".join(x[1:] for x in args.out.suffixes[-2:])
             # check if both format and args.output are defined and are different
             if format and args.output and format != args.output:
