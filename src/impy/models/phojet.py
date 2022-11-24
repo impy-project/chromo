@@ -154,7 +154,7 @@ class PHOJETRun(MCRun):
                 "(need   to generate dummy event)",
             )
             self._generate_event()
-            return CrossSectionData._from_inel(self._lib.powght.siggen[3])
+            return CrossSectionData(inelastic=self._lib.powght.siggen[3])
 
     def _set_stable(self, pdgid, stable):
         if abs(pdgid) == 2212:

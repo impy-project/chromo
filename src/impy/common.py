@@ -10,9 +10,9 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 from abc import ABC, abstractmethod
 import numpy as np
 from impy import impy_config
-from .util import info, classproperty, select_parents, naneq
-from .constants import quarks_and_diquarks_and_gluons
-from .kinematics import EventKinematics
+from impy.util import info, classproperty, select_parents, naneq
+from impy.constants import quarks_and_diquarks_and_gluons
+from impy.kinematics import EventKinematics
 import dataclasses
 import copy
 import typing as _tp
@@ -22,14 +22,57 @@ import warnings
 
 @dataclasses.dataclass
 class CrossSectionData:
-    total: float
-    inelastic: float
-    elastic: float
-    diffractive_ax: float
-    diffractive_xb: float
-    diffractive_xx: float
-    diffractive_axb: float
-    non_diffractive: float
+    """Information of cross-sections returned by the generator.
+
+    The class is driven by the amount of detail that Pythia-8 provides.
+    Most other generators do not fill all attributes. When information is missing,
+    the attributes contain NaN. The fields are intentionally redundant, since
+    some generators may provide only the total cross-section or only the inelastic
+    cross-section.
+
+    All cross-sections are in millibarn.
+
+    Attributes
+    ----------
+    total : float
+        Total cross-section (elastic + inelastic).
+    inelastic : float
+        Inelastic cross-section. Includes diffractive cross-sections.
+    elastic : float
+        Cross-section for pure elastic scattering of incoming particle
+        without any new particle generation.
+    diffractive_xb : float
+        Single diffractive cross-section. Particle 2 remains intact,
+        particles are produced around Particle 1.
+    diffractive_ax : float
+        Single diffractive cross-section. Particle 1 remains intact,
+        particles are produced around Particle 2.
+    diffractive_xx : float
+        Double diffractive cross-section. Central rapidity gap, but
+        paricles are producted around both beam particles.
+    diffractive_axb : float
+        Central diffractive cross-section (e.g.
+        pomeron-pomeron interaction.)
+    non_diffractive : float
+        Inelastic cross-section minus diffractive cross-section.
+    """
+
+    total: float = np.nan
+    inelastic: float = np.nan
+    elastic: float = np.nan
+    diffractive_xb: float = np.nan
+    diffractive_ax: float = np.nan
+    diffractive_xx: float = np.nan
+    diffractive_axb: float = np.nan
+    non_diffractive: float = np.nan
+
+    def __eq__(self, other):
+        at = dataclasses.astuple(self)
+        bt = dataclasses.astuple(other)
+        return all(naneq(a, b) for (a, b) in zip(at, bt))
+
+    def __ne__(self, other):
+        return not self == other
 
 
 # Do we need EventData.n_spectators in addition to EventData.n_wounded?
@@ -149,30 +192,17 @@ class EventData:
 
         This is mostly useful for debugging and in unit tests.
         """
-        return (
-            self.kin == other.kin
-            and self.frame == other.frame
-            and self.nevent == other.nevent
-            and naneq(self.impact_parameter, other.impact_parameter)
-            and self.n_wounded == other.n_wounded
-            and np.all(
-                (self.pid == other.pid)
-                & (self.status == other.status)
-                & (self.charge == other.charge)
-                & (self.px == other.px)
-                & (self.py == other.py)
-                & (self.pz == other.pz)
-                & (self.en == other.en)
-                & (self.m == other.m)
-                & (self.vx == other.vx)
-                & (self.vy == other.vy)
-                & (self.vz == other.vz)
-                & (self.vt == other.vt)
-                & (self.en == other.en)
-            )
-            and (self.parents is None or np.all(self.parents == other.parents))
-            and (self.children is None or np.all(self.children == other.children))
-        )
+
+        def eq(a, b):
+            if isinstance(a, float):
+                return naneq(a, b)
+            elif isinstance(a, np.ndarray):
+                return np.all(a == b)
+            return a == b
+
+        at = dataclasses.astuple(self)
+        bt = dataclasses.astuple(other)
+        return all(eq(a, b) for (a, b) in zip(at, bt))
 
     def copy(self):
         """

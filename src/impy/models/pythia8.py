@@ -60,7 +60,6 @@ class Pythia8(MCRun):
         self._set_final_state_particles()
 
     def _cross_section(self, evt_kin):
-        # TODO check that cross section is in mb
         with self._temporary_evt_kin(evt_kin):
             st = self._lib.pythia.info.sigmaTot
             return CrossSectionData(

@@ -147,7 +147,7 @@ class DpmjetIIIRun(MCRun):
             )
             self._lib.dtglgp.jstatb = saved
 
-        return CrossSectionData._from_inel(self._lib.dtglxs.xspro[0, 0, 0])
+        return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
 
     def _dpmjet_tup(self):
         """Constructs an tuple of arguments for calls to event generator

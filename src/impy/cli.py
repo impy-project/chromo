@@ -63,13 +63,14 @@ for M in get_all_models():
         VALID_MODELS.append(M.label)
 VALID_MODELS = ", ".join(sorted(VALID_MODELS))
 
-FORMATS = (
-    "hepmc",
-    "hepmcgz",
-    "root",
+FORMATS = {
+    "hepmc": writer.Hepmc,
+    "hepmcgz": writer.Hepmc,
+    "root": writer.Root,
+    "svg": writer.Svg,
     # "lhe",
     # "lhegz",
-)
+}
 VALID_FORMATS = f"{', '.join(FORMATS)}"
 
 
@@ -323,17 +324,10 @@ def main():
 
     model = args.model(evt_kin)
 
-    if args.output.startswith("hepmc"):
-        import pyhepmc
-
-        ofile = pyhepmc.open(args.out, "w")
-    elif args.output == "root":
-        ofile = writer.Root(args.out, args, model.cross_section())
-    elif args.output == "pdf":
-        ofile = writer.Pdf(args.out)
+    ofile = FORMATS[args.output](args.out, args, model.cross_section())
 
     task_id = None
-    with ofile as f:
+    with ofile:
         # workaround: several models generate extra print when first
         # event is generated, this interferes with progress bar so we
         # create bar only after second event is generated
@@ -346,7 +340,7 @@ def main():
             SpeedColumn(),
         ) as bar:
             for event in model(args.number):
-                f.write(event)
+                ofile.write(event)
                 if task_id is None:
                     task_id = bar.add_task("", total=args.number)
                 bar.advance(task_id, 1)

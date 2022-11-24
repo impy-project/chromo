@@ -265,3 +265,16 @@ def test_format_2(format):
         stdout=f"Format[ \t]*{format}",
         file=f"impy_eposlhc_1_2212_2212_100.{ext}",
     )
+
+
+def test_format_3():
+    run(
+        "-s",
+        "1",
+        "-S",
+        "100",
+        "-o",
+        "svg",
+        stdout="Format[ \t]*svg",
+        file="impy_eposlhc_1_2212_2212_100_0.svg",
+    )

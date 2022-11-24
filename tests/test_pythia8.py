@@ -3,7 +3,6 @@ from impy.models import Pythia8
 from impy.constants import GeV
 import numpy as np
 from numpy.testing import assert_allclose
-from impy.util import AZ2pdg
 from .util import reference_charge, run_in_separate_process
 import pytest
 from particle import literals as lp
@@ -25,6 +24,12 @@ def run_pp_collision():
     return event
 
 
+def run_cross_section(p1, p2):
+    evt_kin = CenterOfMass(10 * GeV, p1, p2)
+    m = Pythia8(evt_kin, seed=1)
+    return m.cross_section()
+
+
 @pytest.fixture
 @lru_cache(maxsize=1)  # Pythia8 initialization is very slow
 def event():
@@ -38,6 +43,21 @@ def test_impact_parameter(event):
 def test_n_wounded(event):
     # TODO EPOS returns (1, 1) for pp collision, perhaps unify the response
     assert event.n_wounded == (0, 0)
+
+
+def test_cross_section():
+    c = run_in_separate_process(run_cross_section, "p", "p")
+    assert_allclose(c.total, 38.4, atol=0.1)
+    assert_allclose(c.inelastic, 31.3, atol=0.1)
+    assert_allclose(c.elastic, 7.1, atol=0.1)
+    assert_allclose(c.diffractive_xb, 2.6, atol=0.1)
+    assert_allclose(c.diffractive_ax, 2.6, atol=0.1)
+    assert_allclose(c.diffractive_xx, 0.8, atol=1)
+    assert c.diffractive_axb == 0
+    assert_allclose(
+        c.non_diffractive,
+        c.inelastic - c.diffractive_xb - c.diffractive_ax - c.diffractive_xx,
+    )
 
 
 def test_charge(event):

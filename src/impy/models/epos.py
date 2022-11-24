@@ -73,9 +73,16 @@ class EposLHC(MCRun):
 
     def _cross_section(self, evt_kin):
         with self._temporary_evt_kin(evt_kin):
-            total, inel, el, dd, sd = self._lib.xsection()
+            total, inel, el, dd, sd, _ = self._lib.xsection()
             return CrossSectionData(
-                total, inel, el, sd / 2, sd / 2, dd, np.nan, inel - sd - dd
+                total=total,
+                inelastic=inel,
+                elastic=el,
+                diffractive_xb=sd / 2,  # this is an approximation
+                diffractive_ax=sd / 2,  # this is an approximation
+                diffractive_xx=dd,
+                diffractive_axb=0,
+                non_diffractive=inel - sd - dd,
             )
 
     def _set_event_kinematics(self, k):

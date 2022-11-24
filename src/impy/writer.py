@@ -1,5 +1,7 @@
 import numpy as np
 from impy.constants import quarks_and_diquarks_and_gluons
+import dataclasses
+from pathlib import Path
 
 BUFFER_SIZE = 100000
 INT_TYPE = np.int32
@@ -7,15 +9,26 @@ FLOAT_TYPE = np.float32
 
 
 # Differences to CRMC
-# - No header yet
+#
+# - Header tree
+#   - Names in snake_case instead of CamelCase
+#   - Renamed branches
+#     - HEModel -> model
+#     - sigmaTot -> sigma_total
+#     - sigmaEl -> sigma_elastic
+#     - sigmaInel -> sigma_inelastic
+#   - Branches sigmaPair* not included
+#   - Branch model contains name and version as a byte array
+#
 # - Particle tree
 #   - Branch n instead of nPart, name cannot be chosen in uproot
 #   - ImpactParameter renamed to impact
 #   - Branch E is redundant, we skip this to save space
 #   - Extra branches: parent
-# By default, the vertex locations are not interesting and so we don't write them.
-# Long-lived particles are final state, and there is no interesting information in the
-# vertices of very short-lived particles.
+#
+# For impy in default configuration, the vertex locations are not interesting,
+# so we don't write them. Long-lived particles are final state, and there is no
+# interesting information in the vertices of very short-lived particles.
 class Root:
     def __init__(self, file, config, cross_section, write_vertices=False):
         import uproot
@@ -28,12 +41,24 @@ class Root:
             "target_momentum": config.target_momentum,
             "model": config.model.label,
         }
-        header.update(cross_section._asdict())
+        header.update(
+            {
+                f"sigma_{k}": v
+                for (k, v) in dataclasses.asdict(cross_section).items()
+                if not np.isnan(v)
+            }
+        )
+        header.update(
+            {
+                "energy_unit": "MeV",
+                "length_unit": "mm",
+                "sigma_unit": "mb",
+            }
+        )
 
+        self._header = "\n".join(f"{k}: {v}" for (k, v) in header.items())
         self._file = uproot.recreate(file)
-        self._file["header"] = header
 
-        self._tree = None
         self._event_buffers = {
             "impact": np.empty(BUFFER_SIZE, FLOAT_TYPE),
         }
@@ -55,6 +80,8 @@ class Root:
                     "vt": np.empty(BUFFER_SIZE, FLOAT_TYPE),
                 }
             )
+
+        self._tree = None
         self._lengths = []
         self._iparticle = 0
 
@@ -79,7 +106,24 @@ class Root:
             }
         )
         if self._tree is None:
+            # uproot currently does not provide a high-level way
+            # to write jagged arrays and set a title. This is really bad.
+            # Until this is implemented, we force writing of a title
+            # by monkeypatching WritableDirectory.mktree. Obviously, this
+            # is a very bad and brittle solution, but you gotta do what
+            # you gotta do.
+
+            from uproot.writing import WritableDirectory
+
+            mktree = WritableDirectory.mktree
+            title = self._header
+
+            def modded_mktree(self, name, metadata):
+                return mktree(self, name, metadata, title=title)
+
+            WritableDirectory.mktree = modded_mktree
             self._file["event"] = chunk
+            WritableDirectory.mktree = mktree
             self._tree = self._file["event"]
         else:
             self._tree.extend(chunk)
@@ -110,12 +154,53 @@ class Root:
                 val[a:b] = event.pid
             else:
                 val[a:b] = getattr(event, key)
+                if key in ("px", "py", "pz", "m"):
+                    val[a:b] *= 1e3
 
         if b > BUFFER_SIZE // 2:
             self._write_buffers()
-            self._lengths = []
-            self._iparticle = 0
 
 
-def lhe(file, mode):
+class Svg:
+    def __init__(self, file, config, cross_section):
+        self._idx = 0
+        self._template = (file.parent, file.stem, file.suffix)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return True
+
+    def write(self, event):
+        ge = event.to_hepmc3()
+        svg = ge._repr_html_()
+        odir, name, ext = self._template
+        fn = Path(odir) / f"{name}_{self._idx:03}{ext}"
+        self._idx += 1
+        with open(fn, "w") as f:
+            f.write(svg)
+
+
+class Hepmc:
+    def __init__(self, file, config, cross_section):
+        import pyhepmc
+
+        # TODO add metadata to GenRunInfo, needs
+        # fix in pyhepmc
+
+        self._file = pyhepmc.open(file, "w")
+
+    def __enter__(self):
+        self._file = self._file.__enter__()
+        return self._file
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return self._file.__exit__(exc_type, exc_value, traceback)
+
+    def write(self, event):
+        self._file.write(event)
+
+
+def lhe(file):
     raise SystemExit("LHE not yet supported")
