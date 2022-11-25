@@ -522,6 +522,7 @@ class EventKinematics:
 
 class CenterOfMass(EventKinematics):
     def __init__(self, ecm, particle1, particle2):
+        # FIXME this is wrong, modification of global shared state
         impy_config["user_frame"] = "center-of-mass"
         super().__init__(ecm=ecm, particle1=particle1, particle2=particle2)
 
@@ -540,6 +541,7 @@ class Momentum(TaggedFloat):
 
 class FixedTarget(EventKinematics):
     def __init__(self, energy, particle1, particle2):
+        # FIXME this is wrong, modification of global shared state
         impy_config["user_frame"] = "laboratory"
 
         if isinstance(energy, (TotalEnergy, int, float)):

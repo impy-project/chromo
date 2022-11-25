@@ -6,10 +6,10 @@ CRMC (Cosmic Ray Monte Carlo package) https://web.ikp.kit.edu/rulrich/crmc.html
 
 import argparse
 import os
-from . import models, __version__ as version
-from .kinematics import CenterOfMass, FixedTarget, Momentum, _FromParticleName
-from .util import AZ2pdg, tolerant_string_match, get_all_models
-from .constants import MeV, GeV
+from impy import models, __version__ as version
+from impy.kinematics import CenterOfMass, FixedTarget, Momentum, _FromParticleName
+from impy.util import AZ2pdg, tolerant_string_match, get_all_models
+from impy.constants import MeV, GeV
 from impy import writer
 from pathlib import Path
 from particle import Particle

@@ -833,16 +833,10 @@ class MCRun(ABC):
         # info(5, 'Setting default particles stable with lifetime <',
         #      impy_config['tau_stable'], 's')
 
-        # for pdgid in make_stable_list(impy_config['tau_stable'], pdata):
-        #     self.set_stable(pdgid)
-
         info(5, "Setting following particles to be stable:", impy_config["stable_list"])
 
         for pdgid in impy_config["stable_list"]:
             self._set_stable(pdgid, True)
-
-        if impy_config["pi0_stable"]:
-            self._set_stable(111, True)
 
         self._set_final_state_particles_called = True
 

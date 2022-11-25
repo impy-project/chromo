@@ -470,8 +470,8 @@ def tolerant_string_match(a, b):
 
 
 def get_all_models(skip=None):
-    from . import models
-    from .common import MCRun
+    from impy import models
+    from impy.common import MCRun
 
     if skip is None:
         skip = []

@@ -36,9 +36,76 @@ class UrQMD34(MCRun):
     _output_frame = "center-of-mass"
 
     def __init__(self, event_kinematics, seed="random", logfname=None):
-        from particletools.tables import UrQMDParticleTable
-
-        self._stab = UrQMDParticleTable()
+        self._pdg2modid = {
+            22: (100, 0),
+            111: (101, 0),
+            211: (101, 2),
+            -211: (101, -2),
+            321: (106, 1),
+            311: (106, -1),
+            -321: (-106, -1),
+            -311: (-106, 1),
+            2212: (1, 1),
+            2112: (1, -1),
+            221: (102, 0),
+            213: (104, 2),
+            -213: (104, -2),
+            113: (104, 0),
+            323: (108, 2),
+            -323: (108, -2),
+            313: (108, 0),
+            -313: (-108, 0),
+            223: (103, 0),
+            333: (109, 0),
+            3222: (40, 2),
+            3212: (40, 0),
+            3112: (40, -2),
+            3322: (49, 0),
+            3312: (49, -1),
+            3122: (27, 0),
+            2224: (17, 4),
+            2214: (17, 2),
+            2114: (17, 0),
+            1114: (17, -2),
+            3224: (41, 2),
+            3214: (41, 0),
+            3114: (41, -2),
+            3324: (50, 0),
+            3314: (50, -1),
+            3334: (55, 0),
+            411: (133, 2),
+            -411: (133, -2),
+            421: (133, 0),
+            -421: (-133, 0),
+            441: (107, 0),
+            431: (138, 1),
+            -431: (138, -1),
+            433: (139, 1),
+            -433: (139, -1),
+            413: (134, 1),
+            -413: (134, -1),
+            10421: (134, 0),
+            -10421: (-134, 0),
+            443: (135, 0),
+            -2212: (-1, 1),
+            -2112: (-1, -1),
+            -3222: (-40, 2),
+            -3212: (-40, 0),
+            -3112: (-40, -2),
+            -3322: (-49, 0),
+            -3312: (-49, -1),
+            -3122: (-27, 0),
+            -2224: (-17, 4),
+            -2214: (-17, 2),
+            -2114: (-17, 0),
+            -1114: (-17, -2),
+            -3224: (-41, 2),
+            -3214: (-41, 0),
+            -3114: (-41, -2),
+            -3324: (-50, 0),
+            -3314: (-50, -1),
+            -3334: (-55, 0),
+        }
 
         super().__init__(seed, logfname)
 
@@ -89,8 +156,8 @@ class UrQMD34(MCRun):
             # Special projectile
             self._lib.inputs.prspflg = 1
             self._lib.sys.ap = 1
-            self._lib.inputs.spityp[0] = self._stab.pdg2modid[k.p1pdg][0]
-            self._lib.inputs.spiso3[0] = self._stab.pdg2modid[k.p1pdg][1]
+            self._lib.inputs.spityp[0] = self._pdg2modid[k.p1pdg][0]
+            self._lib.inputs.spiso3[0] = self._pdg2modid[k.p1pdg][1]
         else:
             self._lib.inputs.prspflg = 0
             self._lib.sys.ap = k.A1
@@ -100,8 +167,8 @@ class UrQMD34(MCRun):
             # Special projectile
             self._lib.inputs.trspflg = 1
             self._lib.sys.at = 1
-            self._lib.inputs.spityp[1] = self._stab.pdg2modid[k.p2pdg][0]
-            self._lib.inputs.spiso3[1] = self._stab.pdg2modid[k.p2pdg][1]
+            self._lib.inputs.spityp[1] = self._pdg2modid[k.p2pdg][0]
+            self._lib.inputs.spiso3[1] = self._pdg2modid[k.p2pdg][1]
         else:
             self._lib.inputs.trspflg = 0
             self._lib.sys.at = k.A2
@@ -147,7 +214,7 @@ class UrQMD34(MCRun):
         stable_ids = self._lib.stables.stabvec
         nstab = self._lib.stables.nstable
         try:
-            uid = self._stab.pdg2modid[pdgid][0]
+            uid = self._pdg2modid[pdgid][0]
         except KeyError:
             import warnings
 
