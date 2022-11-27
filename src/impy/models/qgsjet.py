@@ -1,10 +1,11 @@
 import numpy as np
 from impy.common import MCRun, MCEvent, CrossSectionData
-from impy import impy_config
-from impy.util import info, _cached_data_dir
+from impy.kinematics import EventFrame
+from impy.util import _cached_data_dir, name
+from particle import literals as lp
 
 
-class QGSJET01Event(MCEvent):
+class QGSJET1Event(MCEvent):
     """Wrapper class around QGSJet HEPEVT converter."""
 
     def _charge_init(self, npart):
@@ -16,7 +17,7 @@ class QGSJET01Event(MCEvent):
         return self._lib.jdiff.jdiff
 
 
-class QGSJETIIEvent(QGSJET01Event):
+class QGSJET2Event(QGSJET1Event):
     def _get_impact_parameter(self):
         return self._lib.qgarr7.b
 
@@ -24,25 +25,28 @@ class QGSJETIIEvent(QGSJET01Event):
         return self._lib.qgarr55.nwp, self._lib.qgarr55.nwt
 
 
-#: Projectiles for QGSJET01 and cross sections
-_qgsjet01_projectiles = {211: 1, 111: 1, 2212: 2, 2112: 2, 321: 3, 130: 3, 310: 3}
-
-#: Specific projectile particle indices for QGSII
-_qgsjetII_projectiles = {211: 1, 2212: 2, 2112: 3, 321: 4, 130: 5, 310: -5}
-
-#: Used for cross section routines
-_qgsjet_hadron_classes = _qgsjet01_projectiles
-
-
 class QGSJetRun(MCRun):
     _name = "QGSJet"
-    _output_frame = "laboratory"
-    # needed to skip set_final_state_particles()
+    _frame = EventFrame.FIXED_TARGET
+    # needed to skip set_final_state_particles() in MCRun
     _set_final_state_particles_called = True
     _data_url = (
         "https://github.com/impy-project/impy"
         + "/releases/download/zipped_data_v1.0/qgsjet_v001.zip"
     )
+
+    def __init__(self, evt_kin, seed=None):
+
+        super().__init__(seed)
+
+        # logging
+        import impy
+
+        lun = 6  # stdout
+        datdir = _cached_data_dir(self._data_url)
+        self._lib.cqgsini(self._seed, datdir, lun, impy.debug_level)
+
+        self.kinematics = evt_kin
 
     def _set_stable(self, pdgid, stable):
         import warnings
@@ -52,34 +56,29 @@ class QGSJetRun(MCRun):
         )
 
 
-class QGSJet01Run(QGSJetRun):
+class QGSJet1Run(QGSJetRun):
     """Implements all abstract attributes of MCRun for the
     QGSJET-01c legacy event generators."""
 
-    _event_class = QGSJET01Event
+    _event_class = QGSJET1Event
+    _projectiles = {
+        lp.pi_plus.pdgid: 1,
+        lp.p.pdgid: 2,
+        lp.n.pdgid: 2,
+        lp.K_plus.pdgid: 3,
+        lp.K_S_0.pdgid: 3,
+        lp.K_L_0.pdgid: 3,
+    }
 
-    def __init__(self, event_kinematics, seed="random", logfname=None):
-        super().__init__(seed, logfname)
-
-        info(5, "Initializing QGSJET01d")
-
-        datdir = _cached_data_dir(self._data_url)
-        self._lib.cqgsini(
-            self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
-        )
-
-        self.event_kinematics = event_kinematics
-
-    def _cross_section(self, evt_kin):
+    def _cross_section(self):
         # Interpolation routine for QGSJET01D cross sections from CORSIKA.
         from scipy.interpolate import UnivariateSpline
 
-        if evt_kin is None:
-            evt_kin = self.event_kinematics
+        evt_kin = self.kinematics
 
-        A_target = evt_kin.A2
+        A_target = evt_kin.p2.A
         # Projectile ID-1 to access fortran indices directly
-        icz = self._qgsproj - 1
+        icz = self._projectile_id - 1
         qgsgrid = 10 ** np.arange(1, 11)
         cross_section = np.zeros(10)
         wa = np.zeros(3)
@@ -106,111 +105,68 @@ class QGSJet01Run(QGSJetRun):
         inel = np.exp(spl(np.log(evt_kin.elab)))
         return CrossSectionData(inelastic=inel)
 
-    def _set_event_kinematics(self, k):
-        info(5, "Setting event kinematics")
+    def _set_kinematics(self, kin):
+        try:
+            self._projectile_id = self._projectiles[abs(kin.p1)]
+        except KeyError:
+            raise ValueError(
+                f"projectile must be {[name(x) for x in self._projectiles]}"
+                " or antiparticles"
+            )
+        self._lib.xxaini(kin.elab, self._projectile_id, kin.p1.A or 1, kin.p2.A)
 
-        if abs(k.p1pdg) in [2212, 2112]:
-            self._qgsproj = 2
-        elif abs(k.p1pdg) in [211, 111]:
-            self._qgsproj = 1
-        elif abs(k.p1pdg) in [321, 130, 310]:
-            self._qgsproj = 3
-        else:
-            raise Exception("QGSJET only supports p, pi+- and K+- as projectile.")
-        self._lib.xxaini(k.elab, self._qgsproj, k.A1, k.A2)
-
-    def _attach_log(self, fname=None):
-        """Routes the output to a file or the stdout."""
-        fname = impy_config["output_log"] if fname is None else fname
-        if fname == "stdout":
-            lun = 6
-            info(5, "Output is routed to stdout.")
-        else:
-            lun = self._attach_fortran_logfile(fname)
-            info(5, "Output is routed to", fname, "via LUN", lun)
-
-        self._lun = lun
-
-    def _generate_event(self):
+    def _generate(self):
         self._lib.psconf()
         # Convert QGSJET to HEPEVT
         self._lib.chepevt()
         return True
 
 
-class QGSJetIIRun(QGSJetRun):
+class QGSJet2Run(QGSJetRun):
     """Implements all abstract attributes of MCRun for the
     QGSJET-II-xx series of event generators."""
 
-    _event_class = QGSJETIIEvent
+    _event_class = QGSJET2Event
+    _projectiles = {
+        lp.pi_plus.pdgid: 1,
+        lp.p.pdgid: 2,
+        lp.n.pdgid: 3,
+        lp.K_plus.pdgid: 4,
+        lp.K_S_0.pdgid: -5,
+        lp.K_L_0.pdgid: 5,
+    }
 
-    def __init__(self, event_kinematics, seed=None, logfname=None):
-
-        super().__init__(seed, logfname)
-
-        info(5, "Initializing QGSJET-II")
-
-        datdir = _cached_data_dir(self._data_url)
-        self._lib.cqgsini(
-            self._seed, datdir, self._lun, impy_config["qgsjet"]["debug_level"]
-        )
-
-        self.event_kinematics = event_kinematics
-
-    def _cross_section(self, evt_kin):
-        if evt_kin is None:
-            evt_kin = self.event_kinematics
+    def _cross_section(self):
+        kin = self.kinematics
         inel = self._lib.qgsect(
-            evt_kin.elab,
-            _qgsjet_hadron_classes[abs(evt_kin.p1pdg)],
-            evt_kin.A1,
-            evt_kin.A2,
+            kin.elab,
+            self._projectile_id,
+            kin.p1.A,
+            kin.p2.A,
         )
         return CrossSectionData(inelastic=inel)
 
-    def _set_event_kinematics(self, k):
-        info(5, "Setting event kinematics")
+    def _set_kinematics(self, kin):
+        self._projectile_id = np.sign(kin.p1) * self._projectiles[abs(kin.p1)]
+        self._lib.qgini(kin.elab, self._projectile_id, kin.p1.A or 1, kin.p2.A)
 
-        if abs(k.p1pdg) in _qgsjetII_projectiles:
-            self._qgsproj = np.sign(k.p1pdg) * _qgsjetII_projectiles[abs(k.p1pdg)]
-        elif k.p1pdg == 111:
-            # For pi0 projectiles alternate between pi+ and pi-
-            self._qgsproj = int(1 - 2 * round(np.random.rand()))
-        else:
-            raise Exception(
-                "Projectile {0} not supported by QGSJET-II.".format(k.p1pdg)
-            )
-
-        self._lib.qgini(k.elab, self._qgsproj, k.A1, k.A2)
-
-    def _attach_log(self, fname=None):
-        """Routes the output to a file or the stdout."""
-        fname = impy_config["output_log"] if fname is None else fname
-        if fname == "stdout":
-            lun = 6
-            info(5, "Output is routed to stdout.")
-        else:
-            lun = self._attach_fortran_logfile(fname)
-            info(5, "Output is routed to", fname, "via LUN", lun)
-        self._lun = lun
-
-    def _generate_event(self):
+    def _generate(self):
         self._lib.qgconf()
         # Convert QGSJET to HEPEVT
         self._lib.chepevt()
         return True
 
 
-class QGSJet01d(QGSJet01Run):
+class QGSJet01d(QGSJet1Run):
     _version = "01d"
     _library_name = "_qgs01"
 
 
-class QGSJetII03(QGSJetIIRun):
+class QGSJetII03(QGSJet2Run):
     _version = "II-03"
     _library_name = "_qgsII03"
 
 
-class QGSJetII04(QGSJetIIRun):
+class QGSJetII04(QGSJet2Run):
     _version = "II-04"
     _library_name = "_qgsII04"

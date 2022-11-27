@@ -31,16 +31,14 @@ def test_composite_target(Model):
         pytest.skip("Switching beams in Pythia8 is very time-consuming")
 
     projectile = "pi-"
-    seed_for_test = 321
     target = CompositeTarget(
         [
-            ("N14", 2 * 0.78084, "Nitrogen"),
-            ("O16", 2 * 0.20946, "Oxygen"),
-            ("O16", 0.004, "Oxygen(Vapor)"),
-            ("proton", 2 * 0.004, "Hydrogen(Vapor)"),
+            ("N14", 2 * 0.78084),
+            ("O16", 2 * 0.20946),
+            ("O16", 0.004),
+            ("proton", 2 * 0.004),
         ],
         "Air without argon",
-        seed_for_test,
     )
 
     evt_kin = CenterOfMass(10 * GeV, projectile, target)

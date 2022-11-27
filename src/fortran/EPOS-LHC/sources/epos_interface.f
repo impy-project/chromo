@@ -17,16 +17,14 @@ c for main program
       end
 
 c-----------------------------------------------------------------------
-      subroutine InitializeEpos(seed, emax, datpath, lpath, ifram, 
-     &   ippdg, itpdg, idebug, iou)
+      subroutine InitEpos(seed, emax, datpath, lpath, ifram, idbg, iou)
 c-----------------------------------------------------------------------
 c General initialization of EPOS
 c anfe: accepts nuclear PDG id instead of A, Z combos
 c-----------------------------------------------------------------------      
       include "epos.inc"
       real seed, emax
-      integer lpath, ifram, iapro, izpro, iatar, 
-     &  iztar, idebug, iou
+      integer lpath, ifram, idbg, iou
       character(*) datpath
       
       seedi=seed   !seed for random number generator: at start program
@@ -59,43 +57,18 @@ c      ionudi=3              !count diffraction without excitation as elastic
       fncs=fnnx(1:nfnnx) // "epos.inics"       !'.lhc' is added a the end of the file name in ainit if LHCparameters is called
 
 c Debug
-      ish=idebug       !debug level
+      ish=idbg       !debug level
       ifch=iou      !debug output (screen)
 c      ifch=31    !debug output (file)
 c      fnch="epos.debug"
 c      nfnch=index(fnch,' ')-1
 c      open(ifch,file=fnch(1:nfnch),status='unknown')
 
-
       nevent = 1  !number of events
       modsho = 1  !printout every modsho events
 
       ecms=emax  !center of mass energy in GeV/c2
       
-      if (ippdg.ge.1000000000) then
-         izpro = mod(ippdg, 1000) / 10
-         iapro = mod(ippdg, 1000000) / 10000
-         ippdg = 2212
-      else
-         izpro = 1
-         iapro = 1
-      endif
-      if (itpdg.ge.1000000000) then
-         iztar = mod(itpdg, 1000) / 10
-         iatar = mod(itpdg, 1000000) / 10000
-         itpdg = 2212
-      else
-         iztar = 1
-         iatar = 1
-      endif
-
-      idproj = idtrafo("pdg","nxs",ippdg)
-      laproj = izpro      !proj Z
-      maproj = iapro      !proj A
-      idtarg = idtrafo("pdg","nxs",itpdg)
-      latarg = iztar      !targ Z
-      matarg = iatar      !targ A
-
       istmax = 1      !only final particles (istmax=1 includes mother particles)
 
       End

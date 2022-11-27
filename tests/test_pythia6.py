@@ -19,7 +19,7 @@ def test_name():
 
 
 def run_name():
-    evt_kin = CenterOfMass(1 * TeV, "p", "p")
+    evt_kin = CenterOfMass(100 * GeV, "p", "p")
     m = Pythia6(evt_kin, seed=4)
     assert m.label == "Pythia-6.428"
 
@@ -28,10 +28,9 @@ def test_instance_name():
     run_in_separate_process(run_name)
 
 
-def run_pp_collision():
-    evt_kin = CenterOfMass(1 * TeV, "p", "p")
+def run_collision(p1, p2):
+    evt_kin = CenterOfMass(100 * GeV, p1, p2)
     m = Pythia6(evt_kin, seed=4)
-    m.set_stable(lp.pi_0.pdgid, False)  # needed to get nonzero vertices
     for event in m(1):
         pass
     return event  # MCEvent is restored as EventData
@@ -46,7 +45,7 @@ def run_cross_section(p1, p2):
 @pytest.fixture
 @lru_cache(maxsize=1)
 def event():
-    return run_in_separate_process(run_pp_collision)
+    return run_in_separate_process(run_collision, "p", "p")
 
 
 def test_cross_section():

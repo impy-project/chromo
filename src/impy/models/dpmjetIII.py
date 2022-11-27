@@ -1,6 +1,7 @@
 from impy.common import MCRun, MCEvent, CrossSectionData
-from impy import impy_config
+from impy.kinematics import EventFrame
 from impy.util import info, _cached_data_dir
+from impy.constants import nuclei, standard_projectiles
 
 
 class DpmjetIIIEvent(MCEvent):
@@ -47,7 +48,8 @@ class DpmjetIIIRun(MCRun):
 
     _name = "DPMJET-III"
     _event_class = DpmjetIIIEvent
-    _output_frame = "center-of-mass"
+    _frame = EventFrame.CENTER_OF_MASS
+    _projectiles = set(standard_projectiles) | set(nuclei)
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
     _data_url = (
@@ -55,24 +57,23 @@ class DpmjetIIIRun(MCRun):
         + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
 
-    def __init__(self, event_kinematics, seed=None, logfname=None):
+    def __init__(self, evt_kin, seed=None):
         from impy.util import fortran_chars
-        from impy.constants import sec2cm
 
-        super().__init__(seed, logfname)
-
-        self._lib.init_rmmard(self._seed)
-
-        # Save maximal mass that has been inisialized
-        # (DPMJET sometimes crashes if higher mass requested than initialized)
-        self._max_A1 = event_kinematics.A1
-        self._max_A2 = event_kinematics.A2
-
-        self.event_kinematics = event_kinematics
-
-        info(1, "Initializing DPMJET-III")
+        super().__init__(seed)
 
         data_dir = _cached_data_dir(self._data_url)
+
+        # Setup logging
+        lun = 6  # stdout
+        if hasattr(self._lib, "dtflka"):
+            self._lib.dtflka.lout = lun
+            self._lib.dtflka.lpri = 50
+        elif hasattr(self._lib, "dtiont"):
+            self._lib.dtiont.lout = lun
+        else:
+            assert False, "Unknown DPMJET version, IO common block not detected"
+        self._lib.pydat1.mstu[10] = lun
 
         # Set the dpmjpar.dat file
         if hasattr(self._lib, "pomdls") and hasattr(self._lib.pomdls, "parfn"):
@@ -92,15 +93,28 @@ class DpmjetIIIRun(MCRun):
             info(3, "DPMJET evap file at", evap_file)
             self._lib.dtimpy.fnevap = fortran_chars(self._lib.dtimpy.fnevap, evap_file)
 
-        k = self.event_kinematics
-        self._lib.dt_init(-1, k.plab, k.A1, k.Z1, k.A2, k.Z2, k.p1pdg, iglau=0)
+        # Save maximal mass that has been initialized
+        # (DPMJET sometimes crashes if higher mass requested than initialized)
+        self._max_A1 = evt_kin.p1.A or 1
+        self._max_A2 = evt_kin.p2.A or 1
+        self._kinematics = evt_kin  # skip _set_event_kinematics
+        k = evt_kin
+        self._lib.dt_init(
+            -1,
+            k.plab,
+            k.p1.A or 1,
+            k.p1.Z or 0,
+            k.p2.A or 1,
+            k.p2.Z or 0,
+            k.p1,
+            iglau=0,
+        )
 
-        if impy_config["user_frame"] == "center-of-mass":
+        self._frame = k.frame
+        if self._frame == EventFrame.CENTER_OF_MASS:
             self._lib.dtflg1.iframe = 2
-            self._output_frame = "center-of-mass"
-        elif impy_config["user_frame"] == "laboratory":
+        elif self._frame == EventFrame.FIXED_TARGET:
             self._lib.dtflg1.iframe = 1
-            self._output_frame = "laboratory"
 
         # Relax momentum and energy conservation checks at very high energies
         if k.ecm > 5e4:
@@ -118,93 +132,57 @@ class DpmjetIIIRun(MCRun):
             # Absolute allowed deviation
             self._lib.pomdls.parmdl[77] = 0.05
 
-        self._set_final_state_particles()
         # Prevent DPMJET from overwriting decay settings
         # self._lib.dtfrpa.ovwtdc = False
         # Set PYTHIA decay flags to follow all changes to MDCY
         self._lib.pydat1.mstj[21 - 1] = 1
         self._lib.pydat1.mstj[22 - 1] = 2
-        # # Set ctau threshold in PYTHIA for the default stable list
-        self._lib.pydat1.parj[70] = impy_config["tau_stable"] * sec2cm * 10.0  # mm
+        self._set_final_state_particles()
 
-    def _cross_section(self, evt_kin=None, precision=None):
+    def _cross_section(self, precision=None):
+        k = self.kinematics
         # we override to set precision
-        if evt_kin is None:
-            k = self.event_kinematics
-        else:
-            k = evt_kin
-        info(10, "Cross section for", k.A1, k.A2, self._lib.idt_icihad(k.p1pdg))
-        if precision is None:
-            self._lib.dt_xsglau(
-                k.A1, k.A2, self._lib.idt_icihad(k.p1pdg), 0, 0, k.ecm, 1, 1, 1
-            )
-        else:
+        if precision is not None:
             saved = self._lib.dtglgp.jstatb
             # Set number of trials for Glauber model integration
             self._lib.dtglgp.jstatb = precision
-            self._lib.dt_xsglau(
-                k.A1, k.A2, self._lib.idt_icihad(k.p1pdg), 0, 0, k.ecm, 1, 1, 1
-            )
+        self._lib.dt_xsglau(
+            k.p1.A or 1, k.p2.A or 1, self._lib.idt_icihad(k.p1), 0, 0, k.ecm, 1, 1, 1
+        )
+        if precision is not None:
             self._lib.dtglgp.jstatb = saved
-
+        # TODO set more cross-sections
         return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
 
-    def _dpmjet_tup(self):
-        """Constructs an tuple of arguments for calls to event generator
-        from given event kinematics object."""
-        k = self.event_kinematics
-        info(
-            20,
-            "Request DPMJET ARGs tuple:\n",
-            (k.A1, k.Z1, k.A2, k.Z2, self._lib.idt_icihad(k.p1pdg), k.elab),
-        )
-        return (k.A1, k.Z1, k.A2, k.Z2, self._lib.idt_icihad(k.p1pdg), k.elab)
-
-    def _set_event_kinematics(self, k):
+    def _set_kinematics(self, k):
         # nothing to be done here except input validation, since
-        # initialization and event generation is done in _generate_event
-        info(5, "Setting event kinematics")
-        if k.A1 > self._max_A1 or k.A2 > self._max_A2:
+        # initialization and event generation is done in _generate
+        if (k.p1.A or 1) > self._max_A1 or (k.p2.A or 1) > self._max_A2:
             raise ValueError(
                 "Maximal initialization mass exceeded "
-                f"{k.A1}/{self._max_A1}, {k.A2}/{self._max_A2}"
+                f"{k.p1.A}/{self._max_A1}, {k.p2.A}/{self._max_A2}"
             )
 
         # AF: No idea yet, but apparently this functionality was around?!
         # if hasattr(k, 'beam') and hasattr(self._lib, 'init'):
-        #     print(self.class_name + "::_set_event_kinematics():" +
-        #           "setting beam params", k.beam)
         #     self._lib.dt_setbm(k.A1, k.Z1, k.A2, k.Z2, k.beam[0], k.beam[1])
         #     print 'OK'
 
-    def _attach_log(self, fname=None):
-        """Routes the output to a file or the stdout."""
-        fname = impy_config["output_log"] if fname is None else fname
-        if fname == "stdout":
-            lun = 6
-            info(5, "Output is routed to stdout.")
-        else:
-            lun = self._attach_fortran_logfile(fname)
-            info(5, "Output is routed to", fname, "via LUN", lun)
-
-        if hasattr(self._lib, "dtflka"):
-            self._lib.dtflka.lout = lun
-            self._lib.dtflka.lpri = 50
-        elif hasattr(self._lib, "dtiont"):
-            self._lib.dtiont.lout = lun
-        else:
-            raise Exception("Unknown DPMJET version, IO common block not detected.")
-
-        self._lib.pydat1.mstu[10] = lun
-
     def _set_stable(self, pdgid, stable):
-        if abs(pdgid) == 2212:
-            return
-        kc = self._lib.pycomp(pdgid)
-        self._lib.pydat3.mdcy[kc - 1, 0] = 0 if stable else 1
+        kc = self._lib.pycomp(pdgid) - 1
+        self._lib.pydat3.mdcy[kc, 0] = not stable
 
-    def _generate_event(self):
-        reject = self._lib.dt_kkinc(*self._dpmjet_tup(), kkmat=-1)
+    def _generate(self):
+        k = self.kinematics
+        reject = self._lib.dt_kkinc(
+            k.p1.A or 1,
+            k.p1.Z or 0,
+            k.p2.A or 1,
+            k.p2.Z or 0,
+            self._lib.idt_icihad(k.p1),
+            k.elab,
+            kkmat=-1,
+        )
         self._lib.dtevno.nevent += 1
         return not reject
 

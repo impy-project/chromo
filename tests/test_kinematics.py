@@ -1,5 +1,5 @@
 from impy.kinematics import FixedTarget, TotalEnergy, KinEnergy, Momentum
-from impy.constants import GeV
+from impy.constants import GeV, MeV
 from particle import literals as lp
 from pytest import approx
 
@@ -15,9 +15,9 @@ def test_fixed_target():
     assert ft.elab == 2 * GeV
 
     ft = FixedTarget(KinEnergy(2 * GeV), "proton", "proton")
-    et = 2 + (lp.proton.mass / 1e3)
+    et = 2 + (lp.proton.mass * MeV)
     assert ft.elab == approx(et)
 
     ft = FixedTarget(Momentum(2 * GeV), "proton", "proton")
-    et = (2**2 + (lp.proton.mass / 1e3) ** 2) ** 0.5
+    et = (2**2 + (lp.proton.mass * MeV) ** 2) ** 0.5
     assert ft.elab == approx(et)

@@ -7,12 +7,13 @@ Simulate interactions with one of the supported event generators
 ```python
 import numpy as np
 import impy
-from impy.constants import TeV
 
 # Define the parameters of the collisions
-event_kinematics = impy.kinematics.CenterOfMass(13 * TeV, "proton", "proton")
+kinematics = impy.kinematics.CenterOfMass(
+    13 * impy.constants.TeV,
+    "proton", "proton")
 # Create an instance of an event generator
-generator = impy.models.Sibyll23d(event_kinematics)
+generator = impy.models.Sibyll23d(kinematics)
 
 nevents = 0
 average_pt = 0

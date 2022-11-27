@@ -1,8 +1,9 @@
 from impy.common import MCRun, MCEvent, CrossSectionData
-from impy import impy_config
 from impy.util import _cached_data_dir
 from os import environ
 import numpy as np
+from impy.kinematics import EventFrame
+from impy.constants import standard_projectiles, em_particles
 
 
 class PYTHIA8Event(MCEvent):
@@ -33,15 +34,17 @@ class Pythia8(MCRun):
     _version = "8.307"
     _library_name = "_pythia8"
     _event_class = PYTHIA8Event
-    _output_frame = "center-of-mass"
+    _frame = EventFrame.CENTER_OF_MASS
+    _projectiles = set(standard_projectiles) | set(em_particles)
+    _targets = _projectiles
     _restartable = True
     _data_url = (
         "https://github.com/impy-project/impy"
         + "/releases/download/zipped_data_v1.0/Pythia8_v001.zip"
     )
 
-    def __init__(self, event_kinematics, seed=None, logfname=None):
-        super().__init__(seed, logfname)
+    def __init__(self, evt_kin, seed=None):
+        super().__init__(seed)
 
         self._lib.hepevt = self._lib.Hepevt()
 
@@ -56,31 +59,24 @@ class Pythia8(MCRun):
         self._lib.pythia = self._lib.Pythia(datdir, True)
 
         # must come last
-        self.event_kinematics = event_kinematics
+        self.kinematics = evt_kin
         self._set_final_state_particles()
 
-    def _cross_section(self, evt_kin):
-        with self._temporary_evt_kin(evt_kin):
-            st = self._lib.pythia.info.sigmaTot
-            return CrossSectionData(
-                st.sigmaTot,
-                st.sigmaTot - st.sigmaEl,
-                st.sigmaEl,
-                st.sigmaAX,
-                st.sigmaXB,
-                st.sigmaXX,
-                st.sigmaAXB,
-            )
+    def _cross_section(self):
+        st = self._lib.pythia.info.sigmaTot
+        return CrossSectionData(
+            st.sigmaTot,
+            st.sigmaTot - st.sigmaEl,
+            st.sigmaEl,
+            st.sigmaAX,
+            st.sigmaXB,
+            st.sigmaXX,
+            st.sigmaAXB,
+        )
 
-    def _set_event_kinematics(self, k):
+    def _set_kinematics(self, kin):
         pythia = self._lib.pythia
         pythia.settings.resetAll()
-
-        if not pythia.particleData.isParticle(k.p1pdg):
-            raise ValueError(f"Particle {k.p1pdg} not recognized")
-
-        if not pythia.particleData.isParticle(k.p2pdg):
-            raise ValueError(f"Particle {k.p2pdg} not recognized")
 
         config = [
             "Random:setSeed = on",
@@ -92,10 +88,8 @@ class Pythia8(MCRun):
             "Print:quiet = on",
             "Next:numberCount = 0",  # do not print progress
         ]
-        # Add more options from config file
-        config += impy_config["pythia8"]["options"]
 
-        if k.p1_is_nucleus or k.p2_is_nucleus:
+        if (kin.p1.A or 0) > 1 or (kin.p2.A or 1) > 1:
             import warnings
 
             warnings.warn(
@@ -108,27 +102,23 @@ class Pythia8(MCRun):
             config.append("HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0")
 
         config += [
-            f"Beams:idA = {k.p1pdg}",
-            f"Beams:idB = {k.p2pdg}",
-            f"Beams:eCM = {k.ecm}",
+            f"Beams:idA = {int(kin.p1)}",
+            f"Beams:idB = {int(kin.p2)}",
+            f"Beams:eCM = {kin.ecm}",
         ]
 
         for line in config:
             if not pythia.readString(line):
-                raise RuntimeError(f"readString('{line}') failed")
+                raise RuntimeError(f"readString({line!r}) failed")
 
         # calling init several times is allowed
         if not pythia.init():
             raise RuntimeError("Pythia8 initialization failed")
 
-    def _attach_log(self, fname):
-        # not implemented
-        pass
-
     def _set_stable(self, pdgid, stable):
         self._lib.pythia.particleData.mayDecay(pdgid, not stable)
 
-    def _generate_event(self):
+    def _generate(self):
         success = self._lib.pythia.next()
         if success:
             # We copy over the event record from Pythia's internal buffer to our

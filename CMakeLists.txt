@@ -132,7 +132,7 @@ list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
 f2py_add_module(_eposlhc
   FUNCTIONS
   aaset ainit aepos afinal hepmcstore
-  getcharge idtrafo initializeepos initeposevt
+  getcharge idtrafo initepos initeposevt
   xsection init_rmmard ${impy_logging}
   SOURCES
   ${eposlhc_sources}

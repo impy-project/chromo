@@ -7,9 +7,9 @@ CRMC (Cosmic Ray Monte Carlo package) https://web.ikp.kit.edu/rulrich/crmc.html
 import argparse
 import os
 from impy import models, __version__ as version
-from impy.kinematics import CenterOfMass, FixedTarget, Momentum, _FromParticleName
+from impy.kinematics import CenterOfMass, FixedTarget, Momentum
 from impy.util import AZ2pdg, tolerant_string_match, get_all_models
-from impy.constants import MeV, GeV
+from impy.constants import MeV, GeV, name2pdg
 from impy import writer
 from pathlib import Path
 from particle import Particle
@@ -94,7 +94,10 @@ def process_particle(x):
     # handle any special names recognised by CRMC here
     # ...
 
-    return _FromParticleName._get_pdg(x)
+    try:
+        return name2pdg[x]
+    except KeyError:
+        raise SystemExit(f"particle name {x} not recognized")
 
 
 def parse_arguments():

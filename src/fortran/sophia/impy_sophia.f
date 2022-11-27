@@ -96,6 +96,6 @@ C       parent and LLIST1(I) - 1 is the index
             IPARNT(I) = -1
         END IF
       ENDDO
-  
-      END      
+
+      END
       

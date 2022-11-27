@@ -26,7 +26,6 @@ def test_Root():
     event = EventData(
         ("foo", "1.0"),
         CenterOfMass(10, "p", "p"),
-        "user-frame",
         1,
         1.0,
         (2, 3),

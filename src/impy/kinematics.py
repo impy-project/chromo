@@ -16,81 +16,15 @@ the implementation is very "cooked up". We have to discuss this.
 """
 
 import numpy as np
-from impy import impy_config
-from impy.util import info, TaggedFloat, AZ2pdg
-from impy.constants import nucleon_mass
-import particle
+from impy.util import TaggedFloat, AZ2pdg, is_AZ, energy2momentum, elab2ecm, mass
+from impy.constants import nucleon_mass, name2pdg
+from particle import PDGID, Particle
+import dataclasses
+from typing import Union, Tuple
+from enum import Enum
 
 
-def _is_AZ_tuple(arg):
-    if isinstance(arg, tuple):
-        if len(arg) != 2:
-            raise ValueError(f"tuple (A, Z) should have len == 2, but given = {arg}")
-        if not isinstance(arg[0], int):
-            raise ValueError(
-                "1st entry of (A, Z) should be 'int' type, but it is "
-                f"{type(arg[0])} = {arg[0]}"
-            )
-        if not isinstance(arg[1], int):
-            raise ValueError(
-                "2nd entry of (A, Z) should be 'int' type, but it is "
-                f"{type(arg[1])} = {arg[1]}"
-            )
-        return True
-    else:
-        return False
-
-
-class _FromParticleName:
-    all_pdgs = {p.name: int(p.pdgid) for p in particle.Particle.findall()}
-    all_pdgs.update(
-        {p.programmatic_name: int(p.pdgid) for p in particle.Particle.findall()}
-    )
-    all_pdgs.update(
-        photon=22,
-        Higgs=25,
-        proton=2212,
-        antiproton=-2212,
-        p=2212,
-        pbar=-2212,
-        neutron=2112,
-        antineutron=-2112,
-        n=2112,
-        nbar=-2112,
-        C=all_pdgs["C12"],
-        N=all_pdgs["N14"],
-        O=all_pdgs["O16"],
-        Pb=all_pdgs["Pb206"],
-        He=all_pdgs["He4"],
-        Ne=all_pdgs["Ne20"],
-        Ar=all_pdgs["Ar40"],
-        Xe=all_pdgs["Xe131"],
-    )
-    all_pdgs["p~"] = all_pdgs["pbar"]
-    all_pdgs["n~"] = all_pdgs["nbar"]
-
-    @staticmethod
-    def _get_pdg(pname):
-        try:
-            return _FromParticleName.all_pdgs[pname]
-        except KeyError:
-            raise ValueError(f'Particle with name = "{pname}" is not found')
-
-    @staticmethod
-    def _get_AZ(arg):
-        if isinstance(arg, str):
-            pdg = particle.pdgid.PDGID(_FromParticleName._get_pdg(arg))
-            if (pdg.A is None) or (pdg.Z is None):
-                raise ValueError(f"'_get_AZ': no (A, Z) data for '{arg}'")
-            else:
-                return pdg.A, pdg.Z
-        elif _is_AZ_tuple(arg):
-            return arg
-        else:
-            raise ValueError(
-                "'_get_AZ' accepts 'str' (particle name) or 'tuple' (A, Z)"
-                f", but it received object {type(arg[1])} = {arg[1]}"
-            )
+EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
 
 
 class CompositeTarget(object):
@@ -99,164 +33,77 @@ class CompositeTarget(object):
     Examples of such composite targets are Air, CO_2, HCl, C_2H_60.
     """
 
-    from numpy.random import default_rng
-
-    def __init__(self, component_list, label="", random_state=None):
-
-        if random_state is None:
-            self.rng = self.default_rng()
-        elif isinstance(random_state, int):
-            # Use random_state as a seed
-            self.rng = self.default_rng(random_state)
-        else:
-            # Use random_state as a user provided
-            # random number generator
-            self.rng = random_state
-
+    def __init__(self, components, label=""):
         self.label = label
-        self.ncomponents = 0
-        self.component_fractions = []
-        self._component_orig_fractions = []
-        self.component_A = []
-        self.component_Z = []
-        self.component_name = []
+        fractions = np.empty(len(components))
+        self._materials = []
+        for i, (particle, amount) in enumerate(components):
+            fractions[i] = amount
+            self._materials.append(_normalize_particle(particle))
+        self._fractions = fractions / np.sum(fractions)
 
-        for component in component_list:
-            if not isinstance(component, tuple):
-                raise ValueError("Composite target accepts list of 'tuple's")
-            if len(component) == 2:
-                self._add_component(component[0], component[1])
-            elif len(component) == 3:
-                self._add_component(component[0], component[1], component[2])
-            else:
-                raise ValueError(
-                    "'CompositeTarget': wrong component length = "
-                    f"{len(component)} for {component}"
-                )
-        self._normalize()
+    @property
+    def fractions(self):
+        return self._fractions
 
-    def _add_component(self, az, fraction, name=""):
-        A, Z = _FromParticleName._get_AZ(az)
-        if (name == "") and (isinstance(az, str)):
-            self.component_name.append(az)
-        else:
-            self.component_name.append(name)
-        self.component_A.append(A)
-        self.component_Z.append(Z)
-        self._component_orig_fractions.append(float(fraction))
-        self.ncomponents += 1
+    @property
+    def materials(self):
+        return self._materials
 
-    def _normalize(self):
-        self.component_fractions = np.array(
-            [
-                f / np.sum(self._component_orig_fractions)
-                for f in self._component_orig_fractions
-            ]
+    @property
+    def Z(self):
+        """Return maximum charge number."""
+        # needed for compatibility with PDGID interface and for dpmjet initialization
+        return max(p.Z for p in self._materials)
+
+    @property
+    def A(self):
+        """Return maximum number of nucleons."""
+        # needed for compatibility with PDGID interface and for dpmjet initialization
+        return max(p.A for p in self._materials)
+
+    @property
+    def is_nucleus(self):
+        return True
+
+    def __int__(self):
+        """Return PDGID for heaviest of elements."""
+        return max(int(m) for m in self._materials)
+
+    def azs(self):
+        return [(p.A, p.Z) for p in self._materials]
+
+    def average_mass(self):
+        return sum(
+            f * p.A * nucleon_mass for (f, p) in zip(self._fractions, self._materials)
         )
-
-        self._sort()
-
-        if not (
-            len(self.component_name)
-            == len(self.component_A)
-            == len(self.component_Z)
-            == len(self.component_fractions)
-            == len(self._component_orig_fractions)
-        ):
-            raise RuntimeError(
-                "CompositeTarget:_normalize len of arrays should be equal"
-            )
-
-        if not (np.sum(self.component_fractions) == 1.0):
-            raise RuntimeError("Normalization failed")
-
-    def add_component(self, az, fraction, name=""):
-        """Add material for composite target.
-
-        Fraction needs relative specification, in percent, number,
-        fraction of one, etc. Just make sure it's the same definition
-        for all components. Internal list is sorted according to
-        relative fractions.
-        """
-        self._add_component(az, fraction, name)
-        self._normalize()
-
-    def _sort(self):
-        """Sorts list acording to fraction"""
-
-        def sort_list(k, idcs):
-            return [k[i] for i in idcs]
-
-        idcs = np.argsort(self.component_fractions)
-        self.component_fractions = self.component_fractions[idcs]
-        self._component_orig_fractions = sort_list(self._component_orig_fractions, idcs)
-        self.component_A = sort_list(self.component_A, idcs)
-        self.component_Z = sort_list(self.component_Z, idcs)
-        self.component_name = sort_list(self.component_name, idcs)
-
-    def _get_maximum_AZ(self):
-        a_val = self.component_A
-        max_ind = a_val.index(max(a_val))
-        return self.component_A[max_ind], self.component_Z[max_ind]
-
-    def _get_random_AZ(self):
-        """Return randomly an (A, Z) tuple according to the component fraction."""
-        ic = self.rng.choice(self.ncomponents, 1, p=self.component_fractions)[0]
-        return self.component_A[ic], self.component_Z[ic]
 
     def __str__(self):
-        ostr = "Composite target '" + self.label + "' \n"
-
-        ostr += "Average mass: {0:5.3f}\n".format(
-            np.sum([A * f for A, f in zip(self.component_A, self.component_fractions)])
-        )
-
+        ostr = f"Composite target {self.label!r}\n"
+        ostr += f"Average mass: {self.average_mass():5.3f}\n"
         ostr += "  Nr   |    Name         |  A  |  Z  | fraction\n"
-        templ = "  {0:3}  | {1:15s} |{2:4} |{3:4} |  {4:5.4f}\n"
-        for i in range(self.ncomponents):
-            ostr += templ.format(
-                i,
-                self.component_name[i],
-                self.component_A[i],
-                self.component_Z[i],
-                self.component_fractions[i],
-            )
-
+        for i, (f, m) in enumerate(zip(self._fractions, self._materials)):
+            name = Particle.from_pdgid(m).name
+            ostr += f"  {i:3}  | {name:15s} |{m.A:4} |{m.Z:4} |  {f:5.4f}\n"
         return ostr
 
 
-def _get_particle_input_type(arg):
-    if isinstance(arg, int):
-        return "pdg_id"
-    elif isinstance(arg, str):
-        return "string"
-    elif _is_AZ_tuple(arg):
-        return "tuple"
-    elif isinstance(arg, CompositeTarget):
-        return "composite_target"
-    else:
-        raise ValueError(f"Unmaintained parameter type {type(arg)} = {arg}")
+def _normalize_particle(x):
+    if isinstance(x, (PDGID, CompositeTarget)):
+        return x
+    if isinstance(x, int):
+        return PDGID(x)
+    if isinstance(x, str):
+        try:
+            return PDGID(name2pdg[x])
+        except KeyError:
+            raise ValueError(f"particle with name {x} not recognized")
+    if is_AZ(x):
+        return PDGID(AZ2pdg(*x))
+    raise ValueError(f"{x} is not a valid particle specification")
 
 
-def _normalize_particle(particle):
-    pdg = None
-    nuc_prop = None
-    composite_target = None
-    received = _get_particle_input_type(particle)
-
-    if received == "pdg_id":
-        pdg = particle
-    elif received == "tuple":
-        nuc_prop = particle
-    elif received == "string":
-        pdg = _FromParticleName._get_pdg(particle)
-    elif received == "composite_target":
-        nuc_prop = particle._get_maximum_AZ()
-        composite_target = particle
-
-    return pdg, nuc_prop, composite_target
-
-
+@dataclasses.dataclass
 class EventKinematics:
     """Handles kinematic variables and conversions between reference frames.
 
@@ -281,249 +128,142 @@ class EventKinematics:
 
     """
 
+    frame: EventFrame
+    p1: PDGID
+    p2: Union[PDGID, CompositeTarget]
+    ecm: float  # for ions this is nucleon-nucleon collision system
+    beams: Tuple[np.ndarray, np.ndarray]
+    _gamma_cm: float
+    _betagamma_cm: float
+
     def __init__(
         self,
         *,
-        ecm=None,
-        plab=None,
-        elab=None,
-        ekin=None,
-        beam=None,
+        ecm=0,
+        plab=0,
+        elab=0,
+        ekin=0,
+        beam=0,
         particle1,
         particle2,
     ):
         # Catch input errors
 
-        if sum(bool(x) for x in [ecm, plab, elab, ekin, beam]) != 1:
+        if sum(x != 0 for x in [ecm, plab, elab, ekin, beam]) != 1:
             raise ValueError(
                 "Please provide only one of ecm/plab/elab/ekin/beam arguments"
             )
 
-        self.particle1 = particle1
-        self.particle2 = particle2
+        self.p1 = _normalize_particle(particle1)
+        self.p2 = _normalize_particle(particle2)
 
-        p1pdg, nuc1_prop, composite_target = _normalize_particle(particle1)
-        if composite_target:
-            raise ValueError("Only 2nd parameter could be composite target")
+        if isinstance(self.p1, CompositeTarget):
+            raise ValueError("Only 2nd particle can be CompositeTarget")
 
-        p2pdg, nuc2_prop, self.composite_target = _normalize_particle(particle2)
+        p2_is_composite = isinstance(self.p2, CompositeTarget)
 
-        (
-            self.p1pdg,
-            self.A1,
-            self.Z1,
-            self.p1_is_nucleus,
-            pmass1,
-        ) = self._handle_particle(p1pdg, nuc1_prop)
-        (
-            self.p2pdg,
-            self.A2,
-            self.Z2,
-            self.p2_is_nucleus,
-            pmass2,
-        ) = self._handle_particle(p2pdg, nuc2_prop)
+        m1 = mass(self.p1)
+        m2 = nucleon_mass if p2_is_composite or self.p2.is_nucleus else mass(self.p2)
 
-        info(
-            10,
-            "Proj. and targ. identified",
-            (self.p1pdg, self.A1, self.Z1),
-            (self.p2pdg, self.A2, self.Z2),
-        )
+        self.beams = (np.zeros(4), np.zeros(4))
 
         # Input specification in center of mass frame
         if ecm:
+            self.frame = EventFrame.CENTER_OF_MASS
             self.ecm = ecm
-            self.elab = 0.5 * (ecm**2 - pmass1**2 - pmass2**2) / pmass2
-            self.plab = self._e2p(self.elab, pmass1)
-            info(20, "ecm specified.")
-        # Input specification in lab frame
-        elif elab:
-            if not (elab > pmass1):
-                raise ValueError("Lab. energy > particle mass required.")
-            self.elab = elab
-            self.plab = self._e2p(self.elab, pmass1)
-            self.ecm = np.sqrt(2.0 * self.elab * pmass2 + pmass2**2 + pmass1**2)
-            # self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
-            info(20, "elab specified.")
-        elif ekin:
-            self.elab = ekin + pmass1
-            self.plab = self._e2p(self.elab, pmass1)
-            self.ecm = np.sqrt(2.0 * self.elab * pmass2 + pmass2**2 + pmass1**2)
-            # self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
-            info(20, "ekin specified.")
-        elif plab:
-            self.plab = plab
-            self.elab = np.sqrt(plab**2 + pmass1**2)
-            self.ecm = np.sqrt(2.0 * self.elab * pmass2 + pmass2**2 + pmass1**2)
-            # self.ecm = np.sqrt((self.elab + pmass2)**2 - self.plab**2)
-            info(20, "plab specified.")
-
+            self.elab = 0.5 * (ecm**2 - m1**2 - m2**2) / m2
+            self.plab = energy2momentum(self.elab, m1)
         # Input specification as 4-vectors
         elif beam:
+            if p2_is_composite:
+                raise ValueError("beam cannot be used with CompositeTarget")
+            self.frame = EventFrame.GENERIC
             p1, p2 = beam
+            self.beams[0, 2] = p1
+            self.beams[1, 2] = p2
+            self.beams[0, 3] = np.sqrt(m1**2 + p1**2)
+            self.beams[1, 3] = np.sqrt(m2**2 + p2**2)
             s = p1 + p2
             self.ecm = np.sqrt(s[3] ** 2 - np.sum(s[:3] ** 2))
-            self.elab = 0.5 * (self.ecm**2 - pmass1**2 + pmass2**2) / pmass2
-            self.plab = self._e2p(self.elab, pmass1)
-            info(
-                20,
-                "beam spec: beam, ecms, elab, plab",
-                beam,
-                self.ecm,
-                self.elab,
-                self.plab,
+            self.elab = 0.5 * (self.ecm**2 - m1**2 + m2**2) / m2
+            self.plab = energy2momentum(self.elab, m1)
+        # Input specification in lab frame
+        elif elab:
+            if not (elab > m1):
+                raise ValueError("projectile energy > projectile mass required")
+            self.frame = EventFrame.FIXED_TARGET
+            self.elab = elab
+            self.plab = energy2momentum(self.elab, m1)
+            self.ecm = np.sqrt(2.0 * self.elab * m2 + m2**2 + m1**2)
+            # self.ecm = np.sqrt((self.elab + m2)**2 - self.plab**2)
+        elif ekin:
+            self.frame = EventFrame.FIXED_TARGET
+            self.elab = ekin + m1
+            self.plab = energy2momentum(self.elab, m1)
+            self.ecm = elab2ecm(self.elab, m1, m2)
+        elif plab:
+            self.frame = EventFrame.FIXED_TARGET
+            self.plab = plab
+            self.elab = np.sqrt(self.plab**2 + m1**2)
+            self.ecm = elab2ecm(self.elab, m1, m2)
+        else:
+            assert False  # this should never happen
+
+        self._fill_beams(m1, m2)
+
+        self._gamma_cm = (self.elab + m2) / self.ecm
+        self._betagamma_cm = self.plab / self.ecm
+
+    def apply_boost(self, event, generator_frame):
+        if generator_frame == self.frame:
+            return
+        CMS = EventFrame.CENTER_OF_MASS
+        FT = EventFrame.FIXED_TARGET
+        if generator_frame == FT and self.frame == CMS:
+            bg = -self._betagamma_cm
+        elif generator_frame == CMS and self.frame == FT:
+            bg = self._betagamma_cm
+        else:
+            raise NotImplementedError(
+                f"Boosts from {generator_frame} to {self.frame} are not yet supported"
             )
-        else:
-            raise ValueError("Define at least ecm or plab")
+        g = self._gamma_cm
+        en = g * event.en + bg * event.pz
+        pz = bg * event.en + g * event.pz
+        event.en[:] = en
+        event.pz[:] = pz
 
-        self.pmass1 = pmass1
-        self.pmass2 = pmass2
-
-        # compute center-of-mass variables
-        s = self.ecm**2
-        self.s = s
-        self.pcm = np.sqrt(
-            (s - (pmass1 + pmass2) ** 2) * (s - (pmass1 - pmass2) ** 2)
-        ) / (2 * self.ecm)
-        self.gamma_cm = (self.elab + pmass2) / self.ecm
-        self.betagamma_z_cm = self.plab / self.ecm
-
-        self.boost_def = {
-            ("center-of-mass", "laboratory"): self.boost_cms_to_lab,
-            ("laboratory", "center-of-mass"): self.boost_lab_to_cms,
-        }
-
-        # self.e_range = []
-
-    @staticmethod
-    def _handle_particle(pdg, nuc_prop):
-        # Handle projectile type
-        if pdg:
-            p = particle.Particle.from_pdgid(pdg)
-            pmass = p.mass * 1e-3
-            a = 1
-            z = p.charge
-            is_nucleus = False
-            info(20, "Particle identified from PDG ID.")
-        else:
-            # average nucleon mass
-            pmass = nucleon_mass
-            a, z = nuc_prop
-            is_nucleus = a > 1
-            if is_nucleus:
-                pdg = AZ2pdg(a, z)
-            else:
-                pdg = 2112 if z == 0 else 2212
-            info(20, "Particle is a nucleus.")
-        return pdg, a, z, is_nucleus, pmass
-
-    @property
-    def beam_as_4vec(self):
-        """Return the projectile target kinematics as 4-vectors. Can be used
-        for PHOJET and PYTHIA."""
-
-        p1, p2 = np.array(np.zeros(4), dtype="d"), np.array(np.zeros(4), dtype="d")
-        p1[0] = 0.0
-        p1[1] = 0.0
-        p1[2] = self.pcm
-        p1[3] = np.sqrt(self.pcm**2 + self.pmass1**2)
-        p2[0] = 0.0
-        p2[1] = 0.0
-        p2[2] = -self.pcm
-        p2[3] = np.sqrt(self.pcm**2 + self.pmass2**2)
-
-        return p1, p2
-
-    def _e2p(self, E, m):
-        return np.sqrt((E + m) * (E - m))
-
-    # def __getstate__(self):
-    #     if "boost_def" in self.__dict__:
-    #         _ = self.__dict__.pop("boost_def")
-    #     return self.__dict__
-
-    # def __setstate__(self, state):
-    #     self.__dict__ = state
-    #     self.boost_def = {
-    #         ("center-of-mass", "laboratory"): self.boost_cms_to_lab,
-    #         ("laboratory", "center-of-mass"): self.boost_lab_to_cms,
-    #     }
-
-    def __ne__(self, other):
-        for key, value in other.__dict__.items():
-            if key == "boost_def":
-                continue
-            if value != self.__dict__[key]:
-                return True
-
-        return False
+    def _fill_beams(self, m1, m2):
+        if self.frame == EventFrame.GENERIC:
+            return  # nothing to do
+        if self.frame == EventFrame.CENTER_OF_MASS:
+            s = self.ecm**2
+            pcm = np.sqrt((s - (m1 + m2) ** 2) * (s - (m1 - m2) ** 2)) / (2 * self.ecm)
+            self.beams[0][2] = pcm
+            self.beams[1][2] = -pcm
+        elif self.frame == EventFrame.FIXED_TARGET:
+            self.beams[0][2] = self.plab
+            self.beams[1][2] = 0
+        # set energyies
+        for b, m in zip(self.beams, (m1, m2)):
+            b[3] = np.sqrt(m**2 + b[2] ** 2)
 
     def __eq__(self, other):
-        return not self.__ne__(other)
+        at = dataclasses.astuple(self)
+        bt = dataclasses.astuple(other)
 
-    def __hash__(self):
-        return hash(
-            "_".join(
-                [
-                    "{0}_{1}".format(key, self.__dict__[key])
-                    for key in sorted(self.__dict__.keys())
-                ]
-            )
-        )
+        def eq(a, b):
+            if isinstance(a, Tuple):
+                return all(eq(ai, bi) for (ai, bi) in zip(a, b))
+            if isinstance(a, np.ndarray):
+                return np.array_equal(a, b)
+            return a == b
 
-    def __le__(self, other):
-        return self.ecm < other.ecm
-
-    def __ge__(self, other):
-        return self.ecm > other.ecm
-
-    def __repr__(self):
-        ostr = "Event kinematics:\n"
-        ostr += "\tecm      : {0:10.5f}\n".format(self.ecm)
-        ostr += "\tpcm      : {0:10.5f}\n".format(self.pcm)
-        ostr += "\telab     : {0:10.5f}\n".format(self.elab)
-        ostr += "\tplab     : {0:10.5f}\n".format(self.plab)
-        ostr += "\tgamma_cm : {0:10.5f}\n".format(self.gamma_cm)
-        ostr += "\tbgamm_cm : {0:10.5f}\n".format(self.betagamma_z_cm)
-        ostr += "\tpdgid 1  : {0:10}\n".format(self.p1pdg)
-        ostr += "\tnucprop 1: {0}/{1}\n".format(self.A1, self.Z1)
-        ostr += "\tpdgid 2  : {0:10}\n".format(self.p2pdg)
-        ostr += "\tnucprop 2: {0}/{1}\n".format(self.A2, self.Z2)
-
-        return ostr
-
-    def apply_boost(self, event, gen_frame, user_frame):
-        if (gen_frame, user_frame) not in self.boost_def:
-            info(20, "FS boost not applicable", gen_frame, "->", user_frame)
-            return
-        info(20, "Boosting FS", gen_frame, "->", user_frame)
-        self.boost_def[(gen_frame, user_frame)](event)
-
-    def boost_cms_to_lab(self, event):
-        """Boosts from center of mass to lab frame.
-
-        Viewed from the target rest frame the center of mass frame
-        is moving backwards.
-        """
-        new_en = self.gamma_cm * event.en + self.betagamma_z_cm * event.pz
-        event.pz = self.betagamma_z_cm * event.en + self.gamma_cm * event.pz
-        event.en = new_en
-
-    def boost_lab_to_cms(self, event):
-        """Boosts from lab to center of mass frame
-
-        Viewed from the target rest frame the center of mass frame
-        is moving backwards.
-        """
-        new_en = self.gamma_cm * event.en - self.betagamma_z_cm * event.pz
-        event.pz = -self.betagamma_z_cm * event.en + self.gamma_cm * event.pz
-        event.en = new_en
+        return all(eq(a, b) for (a, b) in zip(at, bt))
 
 
 class CenterOfMass(EventKinematics):
     def __init__(self, ecm, particle1, particle2):
-        # FIXME this is wrong, modification of global shared state
-        impy_config["user_frame"] = "center-of-mass"
         super().__init__(ecm=ecm, particle1=particle1, particle2=particle2)
 
 
@@ -541,9 +281,6 @@ class Momentum(TaggedFloat):
 
 class FixedTarget(EventKinematics):
     def __init__(self, energy, particle1, particle2):
-        # FIXME this is wrong, modification of global shared state
-        impy_config["user_frame"] = "laboratory"
-
         if isinstance(energy, (TotalEnergy, int, float)):
             super().__init__(
                 elab=float(energy), particle1=particle1, particle2=particle2

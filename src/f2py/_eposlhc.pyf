@@ -4779,15 +4779,13 @@ python module _eposlhc ! in
             integer :: idtrafo
             common /ighnx/ ighenex
         end function idtrafo
-        subroutine initializeepos(seed,emax,datpath,lpath,ifram,ippdg,itpdg,idebug,iou) ! in :_eposlhc:CMakeFiles/_eposlhc.dir/epos_interface.f
+        subroutine initepos(seed,emax,datpath,lpath,ifram,idbg,iou) ! in :_eposlhc:CMakeFiles/_eposlhc.dir/epos_interface.f
             real :: seed
             real :: emax
             character*(*) :: datpath
             integer :: lpath
             integer :: ifram
-            integer :: ippdg
-            integer :: itpdg
-            integer :: idebug
+            integer :: idbg
             integer :: iou
             real :: phievt
             integer :: nevt
@@ -5613,7 +5611,7 @@ python module _eposlhc ! in
             common /dparuni/ alpuni,betuni,betpuni,fpuni,ftuni,epspuni,zzpuni,epstuni,zztuni,betfom,alpfom,alpfomi,gamfom
             common /crvar/ idlead,ilprtg
             common /lhctune/ ilhc
-        end subroutine initializeepos
+        end subroutine initepos
         subroutine initeposevt(ecm,ela,ippdg,itpdg) ! in :_eposlhc:CMakeFiles/_eposlhc.dir/epos_interface.f
             real :: ecm
             real :: ela

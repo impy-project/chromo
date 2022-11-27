@@ -7,8 +7,11 @@
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
 import numpy as np
-from impy.common import MCRun, MCEvent, impy_config, CrossSectionData
-from impy.util import info
+from impy.common import MCRun, MCEvent, CrossSectionData
+from impy.util import info, fortran_array_insert, fortran_array_remove
+from impy.kinematics import EventFrame
+from impy.constants import standard_projectiles, nuclei
+import warnings
 
 
 class UrQMDEvent(MCEvent):
@@ -33,9 +36,18 @@ class UrQMD34(MCRun):
     _version = "3.4"
     _library_name = "_urqmd34"
     _event_class = UrQMDEvent
-    _output_frame = "center-of-mass"
+    _frame = EventFrame.CENTER_OF_MASS
+    _projectiles = set(standard_projectiles) | set(nuclei)
 
-    def __init__(self, event_kinematics, seed="random", logfname=None):
+    def __init__(
+        self,
+        evt_kin,
+        seed=None,
+        caltim=200,
+        outtim=200,
+        ct_params=None,
+        ct_options=None,
+    ):
         self._pdg2modid = {
             22: (100, 0),
             111: (101, 0),
@@ -107,15 +119,13 @@ class UrQMD34(MCRun):
             -3334: (-55, 0),
         }
 
-        super().__init__(seed, logfname)
+        super().__init__(seed)
 
-        self._lib.init_rmmard(self._seed)
+        # logging
+        import impy
 
-        info(1, "First initialization")
-        self._lib.urqini(self._lun, impy_config["urqmd"]["debug_level"])
-
-        # Set default stable
-        self._set_final_state_particles()
+        lun = 6  # stdout
+        self._lib.urqini(lun, impy.debug_level)
 
         self._lib.inputs.nevents = 1
         self._lib.rsys.bmin = 0
@@ -126,53 +136,40 @@ class UrQMD34(MCRun):
         self._lib.options.ctoption[7 - 1] = 1
 
         # Change CTParams and/or CTOptions if needed
-        if "CTParams" in impy_config["urqmd"]:
-            for ctp in impy_config["urqmd"]["CTParams"]:
-                self._lib.options.ctparams[ctp[0]] = ctp[1]
-                info(5, "CTParams[{}] changed to {}".format(ctp[0], ctp[1]))
-        if "CTOptions" in impy_config["urqmd"]:
-            for cto in impy_config["urqmd"]["CTOptions"]:
-                self._lib.options.ctoptions[cto[0]] = cto[1]
-                info(5, "CTOptions[{}] changed to {}".format(cto[0], cto[1]))
+        if ct_params:
+            for k, v in ct_params:
+                self._lib.options.ctparams[k] = v
+                info(5, f"CTParams[{k}] changed to {v}")
+        if ct_options:
+            for k, v in ct_options:
+                self._lib.options.ctoptions[k] = v
+                info(5, f"CTOptions[{k}] changed to {v}")
 
-        # Time evolution (only relevant for QMD?)
-        caltim = impy_config["urqmd"]["caltim"]
-        outtim = impy_config["urqmd"]["outtim"]
         # Don't do time evolution in QMD (as in CORSIKA)
         # This sets timestep to final time -> all steps are = 1
         self._lib.pots.dtimestep = outtim
         self._lib.sys.nsteps = int(0.01 + caltim / self._lib.pots.dtimestep)
         self._lib.inputs.outsteps = int(0.01 + caltim / self._lib.pots.dtimestep)
-        self.event_kinematics = event_kinematics
+        self.kinematics = evt_kin
 
-    def _cross_section(self, evt_kin):
-        with self._temporary_evt_kin(evt_kin):
-            tot = self._lib.ptsigtot()
+        self._set_final_state_particles()
+
+    def _cross_section(self):
+        tot = self._lib.ptsigtot()
         return CrossSectionData(tot, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan)
 
-    def _set_event_kinematics(self, k):
-        info(5, "Setting event kinematics")
-        if not k.p1_is_nucleus:
-            # Special projectile
-            self._lib.inputs.prspflg = 1
-            self._lib.sys.ap = 1
-            self._lib.inputs.spityp[0] = self._pdg2modid[k.p1pdg][0]
-            self._lib.inputs.spiso3[0] = self._pdg2modid[k.p1pdg][1]
-        else:
-            self._lib.inputs.prspflg = 0
-            self._lib.sys.ap = k.A1
-            self._lib.sys.zp = k.Z1
-
-        if not k.p2_is_nucleus:
-            # Special projectile
-            self._lib.inputs.trspflg = 1
-            self._lib.sys.at = 1
-            self._lib.inputs.spityp[1] = self._pdg2modid[k.p2pdg][0]
-            self._lib.inputs.spiso3[1] = self._pdg2modid[k.p2pdg][1]
-        else:
-            self._lib.inputs.trspflg = 0
-            self._lib.sys.at = k.A2
-            self._lib.sys.zt = k.Z2
+    def _set_kinematics(self, kin):
+        for i, (p, x) in enumerate(zip((kin.p1, kin.p2), "pt")):
+            if p.is_nucleus:
+                setattr(self._lib.inputs, f"{x}rspflg", 0)
+                setattr(self._lib.sys, f"a{x}", p.A)
+                setattr(self._lib.sys, f"z{x}", p.Z)
+            else:
+                # Special projectile
+                setattr(self._lib.inputs, f"{x}rspflg", 1)
+                setattr(self._lib.sys, f"a{x}", 1)
+                self._lib.inputs.spityp[i] = self._pdg2modid[p][0]
+                self._lib.inputs.spiso3[i] = self._pdg2modid[p][1]
 
         # Set impact parameter (to be revisited)
         # AF: Does this work for pions or kaons??
@@ -184,12 +181,12 @@ class UrQMD34(MCRun):
 
         # Output only correct in lab frame, don't try using the
         # "equal speed" frame.
-        self._lib.input2.pbeam = k.plab
+        self._lib.input2.pbeam = kin.plab
         self._lib.inputs.srtflag = 2
 
         # Unclear what the effect of the equation of state is but
         # should be required for very low energy.
-        if k.plab > 4.9:
+        if kin.plab > 4.9:
             self._lib.inputs.eos = 0
             # This is the fast method as set default in urqinit.f
             self._lib.options.ctoption[24 - 1] = 2
@@ -198,41 +195,20 @@ class UrQMD34(MCRun):
             # A hard sphere potential is required for equation of state
             self._lib.options.ctoption[24 - 1] = 0
 
-    def _attach_log(self, fname=None):
-        """Routes the output to a file or the stdout."""
-        fname = impy_config["output_log"] if fname is None else fname
-        if fname == "stdout":
-            lun = 6
-            info(5, "Output is routed to stdout.")
-        else:
-            lun = self._attach_fortran_logfile(fname)
-            info(5, "Output is routed to", fname, "via LUN", lun)
-
-        self._lun = lun
-
     def _set_stable(self, pdgid, stable):
-        stable_ids = self._lib.stables.stabvec
-        nstab = self._lib.stables.nstable
         try:
             uid = self._pdg2modid[pdgid][0]
         except KeyError:
-            import warnings
-
-            warnings.warn(f"\nParticle {pdgid} unknown to UrQMD", RuntimeWarning)
+            warnings.warn(f"{pdgid} unknown to UrQMD", RuntimeWarning)
             return
 
+        s = self._lib.stables
         if stable:
-            if uid not in stable_ids[:nstab]:
-                self._lib.stables.stabvec[nstab] = uid
-                self._lib.stables.nstable += 1
+            fortran_array_insert(s.stabvec, s.nstable, uid)
         else:
-            if uid in stable_ids[:nstab]:
-                self._lib.stables.stabvec[: nstab - 1] = np.array(
-                    [pid for pid in stable_ids[:nstab] if pid != uid]
-                )
-                self._lib.stables.nstable -= 1
+            fortran_array_remove(s.stabvec, s.nstable, uid)
 
-    def _generate_event(self):
+    def _generate(self):
         # If new event, initialize projectile and target
         if self._lib.options.ctoption[40 - 1] == 0:
             if self._lib.inputs.prspflg == 0:
