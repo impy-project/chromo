@@ -88,10 +88,10 @@ class Root:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, *args):
         if self._iparticle > 0:
             self._write_buffers()
-        self._file.__exit__(exc_type, exc_value, traceback)
+        return self._file.__exit__(*args)
 
     def _write_buffers(self):
         import awkward as ak
@@ -170,7 +170,7 @@ class Svg:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        return True
+        return False
 
     def write(self, event):
         ge = event.to_hepmc3()
@@ -188,16 +188,12 @@ class Hepmc:
         from pyhepmc.io import _WrappedWriter, WriterAscii
         import gzip
 
-        if file.suffix == ".gz":
-            op = gzip.open
-        else:
-            op = open
-
         # TODO add metadata to GenRunInfo, needs
         # fix in pyhepmc
-        # TODO fix this in pyhepmc, we should be able
-        # to use the public API and not these secrets
 
+        # TODO fix the following in pyhepmc, we should be able
+        # to use the public API and not these secrets
+        op = gzip.open if file.suffix == ".gz" else open
         self._file = op(file, "wb")
         self._ios = pyiostream(self._file)
         self._writer = _WrappedWriter(self._ios, None, WriterAscii)
@@ -209,7 +205,7 @@ class Hepmc:
         self._writer.__exit__(*args)
         self._ios.__exit__(*args)
         self._file.__exit__(*args)
-        return True
+        return False
 
     def write(self, event):
         self._writer.write(event)
