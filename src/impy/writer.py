@@ -1,5 +1,5 @@
 import numpy as np
-from impy.constants import quarks_and_diquarks_and_gluons
+from impy.constants import quarks_and_diquarks_and_gluons, GeV, millibarn
 import dataclasses
 from pathlib import Path
 
@@ -16,19 +16,20 @@ def _raise_import_error(name, task):
 
 # Differences to CRMC
 #
-# - Header tree
-#   - Names in snake_case instead of CamelCase
+# - Names of trees and branches are in snake_case instead of CamelCase
+#
+# - Header tree was removed
+#   - Metadata are stored in YAML format in title of particle tree
 #   - Renamed branches
 #     - HEModel -> model
 #     - sigmaTot -> sigma_total
 #     - sigmaEl -> sigma_elastic
 #     - sigmaInel -> sigma_inelastic
 #   - Branches sigmaPair* not included
-#   - Branch model contains name and version as a byte array
 #
 # - Particle tree
 #   - Branch n instead of nPart, name cannot be chosen in uproot
-#   - ImpactParameter renamed to impact
+#   - Branch ImpactParameter renamed to impact
 #   - Branch E is redundant, we skip this to save space
 #   - Extra branches: parent
 #
@@ -36,30 +37,32 @@ def _raise_import_error(name, task):
 # so we don't write them. Long-lived particles are final state, and there is no
 # interesting information in the vertices of very short-lived particles.
 class Root:
-    def __init__(self, file, config, cross_section, write_vertices=False):
+    def __init__(self, file, config, model, write_vertices=False):
         try:
             import uproot
         except ModuleNotFoundError:
             _raise_import_error("uproot", "write ROOT files")
 
+        # FIXME projectile_momentum and target_momentum are 0 if -S option is used,
+        # to be fixed in follow-up PR that fixes EventKinematics
         header = {
-            "seed": config.seed,
+            "seed": model.seed,
             "projectile_id": config.projectile_id,
-            "projectile_momentum": config.projectile_momentum,
+            "projectile_momentum": config.projectile_momentum / GeV,
             "target_id": config.target_id,
-            "target_momentum": config.target_momentum,
-            "model": config.model.label,
+            "target_momentum": config.target_momentum / GeV,
+            "model": model.label,
         }
         header.update(
             {
-                f"sigma_{k}": v
-                for (k, v) in dataclasses.asdict(cross_section).items()
+                f"sigma_{k}": v / millibarn
+                for (k, v) in dataclasses.asdict(model.cross_section()).items()
                 if not np.isnan(v)
             }
         )
         header.update(
             {
-                "energy_unit": "MeV",
+                "energy_unit": "GeV",
                 "length_unit": "mm",
                 "sigma_unit": "mb",
             }
@@ -171,7 +174,7 @@ class Root:
 
 
 class Svg:
-    def __init__(self, file, config, cross_section):
+    def __init__(self, file, config, model):
         self._idx = 0
         self._template = (file.parent, file.stem, file.suffix)
 
@@ -197,7 +200,7 @@ class Svg:
 
 
 class Hepmc:
-    def __init__(self, file, config, cross_section):
+    def __init__(self, file, config, model):
         try:
             from pyhepmc._core import pyiostream
             from pyhepmc.io import _WrappedWriter, WriterAscii

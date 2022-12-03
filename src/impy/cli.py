@@ -237,8 +237,9 @@ def parse_arguments():
         m2 = Particle.from_pdgid(args.target_id).mass * MeV
         e1 = sqrt(m1**2 + pr**2)
         e2 = sqrt(m2**2 + ta**2)
-        # TODO use the numerically stable formula instead
-        s = (e1 + e2) ** 2 - (pr + ta) ** 2
+        a = e1 + e2
+        b = pr + ta
+        s = (a + b) * (a - b)
         if s <= 0:
             raise SystemExit("Error: s <= 0")
         args.sqrts = sqrt(s)
@@ -326,7 +327,7 @@ def main():
 
     task_id = None
     try:
-        ofile = FORMATS[args.output](args.out, args, model.cross_section())
+        ofile = FORMATS[args.output](args.out, args, model)
         with ofile:
             # workaround: several models generate extra print when first
             # event is generated, this interferes with progress bar so we
