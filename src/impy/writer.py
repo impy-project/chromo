@@ -8,6 +8,12 @@ INT_TYPE = np.int32
 FLOAT_TYPE = np.float32
 
 
+def _raise_import_error(name, task):
+    raise ModuleNotFoundError(
+        f"{name} not found, please install {name} " f"(`pip install {name}`) to {task}"
+    )
+
+
 # Differences to CRMC
 #
 # - Header tree
@@ -31,7 +37,10 @@ FLOAT_TYPE = np.float32
 # interesting information in the vertices of very short-lived particles.
 class Root:
     def __init__(self, file, config, cross_section, write_vertices=False):
-        import uproot
+        try:
+            import uproot
+        except ModuleNotFoundError:
+            _raise_import_error("uproot", "write ROOT files")
 
         header = {
             "seed": config.seed,
@@ -169,11 +178,16 @@ class Svg:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        return False
+    def __exit__(self, *args):
+        return
 
     def write(self, event):
-        ge = event.to_hepmc3()
+        try:
+            ge = event.to_hepmc3()
+        except ModuleNotFoundError:
+            _raise_import_error("pyhepmc", "write SVGs")
+        if not hasattr(ge, "_repr_html_"):
+            _raise_import_error("graphviz", "write SVGs")
         svg = ge._repr_html_()
         odir, name, ext = self._template
         fn = Path(odir) / f"{name}_{self._idx:03}{ext}"
@@ -184,8 +198,12 @@ class Svg:
 
 class Hepmc:
     def __init__(self, file, config, cross_section):
-        from pyhepmc._core import pyiostream
-        from pyhepmc.io import _WrappedWriter, WriterAscii
+        try:
+            from pyhepmc._core import pyiostream
+            from pyhepmc.io import _WrappedWriter, WriterAscii
+        except ModuleNotFoundError:
+            _raise_import_error("pyhepmc", "write HepMC files")
+
         import gzip
 
         # TODO add metadata to GenRunInfo, needs
@@ -205,7 +223,6 @@ class Hepmc:
         self._writer.__exit__(*args)
         self._ios.__exit__(*args)
         self._file.__exit__(*args)
-        return False
 
     def write(self, event):
         self._writer.write(event)

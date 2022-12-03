@@ -324,26 +324,31 @@ def main():
 
     model = args.model(evt_kin)
 
-    ofile = FORMATS[args.output](args.out, args, model.cross_section())
-
     task_id = None
-    with ofile:
-        # workaround: several models generate extra print when first
-        # event is generated, this interferes with progress bar so we
-        # create bar only after second event is generated
-        with Progress(
-            MofNCompleteColumn(),
-            BarColumn(),
-            TaskProgressColumn(),
-            "ETA",
-            TimeRemainingColumn(elapsed_when_finished=True),
-            SpeedColumn(),
-        ) as bar:
-            for event in model(args.number):
-                ofile.write(event)
-                if task_id is None:
-                    task_id = bar.add_task("", total=args.number)
-                bar.advance(task_id, 1)
+    try:
+        ofile = FORMATS[args.output](args.out, args, model.cross_section())
+        with ofile:
+            # workaround: several models generate extra print when first
+            # event is generated, this interferes with progress bar so we
+            # create bar only after second event is generated
+            with Progress(
+                MofNCompleteColumn(),
+                BarColumn(),
+                TaskProgressColumn(),
+                "ETA",
+                TimeRemainingColumn(elapsed_when_finished=True),
+                SpeedColumn(),
+            ) as bar:
+                for event in model(args.number):
+                    ofile.write(event)
+                    if task_id is None:
+                        task_id = bar.add_task("", total=args.number)
+                    bar.advance(task_id, 1)
+    except Exception:
+        import traceback
+
+        msg = traceback.format_exc(chain=False, limit=0)
+        raise SystemExit(msg.strip())
 
 
 if __name__ == "__main__":
