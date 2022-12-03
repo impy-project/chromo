@@ -10,8 +10,6 @@ import pyhepmc
 import uproot
 import platform
 
-IMPY_VERSION = f"impy {version}"
-
 
 def format_matches_extension(p):
     ext = p.suffixes
@@ -64,7 +62,7 @@ def test_nothing():
 
 
 def test_version():
-    run("-v", stdout=IMPY_VERSION)
+    run("-v", stdout=f"impy {version}")
 
 
 def test_minimum():
