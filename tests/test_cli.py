@@ -266,6 +266,12 @@ def test_format_2(format):
 
 
 def test_format_3():
+    if platform.system() == "Windows":
+        pytest.xfail(
+            "Test aborts on Windows with this message: "
+            "UnicodeEncodeError: 'charmap' codec can't encode character '\u0394'"
+            " in  position 20049: character maps to <undefined>"
+        )
     run(
         "-s",
         "1",
