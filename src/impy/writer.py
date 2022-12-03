@@ -10,7 +10,7 @@ FLOAT_TYPE = np.float32
 
 def _raise_import_error(name, task):
     raise ModuleNotFoundError(
-        f"{name} not found, please install {name} " f"(`pip install {name}`) to {task}"
+        f"{name} not found, please install {name} (`pip install {name}`) to {task}"
     )
 
 
