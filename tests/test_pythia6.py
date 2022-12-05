@@ -161,7 +161,7 @@ def test_pickle(event):
     run_in_separate_process(run_pickle)
 
 
-def run_pp_collision_copy():
+def run_event_copy():
     from impy.models.pythia6 import PYTHIA6Event
     from impy.common import EventData
 
@@ -187,4 +187,4 @@ def run_pp_collision_copy():
 
 
 def test_event_copy():
-    run_in_separate_process(run_pp_collision_copy)
+    run_in_separate_process(run_event_copy)
