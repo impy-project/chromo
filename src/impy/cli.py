@@ -346,6 +346,9 @@ def main():
                         task_id = bar.add_task("", total=args.number)
                     bar.advance(task_id, 1)
     except Exception:
+        if int(os.environ.get("DEBUG", "0")) > 0:
+            raise
+
         import traceback
 
         msg = traceback.format_exc(chain=False, limit=0)

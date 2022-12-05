@@ -248,10 +248,15 @@ def test_format_1():
 
 
 @pytest.mark.parametrize("format", ("hepmc", "hepmcgz", "root"))
-def test_format_2(format):
+@pytest.mark.parametrize("model", ("EPOS-LHC", "SIBYLL-2.1", "Pythia-6.4"))
+def test_format_2(format, model):
     ext = format
     if ext.endswith("gz"):
         ext = ext[:-2] + ".gz"
+
+    pyname = {"EPOS-LHC": "eposlhc", "SIBYLL-2.1": "sibyll21", "Pythia-6.4": "pythia6"}[
+        model
+    ]
 
     run(
         "-s",
@@ -260,8 +265,10 @@ def test_format_2(format):
         "100",
         "-o",
         format,
+        "-m",
+        model,
         stdout=f"Format[ \t]*{format}",
-        file=f"impy_eposlhc_1_2212_2212_100.{ext}",
+        file=f"impy_{pyname}_1_2212_2212_100.{ext}",
     )
 
 

@@ -73,7 +73,7 @@ class SIBYLLRun(MCRun):
             evt_kin = self.event_kinematics
 
         sigproj = None
-        if abs(evt_kin.p1pdg) in [2212, 2112, 3112]:
+        if abs(evt_kin.p1pdg) in [2212, 2112]:
             sigproj = 1
         elif abs(evt_kin.p1pdg) == 211:
             sigproj = 2
@@ -85,24 +85,18 @@ class SIBYLLRun(MCRun):
             )
 
         if evt_kin.p1_is_nucleus:
-            raise ValueError(f"Nuclear projectiles not supported by {self.name}")
-
+            raise ValueError(f"Nuclear projectiles not supported by {self.label}")
         if evt_kin.p2_is_nucleus:
-            # Return production cross section for nuclear target
-            try:
-                s = self._lib.sib_sigma_hnuc(sigproj, evt_kin.A2, evt_kin.ecm)
-            except AttributeError:
-                raise ValueError(f"Nuclear projectiles not supported by {self.label}")
-        else:
-            s = self._lib.sib_sigma_hp(sigproj, evt_kin.ecm)
-        # TODO this needs a test
+            raise ValueError(f"Nuclear projectiles not yet supported by {self.label}")
+
+        tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sigproj, evt_kin.ecm)
         return CrossSectionData(
-            total=s[0],
-            elastic=s[1],
-            inelastic=s[2],
-            diffractive_xb=s[3] / 3,
-            diffractive_ax=s[3] / 3,
-            diffractive_xx=s[3] / 3,
+            total=tot,
+            elastic=el,
+            inelastic=inel,
+            diffractive_xb=diff[0],
+            diffractive_ax=diff[1],
+            diffractive_xx=diff[2],
             diffractive_axb=0,
         )
 
