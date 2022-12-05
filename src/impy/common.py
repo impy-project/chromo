@@ -610,8 +610,7 @@ class MCRun(ABC):
         nretries = 0
         for nev in self._composite_plan(nevents):
             while nev > 0:
-                success = self._generate_event()
-                if success:
+                if self._generate_event():
                     nretries = 0
                     self.nevents += 1
                     nev -= 1
@@ -661,7 +660,7 @@ class MCRun(ABC):
         """The method to generate a new event.
 
         Returns:
-            (int) : Rejection flag = 0 if everything is ok.
+            bool : True if event was successfully generated and False otherwise.
         """
         pass
 
