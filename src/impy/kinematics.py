@@ -51,9 +51,23 @@ class _FromParticleName:
         Higgs=25,
         proton=2212,
         antiproton=-2212,
+        p=2212,
+        pbar=-2212,
         neutron=2112,
         antineutron=-2112,
+        n=2112,
+        nbar=-2112,
+        C=all_pdgs["C12"],
+        N=all_pdgs["N14"],
+        O=all_pdgs["O16"],
+        Pb=all_pdgs["Pb206"],
+        He=all_pdgs["He4"],
+        Ne=all_pdgs["Ne20"],
+        Ar=all_pdgs["Ar40"],
+        Xe=all_pdgs["Xe131"],
     )
+    all_pdgs["p~"] = all_pdgs["pbar"]
+    all_pdgs["n~"] = all_pdgs["nbar"]
 
     @staticmethod
     def _get_pdg(pname):
@@ -325,7 +339,7 @@ class EventKinematics:
         # Input specification in lab frame
         elif elab:
             if not (elab > pmass1):
-                raise RuntimeError("Lab. energy > particle mass required.")
+                raise ValueError("Lab. energy > particle mass required.")
             self.elab = elab
             self.plab = self._e2p(self.elab, pmass1)
             self.ecm = np.sqrt(2.0 * self.elab * pmass2 + pmass2**2 + pmass1**2)
@@ -360,9 +374,7 @@ class EventKinematics:
                 self.plab,
             )
         else:
-            raise Exception(
-                self.__class__.__name__ + "::init(): Define at least ecm or plab"
-            )
+            raise ValueError("Define at least ecm or plab")
 
         self.pmass1 = pmass1
         self.pmass2 = pmass2
@@ -510,6 +522,7 @@ class EventKinematics:
 
 class CenterOfMass(EventKinematics):
     def __init__(self, ecm, particle1, particle2):
+        # FIXME this is wrong, modification of global shared state
         impy_config["user_frame"] = "center-of-mass"
         super().__init__(ecm=ecm, particle1=particle1, particle2=particle2)
 
@@ -528,6 +541,7 @@ class Momentum(TaggedFloat):
 
 class FixedTarget(EventKinematics):
     def __init__(self, energy, particle1, particle2):
+        # FIXME this is wrong, modification of global shared state
         impy_config["user_frame"] = "laboratory"
 
         if isinstance(energy, (TotalEnergy, int, float)):

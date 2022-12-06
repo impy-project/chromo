@@ -1,7 +1,7 @@
 import numpy as np
 
 from impy import impy_config
-from impy.common import MCEvent, MCRun
+from impy.common import MCEvent, MCRun, CrossSectionData
 from impy.util import info, _cached_data_dir
 
 
@@ -17,37 +17,12 @@ class EPOSEvent(MCEvent):
     def _charge_init(self, npart):
         return self._lib.charge_vect(self._lib.hepevt.idhep[:npart])
 
-    # Nuclear collision parameters
-    @property
-    def impact_parameter(self):
-        """Returns impact parameter for nuclear collisions."""
+    def _get_impact_parameter(self):
         # return self._lib.nuc3.bimp
-        return self._lib.cevt.bimevt
+        return float(self._lib.cevt.bimevt)
 
-    @property
-    def n_wounded_A(self):
-        """Number of wounded nucleons side A"""
-        return self._lib.cevt.npjevt
-
-    @property
-    def n_wounded_B(self):
-        """Number of wounded nucleons (target) side B"""
-        return self._lib.cevt.ntgevt
-
-    @property
-    def n_wounded(self):
-        """Number of total wounded nucleons"""
-        return self.n_wounded_A + self.n_wounded_B
-
-    @property
-    def n_spectator_A(self):
-        """Number of spectator nucleons side A"""
-        return self._lib.cevt.npnevt + self._lib.cevt.nppevt
-
-    @property
-    def n_spectator_B(self):
-        """Number of spectator nucleons (target) side B"""
-        return self._lib.cevt.ntnevt + self._lib.cevt.ntpevt
+    def _get_n_wounded(self):
+        return int(self._lib.cevt.npjevt), int(self._lib.cevt.ntgevt)
 
 
 class EposLHC(MCRun):
@@ -67,7 +42,6 @@ class EposLHC(MCRun):
     def __init__(self, event_kinematics, seed=None, logfname=None):
         super().__init__(seed, logfname)
 
-        info(1, "First initialization")
         self._lib.aaset(0)
 
         if impy_config["user_frame"] == "center-of-mass":
@@ -97,12 +71,20 @@ class EposLHC(MCRun):
         self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.float32])
         self.event_kinematics = event_kinematics
 
-    def _sigma_inel(self, evt_kin):
+    def _cross_section(self, evt_kin):
         with self._temporary_evt_kin(evt_kin):
-            return self._lib.xsection()[1]
+            total, inel, el, dd, sd, _ = self._lib.xsection()
+            return CrossSectionData(
+                total=total,
+                inelastic=inel,
+                elastic=el,
+                diffractive_xb=sd / 2,  # this is an approximation
+                diffractive_ax=sd / 2,  # this is an approximation
+                diffractive_xx=dd,
+                diffractive_axb=0,
+            )
 
     def _set_event_kinematics(self, k):
-        info(5, "Setting event kinematics")
         self._lib.initeposevt(k.ecm, -1.0, k.p1pdg, k.p2pdg)
 
     def _attach_log(self, fname=None):
@@ -118,13 +100,41 @@ class EposLHC(MCRun):
         self._lun = lun
 
     def _set_stable(self, pdgid, stable):
+        # EPOS decays all unstable particles by default. It uses a nodcy common block
+        # to prevent decay of particles. The common block contains the array
+        # nody and the length nrnody. The array holds EPOS particle ids of
+        # particles that should not be decayed.
+
+        idx = self._lib.idtrafo("pdg", "nxs", pdgid)
+
+        c = self._lib.nodcy  # common block
         if stable:
-            self._lib.setstable(pdgid)
+            # append to nodcy.nody array
+            if c.nrnody == len(c.nody):
+                raise RuntimeError(
+                    f"maximum number of stable particles reached ({c.nrnody})"
+                )
+            c.nody[c.nrnody] = idx
+            c.nrnody += 1
         else:
-            self._lib.setunstable(pdgid)
+            # find and remove entry from nodcy.nody array
+            for i in range(c.nrnody):
+                if c.nody[i] == idx:
+                    c.nrnody -= 1
+                    for j in range(i, c.nrnody):
+                        c.nody[j] = c.nody[j + 1]
+                    break
+
+    def _get_stable(self):
+        result = []
+        c = self._lib.nodcy  # common block
+        for i in range(c.nrnody):
+            pid = self._lib.idtrafo("nxs", "pdg", c.nody[i])
+            result.append(pid)
+        return result
 
     def _generate_event(self):
         self._lib.aepos(-1)
         self._lib.afinal()
         self._lib.hepmcstore()
-        return False
+        return True

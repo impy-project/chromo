@@ -1,5 +1,5 @@
 import numpy as np
-from impy.common import MCRun, MCEvent
+from impy.common import MCRun, MCEvent, CrossSectionData
 from impy import impy_config
 from impy.util import info
 
@@ -57,11 +57,19 @@ class Pythia6(MCRun):
         # # Set ctau threshold in PYTHIA for the default stable list
         self._lib.pydat1.parj[70] = impy_config["tau_stable"] * sec2cm * 10.0  # mm
 
-    def _sigma_inel(self, evt_kin):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
+    def _cross_section(self, evt_kin):
         with self._temporary_evt_kin(evt_kin):
-            return self._lib.pyint7.sigt[0, 0, 5]
+            s = self._lib.pyint7.sigt[0, 0]
+            c = CrossSectionData(
+                total=s[0],
+                elastic=s[1],
+                inelastic=s[0] - s[1],
+                diffractive_xb=s[2],
+                diffractive_ax=s[3],
+                diffractive_xx=s[4],
+                diffractive_axb=0,
+            )
+        return c
 
     def _set_event_kinematics(self, k):
         info(5, "Setting event kinematics")
@@ -103,4 +111,4 @@ class Pythia6(MCRun):
     def _generate_event(self):
         self.event_call()
         self._lib.pyhepc(1)
-        return False
+        return True

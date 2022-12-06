@@ -1,5 +1,5 @@
 import numpy as np
-from impy.common import MCRun, MCEvent, RMMARDState, impy_config
+from impy.common import MCRun, MCEvent, RMMARDState, impy_config, CrossSectionData
 from impy.util import info
 import dataclasses
 
@@ -12,21 +12,11 @@ class SibyllEvent(MCEvent):
     def _charge_init(self, npart):
         return self._lib.schg.ichg[:npart]
 
-    # Nuclear collision parameters
-    @property
-    def impact_parameter(self):
-        """Impact parameter for nuclear collisions."""
+    def _get_impact_parameter(self):
         return self._lib.cnucms.b
 
-    @property
-    def n_wounded_A(self):
-        """Number of wounded nucleons side A"""
-        return self._lib.cnucms.na
-
-    @property
-    def n_wounded_B(self):
-        """Number of wounded nucleons side B"""
-        return self._lib.cnucms.nb
+    def _get_n_wounded(self):
+        return self._lib.cnucms.na, self._lib.cnucms.nb
 
     @property
     def n_NN_interactions(self):
@@ -78,9 +68,12 @@ class SIBYLLRun(MCRun):
 
         self._set_final_state_particles()
 
-    def _sigma_inel(self, evt_kin):
+    def _cross_section(self, evt_kin):
+        if evt_kin is None:
+            evt_kin = self.event_kinematics
+
         sigproj = None
-        if abs(evt_kin.p1pdg) in [2212, 2112, 3112]:
+        if abs(evt_kin.p1pdg) in [2212, 2112]:
             sigproj = 1
         elif abs(evt_kin.p1pdg) == 211:
             sigproj = 2
@@ -92,16 +85,20 @@ class SIBYLLRun(MCRun):
             )
 
         if evt_kin.p1_is_nucleus:
-            raise ValueError(f"Nuclear projectiles not supported by {self.name}")
-
+            raise ValueError(f"Nuclear projectiles not supported by {self.label}")
         if evt_kin.p2_is_nucleus:
-            # Return production cross section for nuclear target
-            try:
-                return self._lib.sib_sigma_hnuc(sigproj, evt_kin.A2, evt_kin.ecm)[0]
-            except AttributeError:
-                raise ValueError(f"Nuclear projectiles not supported by {self.label}")
+            raise ValueError(f"Nuclear projectiles not yet supported by {self.label}")
 
-        return self._lib.sib_sigma_hp(sigproj, evt_kin.ecm)[2]
+        tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sigproj, evt_kin.ecm)
+        return CrossSectionData(
+            total=tot,
+            elastic=el,
+            inelastic=inel,
+            diffractive_xb=diff[0],
+            diffractive_ax=diff[1],
+            diffractive_xx=diff[2],
+            diffractive_axb=0,
+        )
 
     def sigma_inel_air(self):
         """Inelastic cross section according to current
@@ -164,7 +161,7 @@ class SIBYLLRun(MCRun):
         self._lib.sibyll(self._sibproj, self._iatarg, k.ecm)
         self._lib.decsib()
         self._lib.sibhep3()
-        return 0  # SIBYLL never rejects
+        return True
 
     @property
     def random_state(self):
@@ -184,7 +181,7 @@ class Sibyll21(SIBYLLRun):
         self._lib.sibyll(self._sibproj, self._iatarg, k.ecm)
         self._lib.decsib()
         self._lib.sibhep1()
-        return 0  # SIBYLL never rejects
+        return True
 
 
 class Sibyll23(SIBYLLRun):

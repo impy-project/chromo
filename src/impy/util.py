@@ -3,6 +3,7 @@
 import warnings
 import inspect
 import os
+import platform
 from pathlib import Path
 import urllib.request
 import zipfile
@@ -225,6 +226,15 @@ class OutputGrabber(object):
 
 def _download_file(outfile, url):
     """Download a file from 'url' to 'outfile'"""
+    from rich.progress import (
+        Progress,
+        TextColumn,
+        BarColumn,
+        SpinnerColumn,
+        DownloadColumn,
+        TimeRemainingColumn,
+    )
+
     fname = Path(url).name
     try:
         response = urllib.request.urlopen(url)
@@ -242,28 +252,26 @@ def _download_file(outfile, url):
         blocksize = min_blocksize
 
     wrote = 0
-    with open(outfile, "wb") as f:
-        while True:
-            data = response.read(blocksize)
-            if not data:
-                break
-            f.write(data)
-            wrote += len(data)
-            if total_size:
-                print(
-                    f"Downloading {fname}: {wrote/total_size*100:.0f}% "
-                    f"done ({wrote/(1024*1024):.0f} Mb) \r",
-                    end=" ",
-                )
-            else:
-                print(
-                    f"Downloading {fname}: {wrote/(1024*1024):.0f} Mb downloaded \r",
-                    end=" ",
-                )
-    print()
+    with Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn() if total_size else SpinnerColumn(),
+        DownloadColumn(),
+        TimeRemainingColumn(),
+        transient=True,
+    ) as bar:
+        task_id = bar.add_task(f"Downloading {fname}", total=total_size)
+
+        with open(outfile, "wb") as f:
+            chunk = True
+            while chunk:
+                chunk = response.read(blocksize)
+                f.write(chunk)
+                nchunk = len(chunk)
+                wrote += nchunk
+                bar.advance(task_id, nchunk)
+
     if total_size and wrote != total_size:
         raise ConnectionError(f"{fname} has not been downloaded")
-    return True
 
 
 def _cached_data_dir(url):
@@ -287,12 +295,12 @@ def _cached_data_dir(url):
         shutil.rmtree(temp_dir, ignore_errors=True)
         if model_dir.exists():
             shutil.move(model_dir, temp_dir)
-        if _download_file(zip_file, url):
-            if zipfile.is_zipfile(zip_file):
-                with zipfile.ZipFile(zip_file, "r") as zf:
-                    zf.extractall(base_dir.as_posix())
-                zip_file.unlink()
-                shutil.rmtree(temp_dir, ignore_errors=True)
+        _download_file(zip_file, url)
+        if zipfile.is_zipfile(zip_file):
+            with zipfile.ZipFile(zip_file, "r") as zf:
+                zf.extractall(base_dir.as_posix())
+            zip_file.unlink()
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
         version_glob = vname.split("_v")[0]
         for vfile in model_dir.glob(f"{version_glob}_v*"):
@@ -441,3 +449,58 @@ try:
 
 except ModuleNotFoundError:
     pass
+
+
+def tolerant_string_match(a, b):
+    """
+    Return True if all characters in appear also in b in same order.
+
+    This algorithm is slow and should only be used were speed does
+    not matter.
+    """
+    last = 0
+    for c in a:
+        i = b.find(c)
+        if i == -1:
+            return False
+        if i < last:
+            return False
+        last = i
+    return True
+
+
+def get_all_models(skip=None):
+    from impy import models
+    from impy.common import MCRun
+
+    if skip is None:
+        skip = []
+    if platform.system() == "Windows":
+        skip = list(skip) + [models.UrQMD34, models.Pythia8]
+
+    result = []
+    for key in dir(models):
+        obj = getattr(models, key)
+        if skip and obj in skip:
+            continue
+        try:
+            if issubclass(obj, MCRun):  # fails if obj is not a class
+                result.append(obj)
+        except TypeError:
+            pass
+
+    return result
+
+
+def naneq(a, b):
+    """
+    Return True if a == b or if a and b are both NaN.
+
+    Parameters
+    ----------
+    a : float
+        First float.
+    b : float
+        Second float.
+    """
+    return a == b or (np.isnan(a) and np.isnan(b))

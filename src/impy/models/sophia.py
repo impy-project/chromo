@@ -1,5 +1,5 @@
 import numpy as np
-from impy.common import MCRun, MCEvent, impy_config
+from impy.common import MCRun, MCEvent, impy_config, CrossSectionData
 from impy.util import info
 
 sophia_interaction_types = [
@@ -78,13 +78,7 @@ class Sophia20(MCRun):
                 + "but received nucleus = ({0}, {1})".format(k.A2, k.Z2)
             )
 
-    def _sigma_inel(self, evt_kin):
-        import warnings
-
-        warnings.warn(
-            "Returns total cross-section instead of inelastic", RuntimeWarning
-        )
-
+    def _cross_section(self, evt_kin):
         self._validate_kinematics(evt_kin)
 
         nucleon_code_number = self._lib.icon_pdg_sib(evt_kin.p2pdg)
@@ -94,9 +88,10 @@ class Sophia20(MCRun):
         # where nucleon is at rest and photon is moving
         total_crossection_id = 3  # 3 is for total crossection
         # cross section in micro barn
-        return self._lib.crossection(
+        total = self._lib.crossection(
             energy_of_photon, total_crossection_id, nucleon_code_number
         )
+        return CrossSectionData(total, np.nan, np.nan, np.nan, np.nan, np.nan)
 
     def _set_event_kinematics(self, k):
         info(5, "Setting event kinematics")
@@ -163,4 +158,4 @@ class Sophia20(MCRun):
 
         # prepare hepevt common block
         self._lib.toevt()
-        return 0  # No rejection is implemented so far
+        return True

@@ -1,4 +1,4 @@
-from impy.common import MCRun, MCEvent
+from impy.common import MCRun, MCEvent, CrossSectionData
 from impy import impy_config
 from impy.util import info, _cached_data_dir
 
@@ -19,26 +19,11 @@ class DpmjetIIIEvent(MCEvent):
     def _charge_init(self, npart):
         return self._lib.dtpart.iich[self._lib.dtevt2.idbam[:npart] - 1]
 
-    # Nuclear collision parameters
-    @property
-    def impact_parameter(self):
-        """Returns impact parameter for nuclear collisions."""
+    def _get_impact_parameter(self):
         return self._lib.dtglcp.bimpac
 
-    @property
-    def n_wounded_A(self):
-        """Number of wounded nucleons side A"""
-        return self._lib.dtglcp.nwasam
-
-    @property
-    def n_wounded_B(self):
-        """Number of wounded nucleons side B"""
-        return self._lib.dtglcp.nwbsam
-
-    @property
-    def n_wounded(self):
-        """Number of total wounded nucleons"""
-        return self._lib.dtglcp.nwasam + self._lib.dtglcp.nwbsam
+    def _get_n_wounded(self):
+        return self._lib.dtglcp.nwasam, self._lib.dtglcp.nwbsam
 
     # Unfortunately not that simple since this is bounced through
     # entire code as argument not in COMMON
@@ -142,8 +127,12 @@ class DpmjetIIIRun(MCRun):
         # # Set ctau threshold in PYTHIA for the default stable list
         self._lib.pydat1.parj[70] = impy_config["tau_stable"] * sec2cm * 10.0  # mm
 
-    def _sigma_inel(self, evt_kin, precision=None):
-        k = evt_kin
+    def _cross_section(self, evt_kin=None, precision=None):
+        # we override to set precision
+        if evt_kin is None:
+            k = self.event_kinematics
+        else:
+            k = evt_kin
         info(10, "Cross section for", k.A1, k.A2, self._lib.idt_icihad(k.p1pdg))
         if precision is None:
             self._lib.dt_xsglau(
@@ -158,7 +147,7 @@ class DpmjetIIIRun(MCRun):
             )
             self._lib.dtglgp.jstatb = saved
 
-        return self._lib.dtglxs.xspro[0, 0, 0]
+        return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
 
     def _dpmjet_tup(self):
         """Constructs an tuple of arguments for calls to event generator
@@ -217,7 +206,7 @@ class DpmjetIIIRun(MCRun):
     def _generate_event(self):
         reject = self._lib.dt_kkinc(*self._dpmjet_tup(), kkmat=-1)
         self._lib.dtevno.nevent += 1
-        return reject
+        return not reject
 
 
 class DpmjetIII191(DpmjetIIIRun):

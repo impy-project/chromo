@@ -13,6 +13,7 @@ GeV = 1.0
 TeV = 1e3
 PeV = 1e6
 EeV = 1e9
+millibarn = 1.0
 
 quarks_and_diquarks_and_gluons = (
     1,

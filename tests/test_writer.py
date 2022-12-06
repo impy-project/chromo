@@ -1,0 +1,114 @@
+from impy.writer import Root
+from impy.common import CrossSectionData, EventData
+from impy.kinematics import CenterOfMass
+from types import SimpleNamespace
+import numpy as np
+import uproot
+from numpy.testing import assert_equal, assert_allclose
+import yaml
+from pathlib import Path
+import pytest
+
+
+def make_event(n):
+    assert n >= 2
+    rng = np.random.default_rng(1)
+    pid = rng.choice([211, 130, 2212], size=n)
+    pid[:2] = 2212
+    status = np.arange(n)
+    parents = rng.choice(n, size=(n, 2))
+    parents[:2] = 0
+    parents[:, 1] = 0
+    return EventData(
+        ("foo", "1.0"),
+        CenterOfMass(10, "p", "p"),
+        "user-frame",
+        1,
+        1.0,
+        (2, 3),
+        pid,
+        status,
+        1.1 + status,
+        2.2 + status,
+        3.3 + status,
+        4.4 + status,
+        5.5 + status,
+        6.6 + status,
+        7.7 + status,
+        8.8 + status,
+        9.9 + status,
+        10.01 + status,
+        parents,
+        None,
+    )
+
+
+@pytest.mark.parametrize("write_vertices", (False, True))
+@pytest.mark.parametrize("overflow", (False, True))
+def test_Root(write_vertices, overflow):
+    config = SimpleNamespace(
+        seed=1,
+        projectile_id=2,
+        projectile_momentum=3.3,
+        target_id=4,
+        target_momentum=5.5,
+        model=None,
+    )
+
+    class Model:
+        label: str = "foo"
+        seed = 1
+
+        def cross_section(self):
+            return CrossSectionData(total=6.6)
+
+    events = [
+        make_event(2),
+        make_event(5),
+        make_event(4),
+    ]
+    model = Model()
+
+    p = Path("test_writer.root")
+
+    writer = Root(p, config, model, write_vertices=write_vertices, buffer_size=5)
+    if overflow:
+        with pytest.raises(RuntimeError):
+            with writer:
+                for event in events:
+                    writer.write(event)
+                writer.write(make_event(10))
+    else:
+        with writer:
+            for event in events:
+                writer.write(event)
+
+    with uproot.open(p) as f:
+        tree = f["event"]
+        data = yaml.safe_load(tree.title)
+        ref = {
+            "seed": 1,
+            "projectile_id": 2,
+            "projectile_momentum": 3.3,
+            "target_id": 4,
+            "target_momentum": 5.5,
+            "model": "foo",
+            "sigma_total": 6.6,
+            "energy_unit": "GeV",
+            "sigma_unit": "mb",
+        }
+        if write_vertices:
+            ref["length_unit"] = "mm"
+        assert data == ref
+        assert tree.num_entries == len(events)
+        d = tree.arrays()
+        if not write_vertices:
+            assert "vx" not in tree.keys()
+        for i, event in enumerate(events):
+            assert_equal(d["pdgid"][i], event.pid[2:])
+            assert_allclose(d["px"][i], event.px[2:])
+            assert_equal(d["parent"][i], np.maximum(event.parents[2:, 0] - 3, -1))
+            if write_vertices:
+                assert_allclose(d["vx"][i], event.vx[2:])
+
+    p.unlink()

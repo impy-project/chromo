@@ -3,15 +3,6 @@
 # Level of verbosity
 debug_level = 1
 
-# Location for cache file for particledata.tables objects
-pdata_cachefile = "impy_pdata_cache.cch"
-
-
-# For generators which return not successful events:
-# True: retry rejected events until desired number of events reached
-# False: return if event not successful and set event_successful flag
-retry_on_rejection = True
-
 # If to write output to a logfile or 'stdout'
 output_log = "stdout"
 
@@ -51,9 +42,6 @@ stable_list = [
     -2112,
     -13,
 ]  # default stable list with stable lifetime = 10e-12
-
-# Set pi0 to stable by default (often used as default)
-pi0_stable = True
 
 # Apply initial array slicing (Advanced option)
 # True (default): Expose the event variables as truncated views, i.e. event.en[0:npart]

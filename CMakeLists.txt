@@ -133,7 +133,7 @@ f2py_add_module(_eposlhc
   FUNCTIONS
   aaset ainit aepos afinal hepmcstore
   getcharge idtrafo initializeepos initeposevt
-  setstable setunstable xsection init_rmmard ${impy_logging}
+  xsection init_rmmard ${impy_logging}
   SOURCES
   ${eposlhc_sources}
   ${logging_source}

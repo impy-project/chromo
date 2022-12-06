@@ -3,13 +3,12 @@ from impy.kinematics import CenterOfMass
 import impy.models as im
 from collections import Counter
 import pytest
-from .util import (
-    run_in_separate_process,
-    get_all_models,
-)
+from .util import run_in_separate_process
+from impy.util import get_all_models
+
 
 # generate list of all models in impy.models
-models = get_all_models(im)
+models = get_all_models()
 
 
 def run_model(Model, evt_kin):

@@ -19,7 +19,7 @@ def test_name():
 
 
 def run_name():
-    evt_kin = CenterOfMass(1 * TeV, 2212, 2212)
+    evt_kin = CenterOfMass(1 * TeV, "p", "p")
     m = Pythia6(evt_kin, seed=4)
     assert m.label == "Pythia-6.428"
 
@@ -28,8 +28,8 @@ def test_instance_name():
     run_in_separate_process(run_name)
 
 
-def run_event():
-    evt_kin = CenterOfMass(1 * TeV, 2212, 2212)
+def run_pp_collision():
+    evt_kin = CenterOfMass(1 * TeV, "p", "p")
     m = Pythia6(evt_kin, seed=4)
     m.set_stable(lp.pi_0.pdgid, False)  # needed to get nonzero vertices
     for event in m(1):
@@ -37,10 +37,31 @@ def run_event():
     return event  # MCEvent is restored as EventData
 
 
+def run_cross_section(p1, p2):
+    evt_kin = CenterOfMass(10 * GeV, p1, p2)
+    m = Pythia6(evt_kin, seed=1)
+    return m.cross_section()
+
+
 @pytest.fixture
 @lru_cache(maxsize=1)
 def event():
-    return run_in_separate_process(run_event)
+    return run_in_separate_process(run_pp_collision)
+
+
+def test_cross_section():
+    c = run_in_separate_process(run_cross_section, "p", "p")
+    assert_allclose(c.total, 38.4, atol=0.1)
+    assert_allclose(c.inelastic, 31.4, atol=0.1)
+    assert_allclose(c.elastic, 7.0, atol=0.1)
+    assert_allclose(c.diffractive_xb, 2.6, atol=0.1)
+    assert_allclose(c.diffractive_ax, 2.6, atol=0.1)
+    assert_allclose(c.diffractive_xx, 0.9, atol=0.1)
+    assert c.diffractive_axb == 0
+    assert_allclose(
+        c.non_diffractive,
+        c.inelastic - c.diffractive_xb - c.diffractive_ax - c.diffractive_xx,
+    )
 
 
 def test_charge(event):

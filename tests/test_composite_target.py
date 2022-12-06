@@ -3,17 +3,14 @@ from impy.kinematics import CenterOfMass, CompositeTarget
 import impy.models as im
 from collections import Counter
 import pytest
-from .util import (
-    get_all_models,
-    run_in_separate_process,
-)
+from .util import run_in_separate_process
+from impy.util import get_all_models
 
-# generate list of models to test,
-Models = get_all_models(im)
-# skip models which do not support nuclei
-Models = [
-    M for M in Models if M.name not in ("Sophia", "PhoJet") and M is not im.Pythia6
-]
+
+# generate list of models to test, skip models which do not support nuclei
+Models = get_all_models(
+    skip=(im.Sophia20, im.Phojet112, im.Phojet191, im.Phojet193, im.Pythia6)
+)
 
 
 def run_model(Model, evt_kin):

@@ -1,4 +1,4 @@
-from impy.common import MCRun, MCEvent
+from impy.common import MCRun, MCEvent, CrossSectionData
 from impy import impy_config
 from impy.util import info, fortran_chars, _cached_data_dir
 
@@ -146,7 +146,7 @@ class PHOJETRun(MCRun):
         # Set ctau threshold in PYTHIA for the default stable list
         self._lib.pydat1.parj[70] = impy_config["tau_stable"] * c * 1e-3  # mm
 
-    def _sigma_inel(self, evt_kin):
+    def _cross_section(self, evt_kin):
         with self._temporary_evt_kin(evt_kin):
             info(
                 3,
@@ -154,7 +154,7 @@ class PHOJETRun(MCRun):
                 "(need   to generate dummy event)",
             )
             self._generate_event()
-            return self._lib.powght.siggen[3]
+            return CrossSectionData(inelastic=self._lib.powght.siggen[3])
 
     def _set_stable(self, pdgid, stable):
         if abs(pdgid) == 2212:
@@ -200,7 +200,7 @@ class PHOJETRun(MCRun):
         self._lun = lun
 
     def _generate_event(self):
-        return self._lib.pho_event(1, self.p1, self.p2)[1]
+        return not self._lib.pho_event(1, self.p1, self.p2)[1]
 
 
 class Phojet112(PHOJETRun):

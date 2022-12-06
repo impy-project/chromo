@@ -4,13 +4,11 @@ import impy.models as im
 import pickle
 from pathlib import Path
 import pytest
-from .util import (
-    run_in_separate_process,
-    get_all_models,
-)
+from .util import run_in_separate_process
+from impy.util import get_all_models
 
 # generate list of all models in impy.models
-Models = get_all_models(im)
+Models = get_all_models()
 
 
 def run_rng_state(Model):
