@@ -418,7 +418,7 @@ python module _sib23c00 ! in
         subroutine sibini(seedin) ! in :_sib23c00:CMakeFiles/_sib23c00.dir/sibyll_init.fpp
             integer :: seedin
         end subroutine sibini
-        subroutine sibhep3 ! in :_sib23c00:CMakeFiles/_sib23c00.dir/sibyll_init.fpp
+        subroutine sibhep ! in :_sib23c00:CMakeFiles/_sib23c00.dir/sibyll_init.fpp
             double precision dimension(8000,5) :: p
             integer dimension(8000) :: llist
             integer :: np
@@ -440,7 +440,7 @@ python module _sib23c00 ! in
             common /s_chp/ ichp,istr,ibar
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /schg/ ichg
-        end subroutine sibhep3
+        end subroutine sibhep
         function gasdev(idum) ! in :_sib23c00:CMakeFiles/_sib23c00.dir/sibyll_init.fpp
             integer :: idum
             integer, optional :: iset=0

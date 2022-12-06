@@ -1,9 +1,10 @@
 import numpy as np
 from impy.common import MCRun, MCEvent, RMMARDState, CrossSectionData
 from impy.util import info
+from impy.constants import standard_projectiles
 from impy.kinematics import EventFrame
 import dataclasses
-from impy.constants import standard_projectiles
+from particle import literals as lp
 
 
 class SibyllEvent(MCEvent):
@@ -54,6 +55,17 @@ class SIBYLLRun(MCRun):
     _event_class = SibyllEvent
     _frame = EventFrame.CENTER_OF_MASS
     _projectiles = set(standard_projectiles)
+    _cross_section_projectiles = {
+        p.pdgid: sib_id
+        for p, sib_id in (
+            (lp.p, 1),
+            (lp.n, 1),
+            (lp.pi_plus, 2),
+            (lp.K_plus, 3),
+            (lp.K_S_0, 3),
+            (lp.K_L_0, 3),
+        )
+    }
 
     def __init__(self, evt_kin, seed=None):
         super().__init__(seed)
@@ -77,37 +89,40 @@ class SIBYLLRun(MCRun):
         self._set_final_state_particles()
 
     def _cross_section(self):
-        if self._a_target > 1:
-            # Return production cross section for nuclear target
-            s = self._lib.sib_sigma_hnuc(self._projectile_id, self._a_target, self._ecm)
-        else:
-            s = self._lib.sib_sigma_hp(self._projectile_id, self._ecm)
-        # TODO this needs a test
+        kin = self.kinematics
+        if kin.p2.A > 1:
+            # TODO figure out what this returns exactly:
+            # self._lib.sib_sigma_hnuc
+            raise ValueError(f"Nuclear projectiles not yet supported by {self.label}")
+
+        sib_id = self._cross_section_projectiles[abs(kin.p1)]
+
+        tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sib_id, kin.ecm)
         return CrossSectionData(
-            total=s[0],
-            elastic=s[1],
-            inelastic=s[2],
-            diffractive_xb=s[3] / 3,
-            diffractive_ax=s[3] / 3,
-            diffractive_xx=s[3] / 3,
+            total=tot,
+            elastic=el,
+            inelastic=inel,
+            diffractive_xb=diff[0],
+            diffractive_ax=diff[1],
+            diffractive_xx=diff[2],
             diffractive_axb=0,
         )
 
     def sigma_inel_air(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        sigma = self._lib.sib_sigma_hair(self._projectile_id, self._ecm)
+        sigma = self._lib.sib_sigma_hair(self._cross_section_id, self._ecm)
         if isinstance(sigma, tuple):
             return sigma[0]
         return sigma
 
     def _set_kinematics(self, kin):
-        self._a_target = kin.p2.A
-        if self._a_target > 20:
-            raise ValueError(f"Target with A>20 not supported (A={self._a_target})")
-        self._projectile_id = self._lib.isib_pdg2pid(kin.p1)
-        assert self._projectile_id != 0
-        self._ecm = kin.ecm
+        if kin.p2.A is None:
+            raise ValueError("Target must be nucleus")
+        if kin.p2.A > 20:
+            raise ValueError(f"Target with A>20 not supported (A={kin.p2.A})")
+        self._production_id = self._lib.isib_pdg2pid(kin.p1)
+        assert self._production_id != 0
 
     def _set_stable(self, pdgid, stable):
         sid = abs(self._lib.isib_pdg2pid(pdgid))
@@ -125,9 +140,10 @@ class SIBYLLRun(MCRun):
             idb[sid - 1] = abs(idb[sid - 1])
 
     def _generate(self):
-        self._lib.sibyll(self._projectile_id, self._a_target, self._ecm)
+        kin = self.kinematics
+        self._lib.sibyll(self._production_id, kin.p2.A, kin.ecm)
         self._lib.decsib()
-        self._lib.sibhep3()
+        self._lib.sibhep()
         return True
 
     @property
@@ -142,12 +158,6 @@ class SIBYLLRun(MCRun):
 class Sibyll21(SIBYLLRun):
     _version = "2.1"
     _library_name = "_sib21"
-
-    def _generate(self):
-        self._lib.sibyll(self._projectile_id, self._a_target, self._ecm)
-        self._lib.decsib()
-        self._lib.sibhep1()
-        return True
 
 
 class Sibyll23(SIBYLLRun):

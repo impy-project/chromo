@@ -20,8 +20,8 @@ def run_in_separate_process(fn, *args, timeout=60):
     # initialized once. As a workaround, we run each model in a separate
     # thread. When running several jobs, maxtasksperchild=1 is needed to
     # use a fresh interpreter for each task (not needed here, but still).
-    debug = int(environ.get("DEBUG", 0))
-    if debug > 10:
+    debug = int(environ.get("DEBUG", "0"))
+    if debug >= 10:
         out = fn(*args)
     else:
         with Pool(1, maxtasksperchild=1) as p:

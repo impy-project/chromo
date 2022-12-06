@@ -153,16 +153,14 @@ f2py_add_module(_eposlhc
 
 
 ### sib21
-set(SIBYLL21_FUNCTIONS
+set(SIBYLL_FUNCTIONS
   sibyll sibyll_ini sib_sigma_hp sib_sigma_hair sib_sigma_hnuc
-  int_nuc decsib decpar sibini sib_list isib_pid2pdg
+  int_nuc decsib decpar sibini sibhep sib_list isib_pid2pdg
   isib_pdg2pid pdg_ini init_rmmard ${impy_logging})
-
-set(SIBYLL_COMMON_FUNCTIONS ${SIBYLL21_FUNCTIONS} gasdev)  
 
 f2py_add_module(_sib21
   FUNCTIONS
-  ${SIBYLL21_FUNCTIONS} sibhep1 spgasdev
+  ${SIBYLL21_FUNCTIONS} spgasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll_21.f
   ${fortran_dir}/sibyll/sib21aux.f
@@ -171,14 +169,13 @@ f2py_add_module(_sib21
   ${rangen_source}
   COMPILE_DEFS
   ${impy_definitions}
-  SIBYLL_SP
-  SIBYLL_TABLE_LENGTH=49
+  SIBYLL_21
 )
 
 ### sib23
 f2py_add_module(_sib23
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  ${SIBYLL_FUNCTIONS} gasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -186,7 +183,6 @@ f2py_add_module(_sib23
   ${rangen_source}
   COMPILE_DEFS
   ${impy_definitions}
-  SIBYLL_TABLE_LENGTH=99
 )
 
 

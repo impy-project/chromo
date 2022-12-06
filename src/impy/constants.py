@@ -85,10 +85,12 @@ long_lived = (
 
 nuclei = tuple(p.pdgid for p in Particle.findall(lambda p: p.pdgid.is_nucleus))
 
+# only positive PDGIDs!
 standard_projectiles = tuple(
     p.pdgid for p in (lp.p, lp.n, lp.pi_plus, lp.K_plus, lp.K_S_0, lp.K_L_0)
 )
 
+# only positive PDGIDs!
 em_particles = tuple(p.pdgid for p in (lp.photon, lp.e_minus))
 
 # # Standard stable particles for for fast air shower cascade calculation

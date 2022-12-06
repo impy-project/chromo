@@ -29,12 +29,6 @@ def run_ab_collision():
     return event
 
 
-def run_cross_section(p1, p2):
-    evt_kin = CenterOfMass(10 * GeV, p1, p2)
-    m = EposLHC(evt_kin, seed=1)
-    return m.cross_section()
-
-
 @pytest.fixture
 @lru_cache(maxsize=1)
 def event():
@@ -62,6 +56,12 @@ def test_n_wounded(event):
 def test_n_wounded_ion(event_ion):
     assert event_ion.n_wounded[0] > 1
     assert event_ion.n_wounded[1] > 1
+
+
+def run_cross_section(p1, p2):
+    evt_kin = CenterOfMass(10 * GeV, p1, p2)
+    m = EposLHC(evt_kin, seed=1)
+    return m.cross_section()
 
 
 def test_cross_section():

@@ -277,7 +277,7 @@ python module _sib21 ! in
             integer :: isib_pid2pdg
             common /s_pdg2pid/ id_pdg_list,id_list
         end function isib_pid2pdg
-        subroutine sibhep1 ! in :_sib21:CMakeFiles/_sib21.dir/sib21aux.f
+        subroutine sibhep ! in :_sib21:CMakeFiles/_sib21.dir/sibyll_init.fpp
             real dimension(8000,5) :: p
             integer dimension(8000) :: llist
             integer :: np
@@ -299,7 +299,7 @@ python module _sib21 ! in
             common /s_chp/ ichp,istr,ibar
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /schg/ ichg
-        end subroutine sibhep1
+        end subroutine sibhep
         function spgasdev(idum) ! in :_sib21:CMakeFiles/_sib21.dir/sib21aux.f
             integer :: idum
             integer, optional :: iset=0
