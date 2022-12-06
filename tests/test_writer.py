@@ -22,7 +22,6 @@ def make_event(n):
     return EventData(
         ("foo", "1.0"),
         CenterOfMass(10, "p", "p"),
-        "user-frame",
         1,
         1.0,
         (2, 3),

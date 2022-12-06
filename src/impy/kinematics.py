@@ -70,9 +70,6 @@ class CompositeTarget(object):
         """Return PDGID for heaviest of elements."""
         return max(int(m) for m in self._materials)
 
-    def azs(self):
-        return [(p.A, p.Z) for p in self._materials]
-
     def average_mass(self):
         return sum(
             f * p.A * nucleon_mass for (f, p) in zip(self._fractions, self._materials)
