@@ -240,8 +240,9 @@ def parse_arguments():
         m2 = Particle.from_pdgid(args.target_id).mass * MeV
         e1 = sqrt(m1**2 + pr**2)
         e2 = sqrt(m2**2 + ta**2)
-        # TODO use the numerically stable formula instead
-        s = (e1 + e2) ** 2 - (pr + ta) ** 2
+        a = e1 + e2
+        b = pr + ta
+        s = (a + b) * (a - b)
         if s <= 0:
             raise SystemExit("Error: s <= 0")
         args.sqrts = sqrt(s)
@@ -327,26 +328,34 @@ def main():
 
     model = args.model(evt_kin)
 
-    ofile = FORMATS[args.output](args.out, args, model.cross_section())
-
     task_id = None
-    with ofile:
-        # workaround: several models generate extra print when first
-        # event is generated, this interferes with progress bar so we
-        # create bar only after second event is generated
-        with Progress(
-            MofNCompleteColumn(),
-            BarColumn(),
-            TaskProgressColumn(),
-            "ETA",
-            TimeRemainingColumn(elapsed_when_finished=True),
-            SpeedColumn(),
-        ) as bar:
-            for event in model(args.number):
-                ofile.write(event)
-                if task_id is None:
-                    task_id = bar.add_task("", total=args.number)
-                bar.advance(task_id, 1)
+    try:
+        ofile = FORMATS[args.output](args.out, args, model)
+        with ofile:
+            # workaround: several models generate extra print when first
+            # event is generated, this interferes with progress bar so we
+            # create bar only after second event is generated
+            with Progress(
+                MofNCompleteColumn(),
+                BarColumn(),
+                TaskProgressColumn(),
+                "ETA",
+                TimeRemainingColumn(elapsed_when_finished=True),
+                SpeedColumn(),
+            ) as bar:
+                for event in model(args.number):
+                    ofile.write(event)
+                    if task_id is None:
+                        task_id = bar.add_task("", total=args.number)
+                    bar.advance(task_id, 1)
+    except Exception:
+        if int(os.environ.get("DEBUG", "0")) > 0:
+            raise
+
+        import traceback
+
+        msg = traceback.format_exc(chain=False, limit=0)
+        raise SystemExit(msg.strip())
 
 
 if __name__ == "__main__":

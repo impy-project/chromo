@@ -10,8 +10,6 @@ import pyhepmc
 import uproot
 import platform
 
-IMPY_VERSION = f"impy {version}"
-
 
 def format_matches_extension(p):
     ext = p.suffixes
@@ -64,7 +62,7 @@ def test_nothing():
 
 
 def test_version():
-    run("-v", stdout=IMPY_VERSION)
+    run("-v", stdout=f"impy {version}")
 
 
 def test_minimum():
@@ -250,10 +248,15 @@ def test_format_1():
 
 
 @pytest.mark.parametrize("format", ("hepmc", "hepmcgz", "root"))
-def test_format_2(format):
+@pytest.mark.parametrize("model", ("EPOS-LHC", "SIBYLL-2.1", "Pythia-6.4"))
+def test_format_2(format, model):
     ext = format
     if ext.endswith("gz"):
         ext = ext[:-2] + ".gz"
+
+    pyname = {"EPOS-LHC": "eposlhc", "SIBYLL-2.1": "sibyll21", "Pythia-6.4": "pythia6"}[
+        model
+    ]
 
     run(
         "-s",
@@ -262,12 +265,20 @@ def test_format_2(format):
         "100",
         "-o",
         format,
+        "-m",
+        model,
         stdout=f"Format[ \t]*{format}",
-        file=f"impy_eposlhc_1_2212_2212_100.{ext}",
+        file=f"impy_{pyname}_1_2212_2212_100.{ext}",
     )
 
 
 def test_format_3():
+    if platform.system() == "Windows":
+        pytest.xfail(
+            "Test aborts on Windows with this message: "
+            "UnicodeEncodeError: 'charmap' codec can't encode character '\u0394'"
+            " in  position 20049: character maps to <undefined>"
+        )
     run(
         "-s",
         "1",

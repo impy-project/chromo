@@ -65,6 +65,7 @@ class Sophia20(MCRun):
 
     def _cross_section(self):
         # code=3 for inelastic cross-section
+        # TODO fill more cross-sections
         inel = (
             self._lib.crossection(self._energy_of_photon, 3, self._nucleon_code)
             * microbarn

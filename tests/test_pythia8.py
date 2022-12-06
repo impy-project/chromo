@@ -52,7 +52,7 @@ def test_cross_section():
     assert_allclose(c.elastic, 7.1, atol=0.1)
     assert_allclose(c.diffractive_xb, 2.6, atol=0.1)
     assert_allclose(c.diffractive_ax, 2.6, atol=0.1)
-    assert_allclose(c.diffractive_xx, 0.8, atol=1)
+    assert_allclose(c.diffractive_xx, 0.8, atol=0.1)
     assert c.diffractive_axb == 0
     assert_allclose(
         c.non_diffractive,

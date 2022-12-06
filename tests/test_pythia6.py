@@ -18,16 +18,6 @@ def test_name():
     assert Pythia6.label == "Pythia-6.428"
 
 
-def run_name():
-    evt_kin = CenterOfMass(100 * GeV, "p", "p")
-    m = Pythia6(evt_kin, seed=4)
-    assert m.label == "Pythia-6.428"
-
-
-def test_instance_name():
-    run_in_separate_process(run_name)
-
-
 def run_collision(p1, p2):
     evt_kin = CenterOfMass(100 * GeV, p1, p2)
     m = Pythia6(evt_kin, seed=4)
@@ -55,7 +45,7 @@ def test_cross_section():
     assert_allclose(c.elastic, 7.0, atol=0.1)
     assert_allclose(c.diffractive_xb, 2.6, atol=0.1)
     assert_allclose(c.diffractive_ax, 2.6, atol=0.1)
-    assert_allclose(c.diffractive_xx, 0.9, atol=1)
+    assert_allclose(c.diffractive_xx, 0.9, atol=0.1)
     assert c.diffractive_axb == 0
     assert_allclose(
         c.non_diffractive,

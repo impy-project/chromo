@@ -131,8 +131,8 @@ There are two ways to interact with the code.
 - EPOS-LHC
 - PHOJET 1.12-35
 - PHOJET 19.1
-- PYTHIA 6
-- PYTHIA 8 (not yet bundled)
+- PYTHIA 6.4
+- PYTHIA 8.3
 - QGSJet-01
 - QGSJet-II-03
 - QGSJet-II-04
@@ -141,7 +141,6 @@ There are two ways to interact with the code.
 - SIBYLL-2.3c
 - SIBYLL-2.3d
 - SOPHIA (needs update)
-- DPMJET-II (also needs update but model deprecated)
 - UrQMD 3.4
 
 ## Authors:

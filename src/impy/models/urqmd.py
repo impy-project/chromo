@@ -6,7 +6,6 @@
 # The current settings are taken from CORSIKA and they are optimized for speed aparently.
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
-import numpy as np
 from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.util import info, fortran_array_insert, fortran_array_remove
 from impy.kinematics import EventFrame
@@ -156,7 +155,7 @@ class UrQMD34(MCRun):
 
     def _cross_section(self):
         tot = self._lib.ptsigtot()
-        return CrossSectionData(tot, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan)
+        return CrossSectionData(total=tot)
 
     def _set_kinematics(self, kin):
         for i, (p, x) in enumerate(zip((kin.p1, kin.p2), "pt")):

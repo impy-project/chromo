@@ -20,6 +20,9 @@ import warnings
 from particle import Particle
 
 
+# Do we need EventData.n_spectators in addition to EventData.n_wounded?
+# n_spectators can be computed from n_wounded as number_of_nucleons - n_wounded
+# If we want this, it should be computed dynamically via a property.
 @dataclasses.dataclass
 class CrossSectionData:
     """Information of cross-sections returned by the generator.
@@ -599,8 +602,7 @@ class MCRun(ABC):
         nretries = 0
         for nev in self._composite_plan(nevents):
             while nev > 0:
-                success = self._generate()
-                if success:
+                if self._generate():
                     nretries = 0
                     self.nevents += 1
                     nev -= 1
@@ -648,7 +650,7 @@ class MCRun(ABC):
         """The method to generate a new event.
 
         Returns:
-            (int) : Rejection flag = 0 if everything is ok.
+            bool : True if event was successfully generated and False otherwise.
         """
         pass
 

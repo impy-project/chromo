@@ -1,28 +1,34 @@
 import numpy as np
-from impy.constants import quarks_and_diquarks_and_gluons
+from impy.constants import quarks_and_diquarks_and_gluons, millibarn, GeV
 import dataclasses
 from pathlib import Path
 
-BUFFER_SIZE = 100000
 INT_TYPE = np.int32
 FLOAT_TYPE = np.float32
 
 
+def _raise_import_error(name, task):
+    raise ModuleNotFoundError(
+        f"{name} not found, please install {name} (`pip install {name}`) to {task}"
+    )
+
+
 # Differences to CRMC
 #
-# - Header tree
-#   - Names in snake_case instead of CamelCase
+# - Names of trees and branches are in snake_case instead of CamelCase
+#
+# - Header tree was removed
+#   - Metadata are stored in YAML format in title of particle tree
 #   - Renamed branches
 #     - HEModel -> model
 #     - sigmaTot -> sigma_total
 #     - sigmaEl -> sigma_elastic
 #     - sigmaInel -> sigma_inelastic
 #   - Branches sigmaPair* not included
-#   - Branch model contains name and version as a byte array
 #
 # - Particle tree
 #   - Branch n instead of nPart, name cannot be chosen in uproot
-#   - ImpactParameter renamed to impact
+#   - Branch ImpactParameter renamed to impact
 #   - Branch E is redundant, we skip this to save space
 #   - Extra branches: parent
 #
@@ -30,57 +36,65 @@ FLOAT_TYPE = np.float32
 # so we don't write them. Long-lived particles are final state, and there is no
 # interesting information in the vertices of very short-lived particles.
 class Root:
-    def __init__(self, file, config, cross_section, write_vertices=False):
-        import uproot
+    def __init__(self, file, config, model, write_vertices=False, buffer_size=100000):
+        try:
+            import uproot
+        except ModuleNotFoundError:
+            _raise_import_error("uproot", "write ROOT files")
 
+        assert GeV == 1
+        assert millibarn == 1
+
+        # FIXME projectile_momentum and target_momentum are 0 if -S option is used,
+        # to be fixed in follow-up PR that fixes EventKinematics
         header = {
-            "seed": config.seed,
+            "seed": model.seed,
             "projectile_id": config.projectile_id,
             "projectile_momentum": config.projectile_momentum,
             "target_id": config.target_id,
             "target_momentum": config.target_momentum,
-            "model": config.model.label,
+            "model": model.label,
         }
         header.update(
             {
                 f"sigma_{k}": v
-                for (k, v) in dataclasses.asdict(cross_section).items()
+                for (k, v) in dataclasses.asdict(model.cross_section()).items()
                 if not np.isnan(v)
             }
         )
         header.update(
             {
-                "energy_unit": "MeV",
-                "length_unit": "mm",
+                "energy_unit": "GeV",
                 "sigma_unit": "mb",
             }
         )
 
-        self._header = "\n".join(f"{k}: {v}" for (k, v) in header.items())
         self._file = uproot.recreate(file)
 
         self._event_buffers = {
-            "impact": np.empty(BUFFER_SIZE, FLOAT_TYPE),
+            "impact": np.empty(buffer_size, FLOAT_TYPE),
         }
         self._particle_buffers = {
-            "px": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-            "py": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-            "pz": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-            "m": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-            "pdgid": np.empty(BUFFER_SIZE, INT_TYPE),
-            "status": np.empty(BUFFER_SIZE, INT_TYPE),
-            "parent": np.empty(BUFFER_SIZE, INT_TYPE),
+            "px": np.empty(buffer_size, FLOAT_TYPE),
+            "py": np.empty(buffer_size, FLOAT_TYPE),
+            "pz": np.empty(buffer_size, FLOAT_TYPE),
+            "m": np.empty(buffer_size, FLOAT_TYPE),
+            "pdgid": np.empty(buffer_size, INT_TYPE),
+            "status": np.empty(buffer_size, INT_TYPE),
+            "parent": np.empty(buffer_size, INT_TYPE),
         }
         if write_vertices:
+            header["length_unit"] = "mm"
             self._particle_buffers.update(
                 {
-                    "vx": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-                    "vy": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-                    "vz": np.empty(BUFFER_SIZE, FLOAT_TYPE),
-                    "vt": np.empty(BUFFER_SIZE, FLOAT_TYPE),
+                    "vx": np.empty(buffer_size, FLOAT_TYPE),
+                    "vy": np.empty(buffer_size, FLOAT_TYPE),
+                    "vz": np.empty(buffer_size, FLOAT_TYPE),
+                    "vt": np.empty(buffer_size, FLOAT_TYPE),
                 }
             )
 
+        self._header = "\n".join(f"{k}: {v}" for (k, v) in header.items())
         self._tree = None
         self._lengths = []
         self._iparticle = 0
@@ -88,10 +102,10 @@ class Root:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, *args):
         if self._iparticle > 0:
             self._write_buffers()
-        self._file.__exit__(exc_type, exc_value, traceback)
+        return self._file.__exit__(*args)
 
     def _write_buffers(self):
         import awkward as ak
@@ -140,11 +154,19 @@ class Root:
         mask[:2] = False
         event = event[mask]
 
+        event_size = len(event)
+        buffer_size = len(self._particle_buffers["px"])
+        if self._iparticle + event_size > buffer_size:
+            self._write_buffers()
+            if event_size > buffer_size:
+                # this should never happen
+                raise RuntimeError("event is larger than buffer")
+
         ievent = len(self._lengths)
         self._event_buffers["impact"][ievent] = getattr(event, "impact_parameter", 0.0)
 
         a = self._iparticle
-        self._iparticle += len(event)
+        self._iparticle += event_size
         b = self._iparticle
         self._lengths.append(b - a)
         for key, val in self._particle_buffers.items():
@@ -154,26 +176,26 @@ class Root:
                 val[a:b] = event.pid
             else:
                 val[a:b] = getattr(event, key)
-                if key in ("px", "py", "pz", "m"):
-                    val[a:b] *= 1e3
-
-        if b > BUFFER_SIZE // 2:
-            self._write_buffers()
 
 
 class Svg:
-    def __init__(self, file, config, cross_section):
+    def __init__(self, file, config, model):
         self._idx = 0
         self._template = (file.parent, file.stem, file.suffix)
 
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        return True
+    def __exit__(self, *args):
+        return
 
     def write(self, event):
-        ge = event.to_hepmc3()
+        try:
+            ge = event.to_hepmc3()
+        except ModuleNotFoundError:
+            _raise_import_error("pyhepmc", "write SVGs")
+        if not hasattr(ge, "_repr_html_"):
+            _raise_import_error("graphviz", "write SVGs")
         svg = ge._repr_html_()
         odir, name, ext = self._template
         fn = Path(odir) / f"{name}_{self._idx:03}{ext}"
@@ -183,21 +205,21 @@ class Svg:
 
 
 class Hepmc:
-    def __init__(self, file, config, cross_section):
-        from pyhepmc._core import pyiostream
-        from pyhepmc.io import _WrappedWriter, WriterAscii
-        import gzip
+    def __init__(self, file, config, model):
+        try:
+            from pyhepmc._core import pyiostream
+            from pyhepmc.io import _WrappedWriter, WriterAscii
+        except ModuleNotFoundError:
+            _raise_import_error("pyhepmc", "write HepMC files")
 
-        if file.suffix == ".gz":
-            op = gzip.open
-        else:
-            op = open
+        import gzip
 
         # TODO add metadata to GenRunInfo, needs
         # fix in pyhepmc
-        # TODO fix this in pyhepmc, we should be able
-        # to use the public API and not these secrets
 
+        # TODO fix the following in pyhepmc, we should be able
+        # to use the public API and not these secrets
+        op = gzip.open if file.suffix == ".gz" else open
         self._file = op(file, "wb")
         self._ios = pyiostream(self._file)
         self._writer = _WrappedWriter(self._ios, None, WriterAscii)
@@ -209,7 +231,6 @@ class Hepmc:
         self._writer.__exit__(*args)
         self._ios.__exit__(*args)
         self._file.__exit__(*args)
-        return True
 
     def write(self, event):
         self._writer.write(event)
