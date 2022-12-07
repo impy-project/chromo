@@ -759,17 +759,19 @@ class MCRun(ABC):
             If provided, calculate cross-section for EventKinematics.
             Otherwise return values for current setup.
         """
-        if isinstance(kin.p2, CompositeTarget):
-            cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0)
-            kin2 = copy.copy(kin)
-            for component, fraction in zip(kin.p2.components, kin.p2.fractions):
-                kin2.p2 = component
-                cs = self.cross_section(kin2)
-                for i, val in enumerate(dataclasses.astuple(cs)):
-                    cross_section[i] += fraction * val
-            return cross_section
-        else:
-            with self._temporary_kinematics(kin):
+        with self._temporary_kinematics(kin):
+            kin2 = self.kinematics
+            if isinstance(kin2.p2, CompositeTarget):
+                cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0)
+                kin3 = copy.copy(kin2)
+                for component, fraction in zip(kin2.p2.components, kin2.p2.fractions):
+                    kin3.p2 = component
+                    # this calls cross_section recursively, which is fine
+                    cs = self.cross_section(kin3)
+                    for i, val in enumerate(dataclasses.astuple(cs)):
+                        cross_section[i] += fraction * val
+                return cross_section
+            else:
                 return self._cross_section()
 
     @abstractmethod

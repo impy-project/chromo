@@ -14,6 +14,7 @@ from impy.util import get_all_models
 import boost_histogram as bh
 import gzip
 import pickle
+import os
 from pathlib import Path
 from numpy.testing import assert_allclose
 from particle import Particle, literals as lp
@@ -98,28 +99,35 @@ def test_generator(target, frame, Model):
             href = pickle.load(f)
         assert_allclose(h.values(), href.values(), atol=1, rtol=0.05)
     except (AssertionError, FileNotFoundError) as exc:
-        # generate plots for visual inspection if test fails
+        if "CI" not in os.environ:
+            # when run locally, generate plots for visual inspection if test fails
+            try:
+                import matplotlib.pyplot as plt
 
-        import matplotlib.pyplot as plt
+                _, ax = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
+                plt.suptitle(f"{Model.pyname} {target} {frame}")
+                for i, pdgid in enumerate(h.axes[1]):
+                    p = Particle.from_pdgid(pdgid)
+                    v = h.values()[:, i]
+                    xe = h.axes[0].edges
+                    ax[0].stairs(v, xe, label=f"{p.name} {np.sum(v):.0f}")
+                    if not isinstance(exc, FileNotFoundError):
+                        vref = href.values()[:, i]
+                        ax[1].stairs(vref, xe, label=f"{p.name}{np.sum(vref):.0f}")
+                    for axi in ax:
+                        axi.legend(
+                            loc="upper center",
+                            title="c.c. included",
+                            ncol=3,
+                            frameon=False,
+                        )
+                plt.semilogy()
+                plt.savefig(path.with_suffix(".png"))
 
-        _, ax = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
-        plt.suptitle(f"{Model.pyname} {target} {frame}")
-        for i, pdgid in enumerate(h.axes[1]):
-            p = Particle.from_pdgid(pdgid)
-            v = h.values()[:, i]
-            xe = h.axes[0].edges
-            ax[0].stairs(v, xe, label=f"{p.name} {np.sum(v):.0f}")
-            if not isinstance(exc, FileNotFoundError):
-                vref = href.values()[:, i]
-                ax[1].stairs(vref, xe, label=f"{p.name}{np.sum(vref):.0f}")
-            for axi in ax:
-                axi.legend(
-                    loc="upper center", title="c.c. included", ncol=3, frameon=False
-                )
-        plt.semilogy()
-        plt.savefig(path.with_suffix(".png"))
+            except ModuleNotFoundError:
+                print("I wanted to show you some plots, please install matplotlib")
 
-        with gzip.open(path, "wb") as f:
-            pickle.dump(h, f)
+            with gzip.open(path, "wb") as f:
+                pickle.dump(h, f)
 
         raise

@@ -41,8 +41,11 @@ def run(
         assert match, "\n" + actual
     if stderr is not None:
         actual = r.stderr.decode()
-        match = re.search(stderr, actual)
-        assert match, "\n" + actual
+        if stderr in actual:  # also check for literal match
+            match = True
+        else:
+            match = re.search(stderr, actual)
+        assert match, f"\n  [expected] {stderr}\n  [  got   ] {actual}"
     if file:
         if match is not None:
             p = Path(file.format(*match.groups()))
@@ -145,7 +148,7 @@ def test_model_2():
         "-m",
         "py8",
         returncode=1,
-        stderr="Error: model=py8 is ambiguous, matches Pythia-6.428, Pythia-8.307",
+        stderr="Error: model=py8 is ambiguous, matches (Pythia-6.428, Pythia-8.307)",
     )
 
 
@@ -155,8 +158,8 @@ def test_model_3():
         "sib",
         returncode=1,
         stderr=(
-            "Error: model=sib is ambiguous, matches SIBYLL-2.1, SIBYLL-2.3, "
-            "SIBYLL-2.3c, SIBYLL-2.3d"
+            "Error: model=sib is ambiguous, matches (SIBYLL-2.1, SIBYLL-2.3, "
+            "SIBYLL-2.3c, SIBYLL-2.3d)"
         ),
     )
 
