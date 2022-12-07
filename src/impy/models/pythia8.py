@@ -3,7 +3,8 @@ from impy.util import _cached_data_dir
 from os import environ
 import numpy as np
 from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles, em_particles
+from impy.constants import standard_projectiles, nuclei
+from particle import literals as lp
 
 
 class PYTHIA8Event(MCEvent):
@@ -35,8 +36,9 @@ class Pythia8(MCRun):
     _library_name = "_pythia8"
     _event_class = PYTHIA8Event
     _frame = EventFrame.CENTER_OF_MASS
-    _projectiles = set(standard_projectiles) | set(em_particles)
-    _targets = _projectiles
+    _projectiles = standard_projectiles | {lp.photon.pdgid}
+    # nuclei are supported in principle, but generation is very slow
+    _targets = standard_projectiles | nuclei
     _restartable = True
     _data_url = (
         "https://github.com/impy-project/impy"
@@ -81,9 +83,10 @@ class Pythia8(MCRun):
         config = [
             "Random:setSeed = on",
             f"Random:seed = {self._seed}",
-            # Specify energy in center of mass
+            # use center-of-mass frame
             "Beams:frameType = 1",
             "SoftQCD:inelastic = on",
+            "PhotonParton:all = on",
             # reduce verbosity
             "Print:quiet = on",
             "Next:numberCount = 0",  # do not print progress

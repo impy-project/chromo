@@ -1,10 +1,10 @@
 import numpy as np
 from impy.common import MCRun, MCEvent, RMMARDState, CrossSectionData
 from impy.util import info
-from impy.constants import standard_projectiles
 from impy.kinematics import EventFrame
+from impy.constants import nuclei
 import dataclasses
-from particle import literals as lp
+from particle import literals as lp, PDGID
 
 
 class SibyllEvent(MCEvent):
@@ -54,7 +54,7 @@ class SIBYLLRun(MCRun):
     _name = "SIBYLL"
     _event_class = SibyllEvent
     _frame = EventFrame.CENTER_OF_MASS
-    _projectiles = set(standard_projectiles)
+    _targets = {x for x in nuclei if PDGID(x).A <= 20}
     _cross_section_projectiles = {
         p.pdgid: sib_id
         for p, sib_id in (
@@ -117,10 +117,6 @@ class SIBYLLRun(MCRun):
         return sigma
 
     def _set_kinematics(self, kin):
-        if kin.p2.A is None:
-            raise ValueError("Target must be nucleus")
-        if kin.p2.A > 20:
-            raise ValueError(f"Target with A>20 not supported (A={kin.p2.A})")
         self._production_id = self._lib.isib_pdg2pid(kin.p1)
         assert self._production_id != 0
 

@@ -51,10 +51,9 @@ class Sophia20(MCRun):
     _targets = {lp.p.pdgid, lp.n.pdgid}
 
     def __init__(self, kinematics, seed=None, keep_decayed_particles=True):
+        import impy
 
         super().__init__(seed)
-
-        import impy
 
         self._lib.s_plist.ideb = impy.debug_level
         # Keep decayed particles in the history:

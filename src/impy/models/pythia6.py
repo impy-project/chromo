@@ -2,7 +2,7 @@ import numpy as np
 from impy.common import MCRun, MCEvent, CrossSectionData
 from particle import literals as lp
 from impy.kinematics import EventFrame
-from impy.constants import tau_stable, sec2cm
+from impy.constants import standard_projectiles
 
 
 class PYTHIA6Event(MCEvent):
@@ -22,17 +22,9 @@ class Pythia6(MCRun):
     _version = "6.428"
     _library_name = "_pythia6"
     _event_class = PYTHIA6Event
-    _frame = EventFrame.CENTER_OF_MASS
-    _projectiles = {
-        p.pdgid: code
-        for (p, code) in (
-            (lp.p, "p"),
-            (lp.n, "n"),
-            (lp.K_plus, "K+"),
-            (lp.pi_plus, "pi+"),
-        )
-    }
-    _targets = _projectiles
+    _frame = None
+    _projectiles = standard_projectiles
+    _targets = standard_projectiles
 
     def __init__(self, evt_kin, seed=None, new_mpi=False):
         super().__init__(seed)
@@ -65,12 +57,7 @@ class Pythia6(MCRun):
 
         self.kinematics = evt_kin
 
-        # Set default stable
         self._set_final_state_particles()
-        # Set PYTHIA decay flags to follow all changes to MDCY
-        self._lib.pydat1.mstj[21 - 1] = 1
-        self._lib.pydat1.mstj[22 - 1] = 2
-        self._lib.pydat1.parj[70] = tau_stable * sec2cm * 10.0  # mm
 
     def _cross_section(self):
         s = self._lib.pyint7.sigt[0, 0]
@@ -88,17 +75,29 @@ class Pythia6(MCRun):
     def _set_kinematics(self, kin):
         codes = []
         for pdg in (kin.p1, kin.p2):
-            c = self._projectiles[abs(pdg)]
+            code = {
+                lp.proton.pdgid: "p",
+                lp.neutron.pdgid: "n",
+                lp.K_plus.pdgid: "K+",
+                lp.pi_plus.pdgid: "pi+",
+                lp.K_S_0.pdgid: "K_S0",
+                lp.K_L_0.pdgid: "K_L0",
+            }[abs(pdg)]
             if abs(pdg) != pdg:
-                last = c[-1]
+                last = code[-1]
                 if last == "+":
-                    c = c[:-1] + "-"
+                    code = code[:-1] + "-"
                 elif last == "-":
-                    c = c[:-1] + "+"
+                    code = code[:-1] + "+"
                 else:
-                    c += "bar"
-            codes.append(c)
-        self._lib.pyinit("CMS", *codes, kin.ecm)
+                    code += "bar"
+            codes.append(code)
+        if kin.frame == EventFrame.FIXED_TARGET:
+            self._frame = EventFrame.FIXED_TARGET
+            self._lib.pyinit("FIXT", *codes, kin.plab)
+        else:
+            self._frame = EventFrame.CENTER_OF_MASS
+            self._lib.pyinit("CMS", *codes, kin.ecm)
 
     def _set_stable(self, pdgid, stable):
         kc = self._lib.pycomp(pdgid)

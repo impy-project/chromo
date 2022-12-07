@@ -36,10 +36,10 @@ class CompositeTarget(object):
     def __init__(self, components, label=""):
         self.label = label
         fractions = np.empty(len(components))
-        self._materials = []
+        self._components = []
         for i, (particle, amount) in enumerate(components):
             fractions[i] = amount
-            self._materials.append(_normalize_particle(particle))
+            self._components.append(_normalize_particle(particle))
         self._fractions = fractions / np.sum(fractions)
 
     @property
@@ -47,20 +47,20 @@ class CompositeTarget(object):
         return self._fractions
 
     @property
-    def materials(self):
-        return self._materials
+    def components(self):
+        return self._components
 
     @property
     def Z(self):
         """Return maximum charge number."""
         # needed for compatibility with PDGID interface and for dpmjet initialization
-        return max(p.Z for p in self._materials)
+        return max(p.Z for p in self._components)
 
     @property
     def A(self):
         """Return maximum number of nucleons."""
         # needed for compatibility with PDGID interface and for dpmjet initialization
-        return max(p.A for p in self._materials)
+        return max(p.A for p in self._components)
 
     @property
     def is_nucleus(self):
@@ -68,18 +68,21 @@ class CompositeTarget(object):
 
     def __int__(self):
         """Return PDGID for heaviest of elements."""
-        return max(int(m) for m in self._materials)
+        return max(int(m) for m in self._components)
 
     def average_mass(self):
         return sum(
-            f * p.A * nucleon_mass for (f, p) in zip(self._fractions, self._materials)
+            f * p.A * nucleon_mass for (f, p) in zip(self._fractions, self._components)
         )
+
+    def __abs__(self):
+        return abs(int(self))
 
     def __str__(self):
         ostr = f"Composite target {self.label!r}\n"
         ostr += f"Average mass: {self.average_mass():5.3f}\n"
         ostr += "  Nr   |    Name         |  A  |  Z  | fraction\n"
-        for i, (f, m) in enumerate(zip(self._fractions, self._materials)):
+        for i, (f, m) in enumerate(zip(self._fractions, self._components)):
             name = Particle.from_pdgid(m).name
             ostr += f"  {i:3}  | {name:15s} |{m.A:4} |{m.Z:4} |  {f:5.4f}\n"
         return ostr
@@ -134,15 +137,7 @@ class EventKinematics:
     _betagamma_cm: float
 
     def __init__(
-        self,
-        *,
-        ecm=0,
-        plab=0,
-        elab=0,
-        ekin=0,
-        beam=0,
-        particle1,
-        particle2,
+        self, *, ecm=0, plab=0, elab=0, ekin=0, beam=0, particle1, particle2, frame=None
     ):
         # Catch input errors
 
@@ -166,7 +161,7 @@ class EventKinematics:
 
         # Input specification in center of mass frame
         if ecm:
-            self.frame = EventFrame.CENTER_OF_MASS
+            self.frame = EventFrame.CENTER_OF_MASS if frame is None else frame
             self.ecm = ecm
             self.elab = 0.5 * (ecm**2 - m1**2 - m2**2) / m2
             self.plab = energy2momentum(self.elab, m1)
@@ -174,7 +169,7 @@ class EventKinematics:
         elif beam:
             if p2_is_composite:
                 raise ValueError("beam cannot be used with CompositeTarget")
-            self.frame = EventFrame.GENERIC
+            self.frame = EventFrame.GENERIC if frame is None else frame
             p1, p2 = beam
             self.beams[0, 2] = p1
             self.beams[1, 2] = p2
@@ -188,18 +183,18 @@ class EventKinematics:
         elif elab:
             if not (elab > m1):
                 raise ValueError("projectile energy > projectile mass required")
-            self.frame = EventFrame.FIXED_TARGET
+            self.frame = EventFrame.FIXED_TARGET if frame is None else frame
             self.elab = elab
             self.plab = energy2momentum(self.elab, m1)
             self.ecm = np.sqrt(2.0 * self.elab * m2 + m2**2 + m1**2)
             # self.ecm = np.sqrt((self.elab + m2)**2 - self.plab**2)
         elif ekin:
-            self.frame = EventFrame.FIXED_TARGET
+            self.frame = EventFrame.FIXED_TARGET if frame is None else frame
             self.elab = ekin + m1
             self.plab = energy2momentum(self.elab, m1)
             self.ecm = elab2ecm(self.elab, m1, m2)
         elif plab:
-            self.frame = EventFrame.FIXED_TARGET
+            self.frame = EventFrame.FIXED_TARGET if frame is None else frame
             self.plab = plab
             self.elab = np.sqrt(self.plab**2 + m1**2)
             self.ecm = elab2ecm(self.elab, m1, m2)

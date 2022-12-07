@@ -10,7 +10,12 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 from abc import ABC, abstractmethod
 import numpy as np
 from impy.util import classproperty, select_parents, naneq, name
-from impy.constants import quarks_and_diquarks_and_gluons, long_lived
+from impy.constants import (
+    quarks_and_diquarks_and_gluons,
+    long_lived,
+    nuclei,
+    standard_projectiles,
+)
 from impy.kinematics import EventKinematics, CompositeTarget
 import dataclasses
 import copy
@@ -563,8 +568,8 @@ class MCRun(ABC):
     _is_initialized = []
     _restartable = False
     _set_final_state_particles_called = False
-    _projectiles = None
-    _targets = None
+    _projectiles = standard_projectiles
+    _targets = nuclei
     nevents = 0  # number of generated events so far
 
     def __init__(self, seed):
@@ -645,6 +650,16 @@ class MCRun(ABC):
         """Event generator version"""
         return cls._version
 
+    @classproperty
+    def projectiles(cls):
+        """Supported projectiles (positive PDGIDs only, c.c. implied)."""
+        return cls._projectiles
+
+    @classproperty
+    def targets(cls):
+        """Supported targets (positive PDGIDs only, c.c. implied)."""
+        return cls._targets
+
     @abstractmethod
     def _generate(self):
         """The method to generate a new event.
@@ -674,8 +689,8 @@ class MCRun(ABC):
         if isinstance(kin.p2, CompositeTarget):
             nevents = self._composite_target_rng.multinomial(nevents, kin.p2.fractions)
             ek = copy.copy(kin)
-            for m, k in zip(kin.p2.materials, nevents):
-                ek.p2 = m
+            for c, k in zip(kin.p2.components, nevents):
+                ek.p2 = c
                 with self._temporary_kinematics(ek):
                     yield k
         else:
@@ -744,35 +759,22 @@ class MCRun(ABC):
             If provided, calculate cross-section for EventKinematics.
             Otherwise return values for current setup.
         """
-        with self._temporary_kinematics(kin):
-            return self._cross_section()
+        if isinstance(kin.p2, CompositeTarget):
+            cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0)
+            kin2 = copy.copy(kin)
+            for component, fraction in zip(kin.p2.components, kin.p2.fractions):
+                kin2.p2 = component
+                cs = self.cross_section(kin2)
+                for i, val in enumerate(dataclasses.astuple(cs)):
+                    cross_section[i] += fraction * val
+            return cross_section
+        else:
+            with self._temporary_kinematics(kin):
+                return self._cross_section()
 
     @abstractmethod
     def _cross_section(self, evt_kin):
         pass
-
-    # TODO: Change to generic function for composite target. Make
-    # exception for air
-    def sigma_inel_air(self):
-        """Hadron-air production cross sections according to current
-        event setup (energy, projectile).
-
-        Args:
-           precision (int): Anything else then 'default' (str) will set
-                            the number of MC trails to that number.
-        """
-        from impy.constants import frac_air
-
-        cs = 0.0
-        for f, iat in frac_air:
-            kin = EventKinematics(
-                ecm=self.kinematics.ecm,
-                particle1=self.kinematics.p1,
-                particle2=(iat, int(iat / 2)),
-            )
-            cs += f * self._sigma_inel(kin)
-
-        return cs
 
     @abstractmethod
     def _set_stable(self, pidid, stable):

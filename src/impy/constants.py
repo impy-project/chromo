@@ -18,10 +18,6 @@ microbarn = 1e-3 * millibarn
 
 nucleon_mass = 0.5 * (lp.proton.mass + lp.neutron.mass) * MeV
 
-# Air composition for special cross section functions
-# (source https://en.wikipedia.org/wiki/Atmosphere_of_Earth)
-frac_air = [[0.78084, 14], [0.20946, 16], [0.00934, 40]]
-
 quarks_and_diquarks_and_gluons = (
     1,
     2,
@@ -83,15 +79,17 @@ long_lived = (
     -13,
 )
 
-nuclei = tuple(p.pdgid for p in Particle.findall(lambda p: p.pdgid.is_nucleus))
+nuclei = {
+    p.pdgid for p in Particle.findall(lambda p: p.pdgid.is_nucleus and p.charge > 0)
+}
 
 # only positive PDGIDs!
-standard_projectiles = tuple(
+standard_projectiles = {
     p.pdgid for p in (lp.p, lp.n, lp.pi_plus, lp.K_plus, lp.K_S_0, lp.K_L_0)
-)
+}
 
 # only positive PDGIDs!
-em_particles = tuple(p.pdgid for p in (lp.photon, lp.e_minus))
+em_particles = {p.pdgid for p in (lp.photon, lp.e_minus)}
 
 # # Standard stable particles for for fast air shower cascade calculation
 # # Particles with an anti-partner
@@ -110,7 +108,13 @@ def _make_name2pdg():
     all_particles = Particle.findall()
     db = {p.name: int(p.pdgid) for p in all_particles}
     db.update({p.programmatic_name: int(p.pdgid) for p in all_particles})
+    db["p"] = 2212
+    db["n"] = 2112
+    db["p~"] = -db["p"]
+    db["n~"] = -db["n"]
     db.update(
+        H=db["p"],
+        H1=db["p"],
         He=db["He4"],
         C=db["C12"],
         N=db["N14"],
@@ -120,20 +124,25 @@ def _make_name2pdg():
         Xe=db["Xe131"],
         Pb=db["Pb206"],
         photon=db["gamma"],
+        proton=db["p"],
+        neutron=db["n"],
+        antiproton=-db["p"],
+        antineutron=-db["n"],
+        pbar=-db["p"],
+        nbar=-db["n"],
+        p_bar=-db["p"],
+        n_bar=-db["n"],
     )
-    db["p"] = 2212
-    db["n"] = 2112
-    db["proton"] = db["p"]
-    db["neutron"] = db["n"]
-    db["antiproton"] = -db["p"]
-    db["antineutron"] = -db["n"]
-    db["pbar"] = -db["p"]
-    db["nbar"] = -db["n"]
-    db["p_bar"] = -db["p"]
-    db["n_bar"] = -db["n"]
-    db["p~"] = -db["p"]
-    db["n~"] = -db["n"]
     return db
 
 
 name2pdg = _make_name2pdg()
+
+
+# Air composition for special cross section functions
+# (source https://en.wikipedia.org/wiki/Atmosphere_of_Earth)
+air_composition = {
+    name2pdg["N"]: 0.78084,
+    name2pdg["O"]: 0.20946,
+    name2pdg["Ar"]: 0.00934,
+}

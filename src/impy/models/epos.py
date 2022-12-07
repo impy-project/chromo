@@ -3,7 +3,6 @@ from impy.kinematics import EventFrame
 from impy.common import MCEvent, MCRun, CrossSectionData
 from impy.util import _cached_data_dir, fortran_array_insert, fortran_array_remove
 from impy.constants import nuclei, standard_projectiles
-from particle import literals as lp
 
 
 class EPOSEvent(MCEvent):
@@ -34,28 +33,20 @@ class EposLHC(MCRun):
     _version = "LHC"
     _library_name = "_eposlhc"
     _event_class = EPOSEvent
-    _frame = EventFrame.CENTER_OF_MASS
-    _projectiles = set(standard_projectiles) | set(nuclei) | {lp.photon.pdgid}
+    _frame = None
+    _projectiles = standard_projectiles | nuclei
     _data_url = (
         "https://github.com/impy-project/impy"
         + "/releases/download/zipped_data_v1.0/epos_v001.zip"
     )
 
     def __init__(self, evt_kin, seed=None):
-        super().__init__(seed)
+        import impy
 
-        self._frame = evt_kin.frame
-        if self._frame == EventFrame.CENTER_OF_MASS:
-            iframe = 1
-        elif self._frame == EventFrame.FIXED_TARGET:
-            iframe = 2
-        else:
-            raise ValueError(f"{self._frame} not yet supported")
+        super().__init__(seed)
 
         self._lib.aaset(0)
         datdir = _cached_data_dir(self._data_url)
-
-        import impy
 
         lun = 6  # stdout
         self._lib.initepos(
@@ -63,7 +54,6 @@ class EposLHC(MCRun):
             evt_kin.ecm,
             datdir,
             len(datdir),
-            iframe,
             impy.debug_level,
             lun,
         )
@@ -85,7 +75,14 @@ class EposLHC(MCRun):
         )
 
     def _set_kinematics(self, kin):
-        self._lib.initeposevt(kin.ecm, -1.0, kin.p1, kin.p2)
+        if self._frame == EventFrame.FIXED_TARGET:
+            iframe = 2
+            self._frame = kin.frame
+        else:
+            iframe = 1
+            self._frame = EventFrame.CENTER_OF_MASS
+
+        self._lib.initeposevt(kin.ecm, -1.0, kin.p1, kin.p2, iframe)
 
     def _set_stable(self, pdgid, stable):
         # EPOS decays all unstable particles by default. It uses a nodcy common block

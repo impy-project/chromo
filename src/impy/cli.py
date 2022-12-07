@@ -144,13 +144,13 @@ def parse_arguments():
     parser.add_argument(
         "-i",
         "--projectile-id",
-        default=2212,
+        default="p",
         help="PDG ID or particle name (default is proton)",
     )
     parser.add_argument(
         "-I",
         "--target-id",
-        default=2212,
+        default="p",
         help="PDG ID or particle name (default is proton)",
     )
     parser.add_argument(
@@ -209,12 +209,12 @@ def parse_arguments():
                 Model = matches[0]
             elif len(matches) == 0:
                 raise SystemExit(
-                    f"Error: model={args.model} has no match {VALID_MODELS}"
+                    f"Error: model={args.model} has no match ({VALID_MODELS})"
                 )
             else:
                 raise SystemExit(
                     f"Error: model={args.model} is ambiguous, "
-                    f"matches {', '.join(v.label for v in matches)}"
+                    f"matches ({', '.join(v.label for v in matches)})"
                 )
     args.model = Model
 

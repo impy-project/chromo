@@ -35,8 +35,8 @@ class UrQMD34(MCRun):
     _version = "3.4"
     _library_name = "_urqmd34"
     _event_class = UrQMDEvent
-    _frame = EventFrame.CENTER_OF_MASS
-    _projectiles = set(standard_projectiles) | set(nuclei)
+    _frame = EventFrame.FIXED_TARGET
+    _projectiles = standard_projectiles | nuclei
 
     def __init__(
         self,
@@ -47,6 +47,8 @@ class UrQMD34(MCRun):
         ct_params=None,
         ct_options=None,
     ):
+        import impy
+
         self._pdg2modid = {
             22: (100, 0),
             111: (101, 0),
@@ -121,8 +123,6 @@ class UrQMD34(MCRun):
         super().__init__(seed)
 
         # logging
-        import impy
-
         lun = 6  # stdout
         self._lib.urqini(lun, impy.debug_level)
 
@@ -201,6 +201,7 @@ class UrQMD34(MCRun):
             warnings.warn(f"{pdgid} unknown to UrQMD", RuntimeWarning)
             return
 
+        # FIXME changing stabvec has no effect
         s = self._lib.stables
         if stable:
             fortran_array_insert(s.stabvec, s.nstable, uid)

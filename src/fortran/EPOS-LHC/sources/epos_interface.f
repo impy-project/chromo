@@ -17,14 +17,14 @@ c for main program
       end
 
 c-----------------------------------------------------------------------
-      subroutine InitEpos(seed, emax, datpath, lpath, ifram, idbg, iou)
+      subroutine InitEpos(seed, emax, datpath, lpath, idbg, iou)
 c-----------------------------------------------------------------------
 c General initialization of EPOS
 c anfe: accepts nuclear PDG id instead of A, Z combos
 c-----------------------------------------------------------------------      
       include "epos.inc"
       real seed, emax
-      integer lpath, ifram, idbg, iou
+      integer lpath, idbg, iou
       character(*) datpath
       
       seedi=seed   !seed for random number generator: at start program
@@ -40,7 +40,6 @@ c Initialize decay of particles (all unstable decay)
 c      isigma=0              !do not print out the cross section on screen
 c      ionudi=3              !count diffraction without excitation as elastic
 
-      iframe=10 + ifram           !nucleon-nucleon frame (12=target)
       iecho=0                     !"silent" reading mode
 
       nfnnx=lpath   
@@ -74,7 +73,7 @@ c      open(ifch,file=fnch(1:nfnch),status='unknown')
       End
 
 c-----------------------------------------------------------------------
-      subroutine InitEposEvt(ecm, ela, ippdg, itpdg)
+      subroutine InitEposEvt(ecm, ela, ippdg, itpdg, ifram)
 c-----------------------------------------------------------------------
 c Initialization to be called after changing the energy or beam
 c configuration
@@ -82,6 +81,8 @@ c define either ecm < 0 and ela > 0 or ecm > 0 and ela < 0
 c anfe: accepts nuclear PDG id instead of A, Z combos
 c-----------------------------------------------------------------------      
       include "epos.inc"
+      integer ifram
+
       engy = -1.
       ecms = -1.
       elab = -1.
@@ -115,6 +116,8 @@ c-----------------------------------------------------------------------
       idtargin = idtrafo("pdg","nxs",itpdg)
       latarg = iztar      !targ Z
       matarg = iatar      !targ A
+
+      iframe=10 + ifram           !nucleon-nucleon frame (12=target)
 
 c anfe why here? istmax = 1      !only final particles (istmax=1 includes mother particles)
       call ainit()

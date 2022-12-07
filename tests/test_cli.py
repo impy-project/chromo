@@ -57,7 +57,7 @@ def run(
         p.unlink()
 
 
-def test_nothing():
+def test_no_args():
     run(stdout="usage: impy")
 
 

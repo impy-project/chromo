@@ -69,8 +69,8 @@ class PHOJETRun(MCRun):
 
     _name = "PhoJet"
     _event_class = PhojetEvent
-    _frame = EventFrame.CENTER_OF_MASS
-    _projectiles = set(standard_projectiles) | {lp.photon.pdgid}
+    _frame = None
+    _projectiles = standard_projectiles | {lp.photon.pdgid}
     _targets = _projectiles
     _param_file_name = "dpmjpar.dat"
     _data_url = (
@@ -99,7 +99,7 @@ class PHOJETRun(MCRun):
         for i in range(self._lib.podebg.ideb.size):
             self._lib.podebg.ideb[i] = impy.debug_level
 
-        # Initialize logging
+        # Setup logging
         lun = 6  # stdout
         if hasattr(self._lib, "dtflka"):
             self._lib.dtflka.lout = lun
@@ -156,6 +156,12 @@ class PHOJETRun(MCRun):
         self._lib.pydat3.mdcy[kc - 1, 0] = not stable
 
     def _set_kinematics(self, k):
+        if k.frame == EventFrame.FIXED_TARGET:
+            self._lib.dtflg1.iframe = 1
+            self._frame = EventFrame.FIXED_TARGET
+        else:
+            self._lib.dtflg1.iframe = 2
+            self._frame = EventFrame.CENTER_OF_MASS
         self._lib.pho_setpar(1, k.p1, 0, 0.0)
         self._lib.pho_setpar(2, k.p2, 0, 0.0)
         self.p1, self.p2 = k.beams

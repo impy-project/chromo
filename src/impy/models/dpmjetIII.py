@@ -1,6 +1,6 @@
 from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.kinematics import EventFrame
-from impy.util import info, _cached_data_dir
+from impy.util import info, _cached_data_dir, fortran_chars
 from impy.constants import nuclei, standard_projectiles
 
 
@@ -48,33 +48,21 @@ class DpmjetIIIRun(MCRun):
 
     _name = "DPMJET-III"
     _event_class = DpmjetIIIEvent
-    _frame = EventFrame.CENTER_OF_MASS
-    _projectiles = set(standard_projectiles) | set(nuclei)
+    _frame = None
+    _projectiles = standard_projectiles | nuclei
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
     _data_url = (
         "https://github.com/impy-project/impy"
         + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
+    _max_A1 = 0
+    _max_A2 = 0
 
     def __init__(self, evt_kin, seed=None):
-        from impy.util import fortran_chars
-
         super().__init__(seed)
 
         data_dir = _cached_data_dir(self._data_url)
-
-        # Setup logging
-        lun = 6  # stdout
-        if hasattr(self._lib, "dtflka"):
-            self._lib.dtflka.lout = lun
-            self._lib.dtflka.lpri = 50
-        elif hasattr(self._lib, "dtiont"):
-            self._lib.dtiont.lout = lun
-        else:
-            assert False, "Unknown DPMJET version, IO common block not detected"
-        self._lib.pydat1.mstu[10] = lun
-
         # Set the dpmjpar.dat file
         if hasattr(self._lib, "pomdls") and hasattr(self._lib.pomdls, "parfn"):
             pfile = data_dir + self._param_file_name
@@ -93,31 +81,21 @@ class DpmjetIIIRun(MCRun):
             info(3, "DPMJET evap file at", evap_file)
             self._lib.dtimpy.fnevap = fortran_chars(self._lib.dtimpy.fnevap, evap_file)
 
-        # Save maximal mass that has been initialized
-        # (DPMJET sometimes crashes if higher mass requested than initialized)
-        self._max_A1 = evt_kin.p1.A or 1
-        self._max_A2 = evt_kin.p2.A or 1
-        self._kinematics = evt_kin  # skip _set_event_kinematics
-        k = evt_kin
-        self._lib.dt_init(
-            -1,
-            k.plab,
-            k.p1.A or 1,
-            k.p1.Z or 0,
-            k.p2.A or 1,
-            k.p2.Z or 0,
-            k.p1,
-            iglau=0,
-        )
+        # Setup logging
+        lun = 6  # stdout
+        if hasattr(self._lib, "dtflka"):
+            self._lib.dtflka.lout = lun
+            self._lib.dtflka.lpri = 50
+        elif hasattr(self._lib, "dtiont"):
+            self._lib.dtiont.lout = lun
+        else:
+            assert False, "Unknown DPMJET version, IO common block not detected"
+        self._lib.pydat1.mstu[10] = lun
 
-        self._frame = k.frame
-        if self._frame == EventFrame.CENTER_OF_MASS:
-            self._lib.dtflg1.iframe = 2
-        elif self._frame == EventFrame.FIXED_TARGET:
-            self._lib.dtflg1.iframe = 1
+        self.kinematics = evt_kin
 
         # Relax momentum and energy conservation checks at very high energies
-        if k.ecm > 5e4:
+        if evt_kin.ecm > 5e4:
             # Relative allowed deviation
             self._lib.pomdls.parmdl[76] = 0.045
             # Absolute allowed deviation
@@ -126,7 +104,7 @@ class DpmjetIIIRun(MCRun):
             self._lib.pomdls.ipamdl[178] = 5000
 
         # Relax momentum and energy conservation checks at very high energies
-        if k.ecm > 5e4:
+        if evt_kin.ecm > 5e4:
             # Relative allowed deviation
             self._lib.pomdls.parmdl[76] = 0.05
             # Absolute allowed deviation
@@ -154,13 +132,34 @@ class DpmjetIIIRun(MCRun):
         # TODO set more cross-sections
         return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
 
-    def _set_kinematics(self, k):
-        # nothing to be done here except input validation, since
-        # initialization and event generation is done in _generate
-        if (k.p1.A or 1) > self._max_A1 or (k.p2.A or 1) > self._max_A2:
+    def _set_kinematics(self, kin):
+        # Save maximal mass that has been initialized
+        # (DPMJET sometimes crashes if higher mass requested than initialized)
+        if not self._max_A1:
+            # only do this once
+            if kin.frame == EventFrame.FIXED_TARGET:
+                self._lib.dtflg1.iframe = 1
+                self._frame = EventFrame.FIXED_TARGET
+            else:
+                self._lib.dtflg1.iframe = 2
+                self._frame = EventFrame.CENTER_OF_MASS
+            self._max_A1 = kin.p1.A or 1
+            self._max_A2 = kin.p2.A or 1
+            self._lib.dt_init(
+                -1,
+                kin.plab,
+                kin.p1.A or 1,
+                kin.p1.Z or 0,
+                kin.p2.A or 1,
+                kin.p2.Z or 0,
+                kin.p1,
+                iglau=0,
+            )
+
+        if (kin.p1.A or 1) > self._max_A1 or (kin.p2.A or 1) > self._max_A2:
             raise ValueError(
                 "Maximal initialization mass exceeded "
-                f"{k.p1.A}/{self._max_A1}, {k.p2.A}/{self._max_A2}"
+                f"{kin.p1.A}/{self._max_A1}, {kin.p2.A}/{self._max_A2}"
             )
 
         # AF: No idea yet, but apparently this functionality was around?!
@@ -169,8 +168,8 @@ class DpmjetIIIRun(MCRun):
         #     print 'OK'
 
     def _set_stable(self, pdgid, stable):
-        kc = self._lib.pycomp(pdgid) - 1
-        self._lib.pydat3.mdcy[kc, 0] = not stable
+        kc = self._lib.pycomp(pdgid)
+        self._lib.pydat3.mdcy[kc - 1, 0] = not stable
 
     def _generate(self):
         k = self.kinematics

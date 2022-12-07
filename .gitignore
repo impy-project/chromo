@@ -41,3 +41,4 @@ extra.cfg
 pythia*.tgz
 impy-?.?.?
 src/impy/iamdata
+*.png
