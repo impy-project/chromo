@@ -361,8 +361,15 @@ class EventData:
         # for all models. This should be revisited once the fundamental issues
         # with particle histories have been fixed.
         if model == "Pythia" and version.startswith("8"):
-            # must deselect parton showers in Pythia-8 to use HepMC3 IO
-            ev = self.without_parton_shower()
+            # to get a valid GenEvent we must
+            # 1) select only particles produced after the parton shower
+            # 2) connect particles attached to a single beam particle (diffractive events)
+            #    to the common interaction vertex (1, 2)
+            # TODO check if this costs significant amount of time and speed it up if so
+            mask = (self.status == 1) | (self.status == 2) | (self.status == 4)
+            ev = self[mask]
+            mask = (ev.parents[:, 0] == 1) | (ev.parents[:, 0] == 2)
+            ev.parents[mask] = (1, 2)
         elif model in ("UrQMD", "PhoJet", "DPMJET-III"):
             # can only save final state until history is fixed
             warnings.warn(
