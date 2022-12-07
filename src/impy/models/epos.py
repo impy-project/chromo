@@ -40,7 +40,7 @@ class EposLHC(MCRun):
         + "/releases/download/zipped_data_v1.0/epos_v001.zip"
     )
 
-    def __init__(self, evt_kin, seed=None):
+    def __init__(self, evt_kin, *, seed=None):
         import impy
 
         super().__init__(seed)

@@ -1,4 +1,4 @@
-from impy.constants import GeV, air_composition
+from impy.constants import GeV
 from impy.kinematics import (
     CenterOfMass,
     EventKinematics,
@@ -125,7 +125,7 @@ def test_generator(target, frame, Model):
                 plt.savefig(path.with_suffix(".png"))
 
             except ModuleNotFoundError:
-                print("I wanted to show you some plots, please install matplotlib")
+                print("I want to show some plots, please install matplotlib")
 
             with gzip.open(path, "wb") as f:
                 pickle.dump(h, f)

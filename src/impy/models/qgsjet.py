@@ -38,7 +38,7 @@ class QGSJetRun(MCRun):
     # needed to skip set_final_state_particles() in MCRun
     _set_final_state_particles_called = True
 
-    def __init__(self, evt_kin, seed=None):
+    def __init__(self, evt_kin, *, seed=None):
         import impy
 
         super().__init__(seed)

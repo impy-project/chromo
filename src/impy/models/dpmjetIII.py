@@ -59,7 +59,7 @@ class DpmjetIIIRun(MCRun):
     _max_A1 = 0
     _max_A2 = 0
 
-    def __init__(self, evt_kin, seed=None):
+    def __init__(self, evt_kin, *, seed=None):
         super().__init__(seed)
 
         data_dir = _cached_data_dir(self._data_url)

@@ -50,7 +50,7 @@ class Sophia20(MCRun):
     _projectiles = {lp.photon.pdgid}
     _targets = {lp.p.pdgid, lp.n.pdgid}
 
-    def __init__(self, kinematics, seed=None, keep_decayed_particles=True):
+    def __init__(self, kinematics, *, seed=None, keep_decayed_particles=True):
         import impy
 
         super().__init__(seed)

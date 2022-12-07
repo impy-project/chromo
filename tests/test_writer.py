@@ -68,7 +68,7 @@ def test_Root(write_vertices, overflow):
     ]
     model = Model()
 
-    p = Path("test_writer.root")
+    p = Path(f"test_writer_{write_vertices}_{overflow}.root")
 
     writer = Root(p, config, model, write_vertices=write_vertices, buffer_size=5)
     if overflow:

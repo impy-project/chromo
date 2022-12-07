@@ -603,6 +603,7 @@ class MCRun(ABC):
         if hasattr(self._lib, "init_rmmard"):
             self._lib.init_rmmard(self._seed)
 
+        # TODO use rmmard for this, too, instead of numpy PRNG
         self._composite_target_rng = np.random.default_rng(self._seed)
 
     def __call__(self, nevents):

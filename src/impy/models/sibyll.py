@@ -67,7 +67,7 @@ class SIBYLLRun(MCRun):
         )
     }
 
-    def __init__(self, evt_kin, seed=None):
+    def __init__(self, evt_kin, *, seed=None):
         super().__init__(seed)
 
         # setup logging

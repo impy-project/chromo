@@ -133,7 +133,7 @@ def test_changing_beams_proton():
 
 
 def run_pythia_change_energy_nuclei():
-    # This test fails
+    # This test fails, because nuclei are not yet well supported
     evt_kin = CenterOfMass(10 * GeV, 2212, 2212)
     m = Pythia8(evt_kin, seed=1)
     change_energy_for_nuclei = 0
@@ -146,6 +146,6 @@ def run_pythia_change_energy_nuclei():
     assert change_energy_for_nuclei == 2
 
 
-@pytest.mark.skip(reason="it takes forever to generate a nuclear collision")
+@pytest.mark.skip(reason="Simulating nuclei in Pythia8 is very time-consuming")
 def test_changing_beams_nuclei(event):
     run_in_separate_process(run_pythia_change_energy_nuclei)

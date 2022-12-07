@@ -26,7 +26,7 @@ class Pythia6(MCRun):
     _projectiles = standard_projectiles
     _targets = standard_projectiles
 
-    def __init__(self, evt_kin, seed=None, new_mpi=False):
+    def __init__(self, evt_kin, *, seed=None, new_mpi=False):
         super().__init__(seed)
 
         # setup logging

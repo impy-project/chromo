@@ -41,6 +41,7 @@ class UrQMD34(MCRun):
     def __init__(
         self,
         evt_kin,
+        *,
         seed=None,
         caltim=200,
         outtim=200,

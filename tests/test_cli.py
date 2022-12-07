@@ -60,6 +60,11 @@ def run(
         p.unlink()
 
 
+# In the tests below, make sure that all output files
+# have unique names, so that running tests in parallel does
+# cause errors.
+
+
 def test_no_args():
     run(stdout="usage: impy")
 
@@ -132,11 +137,11 @@ def test_model_1(spec, Model):
         "-S",
         "100",
         "-s",
-        "1",
+        "2",
         "-m",
         spec,
         stdout=f"Model[ \t]*{Model.label}",
-        file=f"impy_{Model.pyname.lower()}_1_2212_2212_100.hepmc",
+        file=f"impy_{Model.pyname.lower()}_2_2212_2212_100.hepmc",
     )
 
 
@@ -182,11 +187,11 @@ def test_projectile(spec, expected):
         "-S",
         "100",
         "-s",
-        "1",
+        "3",
         "-i",
         spec,
         stdout=f"Projectile[ \t]*{name} \\({expected}\\)",
-        file=f"impy_eposlhc_1_{expected}_2212_100.hepmc",
+        file=f"impy_eposlhc_3_{expected}_2212_100.hepmc",
     )
 
 
@@ -205,29 +210,29 @@ def test_target(spec, expected):
         "-S",
         "100",
         "-s",
-        "1",
+        "4",
         "-I",
         spec,
         stdout=f"Target[ \t]*{p.name} \\({expected}\\)",
-        file=f"impy_eposlhc_1_2212_{expected}_100.hepmc",
+        file=f"impy_eposlhc_4_2212_{expected}_100.hepmc",
     )
 
 
 def test_momentum_1():
     run(
         "-s",
-        "1",
+        "5",
         "-p 1000",
         "-P -1000",
         stdout="sqrt\\(s\\)[ \t]*2000 GeV",
-        file="impy_eposlhc_1_2212_2212_2000.hepmc",
+        file="impy_eposlhc_5_2212_2212_2000.hepmc",
     )
 
 
 def test_momentum_2():
     run(
         "-s",
-        "1",
+        "6",
         "-p 1000",
         "-P 0",
         stdout="""\
@@ -235,18 +240,18 @@ def test_momentum_2():
 [ |]*Target momentum[ \t]*0 GeV/c *|
 [ |]*sqrt\\(s\\)[ \t]*43.3394 GeV\
 """,
-        file="impy_eposlhc_1_2212_2212_43.hepmc",
+        file="impy_eposlhc_6_2212_2212_43.hepmc",
     )
 
 
 def test_format_1():
     run(
         "-s",
-        "1",
+        "7",
         "-S",
         "100",
         stdout="Format[ \t]*hepmc",
-        file="impy_eposlhc_1_2212_2212_100.hepmc",
+        file="impy_eposlhc_7_2212_2212_100.hepmc",
     )
 
 
@@ -263,7 +268,7 @@ def test_format_2(format, model):
 
     run(
         "-s",
-        "1",
+        "8",
         "-S",
         "100",
         "-o",
@@ -271,7 +276,7 @@ def test_format_2(format, model):
         "-m",
         model,
         stdout=f"Format[ \t]*{format}",
-        file=f"impy_{pyname}_1_2212_2212_100.{ext}",
+        file=f"impy_{pyname}_8_2212_2212_100.{ext}",
     )
 
 
@@ -284,11 +289,11 @@ def test_format_3():
         )
     run(
         "-s",
-        "1",
+        "9",
         "-S",
         "100",
         "-o",
         "svg",
         stdout="Format[ \t]*svg",
-        file="impy_eposlhc_1_2212_2212_100_000.svg",
+        file="impy_eposlhc_9_2212_2212_100_000.svg",
     )
