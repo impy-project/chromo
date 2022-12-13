@@ -9,7 +9,7 @@ import zipfile
 import shutil
 import numpy as np
 from typing import Sequence
-from particle import Particle, PDGID
+from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
 from impy.constants import MeV, nucleon_mass
 
 
@@ -34,8 +34,10 @@ def mass(pdgid):
 def name(pdgid):
     try:
         return Particle.from_pdgid(pdgid).name
-    except KeyError:
+    except ParticleNotFound:
         return f"Unknown({int(pdgid)})"
+    except InvalidParticle:
+        return f"Invalid({int(pdgid)})"
 
 
 def is_AZ(arg):
