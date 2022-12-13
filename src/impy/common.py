@@ -290,12 +290,14 @@ class EventData:
     @property
     def eta(self):
         """Return pseudorapidity."""
-        return np.log((self.p_tot + self.pz) / self.pt)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return np.log((self.p_tot + self.pz) / self.pt)
 
     @property
     def y(self):
         """Return rapidity."""
-        return 0.5 * np.log((self.en + self.pz) / (self.en - self.pz))
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return 0.5 * np.log((self.en + self.pz) / (self.en - self.pz))
 
     @property
     def xf(self):
