@@ -12,6 +12,7 @@ CMAKE_GENERATOR=<Generator>         : Specify which generator to use.
 CMAKE_ARGS=<cmake args>             : Pass additional cmake arguments.
 CMAKE_BUILD_PARALLEL_LEVEL=<number> : Compile in parallel with number threads.
                                       Default is to use number of CPU cores.
+CMAKE_EXECUTABLE=<path>             : Path to cmake executable
 """
 
 import os
@@ -47,6 +48,8 @@ class CMakeExtension(Extension):
 class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = Path(self.get_ext_fullpath(ext.name)).parent.absolute()
+
+        cmake_exe = os.environ.get("CMAKE_EXECUTABLE", "cmake")
 
         debug = int(os.environ.get("DEBUG", 0)) if self.debug is None else self.debug
         verbose = int(os.environ.get("VERBOSE", 0))
@@ -149,7 +152,7 @@ class CMakeBuild(build_ext):
 
         # run cmake setup only once
         if not cmake_cache.exists():
-            cmd = ["cmake", str(ext.sourcedir)] + cmake_args
+            cmd = [cmake_exe, str(ext.sourcedir)] + cmake_args
             if verbose:
                 force_print(" ".join(cmd))
             subp.check_call(cmd, cwd=build_temp)
@@ -162,7 +165,7 @@ class CMakeBuild(build_ext):
         suffix = sc.get_config_var("EXT_SUFFIX") or sc.get_config_var("SO")
         output_file = Path(extdir) / (target + suffix)
         if not output_file.exists() or target == "_eposlhc":  # any one target is fine
-            cmd = ["cmake", "--build", "."] + build_args
+            cmd = [cmake_exe, "--build", "."] + build_args
             if verbose:
                 force_print(" ".join(cmd))
             subp.check_call(cmd, cwd=build_temp)
