@@ -231,8 +231,9 @@ def parse_arguments():
     if (pr != 0 or ta != 0) and args.sqrts != 0:
         raise SystemExit("Error: either set sqrts or momenta, but not both")
     if pr == 0 and ta == 0 and args.sqrts == 0:
-        parser.print_help()
-        raise SystemExit
+        raise SystemExit(
+            "Error: you need to specify particle momenta or the CMS energy"
+        )
 
     if pr != 0 or ta != 0:
         # compute sqrt(s)

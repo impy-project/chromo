@@ -66,7 +66,10 @@ def run(
 
 
 def test_no_args():
-    run(stdout="usage: impy")
+    run(
+        returncode=1,
+        stderr="Error: you need to specify particle momenta or the CMS energy",
+    )
 
 
 def test_version():
