@@ -51,6 +51,7 @@ class Root:
             "seed": model.seed,
             "projectile_id": int(kin.p1),
             "projectile_momentum": kin.beams[0][2],
+            # TODO handle CompositeTarget
             "target_id": int(kin.p2),
             "target_momentum": kin.beams[1][2],
         }
