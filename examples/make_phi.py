@@ -40,6 +40,7 @@ parser.add_argument("number", type=int, help="number of phis to generate")
 
 args = parser.parse_args()
 
+
 @nb.vectorize
 def is_long_lived(pid):
     """
