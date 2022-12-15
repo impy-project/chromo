@@ -160,7 +160,7 @@ set(SIBYLL_FUNCTIONS
 
 f2py_add_module(_sib21
   FUNCTIONS
-  ${SIBYLL21_FUNCTIONS} spgasdev
+  ${SIBYLL_FUNCTIONS} spgasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll_21.f
   ${fortran_dir}/sibyll/sib21aux.f
@@ -537,7 +537,7 @@ f2py_add_module(_dpmjetIII193
   pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
   pho_setpcomb dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias
-  init_rmmard ${impy_logging}
+  init_rmmard simrnd ${impy_logging}
   SOURCES
   ${dpmjetIII193_sources}
   ${fortran_dir}/dpmjetIII-19.3/common/dummies.f

@@ -97,7 +97,7 @@ function (f2py_add_module target_name)
     foreach(src_file ${F2PY_ADD_MODULE_INTERFACE_SOURCES})
       get_filename_component(src_filename ${src_file} NAME)
       set(proc_file CMakeFiles/${target_name}.dir/${src_filename})
-      message(STATUS "proc" proc_file)
+      message(STATUS "processing ${proc_file}")
 
       add_custom_command(
         OUTPUT ${proc_file}
