@@ -14,7 +14,6 @@ model_spec = sys.argv[1]
 requested = int(sys.argv[2])
 
 
-
 @nb.vectorize
 def is_long_lived(pid):
     """
@@ -100,15 +99,21 @@ def run(Model, requested):
                     imot = event.parents[:, 0] - 1
                     eta += list(event.eta[ma])
                     pt += list(event.pt[ma] / MeV)
-                    prompt += [is_prompt(idx, event.pid, imot) for idx in np.arange(len(event))[ma]]
+                    prompt += [
+                        is_prompt(idx, event.pid, imot)
+                        for idx in np.arange(len(event))[ma]
+                    ]
                     bar.update(n_phi)
                     if len(eta) >= requested:
                         with uproot.recreate(f"phi_{m.pyname}.root") as f:
                             f["phi"] = {"eta": eta, "pt": pt, "prompt": prompt}
                             f["run_info"] = {
                                 "n_events": np.array([n_events]),
-                                "inelastic_cross_section": np.array([m.cross_section().inelastic])
+                                "inelastic_cross_section": np.array(
+                                    [m.cross_section().inelastic]
+                                ),
                             }
                             return
+
 
 run(matches[0], requested)
