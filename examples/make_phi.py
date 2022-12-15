@@ -1,18 +1,44 @@
-from impy import models as im
+"""
+This example script generates phi mesons for proton-proton collisions at 13 TeV.
+
+You can specify the model and how many phi mesons you want generated on the command line.
+Beware that some models (the QGSJet series) provide no particle history, which means that
+this model produces no phis at all. Running the script with a QGSJet model will stall
+forever.
+
+The script generates a ROOT file with three trees.
+    phi:
+        Contains the eta and pt / MeV of phis, whether the phi was prompt (it actually
+        always is), and the number of charged particles in the event in which the phi
+        was produced.
+    run_info:
+        Contains only a single number per branch, the information on how many inelastic
+        events had to be generated to produce that many phis and the inelastic
+        cross-section. With this information, one can compute the differential
+        cross-section for phi production for the model.
+    charged:
+        Contains the distributed of charged particles for all generated events.
+"""
+
+
 from impy.kinematics import CenterOfMass
 from impy.constants import MeV, TeV, long_lived
 from impy.util import get_all_models
 from tqdm import tqdm
-import joblib
 import numpy as np
 import numba as nb
 from particle import literals as lp
 import uproot
-import sys
+import argparse
 
-model_spec = sys.argv[1]
-requested = int(sys.argv[2])
 
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "model_spec", help="specify model to run using substring of its pyname"
+)
+parser.add_argument("number", type=int, help="number of phis to generate")
+
+args = parser.parse_args()
 
 @nb.vectorize
 def is_long_lived(pid):
@@ -73,7 +99,7 @@ def is_prompt(idx, pid, imot):
 
 matches = []
 for Model in get_all_models():
-    if model_spec.lower() in Model.pyname.lower():
+    if args.model_spec.lower() in Model.pyname.lower():
         matches.append(Model)
 assert len(matches) == 1
 
@@ -87,14 +113,21 @@ def run(Model, requested):
     eta = []
     pt = []
     prompt = []
+    charged = []
+    all_charged = []
     n_events = 0
     with tqdm(total=requested, desc=m.pyname, ascii=True) as bar:
         while True:
             for event in m(100):
                 n_events += 1
                 n_phi = np.sum(event.pid == phi_pid)
+                nch = len(event.final_state_charged())
+                all_charged.append(nch)
                 if n_phi > 0:
-                    event = event[2:]  # cut beam particles
+                    if np.all(event.pid[:2] == 2212) and np.all(
+                        event.parents[:2, 0] == 0
+                    ):
+                        event = event[2:]  # cut beam particles
                     ma = event.pid == phi_pid
                     imot = event.parents[:, 0] - 1
                     eta += list(event.eta[ma])
@@ -103,17 +136,24 @@ def run(Model, requested):
                         is_prompt(idx, event.pid, imot)
                         for idx in np.arange(len(event))[ma]
                     ]
+                    charged += [nch for _ in range(n_phi)]
                     bar.update(n_phi)
                     if len(eta) >= requested:
                         with uproot.recreate(f"phi_{m.pyname}.root") as f:
-                            f["phi"] = {"eta": eta, "pt": pt, "prompt": prompt}
+                            f["phi"] = {
+                                "eta": eta,
+                                "pt": pt,
+                                "prompt": prompt,
+                                "charged": charged,
+                            }
                             f["run_info"] = {
                                 "n_events": np.array([n_events]),
                                 "inelastic_cross_section": np.array(
                                     [m.cross_section().inelastic]
                                 ),
                             }
+                            f["charged"] = {"charged": all_charged}
                             return
 
 
-run(matches[0], requested)
+run(matches[0], args.number)
