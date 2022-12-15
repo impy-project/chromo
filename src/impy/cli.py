@@ -331,7 +331,7 @@ def main():
 
     task_id = None
     try:
-        ofile = FORMATS[args.output](args.out, args, model)
+        ofile = FORMATS[args.output](args.out, model)
         with ofile:
             # workaround: several models generate extra print when first
             # event is generated, this interferes with progress bar so we
