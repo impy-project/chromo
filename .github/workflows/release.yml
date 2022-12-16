@@ -100,7 +100,9 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
           CIBW_TEST_SKIP: "*-macosx_universal2:arm64"
-          CIBW_TEST_COMMAND: pytest -vv {package}/tests/test_generators.py
+          CIBW_TEST_COMMAND: |
+            python  {package}/tests/test_sophia.py
+            pytest -vv {package}/tests/test_generators.py
           no_proxy: '*'
 
       - uses: actions/upload-artifact@v3
