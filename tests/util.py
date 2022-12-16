@@ -42,7 +42,8 @@ def run_in_separate_process(fn, *args, timeout=60):
 
 def get_all_models(module):
     result = []
-    removed_from_tests = [im.UrQMD34, im.Pythia8]
+    # removed_from_tests = [im.UrQMD34, im.Pythia8]
+    removed_from_tests = []
     for key in dir(module):
         obj = getattr(module, key)
         try:

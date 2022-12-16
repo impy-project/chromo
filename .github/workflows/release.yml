@@ -11,7 +11,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-12]
-        arch: [native, universal2]
+        arch: [native, arm64]
+        # arch: [native, universal2]
         py: [cp39]
         # os: [ubuntu-latest, windows-latest, macos-12]
         # arch: [native, aarch64, universal2]
@@ -99,6 +100,7 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
           CIBW_TEST_SKIP: "*-macosx_universal2:arm64"
+          CIBW_TEST_COMMAND: pytest -vv {package}/tests/test_generators.py
           no_proxy: '*'
 
       - uses: actions/upload-artifact@v3
