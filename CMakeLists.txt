@@ -92,7 +92,7 @@ if (UNIX)
   )
   if (APPLE)
     add_compile_options(
-      $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>)
+      $<$<$<COMPILE_LANGUAGE:Fortran>:$<VERSION_GREATER:$<Fortran_COMPILER_VERSION>,10.0.0>>:-fallow-argument-mismatch>)
   else()
     add_compile_options(
       $<$<COMPILE_LANGUAGE:Fortran>:-Wno-argument-mismatch>)
