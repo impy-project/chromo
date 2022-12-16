@@ -91,8 +91,11 @@ if (UNIX)
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
   )
   if (APPLE)
+    set(is_fortran "$<COMPILE_LANGUAGE:Fortran>")
+    set(is_greater_v10 "$<VERSION_GREATER:$<Fortran_COMPILER_VERSION>,10.0.0>")
+    set(meet_requirements "$<AND:${is_fortran},${is_greater_v10}>")
     add_compile_options(
-      $<$<$<COMPILE_LANGUAGE:Fortran>:$<VERSION_GREATER:$<Fortran_COMPILER_VERSION>,10.0.0>>:-fallow-argument-mismatch>)
+      $<${meet_requirements}:-fallow-argument-mismatch>)
   else()
     add_compile_options(
       $<$<COMPILE_LANGUAGE:Fortran>:-Wno-argument-mismatch>)
