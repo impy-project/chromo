@@ -31,16 +31,25 @@ jobs:
     steps:
 
       - if: ${{ matrix.os == 'macos-12' }}
+        name: Setup gfortran for Macos
         run: |
-          curl -LJO https://github.com/fxcoudert/gfortran-for-macOS/releases/download/12.1-monterey/gfortran-Intel-12.1-Monterey.dmg
-          hdiutil attach gfortran-Intel-12.1-Monterey.dmg
-          sudo installer -package /Volumes/gfortran-Intel-12.1-Monterey/gfortran-Intel-12.1-Monterey/gfortran.pkg -target /
-          sudo hdiutil detach /Volumes/gfortran-Intel-12.1-Monterey
-          export FC=gfortran
-          FC=gfortran
-          which gfortran
-          which gcc
-          which g++
+          # this is taken verbatim from the numpy azure pipeline setup.
+          set -xe
+          # same version of gfortran as the open-libs and numpy-wheel builds
+          curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
+          GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
+          KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
+          if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
+              echo sha256 mismatch
+              exit 1
+          fi
+          hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
+          sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
+          otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
+          # Manually symlink gfortran-4.9 to plain gfortran for f2py.
+          # No longer needed after Feb 13 2020 as gfortran is already present
+          # and the attempted link errors. Keep this for future reference.
+          # ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran
 
 
       - uses: actions/checkout@v3
