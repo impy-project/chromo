@@ -177,6 +177,11 @@ function (f2py_add_module target_name)
   if (WIN32)
     target_link_libraries(${target_name} PUBLIC "-static")
   endif()
+
+  if (APPLE)
+    target_link_libraries(${target_name} PUBLIC "-static -static-libgfortran -static-libquadmath -static-libgcc")
+  endif()
+
   set_property(TARGET ${target_name} PROPERTY SUFFIX ${PYTHON_MODULE_EXTENSION})
   # must be a string, so that empty string works correcty
   set_property(TARGET ${target_name} PROPERTY PREFIX "${PYTHON_MODULE_PREFIX}")
