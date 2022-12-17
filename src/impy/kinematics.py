@@ -16,9 +16,9 @@ the implementation is very "cooked up". We have to discuss this.
 """
 
 import numpy as np
-from impy.util import TaggedFloat, AZ2pdg, is_AZ, energy2momentum, elab2ecm, mass
+from impy.util import TaggedFloat, AZ2pdg, is_AZ, energy2momentum, elab2ecm, mass, name
 from impy.constants import nucleon_mass, name2pdg
-from particle import PDGID, Particle
+from particle import PDGID
 import dataclasses
 from typing import Union, Tuple
 from enum import Enum
@@ -78,14 +78,11 @@ class CompositeTarget(object):
     def __abs__(self):
         return abs(int(self))
 
-    def __str__(self):
-        ostr = f"Composite target {self.label!r}\n"
-        ostr += f"Average mass: {self.average_mass():5.3f}\n"
-        ostr += "  Nr   |    Name         |  A  |  Z  | fraction\n"
-        for i, (f, m) in enumerate(zip(self._fractions, self._components)):
-            name = Particle.from_pdgid(m).name
-            ostr += f"  {i:3}  | {name:15s} |{m.A:4} |{m.Z:4} |  {f:5.4f}\n"
-        return ostr
+    def __repr__(self):
+        components = [
+            (name(c), amount) for (c, amount) in zip(self.components, self.fractions)
+        ]
+        return f"CompositeTarget({components}, label={self.label})"
 
 
 def _normalize_particle(x):
@@ -137,14 +134,26 @@ class EventKinematics:
     _betagamma_cm: float
 
     def __init__(
-        self, *, ecm=0, plab=0, elab=0, ekin=0, beam=0, particle1, particle2, frame=None
+        self,
+        particle1,
+        particle2,
+        *,
+        ecm=None,
+        plab=None,
+        elab=None,
+        ekin=None,
+        beam=None,
+        frame=None,
     ):
         # Catch input errors
 
-        if sum(x != 0 for x in [ecm, plab, elab, ekin, beam]) != 1:
+        if sum(x is not None for x in [ecm, plab, elab, ekin, beam]) != 1:
             raise ValueError(
                 "Please provide only one of ecm/plab/elab/ekin/beam arguments"
             )
+
+        if particle1 is None or particle2 is None:
+            raise ValueError("particle1 and particle2 must be set")
 
         self.p1 = _normalize_particle(particle1)
         self.p2 = _normalize_particle(particle2)
@@ -160,27 +169,27 @@ class EventKinematics:
         self.beams = (np.zeros(4), np.zeros(4))
 
         # Input specification in center of mass frame
-        if ecm:
+        if ecm is not None:
             self.frame = EventFrame.CENTER_OF_MASS if frame is None else frame
             self.ecm = ecm
             self.elab = 0.5 * (ecm**2 - m1**2 - m2**2) / m2
             self.plab = energy2momentum(self.elab, m1)
         # Input specification as 4-vectors
-        elif beam:
+        elif beam is not None:
             if p2_is_composite:
                 raise ValueError("beam cannot be used with CompositeTarget")
             self.frame = EventFrame.GENERIC if frame is None else frame
             p1, p2 = beam
-            self.beams[0, 2] = p1
-            self.beams[1, 2] = p2
-            self.beams[0, 3] = np.sqrt(m1**2 + p1**2)
-            self.beams[1, 3] = np.sqrt(m2**2 + p2**2)
-            s = p1 + p2
+            self.beams[0][2] = p1
+            self.beams[1][2] = p2
+            self.beams[0][3] = np.sqrt(m1**2 + p1**2)
+            self.beams[1][3] = np.sqrt(m2**2 + p2**2)
+            s = np.sum(self.beams, axis=0)
             self.ecm = np.sqrt(s[3] ** 2 - np.sum(s[:3] ** 2))
             self.elab = 0.5 * (self.ecm**2 - m1**2 + m2**2) / m2
             self.plab = energy2momentum(self.elab, m1)
         # Input specification in lab frame
-        elif elab:
+        elif elab is not None:
             if not (elab > m1):
                 raise ValueError("projectile energy > projectile mass required")
             self.frame = EventFrame.FIXED_TARGET if frame is None else frame
@@ -188,12 +197,12 @@ class EventKinematics:
             self.plab = energy2momentum(self.elab, m1)
             self.ecm = np.sqrt(2.0 * self.elab * m2 + m2**2 + m1**2)
             # self.ecm = np.sqrt((self.elab + m2)**2 - self.plab**2)
-        elif ekin:
+        elif ekin is not None:
             self.frame = EventFrame.FIXED_TARGET if frame is None else frame
             self.elab = ekin + m1
             self.plab = energy2momentum(self.elab, m1)
             self.ecm = elab2ecm(self.elab, m1, m2)
-        elif plab:
+        elif plab is not None:
             self.frame = EventFrame.FIXED_TARGET if frame is None else frame
             self.plab = plab
             self.elab = np.sqrt(self.plab**2 + m1**2)

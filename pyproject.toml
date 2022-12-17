@@ -12,7 +12,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-q -ra --ff"
+addopts = "-q -ra --ff -n auto"
 testpaths = ["tests"]
 filterwarnings = [
     "error::numpy.VisibleDeprecationWarning",

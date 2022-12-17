@@ -1,7 +1,7 @@
 from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.kinematics import EventFrame
 from impy.util import info, _cached_data_dir, fortran_chars
-from impy.constants import nuclei, standard_projectiles
+from impy.constants import standard_projectiles
 
 
 class DpmjetIIIEvent(MCEvent):
@@ -49,7 +49,7 @@ class DpmjetIIIRun(MCRun):
     _name = "DPMJET-III"
     _event_class = DpmjetIIIEvent
     _frame = None
-    _projectiles = standard_projectiles | nuclei
+    _projectiles = standard_projectiles
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
     _data_url = (

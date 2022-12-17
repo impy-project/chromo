@@ -1,7 +1,6 @@
 from impy.writer import Root
 from impy.common import CrossSectionData, EventData
-from impy.kinematics import CenterOfMass
-from types import SimpleNamespace
+from impy.kinematics import EventKinematics
 import numpy as np
 import uproot
 from numpy.testing import assert_equal, assert_allclose
@@ -21,7 +20,7 @@ def make_event(n):
     parents[:, 1] = 0
     return EventData(
         ("foo", "1.0"),
-        CenterOfMass(10, "p", "p"),
+        EventKinematics("p", "He", beam=(-3, 4)),
         1,
         1.0,
         (2, 3),
@@ -45,18 +44,10 @@ def make_event(n):
 @pytest.mark.parametrize("write_vertices", (False, True))
 @pytest.mark.parametrize("overflow", (False, True))
 def test_Root(write_vertices, overflow):
-    config = SimpleNamespace(
-        seed=1,
-        projectile_id=2,
-        projectile_momentum=3.3,
-        target_id=4,
-        target_momentum=5.5,
-        model=None,
-    )
-
     class Model:
         label: str = "foo"
         seed = 1
+        kinematics = EventKinematics("p", "He", beam=(-3, 4))
 
         def cross_section(self):
             return CrossSectionData(total=6.6)
@@ -70,7 +61,7 @@ def test_Root(write_vertices, overflow):
 
     p = Path(f"test_writer_{write_vertices}_{overflow}.root")
 
-    writer = Root(p, config, model, write_vertices=write_vertices, buffer_size=5)
+    writer = Root(p, model, write_vertices=write_vertices, buffer_size=5)
     if overflow:
         with pytest.raises(RuntimeError):
             with writer:
@@ -87,10 +78,10 @@ def test_Root(write_vertices, overflow):
         data = yaml.safe_load(tree.title)
         ref = {
             "seed": 1,
-            "projectile_id": 2,
-            "projectile_momentum": 3.3,
-            "target_id": 4,
-            "target_momentum": 5.5,
+            "projectile_id": 2212,
+            "projectile_momentum": -3,
+            "target_id": 1000020040,
+            "target_momentum": 4,
             "model": "foo",
             "sigma_total": 6.6,
             "energy_unit": "GeV",

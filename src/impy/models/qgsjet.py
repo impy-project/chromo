@@ -1,7 +1,7 @@
 import numpy as np
 from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles
+from impy.constants import standard_projectiles, nuclei
 from impy.util import _cached_data_dir
 from particle import literals as lp
 
@@ -29,7 +29,7 @@ class QGSJET2Event(QGSJET1Event):
 class QGSJetRun(MCRun):
     _name = "QGSJet"
     _frame = EventFrame.FIXED_TARGET
-    _projectiles = standard_projectiles
+    _projectiles = standard_projectiles | nuclei
     _data_url = (
         "https://github.com/impy-project/impy"
         + "/releases/download/zipped_data_v1.0/qgsjet_v001.zip"
@@ -104,12 +104,12 @@ class QGSJet1Run(QGSJetRun):
     def _set_kinematics(self, kin):
         self._projectile_id = {
             lp.pi_plus.pdgid: 1,
-            lp.p.pdgid: 2,
-            lp.n.pdgid: 2,
             lp.K_plus.pdgid: 3,
             lp.K_S_0.pdgid: 3,
             lp.K_L_0.pdgid: 3,
-        }[abs(kin.p1)]
+        }.get(
+            abs(kin.p1), 2
+        )  # 2 is correct for nucleons and nuclei
         self._lib.xxaini(kin.elab, self._projectile_id, kin.p1.A or 1, kin.p2.A)
 
     def _generate(self):
@@ -147,7 +147,9 @@ class QGSJet2Run(QGSJetRun):
             lp.K_minus.pdgid: -4,
             lp.K_S_0.pdgid: -5,
             lp.K_L_0.pdgid: 5,
-        }[kin.p1]
+        }.get(
+            kin.p1, 2
+        )  # 2 is correct for nuclei
         self._lib.qgini(kin.elab, self._projectile_id, kin.p1.A or 1, kin.p2.A)
 
     def _generate(self):

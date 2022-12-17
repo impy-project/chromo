@@ -10,23 +10,26 @@ from impy.kinematics import (
 import impy.models as im
 import pytest
 from .util import run_in_separate_process
-from impy.util import get_all_models
+from impy.util import get_all_models, name
 import boost_histogram as bh
 import gzip
 import pickle
-import os
+import matplotlib.pyplot as plt
 from pathlib import Path
-from numpy.testing import assert_allclose
-from particle import Particle, literals as lp
+from particle import literals as lp
 import numpy as np
+from scipy.stats import chi2
 
-# generate list of all models in impy.models
-models = get_all_models()
-ref_dir = Path(__file__).parent / "data"
+THIS_TEST = Path(__file__).stem
+REFERENCE_PATH = Path(__file__).parent / "data" / THIS_TEST
+REFERENCE_PATH.mkdir(exist_ok=True)
 
 
-def run_model(Model, evt_kin):
-    gen = Model(evt_kin, seed=1)
+def run_model(Model, kin, number=1):
+    try:
+        gen = Model(kin, seed=1)
+    except ValueError:
+        return None
 
     h = bh.Histogram(
         bh.axis.Regular(21, -10, 10),
@@ -44,36 +47,45 @@ def run_model(Model, evt_kin):
             ]
         ),
     )
-    for event in gen(100):
-        ev = event.final_state()
-        h.fill(ev.eta, np.abs(ev.pid))
 
-    return h
+    values = []
+    for _ in range(number):
+        for event in gen(100):
+            ev = event.final_state()
+            h.fill(ev.eta, np.abs(ev.pid))
+        if number == 1:
+            return h
+        else:
+            values.append(h.values().copy())
+            h.reset()
+    return values
 
 
+def compute_p_value(got, expected, expected_cov):
+    delta = np.ravel(got) - np.ravel(expected)
+    cov = np.reshape(expected_cov, delta.shape + delta.shape)
+    for i in range(delta.size):
+        cov[i, i] += 0.1  # prevent singularity
+    inv_cov = np.linalg.inv(cov)
+    v = np.einsum("i,ij,j", delta, inv_cov, delta)
+    print(delta.size, v)
+    return 1 - chi2(delta.size).cdf(v)
+
+
+@pytest.mark.trylast
 @pytest.mark.parametrize("target", ("p", "air"))
+@pytest.mark.parametrize("projectile", ("gamma", "pi-", "p", "He"))
 @pytest.mark.parametrize("frame", ("cms", "ft", "cms2ft", "ft2cms"))
-@pytest.mark.parametrize("Model", models)
-def test_generator(target, frame, Model):
-    p1 = lp.pi_minus.pdgid
-    if Model is im.Sophia20:
-        # Sophia can only do γp, γn
-        p1 = lp.gamma.pdgid
-    elif Model in [im.Phojet112, im.UrQMD34]:
-        # The old phojet needs more tweaking for pion-proton (is not related to test)
-        p1 = lp.proton.pdgid
-
-    if target == "air":
+@pytest.mark.parametrize("Model", get_all_models())
+def test_generator(projectile, target, frame, Model):
+    p1 = projectile
+    p2 = target
+    if p2 == "air":
         if Model is im.Pythia8:
             pytest.skip("Simulating nuclei in Pythia8 is very time-consuming")
 
         # cannot use Argon in SIBYLL, so make air from N, O only
         p2 = CompositeTarget((("N", 0.78), ("O", 0.22)))
-        for c in p2.components:
-            if c not in Model.targets:
-                pytest.skip(f"{Model.pyname} does not support support nuclei")
-    else:
-        p2 = target
 
     if frame == "cms":
         kin = CenterOfMass(100 * GeV, p1, p2)
@@ -88,46 +100,53 @@ def test_generator(target, frame, Model):
             elab=100 * GeV, particle1=p1, particle2=p2, frame=EventFrame.CENTER_OF_MASS
         )
     else:
-        assert False
+        assert False  # we should never arrive here
 
     h = run_in_separate_process(run_model, Model, kin)
+    if h is None:
+        assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
+        return
 
-    path = Path(f"test_generators_{Model.pyname}_{target}_{frame}.pkl.gz")
-    try:
-        path_ref = ref_dir / path
+    fn = Path(f"{Model.pyname}_{projectile}_{target}_{frame}")
+    path_ref = REFERENCE_PATH / fn.with_suffix(".pkl.gz")
+    if not path_ref.exists():
+        print(f"{fn}: reference does not exist; generating... (but fail test)")
+        # check plots to see whether reference makes any sense before committing it
+        p_value = -1  # make sure test fails
+        values = run_in_separate_process(run_model, Model, kin, 200, timeout=10000)
+        val_ref = np.mean(values, axis=0)
+        cov_ref = np.cov(np.transpose([np.ravel(x) for x in values]))
+        cov_ref.shape = (*val_ref.shape, *val_ref.shape)
+        with gzip.open(path_ref, "wb") as f:
+            pickle.dump((val_ref, cov_ref), f)
+    else:
         with gzip.open(path_ref) as f:
-            href = pickle.load(f)
-        assert_allclose(h.values(), href.values(), atol=1, rtol=0.05)
-    except (AssertionError, FileNotFoundError) as exc:
-        if "CI" not in os.environ:
-            # when run locally, generate plots for visual inspection if test fails
-            try:
-                import matplotlib.pyplot as plt
+            val_ref, cov_ref = pickle.load(f)
 
-                _, ax = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
-                plt.suptitle(f"{Model.pyname} {target} {frame}")
-                for i, pdgid in enumerate(h.axes[1]):
-                    p = Particle.from_pdgid(pdgid)
-                    v = h.values()[:, i]
-                    xe = h.axes[0].edges
-                    ax[0].stairs(v, xe, label=f"{p.name} {np.sum(v):.0f}")
-                    if not isinstance(exc, FileNotFoundError):
-                        vref = href.values()[:, i]
-                        ax[1].stairs(vref, xe, label=f"{p.name}{np.sum(vref):.0f}")
-                    for axi in ax:
-                        axi.legend(
-                            loc="upper center",
-                            title="c.c. included",
-                            ncol=3,
-                            frameon=False,
-                        )
-                plt.semilogy()
-                plt.savefig(path.with_suffix(".png"))
+        p_value = compute_p_value(h.values(), val_ref, cov_ref)
 
-            except ModuleNotFoundError:
-                print("I want to show some plots, please install matplotlib")
-
-            with gzip.open(path, "wb") as f:
-                pickle.dump(h, f)
-
+    try:
+        assert p_value >= 1e-3
+    except AssertionError:
+        fig, ax = plt.subplots(2, 3, figsize=(10, 8), constrained_layout=True)
+        plt.suptitle(f"{Model.pyname} {projectile} {target} {frame} pvalue={p_value}")
+        xe = h.axes[0].edges
+        cx = h.axes[0].centers
+        for i, (axi, pdgid) in enumerate(zip(ax.flat, h.axes[1])):
+            pname = name(pdgid)
+            v = h.values()[:, i]
+            vref = val_ref[:, i]
+            cref = cov_ref[:, i, :, i]
+            eref = np.diag(cref) ** 0.5
+            vsum = np.sum(v)
+            vrefsum = np.sum(vref)
+            erefsum = np.einsum("i,ij,j", np.ones_like(v), cref, np.ones_like(v)) ** 0.5
+            plt.sca(axi)
+            plt.stairs(v, xe, color=f"C{i}", fill=True, alpha=0.5)
+            plt.errorbar(cx, vref, eref, color=f"C{i}", marker="o")
+            plt.title(f"{pname} {vsum:.0f} ({vrefsum:.0f} ± {erefsum:.0f})")
+        fig_dir = Path() / THIS_TEST
+        fig_dir.mkdir(exist_ok=True)
+        plt.savefig(fig_dir / fn.with_suffix(".png"))
+        plt.close(fig)
         raise

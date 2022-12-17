@@ -1,7 +1,6 @@
 from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.util import fortran_chars, _cached_data_dir
 from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles
 from particle import literals as lp
 
 
@@ -70,7 +69,7 @@ class PHOJETRun(MCRun):
     _name = "PhoJet"
     _event_class = PhojetEvent
     _frame = None
-    _projectiles = standard_projectiles | {lp.photon.pdgid}
+    _projectiles = {lp.proton.pdgid}
     _targets = _projectiles
     _param_file_name = "dpmjpar.dat"
     _data_url = (
