@@ -32,7 +32,7 @@ jobs:
       with:
         submodules: true
 
-    - uses: actions/setup-python@v3
+    - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - uses: awvwgk/setup-fortran@main
@@ -62,7 +62,7 @@ jobs:
         CMAKE_GENERATOR: "MinGW Makefiles"
         FC: ${{ steps.setup-fortran.outputs.fc }}
 
-    - run: python -m pytest -vv -n 3 -
+    - run: python -m pytest -vv -n 3
       env:
         no_proxy: '*'
 
