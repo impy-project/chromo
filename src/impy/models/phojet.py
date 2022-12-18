@@ -69,8 +69,8 @@ class PHOJETRun(MCRun):
     _name = "PhoJet"
     _event_class = PhojetEvent
     _frame = None
-    _projectiles = {lp.proton.pdgid}
-    _targets = _projectiles
+    _projectiles = {lp.proton.pdgid, lp.photon.pdgid}
+    _targets = {lp.proton.pdgid}
     _param_file_name = "dpmjpar.dat"
     _data_url = (
         "https://github.com/impy-project/impy"

@@ -72,6 +72,31 @@ def compute_p_value(got, expected, expected_cov):
     return 1 - chi2(delta.size).cdf(v)
 
 
+def draw_comparison(fn, p_value, h, val_ref, cov_ref):
+    fig, ax = plt.subplots(2, 3, figsize=(10, 8), constrained_layout=True)
+    mname, projectile, target, frame = str(fn).split("_")
+    plt.suptitle(f"{mname} {projectile} {target} {frame} pvalue={p_value}")
+    xe = h.axes[0].edges
+    cx = h.axes[0].centers
+    for i, (axi, pdgid) in enumerate(zip(ax.flat, h.axes[1])):
+        pname = name(pdgid)
+        v = h.values()[:, i]
+        vref = val_ref[:, i]
+        cref = cov_ref[:, i, :, i]
+        eref = np.diag(cref) ** 0.5
+        vsum = np.sum(v)
+        vrefsum = np.sum(vref)
+        erefsum = np.einsum("i,ij,j", np.ones_like(v), cref, np.ones_like(v)) ** 0.5
+        plt.sca(axi)
+        plt.stairs(v, xe, color=f"C{i}", fill=True, alpha=0.5)
+        plt.errorbar(cx, vref, eref, color=f"C{i}", marker="o")
+        plt.title(f"{pname} {vsum:.0f} ({vrefsum:.0f} ± {erefsum:.0f})")
+    fig_dir = Path() / THIS_TEST
+    fig_dir.mkdir(exist_ok=True)
+    plt.savefig(fig_dir / fn.with_suffix(".png"))
+    plt.close(fig)
+
+
 @pytest.mark.trylast
 @pytest.mark.parametrize("target", ("p", "air"))
 @pytest.mark.parametrize("projectile", ("gamma", "pi-", "p", "He"))
@@ -125,28 +150,6 @@ def test_generator(projectile, target, frame, Model):
 
         p_value = compute_p_value(h.values(), val_ref, cov_ref)
 
-    try:
-        assert p_value >= 1e-3
-    except AssertionError:
-        fig, ax = plt.subplots(2, 3, figsize=(10, 8), constrained_layout=True)
-        plt.suptitle(f"{Model.pyname} {projectile} {target} {frame} pvalue={p_value}")
-        xe = h.axes[0].edges
-        cx = h.axes[0].centers
-        for i, (axi, pdgid) in enumerate(zip(ax.flat, h.axes[1])):
-            pname = name(pdgid)
-            v = h.values()[:, i]
-            vref = val_ref[:, i]
-            cref = cov_ref[:, i, :, i]
-            eref = np.diag(cref) ** 0.5
-            vsum = np.sum(v)
-            vrefsum = np.sum(vref)
-            erefsum = np.einsum("i,ij,j", np.ones_like(v), cref, np.ones_like(v)) ** 0.5
-            plt.sca(axi)
-            plt.stairs(v, xe, color=f"C{i}", fill=True, alpha=0.5)
-            plt.errorbar(cx, vref, eref, color=f"C{i}", marker="o")
-            plt.title(f"{pname} {vsum:.0f} ({vrefsum:.0f} ± {erefsum:.0f})")
-        fig_dir = Path() / THIS_TEST
-        fig_dir.mkdir(exist_ok=True)
-        plt.savefig(fig_dir / fn.with_suffix(".png"))
-        plt.close(fig)
-        raise
+    draw_comparison(fn, p_value, h, val_ref, cov_ref)
+
+    assert p_value >= 1e-3
