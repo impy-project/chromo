@@ -30,7 +30,7 @@ def test_hepmc_io(Model):
     # a lot of particles are missing. Either a bug in the original impy record or a
     # bug in the HepMC3 C++ code (not the pyhepmc code).
 
-    test_file = Path(f"{Path(__file__).with_suffix('')}_{Model.__name__}.dat")
+    test_file = Path(f"{Path(__file__).stem}_{Model.pyname}.dat")
 
     events = run_in_separate_process(run, Model)
     expected = []

@@ -68,7 +68,6 @@ def compute_p_value(got, expected, expected_cov):
         cov[i, i] += 0.1  # prevent singularity
     inv_cov = np.linalg.inv(cov)
     v = np.einsum("i,ij,j", delta, inv_cov, delta)
-    print(delta.size, v)
     return 1 - chi2(delta.size).cdf(v)
 
 

@@ -1,6 +1,6 @@
 import numpy as np
 from impy.constants import GeV
-from impy.kinematics import EventKinematics
+from impy.kinematics import CenterOfMass
 from .util import run_in_separate_process
 from impy.util import get_all_models
 import pytest
@@ -21,7 +21,8 @@ def run_model(Model, stable):
     p1 = "p"
     if Model.name == "Sophia":
         p1 = "gamma"
-    kin = EventKinematics(ecm=200 * GeV, particle1=p1, particle2="p")
+    p2 = "p"
+    kin = CenterOfMass(200 * GeV, p1, p2)
     model = Model(kin, seed=1)
     for pid in decay_list:
         model.set_stable(pid, stable)

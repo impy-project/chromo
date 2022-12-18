@@ -69,7 +69,7 @@ class PHOJETRun(MCRun):
     _name = "PhoJet"
     _event_class = PhojetEvent
     _frame = None
-    _projectiles = {lp.proton.pdgid, lp.photon.pdgid}
+    _projectiles = {lp.proton.pdgid}  # FIXME: should allow photons and hadrons
     _targets = {lp.proton.pdgid}
     _param_file_name = "dpmjpar.dat"
     _data_url = (
