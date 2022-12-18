@@ -62,11 +62,11 @@ jobs:
         CMAKE_GENERATOR: "MinGW Makefiles"
         FC: ${{ steps.setup-fortran.outputs.fc }}
 
-    - run: python -m pytest -vv -n 3
+    - run: python -m pytest -vv -n 3 -
       env:
         no_proxy: '*'
 
     - uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.os }}-${{ python-version }}
+        name: ${{ matrix.os }}-${{ matrix.python-version }}
         path: "test_generators/**"
