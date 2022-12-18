@@ -67,16 +67,12 @@ def test_simrnd():
     evt_kin = CenterOfMass(13 * TeV, "proton", "proton")
     generator = im.DpmjetIII193(evt_kin)
 
-    fname = ref_dir / "test_simrnd_data"
+    fname = ref_dir / "test_simrnd_data.pkl"
     with open(fname, "rb") as file:
         reference_data = pickle.load(file)
 
-    for seed, rnd_state in reference_data.items():
+    for seed, (expected_random_state, expected) in reference_data.items():
         generator._lib.init_rmmard(seed)
-        assert (
-            generator.random_state == rnd_state[0]
-        ), f"state of rmmard for seed = {seed} is different"
-        for rnd_number in rnd_state[1]:
-            assert np.isclose(
-                generator._lib.simrnd(), rnd_number, atol=1e-15
-            ), f"simrnd for seed = {seed} produce different sequence of random numbers"
+        assert generator.random_state == expected_random_state
+        got = [generator._lib.simrnd() for _ in range(len(expected))]
+        np.testing.assert_equal(got, expected)
