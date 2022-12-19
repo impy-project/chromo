@@ -5,6 +5,7 @@ from impy.kinematics import EventFrame
 from impy.constants import nuclei
 import dataclasses
 from particle import literals as lp, PDGID
+import warnings
 
 
 class SibyllEvent(MCEvent):
@@ -93,7 +94,11 @@ class SIBYLLRun(MCRun):
         if kin.p2.A > 1:
             # TODO figure out what this returns exactly:
             # self._lib.sib_sigma_hnuc
-            raise ValueError(f"Nuclear projectiles not yet supported by {self.label}")
+            warnings.warn(
+                f"cross-section for nuclear targets not yet supported in {self.label}",
+                RuntimeWarning,
+            )
+            return CrossSectionData()
 
         sib_id = self._cross_section_projectiles[abs(kin.p1)]
 
