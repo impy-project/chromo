@@ -82,7 +82,10 @@ class CompositeTarget(object):
         components = [
             (name(c), amount) for (c, amount) in zip(self.components, self.fractions)
         ]
-        return f"CompositeTarget({components}, label={self.label})"
+        args = f"{components}"
+        if self.label:
+            args += f", label={self.label!r}"
+        return f"CompositeTarget({args})"
 
 
 def _normalize_particle(x):

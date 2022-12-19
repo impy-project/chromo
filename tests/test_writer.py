@@ -1,6 +1,6 @@
 from impy.writer import Root
 from impy.common import CrossSectionData, EventData
-from impy.kinematics import EventKinematics
+from impy.kinematics import EventKinematics, CompositeTarget
 import numpy as np
 import uproot
 from numpy.testing import assert_equal, assert_allclose
@@ -43,11 +43,18 @@ def make_event(n):
 
 @pytest.mark.parametrize("write_vertices", (False, True))
 @pytest.mark.parametrize("overflow", (False, True))
-def test_Root(write_vertices, overflow):
+@pytest.mark.parametrize("target", ("He", "air"))
+def test_Root(write_vertices, overflow, target):
+    if target == "air":
+        air = CompositeTarget([("N", 0.75), ("O", 0.25)])
+        kin = EventKinematics("p", air, plab=5)
+    else:
+        kin = EventKinematics("p", target, beam=(-3, 4))
+
     class Model:
         label: str = "foo"
         seed = 1
-        kinematics = EventKinematics("p", "He", beam=(-3, 4))
+        kinematics = kin
 
         def cross_section(self):
             return CrossSectionData(total=6.6)
@@ -79,9 +86,9 @@ def test_Root(write_vertices, overflow):
         ref = {
             "seed": 1,
             "projectile_id": 2212,
-            "projectile_momentum": -3,
-            "target_id": 1000020040,
-            "target_momentum": 4,
+            "projectile_momentum": -3 if target == "He" else 5,
+            "target_id": 1000020040 if target == "He" else repr(air),
+            "target_momentum": 4 if target == "He" else 0,
             "model": "foo",
             "sigma_total": 6.6,
             "energy_unit": "GeV",

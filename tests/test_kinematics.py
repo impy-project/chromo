@@ -1,4 +1,11 @@
-from impy.kinematics import FixedTarget, TotalEnergy, KinEnergy, Momentum, EventFrame
+from impy.kinematics import (
+    FixedTarget,
+    TotalEnergy,
+    KinEnergy,
+    Momentum,
+    EventFrame,
+    CompositeTarget,
+)
 from impy.constants import GeV, MeV
 from particle import literals as lp
 from pytest import approx
@@ -26,3 +33,11 @@ def test_fixed_target():
     et = (2**2 + (lp.proton.mass * MeV) ** 2) ** 0.5
     assert ft.elab == approx(et)
     assert ft.frame == EventFrame.FIXED_TARGET
+
+
+def test_CompositeTarget_repr():
+    t = CompositeTarget([("N", 3), ("O", 1)])
+    assert repr(t) == "CompositeTarget([('N14', 0.75), ('O16', 0.25)])"
+
+    t = CompositeTarget([("N", 3), ("O", 1)], label="air")
+    assert repr(t) == "CompositeTarget([('N14', 0.75), ('O16', 0.25)], label='air')"

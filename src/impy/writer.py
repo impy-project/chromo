@@ -1,5 +1,6 @@
 import numpy as np
 from impy.constants import quarks_and_diquarks_and_gluons, millibarn, GeV
+from impy.kinematics import CompositeTarget
 import dataclasses
 from pathlib import Path
 
@@ -51,8 +52,9 @@ class Root:
             "seed": model.seed,
             "projectile_id": int(kin.p1),
             "projectile_momentum": kin.beams[0][2],
-            # TODO handle CompositeTarget
-            "target_id": int(kin.p2),
+            "target_id": (
+                repr(kin.p2) if isinstance(kin.p2, CompositeTarget) else int(kin.p2)
+            ),
             "target_momentum": kin.beams[1][2],
         }
         header.update(
