@@ -663,3 +663,13 @@ if(BUILD_dev_dpmjetIII193)
   )
   
 endif()
+
+
+f2py_add_module(_rmmardrng
+  FUNCTIONS
+  rmmaqd rmmard crranma4 init_rmmard simrnd
+  SOURCES
+  ${rangen_source}
+  COMPILE_DEFS
+  ${impy_definitions}
+)

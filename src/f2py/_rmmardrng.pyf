@@ -1,0 +1,67 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module _rmmardrng ! in 
+    interface  ! in :_rmmardrng
+        subroutine rmmaqd(iseed,iseq,chopt) ! in :_rmmardrng:CMakeFiles/_rmmardrng.dir/rangen.fpp
+            integer dimension(3) :: iseed
+            integer :: iseq
+            character*(*) :: chopt
+            double precision :: cd
+            double precision :: cint
+            double precision :: cm
+            double precision :: twom24
+            double precision :: twom48
+            integer :: modcns
+            double precision dimension(8) :: c
+            double precision dimension(97,8) :: u
+            integer dimension(8) :: ijkl
+            integer dimension(8) :: i97
+            integer dimension(8) :: j97
+            integer dimension(8) :: ntot
+            integer dimension(8) :: ntot2
+            integer, optional :: jseq=1
+            common /crranma3/ cd,cint,cm,twom24,twom48,modcns
+            common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
+        end subroutine rmmaqd
+        subroutine rmmard(rvec,lenv,iseq) ! in :_rmmardrng:CMakeFiles/_rmmardrng.dir/rangen.fpp
+            double precision dimension(*) :: rvec
+            integer :: lenv
+            integer :: iseq
+            double precision :: cd
+            double precision :: cint
+            double precision :: cm
+            double precision :: twom24
+            double precision :: twom48
+            integer :: modcns
+            double precision dimension(8) :: c
+            double precision dimension(97,8) :: u
+            integer dimension(8) :: ijkl
+            integer dimension(8) :: i97
+            integer dimension(8) :: j97
+            integer dimension(8) :: ntot
+            integer dimension(8) :: ntot2
+            integer :: jseq
+            common /crranma3/ cd,cint,cm,twom24,twom48,modcns
+            common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
+        end subroutine rmmard
+        function simrnd() ! in :_rmmardrng:CMakeFiles/_rmmardrng.dir/rangen.fpp
+            double precision :: simrnd
+        end function simrnd
+        subroutine init_rmmard(iseedin) ! in :_rmmardrng:CMakeFiles/_rmmardrng.dir/rangen.fpp
+            integer :: iseedin
+            double precision dimension(8) :: c
+            double precision dimension(97,8) :: u
+            integer dimension(8) :: ijkl
+            integer dimension(8) :: i97
+            integer dimension(8) :: j97
+            integer dimension(8) :: ntot
+            integer dimension(8) :: ntot2
+            integer :: jseq
+            common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
+        end subroutine init_rmmard
+    end interface 
+end python module _rmmardrng
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

@@ -34,6 +34,7 @@ models = [
     "phojet193",
     "dpmjetIII191",
     "dpmjetIII193",
+    "rmmardrng",
 ]
 
 # urqmd34 doesn't build correctly on Windows
