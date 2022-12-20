@@ -66,7 +66,8 @@ def test_Root(write_vertices, overflow, target):
     ]
     model = Model()
 
-    p = Path(f"test_writer_{write_vertices}_{overflow}.root")
+    # name must contain all parameters to not cause collisions when test is run parallel
+    p = Path(f"test_writer_{write_vertices}_{overflow}_{target}.root")
 
     writer = Root(p, model, write_vertices=write_vertices, buffer_size=5)
     if overflow:
