@@ -153,14 +153,14 @@ f2py_add_module(_eposlhc
 
 
 ### sib21
-set(SIBYLL_FUNCTIONS
+set(SIBYLL_COMMON_FUNCTIONS
   sibyll sibyll_ini sib_sigma_hp sib_sigma_hair sib_sigma_hnuc
   int_nuc decsib decpar sibini sibhep sib_list isib_pid2pdg
   isib_pdg2pid pdg_ini init_rmmard ${impy_logging})
 
 f2py_add_module(_sib21
   FUNCTIONS
-  ${SIBYLL21_FUNCTIONS} spgasdev
+  ${SIBYLL_COMMON_FUNCTIONS} spgasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll_21.f
   ${fortran_dir}/sibyll/sib21aux.f
@@ -175,7 +175,7 @@ f2py_add_module(_sib21
 ### sib23
 f2py_add_module(_sib23
   FUNCTIONS
-  ${SIBYLL_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -189,7 +189,7 @@ f2py_add_module(_sib23
 ### sib23c01
 f2py_add_module(_sib23c01
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  ${SIBYLL_COMMON_FUNCTIONS}
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c01.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -204,7 +204,7 @@ f2py_add_module(_sib23c01
 ### sib23d
 f2py_add_module(_sib23d
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  ${SIBYLL_COMMON_FUNCTIONS}
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3d.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
