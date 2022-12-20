@@ -61,35 +61,71 @@ def run_model(Model, kin, number=1):
     return values
 
 
-def compute_p_value(got, expected, expected_cov):
-    delta = np.ravel(got) - np.ravel(expected)
-    cov = np.reshape(expected_cov, delta.shape + delta.shape)
+def compute_p_value(got, expected, cov):
+    delta = np.reshape(got, -1) - expected
     for i in range(delta.size):
         cov[i, i] += 0.1  # prevent singularity
     inv_cov = np.linalg.inv(cov)
     v = np.einsum("i,ij,j", delta, inv_cov, delta)
-    return 1 - chi2(delta.size).cdf(v)
+    ndof = np.sum(delta != 0)
+    return 1 - chi2(ndof).cdf(v)
 
 
 def draw_comparison(fn, p_value, h, val_ref, cov_ref):
-    fig, ax = plt.subplots(2, 3, figsize=(10, 8), constrained_layout=True)
     mname, projectile, target, frame = str(fn).split("_")
-    plt.suptitle(f"{mname} {projectile} {target} {frame} pvalue={p_value}")
+    fig = plt.figure(figsize=(10, 8))
+    plt.suptitle(f"{mname} {projectile} {target} {frame} pvalue={p_value:.3g}")
     xe = h.axes[0].edges
     cx = h.axes[0].centers
-    for i, (axi, pdgid) in enumerate(zip(ax.flat, h.axes[1])):
+    left = 0.1
+    bottom = 0.07
+    width = 0.25
+    height1 = 0.25
+    height2 = 0.1
+    hspace = 0.05
+    wspace = 0.05
+    val = h.values()
+    for i, pdgid in enumerate(h.axes[1]):
         pname = name(pdgid)
         v = h.values()[:, i]
-        vref = val_ref[:, i]
-        cref = cov_ref[:, i, :, i]
+        vref = np.reshape(val_ref, val.shape)[:, i]
+        cref = np.reshape(cov_ref, val.shape * 2)[:, i, :, i]
         eref = np.diag(cref) ** 0.5
         vsum = np.sum(v)
         vrefsum = np.sum(vref)
-        erefsum = np.einsum("i,ij,j", np.ones_like(v), cref, np.ones_like(v)) ** 0.5
-        plt.sca(axi)
+        erefsum = np.sum(cref) ** 0.5
+        icol = i % 3
+        irow = i // 3
+        ax = fig.add_axes(
+            (
+                left + (width + wspace) * icol,
+                bottom
+                + (1 - irow) * (height1 + height2 + 2 * hspace)
+                + height2
+                + 0.5 * hspace,
+                width,
+                height1,
+            )
+        )
+        plt.sca(ax)
         plt.stairs(v, xe, color=f"C{i}", fill=True, alpha=0.5)
         plt.errorbar(cx, vref, eref, color=f"C{i}", marker="o")
         plt.title(f"{pname} {vsum:.0f} ({vrefsum:.0f} ± {erefsum:.0f})")
+        plt.tick_params(bottom=False, labelbottom=False)
+        ax = fig.add_axes(
+            (
+                left + (width + wspace) * icol,
+                bottom + (1 - irow) * (height1 + height2 + 2 * hspace),
+                width,
+                height2,
+            )
+        )
+        plt.xlim(xe[0], xe[-1])
+        plt.sca(ax)
+        d = (v - vref) / (eref + 0.1)
+        plt.plot(cx, d, color="k")
+        plt.ylim(-5, 5)
+        plt.xlim(xe[0], xe[-1])
     fig_dir = Path() / THIS_TEST
     fig_dir.mkdir(exist_ok=True)
     plt.savefig(fig_dir / fn.with_suffix(".png"))
@@ -137,10 +173,9 @@ def test_generator(projectile, target, frame, Model):
         print(f"{fn}: reference does not exist; generating... (but fail test)")
         # check plots to see whether reference makes any sense before committing it
         p_value = -1  # make sure test fails
-        values = run_in_separate_process(run_model, Model, kin, 200, timeout=10000)
-        val_ref = np.mean(values, axis=0)
-        cov_ref = np.cov(np.transpose([np.ravel(x) for x in values]))
-        cov_ref.shape = (*val_ref.shape, *val_ref.shape)
+        values = run_in_separate_process(run_model, Model, kin, 50, timeout=10000)
+        val_ref = np.reshape(np.mean(values, axis=0), -1)
+        cov_ref = np.cov(np.transpose([np.reshape(x, -1) for x in values]))
         with gzip.open(path_ref, "wb") as f:
             pickle.dump((val_ref, cov_ref), f)
     else:
