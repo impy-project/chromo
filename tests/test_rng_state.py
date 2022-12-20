@@ -3,12 +3,8 @@ from impy.constants import TeV, GeV
 import impy.models as im
 import pickle
 import pytest
-import numpy as np
-from pathlib import Path
 from .util import run_in_separate_process
 from impy.util import get_all_models
-
-ref_dir = Path(__file__).parent / "data"
 
 
 def run_rng_state(Model):
@@ -61,18 +57,3 @@ def test_rng_state(Model):
         pytest.xfail("UrQMD fails this test for most seeds, needs investigation")
 
     run_in_separate_process(run_rng_state, Model)
-
-
-def test_simrnd():
-    evt_kin = CenterOfMass(13 * TeV, "proton", "proton")
-    generator = im.DpmjetIII193(evt_kin)
-
-    fname = ref_dir / "test_simrnd_data.pkl"
-    with open(fname, "rb") as file:
-        reference_data = pickle.load(file)
-
-    for seed, (expected_random_state, expected) in reference_data.items():
-        generator._lib.init_rmmard(seed)
-        assert generator.random_state == expected_random_state
-        got = [generator._lib.simrnd() for _ in range(len(expected))]
-        np.testing.assert_equal(got, expected)
