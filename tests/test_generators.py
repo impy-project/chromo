@@ -23,6 +23,13 @@ from scipy.stats import chi2
 THIS_TEST = Path(__file__).stem
 REFERENCE_PATH = Path(__file__).parent / "data" / THIS_TEST
 REFERENCE_PATH.mkdir(exist_ok=True)
+FIG_PATH = Path("fig")
+
+
+@pytest.fixture(scope="session")
+def clear_figures():
+    FIG_PATH.unlink(missing_ok=True)
+    FIG_PATH.mkdir(parents=True)
 
 
 def run_model(Model, kin, number=1):
@@ -126,9 +133,7 @@ def draw_comparison(fn, p_value, h, val_ref, cov_ref):
         plt.plot(cx, d, color="k")
         plt.ylim(-5, 5)
         plt.xlim(xe[0], xe[-1])
-    fig_dir = Path() / THIS_TEST
-    fig_dir.mkdir(exist_ok=True)
-    plt.savefig(fig_dir / fn.with_suffix(".png"))
+    plt.savefig(FIG_PATH / fn.with_suffix(".png"))
     plt.close(fig)
 
 
