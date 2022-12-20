@@ -63,26 +63,16 @@ def test_rng_state(Model):
     run_in_separate_process(run_rng_state, Model)
 
 
-class Object(object):
-    pass
-
-
 def test_simrnd():
-
-    from impy.common import RMMARDState
-    import importlib
-
-    rmmard = Object()
-    rmmard._lib = importlib.import_module(f"impy.models._rmmardrng")
-    rmm_state = RMMARDState()
+    evt_kin = CenterOfMass(13 * TeV, "proton", "proton")
+    generator = im.DpmjetIII193(evt_kin)
 
     fname = ref_dir / "test_simrnd_data.pkl"
     with open(fname, "rb") as file:
         reference_data = pickle.load(file)
 
     for seed, (expected_random_state, expected) in reference_data.items():
-        rmmard._lib.init_rmmard(seed)
-        rmm_state._record_state(rmmard)
-        assert rmm_state == expected_random_state
-        got = [rmmard._lib.simrnd() for _ in range(len(expected))]
+        generator._lib.init_rmmard(seed)
+        assert generator.random_state == expected_random_state
+        got = [generator._lib.simrnd() for _ in range(len(expected))]
         np.testing.assert_equal(got, expected)
