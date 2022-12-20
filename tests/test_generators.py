@@ -24,12 +24,7 @@ THIS_TEST = Path(__file__).stem
 REFERENCE_PATH = Path(__file__).parent / "data" / THIS_TEST
 REFERENCE_PATH.mkdir(exist_ok=True)
 FIG_PATH = Path("fig")
-
-
-@pytest.fixture(scope="session")
-def clear_figures():
-    FIG_PATH.unlink(missing_ok=True)
-    FIG_PATH.mkdir(parents=True)
+FIG_PATH.mkdir(parents=True, exist_ok=True)
 
 
 def run_model(Model, kin, number=1):
