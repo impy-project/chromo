@@ -15,6 +15,7 @@ from impy.constants import (
     long_lived,
     nuclei,
     standard_projectiles,
+    GeV,
 )
 from impy.kinematics import EventKinematics, CompositeTarget
 import dataclasses
@@ -579,6 +580,7 @@ class MCRun(ABC):
     _set_final_state_particles_called = False
     _projectiles = standard_projectiles
     _targets = nuclei
+    _ecm_min = 10 * GeV  # default for many models
     nevents = 0  # number of generated events so far
 
     def __init__(self, seed):
@@ -721,17 +723,19 @@ class MCRun(ABC):
     @kinematics.setter
     def kinematics(self, kin):
         if abs(kin.p1) not in self._projectiles:
-            allowed = " ".join(f"{name(p)}[{int(p)}]" for p in self._projectiles)
             raise ValueError(
-                f"projectile {name(kin.p1)}[{int(kin.p1)}] is not allowed ({allowed})"
+                f"projectile {name(kin.p1)}[{int(kin.p1)}] is not allowed, "
+                f"see {self.pyname}.projectiles"
             )
-        if self._targets is None:
-            if not kin.p2.is_nucleus:
-                raise ValueError(f"target {name(kin.p2)} is not a nucleus")
-        elif abs(kin.p2) not in self._targets:
-            allowed = " ".join(f"{name(p)}[{int(p)}]" for p in self._targets)
+        if abs(kin.p2) not in self._targets:
             raise ValueError(
-                f"target {name(kin.p2)}[{int(kin.p2)}] is not among allowed ({allowed})"
+                f"target {name(kin.p2)}[{int(kin.p2)}] is not among allowed, "
+                f"see {self.pyname}.targets"
+            )
+        if kin.ecm < self._ecm_min:
+            raise ValueError(
+                f"center-of-mass energy {kin.ecm/GeV} GeV < "
+                f"minimum energy {self._ecm_min/GeV} GeV"
             )
         self._kinematics = kin
         self._set_kinematics(kin)

@@ -9,7 +9,7 @@
 from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.util import info, fortran_array_insert, fortran_array_remove
 from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles, nuclei
+from impy.constants import standard_projectiles, nuclei, GeV
 import warnings
 
 
@@ -37,6 +37,7 @@ class UrQMD34(MCRun):
     _event_class = UrQMDEvent
     _frame = EventFrame.FIXED_TARGET
     _projectiles = standard_projectiles | nuclei
+    _ecm_min = 2 * GeV
 
     def __init__(
         self,

@@ -1,7 +1,7 @@
 from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.kinematics import EventFrame
 from impy.util import info, _cached_data_dir, fortran_chars
-from impy.constants import standard_projectiles
+from impy.constants import standard_projectiles, GeV
 
 
 class DpmjetIIIEvent(MCEvent):
@@ -56,6 +56,7 @@ class DpmjetIIIRun(MCRun):
         "https://github.com/impy-project/impy"
         + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
+    _ecm_min = 1 * GeV
     _max_A1 = 0
     _max_A2 = 0
 
