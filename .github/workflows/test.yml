@@ -40,7 +40,6 @@ jobs:
       with:
         compiler: gcc
         version: 11
-    - uses: tlylt/install-graphviz@v1
 
     - run: python -m pip install --upgrade pip
 
@@ -62,10 +61,14 @@ jobs:
         CMAKE_GENERATOR: "MinGW Makefiles"
         FC: ${{ steps.setup-fortran.outputs.fc }}
 
+    # graphviz is needed for tests, only install it when compilation succeed
+    - uses: tlylt/install-graphviz@v1
+
     - run: python -m pytest -vv -n 3
       env:
         no_proxy: '*'
 
+    # always() ensures upload even if pytest ends with failures
     - if: always()
       uses: actions/upload-artifact@v3
       with:

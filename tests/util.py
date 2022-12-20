@@ -42,5 +42,6 @@ def run_in_separate_process(fn, *args, timeout=120):
         if queue.empty():
             assert False, "queue empty, process probably crashed"
         out = queue.get(timeout=1)
+        p.join()
         p.close()
     return out
