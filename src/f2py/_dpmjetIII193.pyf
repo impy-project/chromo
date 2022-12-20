@@ -3,7 +3,7 @@
 
 python module _dpmjetIII193 ! in 
     interface  ! in :_dpmjetIII193
-        block data dt_blkd43 ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_BLKD43.f.proc
+        block data dt_blkd43 ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_BLKD43.f
             double precision dimension(296) :: umo
             double precision dimension(296) :: plabf
             double precision, optional,dimension(296) :: siin=296*0.d0
@@ -52,7 +52,7 @@ python module _dpmjetIII193 ! in
             integer dimension(532) :: nrklin
             common /hnreac/ umo,plabf,siin,wk,nrk,nure
         end block data dt_blkd43
-        block data dt_blkd46 ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_BLKD46.f.proc
+        block data dt_blkd46 ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_BLKD46.f
             character dimension(210,8),intent(c) :: aname
             double precision dimension(210) :: aam
             double precision dimension(210) :: ga
@@ -67,7 +67,7 @@ python module _dpmjetIII193 ! in
             integer :: k
             common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
         end block data dt_blkd46
-        block data dt_blkd47 ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_BLKD47.f.proc
+        block data dt_blkd47 ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_BLKD47.f
             character dimension(602,8),intent(c) :: zkname
             double precision dimension(602) :: wt
             integer dimension(602,3) :: nzk
@@ -76,7 +76,7 @@ python module _dpmjetIII193 ! in
             integer, parameter,optional :: idmax9=602
             common /hndech/ zkname,wt,nzk
         end block data dt_blkd47
-        block data dt_defset ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_DEFSET.f.proc
+        block data dt_defset ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_DEFSET.f
             integer, optional,dimension(2) :: ifrag=2 
             integer, optional :: iresco=1
             integer, optional :: imshl=1
@@ -120,7 +120,7 @@ python module _dpmjetIII193 ! in
             common /dtcomp/ emufra,iemuma,iemuch,ncompo,iemul
             common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
         end block data dt_defset
-        subroutine dt_evtout(mode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_EVTOUT.f.proc
+        subroutine dt_evtout(mode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_EVTOUT.f
             integer :: mode
             double precision :: ehfllo
             double precision :: ehflhi
@@ -149,7 +149,7 @@ python module _dpmjetIII193 ! in
             common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
             common /dtevt1/ nhkk,nevhkk,isthkk,idhkk,jmohkk,jdahkk,phkk,vhkk,whkk
         end subroutine dt_evtout
-        subroutine dt_flahad(id,if1,if2,if3) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_FLAHAD.f.proc
+        subroutine dt_flahad(id,if1,if2,if3) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_FLAHAD.f
             integer :: id
             integer :: if1
             integer :: if2
@@ -181,7 +181,7 @@ python module _dpmjetIII193 ! in
             common /dtquar/ iqechr,iqbchr,iqichr,iqschr,iqcchr,iquchr,iqtchr,mquark
             common /popar2/ xm_list,tau_list,gam_list,xm_psm2_list,xm_vem2_list,xm_b82_list,xm_b102_list,xm_bb82_list,xm_bb102_list,ich3_list,iba3_list,iq_list,id_psm_list,id_vem_list,id_b8_list,id_b10_list
         end subroutine dt_flahad
-        block data dt_hadprp ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_HADPRP.f.proc
+        block data dt_hadprp ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_HADPRP.f
             integer, optional,dimension(13) :: iqechr=- 2 
             integer, optional,dimension(13) :: iqbchr=6* - 1 
             integer, optional,dimension(13) :: iqichr=4*0 
@@ -205,7 +205,7 @@ python module _dpmjetIII193 ! in
             common /dthaic/ ipdg2,ibam2,ipdg3,ibam3,ipdg4,ibam4,ipdg5,ibam5,iamcin
             common /dtpain/ btype
         end block data dt_hadprp
-        subroutine dt_init(ncases,epn,npmass,npchar,ntmass,ntchar,idp,iglau) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_INIT.f.proc
+        subroutine dt_init(ncases,epn,npmass,npchar,ntmass,ntchar,idp,iglau) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_INIT.f
             integer :: ncases
             double precision :: epn
             integer :: npmass
@@ -483,7 +483,7 @@ python module _dpmjetIII193 ! in
             common /qneuto/ dsigsu,dsigmc,ndsig,neutyp,neudec
             common /dtevno/ nevent,icasca
         end subroutine dt_init
-        subroutine dt_initjs(mode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_INITJS.f.proc
+        subroutine dt_initjs(mode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_INITJS.f
             integer :: mode
             double precision :: ehfllo
             double precision :: ehflhi
@@ -549,7 +549,7 @@ python module _dpmjetIII193 ! in
             common /dtfrpa/ mstux,parux,mstjx,parjx,imstu,iparu,imstj,iparj,nmstu,nparu,nmstj,nparj,pdb,pdbsea,isig0,ipi0,ovwtdc
             common /dtflg1/ ifrag,iresco,imshl,iresrj,ioulev,lemcck,lhadro,lseadi,levapo,iframe,itrspt,ifusion,iflow
         end subroutine dt_initjs
-        subroutine dt_inucas(it,ip,idxcas,lcas,ncas,irej) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_INUCAS.f.proc
+        subroutine dt_inucas(it,ip,idxcas,lcas,ncas,irej) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_INUCAS.f
             integer :: it
             integer :: ip
             integer :: idxcas
@@ -676,7 +676,7 @@ python module _dpmjetIII193 ! in
             common /dtmodl/ cmodel,elojet,mcgene,lphoin
             common /dtsta2/ excdpm,exceva,nincge,nincco,ninchr,nincwo,nincst,nincev,nresto,nrespr,nresnu,nresba,nrespb,nresch,nresev,neva,nevaga,nevaht,nevahy,nevafi
         end subroutine dt_inucas
-        subroutine dt_kkinc(npmass,npchar,ntmass,ntchar,idp,epn,kkmat,irej) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_KKINC.f.proc
+        subroutine dt_kkinc(npmass,npchar,ntmass,ntchar,idp,epn,kkmat,irej) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_KKINC.f
             integer :: npmass
             integer :: npchar
             integer :: ntmass
@@ -796,7 +796,7 @@ python module _dpmjetIII193 ! in
             common /dtglgp/ jstatb,jbinsb,cglb,ioglb,lprod
             common /dtimpa/ bimin,bimax,xsfrac,icentr
         end subroutine dt_kkinc
-        block data dt_noname ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_NONAME.f.proc
+        block data dt_noname ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_NONAME.f
             double precision, optional,dimension(25) :: sm=0.8d0 
             double precision, optional,dimension(25) :: bbm= 0.85d0 
             double precision, optional,dimension(25) :: bbb= 0.9d0 
@@ -807,7 +807,7 @@ python module _dpmjetIII193 ! in
             common /hnslop/ sm,bbm,bbb
             common /hnredv/ thresh,irii,ikii,ieii
         end block data dt_noname
-        subroutine dt_phoxs(kproj,ktarg,ecm,plab,stot,sine,sdif1,bel,mode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_PHOXS.f.proc
+        subroutine dt_phoxs(kproj,ktarg,ecm,plab,stot,sine,sdif1,bel,mode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_PHOXS.f
             integer :: kproj
             integer :: ktarg
             double precision :: ecm
@@ -889,12 +889,12 @@ python module _dpmjetIII193 ! in
             common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
             common /pocsec/ sigtot,sigela,sigvm,sigine,signdf,sigdir,siglsd,sighsd,sigldd,sighdd,sigcdf,sigpom,sigreg,sighar,sigtr1,sigtr2,sigloo,sigdpo,sig1so,sig1ha,sloel,slovm,sigcor,fsup,fsud,fsuh,ecmfil,p2afil,p2bfil,ipfil,ifafil,ifbfil
         end subroutine dt_phoxs
-        block data dt_runtt ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_RUNTT.f.proc
+        block data dt_runtt ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_RUNTT.f
             double precision, optional :: runtes=100.d0 
             double precision, optional :: eftes= 100.d0
             common /hndrun/ runtes,eftes
         end block data dt_runtt
-        subroutine dt_title ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_TITLE.f.proc
+        subroutine dt_title ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_TITLE.f
             double precision :: ehfllo
             double precision :: ehflhi
             double precision :: amxpfr
@@ -912,7 +912,7 @@ python module _dpmjetIII193 ! in
             integer :: iflevg
             common /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg
         end subroutine dt_title
-        subroutine dt_xsglau(na,nb,jjproj,xi,q2i,ecmi,ie,iq,nidx) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_XSGLAU.f.proc
+        subroutine dt_xsglau(na,nb,jjproj,xi,q2i,ecmi,ie,iq,nidx) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_XSGLAU.f
             integer :: na
             integer :: nb
             integer :: jjproj
@@ -1010,7 +1010,7 @@ python module _dpmjetIII193 ! in
             common /dtvdmp/ rl2,epspol,intrge,idpdf,modega,ishad
             common /dtdiha/ dibeta,dialph
         end subroutine dt_xsglau
-        subroutine dt_xshn(ip,it,pl,ecm,stot,sela) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_XSHN.f.proc
+        subroutine dt_xshn(ip,it,pl,ecm,stot,sela) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_XSHN.f
             integer :: ip
             integer :: it
             double precision :: pl
@@ -1061,7 +1061,7 @@ python module _dpmjetIII193 ! in
             common /pobeam/ mparconf,mpmapp,mpar,sqsglobmax,nmpar,idxmpar,nmapp
             common /potabl/ sigtab,sigecm,ecmf,isimax
         end subroutine dt_xshn
-        block data dt_zk ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/DT_ZK.f.proc
+        block data dt_zk ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/DT_ZK.f
             double precision, optional,dimension(16) :: amz=3*2.2d0 
             double precision, optional,dimension(16) :: gaz=3*.2d0 
             double precision, optional,dimension(16) :: tauz=16*0.d0
@@ -1081,7 +1081,7 @@ python module _dpmjetIII193 ! in
             common /hnaddh/ amz,gaz,tauz,ichz,ibarz,k1z,k2z,wtz,ii22,nzk1,nzk2,nzk3
             common /hnaddn/ anamz,zknam4,zknam5,zknam6
         end block data dt_zk
-        function idt_icihad(mcind) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/IDT_ICIHAD.f.proc
+        function idt_icihad(mcind) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/IDT_ICIHAD.f
             integer :: mcind
             integer dimension(2,7) :: ipdg2
             integer dimension(2,7) :: ibam2
@@ -1095,7 +1095,7 @@ python module _dpmjetIII193 ! in
             integer :: idt_icihad
             common /dthaic/ ipdg2,ibam2,ipdg3,ibam3,ipdg4,ibam4,ipdg5,ibam5,iamcin
         end function idt_icihad
-        function idt_ipdgha(mcind) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/IDT_IPDGHA.f.proc
+        function idt_ipdgha(mcind) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/IDT_IPDGHA.f
             integer :: mcind
             integer dimension(2,7) :: ipdg2
             integer dimension(2,7) :: ibam2
@@ -1109,7 +1109,7 @@ python module _dpmjetIII193 ! in
             integer :: idt_ipdgha
             common /dthaic/ ipdg2,ibam2,ipdg3,ibam3,ipdg4,ibam4,ipdg5,ibam5,iamcin
         end function idt_ipdgha
-        function ipho_id2pdg(idcpc) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/IPHO_ID2PDG.f.proc
+        function ipho_id2pdg(idcpc) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/IPHO_ID2PDG.f
             integer :: idcpc
             integer :: li
             integer :: lo
@@ -1140,7 +1140,7 @@ python module _dpmjetIII193 ! in
             common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
             common /popar1/ id_pdg_list,id_list,name_list,id_pdg_max
         end function ipho_id2pdg
-        function ipho_pdg2id(idpdg) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/IPHO_PDG2ID.f.proc
+        function ipho_pdg2id(idpdg) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/IPHO_PDG2ID.f
             integer :: idpdg
             integer :: li
             integer :: lo
@@ -1171,7 +1171,7 @@ python module _dpmjetIII193 ! in
             common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
             common /popar1/ id_pdg_list,id_list,name_list,id_pdg_max
         end function ipho_pdg2id
-        subroutine pho_borncs(ip,ifhard,xm1,xm2,xm3,xm4) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_BORNCS.f.proc
+        subroutine pho_borncs(ip,ifhard,xm1,xm2,xm3,xm4) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_BORNCS.f
             integer :: ip
             integer :: ifhard
             double precision :: xm1
@@ -1338,7 +1338,7 @@ python module _dpmjetIII193 ! in
             common /pocut1/ ptcut,ptano,fps,fph,psomin,xsomin
             common /point3/ sigs,dsighp,sigh,fs,fh,betas,aas,ptcon
         end subroutine pho_borncs
-        subroutine pho_event(nev,p1,p2,fac,irej) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_EVENT.f.proc
+        subroutine pho_event(nev,p1,p2,fac,irej) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_EVENT.f
             integer :: nev
             double precision dimension(4) :: p1
             double precision dimension(4) :: p2
@@ -1477,7 +1477,7 @@ python module _dpmjetIII193 ! in
             common /pohrcs/ hfac,hwgx,hsig,hdpt,hecm_last,hq2a_last,hq2b_last,iha_last,ihb_last,mh_pro_on,mh_tried,mh_acc_1,mh_acc_2
             common /porecu/ ipopos,ipores,ipoix1,ipoix2,ipoix3
         end subroutine pho_event
-        subroutine pho_ghhias(nevent,eep,een,na,nz) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_GHHIAS.f.proc
+        subroutine pho_ghhias(nevent,eep,een,na,nz) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_GHHIAS.f
             integer :: nevent
             double precision :: eep
             double precision :: een
@@ -1579,7 +1579,7 @@ python module _dpmjetIII193 ! in
             common /poevt2/ impart,iphist,icolor
             common /powght/ siggen,hswght,hswcut,evwght,ipowgc,iswcut,ivwght
         end subroutine pho_ghhias
-        subroutine pho_harint(ipp,ecm,p2v1,p2v2,i1,i2,k1,k2,mspom) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_HARINT.f.proc
+        subroutine pho_harint(ipp,ecm,p2v1,p2v2,i1,i2,k1,k2,mspom) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_HARINT.f
             integer :: ipp
             double precision :: ecm
             double precision :: p2v1
@@ -1757,7 +1757,7 @@ python module _dpmjetIII193 ! in
             common /pockin/ ptwant,as,ah,alns,alnh,z1max,z1dif,z2max,z2dif,pt,ptfin,etac,etad,x1,x2,v,u,w,w1,axx,qqpd,qqal,pdf1,pdf2,weight,phi1,phi2,pho1,pho2,ia,ib,ic,id,iv1,iv2,mspr,irejsc
             common /potabl/ sigtab,sigecm,ecmf,isimax
         end subroutine pho_harint
-        subroutine pho_harmci(ip,emaxf) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_HARMCI.f.proc
+        subroutine pho_harmci(ip,emaxf) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_HARMCI.f
             integer :: ip
             double precision :: emaxf
             integer :: li
@@ -1878,7 +1878,7 @@ python module _dpmjetIII193 ! in
             common /pohtab/ hfac_tab,hwgx_tab,hsig_tab,hdpt_tab,hq2a_tab,hq2b_tab,hecm_tab,ih_q2a_up,ih_q2b_up,ih_ecm_up
             common /powght/ siggen,hswght,hswcut,evwght,ipowgc,iswcut,ivwght
         end subroutine pho_harmci
-        subroutine pho_harxpt(ecmh,pt,ipro,dsigmc) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_HARXPT.f.proc
+        subroutine pho_harxpt(ecmh,pt,ipro,dsigmc) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_HARXPT.f
             double precision :: ecmh
             double precision :: pt
             integer :: ipro
@@ -1954,7 +1954,7 @@ python module _dpmjetIII193 ! in
             common /pohapa/ alqcd2,bqcd,nfbeta,nf
             common /pohdrn/ qmass,bet,pcoudi,pnorm,valprg,nfs
         end subroutine pho_harxpt
-        subroutine pho_harxto(ecmh,ptcutr,ptcutd,dsigmc,dsdptc) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_HARXTO.f.proc
+        subroutine pho_harxto(ecmh,ptcutr,ptcutd,dsigmc,dsdptc) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_HARXTO.f
             double precision :: ecmh
             double precision :: ptcutr
             double precision :: ptcutd
@@ -2031,7 +2031,7 @@ python module _dpmjetIII193 ! in
             common /pohdrn/ qmass,bet,pcoudi,pnorm,valprg,nfs
             common /pohapa/ alqcd2,bqcd,nfbeta,nf
         end subroutine pho_harxto
-        subroutine pho_init(linp,lout,irej) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_INIT.f.proc
+        subroutine pho_init(linp,lout,irej) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_INIT.f
             integer :: linp
             integer :: lout
             integer intent(out) :: irej
@@ -2181,7 +2181,7 @@ python module _dpmjetIII193 ! in
             common /pydat2/ kchg,pmas,parf,vckm
             common /pydat3/ mdcy,mdme,brat,kfdp
         end subroutine pho_init
-        subroutine pho_mcini ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_MCINI.f.proc
+        subroutine pho_mcini ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_MCINI.f
             integer :: li
             integer :: lo
             integer :: lpri
@@ -2317,7 +2317,7 @@ python module _dpmjetIII193 ! in
             common /poprob/ prob,eptab,ieemax,imax,kmax
             common /potabl/ sigtab,sigecm,ecmf,isimax
         end subroutine pho_mcini
-        function pho_pmass(id,mode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_PMASS.f.proc
+        function pho_pmass(id,mode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_PMASS.f
             integer :: id
             integer :: mode
             integer :: li
@@ -2390,7 +2390,7 @@ python module _dpmjetIII193 ! in
             common /popar2/ xm_list,tau_list,gam_list,xm_psm2_list,xm_vem2_list,xm_b82_list,xm_b102_list,xm_bb82_list,xm_bb102_list,ich3_list,iba3_list,iq_list,id_psm_list,id_vem_list,id_b8_list,id_b10_list
             common /pydat1/ mstu,paru,mstj,parj
         end function pho_pmass
-        function pho_pname(id,mode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_PNAME.f.proc
+        function pho_pname(id,mode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_PNAME.f
             integer :: id
             integer :: mode
             integer :: li
@@ -2436,7 +2436,7 @@ python module _dpmjetIII193 ! in
             common /popar1/ id_pdg_list,id_list,name_list,id_pdg_max
             common /popar2/ xm_list,tau_list,gam_list,xm_psm2_list,xm_vem2_list,xm_b82_list,xm_b102_list,xm_bb82_list,xm_bb102_list,ich3_list,iba3_list,iq_list,id_psm_list,id_vem_list,id_b8_list,id_b10_list
         end function pho_pname
-        subroutine pho_prevnt(npart) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_PREVNT.f.proc
+        subroutine pho_prevnt(npart) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_PREVNT.f
             integer :: npart
             integer :: li
             integer :: lo
@@ -2505,7 +2505,7 @@ python module _dpmjetIII193 ! in
             common /poevt2/ impart,iphist,icolor
             common /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp,ideqb,ihfld,ihfls
         end subroutine pho_prevnt
-        function pho_ptcut(ecm,ip) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_PTCUT.f.proc
+        function pho_ptcut(ecm,ip) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_PTCUT.f
             double precision :: ecm
             integer :: ip
             integer :: li
@@ -2538,7 +2538,7 @@ python module _dpmjetIII193 ! in
             common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
             common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
         end function pho_ptcut
-        subroutine pho_rregpar ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_RREGPAR.f.proc
+        subroutine pho_rregpar ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_RREGPAR.f
             integer dimension(2,40) :: mparconf
             integer dimension(2,40) :: mpmapp
             integer dimension(2) :: mpar
@@ -2613,7 +2613,7 @@ python module _dpmjetIII193 ! in
             common /pospre/ salpom,salpomp,sgp,sb0pom,salreg,salregp,sgr,sb0reg,sgppp,sgppr,sb0ppp,sb0ppr,svdmfac,svdmq2f,sb0har,sakfac,sphisup,srmass
             common /po2cha/ phisup,rmass,var,ampfac,elafac,vfac
         end subroutine pho_rregpar
-        subroutine pho_setmdl(indx,ival,imode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_SETMDL.f.proc
+        subroutine pho_setmdl(indx,ival,imode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_SETMDL.f
             integer :: indx
             integer :: ival
             integer :: imode
@@ -2630,7 +2630,7 @@ python module _dpmjetIII193 ! in
             common /poinou/ li,lo,lpri,lendir,datdir
             common /pomdls/ mdlna,iswmdl,parmdl,ipamdl,parfn
         end subroutine pho_setmdl
-        subroutine pho_setpar(iside,idpdg,idcpc,pvir) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_SETPAR.f.proc
+        subroutine pho_setpar(iside,idpdg,idcpc,pvir) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_SETPAR.f
             integer :: iside
             integer :: idpdg
             integer :: idcpc
@@ -2702,7 +2702,7 @@ python module _dpmjetIII193 ! in
             common /popar2/ xm_list,tau_list,gam_list,xm_psm2_list,xm_vem2_list,xm_b82_list,xm_b102_list,xm_bb82_list,xm_bb102_list,ich3_list,iba3_list,iq_list,id_psm_list,id_vem_list,id_b8_list,id_b10_list
             common /popar3/ wg_sec_list,idec_list,isec_list
         end subroutine pho_setpar
-        subroutine pho_setpcomb ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_SETPCOMB.f.proc
+        subroutine pho_setpcomb ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_SETPCOMB.f
             integer dimension(2,40) :: mparconf
             integer dimension(2,40) :: mpmapp
             integer dimension(2) :: mpar
@@ -2752,7 +2752,7 @@ python module _dpmjetIII193 ! in
             common /pogcms/ ecm,pcm,pmass,pvirt,ifpap,ifpab
             common /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp,ideqb,ihfld,ihfls
         end subroutine pho_setpcomb
-        subroutine pho_setpdf(idpdg,ityp,ipar,iset,iext,ipaval,mode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_SETPDF.f.proc
+        subroutine pho_setpdf(idpdg,ityp,ipar,iset,iext,ipaval,mode) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_SETPDF.f
             integer :: idpdg
             integer :: ityp
             integer :: ipar
@@ -2794,7 +2794,7 @@ python module _dpmjetIII193 ! in
             common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
             common /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp,ideqb,ihfld,ihfls
         end subroutine pho_setpdf
-        subroutine pho_sregpar ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_SREGPAR.f.proc
+        subroutine pho_sregpar ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_SREGPAR.f
             integer dimension(2,40) :: mparconf
             integer dimension(2,40) :: mpmapp
             integer dimension(2) :: mpar
@@ -2869,7 +2869,7 @@ python module _dpmjetIII193 ! in
             common /pospre/ salpom,salpomp,sgp,sb0pom,salreg,salregp,sgr,sb0reg,sgppp,sgppr,sb0ppp,sb0ppr,svdmfac,svdmq2f,sb0har,sakfac,sphisup,srmass
             common /po2cha/ phisup,rmass,var,ampfac,elafac,vfac
         end subroutine pho_sregpar
-        subroutine pho_xsect(ip,ifhard,ee) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/PHO_XSECT.f.proc
+        subroutine pho_xsect(ip,ifhard,ee) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_XSECT.f
             integer :: ip
             integer :: ifhard
             double precision :: ee
@@ -2978,7 +2978,7 @@ python module _dpmjetIII193 ! in
             common /pogcms/ ecm,pcm,pmass,pvirt,ifpap,ifpab
             common /point4/ ampel,ampvm,ampsof,amphar,amlmsd,amhmsd,amlmdd,amhmdd,ampdp
         end subroutine pho_xsect
-        function pycomp(kf) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/pycomp.f.proc
+        function pycomp(kf) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pycomp.f
             integer :: kf
             integer dimension(200) :: mstu
             double precision dimension(200) :: paru
@@ -2992,7 +2992,7 @@ python module _dpmjetIII193 ! in
             common /pydat1/ mstu,paru,mstj,parj
             common /pydat2/ kchg,pmas,parf,vckm
         end function pycomp
-        block data pydata ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/pydata.f.proc
+        block data pydata ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pydata.f
             integer, optional,dimension(200) :: mstu=0
             double precision dimension(200) :: paru
             integer, optional,dimension(200) :: mstj=1
@@ -3087,7 +3087,7 @@ python module _dpmjetIII193 ! in
             common /pylh3p/ modsel,parmin,parext,rmsoft,au,ad,ae
             common /pylh3c/ cpro,cver
         end block data pydata
-        subroutine pytune(mytune) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/pytune.f.proc
+        subroutine pytune(mytune) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pytune.f
             integer :: mytune
             integer dimension(200) :: mstu
             double precision dimension(200) :: paru
@@ -3100,7 +3100,10 @@ python module _dpmjetIII193 ! in
             common /pydat1/ mstu,paru,mstj,parj
             common /pypars/ mstp,parp,msti,pari
         end subroutine pytune
-        subroutine init_rmmard(iseedin) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/rangen.f.proc
+        function simrnd() ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/rangen.fpp
+            double precision :: simrnd
+        end function simrnd
+        subroutine init_rmmard(iseedin) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/rangen.fpp
             integer :: iseedin
             double precision dimension(8) :: c
             double precision dimension(97,8) :: u
@@ -3112,11 +3115,11 @@ python module _dpmjetIII193 ! in
             integer :: jseq
             common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
         end subroutine init_rmmard
-        subroutine impy_openlogfile(fname,opunit) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/logging.f.proc
+        subroutine impy_openlogfile(fname,opunit) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/logging.f
             character*300 :: fname
             integer :: opunit
         end subroutine impy_openlogfile
-        subroutine impy_closelogfile(opunit) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/pyf_sources/logging.f.proc
+        subroutine impy_closelogfile(opunit) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/logging.f
             integer :: opunit
         end subroutine impy_closelogfile
     end interface 

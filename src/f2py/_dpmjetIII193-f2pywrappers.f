@@ -69,6 +69,13 @@ C     It contains Fortran 77 wrappers to fortran functions.
       end
 
 
+      subroutine f2pywrapsimrnd (simrndf2pywrap)
+      external simrnd
+      double precision simrndf2pywrap, simrnd
+      simrndf2pywrap = simrnd()
+      end
+
+
       subroutine f2pyinithnreac(setupfunc)
       external setupfunc
       double precision umo(296)

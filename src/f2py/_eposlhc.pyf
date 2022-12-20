@@ -7300,6 +7300,5 @@ python module _eposlhc ! in
     end interface 
 end python module _eposlhc
 
-! This file was auto-generated with f2py (version:1.23.3).
-! See:
-! https://web.archive.org/web/20140822061353/http://cens.ioc.ee/projects/f2py2e
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

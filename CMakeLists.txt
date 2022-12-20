@@ -189,7 +189,7 @@ f2py_add_module(_sib23
 ### sib23c01
 f2py_add_module(_sib23c01
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS}
+  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c01.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -204,7 +204,7 @@ f2py_add_module(_sib23c01
 ### sib23d
 f2py_add_module(_sib23d
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS}
+  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3d.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -537,7 +537,7 @@ f2py_add_module(_dpmjetIII193
   pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
   pho_setpcomb dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias
-  init_rmmard ${impy_logging}
+  init_rmmard simrnd ${impy_logging}
   SOURCES
   ${dpmjetIII193_sources}
   ${fortran_dir}/dpmjetIII-19.3/common/dummies.f
