@@ -37,6 +37,11 @@ def test_fixed_target():
 
 def test_CompositeTarget_repr():
     t = CompositeTarget([("N", 3), ("O", 1)])
+    assert t.A == 16
+    assert t.Z == 8
+    assert t.components == (1000070140, 1000080160)
+    assert int(t) == int(t.components[1])
+    assert abs(t) == int(t.components[1])
     assert repr(t) == "CompositeTarget([('N14', 0.75), ('O16', 0.25)])"
 
     t = CompositeTarget([("N", 3), ("O", 1)], label="air")

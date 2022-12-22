@@ -27,40 +27,45 @@ from enum import Enum
 EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
 
 
-class CompositeTarget(object):
+@dataclasses.dataclass(init=False)
+class CompositeTarget:
     """Definition of composite targets made of multiple (atomic) nuclei.
 
     Examples of such composite targets are Air, CO_2, HCl, C_2H_60.
     """
 
+    label: str
+    components: Tuple[PDGID]
+    fractions: np.ndarray
+
+    # TODO: this is missing a docstring
     def __init__(self, components, label=""):
-        self.label = label
+        if len(components) == 0:
+            raise ValueError("components cannot be empty")
         fractions = np.empty(len(components))
-        self._components = []
+        c = []
         for i, (particle, amount) in enumerate(components):
             fractions[i] = amount
-            self._components.append(_normalize_particle(particle))
-        self._fractions = fractions / np.sum(fractions)
-
-    @property
-    def fractions(self):
-        return self._fractions
-
-    @property
-    def components(self):
-        return self._components
+            p = _normalize_particle(particle)
+            if not p.is_nucleus:
+                raise ValueError(f"component {particle} is not a nucleus")
+            c.append(p)
+        self.label = label
+        self.components = tuple(c)
+        self.fractions = fractions / np.sum(fractions)
+        self.fractions.flags["WRITEABLE"] = False
 
     @property
     def Z(self):
         """Return maximum charge number."""
         # needed for compatibility with PDGID interface and for dpmjet initialization
-        return max(p.Z for p in self._components)
+        return max(p.Z for p in self.components)
 
     @property
     def A(self):
         """Return maximum number of nucleons."""
         # needed for compatibility with PDGID interface and for dpmjet initialization
-        return max(p.A for p in self._components)
+        return max(p.A for p in self.components)
 
     @property
     def is_nucleus(self):
@@ -68,11 +73,11 @@ class CompositeTarget(object):
 
     def __int__(self):
         """Return PDGID for heaviest of elements."""
-        return max(int(m) for m in self._components)
+        return int(max((c.A, c) for c in self.components)[1])
 
     def average_mass(self):
         return sum(
-            f * p.A * nucleon_mass for (f, p) in zip(self._fractions, self._components)
+            f * p.A * nucleon_mass for (f, p) in zip(self.fractions, self.components)
         )
 
     def __abs__(self):

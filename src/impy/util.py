@@ -79,8 +79,8 @@ def AZ2pdg(A, Z):
     to PDG nuclear code"""
     # 10LZZZAAAI
     pdg_id = 1000000000
-    pdg_id += 10 * A
     pdg_id += 10000 * Z
+    pdg_id += 10 * A
     return pdg_id
 
 
