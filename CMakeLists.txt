@@ -189,7 +189,7 @@ f2py_add_module(_sib23
 ### sib23c01
 f2py_add_module(_sib23c01
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  ${SIBYLL_COMMON_FUNCTIONS}
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c01.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -197,14 +197,13 @@ f2py_add_module(_sib23c01
   ${rangen_source}
   COMPILE_DEFS
   ${impy_definitions}
-  SIBYLL_TABLE_LENGTH=99
 )
 
 
 ### sib23d
 f2py_add_module(_sib23d
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  ${SIBYLL_COMMON_FUNCTIONS}
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3d.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -212,7 +211,6 @@ f2py_add_module(_sib23d
   ${rangen_source}
   COMPILE_DEFS
   ${impy_definitions}
-  SIBYLL_TABLE_LENGTH=99
 )
 
 ### qgs01
@@ -308,9 +306,9 @@ f2py_add_module(_pythia6
 ### pythia8
 # About the license and how it affects impy. 
 # Pythia-8 is licensed under GPL-v2 or higher, which means GPL-v3
-# applies. An excerprt from GPL-v3:
+# applies. An excerpt from GPL-v3:
 
-# >  A compilation of a covered work with other separate and independent
+# > A compilation of a covered work with other separate and independent
 # > works, which are not by their nature extensions of the covered work,
 # > and which are not combined with it such as to form a larger program,
 # > in or on a volume of a storage or distribution medium, is called an
@@ -325,7 +323,7 @@ f2py_add_module(_pythia6
 # Pythia-8 library is redistributed by us under its original license, which is
 # allowed. impy is merely a way to steer Pythia-8 and to provide its output in a
 # particular format. The Pythia-8 authors are free to take some of our code and
-# make it GPL code, they can do that anyway, but we have still free to
+# make it GPL code, they can do that anyway, but we are still free to
 # distribute the code that we write under a less restrictive license.
 #
 # To strengthen this position, we compile the original Pythia-8 code into
@@ -537,7 +535,7 @@ f2py_add_module(_dpmjetIII193
   pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
   pho_setpcomb dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias
-  init_rmmard simrnd ${impy_logging}
+  init_rmmard ${impy_logging}
   SOURCES
   ${dpmjetIII193_sources}
   ${fortran_dir}/dpmjetIII-19.3/common/dummies.f
@@ -581,7 +579,7 @@ f2py_add_module(_phojet193
 if(BUILD_sib23c00)
   f2py_add_module(_sib23c00
     FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    ${SIBYLL_COMMON_FUNCTIONS}
     SOURCES
     ${fortran_dir}/sibyll/sibyll2.3c00.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -589,14 +587,13 @@ if(BUILD_sib23c00)
     ${rangen_source}
     COMPILE_DEFS
     ${impy_definitions}
-    SIBYLL_TABLE_LENGTH=99
   )
 endif()
 
 if(BUILD_sib23c02)
   f2py_add_module(_sib23c02
     FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    ${SIBYLL_COMMON_FUNCTIONS}
     SOURCES
     ${fortran_dir}/sibyll/sibyll2.3c02.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -604,14 +601,13 @@ if(BUILD_sib23c02)
     ${rangen_source}
     COMPILE_DEFS
     ${impy_definitions}
-    SIBYLL_TABLE_LENGTH=99
   )
 endif()
 
 if(BUILD_sib23c03)
   f2py_add_module(_sib23c03
     FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    ${SIBYLL_COMMON_FUNCTIONS}
     SOURCES
     ${fortran_dir}/sibyll/sibyll2.3c03.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -619,7 +615,6 @@ if(BUILD_sib23c03)
     ${rangen_source}
     COMPILE_DEFS
     ${impy_definitions}
-    SIBYLL_TABLE_LENGTH=99
   )
 endif()
 
