@@ -116,7 +116,9 @@ class SIBYLLRun(MCRun):
     def sigma_inel_air(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        sigma = self._lib.sib_sigma_hair(self._cross_section_id, self._ecm)
+        kin = self.kinematics
+        sib_id = self._cross_section_projectiles[abs(kin.p1)]
+        sigma = self._lib.sib_sigma_hair(sib_id, self._ecm)
         if isinstance(sigma, tuple):
             return sigma[0]
         return sigma
