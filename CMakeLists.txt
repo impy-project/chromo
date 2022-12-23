@@ -1,6 +1,19 @@
 cmake_minimum_required(VERSION 3.17)
 
-project(impylib LANGUAGES C CXX Fortran)
+project(impylib LANGUAGES Fortran)
+
+# Find C/CXX compilers that match the Fortran compiler
+if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  # Compiler version is something like XY.Z.N, we want only XY
+  string(REGEX MATCH "[0-9]+" COMPILER_MAJOR_VERSION ${CMAKE_Fortran_COMPILER_VERSION})
+  find_program(CMAKE_C_COMPILER "gcc-${COMPILER_MAJOR_VERSION}")
+  find_program(CMAKE_CXX_COMPILER "g++-${COMPILER_MAJOR_VERSION}")
+else()
+  message(FATAL_ERROR "Unknown Fortran compiler, cannot search for C/CXX compiler")
+endif()
+
+# Delayed toolchain initialization
+enable_language(C CXX)
 
 set(BUILD_dev_dpmjetIII193 CACHE 
   PATH "source directory for dev_dpmjetIII193")

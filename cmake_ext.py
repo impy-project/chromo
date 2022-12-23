@@ -107,7 +107,7 @@ class CMakeBuild(build_ext):
                     "win-arm32": "ARM",
                     "win-arm64": "ARM64",
                 }[self.plat_name]
-                # cmake_args += ["-A", arch]
+                cmake_args += ["-A", arch]
 
             # cmake_args += [f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"]
 
@@ -128,7 +128,7 @@ class CMakeBuild(build_ext):
         if not build_temp.exists():
             build_temp.mkdir(parents=True)
 
-        # cmake setup must be run again if external settings have changed
+        # cmake setup must be run again if external settings change
         cmake_cache = build_temp / "CMakeCache.txt"
         if cmake_cache.exists():
             with cmake_cache.open() as f:
@@ -155,7 +155,10 @@ class CMakeBuild(build_ext):
             cmd = [cmake_exe, str(ext.sourcedir)] + cmake_args
             if verbose:
                 force_print(" ".join(cmd))
-            subp.check_call(cmd, cwd=build_temp)
+            r = subp.run(cmd, cwd=build_temp)
+            if r.returncode != 0 and cmake_cache.exists():
+                cmake_cache.unlink()
+                raise SystemExit("Error: CMake configuration failed")
 
         # This is a hack to make the parallel build faster.
         # Compile all targets on first call to make better use of parallization.
@@ -164,8 +167,11 @@ class CMakeBuild(build_ext):
         target = ext.name.split(".")[-1]
         suffix = sc.get_config_var("EXT_SUFFIX") or sc.get_config_var("SO")
         output_file = Path(extdir) / (target + suffix)
-        if not output_file.exists() or target == "_eposlhc":  # any one target is fine
+        if not output_file.exists() or target == "_eposlhc":  # any target is fine
             cmd = [cmake_exe, "--build", "."] + build_args
             if verbose:
                 force_print(" ".join(cmd))
-            subp.check_call(cmd, cwd=build_temp)
+            r = subp.run(cmd, cwd=build_temp)
+            if r.returncode != 0 and cmake_cache.exists():
+                cmake_cache.unlink()
+                raise SystemExit("Error: CMake configuration is faulty")
