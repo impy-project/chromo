@@ -14,11 +14,14 @@ from impy.util import get_all_models, name
 import boost_histogram as bh
 import gzip
 import pickle
+import matplotlib
 import matplotlib.pyplot as plt
 from pathlib import Path
 from particle import literals as lp
 import numpy as np
 from scipy.stats import chi2
+
+matplotlib.use("svg")  # need non-interactive backend for CI Windows
 
 THIS_TEST = Path(__file__).stem
 REFERENCE_PATH = Path(__file__).parent / "data" / THIS_TEST
@@ -64,7 +67,6 @@ def run_model(Model, kin, number=1):
 
 
 def compute_p_value(got, expected, cov):
-    got = np.reshape(got, -1)
     delta = got - expected
     var = np.diag(cov) + 0.1  # prevent singularity
     # we ignore correlations, since including them
@@ -74,12 +76,12 @@ def compute_p_value(got, expected, cov):
     return 1 - chi2(ndof).cdf(v)
 
 
-def draw_comparison(fn, p_value, h, val_ref, cov_ref):
+def draw_comparison(fn, p_value, axes, values, val_ref, cov_ref):
     mname, projectile, target, frame = str(fn).split("_")
     fig = plt.figure(figsize=(10, 8))
     plt.suptitle(f"{mname} {projectile} {target} {frame} pvalue={p_value:.3g}")
-    xe = h.axes[0].edges
-    cx = h.axes[0].centers
+    xe = axes[0].edges
+    cx = axes[0].centers
     left = 0.1
     bottom = 0.07
     width = 0.25
@@ -87,12 +89,13 @@ def draw_comparison(fn, p_value, h, val_ref, cov_ref):
     height2 = 0.1
     hspace = 0.05
     wspace = 0.05
-    val = h.values()
-    for i, pdgid in enumerate(h.axes[1]):
+    shape = tuple(len(x) for x in axes)
+    val = np.reshape(values, shape)
+    for i, pdgid in enumerate(axes[1]):
         pname = name(pdgid)
-        v = h.values()[:, i]
-        vref = np.reshape(val_ref, val.shape)[:, i]
-        cref = np.reshape(cov_ref, val.shape * 2)[:, i, :, i]
+        v = val[:, i]
+        vref = np.reshape(val_ref, shape)[:, i]
+        cref = np.reshape(cov_ref, shape * 2)[:, i, :, i]
         eref = np.diag(cref) ** 0.5
         vsum = np.sum(v)
         vrefsum = np.sum(vref)
@@ -129,7 +132,7 @@ def draw_comparison(fn, p_value, h, val_ref, cov_ref):
         plt.plot(cx, d, color="k")
         plt.ylim(-5, 5)
         plt.xlim(xe[0], xe[-1])
-    plt.savefig(FIG_PATH / fn.with_suffix(".png"))
+    plt.savefig(FIG_PATH / fn.with_suffix(".svg"))
     plt.close(fig)
 
 
@@ -180,7 +183,7 @@ def test_generator(projectile, target, frame, Model):
         with gzip.open(path_ref) as f:
             val_ref, cov_ref = pickle.load(f)
 
-    # "h" sometimes contains extreme spikes
+    # histogram sometimes contains extreme spikes
     # not reflected in cov, this murky formula
     # protects against these false negatives
     values = np.reshape(h.values(), -1)
@@ -188,8 +191,8 @@ def test_generator(projectile, target, frame, Model):
         cov_ref[i, i] = 0.5 * (cov_ref[i, i] + v)
 
     if p_value is None:
-        p_value = compute_p_value(h.values(), val_ref, cov_ref)
+        p_value = compute_p_value(values, val_ref, cov_ref)
 
-    draw_comparison(fn, p_value, h, val_ref, cov_ref)
+    draw_comparison(fn, p_value, h.axes, values, val_ref, cov_ref)
 
     assert p_value >= 1e-5
