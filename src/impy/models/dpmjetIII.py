@@ -98,18 +98,9 @@ class DpmjetIIIRun(MCRun):
         # Relax momentum and energy conservation checks at very high energies
         if evt_kin.ecm > 5e4:
             # Relative allowed deviation
-            self._lib.pomdls.parmdl[76] = 0.045
+            self._lib.pomdls.parmdl[74] = 0.05
             # Absolute allowed deviation
-            self._lib.pomdls.parmdl[77] = 0.395
-            # Relax threshhold of rejected events for variable energy runs
-            self._lib.pomdls.ipamdl[178] = 5000
-
-        # Relax momentum and energy conservation checks at very high energies
-        if evt_kin.ecm > 5e4:
-            # Relative allowed deviation
-            self._lib.pomdls.parmdl[76] = 0.05
-            # Absolute allowed deviation
-            self._lib.pomdls.parmdl[77] = 0.05
+            self._lib.pomdls.parmdl[75] = 0.05
 
         # Prevent DPMJET from overwriting decay settings
         # self._lib.dtfrpa.ovwtdc = False
