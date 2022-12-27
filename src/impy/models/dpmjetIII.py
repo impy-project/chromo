@@ -1,7 +1,7 @@
 from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.kinematics import EventFrame
 from impy.util import info, _cached_data_dir, fortran_chars
-from impy.constants import standard_projectiles, GeV
+from impy.constants import standard_projectiles, nuclei, GeV
 
 
 class DpmjetIIIEvent(MCEvent):
@@ -49,7 +49,7 @@ class DpmjetIIIRun(MCRun):
     _name = "DPMJET-III"
     _event_class = DpmjetIIIEvent
     _frame = None
-    _projectiles = standard_projectiles
+    _projectiles = standard_projectiles | nuclei
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
     _data_url = (
@@ -139,7 +139,7 @@ class DpmjetIIIRun(MCRun):
             self._max_A2 = kin.p2.A or 1
             self._lib.dt_init(
                 -1,
-                kin.plab,
+                max(kin.plab, 100.0),
                 kin.p1.A or 1,
                 kin.p1.Z or 0,
                 kin.p2.A or 1,
@@ -170,7 +170,9 @@ class DpmjetIIIRun(MCRun):
             k.p1.Z or 0,
             k.p2.A or 1,
             k.p2.Z or 0,
-            self._lib.idt_icihad(k.p1),
+            self._lib.idt_icihad(2212)
+            if k.p1.is_nucleus
+            else self._lib.idt_icihad(k.p1),
             k.elab,
             kkmat=-1,
         )

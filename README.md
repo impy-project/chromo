@@ -36,11 +36,10 @@ print("Average pT for charged pions {0:4.3f}".format(average_pt))
 
 ## Supported models
 
-- DPMJET-III 3.0.6
-- DPMJET-III 19.1
+- DPMJET-III 3.0.6 & PHOJET 1.12-35
+- DPMJET-III 19.1 & PHOJET 19.1
+- DPMJET-III 19.3 & PHOJET 19.3
 - EPOS-LHC
-- PHOJET 1.12-35
-- PHOJET 19.1
 - PYTHIA 6.4
 - PYTHIA 8.3
 - QGSJet-01
@@ -50,7 +49,7 @@ print("Average pT for charged pions {0:4.3f}".format(average_pt))
 - SIBYLL-2.3
 - SIBYLL-2.3c
 - SIBYLL-2.3d
-- SOPHIA (needs update)
+- SOPHIA 2.0
 - UrQMD 3.4
 
 ## Installation
