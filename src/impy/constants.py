@@ -1,7 +1,7 @@
 # This dependency might be overkill for just reading a few
 # variables. Should be changed at some point.
 from scipy.constants import speed_of_light as _c_SI
-from particle import literals as lp, Particle
+from particle import literals as lp
 
 c = 1e2 * _c_SI
 cm2sec = 1e-2 / _c_SI
@@ -79,10 +79,6 @@ long_lived = (
     -13,
 )
 
-nuclei = {
-    p.pdgid for p in Particle.findall(lambda p: p.pdgid.is_nucleus and p.charge > 0)
-}
-
 # only positive PDGIDs!
 standard_projectiles = {
     p.pdgid for p in (lp.p, lp.n, lp.pi_plus, lp.K_plus, lp.K_S_0, lp.K_L_0)
@@ -104,45 +100,10 @@ em_particles = {p.pdgid for p in (lp.photon, lp.e_minus)}
 tau_stable = 30e-12  # 30 ps, typical value at LHC
 
 
-def _make_name2pdg():
-    all_particles = Particle.findall()
-    db = {p.name: int(p.pdgid) for p in all_particles}
-    db.update({p.programmatic_name: int(p.pdgid) for p in all_particles})
-    db["p"] = 2212
-    db["n"] = 2112
-    db["p~"] = -db["p"]
-    db["n~"] = -db["n"]
-    db.update(
-        H=db["p"],
-        H1=db["p"],
-        He=db["He4"],
-        C=db["C12"],
-        N=db["N14"],
-        O=db["O16"],
-        Ne=db["Ne20"],
-        Ar=db["Ar40"],
-        Xe=db["Xe131"],
-        Pb=db["Pb206"],
-        photon=db["gamma"],
-        proton=db["p"],
-        neutron=db["n"],
-        antiproton=-db["p"],
-        antineutron=-db["n"],
-        pbar=-db["p"],
-        nbar=-db["n"],
-        p_bar=-db["p"],
-        n_bar=-db["n"],
-    )
-    return db
-
-
-name2pdg = _make_name2pdg()
-
-
 # Air composition for special cross section functions
 # (source https://en.wikipedia.org/wiki/Atmosphere_of_Earth)
 air_composition = {
-    name2pdg["N"]: 0.78084,
-    name2pdg["O"]: 0.20946,
-    name2pdg["Ar"]: 0.00934,
+    1000070140: 0.78084,  # nitrogen
+    1000080160: 0.20946,  # oxygen
+    1000180400: 0.00934,  # argon
 }

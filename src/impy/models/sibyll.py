@@ -1,10 +1,9 @@
 import numpy as np
 from impy.common import MCRun, MCEvent, RMMARDState, CrossSectionData
-from impy.util import info
+from impy.util import info, Nuclei
 from impy.kinematics import EventFrame
-from impy.constants import nuclei
 import dataclasses
-from particle import literals as lp, PDGID
+from particle import literals as lp
 import warnings
 
 
@@ -55,7 +54,7 @@ class SIBYLLRun(MCRun):
     _name = "SIBYLL"
     _event_class = SibyllEvent
     _frame = EventFrame.CENTER_OF_MASS
-    _targets = {x for x in nuclei if PDGID(x).A <= 20}
+    _targets = Nuclei(a_max=20)
     _cross_section_projectiles = {
         p.pdgid: sib_id
         for p, sib_id in (

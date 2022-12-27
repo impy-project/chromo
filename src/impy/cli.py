@@ -8,8 +8,8 @@ import argparse
 import os
 from impy import models, __version__ as version
 from impy.kinematics import CenterOfMass, FixedTarget, Momentum
-from impy.util import AZ2pdg, tolerant_string_match, get_all_models
-from impy.constants import MeV, GeV, name2pdg
+from impy.util import AZ2pdg, tolerant_string_match, get_all_models, name2pdg
+from impy.constants import MeV, GeV
 from impy import writer
 from pathlib import Path
 from particle import Particle
@@ -95,7 +95,7 @@ def process_particle(x):
     # ...
 
     try:
-        return name2pdg[x]
+        return name2pdg(x)
     except KeyError:
         raise SystemExit(f"particle name {x} not recognized")
 
@@ -271,7 +271,8 @@ def parse_arguments():
             pid1 = args.projectile_id
             pid2 = args.target_id
             en = f"{args.sqrts / GeV:.0f}"
-            fn = f"impy_{Model.pyname.lower()}_{args.seed}_{pid1}_{pid2}_{en}.{ext}"
+            mn = Model.pyname.lower()
+            fn = f"impy_{mn}_{args.seed}_{int(pid1)}_{int(pid2)}_{en}.{ext}"
             odir = os.environ.get("CRMC_OUT", ".")
             args.out = Path(odir) / fn
 
@@ -301,9 +302,9 @@ def main():
     msg = f"""\
   [repr.str]Model[/repr.str]\t\t[bold]{args.model.label}[/bold]
   [repr.str]Projectile[/repr.str]\t[bold]{p1.name}[/bold]\
- ([repr.number]{args.projectile_id}[/repr.number])
+ ([repr.number]{int(args.projectile_id)}[/repr.number])
   [repr.str]Target[/repr.str]\t[bold]{p2.name}[/bold]\
- ([repr.number]{args.target_id}[/repr.number])\
+ ([repr.number]{int(args.target_id)}[/repr.number])\
 """
     if pr != 0 or ta != 0:
         msg += f"""

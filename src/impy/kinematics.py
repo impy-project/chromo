@@ -24,8 +24,9 @@ from impy.util import (
     elab2ecm,
     mass,
     pdg2name,
+    name2pdg,
 )
-from impy.constants import nucleon_mass, name2pdg
+from impy.constants import nucleon_mass
 from particle import PDGID
 import dataclasses
 from typing import Union, Tuple
@@ -109,7 +110,7 @@ def _normalize_particle(x):
         return PDGID(x)
     if isinstance(x, str):
         try:
-            return PDGID(name2pdg[x])
+            return PDGID(name2pdg(x))
         except KeyError:
             raise ValueError(f"particle with name {x} not recognized")
     if is_AZ(x):

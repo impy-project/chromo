@@ -7,9 +7,9 @@
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
 from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.util import info, fortran_array_insert, fortran_array_remove
+from impy.util import info, fortran_array_insert, fortran_array_remove, Nuclei
 from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles, nuclei, GeV
+from impy.constants import standard_projectiles, GeV
 import warnings
 
 
@@ -36,7 +36,7 @@ class UrQMD34(MCRun):
     _library_name = "_urqmd34"
     _event_class = UrQMDEvent
     _frame = EventFrame.FIXED_TARGET
-    _projectiles = standard_projectiles | nuclei
+    _projectiles = standard_projectiles | Nuclei()
     _ecm_min = 2 * GeV
 
     def __init__(

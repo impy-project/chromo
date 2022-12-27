@@ -1,8 +1,13 @@
 import numpy as np
 from impy.kinematics import EventFrame
 from impy.common import MCEvent, MCRun, CrossSectionData
-from impy.util import _cached_data_dir, fortran_array_insert, fortran_array_remove
-from impy.constants import nuclei, standard_projectiles
+from impy.util import (
+    _cached_data_dir,
+    fortran_array_insert,
+    fortran_array_remove,
+    Nuclei,
+)
+from impy.constants import standard_projectiles
 
 
 class EPOSEvent(MCEvent):
@@ -34,7 +39,7 @@ class EposLHC(MCRun):
     _library_name = "_eposlhc"
     _event_class = EPOSEvent
     _frame = None
-    _projectiles = standard_projectiles | nuclei
+    _projectiles = standard_projectiles | Nuclei()
     _data_url = (
         "https://github.com/impy-project/impy"
         + "/releases/download/zipped_data_v1.0/epos_v001.zip"

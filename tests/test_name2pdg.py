@@ -1,5 +1,4 @@
-from impy.constants import name2pdg
-from impy.util import pdg2AZ
+from impy.util import pdg2AZ, name2pdg
 from particle import Particle, literals as lp
 
 
@@ -7,21 +6,21 @@ def test_name2pdg():
     for p in Particle.findall():
         if p.name in ("n", "n~", "p", "p~"):  # special cases, treated below
             continue
-        assert name2pdg[p.name] == p.pdgid
-        assert name2pdg[p.programmatic_name] == p.pdgid
-    assert name2pdg["proton"] == lp.proton.pdgid
-    assert name2pdg["neutron"] == lp.neutron.pdgid
-    assert name2pdg["p"] == lp.proton.pdgid
-    assert name2pdg["n"] == lp.neutron.pdgid
-    assert name2pdg["antiproton"] == -lp.proton.pdgid
-    assert name2pdg["antineutron"] == -lp.neutron.pdgid
-    assert name2pdg["pbar"] == -lp.proton.pdgid
-    assert name2pdg["nbar"] == -lp.neutron.pdgid
-    assert name2pdg["p~"] == -lp.proton.pdgid
-    assert name2pdg["n~"] == -lp.neutron.pdgid
-    assert name2pdg["photon"] == lp.gamma.pdgid
-    assert name2pdg["gamma"] == lp.gamma.pdgid
-    assert name2pdg["g"] == 21  # gluon, not photon
+        assert name2pdg(p.name) == p.pdgid
+        assert name2pdg(p.programmatic_name) == p.pdgid
+    assert name2pdg("proton") == lp.proton.pdgid
+    assert name2pdg("neutron") == lp.neutron.pdgid
+    assert name2pdg("p") == lp.proton.pdgid
+    assert name2pdg("n") == lp.neutron.pdgid
+    assert name2pdg("antiproton") == -lp.proton.pdgid
+    assert name2pdg("antineutron") == -lp.neutron.pdgid
+    assert name2pdg("pbar") == -lp.proton.pdgid
+    assert name2pdg("nbar") == -lp.neutron.pdgid
+    assert name2pdg("p~") == -lp.proton.pdgid
+    assert name2pdg("n~") == -lp.neutron.pdgid
+    assert name2pdg("photon") == lp.gamma.pdgid
+    assert name2pdg("gamma") == lp.gamma.pdgid
+    assert name2pdg("g") == 21  # gluon, not photon
 
 
 def test_nuclei():
@@ -227,5 +226,5 @@ def test_nuclei():
     }
 
     for name, azref in nucleus.items():
-        az = pdg2AZ(name2pdg[name])
+        az = pdg2AZ(name2pdg(name))
         assert azref == az

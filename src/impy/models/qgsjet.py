@@ -1,8 +1,8 @@
 import numpy as np
 from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles, nuclei
-from impy.util import _cached_data_dir
+from impy.constants import standard_projectiles
+from impy.util import _cached_data_dir, Nuclei
 from particle import literals as lp
 
 
@@ -29,7 +29,7 @@ class QGSJET2Event(QGSJET1Event):
 class QGSJetRun(MCRun):
     _name = "QGSJet"
     _frame = EventFrame.FIXED_TARGET
-    _projectiles = standard_projectiles | nuclei
+    _projectiles = standard_projectiles | Nuclei()
     _data_url = (
         "https://github.com/impy-project/impy"
         + "/releases/download/zipped_data_v1.0/qgsjet_v001.zip"

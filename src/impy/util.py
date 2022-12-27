@@ -8,9 +8,18 @@ import urllib.request
 import zipfile
 import shutil
 import numpy as np
-from typing import Sequence
+from typing import Sequence, AbstractSet, Union
 from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
 from impy.constants import MeV, nucleon_mass
+
+
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 
 def energy2momentum(E, m):
@@ -29,6 +38,45 @@ def mass(pdgid):
             raise ValueError(f"cannot get mass for {pdgid}")
         return a * nucleon_mass
     return m * MeV
+
+
+def _make_name2pdg_db():
+    all_particles = Particle.findall()
+    db = {p.name: p.pdgid for p in all_particles}
+    db.update({p.programmatic_name: p.pdgid for p in all_particles})
+    db["p"] = PDGID(2212)
+    db["n"] = PDGID(2112)
+    db["p~"] = -db["p"]
+    db["n~"] = -db["n"]
+    db.update(
+        H=db["p"],
+        H1=db["p"],
+        He=db["He4"],
+        C=db["C12"],
+        N=db["N14"],
+        O=db["O16"],
+        Ne=db["Ne20"],
+        Ar=db["Ar40"],
+        Xe=db["Xe131"],
+        Pb=db["Pb206"],
+        photon=db["gamma"],
+        proton=db["p"],
+        neutron=db["n"],
+        antiproton=-db["p"],
+        antineutron=-db["n"],
+        pbar=-db["p"],
+        nbar=-db["n"],
+        p_bar=-db["p"],
+        n_bar=-db["n"],
+    )
+    return db
+
+
+_name2pdg_db = _make_name2pdg_db()
+
+
+def name2pdg(name: str):
+    return _name2pdg_db[name]
 
 
 def pdg2name(pdgid):
@@ -81,7 +129,7 @@ def AZ2pdg(A, Z):
     pdg_id = 1000000000
     pdg_id += 10000 * Z
     pdg_id += 10 * A
-    return pdg_id
+    return PDGID(pdg_id)
 
 
 def fortran_chars(array_ref, char_seq):
@@ -424,15 +472,6 @@ def get_all_models(skip=None):
     return result
 
 
-class Singleton(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
-
-
 def naneq(a, b):
     """
     Return True if a == b or if a and b are both NaN.
@@ -463,3 +502,57 @@ def fortran_array_remove(array, size, value):
             for j in range(i, size):
                 array[j] = array[j + 1]
             break
+
+
+class Nuclei:
+    """
+    Class to specify ranges of nuclei supported by a model.
+
+    It acts like a set and can be combined with sets via operator |.
+
+    The default is to accept any nucleus.
+    """
+
+    def __init__(
+        self, *, a_min: int = 1, a_max: int = 1000, z_min: int = 0, z_max: int = 1000
+    ):
+        self._a_min = a_min
+        self._a_max = a_max
+        self._z_min = z_min
+        self._z_max = z_max
+        self._other = set()
+
+    def __contains__(self, pdgid: Union[PDGID, int]):
+        if pdgid in self._other:
+            return True
+        if not isinstance(pdgid, PDGID):
+            pdgid = PDGID(pdgid)
+        if pdgid.A is None:
+            return False
+        return (
+            self._a_min <= pdgid.A <= self._a_max
+            and self._z_min <= pdgid.Z <= self._z_max
+        )
+
+    def __repr__(self):
+        s = (
+            f"Nuclei(a_min={self._a_min}, a_max={self._a_max}, "
+            f"z_min={self._z_min}, z_max={self._z_max})"
+        )
+        if self._other:
+            s += f" | {self._other}"
+        return s
+
+    def __ior__(self, other: AbstractSet[PDGID]):
+        self._other |= other
+        return self
+
+    def __or__(self, other: AbstractSet[PDGID]):
+        from copy import deepcopy
+
+        result = deepcopy(self)
+        result |= other
+        return result
+
+    def __ror__(self, other: AbstractSet[PDGID]):
+        return self.__or__(other)

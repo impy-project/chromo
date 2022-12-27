@@ -1,9 +1,9 @@
 from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.util import _cached_data_dir
+from impy.util import _cached_data_dir, name2pdg
 from os import environ
 import numpy as np
 from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles, nuclei
+from impy.constants import standard_projectiles
 from particle import literals as lp
 
 
@@ -37,8 +37,12 @@ class Pythia8(MCRun):
     _event_class = PYTHIA8Event
     _frame = EventFrame.CENTER_OF_MASS
     _projectiles = standard_projectiles | {lp.photon.pdgid}
-    # nuclei are supported in principle, but generation is very slow
-    _targets = standard_projectiles | nuclei
+    # Nuclei are supported in principle, but generation is very slow.
+    # Support for nuclei can be added with ParticleData.addParticle.
+    _targets = standard_projectiles | {
+        name2pdg(x)
+        for x in ("He4", "Li6", "C12", "O16", "Cu63", "Xe129", "Au197", "Pb208")
+    }
     _restartable = True
     _data_url = (
         "https://github.com/impy-project/impy"
