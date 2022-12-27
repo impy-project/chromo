@@ -1,5 +1,20 @@
 ----------------------------------------------------------------------
 
+   IMPY PREAMBLE
+
+This is a stripped down version of the PYTHIA 8 source distribution
+for bundling with impy. It lacks examples, documentation, and the
+original build system. Do not use this stripped version for your own
+work. Go to the official PYTHIA 8 homepage and download the full
+distribution instead.
+
+    https://pythia.org/
+
+The installation instructions below are taken from the original full
+distribution and do not apply to this stripped version.
+
+----------------------------------------------------------------------
+
    INSTALLATION - BASIC
 
 1) Once you have unpacked your tarball into a new (sub)directory, the
