@@ -65,6 +65,7 @@ def run_cross_section(model, p1, p2):
     m = model(evt_kin, seed=1)
     return m.cross_section()
 
+
 @pytest.mark.parametrize("model", (DpmjetIII191, DpmjetIII193))
 def test_cross_section(model):
     c = run_in_separate_process(run_cross_section, model, "p", "p")

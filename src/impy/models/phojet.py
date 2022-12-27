@@ -178,7 +178,10 @@ class Phojet112(PHOJETRun):
     _version = "1.12-35"
     _library_name = "_phojet112"
     _param_file_name = "fitpar.dat"
-    _projectiles = {lp.photon.pdgid, lp.proton.pdgid}  # FIXME: should allow photons and hadrons
+    _projectiles = {
+        lp.photon.pdgid,
+        lp.proton.pdgid,
+    }  # FIXME: should allow photons and hadrons
     _data_url = (
         "https://github.com/impy-project/impy"
         + "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
