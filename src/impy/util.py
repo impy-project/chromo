@@ -8,7 +8,7 @@ import urllib.request
 import zipfile
 import shutil
 import numpy as np
-from typing import Sequence, AbstractSet, Union
+from typing import Sequence, AbstractSet
 from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
 from impy.constants import MeV, nucleon_mass
 
@@ -522,7 +522,7 @@ class Nuclei:
         self._z_max = z_max
         self._other = set()
 
-    def __contains__(self, pdgid: Union[PDGID, int]):
+    def __contains__(self, pdgid: int):
         if pdgid in self._other:
             return True
         if not isinstance(pdgid, PDGID):

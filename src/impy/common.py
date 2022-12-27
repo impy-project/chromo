@@ -699,7 +699,7 @@ class MCRun(ABC):
         kin = self.kinematics
         if isinstance(kin.p2, CompositeTarget):
             nevents = self._composite_target_rng.multinomial(nevents, kin.p2.fractions)
-            ek = copy.copy(kin)
+            ek = copy.deepcopy(kin)
             for c, k in zip(kin.p2.components, nevents):
                 ek.p2 = c
                 with self._temporary_kinematics(ek):

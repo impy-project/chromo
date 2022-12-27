@@ -131,6 +131,6 @@ class Pythia8(MCRun):
             # Hepevt-like object. This is not efficient, but easier to
             # implement. The time needed to copy the record is small compared to
             # the time needed to generate the event. If this turns out to be a
-            # bottleneck, we need to make Hepevt a view of the interval record.
+            # bottleneck, we need to make Hepevt a view of the internal record.
             self._lib.hepevt.fill(self._lib.pythia.event)
         return success

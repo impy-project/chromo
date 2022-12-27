@@ -95,6 +95,7 @@ def test_parents(event):
     assert sum(x[0] > 0 and x[1] > 0 for x in event.parents) > 0
 
 
+@pytest.mark.skip(reason="Simulating nuclei in Pythia8 is very time-consuming")
 def test_nuclear_collision():
     # The test takes ages because the initialization is extremely long,
     # and Pythia seldom raises the success flag unless Ecm > TeV are used.
