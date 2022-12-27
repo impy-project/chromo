@@ -86,7 +86,6 @@ class Pythia8(MCRun):
             # use center-of-mass frame
             "Beams:frameType = 1",
             "SoftQCD:inelastic = on",
-            "PhotonParton:all = on",
             # reduce verbosity
             "Print:quiet = on",
             "Next:numberCount = 0",  # do not print progress
