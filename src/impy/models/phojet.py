@@ -1,6 +1,7 @@
 from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.util import fortran_chars, _cached_data_dir
 from impy.kinematics import EventFrame
+from impy.constants import standard_projectiles
 from particle import literals as lp
 
 
@@ -69,8 +70,8 @@ class PHOJETRun(MCRun):
     _name = "PhoJet"
     _event_class = PhojetEvent
     _frame = None
-    _projectiles = {lp.proton.pdgid}  # FIXME: should allow photons and hadrons
-    _targets = {lp.proton.pdgid}
+    _projectiles = standard_projectiles  # FIXME: should allow photons and hadrons
+    _targets = {lp.proton.pdgid, lp.neutron.pdgid}
     _param_file_name = "dpmjpar.dat"
     _data_url = (
         "https://github.com/impy-project/impy"
@@ -177,6 +178,7 @@ class Phojet112(PHOJETRun):
     _version = "1.12-35"
     _library_name = "_phojet112"
     _param_file_name = "fitpar.dat"
+    _projectiles = {lp.photon.pdgid, lp.proton.pdgid}  # FIXME: should allow photons and hadrons
     _data_url = (
         "https://github.com/impy-project/impy"
         + "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
