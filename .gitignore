@@ -42,3 +42,4 @@ pythia*.tgz
 impy-?.?.?
 src/impy/iamdata
 fig/*
+*.svg

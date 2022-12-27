@@ -9,7 +9,7 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 """
 from abc import ABC, abstractmethod
 import numpy as np
-from impy.util import classproperty, select_parents, naneq, name
+from impy.util import classproperty, select_parents, naneq, pdg2name
 from impy.constants import (
     quarks_and_diquarks_and_gluons,
     long_lived,
@@ -629,14 +629,14 @@ class MCRun(ABC):
                     yield event
                     continue
                 nretries += 1
-                if nretries > 5:
+                if nretries % 50 == 0:
                     warnings.warn(
-                        "Event was rejected 5 times in a row. The event generator "
+                        f"Event was rejected {nretries} times in a row. The generator "
                         "may be misconfigured or used outside of its valid range",
                         RuntimeWarning,
                     )
-                if nretries > 20:
-                    raise RuntimeError("More than 20 retries, aborting")
+                if nretries > 1000:
+                    raise RuntimeError("More than 1000 retries, aborting")
 
     @property
     def seed(self):
@@ -724,12 +724,12 @@ class MCRun(ABC):
     def kinematics(self, kin):
         if abs(kin.p1) not in self._projectiles:
             raise ValueError(
-                f"projectile {name(kin.p1)}[{int(kin.p1)}] is not allowed, "
+                f"projectile {pdg2name(kin.p1)}[{int(kin.p1)}] is not allowed, "
                 f"see {self.pyname}.projectiles"
             )
         if abs(kin.p2) not in self._targets:
             raise ValueError(
-                f"target {name(kin.p2)}[{int(kin.p2)}] is not among allowed, "
+                f"target {pdg2name(kin.p2)}[{int(kin.p2)}] is not among allowed, "
                 f"see {self.pyname}.targets"
             )
         if kin.ecm < self._ecm_min:
@@ -749,7 +749,7 @@ class MCRun(ABC):
         """
         p = Particle.from_pdgid(pdgid)
         if p.ctau is None or p.ctau == np.inf:
-            raise ValueError(f"{name(pdgid)} cannot decay")
+            raise ValueError(f"{pdg2name(pdgid)} cannot decay")
         if abs(pdgid) == 311:
             self._set_stable(130, stable)
             self._set_stable(310, stable)

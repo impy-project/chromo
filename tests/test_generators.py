@@ -10,7 +10,7 @@ from impy.kinematics import (
 import impy.models as im
 import pytest
 from .util import run_in_separate_process
-from impy.util import get_all_models, name
+from impy.util import get_all_models, pdg2name
 import boost_histogram as bh
 import gzip
 import pickle
@@ -92,7 +92,7 @@ def draw_comparison(fn, p_value, axes, values, val_ref, cov_ref):
     shape = tuple(len(x) for x in axes)
     val = np.reshape(values, shape)
     for i, pdgid in enumerate(axes[1]):
-        pname = name(pdgid)
+        pname = pdg2name(pdgid)
         v = val[:, i]
         vref = np.reshape(val_ref, shape)[:, i]
         cref = np.reshape(cov_ref, shape * 2)[:, i, :, i]

@@ -31,7 +31,7 @@ def mass(pdgid):
     return m * MeV
 
 
-def name(pdgid):
+def pdg2name(pdgid):
     try:
         return Particle.from_pdgid(pdgid).name
     except ParticleNotFound:

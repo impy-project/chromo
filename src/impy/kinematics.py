@@ -16,7 +16,15 @@ the implementation is very "cooked up". We have to discuss this.
 """
 
 import numpy as np
-from impy.util import TaggedFloat, AZ2pdg, is_AZ, energy2momentum, elab2ecm, mass, name
+from impy.util import (
+    TaggedFloat,
+    AZ2pdg,
+    is_AZ,
+    energy2momentum,
+    elab2ecm,
+    mass,
+    pdg2name,
+)
 from impy.constants import nucleon_mass, name2pdg
 from particle import PDGID
 import dataclasses
@@ -85,7 +93,8 @@ class CompositeTarget:
 
     def __repr__(self):
         components = [
-            (name(c), amount) for (c, amount) in zip(self.components, self.fractions)
+            (pdg2name(c), amount)
+            for (c, amount) in zip(self.components, self.fractions)
         ]
         args = f"{components}"
         if self.label:

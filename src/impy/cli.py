@@ -327,10 +327,9 @@ def main():
     else:  # cms mode
         evt_kin = CenterOfMass(args.sqrts, args.projectile_id, args.target_id)
 
-    model = args.model(evt_kin)
-
     task_id = None
     try:
+        model = args.model(evt_kin)
         ofile = FORMATS[args.output](args.out, model)
         with ofile:
             # workaround: several models generate extra print when first

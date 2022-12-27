@@ -142,7 +142,7 @@ class CMakeBuild(build_ext):
 
         # This is a hack to make the parallel build faster.
         # Compile all targets on first call to make better use of parallization.
-        # Skip if output that already exists, but run at least once since only
+        # Skip output that already exists, but run at least once since only
         # cmake can detect which existing targets need to be recompiled.
         target = ext.name.split(".")[-1]
         suffix = sc.get_config_var("EXT_SUFFIX") or sc.get_config_var("SO")

@@ -343,16 +343,17 @@ f2py_add_module(_pythia6
 # a shared library to which we only link. This makes clear where the boundary
 # between impy and Pythia-8 is.
 if (NOT WIN32)
-file(GLOB pythia8_sources ${cpp_dir}/pythia8307/src/*.cc)
+file(GLOB pythia8_sources ${cpp_dir}/pythia83/src/*.cc)
 
 add_library(libpythia8 SHARED ${pythia8_sources})
 set_target_properties(libpythia8 PROPERTIES OUTPUT_NAME pythia8)
-target_include_directories(libpythia8 PUBLIC ${cpp_dir}/pythia8307/include)
+target_include_directories(libpythia8 PUBLIC ${cpp_dir}/pythia83/include)
 # we don't use this, we must set xmldir at runtime
 target_compile_definitions(libpythia8 PRIVATE XMLDIR="")
 
 pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
 target_link_libraries(_pythia8 PRIVATE libpythia8)
+install(TARGETS libpythia8 DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 endif()
 
 
