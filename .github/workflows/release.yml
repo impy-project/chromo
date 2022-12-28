@@ -11,7 +11,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-12]
-        arch: [native, arm64]
+        arch: [native]
+        # arch: [native, arm64]
         # arch: [native, universal2]
         py: [cp39]
         # os: [ubuntu-latest, windows-latest, macos-12]
@@ -99,7 +100,7 @@ jobs:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
-          CIBW_TEST_SKIP: "*-macosx_universal2:arm64"
+          CIBW_TEST_SKIP: "*"
           CIBW_TEST_COMMAND: |
             python  {package}/tests/test_sophia.py
             pytest -vv {package}/tests/test_generators.py
