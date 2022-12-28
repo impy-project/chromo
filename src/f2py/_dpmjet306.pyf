@@ -776,6 +776,23 @@ python module _dpmjet306 ! in
             integer dimension(3,39) :: mquark
             common /dtquar/ iqechr,iqbchr,iqichr,iqschr,iqcchr,iquchr,iqtchr,mquark
         end subroutine dt_flahad
+        subroutine dt_evtout(mode) ! in :_dpmjet306:CMakeFiles/_dpmjet306.dir/dpmjet3.0-6.f
+            integer :: mode
+            integer :: linp
+            integer :: lout
+            integer :: ldat
+            integer :: nhkk
+            integer :: nevhkk
+            integer dimension(200000) :: isthkk
+            integer dimension(200000) :: idhkk
+            integer dimension(2,200000) :: jmohkk
+            integer dimension(2,200000) :: jdahkk
+            double precision dimension(5,200000) :: phkk
+            double precision dimension(4,200000) :: vhkk
+            double precision dimension(4,200000) :: whkk
+            common /dtiont/ linp,lout,ldat
+            common /dtevt1/ nhkk,nevhkk,isthkk,idhkk,jmohkk,jdahkk,phkk,vhkk,whkk
+        end subroutine dt_evtout
         block data dt_defset ! in :_dpmjet306:CMakeFiles/_dpmjet306.dir/dpmjet3.0-6.f
             integer, optional,dimension(2) :: ifrag=2
             integer, optional :: iresco=1
