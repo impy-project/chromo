@@ -48,7 +48,6 @@ def get_all_models(module):
         try:
             # fails if obj is not a class
             if issubclass(obj, MCRun):
-                removed_from_tests
                 if not (obj in removed_from_tests and platform.system() == "Windows"):
                     result.append(obj)
         except TypeError:
