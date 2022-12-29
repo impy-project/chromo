@@ -10,56 +10,39 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-12]
+        os: [ubuntu-latest, windows-latest]
         arch: [native]
-        # arch: [native, arm64]
-        # arch: [native, universal2]
-        py: [cp39]
-        # os: [ubuntu-latest, windows-latest, macos-12]
-        # arch: [native, aarch64, universal2]
-        # py: [cp37, cp38, cp39, cp310]
-        # exclude:
-        #   - os: windows-latest
-        #     arch: aarch64
-        #   - os: windows-latest
-        #     arch: universal2
-        #   - os: macos-latest
-        #     arch: aarch64
-        #   - os: macos-latest
-        #     arch: universal2
-        #     py: cp37
-        #   - os: ubuntu-latest
-        #     arch: universal2
+        py: [cp37, cp38, cp39, cp310]
     steps:
 
-      - if: ${{ matrix.os == 'macos-12' }}
-        name: Setup gfortran for Macos
-        run: |
-          # this is taken verbatim from the numpy azure pipeline setup.
-          set -xe
-          # same version of gfortran as the open-libs and numpy-wheel builds
-          curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
-          GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
-          KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
-          if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
-              echo sha256 mismatch
-              exit 1
-          fi
-          hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
-          sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
-          otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
-          # Manually symlink gfortran-4.9 to plain gfortran for f2py.
-          # No longer needed after Feb 13 2020 as gfortran is already present
-          # and the attempted link errors. Keep this for future reference.
-          # ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran
+      # - if: ${{ matrix.os == 'macos-12' }}
+      #   name: Setup gfortran for Macos
+      #   run: |
+      #     # this is taken verbatim from the numpy azure pipeline setup.
+      #     set -xe
+      #     # same version of gfortran as the open-libs and numpy-wheel builds
+      #     curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
+      #     GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
+      #     KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
+      #     if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
+      #         echo sha256 mismatch
+      #         exit 1
+      #     fi
+      #     hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
+      #     sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
+      #     otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
+      #     # Manually symlink gfortran-4.9 to plain gfortran for f2py.
+      #     # No longer needed after Feb 13 2020 as gfortran is already present
+      #     # and the attempted link errors. Keep this for future reference.
+      #     # ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran
 
 
       - uses: actions/checkout@v3
         with:
           submodules: true
 
-      - if: ${{ matrix.arch == 'aarch64' }}
-        uses: docker/setup-qemu-action@v2
+      # - if: ${{ matrix.arch == 'aarch64' }}
+      #   uses: docker/setup-qemu-action@v2
 
       - if: ${{ matrix.os != 'macos-12' }}
         uses: awvwgk/setup-fortran@main
@@ -67,11 +50,6 @@ jobs:
         with:
           compiler: gcc
           version: 11
-
-# Step for debugging
-      # - run: ${{ env.FC }} --version
-      #   env:
-      #     FC: ${{ steps.setup-fortran.outputs.fc }}
 
       - if: ${{ matrix.os == 'windows-latest' }}
         uses: pypa/cibuildwheel@v2.11.2
@@ -92,19 +70,19 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
 
-      - if: ${{ matrix.os == 'macos-12' }}
-        uses: pypa/cibuildwheel@v2.11.2
-        env:
-          # Check setuptools version
-          CIBW_BUILD_VERBOSITY: 3
-          CIBW_BUILD: ${{ matrix.py }}-*
-          CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_SKIP: "*musllinux*"
-          CIBW_TEST_SKIP: "*"
-          CIBW_TEST_COMMAND: |
-            python  {package}/tests/test_sophia.py
-            pytest -vv {package}/tests/test_generators.py
-          no_proxy: '*'
+      # - if: ${{ matrix.os == 'macos-12' }}
+      #   uses: pypa/cibuildwheel@v2.11.2
+      #   env:
+      #     # Check setuptools version
+      #     CIBW_BUILD_VERBOSITY: 3
+      #     CIBW_BUILD: ${{ matrix.py }}-*
+      #     CIBW_ARCHS: ${{ matrix.arch }}
+      #     CIBW_SKIP: "*musllinux*"
+      #     CIBW_TEST_SKIP: "*"
+      #     CIBW_TEST_COMMAND: |
+      #       python  {package}/tests/test_sophia.py
+      #       pytest -vv {package}/tests/test_generators.py
+      #     no_proxy: '*'
 
       - uses: actions/upload-artifact@v3
         with:
@@ -197,3 +175,24 @@ jobs:
 #         CMAKE_GENERATOR: "MinGW Makefiles"
 #         FC: ${{ steps.setup-fortran.outputs.fc }}
 #     - run: python -m pytest -vv
+
+
+  upload_all_to_TestPyPI:
+    name: Upload to TestPyPI
+    needs: [wheels]
+    runs-on: ubuntu-latest
+    # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    steps:
+      - name: Download files in artifact to "dist/" directory
+        uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+
+      - name: Publish package to TestPyPI
+        uses: pypa/gh-action-pypi-publish@v1.6.4
+        with:
+          user: __token__
+          repository_url: https://test.pypi.org/legacy/
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+

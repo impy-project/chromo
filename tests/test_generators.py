@@ -31,9 +31,9 @@ def test_generator(Model):
     if Model is im.Sophia20:
         # Sophia can only do γp, γn
         p1pdg = 22  # gamma
-    # elif Model in [im.Phojet112, im.UrQMD34]:
-    #     # The old phojet needs more tweaking for pion-proton (is not related to test)
-    #     p1pdg = 2212  # proton
+    elif Model in [im.Phojet112, im.UrQMD34]:
+        # The old phojet needs more tweaking for pion-proton (is not related to test)
+        p1pdg = 2212  # proton
 
     evt_kin = CenterOfMass(
         100 * GeV,
