@@ -154,36 +154,27 @@ class PHOJETRun(MCRun):
             )
 
     def _cross_section(self, kin=None):
-        from copy import copy
-
-        # # PHOJET workaround for cross-section,
-        # # need to generate dummy event
-        # self._generate()  # TODO check if this is really needed
-        # # TODO fill more cross-sections
-        # k = kin
         kin = self.kinematics if kin is None else kin
         self._lib.pho_setpar(1, kin.p1, 0, 0.0)
         self._lib.pho_setpar(2, kin.p2, 0, 0.0)
-        try:
-            self._lib.pho_setpcomb()
-        except AttributeError:
+        if hasattr(self._lib, "pho_setpcomb"):
             # The old 1.12 version of phojet doesn't have this function
-            pass
+            self._lib.pho_setpcomb()
 
         self._lib.pho_xsect(1, 0, kin.ecm)
 
         return CrossSectionData(
-            total=copy(self._lib.pocsec.sigtot),
-            elastic=copy(self._lib.pocsec.sigela),
-            inelastic=copy(self._lib.pocsec.sigine),
-            diffractive_xb=copy(
+            total=float(self._lib.pocsec.sigtot),
+            elastic=float(self._lib.pocsec.sigela),
+            inelastic=float(self._lib.pocsec.sigine),
+            diffractive_xb=float(
                 self._lib.pocsec.siglsd[0] + self._lib.pocsec.sighsd[0]
             ),
-            diffractive_ax=copy(
+            diffractive_ax=float(
                 self._lib.pocsec.siglsd[1] + self._lib.pocsec.sighsd[1]
             ),
-            diffractive_xx=copy(self._lib.pocsec.sigldd + self._lib.pocsec.sighdd),
-            diffractive_axb=copy(self._lib.pocsec.sigcdf[0]),
+            diffractive_xx=float(self._lib.pocsec.sigldd + self._lib.pocsec.sighdd),
+            diffractive_axb=float(self._lib.pocsec.sigcdf[0]),
         )
 
     def _set_stable(self, pdgid, stable):

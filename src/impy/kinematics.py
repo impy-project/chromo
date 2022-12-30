@@ -29,7 +29,7 @@ from impy.util import (
 from impy.constants import nucleon_mass
 from particle import PDGID
 import dataclasses
-from typing import Union, Tuple
+from typing import Union, Tuple, Collection
 from enum import Enum
 
 
@@ -47,8 +47,20 @@ class CompositeTarget:
     components: Tuple[PDGID]
     fractions: np.ndarray
 
-    # TODO: this is missing a docstring
-    def __init__(self, components, label=""):
+    def __init__(
+        self, components: Collection[Tuple[Union[str, int], float]], label: str = ""
+    ):
+        """
+        Parameters
+        ----------
+        components : collection of (str|int, float)
+            The components of the targets. Each component is given by a string or PDGID
+            that identifies the element, and its relative amount in the material.
+            Amounts do not have to add up to 1, fractions are computed automatically.
+        label : str, optional
+            Give the target a name. This is purely cosmetic.
+        """
+
         if len(components) == 0:
             raise ValueError("components cannot be empty")
         fractions = np.empty(len(components))

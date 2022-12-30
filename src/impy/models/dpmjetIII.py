@@ -137,7 +137,6 @@ class DpmjetIIIRun(MCRun):
                 self._lib.dtglgp.jstatb = saved
             return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
         else:
-            print("Hey")
             stot, sela = self._lib.dt_xshn(
                 self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
             )
