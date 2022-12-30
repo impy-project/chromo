@@ -2034,7 +2034,7 @@ python module _dpmjetIII193 ! in
         subroutine pho_init(linp,lout,irej) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/PHO_INIT.f
             integer :: linp
             integer :: lout
-            integer intent(out) :: irej
+            integer intent(inout) :: irej
             integer :: li
             integer :: lo
             integer :: lpri
@@ -3100,9 +3100,6 @@ python module _dpmjetIII193 ! in
             common /pydat1/ mstu,paru,mstj,parj
             common /pypars/ mstp,parp,msti,pari
         end subroutine pytune
-        function simrnd() ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/rangen.fpp
-            double precision :: simrnd
-        end function simrnd
         subroutine init_rmmard(iseedin) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/rangen.fpp
             integer :: iseedin
             double precision dimension(8) :: c

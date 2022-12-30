@@ -1934,7 +1934,7 @@ python module _dpmjet306 ! in
         subroutine pho_init(linp,lout,irej) ! in :_dpmjet306:CMakeFiles/_dpmjet306.dir/phojet1.12-35c4.f
             integer :: linp
             integer :: lout
-            integer intent(out) :: irej
+            integer intent(inout) :: irej
             integer :: li
             integer :: lo
             integer dimension(100) :: ideb
