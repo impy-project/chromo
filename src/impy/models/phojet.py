@@ -115,7 +115,7 @@ class PHOJETRun(MCRun):
         self._lib.pydat1.mstu[10] = lun
 
         # Initialize PHOJET's parameters
-        # If PHOJET is run through DPMJET, initial init needs -2 else -1
+        # If PHOJET is run through the DPMJET library, this init needs -2 else -1
         if self._lib.pho_init(-1, lun):
             raise RuntimeError("unable to initialize or set LUN")
 
@@ -144,6 +144,12 @@ class PHOJETRun(MCRun):
 
         self.kinematics = evt_kin
 
+        # Initialize kinematics and tables (only once needed)
+        if self._lib.pho_event(-1, self.p1, self.p2)[1]:
+            raise RuntimeError(
+                "initialization failed with the current event kinematics"
+            )
+
     def _cross_section(self):
         # PHOJET workaround for cross-section,
         # need to generate dummy event
@@ -165,10 +171,6 @@ class PHOJETRun(MCRun):
         self._lib.pho_setpar(1, k.p1, 0, 0.0)
         self._lib.pho_setpar(2, k.p2, 0, 0.0)
         self.p1, self.p2 = k.beams
-        if self._lib.pho_event(-1, self.p1, self.p2)[1]:
-            raise RuntimeError(
-                "initialization failed with the current event kinematics"
-            )
 
     def _generate(self):
         return not self._lib.pho_event(1, self.p1, self.p2)[1]
