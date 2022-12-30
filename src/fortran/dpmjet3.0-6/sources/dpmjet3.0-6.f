@@ -21148,7 +21148,7 @@ C  energy-interpolation table
 
 ************************************************************************
 * Total and elastic hadron-nucleon cross section.                      *
-* Below 500GeV cross sections are based on the '98 data compilation    *
+* Below 500GeV cross sections are based on the 98 data compilation    *
 * of the PDG. At higher energies PHOJET results are used (patched to   *
 * the low energy data at 500GeV).                                      *
 *     IP      projectile index (BAMJET numbering scheme)               *
@@ -21164,6 +21164,8 @@ C  energy-interpolation table
 
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       SAVE
+
+Cf2py intent(out) STOT,SELA
 
       COMMON /DTIONT/ LINP,LOUT,LDAT
       PARAMETER (ZERO=0.0D0,ONE=1.0D0)

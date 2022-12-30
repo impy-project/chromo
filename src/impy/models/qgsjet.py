@@ -66,13 +66,13 @@ class QGSJet1Run(QGSJetRun):
 
     _event_class = QGSJET1Event
 
-    def _cross_section(self):
+    def _cross_section(self, kin=None):
         # Interpolation routine for QGSJET01D cross sections from CORSIKA.
         from scipy.interpolate import UnivariateSpline
 
-        evt_kin = self.kinematics
+        kin = self.kinematics if kin is None else kin
 
-        A_target = evt_kin.p2.A
+        A_target = kin.p2.A
         # Projectile ID-1 to access fortran indices directly
         icz = self._projectile_id - 1
         qgsgrid = 10 ** np.arange(1, 11)
@@ -98,7 +98,7 @@ class QGSJet1Run(QGSJetRun):
             np.log(qgsgrid), np.log(cross_section), ext="extrapolate", s=0, k=1
         )
 
-        inel = np.exp(spl(np.log(evt_kin.elab)))
+        inel = np.exp(spl(np.log(kin.elab)))
         return CrossSectionData(inelastic=inel)
 
     def _set_kinematics(self, kin):
@@ -125,8 +125,9 @@ class QGSJet2Run(QGSJetRun):
 
     _event_class = QGSJET2Event
 
-    def _cross_section(self):
-        kin = self.kinematics
+    def _cross_section(self, kin=None):
+        kin = self.kinematics if kin is None else kin
+
         inel = self._lib.qgsect(
             kin.elab,
             self._projectile_id,

@@ -68,7 +68,7 @@ class Pythia8(MCRun):
         self.kinematics = evt_kin
         self._set_final_state_particles()
 
-    def _cross_section(self):
+    def _cross_section(self, kin=None):
         st = self._lib.pythia.info.sigmaTot
         return CrossSectionData(
             st.sigmaTot,

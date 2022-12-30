@@ -785,10 +785,10 @@ class MCRun(ABC):
                         cross_section[i] += fraction * val
                 return cross_section
             else:
-                return self._cross_section()
+                return self._cross_section(kin)
 
     @abstractmethod
-    def _cross_section(self, evt_kin):
+    def _cross_section(self, kin):
         pass
 
     @abstractmethod

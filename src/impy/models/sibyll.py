@@ -88,8 +88,8 @@ class SIBYLLRun(MCRun):
 
         self._set_final_state_particles()
 
-    def _cross_section(self):
-        kin = self.kinematics
+    def _cross_section(self, kin=None):
+        kin = self.kinematics if kin is None else kin
         if kin.p2.A > 1:
             # TODO figure out what this returns exactly:
             # self._lib.sib_sigma_hnuc

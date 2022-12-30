@@ -111,20 +111,39 @@ class DpmjetIIIRun(MCRun):
         self._lib.pydat1.mstj[22 - 1] = 2
         self._set_final_state_particles()
 
-    def _cross_section(self, precision=None):
-        k = self.kinematics
+    def _cross_section(self, kin=None, precision=None):
+        kin = self.kinematics if kin is None else kin
         # we override to set precision
-        if precision is not None:
-            saved = self._lib.dtglgp.jstatb
-            # Set number of trials for Glauber model integration
-            self._lib.dtglgp.jstatb = precision
-        self._lib.dt_xsglau(
-            k.p1.A or 1, k.p2.A or 1, self._lib.idt_icihad(k.p1), 0, 0, k.ecm, 1, 1, 1
-        )
-        if precision is not None:
-            self._lib.dtglgp.jstatb = saved
+        if (kin.p1.A and kin.p1.A > 1) or kin.p2.A > 1:
+            assert kin.p2.A >= 1, "DPMJET requires nucleons or nuclei on side 2."
+            if precision is not None:
+                saved = self._lib.dtglgp.jstatb
+                # Set number of trials for Glauber model integration
+                self._lib.dtglgp.jstatb = precision
+            self._lib.dt_xsglau(
+                kin.p1.A or 1,
+                kin.p2.A or 1,
+                self._lib.idt_icihad(2212)
+                if (kin.p1.A and kin.p1.A > 1)
+                else self._lib.idt_icihad(kin.p1),
+                0,
+                0,
+                kin.ecm,
+                1,
+                1,
+                1,
+            )
+            if precision is not None:
+                self._lib.dtglgp.jstatb = saved
+            return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
+        else:
+            print('Hey')
+            stot, sela = self._lib.dt_xshn(
+                self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
+            )
+            return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
+
         # TODO set more cross-sections
-        return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
 
     def _set_kinematics(self, kin):
         # Save maximal mass that has been initialized
@@ -173,7 +192,7 @@ class DpmjetIIIRun(MCRun):
             k.p2.A or 1,
             k.p2.Z or 0,
             self._lib.idt_icihad(2212)
-            if k.p1.is_nucleus
+            if (k.p1.A and k.p1.A > 1)
             else self._lib.idt_icihad(k.p1),
             k.elab,
             kkmat=-1,

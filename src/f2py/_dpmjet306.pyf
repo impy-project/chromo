@@ -708,8 +708,8 @@ python module _dpmjet306 ! in
             integer :: it
             double precision :: pl
             double precision :: ecm
-            double precision :: stot
-            double precision :: sela
+            double precision intent(out) :: stot
+            double precision intent(out) :: sela
             integer :: linp
             integer :: lout
             integer :: ldat
