@@ -20,7 +20,7 @@ def _target(queue, fn, args):
     queue.put(out)
 
 
-def run_in_separate_process(fn, *args, timeout=120):
+def run_in_separate_process(fn, *args, timeout=600):
     import multiprocessing as mp
 
     # Some models need to initialize same fortran code, which can only be
@@ -34,9 +34,10 @@ def run_in_separate_process(fn, *args, timeout=120):
         queue = ctx.Queue()
         p = ctx.Process(target=_target, args=(queue, fn, args))
         p.start()
-        for _ in range(timeout * 2):
+        step = 0.5
+        for _ in range(int(timeout / step)):
             if p.is_alive():
-                time.sleep(0.5)
+                time.sleep(step)
             else:
                 break
         if queue.empty():

@@ -8,7 +8,7 @@ import urllib.request
 import zipfile
 import shutil
 import numpy as np
-from typing import Sequence, AbstractSet
+from typing import Sequence, Set
 from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
 from impy.constants import MeV, nucleon_mass
 
@@ -543,16 +543,16 @@ class Nuclei:
             s += f" | {self._other}"
         return s
 
-    def __ior__(self, other: AbstractSet[PDGID]):
+    def __ior__(self, other: Set[PDGID]):
         self._other |= other
         return self
 
-    def __or__(self, other: AbstractSet[PDGID]):
+    def __or__(self, other: Set[PDGID]):
         from copy import deepcopy
 
         result = deepcopy(self)
         result |= other
         return result
 
-    def __ror__(self, other: AbstractSet[PDGID]):
+    def __ror__(self, other: Set[PDGID]):
         return self.__or__(other)
