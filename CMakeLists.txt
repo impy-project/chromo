@@ -1,6 +1,19 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.17)
 
-project(impylib LANGUAGES C CXX Fortran)
+project(impylib LANGUAGES Fortran)
+
+# Find C/CXX compilers that match the Fortran compiler
+if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  # Compiler version is something like XY.Z.N, we want only XY
+  string(REGEX MATCH "[0-9]+" COMPILER_MAJOR_VERSION ${CMAKE_Fortran_COMPILER_VERSION})
+  find_program(CMAKE_C_COMPILER "gcc-${COMPILER_MAJOR_VERSION}")
+  find_program(CMAKE_CXX_COMPILER "g++-${COMPILER_MAJOR_VERSION}")
+else()
+  message(FATAL_ERROR "Unknown Fortran compiler, cannot search for C/CXX compiler")
+endif()
+
+# Delayed toolchain initialization
+enable_language(C CXX)
 
 set(BUILD_dev_dpmjetIII193 CACHE 
   PATH "source directory for dev_dpmjetIII193")
@@ -132,7 +145,7 @@ list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
 f2py_add_module(_eposlhc
   FUNCTIONS
   aaset ainit aepos afinal hepmcstore
-  getcharge idtrafo initializeepos initeposevt
+  getcharge idtrafo initepos initeposevt
   xsection init_rmmard ${impy_logging}
   SOURCES
   ${eposlhc_sources}
@@ -153,16 +166,14 @@ f2py_add_module(_eposlhc
 
 
 ### sib21
-set(SIBYLL21_FUNCTIONS
+set(SIBYLL_COMMON_FUNCTIONS
   sibyll sibyll_ini sib_sigma_hp sib_sigma_hair sib_sigma_hnuc
-  int_nuc decsib decpar sibini sib_list isib_pid2pdg
+  int_nuc decsib decpar sibini sibhep sib_list isib_pid2pdg
   isib_pdg2pid pdg_ini init_rmmard ${impy_logging})
-
-set(SIBYLL_COMMON_FUNCTIONS ${SIBYLL21_FUNCTIONS} gasdev)  
 
 f2py_add_module(_sib21
   FUNCTIONS
-  ${SIBYLL21_FUNCTIONS} sibhep1 spgasdev
+  ${SIBYLL_COMMON_FUNCTIONS} spgasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll_21.f
   ${fortran_dir}/sibyll/sib21aux.f
@@ -171,14 +182,13 @@ f2py_add_module(_sib21
   ${rangen_source}
   COMPILE_DEFS
   ${impy_definitions}
-  SIBYLL_SP
-  SIBYLL_TABLE_LENGTH=49
+  SIBYLL_21
 )
 
 ### sib23
 f2py_add_module(_sib23
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -186,14 +196,13 @@ f2py_add_module(_sib23
   ${rangen_source}
   COMPILE_DEFS
   ${impy_definitions}
-  SIBYLL_TABLE_LENGTH=99
 )
 
 
 ### sib23c01
 f2py_add_module(_sib23c01
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  ${SIBYLL_COMMON_FUNCTIONS}
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c01.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -201,14 +210,13 @@ f2py_add_module(_sib23c01
   ${rangen_source}
   COMPILE_DEFS
   ${impy_definitions}
-  SIBYLL_TABLE_LENGTH=99
 )
 
 
 ### sib23d
 f2py_add_module(_sib23d
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+  ${SIBYLL_COMMON_FUNCTIONS}
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3d.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -216,7 +224,6 @@ f2py_add_module(_sib23d
   ${rangen_source}
   COMPILE_DEFS
   ${impy_definitions}
-  SIBYLL_TABLE_LENGTH=99
 )
 
 ### qgs01
@@ -312,9 +319,9 @@ f2py_add_module(_pythia6
 ### pythia8
 # About the license and how it affects impy. 
 # Pythia-8 is licensed under GPL-v2 or higher, which means GPL-v3
-# applies. An excerprt from GPL-v3:
+# applies. An excerpt from GPL-v3:
 
-# >  A compilation of a covered work with other separate and independent
+# > A compilation of a covered work with other separate and independent
 # > works, which are not by their nature extensions of the covered work,
 # > and which are not combined with it such as to form a larger program,
 # > in or on a volume of a storage or distribution medium, is called an
@@ -329,23 +336,24 @@ f2py_add_module(_pythia6
 # Pythia-8 library is redistributed by us under its original license, which is
 # allowed. impy is merely a way to steer Pythia-8 and to provide its output in a
 # particular format. The Pythia-8 authors are free to take some of our code and
-# make it GPL code, they can do that anyway, but we have still free to
+# make it GPL code, they can do that anyway, but we are still free to
 # distribute the code that we write under a less restrictive license.
 #
 # To strengthen this position, we compile the original Pythia-8 code into
 # a shared library to which we only link. This makes clear where the boundary
 # between impy and Pythia-8 is.
 if (NOT WIN32)
-file(GLOB pythia8_sources ${cpp_dir}/pythia8307/src/*.cc)
+file(GLOB pythia8_sources ${cpp_dir}/pythia83/src/*.cc)
 
 add_library(libpythia8 SHARED ${pythia8_sources})
 set_target_properties(libpythia8 PROPERTIES OUTPUT_NAME pythia8)
-target_include_directories(libpythia8 PUBLIC ${cpp_dir}/pythia8307/include)
+target_include_directories(libpythia8 PUBLIC ${cpp_dir}/pythia83/include)
 # we don't use this, we must set xmldir at runtime
 target_compile_definitions(libpythia8 PRIVATE XMLDIR="")
 
 pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
 target_link_libraries(_pythia8 PRIVATE libpythia8)
+install(TARGETS libpythia8 DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 endif()
 
 
@@ -388,7 +396,7 @@ set(dpmjet306_sources
 f2py_add_module(_dpmjet306
   FUNCTIONS
   pho_event dt_init dt_kkinc idt_icihad dt_xsglau
-  pycomp dt_initjs dt_inucas idt_ipdgha
+  pycomp dt_initjs dt_inucas dt_evtout idt_ipdgha
   pho_init pho_setpar pho_pname pho_pmass pho_setmdl
   pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout
   pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar pho_prevnt
@@ -585,7 +593,7 @@ f2py_add_module(_phojet193
 if(BUILD_sib23c00)
   f2py_add_module(_sib23c00
     FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    ${SIBYLL_COMMON_FUNCTIONS}
     SOURCES
     ${fortran_dir}/sibyll/sibyll2.3c00.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -593,14 +601,13 @@ if(BUILD_sib23c00)
     ${rangen_source}
     COMPILE_DEFS
     ${impy_definitions}
-    SIBYLL_TABLE_LENGTH=99
   )
 endif()
 
 if(BUILD_sib23c02)
   f2py_add_module(_sib23c02
     FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    ${SIBYLL_COMMON_FUNCTIONS}
     SOURCES
     ${fortran_dir}/sibyll/sibyll2.3c02.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -608,14 +615,13 @@ if(BUILD_sib23c02)
     ${rangen_source}
     COMPILE_DEFS
     ${impy_definitions}
-    SIBYLL_TABLE_LENGTH=99
   )
 endif()
 
 if(BUILD_sib23c03)
   f2py_add_module(_sib23c03
     FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} sibhep3
+    ${SIBYLL_COMMON_FUNCTIONS}
     SOURCES
     ${fortran_dir}/sibyll/sibyll2.3c03.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -623,7 +629,6 @@ if(BUILD_sib23c03)
     ${rangen_source}
     COMPILE_DEFS
     ${impy_definitions}
-    SIBYLL_TABLE_LENGTH=99
   )
 endif()
 

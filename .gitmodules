@@ -7,3 +7,6 @@
 [submodule "src/cpp/pybind11"]
 	path = src/cpp/pybind11
 	url = git@github.com:pybind/pybind11.git
+[submodule "src/cpp/pythia8308"]
+	path = src/cpp/pythia83
+	url = https://gitlab.com/Pythia8/releases.git

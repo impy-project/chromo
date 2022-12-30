@@ -2,30 +2,104 @@
 
 import warnings
 import inspect
-import os
 import platform
 from pathlib import Path
 import urllib.request
 import zipfile
 import shutil
-
-
-from impy import impy_config
 import numpy as np
-
-# Global debug flags that would be nice to have in some sort
-# of config or other ideas?
-print_module = True
-
-# Standard stable particles for for fast air shower cascade calculation
-# Particles with an anti-partner
-standard_particles = [11, 13, 15, 211, 321, 2212, 2112, 3122, 411, 421, 431]
-standard_particles += [-pid for pid in standard_particles]
-# unflavored particles
-standard_particles = tuple(standard_particles + [111, 130, 310, 221, 223, 333])
+from typing import Sequence, Set
+from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
+from impy.constants import MeV, nucleon_mass
 
 
-def getAZN(pdgid):
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+def energy2momentum(E, m):
+    return np.sqrt((E + m) * (E - m))
+
+
+def elab2ecm(elab, m1, m2):
+    return np.sqrt(2.0 * elab * m2 + m2**2 + m1**2)
+
+
+def mass(pdgid):
+    m = Particle.from_pdgid(pdgid).mass
+    if m is None:
+        a = pdg2AZ(pdgid)[0]
+        if a == 0:
+            raise ValueError(f"cannot get mass for {pdgid}")
+        return a * nucleon_mass
+    return m * MeV
+
+
+def _make_name2pdg_db():
+    all_particles = Particle.findall()
+    db = {p.name: p.pdgid for p in all_particles}
+    db.update({p.programmatic_name: p.pdgid for p in all_particles})
+    db["p"] = PDGID(2212)
+    db["n"] = PDGID(2112)
+    db["p~"] = -db["p"]
+    db["n~"] = -db["n"]
+    db.update(
+        H=db["p"],
+        H1=db["p"],
+        He=db["He4"],
+        C=db["C12"],
+        N=db["N14"],
+        O=db["O16"],
+        Ne=db["Ne20"],
+        Ar=db["Ar40"],
+        Xe=db["Xe131"],
+        Pb=db["Pb206"],
+        photon=db["gamma"],
+        proton=db["p"],
+        neutron=db["n"],
+        antiproton=-db["p"],
+        antineutron=-db["n"],
+        pbar=-db["p"],
+        nbar=-db["n"],
+        p_bar=-db["p"],
+        n_bar=-db["n"],
+    )
+    return db
+
+
+_name2pdg_db = _make_name2pdg_db()
+
+
+def name2pdg(name: str):
+    return _name2pdg_db[name]
+
+
+def pdg2name(pdgid):
+    try:
+        return Particle.from_pdgid(pdgid).name
+    except ParticleNotFound:
+        return f"Unknown({int(pdgid)})"
+    except InvalidParticle:
+        return f"Invalid({int(pdgid)})"
+
+
+def is_AZ(arg):
+    if not isinstance(arg, Sequence):
+        return False
+    if len(arg) != 2:
+        return False
+    for x in arg:
+        if not isinstance(x, int):
+            return False
+    return True
+
+
+def pdg2AZ(pdgid):
     """Returns mass number :math:`A`, charge :math:`Z` and neutron
     number :math:`N` of ``pdgid``.
 
@@ -36,21 +110,16 @@ def getAZN(pdgid):
     Args:
         pdgid (int): PDG ID of nucleus/mass group
     Returns:
-        (int,int,int): (Z,A) tuple
+        (int, int): (A, Z) tuple
     """
-    Z, A = 1, 1
-    if pdgid < 2000:
-        return 0, 0, 0
+    p = PDGID(pdgid)
+    if p.is_nucleus:
+        return p.A, p.Z
     elif pdgid == 2112:
-        return 1, 0, 1
+        return 1, 0
     elif pdgid == 2212:
-        return 1, 1, 0
-    elif pdgid > 1000000000:
-        A = pdgid % 1000 / 10
-        Z = pdgid % 1000000 / 10000
-        return A, Z, A - Z
-    else:
-        return 1, 0, 0
+        return 1, 1
+    return 0, 0
 
 
 def AZ2pdg(A, Z):
@@ -58,9 +127,9 @@ def AZ2pdg(A, Z):
     to PDG nuclear code"""
     # 10LZZZAAAI
     pdg_id = 1000000000
-    pdg_id += 10 * A
     pdg_id += 10000 * Z
-    return pdg_id
+    pdg_id += 10 * A
+    return PDGID(pdg_id)
 
 
 def fortran_chars(array_ref, char_seq):
@@ -96,11 +165,10 @@ def caller_name(skip=2):
 
     name = []
 
-    if print_module:
-        module = inspect.getmodule(parentframe)
-        # `modname` can be None when frame is executed directly in console
-        if module:
-            name.append(module.__name__ + ".")
+    module = inspect.getmodule(parentframe)
+    # `modname` can be None when frame is executed directly in console
+    if module:
+        name.append(module.__name__ + ".")
 
     # detect classname
     if "self" in parentframe.f_locals:
@@ -118,10 +186,10 @@ def caller_name(skip=2):
     return "".join(name)
 
 
-def info(min_dbg_level, *message):
-    """Print to console if `min_debug_level <= config["debug_level"]`
+def info(min_dbg_level, *args):
+    """Print to console if min_dbg_level <= impy.debug_level.
 
-    The fuction determines automatically the name of caller and appends
+    The function determines automatically the name of caller and appends
     the message to it. Message can be a tuple of strings or objects
     which can be converted to string using `str()`.
 
@@ -129,99 +197,10 @@ def info(min_dbg_level, *message):
         min_dbg_level (int): Minimum debug level in config for printing
         message (tuple): Any argument or list of arguments that casts to str
     """
+    import impy
 
-    # Would prefer here a global debug
-    # if min_dbg_level <= config["debug_level"]:
-    if min_dbg_level <= impy_config["debug_level"]:
-        message = [str(m) for m in message]
-        print(caller_name() + " ".join(message))
-
-
-class OutputGrabber(object):
-    """
-    Class to capture the output produced by the console and
-    store it as a string variable. This is provided for utlity
-    to event generators written in C++.
-    Source: https://stackoverflow.com/questions/24277488/
-    in-python-how-to-capture-the-stdout-from-a-c-shared-library-to-a-variable
-    """
-
-    escape_char = r"\c"
-
-    def __init__(self, stream=None, threaded=False):
-        import sys
-
-        self.origstream = stream
-        self.threaded = threaded
-        if self.origstream is None:
-            self.origstream = sys.stdout
-        self.origstreamfd = self.origstream.fileno()
-        self.capturedtext = ""
-        # Create a pipe so the stream can be captured:
-        self.pipe_out, self.pipe_in = os.pipe()
-
-    def __enter__(self):
-        self.start()
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.stop()
-
-    def start(self):
-        """
-        Start capturing the stream data.
-        """
-        import threading
-        import time
-
-        self.capturedtext = ""
-        # Save a copy of the stream:
-        self.streamfd = os.dup(self.origstreamfd)
-        # Replace the original stream with our write pipe:
-        os.dup2(self.pipe_in, self.origstreamfd)
-        if self.threaded:
-            # Start thread that will read the stream:
-            self.workerThread = threading.Thread(target=self.readOutput)
-            self.workerThread.start()
-            # Make sure that the thread is running and os.read() has executed:
-            time.sleep(0.01)
-
-    def stop(self):
-        """
-        Stop capturing the stream data and save the text in `capturedtext`.
-        """
-        # Print the escape character to make the readOutput method stop:
-        self.origstream.write(self.escape_char)
-        # Flush the stream to make sure all our data goes in before
-        # the escape character:
-        self.origstream.flush()
-        if self.threaded:
-            # wait until the thread finishes so we are sure that
-            # we have until the last character:
-            self.workerThread.join()
-        else:
-            self.readOutput()
-        # Close the pipe:
-        os.close(self.pipe_in)
-        os.close(self.pipe_out)
-        # Restore the original stream:
-        os.dup2(self.streamfd, self.origstreamfd)
-        # Close the duplicate stream:
-        os.close(self.streamfd)
-
-    def readOutput(self):
-        """
-        Read the stream data (one byte at a time)
-        and save the text in `capturedtext`.
-        """
-        while True:
-            char = os.read(self.pipe_out, 1)
-            if not char or self.escape_char in char:
-                break
-            self.capturedtext += char
-
-
-# Functions to check and download dababase files on github
+    if min_dbg_level <= impy.debug_level:
+        print(caller_name(), *args)
 
 
 def _download_file(outfile, url):
@@ -274,6 +253,7 @@ def _download_file(outfile, url):
         raise ConnectionError(f"{fname} has not been downloaded")
 
 
+# Function to check and download dababase files on github
 def _cached_data_dir(url):
     """Checks for existence of version file
     "model_name_vxxx.zip". Downloads and unpacks
@@ -504,3 +484,75 @@ def naneq(a, b):
         Second float.
     """
     return a == b or (np.isnan(a) and np.isnan(b))
+
+
+def fortran_array_insert(array, size, value):
+    if value in array[:size]:
+        return
+    if len(array) == size:
+        raise RuntimeError("array is full")
+    array[size] = value
+    size += 1
+
+
+def fortran_array_remove(array, size, value):
+    for i, val in enumerate(array[:size]):
+        if val == value:
+            size -= 1
+            for j in range(i, size):
+                array[j] = array[j + 1]
+            break
+
+
+class Nuclei:
+    """
+    Class to specify ranges of nuclei supported by a model.
+
+    It acts like a set and can be combined with sets via operator |.
+
+    The default is to accept any nucleus.
+    """
+
+    def __init__(
+        self, *, a_min: int = 1, a_max: int = 1000, z_min: int = 0, z_max: int = 1000
+    ):
+        self._a_min = a_min
+        self._a_max = a_max
+        self._z_min = z_min
+        self._z_max = z_max
+        self._other = set()
+
+    def __contains__(self, pdgid: int):
+        if pdgid in self._other:
+            return True
+        if not isinstance(pdgid, PDGID):
+            pdgid = PDGID(pdgid)
+        if pdgid.A is None:
+            return False
+        return (
+            self._a_min <= pdgid.A <= self._a_max
+            and self._z_min <= pdgid.Z <= self._z_max
+        )
+
+    def __repr__(self):
+        s = (
+            f"Nuclei(a_min={self._a_min}, a_max={self._a_max}, "
+            f"z_min={self._z_min}, z_max={self._z_max})"
+        )
+        if self._other:
+            s += f" | {self._other}"
+        return s
+
+    def __ior__(self, other: Set[PDGID]):
+        self._other |= other
+        return self
+
+    def __or__(self, other: Set[PDGID]):
+        from copy import deepcopy
+
+        result = deepcopy(self)
+        result |= other
+        return result
+
+    def __ror__(self, other: Set[PDGID]):
+        return self.__or__(other)

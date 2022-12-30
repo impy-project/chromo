@@ -4779,15 +4779,12 @@ python module _eposlhc ! in
             integer :: idtrafo
             common /ighnx/ ighenex
         end function idtrafo
-        subroutine initializeepos(seed,emax,datpath,lpath,ifram,ippdg,itpdg,idebug,iou) ! in :_eposlhc:CMakeFiles/_eposlhc.dir/epos_interface.f
+        subroutine initepos(seed,emax,datpath,lpath,idbg,iou) ! in :_eposlhc:CMakeFiles/_eposlhc.dir/epos_interface.f
             real :: seed
             real :: emax
             character*(*) :: datpath
             integer :: lpath
-            integer :: ifram
-            integer :: ippdg
-            integer :: itpdg
-            integer :: idebug
+            integer :: idbg
             integer :: iou
             real :: phievt
             integer :: nevt
@@ -5613,12 +5610,13 @@ python module _eposlhc ! in
             common /dparuni/ alpuni,betuni,betpuni,fpuni,ftuni,epspuni,zzpuni,epstuni,zztuni,betfom,alpfom,alpfomi,gamfom
             common /crvar/ idlead,ilprtg
             common /lhctune/ ilhc
-        end subroutine initializeepos
-        subroutine initeposevt(ecm,ela,ippdg,itpdg) ! in :_eposlhc:CMakeFiles/_eposlhc.dir/epos_interface.f
+        end subroutine initepos
+        subroutine initeposevt(ecm,ela,ippdg,itpdg,ifram) ! in :_eposlhc:CMakeFiles/_eposlhc.dir/epos_interface.f
             real :: ecm
             real :: ela
             integer :: ippdg
             integer :: itpdg
+            integer :: ifram
             real :: phievt
             integer :: nevt
             real :: bimevt
@@ -7302,6 +7300,5 @@ python module _eposlhc ! in
     end interface 
 end python module _eposlhc
 
-! This file was auto-generated with f2py (version:1.23.3).
-! See:
-! https://web.archive.org/web/20140822061353/http://cens.ioc.ee/projects/f2py2e
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

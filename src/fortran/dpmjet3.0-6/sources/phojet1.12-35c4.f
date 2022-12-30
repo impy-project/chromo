@@ -511,7 +511,7 @@ C  hard cross sections and MC selection weights
       DOUBLE PRECISION  BRAT
       COMMON/PYDAT3/MDCY(500,3),MDME(4000,2),BRAT(4000),KFDP(4000,5)
 
-Cf2py intent(out) irej
+Cf2py intent(inout) irej
 
       INTEGER PYCOMP
 

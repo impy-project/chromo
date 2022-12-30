@@ -32,7 +32,7 @@ jobs:
       with:
         submodules: true
 
-    - uses: actions/setup-python@v3
+    - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - uses: awvwgk/setup-fortran@main
@@ -40,7 +40,6 @@ jobs:
       with:
         compiler: gcc
         version: 11
-    - uses: tlylt/install-graphviz@v1
 
     - run: python -m pip install --upgrade pip
 
@@ -62,6 +61,19 @@ jobs:
         CMAKE_GENERATOR: "MinGW Makefiles"
         FC: ${{ steps.setup-fortran.outputs.fc }}
 
-    - run: python -m pytest -vv
+    # graphviz is needed for tests, only install it when compilation succeed
+    - uses: tlylt/install-graphviz@v1
+
+    # Tests run in parallel, but data download is currently not thread-safe.
+    # We work around this by downloading all data files upfront.
+    - run: python download_data.py
+    - run: python -m pytest -vv -n 3
       env:
         no_proxy: '*'
+
+    # always() ensures upload even if pytest ends with failures
+    - if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}-${{ matrix.python-version }}
+        path: "fig/**"

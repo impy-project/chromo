@@ -1,12 +1,12 @@
 import os
 from impy import models as im
 from impy.constants import TeV
-from impy.kinematics import EventKinematics
+from impy.kinematics import CenterOfMass
 import pytest
 import pyhepmc
 
 N = 1000
-evt_kin = EventKinematics(ecm=10 * TeV, particle1=2212, p2pdg=2212)
+evt_kin = CenterOfMass(10 * TeV, "p", "p")
 models = {name: getattr(im, name)(evt_kin) for name in ("Sibyll21", "Pythia6")}
 
 

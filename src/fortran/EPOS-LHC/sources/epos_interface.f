@@ -17,16 +17,14 @@ c for main program
       end
 
 c-----------------------------------------------------------------------
-      subroutine InitializeEpos(seed, emax, datpath, lpath, ifram, 
-     &   ippdg, itpdg, idebug, iou)
+      subroutine InitEpos(seed, emax, datpath, lpath, idbg, iou)
 c-----------------------------------------------------------------------
 c General initialization of EPOS
 c anfe: accepts nuclear PDG id instead of A, Z combos
 c-----------------------------------------------------------------------      
       include "epos.inc"
       real seed, emax
-      integer lpath, ifram, iapro, izpro, iatar, 
-     &  iztar, idebug, iou
+      integer lpath, idbg, iou
       character(*) datpath
       
       seedi=seed   !seed for random number generator: at start program
@@ -42,7 +40,6 @@ c Initialize decay of particles (all unstable decay)
 c      isigma=0              !do not print out the cross section on screen
 c      ionudi=3              !count diffraction without excitation as elastic
 
-      iframe=10 + ifram           !nucleon-nucleon frame (12=target)
       iecho=0                     !"silent" reading mode
 
       nfnnx=lpath   
@@ -59,49 +56,24 @@ c      ionudi=3              !count diffraction without excitation as elastic
       fncs=fnnx(1:nfnnx) // "epos.inics"       !'.lhc' is added a the end of the file name in ainit if LHCparameters is called
 
 c Debug
-      ish=idebug       !debug level
+      ish=idbg       !debug level
       ifch=iou      !debug output (screen)
 c      ifch=31    !debug output (file)
 c      fnch="epos.debug"
 c      nfnch=index(fnch,' ')-1
 c      open(ifch,file=fnch(1:nfnch),status='unknown')
 
-
       nevent = 1  !number of events
       modsho = 1  !printout every modsho events
 
       ecms=emax  !center of mass energy in GeV/c2
       
-      if (ippdg.ge.1000000000) then
-         izpro = mod(ippdg, 1000) / 10
-         iapro = mod(ippdg, 1000000) / 10000
-         ippdg = 2212
-      else
-         izpro = 1
-         iapro = 1
-      endif
-      if (itpdg.ge.1000000000) then
-         iztar = mod(itpdg, 1000) / 10
-         iatar = mod(itpdg, 1000000) / 10000
-         itpdg = 2212
-      else
-         iztar = 1
-         iatar = 1
-      endif
-
-      idproj = idtrafo("pdg","nxs",ippdg)
-      laproj = izpro      !proj Z
-      maproj = iapro      !proj A
-      idtarg = idtrafo("pdg","nxs",itpdg)
-      latarg = iztar      !targ Z
-      matarg = iatar      !targ A
-
       istmax = 1      !only final particles (istmax=1 includes mother particles)
 
       End
 
 c-----------------------------------------------------------------------
-      subroutine InitEposEvt(ecm, ela, ippdg, itpdg)
+      subroutine InitEposEvt(ecm, ela, ippdg, itpdg, ifram)
 c-----------------------------------------------------------------------
 c Initialization to be called after changing the energy or beam
 c configuration
@@ -109,6 +81,8 @@ c define either ecm < 0 and ela > 0 or ecm > 0 and ela < 0
 c anfe: accepts nuclear PDG id instead of A, Z combos
 c-----------------------------------------------------------------------      
       include "epos.inc"
+      integer ifram
+
       engy = -1.
       ecms = -1.
       elab = -1.
@@ -142,6 +116,8 @@ c-----------------------------------------------------------------------
       idtargin = idtrafo("pdg","nxs",itpdg)
       latarg = iztar      !targ Z
       matarg = iatar      !targ A
+
+      iframe=10 + ifram           !nucleon-nucleon frame (12=target)
 
 c anfe why here? istmax = 1      !only final particles (istmax=1 includes mother particles)
       call ainit()

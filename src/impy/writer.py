@@ -1,5 +1,6 @@
 import numpy as np
 from impy.constants import quarks_and_diquarks_and_gluons, millibarn, GeV
+from impy.kinematics import CompositeTarget
 import dataclasses
 from pathlib import Path
 
@@ -36,7 +37,7 @@ def _raise_import_error(name, task):
 # so we don't write them. Long-lived particles are final state, and there is no
 # interesting information in the vertices of very short-lived particles.
 class Root:
-    def __init__(self, file, config, model, write_vertices=False, buffer_size=100000):
+    def __init__(self, file, model, write_vertices=False, buffer_size=100000):
         try:
             import uproot
         except ModuleNotFoundError:
@@ -45,15 +46,16 @@ class Root:
         assert GeV == 1
         assert millibarn == 1
 
-        # FIXME projectile_momentum and target_momentum are 0 if -S option is used,
-        # to be fixed in follow-up PR that fixes EventKinematics
+        kin = model.kinematics
         header = {
-            "seed": model.seed,
-            "projectile_id": config.projectile_id,
-            "projectile_momentum": config.projectile_momentum,
-            "target_id": config.target_id,
-            "target_momentum": config.target_momentum,
             "model": model.label,
+            "seed": model.seed,
+            "projectile_id": int(kin.p1),
+            "projectile_momentum": kin.beams[0][2],
+            "target_id": (
+                repr(kin.p2) if isinstance(kin.p2, CompositeTarget) else int(kin.p2)
+            ),
+            "target_momentum": kin.beams[1][2],
         }
         header.update(
             {
@@ -94,7 +96,7 @@ class Root:
                 }
             )
 
-        self._header = "\n".join(f"{k}: {v}" for (k, v) in header.items())
+        self._header = "\n" + "\n".join(f"{k}: {v}" for (k, v) in header.items())
         self._tree = None
         self._lengths = []
         self._iparticle = 0
@@ -179,7 +181,7 @@ class Root:
 
 
 class Svg:
-    def __init__(self, file, config, model):
+    def __init__(self, file, model):
         self._idx = 0
         self._template = (file.parent, file.stem, file.suffix)
 
@@ -205,7 +207,7 @@ class Svg:
 
 
 class Hepmc:
-    def __init__(self, file, config, model):
+    def __init__(self, file, model):
         try:
             from pyhepmc._core import pyiostream
             from pyhepmc.io import _WrappedWriter, WriterAscii
