@@ -64,6 +64,9 @@ jobs:
     # graphviz is needed for tests, only install it when compilation succeed
     - uses: tlylt/install-graphviz@v1
 
+    # Tests run in parallel, but data download is currently not thread-safe.
+    # We work around this by downloading all data files upfront.
+    - run: python download_data.py
     - run: python -m pytest -vv -n 3
       env:
         no_proxy: '*'

@@ -195,4 +195,4 @@ def test_generator(projectile, target, frame, Model):
 
     draw_comparison(fn, p_value, h.axes, values, val_ref, cov_ref)
 
-    assert p_value >= 1e-5
+    assert p_value >= 1e-6
