@@ -14,8 +14,8 @@ from impy.util import (
     classproperty,
     select_parents,
     naneq,
-    name2pdg,
     pdg2name,
+    process_particle,
     Nuclei,
 )
 from impy.constants import (
@@ -737,7 +737,7 @@ class Model(ABC):
         a full particle history and do not allow one to set
         certain resonances as stable.
         """
-        pid = name2pdg(particle) if isinstance(particle, str) else particle
+        pid = process_particle(particle)
         p = Particle.from_pdgid(pid)
         if p.ctau is None or p.ctau == np.inf:
             raise ValueError(f"{pdg2name(pid)} cannot decay")

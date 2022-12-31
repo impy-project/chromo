@@ -9,7 +9,6 @@ from impy.kinematics import (
 )
 import impy.models as im
 import pytest
-from .util import run_in_separate_process
 from impy.util import get_all_models, pdg2name
 import impy
 import boost_histogram as bh
@@ -176,7 +175,7 @@ def test_generator(projectile, target, frame, Model):
     else:
         assert False  # we should never arrive here
 
-    h = run_in_separate_process(run_model, Model, kin)
+    h = run_model(Model, kin)
     if h is None:
         assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
         return

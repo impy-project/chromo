@@ -35,22 +35,18 @@ class QGSJetRun(Model):
         + "/releases/download/zipped_data_v1.0/qgsjet_v001.zip"
     )
 
-    # needed to skip set_final_state_particles() in MCRun
-    _set_final_state_particles_called = True
-
-    def __init__(self, evt_kin, *, seed=None):
-        import impy
-
+    def __init__(self, seed=None):
         super().__init__(seed)
+
+    def _once(self):
+        import impy
 
         # logging
         lun = 6  # stdout
         datdir = _cached_data_dir(self._data_url)
         self._lib.cqgsini(self._seed, datdir, lun, impy.debug_level)
 
-        self.kinematics = evt_kin
-
-    def _set_stable(self, pdgid, stable):
+    def _set_stable(self, pid, stable):
         import warnings
 
         # TODO use Pythia8 instance to decay particles which QGSJet does not decay
@@ -66,11 +62,9 @@ class QGSJet1Run(QGSJetRun):
 
     _event_class = QGSJET1Event
 
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin):
         # Interpolation routine for QGSJET01D cross sections from CORSIKA.
         from scipy.interpolate import UnivariateSpline
-
-        kin = self.kinematics if kin is None else kin
 
         A_target = kin.p2.A
         # Projectile ID-1 to access fortran indices directly
@@ -125,9 +119,7 @@ class QGSJet2Run(QGSJetRun):
 
     _event_class = QGSJET2Event
 
-    def _cross_section(self, kin=None):
-        kin = self.kinematics if kin is None else kin
-
+    def _cross_section(self, kin):
         inel = self._lib.qgsect(
             kin.elab,
             self._projectile_id,
