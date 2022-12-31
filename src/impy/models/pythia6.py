@@ -26,9 +26,10 @@ class Pythia6(Model):
     _projectiles = standard_projectiles
     _targets = standard_projectiles
 
-    def __init__(self, evt_kin, *, seed=None, new_mpi=False):
-        super().__init__(seed)
+    def __init__(self, seed=None, *, new_mpi=False):
+        super().__init__(seed, new_mpi)
 
+    def _once(self, new_mpi):
         # setup logging
         lun = 6  # stdout
         self._lib.pydat1.mstu[10] = lun
@@ -55,11 +56,8 @@ class Pythia6(Model):
         for isub in [11, 12, 13, 28, 53, 68, 92, 93, 94, 95, 96]:
             self._lib.pysubs.msub[isub - 1] = 1
 
-        self.kinematics = evt_kin
-
-        self._set_final_state_particles()
-
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin):
+        self._set_kinematics(kin)
         s = self._lib.pyint7.sigt[0, 0]
         c = CrossSectionData(
             total=s[0],
