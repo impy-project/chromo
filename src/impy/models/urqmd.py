@@ -41,14 +41,16 @@ class UrQMD34(Model):
 
     def __init__(
         self,
-        evt_kin,
-        *,
         seed=None,
+        *,
         caltim=200,
         outtim=200,
         ct_params=None,
         ct_options=None,
     ):
+        super().__init__(seed, caltim, outtim, ct_params, ct_options)
+
+    def _once(self, caltim, outtim, ct_params, ct_options):
         import impy
 
         self._pdg2modid = {
@@ -122,8 +124,6 @@ class UrQMD34(Model):
             -3334: (-55, 0),
         }
 
-        super().__init__(seed)
-
         # logging
         lun = 6  # stdout
         self._lib.urqini(lun, impy.debug_level)
@@ -151,11 +151,9 @@ class UrQMD34(Model):
         self._lib.pots.dtimestep = outtim
         self._lib.sys.nsteps = int(0.01 + caltim / self._lib.pots.dtimestep)
         self._lib.inputs.outsteps = int(0.01 + caltim / self._lib.pots.dtimestep)
-        self.kinematics = evt_kin
 
-        self._set_final_state_particles()
-
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin):
+        self._set_kinematics(kin)
         tot = self._lib.ptsigtot()
         return CrossSectionData(total=tot)
 
