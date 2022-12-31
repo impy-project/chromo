@@ -67,9 +67,10 @@ class SIBYLLRun(Model):
         )
     }
 
-    def __init__(self, evt_kin, *, seed=None):
+    def __init__(self, seed=None):
         super().__init__(seed)
 
+    def _once(self):
         # setup logging
         import impy
 
@@ -82,14 +83,7 @@ class SIBYLLRun(Model):
         self._lib.rndmgas.iset = 0
         self._lib.pdg_ini()
 
-        # This calls _set_event_kinematics which uses self._lib.isib_pdg2pid
-        # which works only after an initialization call to self._lib.pdg_ini()
-        self.kinematics = evt_kin
-
-        self._set_final_state_particles()
-
-    def _cross_section(self, kin=None):
-        kin = self.kinematics if kin is None else kin
+    def _cross_section(self, kin):
         if kin.p2.A > 1:
             # TODO figure out what this returns exactly:
             # self._lib.sib_sigma_hnuc
@@ -125,6 +119,7 @@ class SIBYLLRun(Model):
     def _set_kinematics(self, kin):
         self._production_id = self._lib.isib_pdg2pid(kin.p1)
         assert self._production_id != 0
+        self._kin = kin
 
     def _set_stable(self, pdgid, stable):
         sid = abs(self._lib.isib_pdg2pid(pdgid))
@@ -142,7 +137,7 @@ class SIBYLLRun(Model):
             idb[sid - 1] = abs(idb[sid - 1])
 
     def _generate(self):
-        kin = self.kinematics
+        kin = self._kin
         self._lib.sibyll(self._production_id, kin.p2.A, kin.ecm)
         self._lib.decsib()
         self._lib.sibhep()

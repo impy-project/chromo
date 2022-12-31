@@ -7,6 +7,7 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 """
+from __future__ import annotations
 from abc import ABC, abstractmethod
 import numpy as np
 from impy.util import (
@@ -444,13 +445,13 @@ class MCEvent(EventData, ABC):
     _jmohep = "jmohep"
     _jdahep = "jdahep"
 
-    def __init__(self, generator, kinematics):
+    def __init__(self, generator: Model, kinematics: EventKinematics):
         """
         Parameters
         ----------
-        generator:
+        generator : Model
             Generator instance.
-        kinematics:
+        kinematics : EventKinematics
             Kinematics of the event.
         """
         # used by _charge_init and generator-specific methods
@@ -484,7 +485,7 @@ class MCEvent(EventData, ABC):
         )
 
     @abstractmethod
-    def _charge_init(self, npart):
+    def _charge_init(self, npart: int):
         # override this in derived to get charge info
         ...
 
@@ -767,6 +768,7 @@ class Model(ABC):
         kin : EventKinematics
             Calculate cross-section for EventKinematics.
         """
+        self._validate_kinematics(kin)
         if isinstance(kin.p2, CompositeTarget):
             cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0)
             components = kin.p2.components

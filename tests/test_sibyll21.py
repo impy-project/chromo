@@ -3,22 +3,22 @@ from impy.models import Sibyll21
 from impy.constants import TeV, GeV
 from numpy.testing import assert_allclose, assert_equal
 import numpy as np
-from .util import reference_charge, run_in_separate_process
+from .util import reference_charge
 import pytest
 from particle import Particle
 
 
 def event_run():
-    evt_kin = CenterOfMass(10 * TeV, "p", "p")
-    m = Sibyll21(evt_kin, seed=1)
-    for event in m(1):
+    m = Sibyll21(seed=1)
+    kin = CenterOfMass(10 * TeV, "p", "p")
+    for event in m(kin, 1):
         pass
     return event.copy()  # copy is pickleable
 
 
 @pytest.fixture
 def event():
-    return run_in_separate_process(event_run)
+    return event_run()
 
 
 @pytest.mark.xfail(reason="needs a fix to sibylls ICHP table")
@@ -62,13 +62,13 @@ def test_vertex(event):
 
 
 def run_cross_section(p1, p2):
-    evt_kin = CenterOfMass(10 * GeV, p1, p2)
-    m = Sibyll21(evt_kin, seed=1)
-    return m.cross_section()
+    m = Sibyll21()
+    kin = CenterOfMass(10 * GeV, p1, p2)
+    return m.cross_section(kin)
 
 
 def test_cross_section():
-    c = run_in_separate_process(run_cross_section, "p", "p")
+    c = run_cross_section("p", "p")
     assert_allclose(c.total, 38.4, atol=0.1)
     assert_allclose(c.inelastic, 30.9, atol=0.1)
     assert_allclose(c.elastic, 7.4, atol=0.1)
