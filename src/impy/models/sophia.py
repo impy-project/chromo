@@ -51,7 +51,7 @@ class Sophia20(Model):
     _targets = {lp.p.pdgid, lp.n.pdgid}
     _ecm_min = 0
 
-    def __init__(self, kinematics, *, seed=None, keep_decayed_particles=True):
+    def __init__(self, seed=None, *, keep_decayed_particles=True):
         import impy
 
         super().__init__(seed)
@@ -60,10 +60,10 @@ class Sophia20(Model):
         # Keep decayed particles in the history:
         self._lib.eg_io.keepdc = keep_decayed_particles
 
-        self.kinematics = kinematics
-        self._set_final_state_particles()
+    def _once(self):
+        pass
 
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin):
         # code=3 for inelastic cross-section
         # TODO fill more cross-sections
         inel = (
@@ -72,16 +72,16 @@ class Sophia20(Model):
         )
         return CrossSectionData(inelastic=inel)
 
-    def _set_kinematics(self, evt_kin):
+    def _set_kinematics(self, kin):
         # Here we consider laboratory frame where photon moves along z axis
         # and nucleon is at rest. The angle is counted from z axis.
         # However, because of the definitions in "eventgen" subroutine of
         # SOPHIA code (line "P_gam(3) = -EPS*COS(theta*pi/180.D0)")
         # this angle should be 180 for photon moving along z
         # (and 0 for photon moving in direction opposite to z)
-        self._nucleon_code = self._lib.icon_pdg_sib(evt_kin.p2)
+        self._nucleon_code = self._lib.icon_pdg_sib(kin.p2)
         self._angle_between_nucleon_and_photon = 180
-        self._energy_of_photon = evt_kin.elab
+        self._energy_of_photon = kin.elab
         self._energy_of_nucleon = np.float32(nucleon_mass)
         # setting parameters for cross-section
         self._lib.initial(self._nucleon_code)
