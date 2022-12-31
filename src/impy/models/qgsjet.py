@@ -1,5 +1,5 @@
 import numpy as np
-from impy.common import MCRun, MCEvent, CrossSectionData
+from impy.common import Model, MCEvent, CrossSectionData
 from impy.kinematics import EventFrame
 from impy.constants import standard_projectiles
 from impy.util import _cached_data_dir, Nuclei
@@ -26,7 +26,7 @@ class QGSJET2Event(QGSJET1Event):
         return self._lib.qgarr55.nwp, self._lib.qgarr55.nwt
 
 
-class QGSJetRun(MCRun):
+class QGSJetRun(Model):
     _name = "QGSJet"
     _frame = EventFrame.FIXED_TARGET
     _projectiles = standard_projectiles | Nuclei()

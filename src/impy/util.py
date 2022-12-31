@@ -582,7 +582,7 @@ def tolerant_string_match(a, b):
 
 def get_all_models(skip=None):
     from impy import models
-    from impy.common import MCRun
+    from impy.common import Model
 
     if skip is None:
         skip = []
@@ -595,7 +595,7 @@ def get_all_models(skip=None):
         if skip and obj in skip:
             continue
         try:
-            if issubclass(obj, MCRun):  # fails if obj is not a class
+            if issubclass(obj, Model):  # fails if obj is not a class
                 result.append(obj)
         except TypeError:
             pass

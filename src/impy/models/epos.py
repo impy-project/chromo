@@ -1,6 +1,7 @@
 import numpy as np
 from impy.kinematics import EventFrame
-from impy.common import MCEvent, MCRun, CrossSectionData
+from impy.constants import TeV
+from impy.common import MCEvent, Model, CrossSectionData
 from impy.util import (
     _cached_data_dir,
     fortran_array_insert,
@@ -13,8 +14,8 @@ from impy.constants import standard_projectiles
 class EPOSEvent(MCEvent):
     """Wrapper class around EPOS particle stack."""
 
-    def __init__(self, generator):
-        super().__init__(generator)
+    def __init__(self, generator, kinematics):
+        super().__init__(generator, kinematics)
         # EPOS sets parents of beam particles to (-1, -1).
         # We change it to (0, 0)
         self.parents[self.status == 4] = 0
@@ -30,7 +31,7 @@ class EPOSEvent(MCEvent):
         return int(self._lib.cevt.npjevt), int(self._lib.cevt.ntgevt)
 
 
-class EposLHC(MCRun):
+class EposLHC(Model):
     """Implements all abstract attributes of MCRun for the
     EPOS-LHC series of event generators."""
 
@@ -45,10 +46,11 @@ class EposLHC(MCRun):
         + "/releases/download/zipped_data_v1.0/epos_v001.zip"
     )
 
-    def __init__(self, evt_kin, *, seed=None):
-        import impy
+    def __init__(self, seed=None, *, ecm_max=1000 * TeV):
+        super().__init__(seed, ecm_max)
 
-        super().__init__(seed)
+    def _once(self, ecm_max):
+        from impy import debug_level
 
         self._lib.aaset(0)
         datdir = _cached_data_dir(self._data_url)
@@ -56,18 +58,17 @@ class EposLHC(MCRun):
         lun = 6  # stdout
         self._lib.initepos(
             float(self._seed),
-            evt_kin.ecm,
+            ecm_max,
             datdir,
             len(datdir),
-            impy.debug_level,
+            debug_level,
             lun,
         )
 
-        self._set_final_state_particles()
         self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.float32])
-        self.kinematics = evt_kin
 
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin):
+        self._set_kinematics(kin)
         total, inel, el, dd, sd, _ = self._lib.xsection()
         return CrossSectionData(
             total=total,

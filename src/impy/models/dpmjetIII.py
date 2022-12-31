@@ -1,4 +1,4 @@
-from impy.common import MCRun, MCEvent, CrossSectionData
+from impy.common import Model, MCEvent, CrossSectionData
 from impy.kinematics import EventFrame
 from impy.util import info, _cached_data_dir, fortran_chars, Nuclei
 from impy.constants import standard_projectiles, GeV
@@ -37,7 +37,7 @@ class DpmjetIIIEvent(MCEvent):
 # =========================================================================
 # DpmjetIIIMCRun
 # =========================================================================
-class DpmjetIIIRun(MCRun):
+class DpmjetIIIRun(Model):
     """Implements all abstract attributes of MCRun for the
     DPMJET-III series of event generators.
 

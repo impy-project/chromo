@@ -1,5 +1,5 @@
 import numpy as np
-from impy.common import MCRun, MCEvent, CrossSectionData
+from impy.common import Model, MCEvent, CrossSectionData
 from particle import literals as lp
 from impy.kinematics import EventFrame
 from impy.constants import standard_projectiles
@@ -14,7 +14,7 @@ class PYTHIA6Event(MCEvent):
         return np.fromiter((self._lib.pychge(ki) / 3 for ki in k), np.double)
 
 
-class Pythia6(MCRun):
+class Pythia6(Model):
     """Implements all abstract attributes of MCRun for the
     EPOS-LHC series of event generators."""
 

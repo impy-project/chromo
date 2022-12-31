@@ -156,7 +156,7 @@ def run_pp_collision_copy():
 
     evt_kin = CenterOfMass(1 * TeV, 2212, 2212)
     m = Pythia6(evt_kin, seed=4)
-    m.set_stable(lp.pi_0.pdgid, False)  # needed to get nonzero vertices
+    m.stable(lp.pi_0.pdgid, False)  # needed to get nonzero vertices
     for event in m(1):
         pass
 

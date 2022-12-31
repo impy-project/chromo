@@ -1,5 +1,5 @@
 import numpy as np
-from impy.common import MCRun, MCEvent, RMMARDState, CrossSectionData
+from impy.common import Model, MCEvent, RMMARDState, CrossSectionData
 from impy.util import info, Nuclei
 from impy.kinematics import EventFrame
 import dataclasses
@@ -47,7 +47,7 @@ class RMMARDSib(RMMARDState):
         )
 
 
-class SIBYLLRun(MCRun):
+class SIBYLLRun(Model):
     """Implements all abstract attributes of MCRun for the
     SIBYLL 2.1, 2.3 and 2.3c event generators."""
 
@@ -130,8 +130,8 @@ class SIBYLLRun(MCRun):
         sid = abs(self._lib.isib_pdg2pid(pdgid))
         if abs(pdgid) == 311:
             info(1, "Ignores K0. Using K0L/S instead")
-            self.set_stable(130, stable)
-            self.set_stable(310, stable)
+            self.stable(130, stable)
+            self.stable(310, stable)
             return
         idb = self._lib.s_csydec.idb
         if sid == 0 or sid > idb.size - 1:
