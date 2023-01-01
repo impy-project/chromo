@@ -125,8 +125,8 @@ class SIBYLLRun(Model):
         sid = abs(self._lib.isib_pdg2pid(pdgid))
         if abs(pdgid) == 311:
             info(1, "Ignores K0. Using K0L/S instead")
-            self.stable(130, stable)
-            self.stable(310, stable)
+            self.set_stable(130, stable)
+            self.set_stable(310, stable)
             return
         idb = self._lib.s_csydec.idb
         if sid == 0 or sid > idb.size - 1:

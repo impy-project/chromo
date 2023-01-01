@@ -500,8 +500,10 @@ class MCEvent(EventData, ABC):
     # MCEvent is not pickleable, but EventData is. For convenience, we
     # make it so that MCEvent can be saved and is restored as EventData.
     def __getstate__(self):
-        # save only EventData sub-state
-        return {k: getattr(self, k) for k in self.__dataclass_fields__}
+        # Save only EventData sub-state. We actually need to make a copy here,
+        # a view is not sufficient.
+        copied_event = super().copy()
+        return dataclasses.asdict(copied_event)
 
     def __getnewargs__(self):
         # upon unpickling, create EventData object instead of MCEvent object
@@ -583,6 +585,7 @@ class RMMARDState:
 # =========================================================================
 class Model(ABC):
     _once_called = False
+    _alive_instances = set()
     _projectiles = standard_projectiles
     _targets = Nuclei()
     _ecm_min = 10 * GeV  # default for many models
@@ -591,6 +594,19 @@ class Model(ABC):
     def __init__(self, seed, *args):
         import importlib
         from random import randint
+
+        if self.pyname in self._alive_instances:
+            warnings.warn(
+                f"A previous instance of {self.pyname} is still alive. "
+                "You cannot use two instances in parallel. "
+                "Please delete the old one first before creating a new one. "
+                "You can ignore this warning if the previous instance is already "
+                "out of scope, Python does not always destroy old instances immediately.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+
+        self._alive_instances.add(self.pyname)
 
         if seed is None:
             self._seed = randint(1, 10000000)
@@ -614,12 +630,16 @@ class Model(ABC):
                 self._lib.init_rmmard(self._seed)
             # Run internal model initialization code
             self._once(*args)
-            # Set standard long lived particles as stable
-            for pid in long_lived:
-                self._set_stable(pid, True)
         else:
             if hasattr(self._lib, "init_rmmard"):
                 self._lib.init_rmmard(self._seed)
+        # Set standard long lived particles as stable
+        for pid in long_lived:
+            self._set_stable(pid, True)
+
+    def __del__(self):
+        if self.pyname in self._alive_instances:
+            self._alive_instances.remove(self.pyname)
 
     def __call__(self, kin, nevents):
         """Generator function (in python sence)
@@ -720,12 +740,12 @@ class Model(ABC):
         return rmmard_state, numpy_state
 
     @random_state.setter
-    def _(self, rng_state):
+    def random_state(self, rng_state):
         rmmard_state, numpy_state = rng_state
         rmmard_state._restore_state(self)
         self._composite_target_rng.__setstate__(numpy_state)
 
-    def stable(self, particle, stable=True):
+    def set_stable(self, particle, stable=True):
         """Prevent decay of an unstable particle.
 
         Parameters
@@ -755,14 +775,14 @@ class Model(ABC):
     def maydecay(self, particle):
         """Decay particle in event record.
 
-        Equivalent to `self.stable(particle, stable=False)`
+        Equivalent to `self.set_stable(particle, stable=False)`
 
         Parameters
         ----------
         particle : str or int
             Name or PDG ID of the particle.
         """
-        self.stable(particle, False)
+        self.set_stable(particle, False)
 
     def cross_section(self, kin, **kwargs):
         """Cross sections according to current setup.

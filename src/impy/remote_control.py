@@ -13,9 +13,7 @@ def run(output, Model, init_args, stable_changes, random_state, method, args):
             for k, v in stable_changes:
                 model.set_stable(k, v)
             for x in model(*args):
-                # It is weird that we need to return a copy here,
-                # output.put should pickle the event anyway
-                output.put(x.copy())
+                output.put(x)
         else:
             x = getattr(model, method)(*args)
             output.put(x)

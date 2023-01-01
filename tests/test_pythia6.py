@@ -5,7 +5,7 @@ from impy.models import Pythia6
 from impy.constants import GeV, TeV
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
-from .util import reference_charge, run_in_separate_process
+from .util import reference_charge
 import pytest
 import pickle
 from functools import lru_cache
@@ -25,20 +25,17 @@ def run_collision(p1, p2):
     return event  # MCEvent is restored as EventData
 
 
-def run_cross_section(p1, p2):
-    kin = CenterOfMass(10 * GeV, p1, p2)
-    m = Pythia6(seed=1)
-    return m.cross_section(kin)
-
-
 @pytest.fixture
 @lru_cache(maxsize=1)
 def event():
-    return run_collision("p", "p")
+    return run_collision("p", "p").copy()
 
 
 def test_cross_section():
-    c = run_cross_section("p", "p")
+    kin = CenterOfMass(10 * GeV, "p", "p")
+    m = Pythia6(seed=1)
+    c = m.cross_section(kin)
+
     assert_allclose(c.total, 38.4, atol=0.1)
     assert_allclose(c.inelastic, 31.4, atol=0.1)
     assert_allclose(c.elastic, 7.0, atol=0.1)
@@ -119,7 +116,7 @@ def test_final_state_charged(event):
     assert_equal(ev1, ev3)
 
 
-def test_pickle(event):
+def test_pickle():
     kin = CenterOfMass(10 * GeV, 2212, 2212)
 
     m = Pythia6(seed=1)
@@ -127,17 +124,52 @@ def test_pickle(event):
         pass
 
     s = pickle.dumps(event)
+
+    event1 = event.copy()
+
+    # draw another event so that MCEvent
+    # get overridden
+    for _ in m(kin, 1):
+        pass
+
     event2 = pickle.loads(s)
 
-    assert event == event2
+    assert event1 == event2
 
 
-def run_pp_collision_copy():
+def test_event_getstate_setstate():
+    from impy.models.pythia6 import PYTHIA6Event
+    from impy.common import EventData
+
+    kin = CenterOfMass(10 * GeV, 2212, 2212)
+
+    m = Pythia6(seed=1)
+    for event in m(kin, 1):
+        pass
+
+    assert type(event) is PYTHIA6Event
+
+    # this must create a copy
+    state = event.__getstate__()
+
+    event1 = event.copy()
+    assert type(event1) is not PYTHIA6Event
+
+    # draw another event so that MCEvent gets overridden
+    for _ in m(kin, 1):
+        pass
+
+    event2 = EventData(**state)
+
+    assert event1 == event2
+
+
+def test_event_copy():
     from impy.models.pythia6 import PYTHIA6Event
     from impy.common import EventData
 
     m = Pythia6(seed=4)
-    m.stable("pi_0", False)  # needed to get nonzero vertices
+    m.set_stable("pi_0", False)  # needed to get nonzero vertices
     kin = CenterOfMass(1 * TeV, 2212, 2212)
     for event in m(kin, 1):
         pass
@@ -157,5 +189,14 @@ def run_pp_collision_copy():
     list(m(kin, 1))
 
 
-def test_event_copy():
-    run_in_separate_process(run_pp_collision_copy)
+@pytest.mark.filterwarnings("error")
+def test_warning_when_creating_two_instances():
+    m1 = Pythia6()
+
+    with pytest.raises(RuntimeWarning):
+        Pythia6()
+
+    del m1
+
+    # no warning
+    Pythia6()

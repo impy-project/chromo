@@ -11,7 +11,7 @@ from functools import lru_cache
 
 def run_pp_collision():
     m = EposLHC(seed=4)
-    m.stable("pi0", True)
+    m.set_stable("pi0", True)
     kin = CenterOfMass(10 * GeV, "proton", "proton")
     for event in m(kin, 1):
         pass
@@ -29,13 +29,15 @@ def run_ab_collision():
 @pytest.fixture
 @lru_cache(maxsize=1)
 def event():
-    return run_pp_collision()
+    # must cache a copy and not a view
+    return run_pp_collision().copy()
 
 
 @pytest.fixture
 @lru_cache(maxsize=1)
 def event_ion():
-    return run_ab_collision()
+    # must cache a copy and not a view
+    return run_ab_collision().copy()
 
 
 def test_impact_parameter(event, event_ion):
@@ -117,24 +119,30 @@ def test_parents(event):
     assert sum(x[0] > 0 and x[1] > 0 for x in event.parents) > 0
 
 
-def run_set_stable(stable):
+@pytest.mark.parametrize("stable", (False, True))
+def test_set_stable(stable):
     m = EposLHC(seed=4)
-    for pid, s in stable.items():
-        m.stable(pid, s)
-    print("stable", m._get_stable())
+    pid = lp.pi_0.pdgid
+
+    m.set_stable("pi_0", stable)
+
     kin = CenterOfMass(10 * GeV, "proton", "proton")
     for event in m(kin, 1):
         pass
-    return event
 
+    final = event.final_state()
+    if stable:
+        assert np.sum(final.pid == pid) > 0
+    else:
+        assert np.sum(final.pid == pid) == 0
 
-def test_set_stable():
-    pid = lp.pi_0.pdgid
-    ev1 = run_set_stable({"pi_0": True})
-    ev2 = run_set_stable({pid: False})
+    del m
 
-    # ev1 contains final state pi0
-    assert np.any(ev1.pid[ev1.status == 1] == pid)
+    # check that defaults are restored for new instance
+    m = EposLHC(seed=4)
+    kin = CenterOfMass(10 * GeV, "proton", "proton")
+    for event in m(kin, 1):
+        pass
 
-    # ev2 does not contains final state pi0
-    assert np.all(ev2.pid[ev2.status == 1] != pid)
+    final = event.final_state()
+    assert np.sum(final.pid == pid) == 0
