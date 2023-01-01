@@ -2,6 +2,7 @@ from impy.common import Model, MCEvent, CrossSectionData
 from impy.util import fortran_chars, _cached_data_dir
 from impy.kinematics import EventFrame
 from impy.constants import standard_projectiles
+from impy.remote_control import make_remote_controlled_model
 from particle import literals as lp
 
 
@@ -70,7 +71,7 @@ class PHOJETRun(Model):
     _name = "PhoJet"
     _event_class = PhojetEvent
     _frame = None
-    _projectiles = standard_projectiles  # FIXME: should allow photons and hadrons
+    _projectiles = standard_projectiles
     _targets = {lp.proton.pdgid, lp.neutron.pdgid}
     _param_file_name = "dpmjpar.dat"
     _data_url = (
@@ -78,9 +79,10 @@ class PHOJETRun(Model):
         + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
 
-    def __init__(self, evt_kin, *, seed=None):
+    def __init__(self, seed=None):
         super().__init__(seed)
 
+    def _once(self):
         data_dir = _cached_data_dir(self._data_url)
         # Set the dpmjpar.dat file
         if hasattr(self._lib, "pomdls") and hasattr(self._lib.pomdls, "parfn"):
@@ -143,20 +145,10 @@ class PHOJETRun(Model):
         # Set PYTHIA decay flags to follow all changes to MDCY
         self._lib.pydat1.mstj[21 - 1] = 1
         self._lib.pydat1.mstj[22 - 1] = 2
-        self._set_final_state_particles()
 
-        self.kinematics = evt_kin
+    def _cross_section(self, kin):
+        self._set_kinematics(kin)
 
-        # Initialize kinematics and tables (only once needed)
-        if self._lib.pho_event(-1, self.p1, self.p2)[1]:
-            raise RuntimeError(
-                "initialization failed with the current event kinematics"
-            )
-
-    def _cross_section(self, kin=None):
-        kin = self.kinematics if kin is None else kin
-        self._lib.pho_setpar(1, kin.p1, 0, 0.0)
-        self._lib.pho_setpar(2, kin.p2, 0, 0.0)
         if hasattr(self._lib, "pho_setpcomb"):
             # The old 1.12 version of phojet doesn't have this function
             self._lib.pho_setpcomb()
@@ -190,13 +182,22 @@ class PHOJETRun(Model):
             self._frame = EventFrame.CENTER_OF_MASS
         self._lib.pho_setpar(1, k.p1, 0, 0.0)
         self._lib.pho_setpar(2, k.p2, 0, 0.0)
-        self.p1, self.p2 = k.beams
+        self._beams = k.beams
+
+        # Initialize kinematics and tables (only once needed)
+        # LIMITATION: Once this has been called for a given set of particles,
+        # it cannot be called again for different values of k.p1, k.p2. This
+        # means we cannot change particles in Phojet.
+        if self._lib.pho_event(-1, *self._beams)[1]:
+            raise RuntimeError(
+                "initialization failed with the current event kinematics"
+            )
 
     def _generate(self):
-        return not self._lib.pho_event(1, self.p1, self.p2)[1]
+        return not self._lib.pho_event(1, *self._beams)[1]
 
 
-class Phojet112(PHOJETRun):
+class Phojet112Base(PHOJETRun):
     _version = "1.12-35"
     _library_name = "_phojet112"
     _param_file_name = "fitpar.dat"
@@ -210,11 +211,17 @@ class Phojet112(PHOJETRun):
     )
 
 
-class Phojet191(PHOJETRun):
+class Phojet191Base(PHOJETRun):
     _version = "19.1"
     _library_name = "_phojet191"
 
 
-class Phojet193(PHOJETRun):
+class Phojet193Base(PHOJETRun):
     _version = "19.3"
     _library_name = "_phojet193"
+
+
+# Use remote control as a workaround for Phojet limitation
+Phojet112 = make_remote_controlled_model("Phojet112", Phojet112Base)
+Phojet191 = make_remote_controlled_model("Phojet191", Phojet191Base)
+Phojet193 = make_remote_controlled_model("Phojet193", Phojet193Base)

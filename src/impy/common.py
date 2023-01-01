@@ -715,11 +715,15 @@ class Model(ABC):
 
     @property
     def random_state(self):
-        return RMMARDState()._record_state(self)
+        rmmard_state = RMMARDState()._record_state(self)
+        numpy_state = self._composite_target_rng.__getstate__()
+        return rmmard_state, numpy_state
 
     @random_state.setter
-    def random_state(self, rng_state):
-        rng_state._restore_state(self)
+    def _(self, rng_state):
+        rmmard_state, numpy_state = rng_state
+        rmmard_state._restore_state(self)
+        self._composite_target_rng.__setstate__(numpy_state)
 
     def stable(self, particle, stable=True):
         """Prevent decay of an unstable particle.
@@ -760,13 +764,15 @@ class Model(ABC):
         """
         self.stable(particle, False)
 
-    def cross_section(self, kin):
+    def cross_section(self, kin, **kwargs):
         """Cross sections according to current setup.
 
         Parameters
         ----------
         kin : EventKinematics
             Calculate cross-section for EventKinematics.
+        kwargs :
+            Further arguments passed to the model implementation.
         """
         self._validate_kinematics(kin)
         if isinstance(kin.p2, CompositeTarget):
@@ -775,12 +781,12 @@ class Model(ABC):
             fractions = kin.p2.fractions
             for component, fraction in zip(components, fractions):
                 kin.p2 = component
-                cs = self._cross_section(kin)
+                cs = self._cross_section(kin, **kwargs)
                 for i, val in enumerate(dataclasses.astuple(cs)):
                     cross_section[i] += fraction * val
             return cross_section
         else:
-            return self._cross_section(kin)
+            return self._cross_section(kin, **kwargs)
 
     @abstractmethod
     def _once(self, *args):

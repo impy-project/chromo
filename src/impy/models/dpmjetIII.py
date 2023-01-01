@@ -62,9 +62,7 @@ class DpmjetIIIRun(Model):
     _max_A1 = 0
     _max_A2 = 0
 
-    def __init__(self, evt_kin, *, seed=None):
-        super().__init__(seed)
-
+    def _once(self):
         data_dir = _cached_data_dir(self._data_url)
         # Set the dpmjpar.dat file
         if hasattr(self._lib, "pomdls") and hasattr(self._lib.pomdls, "parfn"):
@@ -95,34 +93,24 @@ class DpmjetIIIRun(Model):
             assert False, "Unknown DPMJET version, IO common block not detected"
         self._lib.pydat1.mstu[10] = lun
 
-        self.kinematics = evt_kin
-
-        # Relax momentum and energy conservation checks at very high energies
-        if evt_kin.ecm > 5e4:
-            # Relative allowed deviation
-            self._lib.pomdls.parmdl[74] = 0.05
-            # Absolute allowed deviation
-            self._lib.pomdls.parmdl[75] = 0.05
-
         # Prevent DPMJET from overwriting decay settings
         # self._lib.dtfrpa.ovwtdc = False
         # Set PYTHIA decay flags to follow all changes to MDCY
         self._lib.pydat1.mstj[21 - 1] = 1
         self._lib.pydat1.mstj[22 - 1] = 2
-        self._set_final_state_particles()
 
-    def _cross_section(self, kin=None, precision=None):
-        kin = self.kinematics if kin is None else kin
-        # we override to set precision
-        if (kin.p1.A and kin.p1.A > 1) or kin.p2.A > 1:
-            assert kin.p2.A >= 1, "DPMJET requires nucleons or nuclei on side 2."
+    def _cross_section(self, kin, precision=None):
+        self._set_kinematics(kin)
+        assert kin.p2.A >= 1  # should be guaranteed _set_kinematics
+
+        if kin.p1.A and kin.p1.A > 1:  # nuclear projectile
             if precision is not None:
                 saved = self._lib.dtglgp.jstatb
                 # Set number of trials for Glauber model integration
                 self._lib.dtglgp.jstatb = precision
             self._lib.dt_xsglau(
                 kin.p1.A or 1,
-                kin.p2.A or 1,
+                kin.p2.A,
                 self._lib.idt_icihad(2212)
                 if (kin.p1.A and kin.p1.A > 1)
                 else self._lib.idt_icihad(kin.p1),
@@ -136,17 +124,26 @@ class DpmjetIIIRun(Model):
             if precision is not None:
                 self._lib.dtglgp.jstatb = saved
             return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
-        else:
-            stot, sela = self._lib.dt_xshn(
-                self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
-            )
-            return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
+
+        # other projectile
+        stot, sela = self._lib.dt_xshn(
+            self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
+        )
+        return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
 
         # TODO set more cross-sections
 
     def _set_kinematics(self, kin):
         # Save maximal mass that has been initialized
         # (DPMJET sometimes crashes if higher mass requested than initialized)
+
+        # Relax momentum and energy conservation checks at very high energies
+        if kin.ecm > 5e4:
+            # Relative allowed deviation
+            self._lib.pomdls.parmdl[74] = 0.05
+            # Absolute allowed deviation
+            self._lib.pomdls.parmdl[75] = 0.05
+
         if not self._max_A1:
             # only do this once
             if kin.frame == EventFrame.FIXED_TARGET:
@@ -179,12 +176,14 @@ class DpmjetIIIRun(Model):
         #     self._lib.dt_setbm(k.A1, k.Z1, k.A2, k.Z2, k.beam[0], k.beam[1])
         #     print 'OK'
 
+        self._kin = kin
+
     def _set_stable(self, pdgid, stable):
         kc = self._lib.pycomp(pdgid)
         self._lib.pydat3.mdcy[kc - 1, 0] = not stable
 
     def _generate(self):
-        k = self.kinematics
+        k = self._kin
         reject = self._lib.dt_kkinc(
             k.p1.A or 1,
             k.p1.Z or 0,
