@@ -77,19 +77,27 @@ class CompositeTarget:
         """Return PDGID for heaviest of elements."""
         return int(max((c.A, c) for c in self.components)[1])
 
+    # this allows us to use CompositeTarget in Set[int].__contains__
+    def __hash__(self):
+        return self.__int__().__hash__()
+
     def average_mass(self):
         return sum(
             f * p.A * nucleon_mass for (f, p) in zip(self.fractions, self.components)
         )
 
+    def __abs__(self):
+        return abs(self.__int__())
 
-class Singleton(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+    def __repr__(self):
+        components = [
+            (pdg2name(c), amount)
+            for (c, amount) in zip(self.components, self.fractions)
+        ]
+        args = f"{components}"
+        if self.label:
+            args += f", label={self.label!r}"
+        return f"CompositeTarget({args})"
 
 
 def energy2momentum(E, m):
@@ -117,21 +125,6 @@ def elab2ecm(elab, m1, m2):
 
 def ecm2elab(ecm, m1, m2):
     return 0.5 * (ecm**2 - m1**2 - m2**2) / m2
-
-
-def process_particle(x):
-    if isinstance(x, (PDGID, CompositeTarget)):
-        return x
-    if isinstance(x, int):
-        return PDGID(x)
-    if isinstance(x, str):
-        try:
-            return PDGID(name2pdg(x))
-        except KeyError:
-            raise ValueError(f"particle with name {x} not recognized")
-    if is_AZ(x):
-        return PDGID(AZ2pdg(*x))
-    raise ValueError(f"{x} is not a valid particle specification")
 
 
 def mass(pdgid):
@@ -234,6 +227,21 @@ def AZ2pdg(A, Z):
     pdg_id += 10000 * Z
     pdg_id += 10 * A
     return PDGID(pdg_id)
+
+
+def process_particle(x):
+    if isinstance(x, (PDGID, CompositeTarget)):
+        return x
+    if isinstance(x, int):
+        return PDGID(x)
+    if isinstance(x, str):
+        try:
+            return PDGID(name2pdg(x))
+        except KeyError:
+            raise ValueError(f"particle with name {x} not recognized")
+    if is_AZ(x):
+        return PDGID(AZ2pdg(*x))
+    raise ValueError(f"{x} is not a valid particle specification")
 
 
 def fortran_chars(array_ref, char_seq):
@@ -626,7 +634,7 @@ class Nuclei:
         self._z_max = z_max
         self._other = set()
 
-    def __contains__(self, pdgid: int):
+    def __contains__(self, pdgid: Union[int, CompositeTarget]):
         if pdgid in self._other:
             return True
         if not isinstance(pdgid, PDGID):
