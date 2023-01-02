@@ -86,7 +86,7 @@ def compute_p_value(got, expected, cov):
 def draw_comparison(fn, p_value, axes, values, val_ref, cov_ref):
     import re
 
-    m = re.search(r"(.+)-(.+)-(.+)-(.+)", str(fn))
+    m = re.search(r"(.+)_(.+)_(.+)_(.+)", str(fn))
     mname = m.group(0)
     projectile = m.group(1)
     target = m.group(2)
@@ -180,7 +180,7 @@ def test_generator(projectile, target, frame, Model):
         assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
         return
 
-    fn = Path(f"{Model.pyname}-{projectile}-{target}-{frame}")
+    fn = Path(f"{Model.pyname}_{projectile}_{target}_{frame}")
     path_ref = REFERENCE_PATH / fn.with_suffix(".pkl.gz")
     if not path_ref.exists():
         print(f"{fn}: reference does not exist; generating...")
