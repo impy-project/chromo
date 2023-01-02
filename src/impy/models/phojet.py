@@ -1,4 +1,4 @@
-from impy.common import Model, MCEvent, CrossSectionData
+from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.util import fortran_chars, _cached_data_dir
 from impy.kinematics import EventFrame
 from impy.constants import standard_projectiles
@@ -60,7 +60,7 @@ class PhojetEvent(MCEvent):
     #                   self._lib.poevt1.phep[0:4, 5]))
 
 
-class PHOJETRun(Model):
+class PHOJETRun(MCRun):
     """Implements all abstract attributes of MCRun for the
     PHOJET series of event generators.
 

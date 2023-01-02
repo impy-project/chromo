@@ -1,8 +1,6 @@
-import numpy as np
-from impy.common import Model, MCEvent, RMMARDState, CrossSectionData
+from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.util import info, Nuclei
 from impy.kinematics import EventFrame
-import dataclasses
 from particle import literals as lp
 import warnings
 
@@ -27,27 +25,7 @@ class SibyllEvent(MCEvent):
         return self._lib.cnucms.ni
 
 
-@dataclasses.dataclass
-class RMMARDSib(RMMARDState):
-    _gasdev_iset: np.ndarray = None
-
-    def _record_state(self, generator):
-        super()._record_state(generator)
-        self._gasdev_iset = generator._lib.rndmgas.iset
-        return self
-
-    def _restore_state(self, generator):
-        super()._restore_state(generator)
-        generator._lib.rndmgas.iset = self._gasdev_iset
-        return self
-
-    def __eq__(self, other: object) -> bool:
-        return super().__eq__(other) and np.array_equal(
-            self._gasdev_iset, other._gasdev_iset
-        )
-
-
-class SIBYLLRun(Model):
+class SIBYLLRun(MCRun):
     """Implements all abstract attributes of MCRun for the
     SIBYLL 2.1, 2.3 and 2.3c event generators."""
 
@@ -142,14 +120,6 @@ class SIBYLLRun(Model):
         self._lib.decsib()
         self._lib.sibhep()
         return True
-
-    @property
-    def random_state(self):
-        return RMMARDSib()._record_state(self)
-
-    @random_state.setter
-    def random_state(self, rng_state):
-        rng_state._restore_state(self)
 
 
 class Sibyll21(SIBYLLRun):

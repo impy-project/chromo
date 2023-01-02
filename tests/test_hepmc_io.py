@@ -4,20 +4,10 @@ from impy.kinematics import CenterOfMass, FixedTarget
 import impy.models as im
 import pytest
 import pyhepmc
-from .util import run_in_separate_process
 from impy.util import get_all_models
 
 # generate list of all models in impy.models
 models = get_all_models()
-
-
-def run(Model):
-    evt_kin = CenterOfMass(100 * GeV, "proton", "proton")
-
-    if Model == im.Sophia20:
-        evt_kin = FixedTarget(100 * GeV, "photon", "proton")
-    gen = Model(evt_kin, seed=1)
-    return list(gen(3))
 
 
 @pytest.mark.parametrize(
@@ -32,7 +22,13 @@ def test_hepmc_io(Model):
 
     test_file = Path(f"{Path(__file__).stem}_{Model.pyname}.dat")
 
-    events = run_in_separate_process(run, Model)
+    kin = CenterOfMass(100 * GeV, "proton", "proton")
+
+    if Model == im.Sophia20:
+        kin = FixedTarget(100 * GeV, "photon", "proton")
+    gen = Model(seed=1)
+    events = [x.copy() for x in gen(kin, 3)]
+
     expected = []
     genevent = None
     for ev in events:

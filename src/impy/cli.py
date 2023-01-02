@@ -324,14 +324,14 @@ def main():
     )
 
     if pr > 0 and ta == 0:  # fixed target mode
-        evt_kin = FixedTarget(Momentum(pr), args.projectile_id, args.target_id)
+        kin = FixedTarget(Momentum(pr), args.projectile_id, args.target_id)
     else:  # cms mode
-        evt_kin = CenterOfMass(args.sqrts, args.projectile_id, args.target_id)
+        kin = CenterOfMass(args.sqrts, args.projectile_id, args.target_id)
 
     task_id = None
     try:
-        model = args.model(evt_kin)
-        ofile = FORMATS[args.output](args.out, model)
+        model = args.model(args.seed)
+        ofile = FORMATS[args.output](args.out, model, kin)
         with ofile:
             # workaround: several models generate extra print when first
             # event is generated, this interferes with progress bar so we
@@ -344,7 +344,7 @@ def main():
                 TimeRemainingColumn(elapsed_when_finished=True),
                 SpeedColumn(),
             ) as bar:
-                for event in model(args.number):
+                for event in model(kin, args.number):
                     ofile.write(event)
                     if task_id is None:
                         task_id = bar.add_task("", total=args.number)

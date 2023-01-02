@@ -2,7 +2,6 @@ from impy.kinematics import CenterOfMass
 from impy import models as im
 from impy.constants import GeV
 from impy.models.sophia import Sophia20
-from .util import run_in_separate_process
 from impy.util import get_all_models
 import numpy as np
 import pytest
@@ -11,24 +10,20 @@ import pytest
 models = get_all_models()
 
 
-def run(Model):
-    evt_kin = CenterOfMass(10 * GeV, "proton", "proton")
-    if Model is Sophia20:
-        evt_kin = CenterOfMass(10 * GeV, "photon", "proton")
-    m = Model(evt_kin, seed=1)
-    for event in m(100):
-        if len(event) > 10:  # to skip small events
-            break
-    return event  # MCEvent is pickeable, but restored as EventData
-
-
 @pytest.mark.parametrize("Model", models)
 def test_to_hepmc3(Model):
 
     if Model == im.UrQMD34:
         pytest.xfail("UrQMD34 FAILS, should be FIXED!!!")
 
-    event = run_in_separate_process(run, Model)
+    kin = CenterOfMass(10 * GeV, "proton", "proton")
+    if Model is Sophia20:
+        kin = CenterOfMass(10 * GeV, "photon", "proton")
+
+    m = Model(seed=1)
+    for event in m(kin, 100):
+        if len(event) > 10:  # to skip small events
+            break
 
     # special case for models that only have final-state particles
     if Model is im.UrQMD34 or Model.name in ("PhoJet", "DPMJET-III"):
@@ -41,7 +36,7 @@ def test_to_hepmc3(Model):
             assert p.status == fs.status[i]
         assert len(hev.vertices) == 0
         return  # test ends here
-    # special case for Pythia8, which does not contain the parton show
+    # special case for Pythia8, which does not contain parton shower
     elif Model is im.Pythia8:
         # parton shower is skipped
         from impy.constants import quarks_and_diquarks_and_gluons

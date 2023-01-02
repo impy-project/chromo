@@ -1,4 +1,4 @@
-from impy.common import Model, MCEvent, CrossSectionData
+from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.util import _cached_data_dir, name2pdg
 from os import environ
 import numpy as np
@@ -30,7 +30,7 @@ class PYTHIA8Event(MCEvent):
         return hi.nPartProj, hi.nPartTarg
 
 
-class Pythia8(Model):
+class Pythia8(MCRun):
     _name = "Pythia"
     _version = "8.308"
     _library_name = "_pythia8"

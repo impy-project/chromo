@@ -1,24 +1,32 @@
 import multiprocessing as mp
+import traceback
+import sys
 
 __all__ = ["make_remote_controlled_model"]
 
 
-def run(output, Model, init_args, stable_changes, random_state, method, args):
-    seed, kwargs = init_args
-    model = Model(seed, **kwargs)
+def run(output, Model, seed, init_kwargs, stables, random_state, method, args):
+    model = Model(seed, **init_kwargs)
     if random_state is not None:
         model.random_state = random_state
     try:
         if method == "call":
-            for k, v in stable_changes:
-                model.set_stable(k, v)
+            for k in stables - model.get_stable():
+                model.set_stable(k, True)
+            for k in model.get_stable() - stables:
+                model.set_stable(k, False)
             for x in model(*args):
                 output.put(x)
         else:
             x = getattr(model, method)(*args)
             output.put(x)
     except Exception as exc:
+        (msg,) = exc.args
+        tb = sys.exc_info()[2]
+        s = "".join(traceback.format_tb(tb))
+        exc.args = (f"{msg}\n\nBacktrace from child process:\n{s}",)
         output.put(exc)
+        return
     output.put(model.random_state)
 
 
@@ -71,23 +79,19 @@ def make_remote_controlled_model(name, Model):
     # everytime we create a new process.
 
     def __init__(self, seed=None, timeout=100, **kwargs):
+        Model.__init__(self, seed, **kwargs)
         self._timeout = timeout
-        self._init_args = (seed, kwargs)
-        self._stable_changes = {}
-        self._random_state = None
+        self._init_kwargs = kwargs
 
     def __call__(self, kin, nevents):
         process, output = self._remote_init("call", (kin, nevents))
         for _ in range(nevents):
             yield get(self._timeout, process, output)
-        self._random_state = get(self._timeout, process, output)
+        self.random_state = get(self._timeout, process, output)
         process.join()
 
     def _cross_section(self, kin):
         return self._remote_method("_cross_section", kin)
-
-    def _set_stable(self, pdgid, stable):
-        self._stable_changes[pdgid] = stable
 
     def _remote_init(self, method, args):
         ctx = mp.get_context("spawn")
@@ -97,9 +101,10 @@ def make_remote_controlled_model(name, Model):
             args=(
                 output,
                 Model,
-                self._init_args,
-                self._stable_changes,
-                self._random_state,
+                self.seed,
+                self._init_kwargs,
+                self.get_stable(),
+                self.random_state,
                 method,
                 args,
             ),
@@ -111,7 +116,7 @@ def make_remote_controlled_model(name, Model):
     def _remote_method(self, method, *args):
         process, output = self._remote_init(method, args)
         x = get(self._timeout, process, output)
-        self._random_state = get(self._timeout, process, output)
+        self.random_state = get(self._timeout, process, output)
         process.join()
         return x
 
@@ -124,7 +129,6 @@ def make_remote_controlled_model(name, Model):
             "__init__": __init__,
             "__call__": __call__,
             "_cross_section": _cross_section,
-            "_set_stable": _set_stable,
             "_remote_init": _remote_init,
             "_remote_method": _remote_method,
         },

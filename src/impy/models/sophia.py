@@ -1,5 +1,5 @@
 import numpy as np
-from impy.common import Model, MCEvent, CrossSectionData
+from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.constants import nucleon_mass
 from impy.constants import microbarn
 from impy.kinematics import EventFrame
@@ -37,7 +37,7 @@ class SophiaEvent(MCEvent):
         return self._lib.schg.iparnt[: self.npart]
 
 
-class Sophia20(Model):
+class Sophia20(MCRun):
     """Implements all abstract attributes of MCRun for the
     Sophia event generator.
     """

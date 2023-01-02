@@ -1,7 +1,7 @@
 import numpy as np
 from impy.kinematics import EventFrame
 from impy.constants import TeV
-from impy.common import MCEvent, Model, CrossSectionData
+from impy.common import MCEvent, MCRun, CrossSectionData
 from impy.util import (
     _cached_data_dir,
     fortran_array_insert,
@@ -31,7 +31,7 @@ class EPOSEvent(MCEvent):
         return int(self._lib.cevt.npjevt), int(self._lib.cevt.ntgevt)
 
 
-class EposLHC(Model):
+class EposLHC(MCRun):
     """Implements all abstract attributes of MCRun for the
     EPOS-LHC series of event generators."""
 

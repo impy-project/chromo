@@ -228,7 +228,7 @@ class EventData:
         """
         Return event copy.
         """
-        # this should be implemented with the help of copy
+        # Cannot be implemented with copy.deepcopy, leads to recursion
         copies = []
         for obj in dataclasses.astuple(self):
             copies.append(obj.copy() if hasattr(obj, "copy") else obj)
@@ -445,7 +445,7 @@ class MCEvent(EventData, ABC):
     _jmohep = "jmohep"
     _jdahep = "jdahep"
 
-    def __init__(self, generator: Model, kinematics: EventKinematics):
+    def __init__(self, generator: MCRun, kinematics: EventKinematics):
         """
         Parameters
         ----------
@@ -512,17 +512,21 @@ class MCEvent(EventData, ABC):
 
 @dataclasses.dataclass
 class RMMARDState:
-    _c_number: np.ndarray = None
-    _u_array: np.ndarray = None
-    _u_i: np.ndarray = None
-    _u_j: np.ndarray = None
-    _seed: np.ndarray = None
-    _counter: np.ndarray = None
-    _big_counter: np.ndarray = None
-    _sequence_number: np.ndarray = None
+    _c_number: np.ndarray
+    _u_array: np.ndarray
+    _u_i: np.ndarray
+    _u_j: np.ndarray
+    _seed: np.ndarray
+    _counter: np.ndarray
+    _big_counter: np.ndarray
+    _sequence_number: np.ndarray
+    _composite_target_state = None
+    # only needed for Sibyll
+    _gasdev_iset: np.ndarray = None
 
-    def _record_state(self, generator):
+    def __init__(self, generator):
         data = generator._lib.crranma4
+
         self._c_number = data.c
         self._u_array = data.u
         self._u_i = data.i97
@@ -531,9 +535,13 @@ class RMMARDState:
         self._counter = data.ntot
         self._big_counter = data.ntot2
         self._sequence_number = data.jseq
-        return self
 
-    def _restore_state(self, generator):
+        self._composite_target_state = generator._composite_target_rng.__getstate__()
+
+        if generator.name == "SIBYLL":
+            self._gasdev_iset = generator._lib.rndmgas.iset
+
+    def _restore(self, generator):
         data = generator._lib.crranma4
 
         data.c = self._c_number
@@ -544,28 +552,26 @@ class RMMARDState:
         data.ntot = self._counter
         data.ntot2 = self._big_counter
         data.jseq = self._sequence_number
-        return self
 
-    def __eq__(self, other: object) -> bool:
-        if other.__class__ is not self.__class__:
-            return NotImplemented
+        generator._composite_target_rng.__setstate__(self._composite_target_state)
 
-        return (
-            np.array_equal(self._c_number, other._c_number)
-            and np.array_equal(self._u_array, other._u_array)
-            and np.array_equal(self._u_i, other._u_i)
-            and np.array_equal(self._u_j, other._u_j)
-            and np.array_equal(self._seed, other._seed)
-            and np.array_equal(self._counter, other._counter)
-            and np.array_equal(self._big_counter, other._big_counter)
-            and np.array_equal(self._sequence_number, other._sequence_number)
-        )
+        if generator.name == "SIBYLL":
+            generator._lib.rndmgas.iset = self._gasdev_iset
+
+    def __eq__(self, other):
+        a = dataclasses.astuple(self)
+        b = dataclasses.astuple(other)
+        return all(np.all(ai == bi) for (ai, bi) in zip(a, b))
 
     def copy(self):
         """
         Return generator copy.
         """
         return copy.deepcopy(self)  # this uses setstate, getstate
+
+    # HD: These should not be public, since the random number state
+    # is an implementation detail. I am going to leave it, since this
+    # whole class will become obsolete when we switch to the numpy PRNG.
 
     @property
     def sequence(self):
@@ -581,14 +587,18 @@ class RMMARDState:
 
 
 # =========================================================================
-# Model
+# MCRun
 # =========================================================================
-class Model(ABC):
+class MCRun(ABC):
     _once_called = False
     _alive_instances = set()
+    _stable = set()
+
+    # defaults for many models (override in Derived if needed)
     _projectiles = standard_projectiles
     _targets = Nuclei()
-    _ecm_min = 10 * GeV  # default for many models
+    _ecm_min = 10 * GeV
+
     nevents = 0  # number of generated events so far
 
     def __init__(self, seed, *args):
@@ -615,7 +625,7 @@ class Model(ABC):
         else:
             raise ValueError(f"Invalid seed {seed}")
 
-        # TODO use rmmard for this, too, instead of numpy PRNG
+        # TODO use single PRNG for everything
         self._composite_target_rng = np.random.default_rng(self._seed)
 
         if not self._once_called:
@@ -633,9 +643,10 @@ class Model(ABC):
         else:
             if hasattr(self._lib, "init_rmmard"):
                 self._lib.init_rmmard(self._seed)
+
         # Set standard long lived particles as stable
         for pid in long_lived:
-            self._set_stable(pid, True)
+            self.set_stable(pid)
 
     def __del__(self):
         if self.pyname in self._alive_instances:
@@ -725,7 +736,9 @@ class Model(ABC):
         if isinstance(kin.p2, CompositeTarget):
             nevents = self._composite_target_rng.multinomial(nevents, kin.p2.fractions)
             components = kin.p2.components
-            for c, nev in zip(components, nevents):
+            # as a workaround for DPMJet, we generate heaviest elements first
+            pairs = sorted(zip(components, nevents), key=lambda p: p[0].A, reverse=True)
+            for c, nev in pairs:
                 kin.p2 = c
                 self._set_kinematics(kin)
                 yield nev
@@ -735,15 +748,16 @@ class Model(ABC):
 
     @property
     def random_state(self):
-        rmmard_state = RMMARDState()._record_state(self)
-        numpy_state = self._composite_target_rng.__getstate__()
-        return rmmard_state, numpy_state
+        return RMMARDState(self)
 
     @random_state.setter
     def random_state(self, rng_state):
-        rmmard_state, numpy_state = rng_state
-        rmmard_state._restore_state(self)
-        self._composite_target_rng.__setstate__(numpy_state)
+        rng_state._restore(self)
+
+    def get_stable(self):
+        """Return set of stable particles."""
+        # make a copy to prevent modification of internal state
+        return set(self._stable)
 
     def set_stable(self, particle, stable=True):
         """Prevent decay of an unstable particle.
@@ -766,11 +780,15 @@ class Model(ABC):
         if p.ctau is None or p.ctau == np.inf:
             raise ValueError(f"{pdg2name(pid)} cannot decay")
         if abs(pid) == 311:
-            self._set_stable(311, stable)
-            self._set_stable(130, stable)
-            self._set_stable(310, stable)
-        else:
-            self._set_stable(pid, stable)
+            self.set_stable(130, stable)
+            self.set_stable(310, stable)
+            return
+
+        if stable:
+            self._stable.add(pid)
+        elif pid in self._stable:
+            self._stable.remove(pid)
+        self._set_stable(pid, stable)
 
     def maydecay(self, particle):
         """Decay particle in event record.

@@ -6,7 +6,7 @@
 # The current settings are taken from CORSIKA and they are optimized for speed aparently.
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
-from impy.common import Model, MCEvent, CrossSectionData
+from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.util import info, fortran_array_insert, fortran_array_remove, Nuclei
 from impy.kinematics import EventFrame
 from impy.constants import standard_projectiles, GeV
@@ -23,7 +23,7 @@ class UrQMDEvent(MCEvent):
         return self._lib.rsys.bimp
 
 
-class UrQMD34(Model):
+class UrQMD34(MCRun):
     """Implements all abstract attributes of MCRun for the
     UrQMD series of event generators.
 
