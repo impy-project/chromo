@@ -11,6 +11,7 @@ import impy.models as im
 import pytest
 from .util import run_in_separate_process
 from impy.util import get_all_models, pdg2name
+import impy
 import boost_histogram as bh
 import gzip
 import pickle
@@ -137,9 +138,9 @@ def draw_comparison(fn, p_value, axes, values, val_ref, cov_ref):
 
 
 @pytest.mark.trylast
+@pytest.mark.parametrize("frame", ("cms", "ft", "cms2ft", "ft2cms"))
 @pytest.mark.parametrize("target", ("p", "air"))
 @pytest.mark.parametrize("projectile", ("gamma", "pi-", "p", "He"))
-@pytest.mark.parametrize("frame", ("cms", "ft", "cms2ft", "ft2cms"))
 @pytest.mark.parametrize("Model", get_all_models())
 def test_generator(projectile, target, frame, Model):
     p1 = projectile
@@ -171,17 +172,19 @@ def test_generator(projectile, target, frame, Model):
     path_ref = REFERENCE_PATH / fn.with_suffix(".pkl.gz")
     p_value = None
     if not path_ref.exists():
-        print(f"{fn}: reference does not exist; generating... (but fail test)")
-        # check plots to see whether reference makes any sense before committing it
-        p_value = -1  # make sure test fails
+        # New reference is generated. Check plots to see whether reference makes
+        # any sense before committing it.
         values = run_in_separate_process(run_model, Model, kin, 50, timeout=10000)
         val_ref = np.reshape(np.mean(values, axis=0), -1)
         cov_ref = np.cov(np.transpose([np.reshape(x, -1) for x in values]))
         with gzip.open(path_ref, "wb") as f:
             pickle.dump((val_ref, cov_ref), f)
-    else:
-        with gzip.open(path_ref) as f:
-            val_ref, cov_ref = pickle.load(f)
+        values = np.reshape(h.values(), -1)
+        draw_comparison(fn, -1, h.axes, values, val_ref, cov_ref)
+        pytest.xfail(reason="reference does not exist; generated new one, check it")
+
+    with gzip.open(path_ref) as f:
+        val_ref, cov_ref = pickle.load(f)
 
     # histogram sometimes contains extreme spikes
     # not reflected in cov, this murky formula
@@ -190,9 +193,11 @@ def test_generator(projectile, target, frame, Model):
     for i, v in enumerate(values):
         cov_ref[i, i] = 0.5 * (cov_ref[i, i] + v)
 
-    if p_value is None:
-        p_value = compute_p_value(values, val_ref, cov_ref)
+    p_value = compute_p_value(values, val_ref, cov_ref)
 
-    draw_comparison(fn, p_value, h.axes, values, val_ref, cov_ref)
+    threshold = 1e-6
 
-    assert p_value >= 1e-6
+    if not (p_value >= threshold) or impy.debug_level > 0:
+        draw_comparison(fn, p_value, h.axes, values, val_ref, cov_ref)
+
+    assert p_value >= threshold

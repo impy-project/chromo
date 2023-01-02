@@ -80,9 +80,9 @@ class EposLHC(MCRun):
         )
 
     def _set_kinematics(self, kin):
-        if self._frame == EventFrame.FIXED_TARGET:
+        if kin.frame == EventFrame.FIXED_TARGET:
             iframe = 2
-            self._frame = kin.frame
+            self._frame = EventFrame.FIXED_TARGET
         else:
             iframe = 1
             self._frame = EventFrame.CENTER_OF_MASS
