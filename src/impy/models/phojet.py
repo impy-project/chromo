@@ -1,8 +1,8 @@
-from impy.common import MCRun, MCEvent, CrossSectionData
+from impy.common import MCEvent, CrossSectionData
 from impy.util import fortran_chars, _cached_data_dir
 from impy.kinematics import EventFrame
 from impy.constants import standard_projectiles
-from impy.remote_control import make_remote_controlled_model
+from impy.remote_control import MCRunRemote as MCRun
 from particle import literals as lp
 
 
@@ -194,7 +194,7 @@ class PHOJETRun(MCRun):
         return not self._lib.pho_event(1, *self._beams)[1]
 
 
-class Phojet112Base(PHOJETRun):
+class Phojet112(PHOJETRun):
     _version = "1.12-35"
     _library_name = "_phojet112"
     _param_file_name = "fitpar.dat"
@@ -208,17 +208,11 @@ class Phojet112Base(PHOJETRun):
     )
 
 
-class Phojet191Base(PHOJETRun):
+class Phojet191(PHOJETRun):
     _version = "19.1"
     _library_name = "_phojet191"
 
 
-class Phojet193Base(PHOJETRun):
+class Phojet193(PHOJETRun):
     _version = "19.3"
     _library_name = "_phojet193"
-
-
-# Use remote control as a workaround for Phojet limitation
-Phojet112 = make_remote_controlled_model("Phojet112", Phojet112Base)
-Phojet191 = make_remote_controlled_model("Phojet191", Phojet191Base)
-Phojet193 = make_remote_controlled_model("Phojet193", Phojet193Base)

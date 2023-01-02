@@ -21,7 +21,6 @@ from particle import literals as lp
 import numpy as np
 from scipy.stats import chi2
 import sys
-import impy
 
 matplotlib.use("svg")  # need non-interactive backend for CI Windows
 

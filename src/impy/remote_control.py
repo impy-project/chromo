@@ -1,25 +1,30 @@
 import multiprocessing as mp
 import traceback
 import sys
+from impy.common import MCRun
 
-__all__ = ["make_remote_controlled_model"]
+__all__ = ["MCRunRemote"]
 
 
 def run(output, Model, seed, init_kwargs, stables, random_state, method, args):
     model = Model(seed, **init_kwargs)
-    if random_state is not None:
-        model.random_state = random_state
+    model.random_state = random_state
     try:
         if method == "call":
             for k in stables - model.get_stable():
                 model.set_stable(k, True)
             for k in model.get_stable() - stables:
                 model.set_stable(k, False)
-            for x in model(*args):
-                output.put(x)
-        else:
-            x = getattr(model, method)(*args)
+            # we must call MCRun.__call__ here,
+            # not MCRunRemote.__call__
+            for x in MCRun.__call__(model, *args):
+                output.put(x.copy())
+        elif method == "cross_section":
+            # same as above
+            x = MCRun.cross_section(model, *args)
             output.put(x)
+        else:
+            assert False  # never arrive here
     except Exception as exc:
         (msg,) = exc.args
         tb = sys.exc_info()[2]
@@ -27,6 +32,7 @@ def run(output, Model, seed, init_kwargs, stables, random_state, method, args):
         exc.args = (f"{msg}\n\nBacktrace from child process:\n{s}",)
         output.put(exc)
         return
+    # also return random state
     output.put(model.random_state)
 
 
@@ -49,37 +55,32 @@ def get(timeout, process, output):
     return x
 
 
-def make_remote_controlled_model(name, Model):
+class MCRunRemote(MCRun):
     """
-    Dynamically create a Model class which executes calls to Model.cross_section and
-    Model.__call__ to the wrapped model in a separate process to work around
-    initialization issues.
+    Base class for models which cannot switch beam particles arbitrarily.
 
-    Parameters
-    ----------
-    name : str
-        Name of the generated class, must be unique.
-    Model : class
-        The wrapped class.
+    Calls to Model.cross_section and Model.__call__ are executed
+    in a separate process with a fresh instance of the underlying generator
+    to work around initialization issues.
     """
-    # This is a big hack, but required until a proper solution is available. A new process
-    # is created whenever the cross_section or __call__ methods are used.
+
+    # This is a big hack, but required until a proper solution is available.
     #
     # Generating events is optimized, the process is kept alive during generation and
     # sends its events via a queue to the main process. In an exception occurs in the
     # child process, it is passed to the main process and raised there.
     #
-    # Sending of data currently uses pickle, which has some overhead. This penalty only
-    # matters for event generation, where the performance drop could be noticable. We
-    # could avoid this by allocating EventData in shared memory, but putting more time and
-    # effort into this for a model that is barely used (Phojet) does not seem effective.
+    # Sending of data may use pickle (seems to be platform dependent) and should have some
+    # overhead. This penalty only matters for event generation, where the performance drop
+    # could be noticable. We could avoid this by allocating EventData in shared memory.
     #
     # To maintain the illusion that we are pulling events from a model instance instead of
-    # restarting it repeatedly, we roundtrip the state of the random number generators
-    # everytime we create a new process.
+    # restarting it repeatedly, we must roundtrip the state of the random number generator
+    # everytime we create a new process. So this functionality relies strongly on correct
+    # RPNG state persistence.
 
     def __init__(self, seed=None, timeout=100, **kwargs):
-        Model.__init__(self, seed, **kwargs)
+        super().__init__(seed, **kwargs)
         self._timeout = timeout
         self._init_kwargs = kwargs
 
@@ -90,8 +91,8 @@ def make_remote_controlled_model(name, Model):
         self.random_state = get(self._timeout, process, output)
         process.join()
 
-    def _cross_section(self, kin):
-        return self._remote_method("_cross_section", kin)
+    def cross_section(self, kin, **kwargs):
+        return self._remote_method("cross_section", kin)
 
     def _remote_init(self, method, args):
         ctx = mp.get_context("spawn")
@@ -100,7 +101,7 @@ def make_remote_controlled_model(name, Model):
             target=run,
             args=(
                 output,
-                Model,
+                self.__class__,
                 self.seed,
                 self._init_kwargs,
                 self.get_stable(),
@@ -119,17 +120,3 @@ def make_remote_controlled_model(name, Model):
         self.random_state = get(self._timeout, process, output)
         process.join()
         return x
-
-    # dynamically create a new class which inherits from Model and
-    # overrides the methods which need to do remote calls
-    return type(
-        name,
-        (Model,),
-        {
-            "__init__": __init__,
-            "__call__": __call__,
-            "_cross_section": _cross_section,
-            "_remote_init": _remote_init,
-            "_remote_method": _remote_method,
-        },
-    )

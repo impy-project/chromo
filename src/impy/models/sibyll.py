@@ -1,6 +1,7 @@
 from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.util import info, Nuclei
 from impy.kinematics import EventFrame
+from impy.remote_control import MCRunRemote
 from particle import literals as lp
 import warnings
 
@@ -25,7 +26,7 @@ class SibyllEvent(MCEvent):
         return self._lib.cnucms.ni
 
 
-class SIBYLLRun(MCRun):
+class SIBYLLRun:
     """Implements all abstract attributes of MCRun for the
     SIBYLL 2.1, 2.3 and 2.3c event generators."""
 
@@ -120,46 +121,47 @@ class SIBYLLRun(MCRun):
         return True
 
 
-class Sibyll21(SIBYLLRun):
+class Sibyll21(SIBYLLRun, MCRun):
     _version = "2.1"
     _library_name = "_sib21"
 
 
-class Sibyll23(SIBYLLRun):
+# For some reason, Sibyll23 requires MCRunRemote, but the others don't
+class Sibyll23(SIBYLLRun, MCRunRemote):
     _version = "2.3"
     _library_name = "_sib23"
 
 
-class Sibyll23c(SIBYLLRun):
+class Sibyll23c(SIBYLLRun, MCRun):
     _version = "2.3c"
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c00(SIBYLLRun):
+class Sibyll23c00(SIBYLLRun, MCRun):
     _version = "2.3c00"
     _library_name = "_sib23c00"
 
 
 # identical to 2.3c
-class Sibyll23c01(SIBYLLRun):
+class Sibyll23c01(SIBYLLRun, MCRun):
     _version = "2.3c01"
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c02(SIBYLLRun):
+class Sibyll23c02(SIBYLLRun, MCRun):
     _version = "2.3c02"
     _library_name = "_sib23c02"
 
 
 # The c03 version was also in CORSIKA until 2020
-class Sibyll23c03(SIBYLLRun):
+class Sibyll23c03(SIBYLLRun, MCRun):
     _version = "2.3c03"
     _library_name = "_sib23c03"
 
 
 # The latest patch c04 was renamed to d, to generate less confusion
-class Sibyll23d(SIBYLLRun):
+class Sibyll23d(SIBYLLRun, MCRun):
     _version = "2.3d"
     _library_name = "_sib23d"

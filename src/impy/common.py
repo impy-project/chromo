@@ -642,8 +642,6 @@ class MCRun(ABC):
             assert hasattr(self, "_library_name")
             assert hasattr(self, "_event_class")
             assert hasattr(self, "_frame")
-            if hasattr(self._lib, "init_rmmard"):
-                self._lib.init_rmmard(self._seed)
             # Run internal model initialization code exactly once
             self._once(**kwargs)
 

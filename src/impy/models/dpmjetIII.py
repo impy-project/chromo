@@ -1,7 +1,7 @@
-from impy.common import MCRun, MCEvent, CrossSectionData
+from impy.common import MCEvent, CrossSectionData
+from impy.remote_control import MCRunRemote as MCRun
 from impy.kinematics import EventFrame
 from impy.util import info, _cached_data_dir, fortran_chars, Nuclei
-from impy.remote_control import make_remote_controlled_model
 from impy.constants import standard_projectiles, GeV
 
 
@@ -200,17 +200,17 @@ class DpmjetIIIRun(MCRun):
         return not reject
 
 
-class DpmjetIII191Base(DpmjetIIIRun):
+class DpmjetIII191(DpmjetIIIRun):
     _version = "19.1"
     _library_name = "_dpmjetIII191"
 
 
-class DpmjetIII193Base(DpmjetIIIRun):
+class DpmjetIII193(DpmjetIIIRun):
     _version = "19.3"
     _library_name = "_dpmjetIII193"
 
 
-class DpmjetIII306Base(DpmjetIIIRun):
+class DpmjetIII306(DpmjetIIIRun):
     _version = "3.0-6"
     _library_name = "_dpmjet306"
     _param_file_name = "fitpar.dat"
@@ -220,14 +220,6 @@ class DpmjetIII306Base(DpmjetIIIRun):
     )
 
 
-class DpmjetIII193Base_DEV(DpmjetIIIRun):
+class DpmjetIII193_DEV(DpmjetIIIRun):
     _version = "19.3-dev"
     _library_name = "_dev_dpmjetIII193"
-
-
-DpmjetIII191 = make_remote_controlled_model("DpmjetIII191", DpmjetIII191Base)
-DpmjetIII193 = make_remote_controlled_model("DpmjetIII193", DpmjetIII193Base)
-DpmjetIII306 = make_remote_controlled_model("DpmjetIII306", DpmjetIII306Base)
-DpmjetIII193_DEV = make_remote_controlled_model(
-    "DpmjetIII193_DEV", DpmjetIII193Base_DEV
-)
