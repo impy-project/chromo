@@ -72,18 +72,6 @@ def test_fixed_target():
     ecm = (ps[1] ** 2 - ps[0] ** 2) ** 0.5
     assert ft.ecm == approx(ecm, rel=1e-3)
 
-    # air = CompositeTarget([("N", 3), ("O", 1)])
-    # ft = FixedTarget(Momentum(2 * GeV), "proton", air)
-    # assert ft.p1 == lp.proton.pdgid
-    # assert ft.p2 == air
-    # assert ft.p2.A == 16
-    # # check that ecm is in nucleon-nucleon collision system
-    # p1 = np.array([(x**2 - nucleon_mass**2) ** 0.5, x])
-    # p2 = np.array([0, nucleon_mass])
-    # ps = p1 + p2
-    # ecm = (ps[1] ** 2 - ps[0] ** 2) ** 0.5
-    # assert ft.ecm == approx(ecm, rel=1e-3)
-
 
 def test_fixed_target_bad_input():
     with pytest.raises(ValueError):
