@@ -102,9 +102,9 @@ class DpmjetIIIRun(MCRun):
 
     def _cross_section(self, kin, precision=None):
         self._set_kinematics(kin)
-        assert kin.p2.A >= 1  # should be guaranteed _set_kinematics
+        assert kin.p2.A >= 1  # should be guaranteed by MCRun._validate_kinematics
 
-        if kin.p1.A and kin.p1.A > 1:  # nuclear projectile
+        if kin.p1.A:  # nuclear projectile
             if precision is not None:
                 saved = self._lib.dtglgp.jstatb
                 # Set number of trials for Glauber model integration
@@ -127,6 +127,10 @@ class DpmjetIIIRun(MCRun):
             return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
 
         # other projectile
+        if kin.p2.A and kin.p2.A > 1:
+            #  DT_XSHN: cross sections not implemented for proj/target  14   0
+            return CrossSectionData()
+
         stot, sela = self._lib.dt_xshn(
             self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
         )
@@ -158,9 +162,9 @@ class DpmjetIIIRun(MCRun):
             self._lib.dt_init(
                 -1,
                 max(kin.plab, 100.0),
-                kin.p1.A or 1,
+                self._max_A1,
                 kin.p1.Z or 0,
-                kin.p2.A or 1,
+                self._max_A2,
                 kin.p2.Z or 0,
                 kin.p1,
                 iglau=0,

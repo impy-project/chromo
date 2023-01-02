@@ -2,57 +2,10 @@ import multiprocessing as mp
 import traceback
 import sys
 from impy.common import MCRun
+from queue import Empty
+
 
 __all__ = ["MCRunRemote"]
-
-
-def run(output, Model, seed, init_kwargs, stables, random_state, method, args):
-    model = Model(seed, **init_kwargs)
-    model.random_state = random_state
-    try:
-        if method == "call":
-            for k in stables - model.get_stable():
-                model.set_stable(k, True)
-            for k in model.get_stable() - stables:
-                model.set_stable(k, False)
-            # we must call MCRun.__call__ here,
-            # not MCRunRemote.__call__
-            for x in MCRun.__call__(model, *args):
-                output.put(x.copy())
-        elif method == "cross_section":
-            # same as above
-            x = MCRun.cross_section(model, *args)
-            output.put(x)
-        else:
-            assert False  # never arrive here
-    except Exception as exc:
-        (msg,) = exc.args
-        tb = sys.exc_info()[2]
-        s = "".join(traceback.format_tb(tb))
-        exc.args = (f"{msg}\n\nBacktrace from child process:\n{s}",)
-        output.put(exc)
-        return
-    # also return random state
-    output.put(model.random_state)
-
-
-def get(timeout, process, output):
-    from queue import Empty
-
-    for _ in range(timeout):
-        if not process.is_alive():
-            raise ValueError("process died")
-        try:
-            x = output.get(timeout=1)
-            break
-        except Empty:
-            pass
-    else:
-        raise TimeoutError("process send no data")
-
-    if isinstance(x, Exception):
-        raise x
-    return x
 
 
 class MCRunRemote(MCRun):
@@ -81,42 +34,98 @@ class MCRunRemote(MCRun):
 
     def __init__(self, seed=None, timeout=100, **kwargs):
         super().__init__(seed, **kwargs)
-        self._timeout = timeout
-        self._init_kwargs = kwargs
+        self._remote = _RemoteCall(self, timeout)
 
     def __call__(self, kin, nevents):
-        process, output = self._remote_init("call", (kin, nevents))
-        for _ in range(nevents):
-            yield get(self._timeout, process, output)
-        self.random_state = get(self._timeout, process, output)
-        process.join()
+        with self._remote("call", kin, nevents) as rc:
+            for _ in range(nevents):
+                yield rc.get()
 
     def cross_section(self, kin, **kwargs):
-        return self._remote_method("cross_section", kin)
+        with self._remote("cross_section", kin, **kwargs) as rc:
+            return rc.get()
 
-    def _remote_init(self, method, args):
+
+class _RemoteCall:
+    def __init__(self, parent, timeout):
+        self.parent = parent
+        self.timeout = timeout
+
+    def __enter__(self):
+        return self
+
+    def __call__(self, method, *args, **kwargs):
         ctx = mp.get_context("spawn")
-        output = ctx.Queue()
-        process = ctx.Process(
-            target=run,
+        self.output = ctx.Queue()
+        p = self.parent
+        state = (p.seed, p._init_kwargs, p.get_stable(), p.random_state)
+        self.process = ctx.Process(
+            target=_run,
             args=(
-                output,
-                self.__class__,
-                self.seed,
-                self._init_kwargs,
-                self.get_stable(),
-                self.random_state,
+                self.output,
+                self.parent.__class__,
+                state,
                 method,
                 args,
+                kwargs,
             ),
             daemon=True,
         )
-        process.start()
-        return process, output
+        self.process.start()
+        return self
 
-    def _remote_method(self, method, *args):
-        process, output = self._remote_init(method, args)
-        x = get(self._timeout, process, output)
-        self.random_state = get(self._timeout, process, output)
-        process.join()
+    def __exit__(self, exc_type, exc_val, tb):
+        if exc_type is None:
+            self.parent.random_state = self.get()
+        self.process.join()
+
+    def get(self):
+        for _ in range(self.timeout):
+            if not self.process.is_alive():
+                raise RuntimeError("process died")
+            try:
+                x = self.output.get(timeout=1)
+                break
+            except Empty:
+                pass
+        else:
+            raise TimeoutError("process send no data")
+
+        if isinstance(x, RemoteException):
+            exc, stb = x.args
+            (msg,) = exc.args
+            exc.args = (f"{msg}\n\nBacktrace from child process:\n{stb}",)
+            raise exc
         return x
+
+
+class RemoteException(Exception):
+    pass
+
+
+def _run(output, Model, state, method, args, kwargs):
+    seed, init_kwargs, stable_state, random_state = state
+    model = Model(seed, **init_kwargs)
+    model.random_state = random_state
+    try:
+        if method == "call":
+            for k in stable_state - model.get_stable():
+                model.set_stable(k, True)
+            for k in model.get_stable() - stable_state:
+                model.set_stable(k, False)
+            # we must explicitly call MCRun.__call__ here,
+            # to get MCRunRemote.__call__
+            for x in MCRun.__call__(model, *args, **kwargs):
+                output.put(x.copy())
+        else:
+            # same as above
+            meth = getattr(MCRun, method)
+            x = meth(model, *args, **kwargs)
+            output.put(x)
+    except Exception as exc:
+        tb = sys.exc_info()[2]
+        s = "".join(traceback.format_tb(tb))
+        exc2 = RemoteException(exc, s)
+        output.put(exc2)
+    # also return random state
+    output.put(model.random_state)

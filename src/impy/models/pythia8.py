@@ -62,6 +62,10 @@ class Pythia8(MCRun):
         self._lib.pythia = self._lib.Pythia(datdir, True)
 
     def _cross_section(self, kin):
+        if (kin.p2.A or 1) > 1:
+            # Trying to access info.sigmaTot crashes Pythia-8
+            # if target is a nucleus
+            return CrossSectionData()
         self._set_kinematics(kin)
         st = self._lib.pythia.info.sigmaTot
         return CrossSectionData(

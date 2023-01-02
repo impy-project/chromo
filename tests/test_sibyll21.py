@@ -61,14 +61,10 @@ def test_vertex(event):
     assert_equal(event.vt, 0)
 
 
-def run_cross_section(p1, p2):
-    m = Sibyll21()
-    kin = CenterOfMass(10 * GeV, p1, p2)
-    return m.cross_section(kin)
-
-
 def test_cross_section():
-    c = run_cross_section("p", "p")
+    m = Sibyll21()
+    kin = CenterOfMass(10 * GeV, "p", "p")
+    c = m.cross_section(kin)
     assert_allclose(c.total, 38.4, atol=0.1)
     assert_allclose(c.inelastic, 30.9, atol=0.1)
     assert_allclose(c.elastic, 7.4, atol=0.1)

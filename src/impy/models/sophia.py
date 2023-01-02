@@ -59,6 +59,7 @@ class Sophia20(MCRun):
         self._lib.eg_io.keepdc = keep_decayed_particles
 
     def _cross_section(self, kin):
+        self._set_kinematics(kin)
         # code=3 for inelastic cross-section
         # TODO fill more cross-sections
         inel = (

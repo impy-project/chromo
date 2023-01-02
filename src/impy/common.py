@@ -17,6 +17,7 @@ from impy.util import (
     pdg2name,
     process_particle,
     Nuclei,
+    AliveInstanceWarning,
 )
 from impy.constants import (
     quarks_and_diquarks_and_gluons,
@@ -32,9 +33,6 @@ import warnings
 from particle import Particle
 
 
-# Do we need EventData.n_spectators in addition to EventData.n_wounded?
-# n_spectators can be computed from n_wounded as number_of_nucleons - n_wounded
-# If we want this, it should be computed dynamically via a property.
 @dataclasses.dataclass
 class CrossSectionData:
     """Information of cross-sections returned by the generator.
@@ -604,9 +602,11 @@ class MCRun(ABC):
     # Don't override `__init__` in derived class, use `_once` instead.
     # You can pass custom initialization parameters via **kwargs, which
     # are forwarded to `_once`.
-    def __init__(self, seed, **kwargs):
+    def __init__(self, seed=None, **kwargs):
         import importlib
         from random import randint
+
+        self._init_kwargs = kwargs
 
         if self.pyname in self._alive_instances:
             warnings.warn(
@@ -615,7 +615,7 @@ class MCRun(ABC):
                 "Please delete the old one first before creating a new one. "
                 "You can ignore this warning if the previous instance is already "
                 "out of scope, Python does not always destroy old instances immediately.",
-                RuntimeWarning,
+                AliveInstanceWarning,
                 stacklevel=3,
             )
 
@@ -780,6 +780,7 @@ class MCRun(ABC):
         p = Particle.from_pdgid(pid)
         if p.ctau is None or p.ctau == np.inf:
             raise ValueError(f"{pdg2name(pid)} cannot decay")
+
         if abs(pid) == 311:
             self.set_stable(130, stable)
             self.set_stable(310, stable)
@@ -789,6 +790,7 @@ class MCRun(ABC):
             self._stable.add(pid)
         elif pid in self._stable:
             self._stable.remove(pid)
+
         self._set_stable(pid, stable)
 
     def maydecay(self, particle):
@@ -818,11 +820,16 @@ class MCRun(ABC):
             cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0)
             components = kin.p2.components
             fractions = kin.p2.fractions
-            for component, fraction in zip(components, fractions):
+            # as a workaround for DPMJet, we use heaviest elements first
+            pairs = sorted(
+                zip(components, fractions), key=lambda p: p[0].A, reverse=True
+            )
+            for component, fraction in pairs:
                 kin.p2 = component
                 cs = self._cross_section(kin, **kwargs)
-                for i, val in enumerate(dataclasses.astuple(cs)):
-                    cross_section[i] += fraction * val
+                for key, val in dataclasses.asdict(cs).items():
+                    v = getattr(cross_section, key)
+                    setattr(cross_section, key, v + fraction * val)
             return cross_section
         else:
             return self._cross_section(kin, **kwargs)

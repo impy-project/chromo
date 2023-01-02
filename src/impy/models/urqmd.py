@@ -7,7 +7,7 @@
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
 from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.util import info, fortran_array_insert, fortran_array_remove, Nuclei
+from impy.util import info, fortran_array_insert, fortran_array_remove, Nuclei, pdg2name
 from impy.kinematics import EventFrame
 from impy.constants import standard_projectiles, GeV
 import warnings
@@ -187,10 +187,20 @@ class UrQMD34(MCRun):
             self._lib.options.ctoption[24 - 1] = 0
 
     def _set_stable(self, pdgid, stable):
+        # URQMD does not generate muons
+        if abs(pdgid) == 13:
+            return
+
+        # URQMD uses K0, K0~ states instead of KS0, KL0
+        if abs(pdgid) in (130, 310):  # KS0 or KL0
+            pdgid = 311
+
         try:
             uid = self._pdg2modid[pdgid][0]
         except KeyError:
-            warnings.warn(f"{pdgid} unknown to UrQMD", RuntimeWarning)
+            warnings.warn(
+                f"{pdg2name(pdgid)} [{pdgid}] unknown to UrQMD", RuntimeWarning
+            )
             return
 
         # FIXME changing stabvec has no effect

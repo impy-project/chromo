@@ -114,8 +114,8 @@ class SIBYLLRun:
             idb[sid - 1] = abs(idb[sid - 1])
 
     def _generate(self):
-        kin = self._kin
-        self._lib.sibyll(self._production_id, kin.p2.A, kin.ecm)
+        k = self._kin
+        self._lib.sibyll(self._production_id, k.p2.A, k.ecm)
         self._lib.decsib()
         self._lib.sibhep()
         return True
