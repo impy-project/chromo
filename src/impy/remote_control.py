@@ -89,6 +89,8 @@ class _RemoteCall:
             except Empty:
                 pass
         else:
+            if self.process.is_alive():
+                self.process.terminate()
             raise TimeoutError("process send no data")
 
         if isinstance(x, RemoteException):
