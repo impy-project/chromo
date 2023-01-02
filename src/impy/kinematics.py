@@ -1,133 +1,38 @@
 """ This module handles transformations between Lorentz frames and
 different inputs required by the low-level event generator interfaces.
-
-
-@Hans @Sonia: we need to come up with some sort general handling
-of different inputs. Hans suggested to mimic a similar behavior as for
-colors in matplotlib. That one can initialize with different arguments, like
-'pp' 7 TeV would be internally translated to 2212, 2212 and to 4-vectors
-[0.,0.,+-3.499999TeV, 3.5TeV]. This assumes that the input interpreted as
-center of mass total energy (not momentum) AND that the final state is
-defined in center-of-mass as well.
-
-This was already the initial motivation but I have the impression that
-the implementation is very "cooked up". We have to discuss this.
-
 """
-
 import numpy as np
 from impy.util import (
     TaggedFloat,
-    AZ2pdg,
-    is_AZ,
     energy2momentum,
+    momentum2energy,
     elab2ecm,
+    ecm2elab,
     mass,
-    pdg2name,
-    name2pdg,
+    process_particle,
 )
-from impy.constants import nucleon_mass
+from impy.constants import nucleon_mass, MeV, GeV, TeV, PeV, EeV
+from impy.util import CompositeTarget, EventFrame
 from particle import PDGID
 import dataclasses
-from typing import Union, Tuple, Collection
-from enum import Enum
+from typing import Union, Tuple
 
 
-EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
-
-
-@dataclasses.dataclass(init=False)
-class CompositeTarget:
-    """Definition of composite targets made of multiple (atomic) nuclei.
-
-    Examples of such composite targets are Air, CO_2, HCl, C_2H_60.
-    """
-
-    label: str
-    components: Tuple[PDGID]
-    fractions: np.ndarray
-
-    def __init__(
-        self, components: Collection[Tuple[Union[str, int], float]], label: str = ""
-    ):
-        """
-        Parameters
-        ----------
-        components : collection of (str|int, float)
-            The components of the targets. Each component is given by a string or PDGID
-            that identifies the element, and its relative amount in the material.
-            Amounts do not have to add up to 1, fractions are computed automatically.
-        label : str, optional
-            Give the target a name. This is purely cosmetic.
-        """
-
-        if len(components) == 0:
-            raise ValueError("components cannot be empty")
-        fractions = np.empty(len(components))
-        c = []
-        for i, (particle, amount) in enumerate(components):
-            fractions[i] = amount
-            p = _normalize_particle(particle)
-            if not p.is_nucleus:
-                raise ValueError(f"component {particle} is not a nucleus")
-            c.append(p)
-        self.label = label
-        self.components = tuple(c)
-        self.fractions = fractions / np.sum(fractions)
-        self.fractions.flags["WRITEABLE"] = False
-
-    @property
-    def Z(self):
-        """Return maximum charge number."""
-        # needed for compatibility with PDGID interface and for dpmjet initialization
-        return max(p.Z for p in self.components)
-
-    @property
-    def A(self):
-        """Return maximum number of nucleons."""
-        # needed for compatibility with PDGID interface and for dpmjet initialization
-        return max(p.A for p in self.components)
-
-    @property
-    def is_nucleus(self):
-        return True
-
-    def __int__(self):
-        """Return PDGID for heaviest of elements."""
-        return int(max((c.A, c) for c in self.components)[1])
-
-    def average_mass(self):
-        return sum(
-            f * p.A * nucleon_mass for (f, p) in zip(self.fractions, self.components)
-        )
-
-    def __abs__(self):
-        return abs(int(self))
-
-    def __repr__(self):
-        components = [
-            (pdg2name(c), amount)
-            for (c, amount) in zip(self.components, self.fractions)
-        ]
-        args = f"{components}"
-        if self.label:
-            args += f", label={self.label!r}"
-        return f"CompositeTarget({args})"
-
-
-def _normalize_particle(x):
-    if isinstance(x, (PDGID, CompositeTarget)):
-        return x
-    if isinstance(x, int):
-        return PDGID(x)
-    if isinstance(x, str):
-        try:
-            return PDGID(name2pdg(x))
-        except KeyError:
-            raise ValueError(f"particle with name {x} not recognized")
-    if is_AZ(x):
-        return PDGID(AZ2pdg(*x))
-    raise ValueError(f"{x} is not a valid particle specification")
+__all__ = (
+    "EventFrame",
+    "CompositeTarget",
+    "MeV",
+    "GeV",
+    "TeV",
+    "PeV",
+    "EeV",
+    "EventKinematics",
+    "CenterOfMass",
+    "FixedTarget",
+    "TotalEnergy",
+    "KinEnergy",
+    "Momentum",
+)
 
 
 @dataclasses.dataclass
@@ -136,28 +41,38 @@ class EventKinematics:
 
     There are different ways to specify a particle collision. For instance
     the projectile and target momenta can be specified in the target rest frame,
-    the so called 'laboratory' frame, or the nucleon-nucleon center of mass frame
+    the so called 'laboratory' frame, or the nucleon-nucleon center-of-mass frame
     where the modulus of the nucleon momenta is the same but the direction
     inverted. Each event generator expects its arguments to be given in one
     or the other frame. This class allows the generator to pick itself the correct
     frame, while the user can specify the kinematics in the preferred form.
 
-    Args:
-        (float) ecm      : :math:`\\sqrt{s}`, the center-of-mass energy
-        (float) plab     : projectile momentum in lab frame
-        (float) elab     : projectile energy in lab frame
-        (float) ekin     : projectile kinetic energy in lab frame
-        (tuple) beam     : Specification as tuple of 4-vectors (np.array)s
-        (tuple) particle1: particle name, PDG ID, or nucleus mass & charge (A, Z)
-                           of the projectile
-        (tuple) particle2: particle name, PDG ID, or nucleus mass & charge (A, Z),
-                           or CompositeTarget of the target
-
+    Parameters
+    ----------
+        particle1: str or int or (int, int)
+            Particle name, PDG ID, or nucleus mass & charge (A, Z) of projectile.
+        particle2: str or int or (int, int) or CompositeTarget
+            Particle name, PDG ID, nucleus mass & charge (A, Z), or CompositeTarget
+            of the target
+        ecm : float, optional
+            Center-of-mass energy :math:`\\sqrt{s}`.
+        plab : float, optional
+            Projectile momentum in lab frame. If the projectile is a nucleus, it is
+            the momentum per nucleon.
+        elab : float, optional
+            Projectile energy in lab frame. If the projectile is a nucleus, it is
+            the energy per nucleon.
+        ekin : float, optional
+            Projectile kinetic energy in lab frame. If the projectile is a nucleus,
+            it is the kinetic energy per nucleon.
+        beam : tuple of two floats
+            Specification as tuple of two momenta. If the projectile or target are
+            nuclei, it is the momentum per nucleon.
     """
 
     frame: EventFrame
-    p1: PDGID
-    p2: Union[PDGID, CompositeTarget]
+    p1: Union[PDGID, Tuple[int, int]]
+    p2: Union[PDGID, Tuple[int, int], CompositeTarget]
     ecm: float  # for ions this is nucleon-nucleon collision system
     beams: Tuple[np.ndarray, np.ndarray]
     _gamma_cm: float
@@ -185,57 +100,61 @@ class EventKinematics:
         if particle1 is None or particle2 is None:
             raise ValueError("particle1 and particle2 must be set")
 
-        self.p1 = _normalize_particle(particle1)
-        self.p2 = _normalize_particle(particle2)
+        self.p1 = process_particle(particle1)
+        self.p2 = process_particle(particle2)
 
         if isinstance(self.p1, CompositeTarget):
             raise ValueError("Only 2nd particle can be CompositeTarget")
 
         p2_is_composite = isinstance(self.p2, CompositeTarget)
 
-        m1 = mass(self.p1)
+        m1 = nucleon_mass if self.p1.is_nucleus else mass(self.p1)
         m2 = nucleon_mass if p2_is_composite or self.p2.is_nucleus else mass(self.p2)
 
         self.beams = (np.zeros(4), np.zeros(4))
 
-        # Input specification in center of mass frame
+        # Input specification in center-of-mass frame
         if ecm is not None:
-            self.frame = EventFrame.CENTER_OF_MASS if frame is None else frame
+            self.frame = frame or EventFrame.CENTER_OF_MASS
             self.ecm = ecm
-            self.elab = 0.5 * (ecm**2 - m1**2 - m2**2) / m2
+            self.elab = ecm2elab(ecm, m1, m2)
             self.plab = energy2momentum(self.elab, m1)
         # Input specification as 4-vectors
         elif beam is not None:
             if p2_is_composite:
                 raise ValueError("beam cannot be used with CompositeTarget")
-            self.frame = EventFrame.GENERIC if frame is None else frame
+            self.frame = frame or EventFrame.GENERIC
             p1, p2 = beam
             self.beams[0][2] = p1
             self.beams[1][2] = p2
-            self.beams[0][3] = np.sqrt(m1**2 + p1**2)
-            self.beams[1][3] = np.sqrt(m2**2 + p2**2)
+            self.beams[0][3] = momentum2energy(p1, m1)
+            self.beams[1][3] = momentum2energy(p2, m2)
             s = np.sum(self.beams, axis=0)
-            self.ecm = np.sqrt(s[3] ** 2 - np.sum(s[:3] ** 2))
-            self.elab = 0.5 * (self.ecm**2 - m1**2 + m2**2) / m2
+            # We compute ecm with energy2momentum. It is not really energy to momentum,
+            # but energy2momentum(x, y) computes x^2 - y^2, which is what we need. Here,
+            # I use that px and py are always zero, if we ever change this, many formulas
+            # have to change in this class, like all the boosts
+            self.ecm = energy2momentum(s[3], s[2])
+            self.elab = ecm2elab(self.ecm, m1, m2)
             self.plab = energy2momentum(self.elab, m1)
         # Input specification in lab frame
         elif elab is not None:
             if not (elab > m1):
                 raise ValueError("projectile energy > projectile mass required")
-            self.frame = EventFrame.FIXED_TARGET if frame is None else frame
+            self.frame = frame or EventFrame.FIXED_TARGET
             self.elab = elab
             self.plab = energy2momentum(self.elab, m1)
-            self.ecm = np.sqrt(2.0 * self.elab * m2 + m2**2 + m1**2)
+            self.ecm = elab2ecm(self.elab, m1, m2)
             # self.ecm = np.sqrt((self.elab + m2)**2 - self.plab**2)
         elif ekin is not None:
-            self.frame = EventFrame.FIXED_TARGET if frame is None else frame
+            self.frame = frame or EventFrame.FIXED_TARGET
             self.elab = ekin + m1
             self.plab = energy2momentum(self.elab, m1)
             self.ecm = elab2ecm(self.elab, m1, m2)
         elif plab is not None:
-            self.frame = EventFrame.FIXED_TARGET if frame is None else frame
+            self.frame = frame or EventFrame.FIXED_TARGET
             self.plab = plab
-            self.elab = np.sqrt(self.plab**2 + m1**2)
+            self.elab = momentum2energy(self.plab, m1)
             self.ecm = elab2ecm(self.elab, m1, m2)
         else:
             assert False  # this should never happen
@@ -275,7 +194,7 @@ class EventKinematics:
         elif self.frame == EventFrame.FIXED_TARGET:
             self.beams[0][2] = self.plab
             self.beams[1][2] = 0
-        # set energyies
+        # set energies
         for b, m in zip(self.beams, (m1, m2)):
             b[3] = np.sqrt(m**2 + b[2] ** 2)
 

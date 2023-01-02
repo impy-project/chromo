@@ -8,9 +8,79 @@ import urllib.request
 import zipfile
 import shutil
 import numpy as np
-from typing import Sequence, Set
+from typing import Sequence, Set, Tuple, Collection, Union
 from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
 from impy.constants import MeV, nucleon_mass
+from enum import Enum
+import dataclasses
+
+EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
+
+
+@dataclasses.dataclass(init=False)
+class CompositeTarget:
+    """Definition of composite targets made of multiple (atomic) nuclei.
+
+    Examples of such composite targets are Air, CO_2, HCl, C_2H_60.
+    """
+
+    label: str
+    components: Tuple[PDGID]
+    fractions: np.ndarray
+
+    def __init__(
+        self, components: Collection[Tuple[Union[str, int], float]], label: str = ""
+    ):
+        """
+        Parameters
+        ----------
+        components : collection of (str|int, float)
+            The components of the targets. Each component is given by a string or PDGID
+            that identifies the element, and its relative amount in the material.
+            Amounts do not have to add up to 1, fractions are computed automatically.
+        label : str, optional
+            Give the target a name. This is purely cosmetic.
+        """
+
+        if len(components) == 0:
+            raise ValueError("components cannot be empty")
+        fractions = np.empty(len(components))
+        c = []
+        for i, (particle, amount) in enumerate(components):
+            fractions[i] = amount
+            p = process_particle(particle)
+            if not p.is_nucleus:
+                raise ValueError(f"component {particle} is not a nucleus")
+            c.append(p)
+        self.label = label
+        self.components = tuple(c)
+        self.fractions = fractions / np.sum(fractions)
+        self.fractions.flags["WRITEABLE"] = False
+
+    @property
+    def Z(self):
+        """Return maximum charge number."""
+        # needed for compatibility with PDGID interface and for dpmjet initialization
+        return max(p.Z for p in self.components)
+
+    @property
+    def A(self):
+        """Return maximum number of nucleons."""
+        # needed for compatibility with PDGID interface and for dpmjet initialization
+        return max(p.A for p in self.components)
+
+    @property
+    def is_nucleus(self):
+        return True
+
+    def __int__(self):
+        """Return PDGID for heaviest of elements."""
+        return int(max((c.A, c) for c in self.components)[1])
+
+    def average_mass(self):
+        return sum(
+            f * p.A * nucleon_mass for (f, p) in zip(self.fractions, self.components)
+        )
 
 
 class Singleton(type):
@@ -23,11 +93,45 @@ class Singleton(type):
 
 
 def energy2momentum(E, m):
+    # numerically more stable way to compute E^2 - m^2
     return np.sqrt((E + m) * (E - m))
 
 
+def momentum2energy(p, m):
+    # only a minor trick can be used here, add in order
+    # of increasing scale
+    a, b = (p, m) if p < m else (m, p)
+    return np.sqrt(a**2 + b**2)
+
+
 def elab2ecm(elab, m1, m2):
-    return np.sqrt(2.0 * elab * m2 + m2**2 + m1**2)
+    # ecm^2 = s = ((p1^2 + m1^2)^0.5 + (p2^2 + m2^2)^0.5)^2 - (p1 + p2)^2
+    #   with   elab = (p1^2 + m1^2)^0.5,    p2 = 0
+    #       = (elab + m2)^2 - p1^2
+    #       = (elab + m2)^2 - (elab^2 - m1^2)
+    #       = elab^2 + 2 elab m2 + m2^2 - elab^2 + m1^2
+    #       = 2 elab m2 + m1^2 + m2^2
+    # sum in order of increasing size to improve numerical accuracy
+    return np.sqrt(m1**2 + m2**2 + 2.0 * elab * m2)
+
+
+def ecm2elab(ecm, m1, m2):
+    return 0.5 * (ecm**2 - m1**2 - m2**2) / m2
+
+
+def process_particle(x):
+    if isinstance(x, (PDGID, CompositeTarget)):
+        return x
+    if isinstance(x, int):
+        return PDGID(x)
+    if isinstance(x, str):
+        try:
+            return PDGID(name2pdg(x))
+        except KeyError:
+            raise ValueError(f"particle with name {x} not recognized")
+    if is_AZ(x):
+        return PDGID(AZ2pdg(*x))
+    raise ValueError(f"{x} is not a valid particle specification")
 
 
 def mass(pdgid):

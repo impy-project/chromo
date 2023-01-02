@@ -9,7 +9,13 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 """
 from abc import ABC, abstractmethod
 import numpy as np
-from impy.util import classproperty, select_parents, naneq, pdg2name, Nuclei
+from impy.util import (
+    classproperty,
+    select_parents,
+    naneq,
+    pdg2name,
+    Nuclei,
+)
 from impy.constants import (
     quarks_and_diquarks_and_gluons,
     long_lived,
