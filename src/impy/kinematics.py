@@ -145,7 +145,6 @@ class EventKinematics:
             self.elab = elab
             self.plab = energy2momentum(self.elab, m1)
             self.ecm = elab2ecm(self.elab, m1, m2)
-            # self.ecm = np.sqrt((self.elab + m2)**2 - self.plab**2)
         elif ekin is not None:
             self.frame = frame or EventFrame.FIXED_TARGET
             self.elab = ekin + m1
