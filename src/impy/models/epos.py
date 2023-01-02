@@ -46,10 +46,7 @@ class EposLHC(MCRun):
         + "/releases/download/zipped_data_v1.0/epos_v001.zip"
     )
 
-    def __init__(self, seed=None, *, ecm_max=1000 * TeV):
-        super().__init__(seed, ecm_max)
-
-    def _once(self, ecm_max):
+    def _once(self, ecm_max=1000 * TeV):
         from impy import debug_level
 
         self._lib.aaset(0)

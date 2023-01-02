@@ -79,9 +79,6 @@ class PHOJETRun(MCRun):
         + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
 
-    def __init__(self, seed=None):
-        super().__init__(seed)
-
     def _once(self):
         data_dir = _cached_data_dir(self._data_url)
         # Set the dpmjpar.dat file

@@ -48,9 +48,6 @@ class Pythia8(MCRun):
         + "/releases/download/zipped_data_v1.0/Pythia8_v002.zip"
     )
 
-    def __init__(self, seed=None):
-        super().__init__(seed)
-
     def _once(self):
         self._lib.hepevt = self._lib.Hepevt()
 

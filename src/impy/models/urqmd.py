@@ -39,20 +39,12 @@ class UrQMD34(MCRun):
     _projectiles = standard_projectiles | Nuclei()
     _ecm_min = 2 * GeV
 
-    def __init__(
-        self,
-        seed=None,
-        *,
-        caltim=200,
-        outtim=200,
-        ct_params=None,
-        ct_options=None,
-    ):
-        super().__init__(seed, caltim, outtim, ct_params, ct_options)
+    def _once(self, caltim=200, outtim=200, ct_params=None, ct_options=None):
+        from impy import debug_level
 
-    def _once(self, caltim, outtim, ct_params, ct_options):
-        import impy
-
+        # The reason to have this here is to reduce import time for the module.
+        # It is probably premature optimisation, but the idea is to only generate
+        # this table when someone actually runs UrQMD.
         self._pdg2modid = {
             22: (100, 0),
             111: (101, 0),
@@ -126,7 +118,7 @@ class UrQMD34(MCRun):
 
         # logging
         lun = 6  # stdout
-        self._lib.urqini(lun, impy.debug_level)
+        self._lib.urqini(lun, debug_level)
 
         self._lib.inputs.nevents = 1
         self._lib.rsys.bmin = 0

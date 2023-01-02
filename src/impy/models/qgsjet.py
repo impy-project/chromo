@@ -35,16 +35,13 @@ class QGSJetRun(MCRun):
         + "/releases/download/zipped_data_v1.0/qgsjet_v001.zip"
     )
 
-    def __init__(self, seed=None):
-        super().__init__(seed)
-
     def _once(self):
-        import impy
+        from impy import debug_level
 
         # logging
         lun = 6  # stdout
         datdir = _cached_data_dir(self._data_url)
-        self._lib.cqgsini(self._seed, datdir, lun, impy.debug_level)
+        self._lib.cqgsini(self._seed, datdir, lun, debug_level)
 
     def _set_stable(self, pid, stable):
         import warnings

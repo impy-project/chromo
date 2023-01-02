@@ -21,6 +21,7 @@ from particle import literals as lp
 import numpy as np
 from scipy.stats import chi2
 import sys
+import impy
 
 matplotlib.use("svg")  # need non-interactive backend for CI Windows
 
@@ -175,10 +176,11 @@ def test_generator(projectile, target, frame, Model):
     else:
         assert False  # we should never arrive here
 
+    if abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets:
+        pytest.skip(reason=f"Projectile or target not supported by {Model.pyname}")
+
     h = run_model(Model, kin)
-    if h is None:
-        assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
-        return
+    assert h is not None
 
     fn = Path(f"{Model.pyname}_{projectile}_{target}_{frame}")
     path_ref = REFERENCE_PATH / fn.with_suffix(".pkl.gz")

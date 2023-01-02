@@ -111,7 +111,7 @@ class DpmjetIIIRun(MCRun):
                 self._lib.dtglgp.jstatb = precision
             self._lib.dt_xsglau(
                 kin.p1.A or 1,
-                kin.p2.A,
+                kin.p2.A or 1,
                 self._lib.idt_icihad(2212)
                 if (kin.p1.A and kin.p1.A > 1)
                 else self._lib.idt_icihad(kin.p1),

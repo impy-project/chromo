@@ -45,16 +45,14 @@ class SIBYLLRun(MCRun):
         )
     }
 
-    def __init__(self, seed=None):
-        super().__init__(seed)
-
     def _once(self):
+        from impy import debug_level
+
         # setup logging
-        import impy
 
         lun = 6  # stdout
         self._lib.s_debug.lun = lun
-        self._lib.s_debug.ndebug = impy.debug_level
+        self._lib.s_debug.ndebug = debug_level
 
         self._lib.sibini(self._seed)
         # Set the internal state of GASDEV function (rng) to 0

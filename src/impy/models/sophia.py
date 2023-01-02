@@ -51,17 +51,12 @@ class Sophia20(MCRun):
     _targets = {lp.p.pdgid, lp.n.pdgid}
     _ecm_min = 0
 
-    def __init__(self, seed=None, *, keep_decayed_particles=True):
-        import impy
+    def _once(self, keep_decayed_particles=True):
+        from impy import debug_level
 
-        super().__init__(seed)
-
-        self._lib.s_plist.ideb = impy.debug_level
+        self._lib.s_plist.ideb = debug_level
         # Keep decayed particles in the history:
         self._lib.eg_io.keepdc = keep_decayed_particles
-
-    def _once(self):
-        pass
 
     def _cross_section(self, kin):
         # code=3 for inelastic cross-section

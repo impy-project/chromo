@@ -601,7 +601,10 @@ class MCRun(ABC):
 
     nevents = 0  # number of generated events so far
 
-    def __init__(self, seed, *args):
+    # Don't override `__init__` in derived class, use `_once` instead.
+    # You can pass custom initialization parameters via **kwargs, which
+    # are forwarded to `_once`.
+    def __init__(self, seed, **kwargs):
         import importlib
         from random import randint
 
@@ -628,6 +631,10 @@ class MCRun(ABC):
         # TODO use single PRNG for everything
         self._composite_target_rng = np.random.default_rng(self._seed)
 
+        self._lib = importlib.import_module(f"impy.models.{self._library_name}")
+        if hasattr(self._lib, "init_rmmard"):
+            self._lib.init_rmmard(self._seed)
+
         if not self._once_called:
             self._once_called = True
             assert hasattr(self, "_name")
@@ -635,14 +642,10 @@ class MCRun(ABC):
             assert hasattr(self, "_library_name")
             assert hasattr(self, "_event_class")
             assert hasattr(self, "_frame")
-            self._lib = importlib.import_module(f"impy.models.{self._library_name}")
             if hasattr(self._lib, "init_rmmard"):
                 self._lib.init_rmmard(self._seed)
-            # Run internal model initialization code
-            self._once(*args)
-        else:
-            if hasattr(self._lib, "init_rmmard"):
-                self._lib.init_rmmard(self._seed)
+            # Run internal model initialization code exactly once
+            self._once(**kwargs)
 
         # Set standard long lived particles as stable
         for pid in long_lived:

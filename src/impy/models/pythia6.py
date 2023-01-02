@@ -26,10 +26,7 @@ class Pythia6(MCRun):
     _projectiles = standard_projectiles
     _targets = standard_projectiles
 
-    def __init__(self, seed=None, *, new_mpi=False):
-        super().__init__(seed, new_mpi)
-
-    def _once(self, new_mpi):
+    def _once(self, new_mpi=False):
         # setup logging
         lun = 6  # stdout
         self._lib.pydat1.mstu[10] = lun
