@@ -596,7 +596,6 @@ class RMMARDState:
 class MCRun(ABC):
     _once_called = False
     _alive_instances = set()
-    _stable = set()
 
     # defaults for many models (override in Derived if needed)
     _projectiles = standard_projectiles
@@ -608,11 +607,14 @@ class MCRun(ABC):
     # Don't override `__init__` in derived class, use `_once` instead.
     # You can pass custom initialization parameters via **kwargs, which
     # are forwarded to `_once`.
-    def __init__(self, seed=None, **kwargs):
+    #
+    # timeout parameter is used MCRunRemote and ignored here
+    def __init__(self, seed=None, timeout: int = -1, **kwargs):
         import importlib
         from random import randint
 
         self._init_kwargs = kwargs
+        self._timeout = timeout
 
         if self.pyname in self._alive_instances:
             warnings.warn(
@@ -620,7 +622,7 @@ class MCRun(ABC):
                 "You cannot use two instances in parallel. "
                 "Please delete the old one first before creating a new one. "
                 "You can ignore this warning if the previous instance is already "
-                "out of scope, Python does not always destroy old instances immediately.",
+                "out of scope; Python does not always destroy old instances immediately.",
                 AliveInstanceWarning,
                 stacklevel=3,
             )
@@ -652,12 +654,12 @@ class MCRun(ABC):
             self._once(**kwargs)
 
         # Set standard long lived particles as stable
+        self._stable = set()
         for pid in long_lived:
             self.set_stable(pid)
 
     def __del__(self):
-        if self.pyname in self._alive_instances:
-            self._alive_instances.remove(self.pyname)
+        self._alive_instances -= {self.pyname}
 
     def __call__(self, kin, nevents):
         """Generator function (in python sence)

@@ -15,6 +15,10 @@ class MCRunRemote(MCRun):
     Calls to Model.cross_section and Model.__call__ are executed
     in a separate process with a fresh instance of the underlying generator
     to work around initialization issues.
+
+    If the parameter timeout is set to zero or negative values, the remote
+    control feature is disabled. This may be required when you want to run
+    the models in parallel in a Notebook with joblib, and possibly elsewhere.
     """
 
     # This is a big hack, but required until a proper solution is available.
@@ -32,35 +36,35 @@ class MCRunRemote(MCRun):
     # everytime we create a new process. So this functionality relies strongly on correct
     # RPNG state persistence.
 
-    def __init__(self, seed=None, timeout=100, **kwargs):
-        super().__init__(seed, **kwargs)
-        self._remote = _RemoteCall(self, timeout)
-
     def __call__(self, kin, nevents):
-        with self._remote("call", kin, nevents) as rc:
-            for _ in range(nevents):
-                yield rc.get()
+        if self._timeout > 0:
+            with _RemoteCall(self, self._timeout, "call", kin, nevents) as rc:
+                for _ in range(nevents):
+                    yield rc.get()
+        else:
+            return super().__call__(kin, nevents)
 
     def cross_section(self, kin, **kwargs):
-        with self._remote("cross_section", kin, **kwargs) as rc:
-            return rc.get()
+        if self._timeout > 0:
+            with _RemoteCall(self, self._timeout, "cross_section", kin, **kwargs) as rc:
+                return rc.get()
+        else:
+            return super().cross_section(kin, **kwargs)
 
 
 class _RemoteCall:
-    def __init__(self, parent, timeout):
+    def __init__(self, parent, timeout, method, *args, **kwargs):
         self.parent = parent
-        self.timeout = timeout
-
-    def __enter__(self):
-        return self
-
-    def __call__(self, method, *args, **kwargs):
         ctx = mp.get_context("spawn")
         # Queue should only hold one item at a time
         self.output = ctx.Queue(maxsize=1)
         self.stop = ctx.Event()
-        p = self.parent
-        state = (p.seed, p._init_kwargs, p.get_stable(), p.random_state)
+        state = (
+            parent.seed,
+            parent._init_kwargs,
+            parent.get_stable(),
+            parent.random_state,
+        )
         self.process = ctx.Process(
             target=_run,
             args=(
@@ -75,6 +79,8 @@ class _RemoteCall:
             daemon=True,
         )
         self.process.start()
+
+    def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, tb):
@@ -121,7 +127,8 @@ class RemoteException(Exception):
 
 def _run(output, stop, Model, state, method, args, kwargs):
     seed, init_kwargs, stable_state, random_state = state
-    model = Model(seed, **init_kwargs)
+    # timeout = 0 disables remote call, we don't want this to be recursive
+    model = Model(seed, timeout=0, **init_kwargs)
     model.random_state = random_state
     try:
         if method == "call":
@@ -129,9 +136,7 @@ def _run(output, stop, Model, state, method, args, kwargs):
                 model.set_stable(k, True)
             for k in model.get_stable() - stable_state:
                 model.set_stable(k, False)
-            # we must explicitly call MCRun.__call__ here,
-            # otherwise we would get MCRunRemote.__call__
-            for x in MCRun.__call__(model, *args, **kwargs):
+            for x in model(*args, **kwargs):
                 # If iteration is stopped in the main thread,
                 # we must stop it also here, to get our
                 # random_state below
@@ -142,9 +147,7 @@ def _run(output, stop, Model, state, method, args, kwargs):
                 # maybe the process.Queue does not use pickling.
                 output.put(x.copy())
         else:
-            # same as above
-            meth = getattr(MCRun, method)
-            x = meth(model, *args, **kwargs)
+            x = getattr(model, method)(*args, **kwargs)
             output.put(x)
 
     except Exception as exc:

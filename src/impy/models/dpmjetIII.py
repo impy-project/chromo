@@ -104,7 +104,9 @@ class DpmjetIIIRun(MCRun):
         self._set_kinematics(kin)
         assert kin.p2.A >= 1  # should be guaranteed by MCRun._validate_kinematics
 
-        if kin.p1.A:  # nuclear projectile
+        projectile_id = 2212 if kin.p1.is_nucleus else kin.p1
+
+        if (kin.p2.is_nucleus and kin.p2.A > 1) or (kin.p1.is_nucleus and kin.p1.A > 1):
             if precision is not None:
                 saved = self._lib.dtglgp.jstatb
                 # Set number of trials for Glauber model integration
@@ -112,9 +114,7 @@ class DpmjetIIIRun(MCRun):
             self._lib.dt_xsglau(
                 kin.p1.A or 1,
                 kin.p2.A or 1,
-                self._lib.idt_icihad(2212)
-                if (kin.p1.A and kin.p1.A > 1)
-                else self._lib.idt_icihad(kin.p1),
+                projectile_id,
                 0,
                 0,
                 kin.ecm,
@@ -126,14 +126,10 @@ class DpmjetIIIRun(MCRun):
                 self._lib.dtglgp.jstatb = saved
             return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
 
-        # other projectile
-        if kin.p2.A and kin.p2.A > 1:
-            #  DT_XSHN: cross sections not implemented for proj/target  14   0
-            return CrossSectionData()
-
-        stot, sela = self._lib.dt_xshn(
-            self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
-        )
+        assert kin.p1.is_hadron
+        assert kin.p2.is_hadron
+        target_id = self._lib.idt_icihad(kin.p2)
+        stot, sela = self._lib.dt_xshn(projectile_id, target_id, 0.0, kin.ecm)
         return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
 
         # TODO set more cross-sections
