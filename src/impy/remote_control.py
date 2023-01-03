@@ -36,25 +36,29 @@ class MCRunRemote(MCRun):
     # everytime we create a new process. So this functionality relies strongly on correct
     # RPNG state persistence.
 
+    def __init__(self, seed=None, *, timeout=100, **kwargs):
+        super().__init__(seed, timeout=timeout, **kwargs)
+
     def __call__(self, kin, nevents):
-        if self._timeout > 0:
-            with _RemoteCall(self, self._timeout, "call", kin, nevents) as rc:
+        if self._timeout:
+            with _RemoteCall(self, "call", kin, nevents) as rc:
                 for _ in range(nevents):
                     yield rc.get()
         else:
-            return super().__call__(kin, nevents)
+            super().__call__(kin, nevents)
 
     def cross_section(self, kin, **kwargs):
-        if self._timeout > 0:
-            with _RemoteCall(self, self._timeout, "cross_section", kin, **kwargs) as rc:
+        if self._timeout:
+            with _RemoteCall(self, "cross_section", kin, **kwargs) as rc:
                 return rc.get()
         else:
-            return super().cross_section(kin, **kwargs)
+            super().cross_section(kin, **kwargs)
 
 
 class _RemoteCall:
-    def __init__(self, parent, timeout, method, *args, **kwargs):
+    def __init__(self, parent, method, *args, **kwargs):
         self.parent = parent
+        self.timeout = parent._timeout
         ctx = mp.get_context("spawn")
         # Queue should only hold one item at a time
         self.output = ctx.Queue(maxsize=1)

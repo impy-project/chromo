@@ -609,7 +609,7 @@ class MCRun(ABC):
     # are forwarded to `_once`.
     #
     # timeout parameter is used MCRunRemote and ignored here
-    def __init__(self, seed=None, timeout: int = -1, **kwargs):
+    def __init__(self, seed=None, *, timeout: int = -1, **kwargs):
         import importlib
         from random import randint
 
