@@ -45,7 +45,8 @@ class MCRunRemote(MCRun):
                 for _ in range(nevents):
                     yield rc.get()
         else:
-            return super().__call__(kin, nevents)
+            for x in super().__call__(kin, nevents):
+                yield x
 
     def cross_section(self, kin, **kwargs):
         if self._timeout > 0:
@@ -131,8 +132,8 @@ class RemoteException(Exception):
 
 def _run(output, stop, Model, state, method, args, kwargs):
     seed, init_kwargs, stable_state, random_state = state
-    # timeout = 0 disables remote call, we don't want this to be recursive
-    model = Model(seed, timeout=0, **init_kwargs)
+    # setting timeout=0 is not enough to disable remote call
+    model = Model(seed, **init_kwargs)
     model.random_state = random_state
     try:
         if method == "call":
@@ -140,7 +141,8 @@ def _run(output, stop, Model, state, method, args, kwargs):
                 model.set_stable(k, True)
             for k in model.get_stable() - stable_state:
                 model.set_stable(k, False)
-            for x in model(*args, **kwargs):
+            # We must call MCRun.__call__ here
+            for x in MCRun.__call__(model, *args, **kwargs):
                 # If iteration is stopped in the main thread,
                 # we must stop it also here, to get our
                 # random_state below
@@ -151,7 +153,9 @@ def _run(output, stop, Model, state, method, args, kwargs):
                 # maybe the process.Queue does not use pickling.
                 output.put(x.copy())
         else:
-            x = getattr(model, method)(*args, **kwargs)
+            # We must call MCRun.<method> here
+            meth = getattr(MCRun, method)
+            x = meth(model, *args, **kwargs)
             output.put(x)
 
     except Exception as exc:

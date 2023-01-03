@@ -57,14 +57,18 @@ class Dummy(MCRun):
         return f"<Dummy at 0x{id(self):x}>"
 
 
-def test_dummy_1():
-    model = Dummy(seed=1)
+@pytest.mark.parametrize("timeout", (100, 0))
+def test_dummy_1(timeout):
+    model = Dummy(seed=1, timeout=timeout)
     assert model.random_state.counter == 0
 
     kin = CenterOfMass(100, "p", "p")
     events = []
     for event in model(kin, 5):
-        assert model.random_state.counter == 0
+        if timeout:
+            assert model.random_state.counter == 0
+        else:
+            assert model.random_state.counter > 0
         events.append(event)
 
     expected = [DummyEvent(None, kin, i + 1) for i in range(5)]
@@ -73,13 +77,17 @@ def test_dummy_1():
     assert model.random_state.counter == 5
 
 
-def test_dummy_2():
-    model = Dummy(seed=1)
+@pytest.mark.parametrize("timeout", (100, 0))
+def test_dummy_2(timeout):
+    model = Dummy(seed=1, timeout=timeout)
 
     kin = CenterOfMass(100, "p", "p")
     events = []
     for i, event in enumerate(model(kin, 10)):
-        assert model.random_state.counter == 0
+        if timeout:
+            assert model.random_state.counter == 0
+        else:
+            assert model.random_state.counter > 0
         if i == 3:
             break
         events.append(event)
@@ -90,15 +98,19 @@ def test_dummy_2():
     assert model.random_state.counter >= 3
 
 
-def test_dummy_3():
-    model = Dummy(seed=1, raise_at=3)
+@pytest.mark.parametrize("timeout", (100, 0))
+def test_dummy_3(timeout):
+    model = Dummy(seed=1, timeout=timeout, raise_at=3)
 
     kin = CenterOfMass(100, "p", "p")
     events = []
 
     with pytest.raises(ValueError):
-        assert model.random_state.counter == 0
         for event in model(kin, 10):
+            if timeout:
+                assert model.random_state.counter == 0
+            else:
+                assert model.random_state.counter > 0
             events.append(event)
 
     expected = [DummyEvent(None, kin, i + 1) for i in range(3)]
@@ -107,15 +119,19 @@ def test_dummy_3():
     assert model.random_state.counter >= 3
 
 
-def test_dummy_4():
-    model = Dummy(seed=1)
+@pytest.mark.parametrize("timeout", (100, 0))
+def test_dummy_4(timeout):
+    model = Dummy(seed=1, timeout=timeout)
 
     kin = CenterOfMass(100, "p", "p")
     events = []
 
     with pytest.raises(ValueError):
-        assert model.random_state.counter == 0
         for i, event in enumerate(model(kin, 10)):
+            if timeout:
+                assert model.random_state.counter == 0
+            else:
+                assert model.random_state.counter > 0
             if i == 3:
                 raise ValueError()
             events.append(event)
