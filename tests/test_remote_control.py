@@ -45,7 +45,8 @@ class Dummy(MCRun):
         return True
 
     def _cross_section(self, kin):
-        return CrossSectionData()
+        self._lib.crranma4.ntot += 1
+        return CrossSectionData(inelastic=float(self._lib.crranma4.ntot))
 
     def _set_kinematics(self, kin):
         self._kin = kin
@@ -75,6 +76,9 @@ def test_dummy_1(timeout):
     assert events == expected
 
     assert model.random_state.counter == 5
+
+    c = model.cross_section(kin)
+    assert c.inelastic == 5
 
 
 @pytest.mark.parametrize("timeout", (100, 0))
