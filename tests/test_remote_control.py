@@ -1,67 +1,126 @@
-from impy.models import Phojet193
 from impy.kinematics import CenterOfMass
+from impy.remote_control import MCRunRemote as MCRun
+from impy.common import CrossSectionData
+from impy.util import EventFrame
+import pytest
 
 
-def test_phojet_1():
-    model = Phojet193(seed=1)
+class DummyEvent:
+    def __init__(self, generator, kinematics, counter=0):
+        self.kinematics = kinematics
+        if generator is None:
+            self.counter = counter
+        else:
+            self.counter = generator.event.counter
+
+    def copy(self):
+        return DummyEvent(None, self.kinematics, self.counter)
+
+    def __repr__(self):
+        return f"DummyEvent(None, {self.kinematics}, {self.counter})"
+
+    def __eq__(self, other):
+        return self.kinematics == other.kinematics and self.counter == other.counter
+
+
+class Dummy(MCRun):
+    _name = "Dummy"
+    _version = "1.0"
+    _event_class = DummyEvent
+    _library_name = "_eposlhc"
+    _frame = EventFrame.CENTER_OF_MASS
+
+    def _once(self, raise_at=None):
+        self.event = DummyEvent(None, None)
+        self.raise_at = raise_at
+
+    def _generate(self):
+        if self.raise_at is not None:
+            if self.raise_at == 0:
+                raise ValueError("from raise_at")
+            self.raise_at -= 1
+        self.event.counter += 1
+        # fake drawing a random number
+        self._lib.crranma4.ntot += 1
+        return True
+
+    def _cross_section(self, kin):
+        return CrossSectionData()
+
+    def _set_kinematics(self, kin):
+        self._kin = kin
+
+    def _set_stable(self, pid, stable):
+        pass
+
+    def __repr__(self):
+        return f"<Dummy at 0x{id(self):x}>"
+
+
+def test_dummy_1():
+    model = Dummy(seed=1)
+    assert model.random_state.counter == 0
 
     kin = CenterOfMass(100, "p", "p")
-
-    events1 = []
-    for event in model(kin, 10):
-        events1.append(event)
-
-    assert len(events1) == 10
-
-    for event in events1:
-        assert len(event) > 0
-
-    events2 = []
+    events = []
     for event in model(kin, 5):
-        events2.append(event)
-    assert len(events2) == 5
+        assert model.random_state.counter == 0
+        events.append(event)
 
-    assert events2 != events1[:5]
+    expected = [DummyEvent(None, kin, i + 1) for i in range(5)]
+    assert events == expected
+
+    assert model.random_state.counter == 5
 
 
-def test_phojet_2():
-    model = Phojet193(seed=1)
+def test_dummy_2():
+    model = Dummy(seed=1)
 
     kin = CenterOfMass(100, "p", "p")
+    events = []
+    for i, event in enumerate(model(kin, 10)):
+        assert model.random_state.counter == 0
+        if i == 3:
+            break
+        events.append(event)
 
-    events1 = []
-    for event in model(kin, 10):
-        events1.append(event)
+    expected = [DummyEvent(None, kin, i + 1) for i in range(3)]
+    assert events == expected
 
-    assert len(events1) == 10
-
-    for event in events1:
-        assert len(event) > 0
-
-    kin = CenterOfMass(100, "pi-", "p")
-
-    events2 = []
-    for event in model(kin, 5):
-        events2.append(event)
-    assert len(events2) == 5
-
-    assert events2 != events1[:5]
+    assert model.random_state.counter >= 3
 
 
-def test_phojet_3():
-    model = Phojet193(seed=1)
+def test_dummy_3():
+    model = Dummy(seed=1, raise_at=3)
 
-    prev = 0
-    for en in (10, 100, 1000):
-        kin = CenterOfMass(en, "p", "p")
-        c = model.cross_section(kin)
-        assert c.inelastic > 10
-        assert c.inelastic > prev
-        prev = c.inelastic
+    kin = CenterOfMass(100, "p", "p")
+    events = []
+
+    with pytest.raises(ValueError):
+        assert model.random_state.counter == 0
+        for event in model(kin, 10):
+            events.append(event)
+
+    expected = [DummyEvent(None, kin, i + 1) for i in range(3)]
+    assert events == expected
+
+    assert model.random_state.counter >= 3
 
 
-def test_phojet_4():
-    model = Phojet193(seed=1)
+def test_dummy_4():
+    model = Dummy(seed=1)
 
-    # this calls an attribute of the original class
-    assert len(model.projectiles) > 0
+    kin = CenterOfMass(100, "p", "p")
+    events = []
+
+    with pytest.raises(ValueError):
+        assert model.random_state.counter == 0
+        for i, event in enumerate(model(kin, 10)):
+            if i == 3:
+                raise ValueError()
+            events.append(event)
+
+    expected = [DummyEvent(None, kin, i + 1) for i in range(3)]
+    assert events == expected
+
+    assert model.random_state.counter >= 3

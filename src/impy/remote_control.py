@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import traceback
 import sys
-from impy.common import MCRun
+from impy.common import MCRun, RMMARDState
 from queue import Empty
 
 
@@ -56,13 +56,16 @@ class _RemoteCall:
 
     def __call__(self, method, *args, **kwargs):
         ctx = mp.get_context("spawn")
-        self.output = ctx.Queue()
+        # Queue should only hold one item at a time
+        self.output = ctx.Queue(maxsize=1)
+        self.stop = ctx.Event()
         p = self.parent
         state = (p.seed, p._init_kwargs, p.get_stable(), p.random_state)
         self.process = ctx.Process(
             target=_run,
             args=(
                 self.output,
+                self.stop,
                 self.parent.__class__,
                 state,
                 method,
@@ -75,9 +78,21 @@ class _RemoteCall:
         return self
 
     def __exit__(self, exc_type, exc_val, tb):
-        if exc_type is None:
-            self.parent.random_state = self.get()
+        # maybe stop iteration in remote process
+        self.stop.set()
+        # empty queue until we get RMMARDState
+        while self.output.full():
+            x = self.output.get()
+            if isinstance(x, RMMARDState):
+                self.parent.random_state = x
+                break
+        assert self.output.empty()
+        self.output.close()
+        self.process.join(timeout=1)
+        if self.process.is_alive():
+            self.process.kill()
         self.process.join()
+        self.process.close()
 
     def get(self):
         for _ in range(self.timeout):
@@ -89,8 +104,6 @@ class _RemoteCall:
             except Empty:
                 pass
         else:
-            if self.process.is_alive():
-                self.process.kill()
             raise TimeoutError("process send no data")
 
         if isinstance(x, RemoteException):
@@ -98,6 +111,7 @@ class _RemoteCall:
             (msg,) = exc.args
             exc.args = (f"{msg}\n\nBacktrace from child process:\n{stb}",)
             raise exc
+
         return x
 
 
@@ -105,7 +119,7 @@ class RemoteException(Exception):
     pass
 
 
-def _run(output, Model, state, method, args, kwargs):
+def _run(output, stop, Model, state, method, args, kwargs):
     seed, init_kwargs, stable_state, random_state = state
     model = Model(seed, **init_kwargs)
     model.random_state = random_state
@@ -116,18 +130,38 @@ def _run(output, Model, state, method, args, kwargs):
             for k in model.get_stable() - stable_state:
                 model.set_stable(k, False)
             # we must explicitly call MCRun.__call__ here,
-            # to get MCRunRemote.__call__
+            # otherwise we would get MCRunRemote.__call__
             for x in MCRun.__call__(model, *args, **kwargs):
+                # If iteration is stopped in the main thread,
+                # we must stop it also here, to get our
+                # random_state below
+                if stop.is_set():
+                    break
+                # The copy is necessary, but shouldn't be. This
+                # smells like a bug in the pickling of MCEvent, or
+                # maybe the process.Queue does not use pickling.
                 output.put(x.copy())
         else:
             # same as above
             meth = getattr(MCRun, method)
             x = meth(model, *args, **kwargs)
             output.put(x)
+
     except Exception as exc:
+        # To aid debugging, we catch the traceback in the
+        # Remote process and pass it along with the exception
+        # to the main process. Unfortunately, one cannot pickle
+        # traceback objects (without external library support),
+        # so we convert the traceback into a string here, and
+        # append that string to the exception message later.
         tb = sys.exc_info()[2]
         s = "".join(traceback.format_tb(tb))
         exc2 = RemoteException(exc, s)
         output.put(exc2)
-    # also return random state
+
+    # Finally also return random state, whether there
+    # was an exception or not. If we switch to the Numpy
+    # generator, we can probably allocate the random state
+    # in shared memory, so it is shared at no additional cost,
+    # and this manual synchronisation is no longer necessary.
     output.put(model.random_state)

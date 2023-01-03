@@ -19,8 +19,12 @@ def test_cross_section(Model, projectile, target):
 
     kin = CenterOfMass(1 * TeV, p1, p2)
 
+    model = Model(seed=1)
+
     if abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets:
-        pytest.skip("Model does not accept projectile or target")
+        with pytest.raises(ValueError):
+            model.cross_section(kin)
+        return
 
     # known issues
     if Model.name == "DPMJET-III" and not kin.p1.is_nucleus and kin.p2.is_nucleus:
@@ -32,7 +36,6 @@ def test_cross_section(Model, projectile, target):
     if Model.pyname == "Pythia8" and (kin.p1.A or 1) > 1 or (kin.p2.A or 1) > 1:
         pytest.xfail("A-A and h-A cross-sections are not yet supported for Pythia8")
 
-    model = Model(seed=1)
     c = model.cross_section(kin)
 
     if Model is im.UrQMD34:

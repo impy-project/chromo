@@ -19,6 +19,7 @@ filterwarnings = [
     "error::DeprecationWarning",
     "ignore::impy.AliveInstanceWarning",
     "ignore::impy.FixedStableListWarning",
+    "ignore::impy.OutputWarning",
 ]
 
 [tool.cibuildwheel]

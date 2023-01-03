@@ -3,7 +3,7 @@ from impy import models
 from impy import kinematics
 from impy import constants
 import os
-from impy.util import AliveInstanceWarning, FixedStableListWarning
+from impy.util import AliveInstanceWarning, FixedStableListWarning, OutputWarning
 
 debug_level = int(os.environ.get("DEBUG", "0"))
 
@@ -14,5 +14,6 @@ __all__ = [
     "debug_level",
     "AliveInstanceWarning",
     "FixedStableListWarning",
+    "OutputWarning",
     "__version__",
 ]

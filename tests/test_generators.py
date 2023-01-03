@@ -175,10 +175,11 @@ def test_generator(projectile, target, frame, Model):
     else:
         assert False  # we should never arrive here
 
-    if abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets:
-        pytest.skip(reason=f"Projectile or target not supported by {Model.pyname}")
-
     h = run_model(Model, kin)
+    if abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets:
+        assert h is None
+        return
+
     assert h is not None
 
     fn = Path(f"{Model.pyname}_{projectile}_{target}_{frame}")

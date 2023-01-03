@@ -18,6 +18,7 @@ from impy.util import (
     process_particle,
     Nuclei,
     AliveInstanceWarning,
+    OutputWarning,
 )
 from impy.constants import (
     quarks_and_diquarks_and_gluons,
@@ -382,7 +383,7 @@ class EventData:
             warnings.warn(
                 f"{model}-{version}: only final state particles "
                 "available in HepMC3 event",
-                RuntimeWarning,
+                OutputWarning,
             )
             ev = self.final_state()
         else:
@@ -566,6 +567,11 @@ class RMMARDState:
         Return generator copy.
         """
         return copy.deepcopy(self)  # this uses setstate, getstate
+
+    def __repr__(self):
+        return (
+            f"<RMMARDState at 0x{id(self):x} seed={self.seed} counter={self.counter}>"
+        )
 
     # HD: These should not be public, since the random number state
     # is an implementation detail. I am going to leave it, since this

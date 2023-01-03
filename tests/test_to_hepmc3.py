@@ -16,9 +16,8 @@ def test_to_hepmc3(Model):
     if Model == im.UrQMD34:
         pytest.xfail("UrQMD34 FAILS, should be FIXED!!!")
 
-    kin = CenterOfMass(10 * GeV, "proton", "proton")
-    if Model is Sophia20:
-        kin = CenterOfMass(10 * GeV, "photon", "proton")
+    projectile = "photon" if Model is Sophia20 else "proton"
+    kin = CenterOfMass(10 * GeV, projectile, "proton")
 
     m = Model(seed=1)
     for event in m(kin, 100):
