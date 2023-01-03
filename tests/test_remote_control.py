@@ -46,7 +46,9 @@ class Dummy(MCRun):
 
     def _cross_section(self, kin):
         self._lib.crranma4.ntot += 1
-        return CrossSectionData(inelastic=float(self._lib.crranma4.ntot))
+        if self.raise_at is not None:
+            raise ValueError("from raise_at")
+        return CrossSectionData(inelastic=float(self._lib.crranma4.ntot[0]))
 
     def _set_kinematics(self, kin):
         self._kin = kin
@@ -78,7 +80,8 @@ def test_dummy_1(timeout):
     assert model.random_state.counter == 5
 
     c = model.cross_section(kin)
-    assert c.inelastic == 5
+    assert c.inelastic == 6
+    assert model.random_state.counter == 6
 
 
 @pytest.mark.parametrize("timeout", (100, 0))
@@ -121,6 +124,12 @@ def test_dummy_3(timeout):
     assert events == expected
 
     assert model.random_state.counter >= 3
+    prev = int(model.random_state.counter)
+
+    with pytest.raises(ValueError):
+        model.cross_section(kin)
+
+    assert model.random_state.counter == prev + 1
 
 
 @pytest.mark.parametrize("timeout", (100, 0))
