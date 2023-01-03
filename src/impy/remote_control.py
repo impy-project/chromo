@@ -40,19 +40,19 @@ class MCRunRemote(MCRun):
         super().__init__(seed, timeout=timeout, **kwargs)
 
     def __call__(self, kin, nevents):
-        if self._timeout:
+        if self._timeout > 0:
             with _RemoteCall(self, "call", kin, nevents) as rc:
                 for _ in range(nevents):
                     yield rc.get()
         else:
-            super().__call__(kin, nevents)
+            return super().__call__(kin, nevents)
 
     def cross_section(self, kin, **kwargs):
-        if self._timeout:
+        if self._timeout > 0:
             with _RemoteCall(self, "cross_section", kin, **kwargs) as rc:
                 return rc.get()
         else:
-            super().cross_section(kin, **kwargs)
+            return super().cross_section(kin, **kwargs)
 
 
 class _RemoteCall:
