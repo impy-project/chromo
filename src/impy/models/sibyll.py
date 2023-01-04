@@ -1,5 +1,5 @@
 from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.util import info, Nuclei
+from impy.util import Nuclei
 from impy.kinematics import EventFrame
 from impy.remote_control import MCRunRemote
 from particle import literals as lp
@@ -34,17 +34,6 @@ class SIBYLLRun:
     _event_class = SibyllEvent
     _frame = EventFrame.CENTER_OF_MASS
     _targets = Nuclei(a_max=20)
-    _cross_section_projectiles = {
-        p.pdgid: sib_id
-        for p, sib_id in (
-            (lp.p, 1),
-            (lp.n, 1),
-            (lp.pi_plus, 2),
-            (lp.K_plus, 3),
-            (lp.K_S_0, 3),
-            (lp.K_L_0, 3),
-        )
-    }
 
     def _once(self):
         from impy import debug_level
@@ -61,7 +50,8 @@ class SIBYLLRun:
         self._lib.pdg_ini()
 
     def _cross_section(self, kin):
-        if kin.p2.A > 1:
+        self._set_kinematics(kin)
+        if self._target_a > 1:
             # TODO figure out what this returns exactly:
             # self._lib.sib_sigma_hnuc
             warnings.warn(
@@ -70,9 +60,9 @@ class SIBYLLRun:
             )
             return CrossSectionData()
 
-        sib_id = self._cross_section_projectiles[abs(kin.p1)]
-
-        tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sib_id, kin.ecm)
+        tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(
+            self._projectile_class, self._ecm
+        )
         return CrossSectionData(
             total=tot,
             elastic=el,
@@ -86,25 +76,28 @@ class SIBYLLRun:
     def sigma_inel_air(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        kin = self.kinematics
-        sib_id = self._cross_section_projectiles[abs(kin.p1)]
-        sigma = self._lib.sib_sigma_hair(sib_id, self._ecm)
+        sigma = self._lib.sib_sigma_hair(self._projectile_class, self._ecm)
         if isinstance(sigma, tuple):
             return sigma[0]
         return sigma
 
     def _set_kinematics(self, kin):
-        self._production_id = self._lib.isib_pdg2pid(kin.p1)
-        assert self._production_id != 0
-        self._kin = kin
+        self._projectile_id = self._lib.isib_pdg2pid(kin.p1)
+        self._projectile_class = {
+            lp.p.pdgid: 1,
+            lp.n.pdgid: 1,
+            lp.pi_plus.pdgid: 2,
+            lp.K_plus.pdgid: 3,
+            lp.K_S_0.pdgid: 3,
+            lp.K_L_0.pdgid: 3,
+        }[abs(kin.p1)]
+        self._target_a = kin.p2.A
+        assert self._projectile_id != 0
+        assert self._target_a >= 1
+        self._ecm = kin.ecm
 
     def _set_stable(self, pdgid, stable):
         sid = abs(self._lib.isib_pdg2pid(pdgid))
-        if abs(pdgid) == 311:
-            info(1, "Ignores K0. Using K0L/S instead")
-            self.set_stable(130, stable)
-            self.set_stable(310, stable)
-            return
         idb = self._lib.s_csydec.idb
         if sid == 0 or sid > idb.size - 1:
             return
@@ -114,8 +107,7 @@ class SIBYLLRun:
             idb[sid - 1] = abs(idb[sid - 1])
 
     def _generate(self):
-        k = self._kin
-        self._lib.sibyll(self._production_id, k.p2.A, k.ecm)
+        self._lib.sibyll(self._projectile_id, self._target_a, self._ecm)
         self._lib.decsib()
         self._lib.sibhep()
         return True
