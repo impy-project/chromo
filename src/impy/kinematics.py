@@ -9,6 +9,7 @@ from impy.util import (
     elab2ecm,
     ecm2elab,
     mass,
+    is_real_nucleus,
     process_particle,
 )
 from impy.constants import nucleon_mass, MeV, GeV, TeV, PeV, EeV
@@ -108,8 +109,8 @@ class EventKinematics:
 
         p2_is_composite = isinstance(self.p2, CompositeTarget)
 
-        m1 = nucleon_mass if self.p1.is_nucleus else mass(self.p1)
-        m2 = nucleon_mass if p2_is_composite or self.p2.is_nucleus else mass(self.p2)
+        m1 = nucleon_mass if is_real_nucleus(self.p1) else mass(self.p1)
+        m2 = nucleon_mass if is_real_nucleus(self.p2) else mass(self.p2)
 
         self.beams = (np.zeros(4), np.zeros(4))
 

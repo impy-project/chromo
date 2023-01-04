@@ -73,6 +73,10 @@ class CompositeTarget:
     def is_nucleus(self):
         return True
 
+    @property
+    def is_hadron(self):
+        return False
+
     def __int__(self):
         """Return PDGID for heaviest of elements."""
         return int(max((c.A, c) for c in self.components)[1])
@@ -98,6 +102,21 @@ class CompositeTarget:
         if self.label:
             args += f", label={self.label!r}"
         return f"CompositeTarget({args})"
+
+
+def is_real_nucleus(pdgid: Union[int, PDGID, CompositeTarget]) -> bool:
+    """
+    Return True if pdgid is a nucleus with A > 1.
+
+    PDGID.is_nucleus is True also for proton and neutrons,
+    which is correct in some sense, but often we want to
+    handle only nuclei with A > 1 in the interface.
+
+    Also works for CompositeTarget.
+    """
+    if not isinstance(pdgid, PDGID):
+        pdgid = PDGID(pdgid)
+    return pdgid.A and pdgid.A > 1
 
 
 def energy2momentum(E, m):

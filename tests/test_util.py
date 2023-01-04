@@ -76,3 +76,25 @@ def test_momentum_energy_conversion():
     en = util.momentum2energy(p, m)
     p2 = util.energy2momentum(en, m)
     assert p == approx(p2)
+
+
+def test_is_real_nucleus():
+    proton = 2212
+    neutron = 2112
+
+    assert not util.is_real_nucleus(proton)
+    assert not util.is_real_nucleus(neutron)
+
+    proton2 = util.AZ2pdg(1, 1)
+    neutron2 = util.AZ2pdg(1, 0)
+
+    assert not util.is_real_nucleus(proton2)
+    assert not util.is_real_nucleus(neutron2)
+
+    deuterium = util.AZ2pdg(2, 1)
+
+    assert util.is_real_nucleus(deuterium)
+
+    mix = util.CompositeTarget([("p", 0.5), ("He", 0.5)])
+
+    assert util.is_real_nucleus(mix)
