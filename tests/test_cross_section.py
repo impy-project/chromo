@@ -34,15 +34,8 @@ def test_cross_section(Model, projectile, target):
         pytest.xfail("no support for nuclear projectiles in QGSJet01d")
     if pyname == "Pythia8" and ((kin.p1.A or 1) > 1 or (kin.p2.A or 1) > 1):
         pytest.xfail("A-A and h-A cross-sections are not yet supported for Pythia8")
-    if pyname == "DpmjetIII191" and projectile == "He" and target == "air":
-        pytest.xfail("DpmjetIII191 returns NaN for (He, air)")
-    if any(
-        [
-            (pyname == "DpmjetIII193" and kin.p1.is_nucleus and kin.p2.is_nucleus),
-            (pyname.startswith("Dpmjet") and abs(kin.p1) == 211),
-        ]
-    ):
-        pytest.xfail(f"{Model.pyname} aborts on ({projectile}, {target})")
+    if pyname.startswith("DpmjetIII19") and target == "air":
+        pytest.xfail(f"{pyname} returns NaN for (any, air)")
 
     c = model.cross_section(kin)
 
