@@ -24,11 +24,23 @@ jobs:
           submodules: true
 
 
-      - if: ${{ matrix.os == 'macos-12' }}
+      - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'native'}}
         name: Setup gfortran for Macos
         run: |
           set -xe
           # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
+          chmod +x .github/workflows/gfortran_utils.sh
+          source .github/workflows/gfortran_utils.sh
+          install_gfortran
+          gfortran --version
+          which gfortran
+
+      - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'arm64'}}
+        name: Setup gfortran for Macos
+        run: |
+          set -xe
+          # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
+          export PLAT="arm64"
           chmod +x .github/workflows/gfortran_utils.sh
           source .github/workflows/gfortran_utils.sh
           install_gfortran
@@ -85,7 +97,19 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
 
-      - if: ${{ matrix.os == 'macos-12' }}
+      - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'native' }}
+        uses: pypa/cibuildwheel@v2.11.2
+        env:
+          # Check setuptools version
+          CIBW_BUILD_VERBOSITY: 3
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_SKIP: "*musllinux*"
+          CIBW_TEST_COMMAND: |
+            pytest -vv {package}/tests/macos_test_impy.py
+          no_proxy: '*'
+
+      - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'arm64' }}
         uses: pypa/cibuildwheel@v2.11.2
         env:
           # Check setuptools version
@@ -96,7 +120,7 @@ jobs:
           CIBW_TEST_SKIP: "*_arm64 *_universal2:arm64"
           CIBW_TEST_COMMAND: |
             pytest -vv {package}/tests/macos_test_impy.py
-          CIBW_ARCHS_MACOS: x86_64 arm64
+          CIBW_ARCHS_MACOS: arm64
           no_proxy: '*'
 
       - uses: actions/upload-artifact@v3
