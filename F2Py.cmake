@@ -178,6 +178,13 @@ function (f2py_add_module target_name)
     target_link_libraries(${target_name} PUBLIC "-static")
   endif()
 
+  if (APPLE)
+    set_target_properties(${target_name} PROPERTIES
+      BUILD_RPATH "/usr/local/lib"
+      INSTALL_RPATH "/usr/local/lib"    
+    )
+  endif()
+
   # if (APPLE)
   #   target_link_libraries(${target_name} PUBLIC "-static -static-libgfortran -static-libgcc")
   # endif()
