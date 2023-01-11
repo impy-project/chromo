@@ -44,8 +44,6 @@ jobs:
           chmod +x .github/workflows/gfortran_utils.sh
           source .github/workflows/gfortran_utils.sh
           install_arm64_cross_gfortran
-          gfortran --version
-          which gfortran
 
       # - if: ${{ matrix.os == 'macos-12' }}
       #   name: Setup gfortran for Macos
