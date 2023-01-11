@@ -33,6 +33,7 @@ jobs:
           source .github/workflows/gfortran_utils.sh
           install_gfortran
           gfortran --version
+          which gfortran
 
       # - if: ${{ matrix.os == 'macos-12' }}
       #   name: Setup gfortran for Macos
