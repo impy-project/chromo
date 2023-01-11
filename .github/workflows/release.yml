@@ -17,6 +17,13 @@ jobs:
         # arch: [native]
         # py: [cp37, cp38, cp39, cp310]
     steps:
+
+
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+
       - if: ${{ matrix.os == 'macos-12' }}
         name: Setup gfortran for Macos
         run: |
@@ -47,11 +54,6 @@ jobs:
       #     # No longer needed after Feb 13 2020 as gfortran is already present
       #     # and the attempted link errors. Keep this for future reference.
       #     # ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran
-
-
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
 
       # - if: ${{ matrix.arch == 'aarch64' }}
       #   uses: docker/setup-qemu-action@v2
