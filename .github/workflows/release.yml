@@ -126,6 +126,7 @@ jobs:
             chmod +x .github/workflows/gfortran_utils.sh
             source .github/workflows/gfortran_utils.sh
             install_arm64_cross_gfortran
+            echo "FC=${FC}" >> $GITHUB_ENV
           no_proxy: '*'
 
       - uses: actions/upload-artifact@v3
