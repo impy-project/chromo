@@ -11,8 +11,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-12]
-        arch: [native, arm64]
-        py: [cp38, cp39, cp310, cp311]
+        arch: [arm64]
+        py: [cp38]
+        # py: [cp38, cp39, cp310, cp311]
         # os: [ubuntu-latest, windows-latest]
         # arch: [native]
         # py: [cp37, cp38, cp39, cp310]
@@ -128,6 +129,9 @@ jobs:
             source .github/workflows/gfortran_utils.sh
             install_arm64_cross_gfortran
           FC: "/opt/gfortran-darwin-arm64-cross/bin/arm64-apple-darwin20.0.0-gfortran"
+          MACOSX_DEPLOYMENT_TARGET: "11.0"
+          FC_ARM64: "/opt/gfortran-darwin-arm64-cross/bin/arm64-apple-darwin20.0.0-gfortran"
+          FC_ARM64_LDFLAGS: "-L/opt/gfortran-darwin-arm64-cross/lib/gcc/arm64-apple-darwin20.0.0/11.3.0 -Wl,-rpath,/opt/gfortran-darwin-arm64-cross/lib/gcc/arm64-apple-darwin20.0.0/11.3.0"
           no_proxy: '*'
 
       - uses: actions/upload-artifact@v3
