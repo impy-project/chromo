@@ -119,7 +119,7 @@ jobs:
           CIBW_TEST_COMMAND: |
             pytest -vv {package}/tests/macos_test_impy.py
           CIBW_ARCHS_MACOS: arm64
-          CIBW_BEFORE_ALL: |
+          CIBW_BEFORE_BUILD: |
             set -xe
             # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
             export PLAT="arm64"
