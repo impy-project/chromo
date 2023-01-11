@@ -93,9 +93,9 @@ jobs:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
-          # CIBW_TEST_COMMAND: |
-          #   python  {package}/tests/test_sophia.py
-          #   pytest -vv {package}/tests/test_generators.py
+          CIBW_TEST_SKIP: "*"
+          CIBW_TEST_COMMAND: |
+            pytest -vv {package}/tests/macos_test_impy.py
           no_proxy: '*'
 
       - uses: actions/upload-artifact@v3
