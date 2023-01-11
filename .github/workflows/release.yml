@@ -35,15 +35,15 @@ jobs:
           gfortran --version
           which gfortran
 
-      - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'arm64'}}
-        name: Setup gfortran for Macos
-        run: |
-          set -xe
-          # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
-          export PLAT="arm64"
-          chmod +x .github/workflows/gfortran_utils.sh
-          source .github/workflows/gfortran_utils.sh
-          install_arm64_cross_gfortran
+      # - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'arm64'}}
+      #   name: Setup gfortran for Macos
+      #   run: |
+      #     set -xe
+      #     # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
+      #     export PLAT="arm64"
+      #     chmod +x .github/workflows/gfortran_utils.sh
+      #     source .github/workflows/gfortran_utils.sh
+      #     install_arm64_cross_gfortran
 
       # - if: ${{ matrix.os == 'macos-12' }}
       #   name: Setup gfortran for Macos
@@ -119,7 +119,14 @@ jobs:
           CIBW_TEST_COMMAND: |
             pytest -vv {package}/tests/macos_test_impy.py
           CIBW_ARCHS_MACOS: arm64
-          no_proxy: '*'
+          CIBW_BEFORE_ALL: |
+            set -xe
+            # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
+            export PLAT="arm64"
+            chmod +x .github/workflows/gfortran_utils.sh
+            source .github/workflows/gfortran_utils.sh
+            install_arm64_cross_gfortran
+            no_proxy: '*'
 
       - uses: actions/upload-artifact@v3
         with:
