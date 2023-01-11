@@ -40,6 +40,7 @@ jobs:
         run: |
           set -xe
           # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
+          export PLAT="arm64"
           chmod +x .github/workflows/gfortran_utils.sh
           source .github/workflows/gfortran_utils.sh
           install_arm64_cross_gfortran
