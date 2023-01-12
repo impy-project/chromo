@@ -54,16 +54,28 @@ def fix_macos_installation(logfile):
         ext_file = str(ext_file)
 
         cmd = ["otool", "-L", ext_file]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE)
-        lib_deps = result.stdout.decode("utf-8")
+        python_lib_in_file = None
+
+        ntries = 0
+        while (python_lib_in_file is None) or (ntries < 10):
+            result = subprocess.run(cmd, stdout=subprocess.PIPE)
+            lib_deps = result.stdout.decode("utf-8")
+            search_res = (
+                re.search("^(.*Python).*$", lib_deps, flags=re.MULTILINE)
+                .group(1)
+                .strip()
+            )
+
+            if search_res:
+                python_lib_in_file = search_res.group(1).strip()
+            else:
+                python_lib_in_file = None
+            ntries += 1
 
         message = f"\n----------\nFixing {ext_file}:\nBefore\n{lib_deps}"
         with open(logfile, "a") as lf:
             lf.write(message)
 
-        python_lib_in_file = (
-            re.search("^(.*Python).*$", lib_deps, flags=re.MULTILINE).group(1).strip()
-        )
         python_lib_real = str(next(Path(get_config_var("LIBDIR")).glob("libpython*")))
 
         cmd = [
