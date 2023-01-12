@@ -11,10 +11,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-12]
-        arch: [native, arm64]
+        arch: [native]
         py: [cp38, cp39, cp310, cp311]
         # os: [ubuntu-latest, windows-latest]
-        # arch: [native]
+        # arch: [native, arm64]
         # py: [cp37, cp38, cp39, cp310]
     steps:
 
@@ -73,6 +73,9 @@ jobs:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
+          CIBW_TEST_COMMAND: |
+            pytest -vv {package}/tests/macos_test_impy.py
+            pytest -vv {package}/tests/test*
           no_proxy: '*'
 
       - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'arm64' }}
