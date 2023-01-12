@@ -12,37 +12,30 @@ from cmake_ext import CMakeExtension, CMakeBuild  # noqa: E402
 subp.call(["git", "submodule", "update"])
 
 
-# models = [
-#     "eposlhc",
-#     "sib21",
-#     "sib23",
-#     "sib23d",
-#     "sib23c01",
-#     "qgs01",
-#     "qgsII03",
-#     "qgsII04",
-#     "pythia6",
-#     "sophia",
-#     "dpmjet306",
-#     "phojet112",
-#     "phojet191",
-#     "phojet193",
-#     "dpmjetIII191",
-#     "dpmjetIII193",
-# ]
-
 models = [
+    "eposlhc",
     "sib21",
     "sib23",
     "sib23d",
     "sib23c01",
+    "qgs01",
+    "qgsII03",
+    "qgsII04",
+    "pythia6",
     "sophia",
+    "dpmjet306",
+    "phojet112",
+    "phojet191",
+    "phojet193",
+    "dpmjetIII191",
+    "dpmjetIII193",
 ]
 
+
 # urqmd34 doesn't build correctly on Windows
-# if platform.system() != "Windows":
-#     models.append("urqmd34")
-#     models.append("pythia8")
+if platform.system() != "Windows":
+    models.append("urqmd34")
+    models.append("pythia8")
 
 # for convenience, support building extra models via extra.cfg
 # extra.cfg is not tracked by git, so can be freely modified

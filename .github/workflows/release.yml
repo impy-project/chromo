@@ -11,9 +11,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-12]
-        arch: [arm64]
-        py: [cp38]
-        # py: [cp38, cp39, cp310, cp311]
+        arch: [native, arm64]
+        py: [cp38, cp39, cp310, cp311]
         # os: [ubuntu-latest, windows-latest]
         # arch: [native]
         # py: [cp37, cp38, cp39, cp310]
@@ -36,39 +35,9 @@ jobs:
           gfortran --version
           which gfortran
 
-      # - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'arm64'}}
-      #   name: Setup gfortran for Macos
-      #   run: |
-      #     set -xe
-      #     # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
-      #     export PLAT="arm64"
-      #     chmod +x .github/workflows/gfortran_utils.sh
-      #     source .github/workflows/gfortran_utils.sh
-      #     install_arm64_cross_gfortran
 
-      # - if: ${{ matrix.os == 'macos-12' }}
-      #   name: Setup gfortran for Macos
-      #   run: |
-      #     # this is taken verbatim from the numpy azure pipeline setup.
-      #     set -xe
-      #     # same version of gfortran as the open-libs and numpy-wheel builds
-      #     curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
-      #     GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
-      #     KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
-      #     if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
-      #         echo sha256 mismatch
-      #         exit 1
-      #     fi
-      #     hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
-      #     sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
-      #     otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
-      #     # Manually symlink gfortran-4.9 to plain gfortran for f2py.
-      #     # No longer needed after Feb 13 2020 as gfortran is already present
-      #     # and the attempted link errors. Keep this for future reference.
-      #     # ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran
-
-      # - if: ${{ matrix.arch == 'aarch64' }}
-      #   uses: docker/setup-qemu-action@v2
+      - if: ${{ matrix.arch == 'aarch64' }}
+        uses: docker/setup-qemu-action@v2
 
       - if: ${{ matrix.os != 'macos-12' }}
         uses: awvwgk/setup-fortran@main
@@ -104,8 +73,6 @@ jobs:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*musllinux*"
-          CIBW_TEST_COMMAND: |
-            pytest -vv {package}/tests/macos_test_impy.py
           no_proxy: '*'
 
       - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'arm64' }}
@@ -130,8 +97,6 @@ jobs:
             install_arm64_cross_gfortran
           FC: "/opt/gfortran-darwin-arm64-cross/bin/arm64-apple-darwin20.0.0-gfortran"
           MACOSX_DEPLOYMENT_TARGET: "11.0"
-          FC_ARM64: "/opt/gfortran-darwin-arm64-cross/bin/arm64-apple-darwin20.0.0-gfortran"
-          FC_ARM64_LDFLAGS: "-L/opt/gfortran-darwin-arm64-cross/lib/gcc/arm64-apple-darwin20.0.0/11.3.0 -Wl,-rpath,/opt/gfortran-darwin-arm64-cross/lib/gcc/arm64-apple-darwin20.0.0/11.3.0"
           no_proxy: '*'
 
       - uses: actions/upload-artifact@v3
