@@ -53,27 +53,33 @@ def fix_macos_installation(logfile):
     for ext_file in models_dir.glob("*.so"):
         ext_file = str(ext_file)
 
+        # Get libraries required by extension module
         cmd = ["otool", "-L", ext_file]
-        python_lib_in_file = None
-
-        ntries = 0
-        while (python_lib_in_file is None) or (ntries < 10):
-            result = subprocess.run(cmd, stdout=subprocess.PIPE)
-            lib_deps = result.stdout.decode("utf-8")
-            search_res = re.search("^(.*Python).*$", lib_deps, flags=re.MULTILINE)
-
-            if search_res:
-                python_lib_in_file = search_res.group(1).strip()
-            else:
-                python_lib_in_file = None
-            ntries += 1
+        result = subprocess.run(cmd, stdout=subprocess.PIPE)
+        lib_deps = result.stdout.decode("utf-8")
 
         message = f"\n----------\nFixing {ext_file}:\nBefore\n{lib_deps}"
         with open(logfile, "a") as lf:
             lf.write(message)
 
+        # Search for python....dylib or Python shared library
+        search_res = re.search(
+            "^(.*python.*dylib|.*Python).*$", lib_deps, flags=re.MULTILINE
+        )
+
+        if search_res is None:
+            message = (
+                'NOT FIXED: Paths  with "Python" or "python*.dylib" strings '
+                "isn't found inside shared library file"
+            )
+            with open(logfile, "a") as lf:
+                lf.write(message)
+            continue
+
+        python_lib_in_file = search_res.group(1).strip()
         python_lib_real = str(next(Path(get_config_var("LIBDIR")).glob("libpython*")))
 
+        # Change paths
         cmd = [
             "install_name_tool",
             "-change",
