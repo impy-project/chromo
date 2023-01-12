@@ -60,11 +60,7 @@ def fix_macos_installation(logfile):
         while (python_lib_in_file is None) or (ntries < 10):
             result = subprocess.run(cmd, stdout=subprocess.PIPE)
             lib_deps = result.stdout.decode("utf-8")
-            search_res = (
-                re.search("^(.*Python).*$", lib_deps, flags=re.MULTILINE)
-                .group(1)
-                .strip()
-            )
+            search_res = re.search("^(.*Python).*$", lib_deps, flags=re.MULTILINE)
 
             if search_res:
                 python_lib_in_file = search_res.group(1).strip()
