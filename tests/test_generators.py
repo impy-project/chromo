@@ -185,9 +185,9 @@ def test_generator(projectile, target, frame, Model):
     fn = Path(f"{Model.pyname}_{projectile}_{target}_{frame}")
     path_ref = REFERENCE_PATH / fn.with_suffix(".pkl.gz")
     if not path_ref.exists():
-        print(f"{fn}: reference does not exist; generating...")
-        # check plots to see whether reference makes any sense before committing it
-        values = run_model(Model, kin, 50)
+        # New reference is generated. Check plots to see whether reference makes
+        # any sense before committing it.
+        values = run_in_separate_process(run_model, Model, kin, 50, timeout=10000)
         val_ref = np.reshape(np.mean(values, axis=0), -1)
         cov_ref = np.cov(np.transpose([np.reshape(x, -1) for x in values]))
         assert np.sum(np.isnan(val_ref)) == 0
