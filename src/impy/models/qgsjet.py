@@ -2,8 +2,9 @@ import numpy as np
 from impy.common import MCRun, MCEvent, CrossSectionData
 from impy.kinematics import EventFrame
 from impy.constants import standard_projectiles
-from impy.util import _cached_data_dir, Nuclei
+from impy.util import _cached_data_dir, Nuclei, FixedStableListWarning
 from particle import literals as lp
+import warnings
 
 
 class QGSJET1Event(MCEvent):
@@ -35,28 +36,18 @@ class QGSJetRun(MCRun):
         + "/releases/download/zipped_data_v1.0/qgsjet_v001.zip"
     )
 
-    # needed to skip set_final_state_particles() in MCRun
-    _set_final_state_particles_called = True
-
-    def __init__(self, evt_kin, *, seed=None):
-        import impy
-
-        super().__init__(seed)
+    def _once(self):
+        from impy import debug_level
 
         # logging
         lun = 6  # stdout
         datdir = _cached_data_dir(self._data_url)
-        self._lib.cqgsini(self._seed, datdir, lun, impy.debug_level)
+        self._lib.cqgsini(self._seed, datdir, lun, debug_level)
 
-        self.kinematics = evt_kin
-
-    def _set_stable(self, pdgid, stable):
-        import warnings
-
+    def _set_stable(self, pid, stable):
         # TODO use Pythia8 instance to decay particles which QGSJet does not decay
-
         warnings.warn(
-            f"stable particles cannot be changed in {self.pyname}", RuntimeWarning
+            f"cannot change stable particles in {self.pyname}", FixedStableListWarning
         )
 
 
@@ -66,15 +57,26 @@ class QGSJet1Run(QGSJetRun):
 
     _event_class = QGSJET1Event
 
-    def _cross_section(self, kin=None):
+    def _projectile_id(self, pid):
+        # 2 is correct for nucleons and nuclei
+        return {
+            lp.pi_plus.pdgid: 1,
+            lp.K_plus.pdgid: 3,
+            lp.K_S_0.pdgid: 3,
+            lp.K_L_0.pdgid: 3,
+        }.get(abs(pid), 2)
+
+    def _cross_section(self, kin):
         # Interpolation routine for QGSJET01D cross sections from CORSIKA.
         from scipy.interpolate import UnivariateSpline
 
-        kin = self.kinematics if kin is None else kin
+        if (kin.p1.A or 0) > 1:
+            # nuclear projectiles are not supported
+            return CrossSectionData()
 
         A_target = kin.p2.A
         # Projectile ID-1 to access fortran indices directly
-        icz = self._projectile_id - 1
+        icz = self._projectile_id(kin.p1) - 1
         qgsgrid = 10 ** np.arange(1, 11)
         cross_section = np.zeros(10)
         wa = np.zeros(3)
@@ -102,15 +104,7 @@ class QGSJet1Run(QGSJetRun):
         return CrossSectionData(inelastic=inel)
 
     def _set_kinematics(self, kin):
-        self._projectile_id = {
-            lp.pi_plus.pdgid: 1,
-            lp.K_plus.pdgid: 3,
-            lp.K_S_0.pdgid: 3,
-            lp.K_L_0.pdgid: 3,
-        }.get(
-            abs(kin.p1), 2
-        )  # 2 is correct for nucleons and nuclei
-        self._lib.xxaini(kin.elab, self._projectile_id, kin.p1.A or 1, kin.p2.A)
+        self._lib.xxaini(kin.elab, self._projectile_id(kin.p1), kin.p1.A or 1, kin.p2.A)
 
     def _generate(self):
         self._lib.psconf()
@@ -125,19 +119,10 @@ class QGSJet2Run(QGSJetRun):
 
     _event_class = QGSJET2Event
 
-    def _cross_section(self, kin=None):
-        kin = self.kinematics if kin is None else kin
-
-        inel = self._lib.qgsect(
-            kin.elab,
-            self._projectile_id,
-            kin.p1.A,
-            kin.p2.A,
-        )
-        return CrossSectionData(inelastic=inel)
-
-    def _set_kinematics(self, kin):
-        self._projectile_id = {
+    @staticmethod
+    def _projectile_id(pid: int) -> int:
+        # 2 is correct for nuclei
+        return {
             lp.pi_plus.pdgid: 1,
             lp.pi_minus.pdgid: -1,
             lp.proton.pdgid: 2,
@@ -148,10 +133,21 @@ class QGSJet2Run(QGSJetRun):
             lp.K_minus.pdgid: -4,
             lp.K_S_0.pdgid: -5,
             lp.K_L_0.pdgid: 5,
-        }.get(
-            kin.p1, 2
-        )  # 2 is correct for nuclei
-        self._lib.qgini(kin.elab, self._projectile_id, kin.p1.A or 1, kin.p2.A)
+        }.get(pid, 2)
+
+    def _cross_section(self, kin):
+        # qgini not needed for cross-section
+        inel = self._lib.qgsect(
+            kin.elab,
+            # need to use classes 1-5 here
+            abs(self._projectile_id(kin.p1)),
+            kin.p1.A or 1,
+            kin.p2.A,
+        )
+        return CrossSectionData(inelastic=inel)
+
+    def _set_kinematics(self, kin):
+        self._lib.qgini(kin.elab, self._projectile_id(kin.p1), kin.p1.A or 1, kin.p2.A)
 
     def _generate(self):
         self._lib.qgconf()

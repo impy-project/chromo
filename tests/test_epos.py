@@ -3,28 +3,25 @@ from impy.models import EposLHC
 from impy.constants import GeV
 import numpy as np
 from numpy.testing import assert_allclose
-from .util import (
-    reference_charge,
-    run_in_separate_process,
-)
+from .util import reference_charge
 import pytest
 from particle import literals as lp
 from functools import lru_cache
 
 
 def run_pp_collision():
-    evt_kin = CenterOfMass(10 * GeV, "proton", "proton")
-    m = EposLHC(evt_kin, seed=4)
-    m.set_stable(lp.pi_0.pdgid, True)
-    for event in m(1):
+    m = EposLHC(seed=4)
+    m.set_stable("pi0", True)
+    kin = CenterOfMass(10 * GeV, "proton", "proton")
+    for event in m(kin, 1):
         pass
     return event
 
 
 def run_ab_collision():
-    evt_kin = CenterOfMass(10 * GeV, (4, 2), (12, 6))
-    m = EposLHC(evt_kin, seed=1)
-    for event in m(1):
+    kin = CenterOfMass(10 * GeV, (4, 2), (12, 6))
+    m = EposLHC(seed=1)
+    for event in m(kin, 1):
         pass
     return event
 
@@ -32,13 +29,15 @@ def run_ab_collision():
 @pytest.fixture
 @lru_cache(maxsize=1)
 def event():
-    return run_in_separate_process(run_pp_collision)
+    # must cache a copy and not a view
+    return run_pp_collision().copy()
 
 
 @pytest.fixture
 @lru_cache(maxsize=1)
 def event_ion():
-    return run_in_separate_process(run_ab_collision)
+    # must cache a copy and not a view
+    return run_ab_collision().copy()
 
 
 def test_impact_parameter(event, event_ion):
@@ -59,13 +58,13 @@ def test_n_wounded_ion(event_ion):
 
 
 def run_cross_section(p1, p2):
-    evt_kin = CenterOfMass(10 * GeV, p1, p2)
-    m = EposLHC(evt_kin, seed=1)
-    return m.cross_section()
+    m = EposLHC(seed=1)
+    kin = CenterOfMass(10 * GeV, p1, p2)
+    return m.cross_section(kin)
 
 
 def test_cross_section():
-    c = run_in_separate_process(run_cross_section, "p", "p")
+    c = run_cross_section("p", "p")
     assert_allclose(c.total, 38.2, atol=0.1)
     assert_allclose(c.inelastic, 30.7, atol=0.1)
     assert_allclose(c.elastic, 7.4, atol=0.1)
@@ -120,24 +119,30 @@ def test_parents(event):
     assert sum(x[0] > 0 and x[1] > 0 for x in event.parents) > 0
 
 
-def run_set_stable(stable):
-    evt_kin = CenterOfMass(10 * GeV, "proton", "proton")
-    m = EposLHC(evt_kin, seed=4)
-    for pid, s in stable.items():
-        m.set_stable(pid, s)
-    print("stable", m._get_stable())
-    for event in m(1):
-        pass
-    return event
-
-
-def test_set_stable():
+@pytest.mark.parametrize("stable", (False, True))
+def test_set_stable(stable):
+    m = EposLHC(seed=4)
     pid = lp.pi_0.pdgid
-    ev1 = run_in_separate_process(run_set_stable, {pid: True})
-    ev2 = run_in_separate_process(run_set_stable, {pid: False})
 
-    # ev1 contains final state pi0
-    assert np.any(ev1.pid[ev1.status == 1] == pid)
+    m.set_stable("pi_0", stable)
 
-    # ev2 does not contains final state pi0
-    assert np.all(ev2.pid[ev2.status == 1] != pid)
+    kin = CenterOfMass(10 * GeV, "proton", "proton")
+    for event in m(kin, 1):
+        pass
+
+    final = event.final_state()
+    if stable:
+        assert np.sum(final.pid == pid) > 0
+    else:
+        assert np.sum(final.pid == pid) == 0
+
+    del m
+
+    # check that defaults are restored for new instance
+    m = EposLHC(seed=4)
+    kin = CenterOfMass(10 * GeV, "proton", "proton")
+    for event in m(kin, 1):
+        pass
+
+    final = event.final_state()
+    assert np.sum(final.pid == pid) == 0

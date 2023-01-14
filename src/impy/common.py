@@ -7,6 +7,7 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 """
+from __future__ import annotations
 from abc import ABC, abstractmethod
 import numpy as np
 from impy.util import (
@@ -14,7 +15,10 @@ from impy.util import (
     select_parents,
     naneq,
     pdg2name,
+    process_particle,
     Nuclei,
+    AliveInstanceWarning,
+    OutputWarning,
 )
 from impy.constants import (
     quarks_and_diquarks_and_gluons,
@@ -26,14 +30,10 @@ from impy.kinematics import EventKinematics, CompositeTarget
 import dataclasses
 import copy
 from typing import Tuple, Optional
-from contextlib import contextmanager
 import warnings
 from particle import Particle
 
 
-# Do we need EventData.n_spectators in addition to EventData.n_wounded?
-# n_spectators can be computed from n_wounded as number_of_nucleons - n_wounded
-# If we want this, it should be computed dynamically via a property.
 @dataclasses.dataclass
 class CrossSectionData:
     """Information of cross-sections returned by the generator.
@@ -227,7 +227,7 @@ class EventData:
         """
         Return event copy.
         """
-        # this should be implemented with the help of copy
+        # Cannot be implemented with copy.deepcopy, leads to recursion
         copies = []
         for obj in dataclasses.astuple(self):
             copies.append(obj.copy() if hasattr(obj, "copy") else obj)
@@ -383,7 +383,7 @@ class EventData:
             warnings.warn(
                 f"{model}-{version}: only final state particles "
                 "available in HepMC3 event",
-                RuntimeWarning,
+                OutputWarning,
             )
             ev = self.final_state()
         else:
@@ -444,12 +444,14 @@ class MCEvent(EventData, ABC):
     _jmohep = "jmohep"
     _jdahep = "jdahep"
 
-    def __init__(self, generator):
+    def __init__(self, generator: MCRun, kinematics: EventKinematics):
         """
         Parameters
         ----------
-        generator:
+        generator : Model
             Generator instance.
+        kinematics : EventKinematics
+            Kinematics of the event.
         """
         # used by _charge_init and generator-specific methods
         self._lib = generator._lib
@@ -468,7 +470,7 @@ class MCEvent(EventData, ABC):
         EventData.__init__(
             self,
             (generator.name, generator.version),
-            generator.kinematics,
+            kinematics,
             int(getattr(evt, self._nevhep)),
             self._get_impact_parameter(),
             self._get_n_wounded(),
@@ -482,7 +484,7 @@ class MCEvent(EventData, ABC):
         )
 
     @abstractmethod
-    def _charge_init(self, npart):
+    def _charge_init(self, npart: int):
         # override this in derived to get charge info
         ...
 
@@ -497,8 +499,10 @@ class MCEvent(EventData, ABC):
     # MCEvent is not pickleable, but EventData is. For convenience, we
     # make it so that MCEvent can be saved and is restored as EventData.
     def __getstate__(self):
-        # save only EventData sub-state
-        return {k: getattr(self, k) for k in self.__dataclass_fields__}
+        # Save only EventData sub-state. We actually need to make a copy here,
+        # a view is not sufficient.
+        copied_event = super().copy()
+        return dataclasses.asdict(copied_event)
 
     def __getnewargs__(self):
         # upon unpickling, create EventData object instead of MCEvent object
@@ -507,17 +511,21 @@ class MCEvent(EventData, ABC):
 
 @dataclasses.dataclass
 class RMMARDState:
-    _c_number: np.ndarray = None
-    _u_array: np.ndarray = None
-    _u_i: np.ndarray = None
-    _u_j: np.ndarray = None
-    _seed: np.ndarray = None
-    _counter: np.ndarray = None
-    _big_counter: np.ndarray = None
-    _sequence_number: np.ndarray = None
+    _c_number: np.ndarray
+    _u_array: np.ndarray
+    _u_i: np.ndarray
+    _u_j: np.ndarray
+    _seed: np.ndarray
+    _counter: np.ndarray
+    _big_counter: np.ndarray
+    _sequence_number: np.ndarray
+    _composite_target_state = None
+    # only needed for Sibyll
+    _gasdev_iset: np.ndarray = None
 
-    def _record_state(self, generator):
+    def __init__(self, generator):
         data = generator._lib.crranma4
+
         self._c_number = data.c
         self._u_array = data.u
         self._u_i = data.i97
@@ -526,9 +534,13 @@ class RMMARDState:
         self._counter = data.ntot
         self._big_counter = data.ntot2
         self._sequence_number = data.jseq
-        return self
 
-    def _restore_state(self, generator):
+        self._composite_target_state = generator._composite_target_rng.__getstate__()
+
+        if generator.name == "SIBYLL":
+            self._gasdev_iset = generator._lib.rndmgas.iset
+
+    def _restore(self, generator):
         data = generator._lib.crranma4
 
         data.c = self._c_number
@@ -539,28 +551,31 @@ class RMMARDState:
         data.ntot = self._counter
         data.ntot2 = self._big_counter
         data.jseq = self._sequence_number
-        return self
 
-    def __eq__(self, other: object) -> bool:
-        if other.__class__ is not self.__class__:
-            return NotImplemented
+        generator._composite_target_rng.__setstate__(self._composite_target_state)
 
-        return (
-            np.array_equal(self._c_number, other._c_number)
-            and np.array_equal(self._u_array, other._u_array)
-            and np.array_equal(self._u_i, other._u_i)
-            and np.array_equal(self._u_j, other._u_j)
-            and np.array_equal(self._seed, other._seed)
-            and np.array_equal(self._counter, other._counter)
-            and np.array_equal(self._big_counter, other._big_counter)
-            and np.array_equal(self._sequence_number, other._sequence_number)
-        )
+        if generator.name == "SIBYLL":
+            generator._lib.rndmgas.iset = self._gasdev_iset
+
+    def __eq__(self, other):
+        a = dataclasses.astuple(self)
+        b = dataclasses.astuple(other)
+        return all(np.all(ai == bi) for (ai, bi) in zip(a, b))
 
     def copy(self):
         """
         Return generator copy.
         """
         return copy.deepcopy(self)  # this uses setstate, getstate
+
+    def __repr__(self):
+        return (
+            f"<RMMARDState at 0x{id(self):x} seed={self.seed} counter={self.counter}>"
+        )
+
+    # HD: These should not be public, since the random number state
+    # is an implementation detail. I am going to leave it, since this
+    # whole class will become obsolete when we switch to the numpy PRNG.
 
     @property
     def sequence(self):
@@ -579,28 +594,40 @@ class RMMARDState:
 # MCRun
 # =========================================================================
 class MCRun(ABC):
-    #: Prevent creating multiple classes within same python scope
-    _is_initialized = []
-    _restartable = False
-    _set_final_state_particles_called = False
+    _once_called = False
+    _alive_instances = set()
+
+    # defaults for many models (override in Derived if needed)
     _projectiles = standard_projectiles
     _targets = Nuclei()
-    _ecm_min = 10 * GeV  # default for many models
+    _ecm_min = 10 * GeV
+
     nevents = 0  # number of generated events so far
 
-    def __init__(self, seed):
+    # Don't override `__init__` in derived class, use `_once` instead.
+    # You can pass custom initialization parameters via **kwargs, which
+    # are forwarded to `_once`.
+    #
+    # timeout parameter is used MCRunRemote and ignored here
+    def __init__(self, seed=None, *, timeout: int = -1, **kwargs):
         import importlib
         from random import randint
 
-        if not self._restartable:
-            self._abort_if_already_initialized()
+        self._init_kwargs = kwargs
+        self._timeout = timeout
 
-        assert hasattr(self, "_name")
-        assert hasattr(self, "_version")
-        assert hasattr(self, "_library_name")
-        assert hasattr(self, "_event_class")
-        assert hasattr(self, "_frame")
-        self._lib = importlib.import_module(f"impy.models.{self._library_name}")
+        if self.pyname in self._alive_instances:
+            warnings.warn(
+                f"A previous instance of {self.pyname} is still alive. "
+                "You cannot use two instances in parallel. "
+                "Please delete the old one first before creating a new one. "
+                "You can ignore this warning if the previous instance is already "
+                "out of scope; Python does not always destroy old instances immediately.",
+                AliveInstanceWarning,
+                stacklevel=3,
+            )
+
+        self._alive_instances.add(self.pyname)
 
         if seed is None:
             self._seed = randint(1, 10000000)
@@ -609,28 +636,46 @@ class MCRun(ABC):
         else:
             raise ValueError(f"Invalid seed {seed}")
 
+        # TODO use single PRNG for everything
+        self._composite_target_rng = np.random.default_rng(self._seed)
+
+        self._lib = importlib.import_module(f"impy.models.{self._library_name}")
         if hasattr(self._lib, "init_rmmard"):
             self._lib.init_rmmard(self._seed)
 
-        # TODO use rmmard for this, too, instead of numpy PRNG
-        self._composite_target_rng = np.random.default_rng(self._seed)
+        if not self._once_called:
+            self._once_called = True
+            assert hasattr(self, "_name")
+            assert hasattr(self, "_version")
+            assert hasattr(self, "_library_name")
+            assert hasattr(self, "_event_class")
+            assert hasattr(self, "_frame")
+            # Run internal model initialization code exactly once
+            self._once(**kwargs)
 
-    def __call__(self, nevents):
+        # Set standard long lived particles as stable
+        self._stable = set()
+        for pid in long_lived:
+            self.set_stable(pid)
+
+    def __del__(self):
+        self._alive_instances -= {self.pyname}
+
+    def __call__(self, kin, nevents):
         """Generator function (in python sence)
         which launches the underlying event generator
         and returns its the result (event) as MCEvent object
         """
-        assert self._set_final_state_particles_called
         nretries = 0
-        for nev in self._composite_plan(nevents):
+        for nev in self._composite_plan(kin, nevents):
             while nev > 0:
                 if self._generate():
                     nretries = 0
                     self.nevents += 1
                     nev -= 1
-                    event = self._event_class(self)
+                    event = self._event_class(self, kin)
                     # boost into frame requested by user
-                    self.kinematics.apply_boost(event, self._frame)
+                    kin.apply_boost(event, self._frame)
                     yield event
                     continue
                 nretries += 1
@@ -677,157 +722,155 @@ class MCRun(ABC):
         """Supported targets (positive PDGIDs only, c.c. implied)."""
         return cls._targets
 
-    @abstractmethod
-    def _generate(self):
-        """The method to generate a new event.
+    @classmethod
+    def _validate_kinematics(cls, kin):
+        if abs(kin.p1) not in cls._projectiles:
+            raise ValueError(
+                f"projectile {pdg2name(kin.p1)}[{int(kin.p1)}] is not allowed, "
+                f"see {cls.pyname}.projectiles"
+            )
+        if abs(kin.p2) not in cls._targets:
+            raise ValueError(
+                f"target {pdg2name(kin.p2)}[{int(kin.p2)}] is not among allowed, "
+                f"see {cls.pyname}.targets"
+            )
+        if kin.ecm < cls._ecm_min:
+            raise ValueError(
+                f"center-of-mass energy {kin.ecm/GeV} GeV < "
+                f"minimum energy {cls._ecm_min/GeV} GeV"
+            )
 
-        Returns:
-            bool : True if event was successfully generated and False otherwise.
+    def _composite_plan(self, kin, nevents):
+        self._validate_kinematics(kin)
+        if isinstance(kin.p2, CompositeTarget):
+            nevents = self._composite_target_rng.multinomial(nevents, kin.p2.fractions)
+            components = kin.p2.components
+            # as a workaround for DPMJet, we generate heaviest elements first
+            pairs = sorted(zip(components, nevents), key=lambda p: p[0].A, reverse=True)
+            for c, nev in pairs:
+                kin.p2 = c
+                self._set_kinematics(kin)
+                yield nev
+        else:
+            self._set_kinematics(kin)
+            yield nevents
+
+    @property
+    def random_state(self):
+        return RMMARDState(self)
+
+    @random_state.setter
+    def random_state(self, rng_state):
+        rng_state._restore(self)
+
+    def get_stable(self):
+        """Return set of stable particles."""
+        # make a copy to prevent modification of internal state
+        return set(self._stable)
+
+    def set_stable(self, particle, stable=True):
+        """Prevent decay of an unstable particle.
+
+        Parameters
+        ----------
+        particle : str or int
+            Name or PDG ID of the particle.
+        stable : bool, optional
+            If true, particle is not decayed by the generator.
+
+        Notes
+        -----
+        Some generators (e.g. the QGSJet models) do not provide
+        a full particle history and do not allow one to set
+        certain resonances as stable.
         """
+        pid = process_particle(particle)
+        p = Particle.from_pdgid(pid)
+        if p.ctau is None or p.ctau == np.inf:
+            raise ValueError(f"{pdg2name(pid)} cannot decay")
+
+        if abs(pid) == 311:
+            self.set_stable(130, stable)
+            self.set_stable(310, stable)
+            return
+
+        if stable:
+            self._stable.add(pid)
+        elif pid in self._stable:
+            self._stable.remove(pid)
+
+        self._set_stable(pid, stable)
+
+    def maydecay(self, particle):
+        """Decay particle in event record.
+
+        Equivalent to `self.set_stable(particle, stable=False)`
+
+        Parameters
+        ----------
+        particle : str or int
+            Name or PDG ID of the particle.
+        """
+        self.set_stable(particle, False)
+
+    def cross_section(self, kin, **kwargs):
+        """Cross sections according to current setup.
+
+        Parameters
+        ----------
+        kin : EventKinematics
+            Calculate cross-section for EventKinematics.
+        kwargs :
+            Further arguments passed to the model implementation.
+        """
+        self._validate_kinematics(kin)
+        if isinstance(kin.p2, CompositeTarget):
+            cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0)
+            components = kin.p2.components
+            fractions = kin.p2.fractions
+            # as a workaround for DPMJet, we use heaviest elements first
+            pairs = sorted(
+                zip(components, fractions), key=lambda p: p[0].A, reverse=True
+            )
+            for component, fraction in pairs:
+                kin.p2 = component
+                cs = self._cross_section(kin, **kwargs)
+                for key, val in dataclasses.asdict(cs).items():
+                    v = getattr(cross_section, key)
+                    setattr(cross_section, key, v + fraction * val)
+            return cross_section
+        else:
+            return self._cross_section(kin, **kwargs)
+
+    @abstractmethod
+    def _once(self, *args):
+        # This has to be implemented in the derived concrete class.
         pass
 
     @abstractmethod
     def _set_kinematics(self, kin):
         # Set new combination of energy, momentum, projectile
-        # and target combination for next event.
+        # and target combination in the underlying model.
 
         # Either, this method defines some derived variables
-        # that _generate_event() can use to generate new events
+        # that _generate() can use to generate new events
         # without additional arguments, or, it can also set
         # internal variables of the model. In both cases the
-        # important thing is that _generate_event remains argument-free.
-
-        # This call must not update self.kinematics, only the
-        # generator-specific variables.
+        # important thing is that _generate() remains argument-free.
         pass
 
-    def _composite_plan(self, nevents):
-        kin = self.kinematics
-        if isinstance(kin.p2, CompositeTarget):
-            nevents = self._composite_target_rng.multinomial(nevents, kin.p2.fractions)
-            ek = copy.deepcopy(kin)
-            for c, k in zip(kin.p2.components, nevents):
-                ek.p2 = c
-                with self._temporary_kinematics(ek):
-                    yield k
-        else:
-            yield nevents
-
-    @property
-    def random_state(self):
-        return RMMARDState()._record_state(self)
-
-    @random_state.setter
-    def random_state(self, rng_state):
-        rng_state._restore_state(self)
-
-    @property
-    def kinematics(self):
-        return self._kinematics
-
-    @kinematics.setter
-    def kinematics(self, kin):
-        if abs(kin.p1) not in self._projectiles:
-            raise ValueError(
-                f"projectile {pdg2name(kin.p1)}[{int(kin.p1)}] is not allowed, "
-                f"see {self.pyname}.projectiles"
-            )
-        if abs(kin.p2) not in self._targets:
-            raise ValueError(
-                f"target {pdg2name(kin.p2)}[{int(kin.p2)}] is not among allowed, "
-                f"see {self.pyname}.targets"
-            )
-        if kin.ecm < self._ecm_min:
-            raise ValueError(
-                f"center-of-mass energy {kin.ecm/GeV} GeV < "
-                f"minimum energy {self._ecm_min/GeV} GeV"
-            )
-        self._kinematics = kin
-        self._set_kinematics(kin)
-
-    def set_stable(self, pdgid, stable=True):
-        """Prevent decay of unstable particles
-
-        Args:
-            pdgid (int)        : PDG ID of the particle
-            stable (bool)      : If `False`, particle is allowed to decay
-        """
-        p = Particle.from_pdgid(pdgid)
-        if p.ctau is None or p.ctau == np.inf:
-            raise ValueError(f"{pdg2name(pdgid)} cannot decay")
-        if abs(pdgid) == 311:
-            self._set_stable(130, stable)
-            self._set_stable(310, stable)
-        else:
-            self._set_stable(pdgid, stable)
-
-    def set_unstable(self, pdgid):
-        """Convenience funtion for `self.set_stable(..., stable=False)`
-
-        Args:
-            pdgid(int)         : PDG ID of the particle
-        """
-        self.set_stable(pdgid, False)
-
-    def cross_section(self, kin=None):
-        """Cross sections according to current setup.
-
-        Parameters
-        ----------
-        kin : EventKinematics, optional
-            If provided, calculate cross-section for EventKinematics.
-            Otherwise return values for current setup.
-        """
-        with self._temporary_kinematics(kin):
-            kin2 = self.kinematics
-            if isinstance(kin2.p2, CompositeTarget):
-                cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0)
-                kin3 = copy.copy(kin2)
-                for component, fraction in zip(kin2.p2.components, kin2.p2.fractions):
-                    kin3.p2 = component
-                    # this calls cross_section recursively, which is fine
-                    cs = self.cross_section(kin3)
-                    for i, val in enumerate(dataclasses.astuple(cs)):
-                        cross_section[i] += fraction * val
-                return cross_section
-            else:
-                return self._cross_section(kin)
+    @abstractmethod
+    def _set_stable(self, pid, stable):
+        # This has to be implemented in the derived concrete class.
+        pass
 
     @abstractmethod
     def _cross_section(self, kin):
+        # This has to be implemented in the derived concrete class.
         pass
 
     @abstractmethod
-    def _set_stable(self, pidid, stable):
+    def _generate(self):
+        # This has to be implemented in the derived concrete class.
+        # Returns True if event was successfully generated and False otherwise.
         pass
-
-    def _abort_if_already_initialized(self):
-        # The first initialization should not be run more than
-        # once.
-        message = """
-        Don't run initialization multiple times for the same generator. This
-        is a limitation of fortran libraries since all symbols are by default
-        in global scope. Multiple instances can be created in mupliple threads
-        or "python executables" using Pool in multiprocessing etc."""
-
-        assert self._library_name not in self._is_initialized, message
-        self._is_initialized.append(self._library_name)
-
-    def _set_final_state_particles(self):
-        """Defines particles as stable for the default 'tau_stable'
-        value in the config."""
-
-        for pdgid in long_lived:
-            self._set_stable(pdgid, True)
-
-        self._set_final_state_particles_called = True
-
-    @contextmanager
-    def _temporary_kinematics(self, kin):
-        if kin is None:
-            yield
-        else:
-            prev = copy.copy(self.kinematics)
-            self.kinematics = kin
-            yield
-            self.kinematics = prev

@@ -1,6 +1,7 @@
-from impy.common import MCRun, MCEvent, CrossSectionData
+from impy.common import MCEvent, CrossSectionData
+from impy.remote_control import MCRunRemote as MCRun
 from impy.kinematics import EventFrame
-from impy.util import info, _cached_data_dir, fortran_chars, Nuclei
+from impy.util import info, _cached_data_dir, fortran_chars, Nuclei, is_real_nucleus
 from impy.constants import standard_projectiles, GeV
 
 
@@ -59,12 +60,8 @@ class DpmjetIIIRun(MCRun):
         + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
     _ecm_min = 1 * GeV
-    _max_A1 = 0
-    _max_A2 = 0
 
-    def __init__(self, evt_kin, *, seed=None):
-        super().__init__(seed)
-
+    def _once(self):
         data_dir = _cached_data_dir(self._data_url)
         # Set the dpmjpar.dat file
         if hasattr(self._lib, "pomdls") and hasattr(self._lib.pomdls, "parfn"):
@@ -95,37 +92,25 @@ class DpmjetIIIRun(MCRun):
             assert False, "Unknown DPMJET version, IO common block not detected"
         self._lib.pydat1.mstu[10] = lun
 
-        self.kinematics = evt_kin
-
-        # Relax momentum and energy conservation checks at very high energies
-        if evt_kin.ecm > 5e4:
-            # Relative allowed deviation
-            self._lib.pomdls.parmdl[74] = 0.05
-            # Absolute allowed deviation
-            self._lib.pomdls.parmdl[75] = 0.05
-
         # Prevent DPMJET from overwriting decay settings
         # self._lib.dtfrpa.ovwtdc = False
         # Set PYTHIA decay flags to follow all changes to MDCY
         self._lib.pydat1.mstj[21 - 1] = 1
         self._lib.pydat1.mstj[22 - 1] = 2
-        self._set_final_state_particles()
 
-    def _cross_section(self, kin=None, precision=None):
-        kin = self.kinematics if kin is None else kin
-        # we override to set precision
-        if (kin.p1.A and kin.p1.A > 1) or kin.p2.A > 1:
-            assert kin.p2.A >= 1, "DPMJET requires nucleons or nuclei on side 2."
+    def _cross_section(self, kin, precision=None):
+        self._set_kinematics(kin)
+        assert kin.p2.A >= 1  # should be guaranteed by MCRun._validate_kinematics
+
+        if is_real_nucleus(kin.p2) or is_real_nucleus(kin.p1):
             if precision is not None:
                 saved = self._lib.dtglgp.jstatb
                 # Set number of trials for Glauber model integration
                 self._lib.dtglgp.jstatb = precision
             self._lib.dt_xsglau(
-                kin.p1.A or 1,
-                kin.p2.A or 1,
-                self._lib.idt_icihad(2212)
-                if (kin.p1.A and kin.p1.A > 1)
-                else self._lib.idt_icihad(kin.p1),
+                self._a1,
+                self._a2,
+                self._projectile_id,
                 0,
                 0,
                 kin.ecm,
@@ -136,42 +121,57 @@ class DpmjetIIIRun(MCRun):
             if precision is not None:
                 self._lib.dtglgp.jstatb = saved
             return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
-        else:
-            stot, sela = self._lib.dt_xshn(
-                self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
-            )
-            return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
+
+        assert kin.p1.is_hadron
+        assert kin.p2.is_hadron
+        target_id = self._lib.idt_icihad(kin.p2)
+        stot, sela = self._lib.dt_xshn(self._projectile_id, target_id, 0.0, kin.ecm)
+        return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
 
         # TODO set more cross-sections
 
     def _set_kinematics(self, kin):
+        self._a1 = kin.p1.A or 1
+        self._z1 = kin.p1.Z or 0
+        self._a2 = kin.p2.A or 1
+        self._z2 = kin.p2.Z or 0
+
         # Save maximal mass that has been initialized
         # (DPMJET sometimes crashes if higher mass requested than initialized)
-        if not self._max_A1:
-            # only do this once
+
+        if not hasattr(self, "_a1_max"):  # only do this once
             if kin.frame == EventFrame.FIXED_TARGET:
                 self._lib.dtflg1.iframe = 1
                 self._frame = EventFrame.FIXED_TARGET
             else:
                 self._lib.dtflg1.iframe = 2
                 self._frame = EventFrame.CENTER_OF_MASS
-            self._max_A1 = kin.p1.A or 1
-            self._max_A2 = kin.p2.A or 1
+            self._a1_max = self._a1
+            self._a2_max = self._a2
+
             self._lib.dt_init(
                 -1,
                 max(kin.plab, 100.0),
-                kin.p1.A or 1,
-                kin.p1.Z or 0,
-                kin.p2.A or 1,
-                kin.p2.Z or 0,
+                self._a1_max,
+                self._z1,
+                self._a2_max,
+                self._z2,
                 kin.p1,
                 iglau=0,
             )
 
-        if (kin.p1.A or 1) > self._max_A1 or (kin.p2.A or 1) > self._max_A2:
+        # Relax momentum and energy conservation checks at very high energies.
+        # Must be called after dt_init, which sets pomdls.parmdl.
+        if kin.ecm > 5e4:
+            # Relative allowed deviation
+            self._lib.pomdls.parmdl[74] = 0.05
+            # Absolute allowed deviation
+            self._lib.pomdls.parmdl[75] = 0.05
+
+        if self._a1 > self._a1_max or self._a2 > self._a2_max:
             raise ValueError(
                 "Maximal initialization mass exceeded "
-                f"{kin.p1.A}/{self._max_A1}, {kin.p2.A}/{self._max_A2}"
+                f"{self._a1}/{self._a1_max}, {self._a2}/{self._a2_max}"
             )
 
         # AF: No idea yet, but apparently this functionality was around?!
@@ -179,20 +179,24 @@ class DpmjetIIIRun(MCRun):
         #     self._lib.dt_setbm(k.A1, k.Z1, k.A2, k.Z2, k.beam[0], k.beam[1])
         #     print 'OK'
 
+        self._kin = kin
+        # projectile id for _generate and _cross_section
+        self._projectile_id = self._lib.idt_icihad(
+            2212 if is_real_nucleus(kin.p1) else kin.p1
+        )
+
     def _set_stable(self, pdgid, stable):
         kc = self._lib.pycomp(pdgid)
         self._lib.pydat3.mdcy[kc - 1, 0] = not stable
 
     def _generate(self):
-        k = self.kinematics
+        k = self._kin
         reject = self._lib.dt_kkinc(
-            k.p1.A or 1,
-            k.p1.Z or 0,
-            k.p2.A or 1,
-            k.p2.Z or 0,
-            self._lib.idt_icihad(2212)
-            if (k.p1.A and k.p1.A > 1)
-            else self._lib.idt_icihad(k.p1),
+            self._a1,
+            self._z1,
+            self._a2,
+            self._z2,
+            self._projectile_id,
             k.elab,
             kkmat=-1,
         )

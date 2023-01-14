@@ -14,6 +14,19 @@ from impy.constants import MeV, nucleon_mass
 from enum import Enum
 import dataclasses
 
+
+class AliveInstanceWarning(RuntimeWarning):
+    pass
+
+
+class FixedStableListWarning(RuntimeWarning):
+    pass
+
+
+class OutputWarning(RuntimeWarning):
+    pass
+
+
 EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
 
 

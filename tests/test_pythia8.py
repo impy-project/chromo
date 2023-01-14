@@ -3,7 +3,7 @@ from impy.models import Pythia8
 from impy.constants import GeV
 import numpy as np
 from numpy.testing import assert_allclose
-from .util import reference_charge, run_in_separate_process
+from .util import reference_charge
 import pytest
 from functools import lru_cache
 import sys
@@ -15,23 +15,23 @@ pytestmark = pytest.mark.skipif(
 
 
 def run_collision(energy, p1, p2):
-    evt_kin = CenterOfMass(energy, p1, p2)
-    m = Pythia8(evt_kin, seed=4)
-    for event in m(1):
+    kin = CenterOfMass(energy, p1, p2)
+    m = Pythia8(seed=4)
+    for event in m(kin, 1):
         pass
     return event
 
 
 def run_cross_section(energy, p1, p2):
-    evt_kin = CenterOfMass(energy, p1, p2)
-    m = Pythia8(evt_kin, seed=1)
-    return m.cross_section()
+    m = Pythia8(seed=1)
+    kin = CenterOfMass(energy, p1, p2)
+    return m.cross_section(kin)
 
 
 @pytest.fixture
 @lru_cache(maxsize=1)  # Pythia8 initialization is very slow
 def event():
-    return run_in_separate_process(run_collision, 10 * GeV, "p", "p")
+    return run_collision(10 * GeV, "p", "p")
 
 
 def test_impact_parameter(event):
@@ -44,7 +44,7 @@ def test_n_wounded(event):
 
 
 def test_cross_section():
-    c = run_in_separate_process(run_cross_section, 10 * GeV, "p", "p")
+    c = run_cross_section(10 * GeV, "p", "p")
     assert_allclose(c.total, 38.4, atol=0.1)
     assert_allclose(c.inelastic, 31.3, atol=0.1)
     assert_allclose(c.elastic, 7.1, atol=0.1)
@@ -100,9 +100,7 @@ def test_nuclear_collision():
     # The test takes ages because the initialization is extremely long,
     # and Pythia seldom raises the success flag unless Ecm > TeV are used.
 
-    event = run_in_separate_process(
-        run_collision, 2000 * GeV, "p", (4, 2), timeout=1000
-    )
+    event = run_collision(2000 * GeV, "p", (4, 2))
     assert event.pid[0] == 2212
     assert event.pid[1] == 1000020040
     assert_allclose(event.en[0], 1e3)
@@ -115,7 +113,7 @@ def test_nuclear_collision():
 
 
 def test_photo_hadron_collision():
-    event = run_in_separate_process(run_collision, 100 * GeV, "gamma", "p")
+    event = run_collision(100 * GeV, "gamma", "p")
     event.pid[0] == 22
     event.pid[1] == 2212
     apid = np.abs(event.final_state_charged().pid)
@@ -123,14 +121,14 @@ def test_photo_hadron_collision():
 
 
 def run_pythia_change_energy():
-    evt_kin = CenterOfMass(10 * GeV, "p", "p")
-    m = Pythia8(evt_kin, seed=1)
-    for event in m(1):
+    m = Pythia8(seed=1)
+    kin = CenterOfMass(10 * GeV, "p", "p")
+    for event in m(kin, 1):
         assert_allclose(event.en[:2], 5 * GeV)
-    m.kinematics = CenterOfMass(100 * GeV, "p", "p")
-    for event in m(1):
+    kin = CenterOfMass(100 * GeV, "p", "p")
+    for event in m(kin, 1):
         assert_allclose(event.en[:2], 50 * GeV)
 
 
 def test_changing_beams_proton():
-    run_in_separate_process(run_pythia_change_energy)
+    run_pythia_change_energy()

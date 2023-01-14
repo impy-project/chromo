@@ -54,9 +54,8 @@ def test_Root(write_vertices, overflow, target):
     class Model:
         label: str = "foo"
         seed = 1
-        kinematics = kin
 
-        def cross_section(self):
+        def cross_section(self, kin):
             return CrossSectionData(total=6.6)
 
     events = [
@@ -69,7 +68,7 @@ def test_Root(write_vertices, overflow, target):
     # name must contain all parameters to not cause collisions when test is run parallel
     p = Path(f"test_writer_{write_vertices}_{overflow}_{target}.root")
 
-    writer = Root(p, model, write_vertices=write_vertices, buffer_size=5)
+    writer = Root(p, model, kin, write_vertices=write_vertices, buffer_size=5)
     if overflow:
         with pytest.raises(RuntimeError):
             with writer:

@@ -43,15 +43,12 @@ class Pythia8(MCRun):
         name2pdg(x)
         for x in ("He4", "Li6", "C12", "O16", "Cu63", "Xe129", "Au197", "Pb208")
     }
-    _restartable = True
     _data_url = (
         "https://github.com/impy-project/impy"
         + "/releases/download/zipped_data_v1.0/Pythia8_v002.zip"
     )
 
-    def __init__(self, evt_kin, *, seed=None):
-        super().__init__(seed)
-
+    def _once(self):
         self._lib.hepevt = self._lib.Hepevt()
 
         datdir = _cached_data_dir(self._data_url) + "xmldoc"
@@ -64,11 +61,12 @@ class Pythia8(MCRun):
             del environ["PYTHIA8DATA"]
         self._lib.pythia = self._lib.Pythia(datdir, True)
 
-        # must come last
-        self.kinematics = evt_kin
-        self._set_final_state_particles()
-
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin):
+        if (kin.p2.A or 1) > 1:
+            # Trying to access info.sigmaTot crashes Pythia-8
+            # if target is a nucleus
+            return CrossSectionData()
+        self._set_kinematics(kin)
         st = self._lib.pythia.info.sigmaTot
         return CrossSectionData(
             st.sigmaTot,

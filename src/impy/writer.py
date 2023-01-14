@@ -37,7 +37,9 @@ def _raise_import_error(name, task):
 # so we don't write them. Long-lived particles are final state, and there is no
 # interesting information in the vertices of very short-lived particles.
 class Root:
-    def __init__(self, file, model, write_vertices=False, buffer_size=100000):
+    def __init__(
+        self, file, model, kinematics, write_vertices=False, buffer_size=100000
+    ):
         try:
             import uproot
         except ModuleNotFoundError:
@@ -46,21 +48,24 @@ class Root:
         assert GeV == 1
         assert millibarn == 1
 
-        kin = model.kinematics
         header = {
             "model": model.label,
             "seed": model.seed,
-            "projectile_id": int(kin.p1),
-            "projectile_momentum": kin.beams[0][2],
+            "projectile_id": int(kinematics.p1),
+            "projectile_momentum": kinematics.beams[0][2],
             "target_id": (
-                repr(kin.p2) if isinstance(kin.p2, CompositeTarget) else int(kin.p2)
+                repr(kinematics.p2)
+                if isinstance(kinematics.p2, CompositeTarget)
+                else int(kinematics.p2)
             ),
-            "target_momentum": kin.beams[1][2],
+            "target_momentum": kinematics.beams[1][2],
         }
         header.update(
             {
                 f"sigma_{k}": v
-                for (k, v) in dataclasses.asdict(model.cross_section()).items()
+                for (k, v) in dataclasses.asdict(
+                    model.cross_section(kinematics)
+                ).items()
                 if not np.isnan(v)
             }
         )
@@ -181,7 +186,7 @@ class Root:
 
 
 class Svg:
-    def __init__(self, file, model):
+    def __init__(self, file, model, kinematics):
         self._idx = 0
         self._template = (file.parent, file.stem, file.suffix)
 
@@ -207,7 +212,7 @@ class Svg:
 
 
 class Hepmc:
-    def __init__(self, file, model):
+    def __init__(self, file, model, kinematics):
         try:
             from pyhepmc._core import pyiostream
             from pyhepmc.io import _WrappedWriter, WriterAscii

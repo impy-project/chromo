@@ -7,7 +7,7 @@
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
 from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.util import info, fortran_array_insert, fortran_array_remove, Nuclei
+from impy.util import info, fortran_array_insert, fortran_array_remove, Nuclei, pdg2name
 from impy.kinematics import EventFrame
 from impy.constants import standard_projectiles, GeV
 import warnings
@@ -39,18 +39,12 @@ class UrQMD34(MCRun):
     _projectiles = standard_projectiles | Nuclei()
     _ecm_min = 2 * GeV
 
-    def __init__(
-        self,
-        evt_kin,
-        *,
-        seed=None,
-        caltim=200,
-        outtim=200,
-        ct_params=None,
-        ct_options=None,
-    ):
-        import impy
+    def _once(self, caltim=200, outtim=200, ct_params=None, ct_options=None):
+        from impy import debug_level
 
+        # The reason to have this here is to reduce import time for the module.
+        # It is probably premature optimisation, but the idea is to only generate
+        # this table when someone actually runs UrQMD.
         self._pdg2modid = {
             22: (100, 0),
             111: (101, 0),
@@ -122,11 +116,9 @@ class UrQMD34(MCRun):
             -3334: (-55, 0),
         }
 
-        super().__init__(seed)
-
         # logging
         lun = 6  # stdout
-        self._lib.urqini(lun, impy.debug_level)
+        self._lib.urqini(lun, debug_level)
 
         self._lib.inputs.nevents = 1
         self._lib.rsys.bmin = 0
@@ -151,11 +143,9 @@ class UrQMD34(MCRun):
         self._lib.pots.dtimestep = outtim
         self._lib.sys.nsteps = int(0.01 + caltim / self._lib.pots.dtimestep)
         self._lib.inputs.outsteps = int(0.01 + caltim / self._lib.pots.dtimestep)
-        self.kinematics = evt_kin
 
-        self._set_final_state_particles()
-
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin):
+        self._set_kinematics(kin)
         tot = self._lib.ptsigtot()
         return CrossSectionData(total=tot)
 
@@ -197,10 +187,20 @@ class UrQMD34(MCRun):
             self._lib.options.ctoption[24 - 1] = 0
 
     def _set_stable(self, pdgid, stable):
+        # URQMD does not generate muons
+        if abs(pdgid) == 13:
+            return
+
+        # URQMD uses K0, K0~ states instead of KS0, KL0
+        if abs(pdgid) in (130, 310):  # KS0 or KL0
+            pdgid = 311
+
         try:
             uid = self._pdg2modid[pdgid][0]
         except KeyError:
-            warnings.warn(f"{pdgid} unknown to UrQMD", RuntimeWarning)
+            warnings.warn(
+                f"{pdg2name(pdgid)} [{pdgid}] unknown to UrQMD", RuntimeWarning
+            )
             return
 
         # FIXME changing stabvec has no effect

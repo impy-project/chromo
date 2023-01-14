@@ -211,6 +211,16 @@ class EventKinematics:
 
         return all(eq(a, b) for (a, b) in zip(at, bt))
 
+    def __repr__(self):
+        p = f"{self.p1:d}, {self.p2:d}"
+        if self.frame == EventFrame.CENTER_OF_MASS:
+            s = f"ecm={self.ecm}"
+            return f"CenterOfMass({self.ecm}, {p})"
+        elif self.frame == EventFrame.FIXED_TARGET:
+            return f"FixedTarget({self.elab}, {p})"
+        s = f"beam=({self.beams[0][2]}, {self.beams[1][2]}), frame={self.frame}"
+        return f"EventKinematics({p}, {s})"
+
 
 class CenterOfMass(EventKinematics):
     def __init__(self, ecm, particle1, particle2):

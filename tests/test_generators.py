@@ -9,7 +9,6 @@ from impy.kinematics import (
 )
 import impy.models as im
 import pytest
-from .util import run_in_separate_process
 from impy.util import get_all_models, pdg2name
 import impy
 import boost_histogram as bh
@@ -21,6 +20,7 @@ from pathlib import Path
 from particle import literals as lp
 import numpy as np
 from scipy.stats import chi2
+import sys
 
 matplotlib.use("svg")  # need non-interactive backend for CI Windows
 
@@ -32,11 +32,6 @@ FIG_PATH.mkdir(parents=True, exist_ok=True)
 
 
 def run_model(Model, kin, number=1):
-    try:
-        gen = Model(kin, seed=1)
-    except ValueError:
-        return None
-
     h = bh.Histogram(
         bh.axis.Regular(21, -10, 10),
         bh.axis.IntCategory(
@@ -54,17 +49,28 @@ def run_model(Model, kin, number=1):
         ),
     )
 
-    values = []
-    for _ in range(number):
-        for event in gen(100):
+    def fill(gen, kin, h):
+        for event in gen(kin, 100):
             ev = event.final_state()
             h.fill(ev.eta, np.abs(ev.pid))
+
+    try:
         if number == 1:
+            gen = Model(seed=1)
+            fill(gen, kin, h)
             return h
         else:
-            values.append(h.values().copy())
-            h.reset()
-    return values
+            values = []
+            gen = Model(seed=1)
+            for i in range(number):
+                sys.stderr.write(f"iteration {i}")
+                sys.stderr.flush()
+                fill(gen, kin, h)
+                values.append(h.values().copy())
+                h.reset()
+            return values
+    except ValueError:
+        return None
 
 
 def compute_p_value(got, expected, cov):
@@ -78,7 +84,13 @@ def compute_p_value(got, expected, cov):
 
 
 def draw_comparison(fn, p_value, axes, values, val_ref, cov_ref):
-    mname, projectile, target, frame = str(fn).split("_")
+    import re
+
+    m = re.search(r"(.+)_(.+)_(.+)_(.+)", str(fn))
+    mname = m.group(0)
+    projectile = m.group(1)
+    target = m.group(2)
+    frame = m.group(3)
     fig = plt.figure(figsize=(10, 8))
     plt.suptitle(f"{mname} {projectile} {target} {frame} pvalue={p_value:.3g}")
     xe = axes[0].edges
@@ -97,7 +109,7 @@ def draw_comparison(fn, p_value, axes, values, val_ref, cov_ref):
         v = val[:, i]
         vref = np.reshape(val_ref, shape)[:, i]
         cref = np.reshape(cov_ref, shape * 2)[:, i, :, i]
-        eref = np.diag(cref) ** 0.5
+        eref = np.diag(np.maximum(cref, 0)) ** 0.5
         vsum = np.sum(v)
         vrefsum = np.sum(vref)
         erefsum = np.sum(cref) ** 0.5
@@ -163,20 +175,23 @@ def test_generator(projectile, target, frame, Model):
     else:
         assert False  # we should never arrive here
 
-    h = run_in_separate_process(run_model, Model, kin)
-    if h is None:
-        assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
+    h = run_model(Model, kin)
+    if abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets:
+        assert h is None
         return
+
+    assert h is not None
 
     fn = Path(f"{Model.pyname}_{projectile}_{target}_{frame}")
     path_ref = REFERENCE_PATH / fn.with_suffix(".pkl.gz")
-    p_value = None
     if not path_ref.exists():
         # New reference is generated. Check plots to see whether reference makes
         # any sense before committing it.
         values = run_in_separate_process(run_model, Model, kin, 50, timeout=10000)
         val_ref = np.reshape(np.mean(values, axis=0), -1)
         cov_ref = np.cov(np.transpose([np.reshape(x, -1) for x in values]))
+        assert np.sum(np.isnan(val_ref)) == 0
+        assert np.sum(np.isnan(cov_ref)) == 0
         with gzip.open(path_ref, "wb") as f:
             pickle.dump((val_ref, cov_ref), f)
         values = np.reshape(h.values(), -1)

@@ -1,8 +1,7 @@
-import numpy as np
-from impy.common import MCRun, MCEvent, RMMARDState, CrossSectionData
-from impy.util import info, Nuclei
+from impy.common import MCRun, MCEvent, CrossSectionData
+from impy.util import Nuclei
 from impy.kinematics import EventFrame
-import dataclasses
+from impy.remote_control import MCRunRemote
 from particle import literals as lp
 import warnings
 
@@ -27,27 +26,7 @@ class SibyllEvent(MCEvent):
         return self._lib.cnucms.ni
 
 
-@dataclasses.dataclass
-class RMMARDSib(RMMARDState):
-    _gasdev_iset: np.ndarray = None
-
-    def _record_state(self, generator):
-        super()._record_state(generator)
-        self._gasdev_iset = generator._lib.rndmgas.iset
-        return self
-
-    def _restore_state(self, generator):
-        super()._restore_state(generator)
-        generator._lib.rndmgas.iset = self._gasdev_iset
-        return self
-
-    def __eq__(self, other: object) -> bool:
-        return super().__eq__(other) and np.array_equal(
-            self._gasdev_iset, other._gasdev_iset
-        )
-
-
-class SIBYLLRun(MCRun):
+class SIBYLLRun:
     """Implements all abstract attributes of MCRun for the
     SIBYLL 2.1, 2.3 and 2.3c event generators."""
 
@@ -55,42 +34,24 @@ class SIBYLLRun(MCRun):
     _event_class = SibyllEvent
     _frame = EventFrame.CENTER_OF_MASS
     _targets = Nuclei(a_max=20)
-    _cross_section_projectiles = {
-        p.pdgid: sib_id
-        for p, sib_id in (
-            (lp.p, 1),
-            (lp.n, 1),
-            (lp.pi_plus, 2),
-            (lp.K_plus, 3),
-            (lp.K_S_0, 3),
-            (lp.K_L_0, 3),
-        )
-    }
 
-    def __init__(self, evt_kin, *, seed=None):
-        super().__init__(seed)
+    def _once(self):
+        from impy import debug_level
 
         # setup logging
-        import impy
 
         lun = 6  # stdout
         self._lib.s_debug.lun = lun
-        self._lib.s_debug.ndebug = impy.debug_level
+        self._lib.s_debug.ndebug = debug_level
 
         self._lib.sibini(self._seed)
         # Set the internal state of GASDEV function (rng) to 0
         self._lib.rndmgas.iset = 0
         self._lib.pdg_ini()
 
-        # This calls _set_event_kinematics which uses self._lib.isib_pdg2pid
-        # which works only after an initialization call to self._lib.pdg_ini()
-        self.kinematics = evt_kin
-
-        self._set_final_state_particles()
-
-    def _cross_section(self, kin=None):
-        kin = self.kinematics if kin is None else kin
-        if kin.p2.A > 1:
+    def _cross_section(self, kin):
+        self._set_kinematics(kin)
+        if self._target_a > 1:
             # TODO figure out what this returns exactly:
             # self._lib.sib_sigma_hnuc
             warnings.warn(
@@ -99,9 +60,9 @@ class SIBYLLRun(MCRun):
             )
             return CrossSectionData()
 
-        sib_id = self._cross_section_projectiles[abs(kin.p1)]
-
-        tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sib_id, kin.ecm)
+        tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(
+            self._projectile_class, self._ecm
+        )
         return CrossSectionData(
             total=tot,
             elastic=el,
@@ -115,24 +76,28 @@ class SIBYLLRun(MCRun):
     def sigma_inel_air(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        kin = self.kinematics
-        sib_id = self._cross_section_projectiles[abs(kin.p1)]
-        sigma = self._lib.sib_sigma_hair(sib_id, self._ecm)
+        sigma = self._lib.sib_sigma_hair(self._projectile_class, self._ecm)
         if isinstance(sigma, tuple):
             return sigma[0]
         return sigma
 
     def _set_kinematics(self, kin):
-        self._production_id = self._lib.isib_pdg2pid(kin.p1)
-        assert self._production_id != 0
+        self._projectile_id = self._lib.isib_pdg2pid(kin.p1)
+        self._projectile_class = {
+            lp.p.pdgid: 1,
+            lp.n.pdgid: 1,
+            lp.pi_plus.pdgid: 2,
+            lp.K_plus.pdgid: 3,
+            lp.K_S_0.pdgid: 3,
+            lp.K_L_0.pdgid: 3,
+        }[abs(kin.p1)]
+        self._target_a = kin.p2.A
+        assert self._projectile_id != 0
+        assert self._target_a >= 1
+        self._ecm = kin.ecm
 
     def _set_stable(self, pdgid, stable):
         sid = abs(self._lib.isib_pdg2pid(pdgid))
-        if abs(pdgid) == 311:
-            info(1, "Ignores K0. Using K0L/S instead")
-            self.set_stable(130, stable)
-            self.set_stable(310, stable)
-            return
         idb = self._lib.s_csydec.idb
         if sid == 0 or sid > idb.size - 1:
             return
@@ -142,61 +107,53 @@ class SIBYLLRun(MCRun):
             idb[sid - 1] = abs(idb[sid - 1])
 
     def _generate(self):
-        kin = self.kinematics
-        self._lib.sibyll(self._production_id, kin.p2.A, kin.ecm)
+        self._lib.sibyll(self._projectile_id, self._target_a, self._ecm)
         self._lib.decsib()
         self._lib.sibhep()
         return True
 
-    @property
-    def random_state(self):
-        return RMMARDSib()._record_state(self)
 
-    @random_state.setter
-    def random_state(self, rng_state):
-        rng_state._restore_state(self)
-
-
-class Sibyll21(SIBYLLRun):
+class Sibyll21(SIBYLLRun, MCRun):
     _version = "2.1"
     _library_name = "_sib21"
 
 
-class Sibyll23(SIBYLLRun):
+# For some reason, Sibyll23 requires MCRunRemote, but the others don't
+class Sibyll23(SIBYLLRun, MCRunRemote):
     _version = "2.3"
     _library_name = "_sib23"
 
 
-class Sibyll23c(SIBYLLRun):
+class Sibyll23c(SIBYLLRun, MCRun):
     _version = "2.3c"
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c00(SIBYLLRun):
+class Sibyll23c00(SIBYLLRun, MCRun):
     _version = "2.3c00"
     _library_name = "_sib23c00"
 
 
 # identical to 2.3c
-class Sibyll23c01(SIBYLLRun):
+class Sibyll23c01(SIBYLLRun, MCRun):
     _version = "2.3c01"
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c02(SIBYLLRun):
+class Sibyll23c02(SIBYLLRun, MCRun):
     _version = "2.3c02"
     _library_name = "_sib23c02"
 
 
 # The c03 version was also in CORSIKA until 2020
-class Sibyll23c03(SIBYLLRun):
+class Sibyll23c03(SIBYLLRun, MCRun):
     _version = "2.3c03"
     _library_name = "_sib23c03"
 
 
 # The latest patch c04 was renamed to d, to generate less confusion
-class Sibyll23d(SIBYLLRun):
+class Sibyll23d(SIBYLLRun, MCRun):
     _version = "2.3d"
     _library_name = "_sib23d"
