@@ -26,7 +26,7 @@ matplotlib.use("svg")  # need non-interactive backend for CI Windows
 
 THIS_TEST = Path(__file__).stem
 REFERENCE_PATH = Path(__file__).parent / "data" / THIS_TEST
-REFERENCE_PATH.mkdir(exist_ok=True)
+REFERENCE_PATH.mkdir(parents=True, exist_ok=True)
 FIG_PATH = Path("fig")
 FIG_PATH.mkdir(parents=True, exist_ok=True)
 
@@ -38,7 +38,7 @@ def run_model(Model, kin, number=1):
         return None
 
     h = bh.Histogram(
-        bh.axis.Regular(21, -10, 10),
+        bh.axis.Regular(11, -10, 10),
         bh.axis.IntCategory(
             [
                 p.pdgid
@@ -69,9 +69,15 @@ def run_model(Model, kin, number=1):
 
 def compute_p_value(got, expected, cov):
     delta = got - expected
-    var = np.diag(cov) + 0.1  # prevent singularity
     # we ignore correlations, since including them
     # leads to implausible results
+    var = np.diag(cov) + 0.1  # prevent singularity
+
+    # histogram sometimes contains extreme spikes
+    # not reflected in cov, this murky formula
+    # protects against these false negatives
+    for i, v in enumerate(got):
+        var[i] = 0.5 * (var[i] + v)
     v = np.sum(delta**2 / var)
     ndof = np.sum(delta != 0)
     return 1 - chi2(ndof).cdf(v)
@@ -180,18 +186,12 @@ def test_generator(projectile, target, frame, Model):
         with gzip.open(path_ref, "wb") as f:
             pickle.dump((val_ref, cov_ref), f)
         values = np.reshape(h.values(), -1)
-        draw_comparison(fn, -1, h.axes, values, val_ref, cov_ref)
+        p_value = compute_p_value(values, val_ref, cov_ref)
+        draw_comparison(fn, p_value, h.axes, values, val_ref, cov_ref)
         pytest.xfail(reason="reference does not exist; generated new one, check it")
 
     with gzip.open(path_ref) as f:
         val_ref, cov_ref = pickle.load(f)
-
-    # histogram sometimes contains extreme spikes
-    # not reflected in cov, this murky formula
-    # protects against these false negatives
-    values = np.reshape(h.values(), -1)
-    for i, v in enumerate(values):
-        cov_ref[i, i] = 0.5 * (cov_ref[i, i] + v)
 
     p_value = compute_p_value(values, val_ref, cov_ref)
 
