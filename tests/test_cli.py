@@ -283,8 +283,9 @@ def test_format_2(format, model):
         file=f"impy_{pyname}_8_2212_2212_100.{ext}",
     )
 
+
 #
-#def test_format_3():
+# def test_format_3():
 #    if platform.system() == "Windows":
 #        pytest.xfail(
 #            "Test aborts on Windows with this message: "
