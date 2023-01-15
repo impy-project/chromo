@@ -272,6 +272,13 @@ C     It contains Fortran 77 wrappers to fortran functions.
       call setupfunc(id_pdg_list,id_list)
       end
 
+      subroutine f2pyinitrndmgas(setupfunc)
+      external setupfunc
+      integer iset
+      common /rndmgas/ iset
+      call setupfunc(iset)
+      end
+
       subroutine f2pyinithepevt(setupfunc)
       external setupfunc
       integer nevhep
@@ -295,25 +302,11 @@ C     It contains Fortran 77 wrappers to fortran functions.
       call setupfunc(ichg)
       end
 
-      subroutine f2pyinitrndmgas(setupfunc)
+      subroutine f2pyinitnpy(setupfunc)
       external setupfunc
-      integer iset
-      common /rndmgas/ iset
-      call setupfunc(iset)
-      end
-
-      subroutine f2pyinitcrranma4(setupfunc)
-      external setupfunc
-      double precision c(8)
-      double precision u(97,8)
-      integer ijkl(8)
-      integer i97(8)
-      integer j97(8)
-      integer ntot(8)
-      integer ntot2(8)
-      integer jseq
-      common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
-      call setupfunc(c,u,ijkl,i97,j97,ntot,ntot2,jseq)
+      integer*8 bitgen
+      common /npy/ bitgen
+      call setupfunc(bitgen)
       end
 
 

@@ -3,7 +3,7 @@
 
 python module _qgsII04 ! in 
     interface  ! in :_qgsII04
-        subroutine qgini(e0n,icp0,iap,iat) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/pyf_sources/qgsjet-II-04.f.proc
+        subroutine qgini(e0n,icp0,iap,iat) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/qgsjet-II-04.f
             double precision :: e0n
             integer :: icp0
             integer :: iap
@@ -67,7 +67,7 @@ python module _qgsII04 ! in
             common /qgdebug/ debug
             common /qgsiinex1/ xan,xbn,bqgs,bmaxqgs,bmaxnex,bminnex
         end subroutine qgini
-        subroutine qgconf ! in :_qgsII04:CMakeFiles/_qgsII04.dir/pyf_sources/qgsjet-II-04.f.proc
+        subroutine qgconf ! in :_qgsII04:CMakeFiles/_qgsII04.dir/qgsjet-II-04.f
             integer dimension(2) :: ia
             integer :: icz
             integer :: icp
@@ -141,9 +141,9 @@ python module _qgsII04 ! in
             integer dimension(208) :: icona
             integer dimension(208) :: iconb
             integer :: nwt
-            integer :: nwp
+            integer :: nwp       !n of wounded targ.(proj.) nucleons
             integer :: nspec
-            integer :: nspect
+            integer :: nspect  !n of spectators targ.(proj.) nucle
             integer :: debug
             double precision dimension(208,3) :: xan
             double precision dimension(208,3) :: xbn
@@ -152,7 +152,7 @@ python module _qgsII04 ! in
             double precision :: bmaxnex
             double precision :: bminnex
             double precision :: bdiff
-            integer :: jdiff
+            integer :: jdiff     !for external use: impact parameter
             integer :: ng1evt
             integer :: ng2evt
             real :: rglevt
@@ -160,7 +160,7 @@ python module _qgsII04 ! in
             real :: eglevt
             real :: fglevt
             integer :: ikoevt
-            real :: typevt
+            double precision :: typevt            !in epos.inc
             common /qgarr1/ ia,icz,icp
             common /qgarr2/ scm,wp0,wm0
             common /qgarr4/ ey0
@@ -176,14 +176,14 @@ python module _qgsII04 ! in
             common /qgarr23/ bbpom,vvxpom,bpompr,bpomtg,vvxpr,vvxtg,xpompr,xpomtg,xpopin,xpomin,vvxin,bpomin
             common /qgarr43/ moniou
             common /qgarr46/ iconab,icona,iconb
-            common /qgarr55/ nwt,nwp
-            common /qgarr56/ nspec,nspect
+            common /qgarr55/ nwt,nwp       !n of wounded targ.(proj.) nucleons
+            common /qgarr56/ nspec,nspect  !n of spectators targ.(proj.) nucle
             common /qgdebug/ debug
             common /qgsiinex1/ xan,xbn,bqgs,bmaxqgs,bmaxnex,bminnex
-            common /jdiff/ bdiff,jdiff
-            common /c2evt/ ng1evt,ng2evt,rglevt,sglevt,eglevt,fglevt,ikoevt,typevt
+            common /jdiff/ bdiff,jdiff     !for external use: impact parameter
+            common /c2evt/ ng1evt,ng2evt,rglevt,sglevt,eglevt,fglevt,ikoevt,typevt            !in epos.inc
         end subroutine qgconf
-        block data qgdata ! in :_qgsII04:CMakeFiles/_qgsII04.dir/pyf_sources/qgsjet-II-04.f.proc
+        block data qgdata ! in :_qgsII04:CMakeFiles/_qgsII04.dir/qgsjet-II-04.f
             double precision, optional,dimension(56) :: trnuc=0.69d0
             double precision, optional,dimension(56) :: twsnuc=0.d0
             double precision, optional,dimension(56) :: twbnuc=0.d0
@@ -204,7 +204,7 @@ python module _qgsII04 ! in
             common /arr8/ x2,a2
             common /arr9/ x9,a9
         end block data qgdata
-        function qgsect(e0n,icz,iap0,iat0) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/pyf_sources/qgsjet-II-04.f.proc
+        function qgsect(e0n,icz,iap0,iat0) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/qgsjet-II-04.f
             double precision :: e0n
             integer :: icz
             integer :: iap0
@@ -219,7 +219,7 @@ python module _qgsII04 ! in
             common /qgarr43/ moniou
             common /qgdebug/ debug
         end function qgsect
-        subroutine qgreg(ep0,ic) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/pyf_sources/qgsjet-II-04.f.proc
+        subroutine qgreg(ep0,ic) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/qgsjet-II-04.f
             double precision dimension(4) :: ep0
             integer :: ic
             double precision dimension(3) :: ey0
@@ -250,8 +250,7 @@ python module _qgsII04 ! in
             common /qgarr43/ moniou
             common /qgdebug/ debug
         end subroutine qgreg
-        subroutine cqgsini(seedin,datdir,lun,debugnum) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/pyf_sources/impy_qgsII.f.proc
-            integer :: seedin
+        subroutine cqgsini(datdir,lun,debugnum) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/impy_qgsII.f
             character*256 :: datdir
             integer :: lun
             integer :: debugnum
@@ -262,7 +261,7 @@ python module _qgsII04 ! in
             common /qgarr43/ moniou
             common /qgdebug/ debug
         end subroutine cqgsini
-        subroutine chepevt ! in :_qgsII04:CMakeFiles/_qgsII04.dir/pyf_sources/impy_qgsII.f.proc
+        subroutine chepevt ! in :_qgsII04:CMakeFiles/_qgsII04.dir/impy_qgsII.f
             integer :: nsp
             double precision dimension(4,95000) :: esp
             integer dimension(95000) :: ich
@@ -280,30 +279,23 @@ python module _qgsII04 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /qgchg/ ichg
         end subroutine chepevt
-        block data qgsdat ! in :_qgsII04:CMakeFiles/_qgsII04.dir/pyf_sources/impy_qgsII.f.proc
+        block data qgsdat ! in :_qgsII04:CMakeFiles/_qgsII04.dir/impy_qgsII.f
             integer, optional,dimension(200) :: ictabl=0
             integer, optional,dimension(21) :: iqtabl=51
             common /crqgslin/ ictabl,iqtabl
         end block data qgsdat
-        subroutine impy_openlogfile(fname,opunit) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/pyf_sources/logging.f.proc
+        subroutine impy_openlogfile(fname,opunit) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/logging.f
             character*300 :: fname
             integer :: opunit
         end subroutine impy_openlogfile
-        subroutine impy_closelogfile(opunit) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/pyf_sources/logging.f.proc
+        subroutine impy_closelogfile(opunit) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/logging.f
             integer :: opunit
         end subroutine impy_closelogfile
-        subroutine init_rmmard(iseedin) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/pyf_sources/rangen.f.proc
-            integer :: iseedin
-            double precision dimension(8) :: c
-            double precision dimension(97,8) :: u
-            integer dimension(8) :: ijkl
-            integer dimension(8) :: i97
-            integer dimension(8) :: j97
-            integer dimension(8) :: ntot
-            integer dimension(8) :: ntot2
-            integer :: jseq
-            common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
-        end subroutine init_rmmard
+        subroutine npyrng(rval) ! in :_qgsII04:CMakeFiles/_qgsII04.dir/rangen.fpp
+            double precision :: rval
+            integer*8 :: bitgen
+            common /npy/ bitgen
+        end subroutine npyrng
     end interface 
 end python module _qgsII04
 

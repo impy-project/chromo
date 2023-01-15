@@ -172,14 +172,8 @@ def parse_arguments():
         print(f"impy {version}")
         raise SystemExit
 
-    max_seed = int(1e9)  # EPOS requirement
     if args.seed <= 0:
-        args.seed = int.from_bytes(os.urandom(4), "little")
-        args.seed %= max_seed  # result of modulus is always positive
-    elif args.seed > max_seed:
-        raise SystemExit(
-            f"Error: {args.seed} is larger " f"than maximum seed ({max_seed})"
-        )
+        args.seed = int.from_bytes(os.urandom(8), "little")
 
     if args.number <= 0:
         raise SystemExit("Error: number must be positive")

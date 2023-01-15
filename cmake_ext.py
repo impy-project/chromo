@@ -21,6 +21,7 @@ import subprocess as subp
 import sys
 from pathlib import Path
 import sysconfig as sc
+import platform
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
@@ -37,6 +38,37 @@ def cache_value(key, s):
     m = re.search(key + r":[A-Z]+=(.*)" + "$", s, flags=re.MULTILINE)
     assert m, f"{key} is not a cached cmake variable"
     return m.group(1)
+
+
+def get_models():
+    # for convenience, support building extra models via EXTRA
+    # EXTRA is not tracked by git, so can be freely modified
+    # EXTRA example:
+    # -----
+    # sib23c00
+    # sib23c02
+    # sib23c03
+    # dev_dpmjetIII193=/full/path/to/dir/dpmjetIII-19.3
+    # ----
+    models = {}
+    for input_file in ("model", "extra"):
+        path = cwd / f"{input_file}.cfg"
+        if not path.exists():
+            continue
+        with open(path) as f:
+            for model in f:
+                model = model.strip()
+                if not model or model.startswith("#"):
+                    continue
+                model, *mpath = model.split("=")
+                models[model] = mpath[0] if mpath else None
+
+    # urqmd34 doesn't build correctly on Windows
+    if platform.system() == "Windows":
+        del models["urqmd34"]
+        del models["pythia8"]
+
+    return models
 
 
 class CMakeExtension(Extension):
@@ -147,8 +179,10 @@ class CMakeBuild(build_ext):
         target = ext.name.split(".")[-1]
         suffix = sc.get_config_var("EXT_SUFFIX") or sc.get_config_var("SO")
         output_file = Path(extdir) / (target + suffix)
-        if not output_file.exists() or target == "_eposlhc":  # any target is fine
-            cmd = [cmake_exe, "--build", "."] + build_args
+        targets = [f"_{m}" for m in get_models()]
+        if not output_file.exists() or target == targets[0]:  # any target is fine
+
+            cmd = [cmake_exe, "--build", ".", "-t", *targets] + build_args
             if verbose:
                 force_print(" ".join(cmd))
             r = subp.run(cmd, cwd=build_temp)

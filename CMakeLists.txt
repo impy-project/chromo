@@ -132,9 +132,9 @@ set(f2py_dir ${CMAKE_SOURCE_DIR}/src/f2py)
 configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c fortranobject.c COPYONLY)
 set(f2py_source fortranobject.c)
 
-set(impy_logging impy_openlogfile impy_closelogfile)
+set(impy_functions impy_openlogfile impy_closelogfile npyrng)
 set(logging_source ${fortran_dir}/logging.f)
-set(rangen_source ${fortran_dir}/rangen.fpp)
+set(rangen_source ${fortran_dir}/rangen.fpp ${fortran_dir}/rangen.c)
 
 
 ### eposlhc
@@ -146,7 +146,7 @@ f2py_add_module(_eposlhc
   FUNCTIONS
   aaset ainit aepos afinal hepmcstore
   getcharge idtrafo initepos initeposevt
-  xsection init_rmmard ${impy_logging}
+  xsection ${impy_functions}
   SOURCES
   ${eposlhc_sources}
   ${logging_source}
@@ -159,7 +159,7 @@ f2py_add_module(_eposlhc
   ${rangen_source}
   ${logging_source}
   INCLUDE_DIRS
-  ${fortran_dir}/EPOS-LHC/sources
+  ${fortran_dir}/EPOS-LHC/sources ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -169,7 +169,7 @@ f2py_add_module(_eposlhc
 set(SIBYLL_COMMON_FUNCTIONS
   sibyll sibyll_ini sib_sigma_hp sib_sigma_hair sib_sigma_hnuc
   int_nuc decsib decpar sibini sibhep sib_list isib_pid2pdg
-  isib_pdg2pid pdg_ini init_rmmard ${impy_logging})
+  isib_pdg2pid pdg_ini ${impy_functions})
 
 f2py_add_module(_sib21
   FUNCTIONS
@@ -180,6 +180,8 @@ f2py_add_module(_sib21
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
   SIBYLL_21
@@ -194,6 +196,8 @@ f2py_add_module(_sib23
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -208,6 +212,8 @@ f2py_add_module(_sib23c01
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -222,6 +228,8 @@ f2py_add_module(_sib23d
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -230,19 +238,21 @@ f2py_add_module(_sib23d
 f2py_add_module(_qgs01
   FUNCTIONS
   cqgsini sectnu xxaini psconf xxreg psaini chepevt
-  init_rmmard ${impy_logging}
+  ${impy_functions}
   SOURCES
   ${fortran_dir}/qgsjet/qgsjet01d.f
   ${fortran_dir}/qgsjet/impy_qgs1.f
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
 
 ### qgsII03
 set(QGSJETII_COMMON_FUNCTIONS
-  cqgsini qgsect qgini qgconf qgreg chepevt init_rmmard ${impy_logging})
+  cqgsini qgsect qgini qgconf qgreg chepevt ${impy_functions})
 
 f2py_add_module(_qgsII03
   FUNCTIONS
@@ -252,6 +262,8 @@ f2py_add_module(_qgsII03
   ${fortran_dir}/qgsjet/impy_qgsII.f
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -265,6 +277,8 @@ f2py_add_module(_qgsII04
   ${fortran_dir}/qgsjet/impy_qgsII.f
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -293,11 +307,11 @@ f2py_add_module(_urqmd34
   FUNCTIONS
   urqmd init uinit set0 params uounit strini loginit
   loadwtab norm_init output cascinit nucrad urqini partname
-  chepevt ptsigtot init_rmmard ${impy_logging}
+  chepevt ptsigtot ${impy_functions}
   SOURCES
   ${urqmd34_sources}
   INCLUDE_DIRS
-  ${fortran_dir}/urqmd-3.4/sources
+  ${fortran_dir}/urqmd-3.4/sources ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -307,11 +321,13 @@ endif()
 f2py_add_module(_pythia6
   FUNCTIONS
   pyinit pyexec pytune pylist pyevnt pyevnw pystat pyedit
-  pyhepc pychge pycomp pyk init_rmmard ${impy_logging}
+  pyhepc pychge pycomp pyk ${impy_functions}
   SOURCES
   ${fortran_dir}/pythia6/pythia-6.4.28.f
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -371,7 +387,7 @@ endif()
 f2py_add_module(_sophia
   FUNCTIONS
   eventgen print_event crossection initial
-  icon_pdg_sib init_rmmard toevt ${impy_logging}
+  icon_pdg_sib toevt ${impy_functions}
   SOURCES
   ${fortran_dir}/sophia/SOPHIA20.f
   ${fortran_dir}/sophia/eventgen.f
@@ -381,6 +397,8 @@ f2py_add_module(_sophia
   ${fortran_dir}/sophia/impy_sophia.f
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -401,12 +419,14 @@ f2py_add_module(_dpmjet306
   pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout
   pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar pho_prevnt
   ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
-  pho_setpcomb dt_phoxs dt_xshn dt_flahad init_rmmard
-  ${impy_logging}
+  pho_setpcomb dt_phoxs dt_xshn dt_flahad
+  ${impy_functions}
   SOURCES
   ${dpmjet306_sources}
   ${rangen_source}
   ${logging_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -419,11 +439,13 @@ f2py_add_module(_phojet112
   pho_setmdl pho_setpdf pycomp pho_xsect pho_borncs pho_harmci
   pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
-  pho_setpcomb init_rmmard ${impy_logging}
+  pho_setpcomb ${impy_functions}
   SOURCES
   ${dpmjet306_sources}
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -486,7 +508,7 @@ f2py_add_module(_dpmjetIII191
   pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini pho_ptcut
   pytune pho_rregpar pho_sregpar pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint
   pho_harxto pho_harxpt pho_setpcomb dt_phoxs dt_xshn dt_flahad
-  dt_title dt_ficonf pho_ghhias init_rmmard ${impy_logging}
+  dt_title dt_ficonf pho_ghhias ${impy_functions}
   SOURCES
   ${dpmjetIII191_modded_sources}
   ${fortran_dir}/dpmjetIII-19.1/common/dummies.f
@@ -497,6 +519,7 @@ f2py_add_module(_dpmjetIII191
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
   ${CMAKE_CURRENT_BINARY_DIR}/include
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -510,7 +533,7 @@ f2py_add_module(_phojet191
   pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini 
   pho_ptcut pytune pho_rregpar pho_sregpar pho_prevnt 
   ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt 
-  pho_setpcomb dt_ficonf pho_ghhias init_rmmard ${impy_logging}
+  pho_setpcomb dt_ficonf pho_ghhias ${impy_functions}
   SOURCES
   ${dpmjetIII191_modded_sources}
   ${fortran_dir}/dpmjetIII-19.1/common/dummies.f
@@ -521,6 +544,7 @@ f2py_add_module(_phojet191
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
   ${CMAKE_CURRENT_BINARY_DIR}/include
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -549,7 +573,7 @@ f2py_add_module(_dpmjetIII193
   pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
   pho_setpcomb dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias
-  init_rmmard ${impy_logging}
+  ${impy_functions}
   SOURCES
   ${dpmjetIII193_sources}
   ${fortran_dir}/dpmjetIII-19.3/common/dummies.f
@@ -560,6 +584,7 @@ f2py_add_module(_dpmjetIII193
   ${fortran_dir}/dpmjetIII-19.3/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.3/include/pythia
   ${fortran_dir}/dpmjetIII-19.3/include/flinclude
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -572,7 +597,7 @@ f2py_add_module(_phojet193
   pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
   pho_setpcomb pho_ghhias
-  init_rmmard ${impy_logging}
+  ${impy_functions}
   SOURCES
   ${dpmjetIII193_sources}
   ${fortran_dir}/dpmjetIII-19.3/common/dummies.f
@@ -583,6 +608,7 @@ f2py_add_module(_phojet193
   ${fortran_dir}/dpmjetIII-19.3/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.3/include/pythia
   ${fortran_dir}/dpmjetIII-19.3/include/flinclude
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )
@@ -599,7 +625,9 @@ if(BUILD_sib23c00)
     ${fortran_dir}/sibyll/sibyll_init.fpp
     ${logging_source}
     ${rangen_source}
-    COMPILE_DEFS
+    INCLUDE_DIRS
+    ${NUMPY_INCLUDE_DIRS}
+      COMPILE_DEFS
     ${impy_definitions}
   )
 endif()
@@ -613,6 +641,8 @@ if(BUILD_sib23c02)
     ${fortran_dir}/sibyll/sibyll_init.fpp
     ${logging_source}
     ${rangen_source}
+    INCLUDE_DIRS
+    ${NUMPY_INCLUDE_DIRS}
     COMPILE_DEFS
     ${impy_definitions}
   )
@@ -627,6 +657,8 @@ if(BUILD_sib23c03)
     ${fortran_dir}/sibyll/sibyll_init.fpp
     ${logging_source}
     ${rangen_source}
+    INCLUDE_DIRS
+    ${NUMPY_INCLUDE_DIRS}
     COMPILE_DEFS
     ${impy_definitions}
   )
@@ -656,7 +688,7 @@ if(BUILD_dev_dpmjetIII193)
     pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
     pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
     pho_setpcomb dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias
-    init_rmmard ${impy_logging}
+    ${impy_functions}
     SOURCES
     ${dev_dpmjetIII193_sources}
     ${dev_source}/common/dummies.f
@@ -667,6 +699,7 @@ if(BUILD_dev_dpmjetIII193)
     ${dev_source}/include/dpmjet
     ${dev_source}/include/pythia
     ${dev_source}/include/flinclude
+    ${NUMPY_INCLUDE_DIRS}  
     COMPILE_DEFS
     ${impy_definitions}
   )

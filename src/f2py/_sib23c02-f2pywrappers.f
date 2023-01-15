@@ -18,14 +18,6 @@ C     It contains Fortran 77 wrappers to fortran functions.
       end
 
 
-      subroutine f2pywrapgasdev (gasdevf2pywrap, idum)
-      external gasdev
-      integer idum
-      double precision gasdevf2pywrap, gasdev
-      gasdevf2pywrap = gasdev(idum)
-      end
-
-
       subroutine f2pyinits_debug(setupfunc)
       external setupfunc
       integer ncall
@@ -413,25 +405,11 @@ C     It contains Fortran 77 wrappers to fortran functions.
       call setupfunc(ichg)
       end
 
-      subroutine f2pyinitrndmgas(setupfunc)
+      subroutine f2pyinitnpy(setupfunc)
       external setupfunc
-      integer iset
-      common /rndmgas/ iset
-      call setupfunc(iset)
-      end
-
-      subroutine f2pyinitcrranma4(setupfunc)
-      external setupfunc
-      double precision c(8)
-      double precision u(97,8)
-      integer ijkl(8)
-      integer i97(8)
-      integer j97(8)
-      integer ntot(8)
-      integer ntot2(8)
-      integer jseq
-      common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
-      call setupfunc(c,u,ijkl,i97,j97,ntot,ntot2,jseq)
+      integer*8 bitgen
+      common /npy/ bitgen
+      call setupfunc(bitgen)
       end
 
 

@@ -1,7 +1,7 @@
 C This file are aux functions for stand-alone use
 C of CORSIKA interaction models
 
-      SUBROUTINE CQGSINI( ISEEDIN, DATDIR, LUN, DEBUGNUM )
+      SUBROUTINE CQGSINI( DATDIR, LUN, DEBUGNUM )
 C-----------------------------------------------------------------------
 C  C(ompact) Q(UARK) G(LUON) S(TRING JET MODEL) INI(TIALZATION)
 C
@@ -20,11 +20,6 @@ C-----------------------------------------------------------------------
       INTEGER DEBUGNUM, DEBUG
       COMMON /AREA43/ MONIOU
       COMMON /DEBUG/  DEBUG
-
-      INTEGER          ISEEDIN
-
-C  init the random number generator
-      Call INIT_RMMARD(ISEEDIN)  
 
 C  Set output LUN
       MONIOU = LUN

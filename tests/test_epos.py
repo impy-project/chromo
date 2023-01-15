@@ -121,8 +121,8 @@ def test_parents(event):
 
 
 def run_set_stable(stable):
-    evt_kin = CenterOfMass(10 * GeV, "proton", "proton")
-    m = EposLHC(evt_kin, seed=4)
+    evt_kin = CenterOfMass(100 * GeV, "proton", "proton")
+    m = EposLHC(evt_kin, seed=1)
     for pid, s in stable.items():
         m.set_stable(pid, s)
     print("stable", m._get_stable())

@@ -46,7 +46,7 @@ class QGSJetRun(MCRun):
         # logging
         lun = 6  # stdout
         datdir = _cached_data_dir(self._data_url)
-        self._lib.cqgsini(self._seed, datdir, lun, impy.debug_level)
+        self._lib.cqgsini(datdir, lun, impy.debug_level)
 
         self.kinematics = evt_kin
 

@@ -505,76 +505,6 @@ class MCEvent(EventData, ABC):
         return (EventData,)
 
 
-@dataclasses.dataclass
-class RMMARDState:
-    _c_number: np.ndarray = None
-    _u_array: np.ndarray = None
-    _u_i: np.ndarray = None
-    _u_j: np.ndarray = None
-    _seed: np.ndarray = None
-    _counter: np.ndarray = None
-    _big_counter: np.ndarray = None
-    _sequence_number: np.ndarray = None
-
-    def _record_state(self, generator):
-        data = generator._lib.crranma4
-        self._c_number = data.c
-        self._u_array = data.u
-        self._u_i = data.i97
-        self._u_j = data.j97
-        self._seed = data.ijkl
-        self._counter = data.ntot
-        self._big_counter = data.ntot2
-        self._sequence_number = data.jseq
-        return self
-
-    def _restore_state(self, generator):
-        data = generator._lib.crranma4
-
-        data.c = self._c_number
-        data.u = self._u_array
-        data.i97 = self._u_i
-        data.j97 = self._u_j
-        data.ijkl = self._seed
-        data.ntot = self._counter
-        data.ntot2 = self._big_counter
-        data.jseq = self._sequence_number
-        return self
-
-    def __eq__(self, other: object) -> bool:
-        if other.__class__ is not self.__class__:
-            return NotImplemented
-
-        return (
-            np.array_equal(self._c_number, other._c_number)
-            and np.array_equal(self._u_array, other._u_array)
-            and np.array_equal(self._u_i, other._u_i)
-            and np.array_equal(self._u_j, other._u_j)
-            and np.array_equal(self._seed, other._seed)
-            and np.array_equal(self._counter, other._counter)
-            and np.array_equal(self._big_counter, other._big_counter)
-            and np.array_equal(self._sequence_number, other._sequence_number)
-        )
-
-    def copy(self):
-        """
-        Return generator copy.
-        """
-        return copy.deepcopy(self)  # this uses setstate, getstate
-
-    @property
-    def sequence(self):
-        return self._sequence_number
-
-    @property
-    def counter(self):
-        return self._counter[self.sequence - 1]
-
-    @property
-    def seed(self):
-        return self._seed[self.sequence - 1]
-
-
 # =========================================================================
 # MCRun
 # =========================================================================
@@ -590,7 +520,7 @@ class MCRun(ABC):
 
     def __init__(self, seed):
         import importlib
-        from random import randint
+        from numpy.random import default_rng
 
         if not self._restartable:
             self._abort_if_already_initialized()
@@ -602,18 +532,10 @@ class MCRun(ABC):
         assert hasattr(self, "_frame")
         self._lib = importlib.import_module(f"impy.models.{self._library_name}")
 
-        if seed is None:
-            self._seed = randint(1, 10000000)
-        elif isinstance(seed, int):
-            self._seed = seed
-        else:
-            raise ValueError(f"Invalid seed {seed}")
-
-        if hasattr(self._lib, "init_rmmard"):
-            self._lib.init_rmmard(self._seed)
-
-        # TODO use rmmard for this, too, instead of numpy PRNG
-        self._composite_target_rng = np.random.default_rng(self._seed)
+        self._seed = seed
+        self._rng = default_rng(seed)
+        if hasattr(self._lib, "npy"):
+            self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
 
     def __call__(self, nevents):
         """Generator function (in python sence)
@@ -704,7 +626,7 @@ class MCRun(ABC):
     def _composite_plan(self, nevents):
         kin = self.kinematics
         if isinstance(kin.p2, CompositeTarget):
-            nevents = self._composite_target_rng.multinomial(nevents, kin.p2.fractions)
+            nevents = self._rng.multinomial(nevents, kin.p2.fractions)
             ek = copy.deepcopy(kin)
             for c, k in zip(kin.p2.components, nevents):
                 ek.p2 = c
@@ -715,11 +637,11 @@ class MCRun(ABC):
 
     @property
     def random_state(self):
-        return RMMARDState()._record_state(self)
+        return self._rng.__getstate__()
 
     @random_state.setter
     def random_state(self, rng_state):
-        rng_state._restore_state(self)
+        self._rng.__setstate__(rng_state)
 
     @property
     def kinematics(self):
