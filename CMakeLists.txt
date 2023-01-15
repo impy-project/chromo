@@ -144,7 +144,7 @@ set(rangen_source ${fortran_dir}/rangen.fpp ${fortran_dir}/rangen.c)
 
 
 ### eposlhc
-file(GLOB eposlhc_sources ${fortran_dir}/EPOS-LHC/sources/*.f)
+file(GLOB eposlhc_sources ${fortran_dir}/epos/sources/*.f)
 list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
 
 
@@ -152,20 +152,20 @@ f2py_add_module(_eposlhc
   FUNCTIONS
   aaset ainit aepos afinal hepmcstore
   getcharge idtrafo initepos initeposevt
-  xsection ${impy_functions}
+  xsection rmmard ${impy_functions}
   SOURCES
   ${eposlhc_sources}
   ${logging_source}
   ${rangen_source}
   INTERFACE_SOURCES
-  ${fortran_dir}/EPOS-LHC/sources/epos-bas-lhc.f 
-  ${fortran_dir}/EPOS-LHC/sources/epos-ids-lhc.f 
-  ${fortran_dir}/EPOS-LHC/sources/epos_interface.f
-  ${fortran_dir}/EPOS-LHC/sources/epos-random.f
+  ${fortran_dir}/epos/sources/epos-bas-lhc.f 
+  ${fortran_dir}/epos/sources/epos-ids-lhc.f 
+  ${fortran_dir}/epos/sources/epos_interface.f
+  ${fortran_dir}/epos/sources/epos-random.f
   ${rangen_source}
   ${logging_source}
   INCLUDE_DIRS
-  ${fortran_dir}/EPOS-LHC/sources ${NUMPY_INCLUDE_DIRS}
+  ${fortran_dir}/epos/sources ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${impy_definitions}
 )

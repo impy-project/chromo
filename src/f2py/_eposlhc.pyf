@@ -7282,6 +7282,11 @@ python module _eposlhc ! in
             integer*8 :: bitgen
             common /npy/ bitgen
         end subroutine npyrng
+        subroutine rmmard(rvec,lenv,iseq) ! in :_eposlhc:CMakeFiles/_eposlhc.dir/rangen.fpp
+            double precision dimension(*) :: rvec
+            integer :: lenv
+            integer :: iseq
+        end subroutine rmmard
         subroutine impy_openlogfile(fname,opunit) ! in :_eposlhc:CMakeFiles/_eposlhc.dir/logging.f
             character*300 :: fname
             integer :: opunit
