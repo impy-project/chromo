@@ -1,8 +1,13 @@
 import numpy as np
-
-from impy import impy_config
-from impy.common import MCEvent, MCRun
-from impy.util import info, _cached_data_dir
+from impy.kinematics import EventFrame
+from impy.common import MCEvent, MCRun, CrossSectionData
+from impy.util import (
+    _cached_data_dir,
+    fortran_array_insert,
+    fortran_array_remove,
+    Nuclei,
+)
+from impy.constants import standard_projectiles
 
 
 class EPOSEvent(MCEvent):
@@ -17,37 +22,12 @@ class EPOSEvent(MCEvent):
     def _charge_init(self, npart):
         return self._lib.charge_vect(self._lib.hepevt.idhep[:npart])
 
-    # Nuclear collision parameters
-    @property
-    def impact_parameter(self):
-        """Returns impact parameter for nuclear collisions."""
+    def _get_impact_parameter(self):
         # return self._lib.nuc3.bimp
-        return self._lib.cevt.bimevt
+        return float(self._lib.cevt.bimevt)
 
-    @property
-    def n_wounded_A(self):
-        """Number of wounded nucleons side A"""
-        return self._lib.cevt.npjevt
-
-    @property
-    def n_wounded_B(self):
-        """Number of wounded nucleons (target) side B"""
-        return self._lib.cevt.ntgevt
-
-    @property
-    def n_wounded(self):
-        """Number of total wounded nucleons"""
-        return self.n_wounded_A + self.n_wounded_B
-
-    @property
-    def n_spectator_A(self):
-        """Number of spectator nucleons side A"""
-        return self._lib.cevt.npnevt + self._lib.cevt.nppevt
-
-    @property
-    def n_spectator_B(self):
-        """Number of spectator nucleons (target) side B"""
-        return self._lib.cevt.ntnevt + self._lib.cevt.ntpevt
+    def _get_n_wounded(self):
+        return int(self._lib.cevt.npjevt), int(self._lib.cevt.ntgevt)
 
 
 class EposLHC(MCRun):
@@ -56,75 +36,83 @@ class EposLHC(MCRun):
 
     _name = "EPOS"
     _version = "LHC"
-    _event_class = EPOSEvent
     _library_name = "_eposlhc"
-    _output_frame = "center-of-mass"
+    _event_class = EPOSEvent
+    _frame = None
+    _projectiles = standard_projectiles | Nuclei()
     _data_url = (
         "https://github.com/impy-project/impy"
         + "/releases/download/zipped_data_v1.0/epos_v001.zip"
     )
 
-    def __init__(self, event_kinematics, seed=None, logfname=None):
-        super().__init__(seed, logfname)
+    def __init__(self, evt_kin, *, seed=None):
+        import impy
 
-        info(1, "First initialization")
+        super().__init__(seed)
+
         self._lib.aaset(0)
-
-        if impy_config["user_frame"] == "center-of-mass":
-            iframe = 1
-            self._output_frame = "center-of-mass"
-        elif impy_config["user_frame"] == "laboratory":
-            iframe = 2
-            self._output_frame = "laboratory"
-
-        k = event_kinematics
-
         datdir = _cached_data_dir(self._data_url)
-        self._lib.initializeepos(
+
+        lun = 6  # stdout
+        self._lib.initepos(
             float(self._seed),
-            k.ecm,
+            evt_kin.ecm,
             datdir,
             len(datdir),
-            iframe,
-            k.p1pdg,
-            k.p2pdg,
-            impy_config["epos"]["debug_level"],
-            self._lun,
+            impy.debug_level,
+            lun,
         )
 
-        # Set default stable
         self._set_final_state_particles()
         self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.float32])
-        self.event_kinematics = event_kinematics
+        self.kinematics = evt_kin
 
-    def _sigma_inel(self, evt_kin):
-        with self._temporary_evt_kin(evt_kin):
-            return self._lib.xsection()[1]
+    def _cross_section(self, kin=None):
+        total, inel, el, dd, sd, _ = self._lib.xsection()
+        return CrossSectionData(
+            total=total,
+            inelastic=inel,
+            elastic=el,
+            diffractive_xb=sd / 2,  # this is an approximation
+            diffractive_ax=sd / 2,  # this is an approximation
+            diffractive_xx=dd,
+            diffractive_axb=0,
+        )
 
-    def _set_event_kinematics(self, k):
-        info(5, "Setting event kinematics")
-        self._lib.initeposevt(k.ecm, -1.0, k.p1pdg, k.p2pdg)
-
-    def _attach_log(self, fname=None):
-        """Routes the output to a file or the stdout."""
-        fname = impy_config["output_log"] if fname is None else fname
-        if fname == "stdout":
-            lun = 6
-            info(5, "Output is routed to stdout.")
+    def _set_kinematics(self, kin):
+        if kin.frame == EventFrame.FIXED_TARGET:
+            iframe = 2
+            self._frame = EventFrame.FIXED_TARGET
         else:
-            lun = self._attach_fortran_logfile(fname)
-            info(5, "Output is routed to", fname, "via LUN", lun)
+            iframe = 1
+            self._frame = EventFrame.CENTER_OF_MASS
 
-        self._lun = lun
+        self._lib.initeposevt(kin.ecm, -1.0, kin.p1, kin.p2, iframe)
 
     def _set_stable(self, pdgid, stable):
-        if stable:
-            self._lib.setstable(pdgid)
-        else:
-            self._lib.setunstable(pdgid)
+        # EPOS decays all unstable particles by default. It uses a nodcy common block
+        # to prevent decay of particles. The common block contains the array
+        # nody and the length nrnody. The array holds EPOS particle ids of
+        # particles that should not be decayed.
 
-    def _generate_event(self):
+        idx = self._lib.idtrafo("pdg", "nxs", pdgid)
+
+        c = self._lib.nodcy  # common block
+        if stable:
+            fortran_array_insert(c.nody, c.nrnody, idx)
+        else:
+            fortran_array_remove(c.nody, c.nrnody, idx)
+
+    def _get_stable(self):
+        result = []
+        c = self._lib.nodcy  # common block
+        for i in range(c.nrnody):
+            pid = self._lib.idtrafo("nxs", "pdg", c.nody[i])
+            result.append(pid)
+        return result
+
+    def _generate(self):
         self._lib.aepos(-1)
         self._lib.afinal()
         self._lib.hepmcstore()
-        return False
+        return True

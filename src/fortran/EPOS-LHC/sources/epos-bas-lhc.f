@@ -2831,7 +2831,7 @@ c-----------------------------------------------------------------------
       inicnt=inicnt+1
 
       if(inicnt.eq.1)then
-        write(ifmt,'(a)')'initializations ...'
+c        write(ifmt,'(a)')'initializations ...'
         if(isigma.eq.1.and.ionudi.ne.1)then
           write(ifmt,'(a)')
      &  '##################################################'

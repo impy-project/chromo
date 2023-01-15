@@ -1,6 +1,6 @@
 from impy.kinematics import CenterOfMass
 from impy.models import Sibyll21
-from impy.constants import TeV
+from impy.constants import TeV, GeV
 from numpy.testing import assert_allclose, assert_equal
 import numpy as np
 from .util import reference_charge, run_in_separate_process
@@ -9,7 +9,7 @@ from particle import Particle
 
 
 def event_run():
-    evt_kin = CenterOfMass(10 * TeV, 2212, 2212)
+    evt_kin = CenterOfMass(10 * TeV, "p", "p")
     m = Sibyll21(evt_kin, seed=1)
     for event in m(1):
         pass
@@ -59,3 +59,24 @@ def test_vertex(event):
     assert_equal(event.vy, 0)
     assert_equal(event.vz, 0)
     assert_equal(event.vt, 0)
+
+
+def run_cross_section(p1, p2):
+    evt_kin = CenterOfMass(10 * GeV, p1, p2)
+    m = Sibyll21(evt_kin, seed=1)
+    return m.cross_section()
+
+
+def test_cross_section():
+    c = run_in_separate_process(run_cross_section, "p", "p")
+    assert_allclose(c.total, 38.4, atol=0.1)
+    assert_allclose(c.inelastic, 30.9, atol=0.1)
+    assert_allclose(c.elastic, 7.4, atol=0.1)
+    assert_allclose(c.diffractive_xb, 2.9, atol=0.1)
+    assert_allclose(c.diffractive_ax, 2.9, atol=0.1)
+    assert_allclose(c.diffractive_xx, 0.8, atol=0.1)
+    assert c.diffractive_axb == 0
+    assert_allclose(
+        c.non_diffractive,
+        c.inelastic - c.diffractive_xb - c.diffractive_ax - c.diffractive_xx,
+    )

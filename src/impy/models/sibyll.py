@@ -1,7 +1,10 @@
 import numpy as np
-from impy.common import MCRun, MCEvent, RMMARDState, impy_config
-from impy.util import info
+from impy.common import MCRun, MCEvent, RMMARDState, CrossSectionData
+from impy.util import info, Nuclei
+from impy.kinematics import EventFrame
 import dataclasses
+from particle import literals as lp
+import warnings
 
 
 class SibyllEvent(MCEvent):
@@ -12,21 +15,11 @@ class SibyllEvent(MCEvent):
     def _charge_init(self, npart):
         return self._lib.schg.ichg[:npart]
 
-    # Nuclear collision parameters
-    @property
-    def impact_parameter(self):
-        """Impact parameter for nuclear collisions."""
+    def _get_impact_parameter(self):
         return self._lib.cnucms.b
 
-    @property
-    def n_wounded_A(self):
-        """Number of wounded nucleons side A"""
-        return self._lib.cnucms.na
-
-    @property
-    def n_wounded_B(self):
-        """Number of wounded nucleons side B"""
-        return self._lib.cnucms.nb
+    def _get_n_wounded(self):
+        return self._lib.cnucms.na, self._lib.cnucms.nb
 
     @property
     def n_NN_interactions(self):
@@ -60,12 +53,29 @@ class SIBYLLRun(MCRun):
 
     _name = "SIBYLL"
     _event_class = SibyllEvent
-    _output_frame = "center-of-mass"
+    _frame = EventFrame.CENTER_OF_MASS
+    _targets = Nuclei(a_max=20)
+    _cross_section_projectiles = {
+        p.pdgid: sib_id
+        for p, sib_id in (
+            (lp.p, 1),
+            (lp.n, 1),
+            (lp.pi_plus, 2),
+            (lp.K_plus, 3),
+            (lp.K_S_0, 3),
+            (lp.K_L_0, 3),
+        )
+    }
 
-    def __init__(self, event_kinematics, seed=None, logfname=None):
-        super().__init__(seed, logfname)
+    def __init__(self, evt_kin, *, seed=None):
+        super().__init__(seed)
 
-        self._lib.s_debug.ndebug = impy_config["sibyll"]["debug_level"]
+        # setup logging
+        import impy
+
+        lun = 6  # stdout
+        self._lib.s_debug.lun = lun
+        self._lib.s_debug.ndebug = impy.debug_level
 
         self._lib.sibini(self._seed)
         # Set the internal state of GASDEV function (rng) to 0
@@ -74,75 +84,47 @@ class SIBYLLRun(MCRun):
 
         # This calls _set_event_kinematics which uses self._lib.isib_pdg2pid
         # which works only after an initialization call to self._lib.pdg_ini()
-        self.event_kinematics = event_kinematics
+        self.kinematics = evt_kin
 
         self._set_final_state_particles()
 
-    def _sigma_inel(self, evt_kin):
-        sigproj = None
-        if abs(evt_kin.p1pdg) in [2212, 2112, 3112]:
-            sigproj = 1
-        elif abs(evt_kin.p1pdg) == 211:
-            sigproj = 2
-        elif abs(evt_kin.p1pdg) == 321:
-            sigproj = 3
-        else:
-            raise ValueError(
-                f"No cross section available for projectile {evt_kin.p1pdg}"
+    def _cross_section(self, kin=None):
+        kin = self.kinematics if kin is None else kin
+        if kin.p2.A > 1:
+            # TODO figure out what this returns exactly:
+            # self._lib.sib_sigma_hnuc
+            warnings.warn(
+                f"cross-section for nuclear targets not yet supported in {self.label}",
+                RuntimeWarning,
             )
+            return CrossSectionData()
 
-        if evt_kin.p1_is_nucleus:
-            raise ValueError(f"Nuclear projectiles not supported by {self.name}")
+        sib_id = self._cross_section_projectiles[abs(kin.p1)]
 
-        if evt_kin.p2_is_nucleus:
-            # Return production cross section for nuclear target
-            try:
-                return self._lib.sib_sigma_hnuc(sigproj, evt_kin.A2, evt_kin.ecm)[0]
-            except AttributeError:
-                raise ValueError(f"Nuclear projectiles not supported by {self.label}")
-
-        return self._lib.sib_sigma_hp(sigproj, evt_kin.ecm)[2]
+        tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sib_id, kin.ecm)
+        return CrossSectionData(
+            total=tot,
+            elastic=el,
+            inelastic=inel,
+            diffractive_xb=diff[0],
+            diffractive_ax=diff[1],
+            diffractive_xx=diff[2],
+            diffractive_axb=0,
+        )
 
     def sigma_inel_air(self):
         """Inelastic cross section according to current
         event setup (energy, projectile, target)"""
-        k = self.event_kinematics
-        sigproj = None
-        if abs(k.p1pdg) in [2212, 2112, 3112]:
-            sigproj = 1
-        elif abs(k.p1pdg) == 211:
-            sigproj = 2
-        elif abs(k.p1pdg) == 321:
-            sigproj = 3
-        else:
-            info(0, "No cross section available for projectile", k.p1pdg)
-            raise Exception("Input error")
-        sigma = self._lib.sib_sigma_hair(sigproj, k.ecm)
+        kin = self.kinematics
+        sib_id = self._cross_section_projectiles[abs(kin.p1)]
+        sigma = self._lib.sib_sigma_hair(sib_id, self._ecm)
         if isinstance(sigma, tuple):
             return sigma[0]
         return sigma
 
-    def _set_event_kinematics(self, k):
-        info(5, "Setting event kinematics")
-        if k.p1_is_nucleus:
-            raise ValueError(
-                f"Projectile nuclei not natively supported in SIBYLL, A = {k.A1}"
-            )
-        if k.p2_is_nucleus and k.A2 > 20:
-            raise ValueError(f"Target with A>20 not supported, A = {k.A2}")
-        self._sibproj = self._lib.isib_pdg2pid(k.p1pdg)
-        self._iatarg = k.A2
-
-    def _attach_log(self, fname=None):
-        """Routes the output to a file or the stdout."""
-        fname = impy_config["output_log"] if fname is None else fname
-        if fname == "stdout":
-            self._lib.s_debug.lun = 6
-            info(5, "Output is routed to stdout.")
-        else:
-            lun = self._attach_fortran_logfile(fname)
-            self._lib.s_debug.lun = lun
-            info(5, "Output is routed to", fname, "via LUN", lun)
+    def _set_kinematics(self, kin):
+        self._production_id = self._lib.isib_pdg2pid(kin.p1)
+        assert self._production_id != 0
 
     def _set_stable(self, pdgid, stable):
         sid = abs(self._lib.isib_pdg2pid(pdgid))
@@ -155,16 +137,16 @@ class SIBYLLRun(MCRun):
         if sid == 0 or sid > idb.size - 1:
             return
         if stable:
-            idb[sid - 1] = -np.abs(idb[sid - 1])
+            idb[sid - 1] = -abs(idb[sid - 1])
         else:
-            idb[sid - 1] = np.abs(idb[sid - 1])
+            idb[sid - 1] = abs(idb[sid - 1])
 
-    def _generate_event(self):
-        k = self.event_kinematics
-        self._lib.sibyll(self._sibproj, self._iatarg, k.ecm)
+    def _generate(self):
+        kin = self.kinematics
+        self._lib.sibyll(self._production_id, kin.p2.A, kin.ecm)
         self._lib.decsib()
-        self._lib.sibhep3()
-        return 0  # SIBYLL never rejects
+        self._lib.sibhep()
+        return True
 
     @property
     def random_state(self):
@@ -178,13 +160,6 @@ class SIBYLLRun(MCRun):
 class Sibyll21(SIBYLLRun):
     _version = "2.1"
     _library_name = "_sib21"
-
-    def _generate_event(self):
-        k = self.event_kinematics
-        self._lib.sibyll(self._sibproj, self._iatarg, k.ecm)
-        self._lib.decsib()
-        self._lib.sibhep1()
-        return 0  # SIBYLL never rejects
 
 
 class Sibyll23(SIBYLLRun):

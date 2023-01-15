@@ -21,14 +21,13 @@ jobs:
     strategy:
       matrix:
         include:
-          ## TODO cannot test on windows for now, fortran compiler is not found
+          # Python version number must be string, otherwise 3.10 becomes 3.1
           - os: windows-latest
             python-version: "3.10"
 
           - os: macos-latest
-            python-version: "3.7"
+            python-version: "3.8"
 
-          # # version number must be string, otherwise 3.10 becomes 3.1
           - os: ubuntu-latest
             python-version: "3.9"
       fail-fast: false
@@ -37,36 +36,22 @@ jobs:
       with:
         submodules: true
 
-    # - uses: actions/checkout@v3
-    #   with:
-    #     submodules: true
-    #     lfs: true
-    # - name: Create LFS file list
-    #   run: |
-    #     git lfs ls-files --long --include  "${{ inputs.include }}" --exclude  "${{ inputs.exclude }}" | cut -d ' ' -f1 | sort > .lfs-assets-id
-    #   shell: bash
-    # - name: Restore LFS cache
-    #   uses: actions/cache@v3
-    #   id: lfs-cache
-    #   with:
-    #     path: .git/lfs
-    #     key: lfs-${{ hashFiles('.lfs-assets-id') }}-v1
-    # - name: Git LFS Pull
-    #   run: git lfs pull
-    #   shell: bash
-
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - uses: awvwgk/setup-fortran@main
       id: setup-fortran
       with:
         compiler: gcc
-        version: 12
-    - run: python -m pip install --upgrade pip
-    - run: python -m pip install --prefer-binary -v .[test]
-      if: ${{ matrix.os != 'windows-latest' }}
+        version: 11
 
+    - run: python -m pip install --upgrade pip
+    # Remove after January 16th 2023 when GA switches to 14.2 by default
+    - if: ${{ matrix.os == 'macos-latest' }}
+      run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
+
+    - if: ${{ matrix.os != 'windows-latest' }}
+      run: python -m pip install --prefer-binary -v .[test]
 
     - if: ${{ matrix.os == 'windows-latest' }}
       run: |
@@ -77,12 +62,25 @@ jobs:
         cmake --build ./build_dlfcn
         cmake --install ./build_dlfcn
 
-    - run: python -m pip install --prefer-binary -v .[test]
-      if: ${{ matrix.os == 'windows-latest' }}
+    - if: ${{ matrix.os == 'windows-latest' }}
+      run: python -m pip install --prefer-binary -v .[test]
       env:
         CMAKE_GENERATOR: "MinGW Makefiles"
         FC: ${{ steps.setup-fortran.outputs.fc }}
 
-    - run: python -m pytest -vv
+    # graphviz is needed for tests, only install it when compilation succeed
+    - uses: tlylt/install-graphviz@v1
+
+    # Tests run in parallel, but data download is currently not thread-safe.
+    # We work around this by downloading all data files upfront.
+    - run: python download_data.py
+    - run: python -m pytest -vv -n 3
       env:
         no_proxy: '*'
+
+    # always() ensures upload even if pytest ends with failures
+    - if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}-${{ matrix.python-version }}
+        path: "fig/**"

@@ -12,6 +12,7 @@ CMAKE_GENERATOR=<Generator>         : Specify which generator to use.
 CMAKE_ARGS=<cmake args>             : Pass additional cmake arguments.
 CMAKE_BUILD_PARALLEL_LEVEL=<number> : Compile in parallel with number threads.
                                       Default is to use number of CPU cores.
+CMAKE_EXECUTABLE=<path>             : Path to cmake executable
 """
 
 import os
@@ -47,6 +48,8 @@ class CMakeExtension(Extension):
 class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = Path(self.get_ext_fullpath(ext.name)).parent.absolute()
+
+        cmake_exe = os.environ.get("CMAKE_EXECUTABLE", "cmake")
 
         debug = int(os.environ.get("DEBUG", 0)) if self.debug is None else self.debug
         verbose = int(os.environ.get("VERBOSE", 0))
@@ -88,27 +91,7 @@ class CMakeBuild(build_ext):
 
         build_args = ["--config", cfg]  # needed by some generators, e.g. on Windows
 
-        # if cmake_generator in ("Unix Makefiles", "MinGW Makefiles", "MSYS Makefiles"):
-        if self.compiler.compiler_type == "msvc":
-            # CMake allows an arch-in-generator style for backward compatibility
-            contains_arch = any(x in cmake_generator for x in ("ARM", "Win64"))
-
-            # Specify the arch if using MSVC generator, but only if it doesn't
-            # contain a backward-compatibility arch spec already in the
-            # generator name.
-            if not contains_arch:
-                # Convert distutils Windows platform specifiers to CMake -A arguments
-                arch = {
-                    "win32": "Win32",
-                    "win-amd64": "x64",
-                    "win-arm32": "ARM",
-                    "win-arm64": "ARM64",
-                }[self.plat_name]
-                # cmake_args += ["-A", arch]
-
-            # cmake_args += [f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"]
-
-        elif sys.platform.startswith("darwin"):
+        if sys.platform.startswith("darwin"):
             # Cross-compile support for macOS - respect ARCHFLAGS if set
             archs = re.findall(r"-arch (\S+)", os.environ.get("ARCHFLAGS", ""))
             if archs:
@@ -125,7 +108,7 @@ class CMakeBuild(build_ext):
         if not build_temp.exists():
             build_temp.mkdir(parents=True)
 
-        # cmake setup must be run again if external settings have changed
+        # cmake setup must be run again if external settings change
         cmake_cache = build_temp / "CMakeCache.txt"
         if cmake_cache.exists():
             with cmake_cache.open() as f:
@@ -149,20 +132,26 @@ class CMakeBuild(build_ext):
 
         # run cmake setup only once
         if not cmake_cache.exists():
-            cmd = ["cmake", str(ext.sourcedir)] + cmake_args
+            cmd = [cmake_exe, str(ext.sourcedir)] + cmake_args
             if verbose:
                 force_print(" ".join(cmd))
-            subp.check_call(cmd, cwd=build_temp)
+            r = subp.run(cmd, cwd=build_temp)
+            if r.returncode != 0 and cmake_cache.exists():
+                cmake_cache.unlink()
+                raise SystemExit("Error: CMake configuration failed")
 
         # This is a hack to make the parallel build faster.
         # Compile all targets on first call to make better use of parallization.
-        # Skip if output that already exists, but run at least once since only
+        # Skip output that already exists, but run at least once since only
         # cmake can detect which existing targets need to be recompiled.
         target = ext.name.split(".")[-1]
         suffix = sc.get_config_var("EXT_SUFFIX") or sc.get_config_var("SO")
         output_file = Path(extdir) / (target + suffix)
-        if not output_file.exists() or target == "_eposlhc":  # any one target is fine
-            cmd = ["cmake", "--build", "."] + build_args
+        if not output_file.exists() or target == "_eposlhc":  # any target is fine
+            cmd = [cmake_exe, "--build", "."] + build_args
             if verbose:
                 force_print(" ".join(cmd))
-            subp.check_call(cmd, cwd=build_temp)
+            r = subp.run(cmd, cwd=build_temp)
+            if r.returncode != 0 and cmake_cache.exists():
+                cmake_cache.unlink()
+                raise SystemExit("Error: CMake configuration is faulty")

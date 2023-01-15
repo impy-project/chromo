@@ -342,7 +342,7 @@ extern void F_FUNC_US(sib_sigma_hair,SIB_SIGMA_HAIR)(int*,double*,double*,double
 extern void F_FUNC_US(sib_sigma_hnuc,SIB_SIGMA_HNUC)(int*,int*,double*,double*,double*,double*);
 extern void F_FUNC_US(int_nuc,INT_NUC)(int*,int*,double*,double*);
 extern void F_FUNC(sibini,SIBINI)(int*);
-extern void F_FUNC(sibhep3,SIBHEP3)(void);
+extern void F_FUNC(sibhep,SIBHEP)(void);
 extern void F_WRAPPEDFUNC(gasdev,GASDEV)(double*,int*);
 extern void F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE)(string,int*,size_t);
 extern void F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE)(int*);
@@ -1443,12 +1443,12 @@ f2py_stop_clock();
 }
 /******************************* end of sibini *******************************/
 
-/********************************** sibhep3 **********************************/
-static char doc_f2py_rout__sib23c03_sibhep3[] = "\
-sibhep3()\n\nWrapper for ``sibhep3``.\
+/********************************** sibhep **********************************/
+static char doc_f2py_rout__sib23c03_sibhep[] = "\
+sibhep()\n\nWrapper for ``sibhep``.\
 \n";
-/* extern void F_FUNC(sibhep3,SIBHEP3)(void); */
-static PyObject *f2py_rout__sib23c03_sibhep3(const PyObject *capi_self,
+/* extern void F_FUNC(sibhep,SIBHEP)(void); */
+static PyObject *f2py_rout__sib23c03_sibhep(const PyObject *capi_self,
                            PyObject *capi_args,
                            PyObject *capi_keywds,
                            void (*f2py_func)(void)) {
@@ -1463,7 +1463,7 @@ static PyObject *f2py_rout__sib23c03_sibhep3(const PyObject *capi_self,
 f2py_start_clock();
 #endif
   if (!PyArg_ParseTupleAndKeywords(capi_args,capi_keywds,\
-    "|:_sib23c03.sibhep3",\
+    "|:_sib23c03.sibhep",\
     capi_kwlist))
     return NULL;
 /*frompyobj*/
@@ -1501,7 +1501,7 @@ f2py_stop_clock();
 #endif
   return capi_buildvalue;
 }
-/******************************* end of sibhep3 *******************************/
+/******************************* end of sibhep *******************************/
 
 /*********************************** gasdev ***********************************/
 static char doc_f2py_rout__sib23c03_gasdev[] = "\
@@ -2571,7 +2571,7 @@ static FortranDataDef f2py_routine_defs[] = {
   {"sib_sigma_hnuc",-1,{{-1}},0,(char *)F_FUNC_US(sib_sigma_hnuc,SIB_SIGMA_HNUC),(f2py_init_func)f2py_rout__sib23c03_sib_sigma_hnuc,doc_f2py_rout__sib23c03_sib_sigma_hnuc},
   {"int_nuc",-1,{{-1}},0,(char *)F_FUNC_US(int_nuc,INT_NUC),(f2py_init_func)f2py_rout__sib23c03_int_nuc,doc_f2py_rout__sib23c03_int_nuc},
   {"sibini",-1,{{-1}},0,(char *)F_FUNC(sibini,SIBINI),(f2py_init_func)f2py_rout__sib23c03_sibini,doc_f2py_rout__sib23c03_sibini},
-  {"sibhep3",-1,{{-1}},0,(char *)F_FUNC(sibhep3,SIBHEP3),(f2py_init_func)f2py_rout__sib23c03_sibhep3,doc_f2py_rout__sib23c03_sibhep3},
+  {"sibhep",-1,{{-1}},0,(char *)F_FUNC(sibhep,SIBHEP),(f2py_init_func)f2py_rout__sib23c03_sibhep,doc_f2py_rout__sib23c03_sibhep},
   {"gasdev",-1,{{-1}},0,(char *)F_WRAPPEDFUNC(gasdev,GASDEV),(f2py_init_func)f2py_rout__sib23c03_gasdev,doc_f2py_rout__sib23c03_gasdev},
   {"impy_openlogfile",-1,{{-1}},0,(char *)F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE),(f2py_init_func)f2py_rout__sib23c03_impy_openlogfile,doc_f2py_rout__sib23c03_impy_openlogfile},
   {"impy_closelogfile",-1,{{-1}},0,(char *)F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE),(f2py_init_func)f2py_rout__sib23c03_impy_closelogfile,doc_f2py_rout__sib23c03_impy_closelogfile},
@@ -2625,7 +2625,7 @@ PyMODINIT_FUNC PyInit__sib23c03(void) {
 "  sigprod,sigbdif = sib_sigma_hnuc(l,iat,sqs,sigela)\n"
 "  int_nuc(ia,ib,sig0,sigel)\n"
 "  sibini(seedin)\n"
-"  sibhep3()\n"
+"  sibhep()\n"
 "  gasdev = gasdev(idum)\n"
 "  impy_openlogfile(fname,opunit)\n"
 "  impy_closelogfile(opunit)\n"

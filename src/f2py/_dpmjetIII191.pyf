@@ -1599,7 +1599,7 @@ python module _dpmjetIII191 ! in
         subroutine pho_init(linp,lout,irej) ! in :_dpmjetIII191:CMakeFiles/_dpmjetIII191.dir/PHO_INIT.f
             integer :: linp
             integer :: lout
-            integer intent(out) :: irej
+            integer intent(inout) :: irej
             integer :: li
             integer :: lo
             integer :: lpri

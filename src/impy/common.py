@@ -9,15 +9,96 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 """
 from abc import ABC, abstractmethod
 import numpy as np
-from impy import impy_config
-from .util import info, classproperty, select_parents
-from .constants import quarks_and_diquarks_and_gluons
-from .kinematics import EventKinematics
+from impy.util import (
+    classproperty,
+    select_parents,
+    naneq,
+    pdg2name,
+    Nuclei,
+)
+from impy.constants import (
+    quarks_and_diquarks_and_gluons,
+    long_lived,
+    standard_projectiles,
+    GeV,
+)
+from impy.kinematics import EventKinematics, CompositeTarget
 import dataclasses
 import copy
-import typing as _tp
+from typing import Tuple, Optional
 from contextlib import contextmanager
 import warnings
+from particle import Particle
+
+
+# Do we need EventData.n_spectators in addition to EventData.n_wounded?
+# n_spectators can be computed from n_wounded as number_of_nucleons - n_wounded
+# If we want this, it should be computed dynamically via a property.
+@dataclasses.dataclass
+class CrossSectionData:
+    """Information of cross-sections returned by the generator.
+
+    The class is driven by the amount of detail that Pythia-8 provides.
+    Most other generators do not fill all attributes. When information is missing,
+    the attributes contain NaN. The fields are intentionally redundant, since
+    some generators may provide only the total cross-section or only the inelastic
+    cross-section.
+
+    All cross-sections are in millibarn.
+
+    Attributes
+    ----------
+    total : float
+        Total cross-section (elastic + inelastic).
+    inelastic : float
+        Inelastic cross-section. Includes diffractive cross-sections.
+    elastic : float
+        Cross-section for pure elastic scattering of incoming particle
+        without any new particle generation.
+    diffractive_xb : float
+        Single diffractive cross-section. Particle 2 remains intact,
+        particles are produced around Particle 1.
+    diffractive_ax : float
+        Single diffractive cross-section. Particle 1 remains intact,
+        particles are produced around Particle 2.
+    diffractive_xx : float
+        Double diffractive cross-section. Central rapidity gap, but
+        paricles are producted around both beam particles.
+    diffractive_axb : float
+        Central diffractive cross-section (e.g.
+        pomeron-pomeron interaction.)
+    """
+
+    total: float = np.nan
+    inelastic: float = np.nan
+    elastic: float = np.nan
+    diffractive_xb: float = np.nan
+    diffractive_ax: float = np.nan
+    diffractive_xx: float = np.nan
+    diffractive_axb: float = np.nan
+
+    @property
+    def non_diffractive(self):
+        return (
+            self.inelastic
+            - self.diffractive_xb
+            - self.diffractive_ax
+            - self.diffractive_xx
+            - self.diffractive_axb
+        )
+
+    def __eq__(self, other):
+        at = dataclasses.astuple(self)
+        bt = dataclasses.astuple(other)
+        return all(naneq(a, b) for (a, b) in zip(at, bt))
+
+    def __ne__(self, other):
+        return not self == other
+
+
+# Do we need EventData.n_spectators in addition to EventData.n_wounded?
+# n_spectators can be computed from n_wounded as number_of_nucleons - n_wounded
+# If we want this, it should be computed dynamically via a property.
 
 
 @dataclasses.dataclass
@@ -31,10 +112,12 @@ class EventData:
         Info about the generator, its name and version.
     kin: EventKinematics
         Info about initial state.
-    frame: str
-        Current event frame (Lorentz frame).
     nevent: int
         Which event in the sequence.
+    impact_parameter: float
+        Impact parameter for nuclear collisions in mm.
+    n_wounded: (int, int)
+        Number of wounded nucleons on sides A and B.
     pid: 1D array of int
         PDG IDs of the particles.
     status: 1D array of int
@@ -68,10 +151,11 @@ class EventData:
         Same as parents.
     """
 
-    generator: _tp.Tuple[str, str]
+    generator: Tuple[str, str]
     kin: EventKinematics
-    frame: str
     nevent: int
+    impact_parameter: float
+    n_wounded: Tuple[int, int]
     pid: np.ndarray
     status: np.ndarray
     charge: np.ndarray
@@ -84,8 +168,8 @@ class EventData:
     vy: np.ndarray
     vz: np.ndarray
     vt: np.ndarray
-    parents: _tp.Optional[np.ndarray]
-    children: _tp.Optional[np.ndarray]
+    parents: Optional[np.ndarray]
+    children: Optional[np.ndarray]
 
     def __getitem__(self, arg):
         """
@@ -96,8 +180,9 @@ class EventData:
         return EventData(
             self.generator,
             self.kin,
-            self.frame,
             self.nevent,
+            self.impact_parameter,
+            self.n_wounded,
             self.pid[arg],
             self.status[arg],
             self.charge[arg],
@@ -124,28 +209,19 @@ class EventData:
 
         This is mostly useful for debugging and in unit tests.
         """
-        return (
-            self.kin == other.kin
-            and self.frame == other.frame
-            and self.nevent == other.nevent
-            and np.all(
-                (self.pid == other.pid)
-                & (self.status == other.status)
-                & (self.charge == other.charge)
-                & (self.px == other.px)
-                & (self.py == other.py)
-                & (self.pz == other.pz)
-                & (self.en == other.en)
-                & (self.m == other.m)
-                & (self.vx == other.vx)
-                & (self.vy == other.vy)
-                & (self.vz == other.vz)
-                & (self.vt == other.vt)
-                & (self.en == other.en)
-            )
-            and (self.parents is None or np.all(self.parents == other.parents))
-            and (self.children is None or np.all(self.children == other.children))
-        )
+
+        def eq(a, b):
+            if isinstance(a, float):
+                return naneq(a, b)
+            elif isinstance(a, np.ndarray):
+                return np.array_equal(a, b)
+            elif isinstance(a, Tuple):
+                return all(eq(ai, bi) for (ai, bi) in zip(a, b))
+            return a == b
+
+        at = dataclasses.astuple(self)
+        bt = dataclasses.astuple(other)
+        return all(eq(a, b) for (a, b) in zip(at, bt))
 
     def copy(self):
         """
@@ -220,12 +296,14 @@ class EventData:
     @property
     def eta(self):
         """Return pseudorapidity."""
-        return np.log((self.p_tot + self.pz) / self.pt)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return np.log((self.p_tot + self.pz) / self.pt)
 
     @property
     def y(self):
         """Return rapidity."""
-        return 0.5 * np.log((self.en + self.pz) / (self.en - self.pz))
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return 0.5 * np.log((self.en + self.pz) / (self.en - self.pz))
 
     @property
     def xf(self):
@@ -291,8 +369,15 @@ class EventData:
         # for all models. This should be revisited once the fundamental issues
         # with particle histories have been fixed.
         if model == "Pythia" and version.startswith("8"):
-            # must deselect parton showers in Pythia-8 to use HepMC3 IO
-            ev = self.without_parton_shower()
+            # to get a valid GenEvent we must
+            # 1) select only particles produced after the parton shower
+            # 2) connect particles attached to a single beam particle (diffractive events)
+            #    to the common interaction vertex (1, 2)
+            # TODO check if this costs significant amount of time and speed it up if so
+            mask = (self.status == 1) | (self.status == 2) | (self.status == 4)
+            ev = self[mask]
+            mask = (ev.parents[:, 0] == 1) | (ev.parents[:, 0] == 2)
+            ev.parents[mask] = (1, 2)
         elif model in ("UrQMD", "PhoJet", "DPMJET-III"):
             # can only save final state until history is fixed
             warnings.warn(
@@ -380,14 +465,13 @@ class MCEvent(EventData, ABC):
         parents = getattr(evt, self._jmohep).T[sel] if self._jmohep else None
         children = getattr(evt, self._jdahep).T[sel] if self._jdahep else None
 
-        user_frame = impy_config["user_frame"]  # TODO take from event_kinematics
-
         EventData.__init__(
             self,
             (generator.name, generator.version),
-            generator.event_kinematics,
-            user_frame,
+            generator.kinematics,
             int(getattr(evt, self._nevhep)),
+            self._get_impact_parameter(),
+            self._get_n_wounded(),
             getattr(evt, self._idhep)[sel],
             getattr(evt, self._isthep)[sel],
             self._charge_init(npart),
@@ -397,13 +481,18 @@ class MCEvent(EventData, ABC):
             children,
         )
 
-        # Apply boosts into frame required by user
-        self.kin.apply_boost(self, generator._output_frame, user_frame)
-
     @abstractmethod
     def _charge_init(self, npart):
         # override this in derived to get charge info
         ...
+
+    def _get_impact_parameter(self):
+        # override this in derived
+        return np.nan
+
+    def _get_n_wounded(self):
+        # override this in derived
+        return (0, 0)
 
     # MCEvent is not pickleable, but EventData is. For convenience, we
     # make it so that MCEvent can be saved and is restored as EventData.
@@ -494,14 +583,14 @@ class MCRun(ABC):
     _is_initialized = []
     _restartable = False
     _set_final_state_particles_called = False
-    _evt_kin = None
+    _projectiles = standard_projectiles
+    _targets = Nuclei()
+    _ecm_min = 10 * GeV  # default for many models
     nevents = 0  # number of generated events so far
 
-    def __init__(self, seed, logfname):
+    def __init__(self, seed):
         import importlib
         from random import randint
-
-        # from impy.util import OutputGrabber
 
         if not self._restartable:
             self._abort_if_already_initialized()
@@ -510,22 +599,21 @@ class MCRun(ABC):
         assert hasattr(self, "_version")
         assert hasattr(self, "_library_name")
         assert hasattr(self, "_event_class")
-        assert hasattr(self, "_output_frame")
+        assert hasattr(self, "_frame")
         self._lib = importlib.import_module(f"impy.models.{self._library_name}")
 
-        # FORTRAN LUN that keeps logfile handle
-        self._output_lun = None
-
-        self._attach_log(logfname)
-
-        if seed is None or seed == "random":
-            self._seed = randint(1000000, 10000000)
+        if seed is None:
+            self._seed = randint(1, 10000000)
         elif isinstance(seed, int):
             self._seed = seed
         else:
             raise ValueError(f"Invalid seed {seed}")
 
-        info(3, "Using seed:", self._seed)
+        if hasattr(self._lib, "init_rmmard"):
+            self._lib.init_rmmard(self._seed)
+
+        # TODO use rmmard for this, too, instead of numpy PRNG
+        self._composite_target_rng = np.random.default_rng(self._seed)
 
     def __call__(self, nevents):
         """Generator function (in python sence)
@@ -533,26 +621,27 @@ class MCRun(ABC):
         and returns its the result (event) as MCEvent object
         """
         assert self._set_final_state_particles_called
-        retry_on_rejection = impy_config["retry_on_rejection"]
-        # Initialize counters to prevent infinite loops in rejections
-        ntrials = 0
-        nremaining = nevents
-        self._set_comp_target(nevents)
-        while nremaining > 0:
-            self._update_event_kinematics(nremaining)
-            if self._generate_event() == 0:
-                self.nevents += 1
-                yield self._event_class(self)
-                nremaining -= 1
-                ntrials += 1
-            elif retry_on_rejection:
-                info(10, "Rejection occured. Retrying..")
-                ntrials += 1
-                continue
-            elif ntrials > 2 * nevents:
-                raise Exception("Things run bad. Check your input.")
-            else:
-                info(0, "Rejection occured")
+        nretries = 0
+        for nev in self._composite_plan(nevents):
+            while nev > 0:
+                if self._generate():
+                    nretries = 0
+                    self.nevents += 1
+                    nev -= 1
+                    event = self._event_class(self)
+                    # boost into frame requested by user
+                    self.kinematics.apply_boost(event, self._frame)
+                    yield event
+                    continue
+                nretries += 1
+                if nretries % 50 == 0:
+                    warnings.warn(
+                        f"Event was rejected {nretries} times in a row. The generator "
+                        "may be misconfigured or used outside of its valid range",
+                        RuntimeWarning,
+                    )
+                if nretries > 1000:
+                    raise RuntimeError("More than 1000 retries, aborting")
 
     @property
     def seed(self):
@@ -574,26 +663,31 @@ class MCRun(ABC):
         return cls.__name__
 
     @classproperty
-    def output_frame(cls):
-        """Default frame of the output particle stack."""
-        return cls._output_frame
-
-    @classproperty
     def version(cls):
         """Event generator version"""
         return cls._version
 
+    @classproperty
+    def projectiles(cls):
+        """Supported projectiles (positive PDGIDs only, c.c. implied)."""
+        return cls._projectiles
+
+    @classproperty
+    def targets(cls):
+        """Supported targets (positive PDGIDs only, c.c. implied)."""
+        return cls._targets
+
     @abstractmethod
-    def _generate_event(self):
+    def _generate(self):
         """The method to generate a new event.
 
         Returns:
-            (int) : Rejection flag = 0 if everything is ok.
+            bool : True if event was successfully generated and False otherwise.
         """
         pass
 
     @abstractmethod
-    def _set_event_kinematics(self, evtkin):
+    def _set_kinematics(self, kin):
         # Set new combination of energy, momentum, projectile
         # and target combination for next event.
 
@@ -603,37 +697,21 @@ class MCRun(ABC):
         # internal variables of the model. In both cases the
         # important thing is that _generate_event remains argument-free.
 
-        # This call must not update self.event_kinematics, only the
+        # This call must not update self.kinematics, only the
         # generator-specific variables.
         pass
 
-    def _set_comp_target(self, nevents):
-        if self._evt_kin.composite_target:
-            setattr(self, "_nremaining", nevents)
-            setattr(self, "_target_ind", self._gen_target_ind(nevents))
-
-    def _gen_target_ind(self, nevents):
-        ctarget = self._evt_kin.composite_target
-        sample = ctarget.rng.multinomial(nevents, ctarget.component_fractions)
-
-        for cindex, ntimes in enumerate(sample):
-            for _ in range(ntimes):
-                yield cindex
-
-    def _update_event_kinematics(self, nremaining):
-        if self._evt_kin.composite_target:
-
-            if nremaining == self._nremaining:
-                return
-
-            ctarget = self._evt_kin.composite_target
-            self._nremaining = nremaining
-            evt_kin = self._evt_kin
-            if evt_kin.p2_is_nucleus:
-                ic = next(self._target_ind)
-                evt_kin.A2 = ctarget.component_A[ic]
-                evt_kin.Z2 = ctarget.component_Z[ic]
-                self._set_event_kinematics(evt_kin)
+    def _composite_plan(self, nevents):
+        kin = self.kinematics
+        if isinstance(kin.p2, CompositeTarget):
+            nevents = self._composite_target_rng.multinomial(nevents, kin.p2.fractions)
+            ek = copy.deepcopy(kin)
+            for c, k in zip(kin.p2.components, nevents):
+                ek.p2 = c
+                with self._temporary_kinematics(ek):
+                    yield k
+        else:
+            yield nevents
 
     @property
     def random_state(self):
@@ -644,13 +722,28 @@ class MCRun(ABC):
         rng_state._restore_state(self)
 
     @property
-    def event_kinematics(self):
-        return self._evt_kin
+    def kinematics(self):
+        return self._kinematics
 
-    @event_kinematics.setter
-    def event_kinematics(self, evt_kin):
-        self._evt_kin = evt_kin
-        self._set_event_kinematics(evt_kin)
+    @kinematics.setter
+    def kinematics(self, kin):
+        if abs(kin.p1) not in self._projectiles:
+            raise ValueError(
+                f"projectile {pdg2name(kin.p1)}[{int(kin.p1)}] is not allowed, "
+                f"see {self.pyname}.projectiles"
+            )
+        if abs(kin.p2) not in self._targets:
+            raise ValueError(
+                f"target {pdg2name(kin.p2)}[{int(kin.p2)}] is not among allowed, "
+                f"see {self.pyname}.targets"
+            )
+        if kin.ecm < self._ecm_min:
+            raise ValueError(
+                f"center-of-mass energy {kin.ecm/GeV} GeV < "
+                f"minimum energy {self._ecm_min/GeV} GeV"
+            )
+        self._kinematics = kin
+        self._set_kinematics(kin)
 
     def set_stable(self, pdgid, stable=True):
         """Prevent decay of unstable particles
@@ -659,12 +752,14 @@ class MCRun(ABC):
             pdgid (int)        : PDG ID of the particle
             stable (bool)      : If `False`, particle is allowed to decay
         """
-        # put common code here
-        if stable:
-            info(5, pdgid, "allowed to decay")
+        p = Particle.from_pdgid(pdgid)
+        if p.ctau is None or p.ctau == np.inf:
+            raise ValueError(f"{pdg2name(pdgid)} cannot decay")
+        if abs(pdgid) == 311:
+            self._set_stable(130, stable)
+            self._set_stable(310, stable)
         else:
-            info(5, "defining", pdgid, "as stable particle")
-        self._set_stable(pdgid, stable)
+            self._set_stable(pdgid, stable)
 
     def set_unstable(self, pdgid):
         """Convenience funtion for `self.set_stable(..., stable=False)`
@@ -674,48 +769,37 @@ class MCRun(ABC):
         """
         self.set_stable(pdgid, False)
 
-    def sigma_inel(self, evt_kin=None):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        return self._sigma_inel(self.event_kinematics if evt_kin is None else evt_kin)
+    def cross_section(self, kin=None):
+        """Cross sections according to current setup.
 
-    @abstractmethod
-    def _sigma_inel(self, evtkin):
-        pass
-
-    # TODO: Change to generic function for composite target. Make
-    # exception for air
-    def sigma_inel_air(self):
-        """Hadron-air production cross sections according to current
-        event setup (energy, projectile).
-
-        Args:
-           precision (int): Anything else then 'default' (str) will set
-                            the number of MC trails to that number.
+        Parameters
+        ----------
+        kin : EventKinematics, optional
+            If provided, calculate cross-section for EventKinematics.
+            Otherwise return values for current setup.
         """
-
-        # Make a backup of the current kinematics config
-        frac_air = impy_config["frac_air"]
-
-        cs = 0.0
-        for f, iat in frac_air:
-            k = EventKinematics(
-                ecm=self.event_kinematics.ecm,
-                particle1=self.event_kinematics.particle1,
-                particle2=(iat, int(iat / 2)),
-            )
-            cs += f * self._sigma_inel(k)
-
-        return cs
+        with self._temporary_kinematics(kin):
+            kin2 = self.kinematics
+            if isinstance(kin2.p2, CompositeTarget):
+                cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0)
+                kin3 = copy.copy(kin2)
+                for component, fraction in zip(kin2.p2.components, kin2.p2.fractions):
+                    kin3.p2 = component
+                    # this calls cross_section recursively, which is fine
+                    cs = self.cross_section(kin3)
+                    for i, val in enumerate(dataclasses.astuple(cs)):
+                        cross_section[i] += fraction * val
+                return cross_section
+            else:
+                return self._cross_section(kin)
 
     @abstractmethod
-    def _attach_log(self, fname):
-        """Routes the output to a file or the stdout."""
+    def _cross_section(self, kin):
         pass
 
     @abstractmethod
     def _set_stable(self, pidid, stable):
-        ...
+        pass
 
     def _abort_if_already_initialized(self):
         # The first initialization should not be run more than
@@ -729,62 +813,21 @@ class MCRun(ABC):
         assert self._library_name not in self._is_initialized, message
         self._is_initialized.append(self._library_name)
 
-    def _attach_fortran_logfile(self, fname):
-        """Chooses a random LUN between 20 - 100 and returns a FORTRAN
-        file handle (LUN number) to an open file."""
-        import os
-        from os import path
-        from random import randint
-
-        if path.isfile(fname) and os.stat(fname).st_size != 0:
-            raise Exception("Attempts to overwrite log :" + fname)
-        elif self.output_lun is not None:
-            raise Exception("Log already attached to LUN", self.output_lun)
-
-        path.abspath(fname)
-        # Create a random fortran output unit
-        self._output_lun = randint(20, 100)
-        self._lib.impy_openlogfile(path.abspath(fname), self.output_lun)
-        return self._output_lun
-
-    def _close_logfile(self):
-        """Constructed for closing C++ and FORTRAN log files"""
-        if "pythia8" not in self._label:
-            self._close_fortran_logfile()
-        else:
-            # self.close_cc_logfile()
-            pass
-
-    def _close_fortran_logfile(self):
-        """FORTRAN LUN has to be released when finished to flush buffers."""
-        if self.output_lun is None:
-            info(2, "Output went not to file.")
-        else:
-            self._lib.impy_closelogfile(self.output_lun)
-            self._output_lun = None
-
     def _set_final_state_particles(self):
         """Defines particles as stable for the default 'tau_stable'
         value in the config."""
-        # info(5, 'Setting default particles stable with lifetime <',
-        #      impy_config['tau_stable'], 's')
 
-        # for pdgid in make_stable_list(impy_config['tau_stable'], pdata):
-        #     self.set_stable(pdgid)
-
-        info(5, "Setting following particles to be stable:", impy_config["stable_list"])
-
-        for pdgid in impy_config["stable_list"]:
+        for pdgid in long_lived:
             self._set_stable(pdgid, True)
-
-        if impy_config["pi0_stable"]:
-            self._set_stable(111, True)
 
         self._set_final_state_particles_called = True
 
     @contextmanager
-    def _temporary_evt_kin(self, evt_kin):
-        prev = copy(self.event_kinematics)
-        self.event_kinematics = evt_kin
-        yield
-        self.event_kinematics = prev
+    def _temporary_kinematics(self, kin):
+        if kin is None:
+            yield
+        else:
+            prev = copy.copy(self.kinematics)
+            self.kinematics = kin
+            yield
+            self.kinematics = prev

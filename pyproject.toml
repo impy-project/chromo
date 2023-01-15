@@ -4,16 +4,15 @@ requires = [
     "wheel",
     "cmake",
     "numpy<1.24",
-    "pyhepmc>=2.7.3"
 ]
-build-backend = "setuptools.build_meta"
+#build-backend = "setuptools.build_meta"
 
 [tool.mypy]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-q -ra --ff"
+addopts = "-q -ra --ff -n auto"
 testpaths = ["tests"]
 filterwarnings = [
     "error::numpy.VisibleDeprecationWarning",

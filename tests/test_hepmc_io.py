@@ -4,20 +4,18 @@ from impy.kinematics import CenterOfMass, FixedTarget
 import impy.models as im
 import pytest
 import pyhepmc
-from .util import (
-    run_in_separate_process,
-    get_all_models,
-)
+from .util import run_in_separate_process
+from impy.util import get_all_models
 
 # generate list of all models in impy.models
-models = get_all_models(im)
+models = get_all_models()
 
 
 def run(Model):
-    evt_kin = CenterOfMass(10 * GeV, 2212, 2212)
+    evt_kin = CenterOfMass(100 * GeV, "proton", "proton")
 
     if Model == im.Sophia20:
-        evt_kin = FixedTarget(10 * GeV, "photon", "proton")
+        evt_kin = FixedTarget(100 * GeV, "photon", "proton")
     gen = Model(evt_kin, seed=1)
     return list(gen(3))
 
@@ -32,10 +30,14 @@ def test_hepmc_io(Model):
     # a lot of particles are missing. Either a bug in the original impy record or a
     # bug in the HepMC3 C++ code (not the pyhepmc code).
 
-    test_file = Path(f"{Path(__file__).with_suffix('')}_{Model.__name__}.dat")
+    test_file = Path(f"{Path(__file__).stem}_{Model.pyname}.dat")
 
     events = run_in_separate_process(run, Model)
-    expected = [ev.to_hepmc3() for ev in events]
+    expected = []
+    genevent = None
+    for ev in events:
+        genevent = ev.to_hepmc3(genevent)
+        expected.append(genevent)
 
     # Uncomment this to get debugging output. Higher number shows more.
     # This only works if you compile pyhepmc in debug mode.

@@ -1092,7 +1092,7 @@ python module _phojet191 ! in
         subroutine pho_init(linp,lout,irej) ! in :_phojet191:CMakeFiles/_phojet191.dir/PHO_INIT.f
             integer :: linp
             integer :: lout
-            integer intent(out) :: irej
+            integer intent(inout) :: irej
             integer :: li
             integer :: lo
             integer :: lpri

@@ -7,12 +7,13 @@ Simulate interactions with one of the supported event generators
 ```python
 import numpy as np
 import impy
-from impy.constants import TeV
 
 # Define the parameters of the collisions
-event_kinematics = impy.kinematics.CenterOfMass(13 * TeV, "proton", "proton")
+kinematics = impy.kinematics.CenterOfMass(
+    13 * impy.constants.TeV,
+    "proton", "proton")
 # Create an instance of an event generator
-generator = impy.models.Sibyll23d(event_kinematics)
+generator = impy.models.Sibyll23d(kinematics)
 
 nevents = 0
 average_pt = 0
@@ -32,6 +33,24 @@ for event in generator(10000):
 average_pt = average_pt / nevents
 print("Average pT for charged pions {0:4.3f}".format(average_pt))
 ```
+
+## Supported models
+
+- DPMJET-III 3.0.6 & PHOJET 1.12-35
+- DPMJET-III 19.1 & PHOJET 19.1
+- DPMJET-III 19.3 & PHOJET 19.3
+- EPOS-LHC
+- PYTHIA 6.4
+- PYTHIA 8.3
+- QGSJet-01
+- QGSJet-II-03
+- QGSJet-II-04
+- SIBYLL-2.1
+- SIBYLL-2.3
+- SIBYLL-2.3c
+- SIBYLL-2.3d
+- SOPHIA 2.0
+- UrQMD 3.4
 
 ## Installation
 
@@ -123,27 +142,15 @@ There are two ways to interact with the code.
 
 2. Via a HEPMC output that can be piped in Rivet or other tools supporting the format.
 
-## Supported models
+## Running tests
 
-- DPMJET-III 3.0.6
-- DPMJET-III 19.1
-- EPOS-LHC
-- PHOJET 1.12-35
-- PHOJET 19.1
-- PYTHIA 6
-- PYTHIA 8 (not yet bundled)
-- QGSJet-01
-- QGSJet-II-03
-- QGSJet-II-04
-- SIBYLL-2.1
-- SIBYLL-2.3
-- SIBYLL-2.3c
-- SIBYLL-2.3d
-- SOPHIA (needs update)
-- DPMJET-II (also needs update but model deprecated)
-- UrQMD 3.4
+Some notes regarding tests.
 
-## Authors:
+- Tests are run in parallel by default with `pytest-xdist`. To disable this, use the option `-n 0`.
+- The test `test_generators` takes a long time. It is marked to be run last. You can skip it with the option `-k "not test_generators"`.
+- Tests which run a model do so in a separate process, because most models can only instantiated once. This prevents using `--pdb` to start the debugger at the point of failure. You can prefix the pytest call like this `DEBUG=10 python -m pytest ...` to run the model in the current process. This will only work once for each model and lead to failures afterwards.
+
+## Authors
 
 - Anatoli Fedynitch
 - Hans Dembinski
@@ -153,4 +160,4 @@ There are two ways to interact with the code.
 
 ## LICENSE
 
-The source code of impy is licensed under the [BSD 3-clause license (see LICENSE for detail)](LICENSE). The source codes of the event generators are individually licensed under different conditions (see the COPYING files located in the subdirectories). 
+The source code of impy is licensed under the [BSD 3-clause license (see LICENSE for detail)](LICENSE). The source codes of the event generators are individually licensed under different conditions (see the COPYING files located in the subdirectories).
