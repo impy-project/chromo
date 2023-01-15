@@ -1,6 +1,7 @@
 #include <numpy/random/bitgen.h>
-#include <numpy/random/distributions.h>
 #include <stdint.h>
+
+double random_standard_normal(bitgen_t *bitgen_state);
 
 // called from Fortran
 void npynxt_(double* value, int64_t* ptr)

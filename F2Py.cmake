@@ -16,7 +16,6 @@
 #
 #   PYTHON_EXECUTABLE
 #   PYTHON_LIBRARIES
-#   NUMPY_RANDOM
 #   F2PY_INCLUDE_DIR
 #   PYTHON_MODULE_EXTENSION
 #   PYTHON_MODULE_PREFIX
@@ -168,7 +167,6 @@ function (f2py_add_module target_name)
   if (PYTHON_LIBRARIES) # may not be available (e.g. on manylinux)
     target_link_libraries(${target_name} PRIVATE ${PYTHON_LIBRARIES})
   endif()
-  target_link_libraries(${target_name} PRIVATE ${NUMPY_RANDOM} ${NUMPY_MATH})
   if (F2PY_ADD_MODULE_INCLUDE_DIRS)
     target_include_directories(${target_name}
     PRIVATE ${F2PY_ADD_MODULE_INCLUDE_DIRS})
