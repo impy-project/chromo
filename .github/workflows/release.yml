@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-12]
+        os: [ubuntu-latest, windows-latest, macos-12]
         arch: [native]
         py: [cp37, cp38, cp39, cp310, cp311]
         # exclude:
@@ -31,6 +31,9 @@ jobs:
         with:
           submodules: true
 
+      # graphviz is needed for tests, only install it when compilation succeed
+      # How to integrate into cibuildwheels?
+      - uses: tlylt/install-graphviz@v1
 
       # Remove after January 16th 2023 when GA switches to 14.2 by default
       - if: ${{ matrix.os == 'macos-12' }}
@@ -202,22 +205,22 @@ jobs:
 #     - run: python -m pytest -vv
 
 
-  # upload_all_to_TestPyPI:
-  #   name: Upload to TestPyPI
-  #   needs: [wheels]
-  #   runs-on: ubuntu-latest
-  #   # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-  #   steps:
-  #     - name: Download files in artifact to "dist/" directory
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: artifact
-  #         path: dist
+  upload_all_to_TestPyPI:
+    name: Upload to TestPyPI
+    needs: [wheels]
+    runs-on: ubuntu-latest
+    # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    steps:
+      - name: Download files in artifact to "dist/" directory
+        uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
 
-  #     - name: Publish package to TestPyPI
-  #       uses: pypa/gh-action-pypi-publish@v1.6.4
-  #       with:
-  #         user: __token__
-  #         repository_url: https://test.pypi.org/legacy/
-  #         password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      - name: Publish package to TestPyPI
+        uses: pypa/gh-action-pypi-publish@v1.6.4
+        with:
+          user: __token__
+          repository_url: https://test.pypi.org/legacy/
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
