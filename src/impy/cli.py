@@ -324,7 +324,7 @@ def main():
 
     task_id = None
     try:
-        model = args.model(evt_kin)
+        model = args.model(evt_kin, seed=args.seed)
         ofile = FORMATS[args.output](args.out, model)
         with ofile:
             # workaround: several models generate extra print when first

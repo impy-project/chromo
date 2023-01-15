@@ -520,7 +520,6 @@ class MCRun(ABC):
 
     def __init__(self, seed):
         import importlib
-        from numpy.random import default_rng
 
         if not self._restartable:
             self._abort_if_already_initialized()
@@ -533,7 +532,7 @@ class MCRun(ABC):
         self._lib = importlib.import_module(f"impy.models.{self._library_name}")
 
         self._seed = seed
-        self._rng = default_rng(seed)
+        self._rng = np.random.default_rng(seed)
         if hasattr(self._lib, "npy"):
             self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
 
