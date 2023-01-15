@@ -18,11 +18,11 @@ C     It contains Fortran 77 wrappers to fortran functions.
       end
 
 
-      subroutine f2pywrapspgasdev (spgasdevf2pywrap, idum)
+      subroutine f2pywrapspgasdev (spgasdevf2pywrap, dummy)
       external spgasdev
-      integer idum
+      integer dummy
       real spgasdevf2pywrap, spgasdev
-      spgasdevf2pywrap = spgasdev(idum)
+      spgasdevf2pywrap = spgasdev(dummy)
       end
 
 
@@ -270,13 +270,6 @@ C     It contains Fortran 77 wrappers to fortran functions.
       integer id_list(577)
       common /s_pdg2pid/ id_pdg_list,id_list
       call setupfunc(id_pdg_list,id_list)
-      end
-
-      subroutine f2pyinitrndmgas(setupfunc)
-      external setupfunc
-      integer iset
-      common /rndmgas/ iset
-      call setupfunc(iset)
       end
 
       subroutine f2pyinithepevt(setupfunc)

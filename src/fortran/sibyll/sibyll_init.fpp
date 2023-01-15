@@ -86,37 +86,3 @@ C-----------------------------------------------------------------------
 
       NEVSIB = NEVSIB + 1
       END
-
-#ifndef SIBYLL_21
-C***********************************************************************
-C     Gaussian deviation
-C
-C     Computes a normal distributed number with the Marsaglia polar
-C     method. The method always computes two normal numbers, so the
-C     extra one is stored on the first call and returned on the second
-C     call.
-C***********************************************************************
-      DOUBLE PRECISION FUNCTION GASDEV(IDUM)
-      DOUBLE PRECISION GSET,V1,V2,R,FAC,S_RNDM
-      INTEGER ISET,IDUM
-      COMMON /RNDMGAS/ ISET
-      SAVE
-      DATA ISET/0/
-      gasdev=idum
-      IF (ISET.EQ.0) THEN
-12      V1=2.D0*S_RNDM(0)-1.D0
-        V2=2.D0*S_RNDM(1)-1.D0
-        R=V1**2+V2**2
-        IF (R.GE.1.D0) GO TO 12
-        FAC=SQRT(-2.D0*LOG(R)/R)
-        GSET=V1*FAC
-        GASDEV=V2*FAC
-        ISET=1
-      ELSE
-        GASDEV=GSET
-        ISET=0
-      ENDIF
-      RETURN
-      END
-
-#endif

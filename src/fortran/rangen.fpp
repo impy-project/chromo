@@ -1,16 +1,41 @@
-      SUBROUTINE NPYRNG( RVAL )
-      IMPLICIT NONE
+      SUBROUTINE npyrng( rval )
+      implicit none
 
-      EXTERNAL NPYNXT
-      DOUBLE PRECISION RVAL
-      integer*8 BITGEN
-      COMMON /NPY/BITGEN
-      SAVE
+      external npynxt
+      double precision rval
+      integer*8 bitgen
+      common /npy/bitgen
 
-      CALL NPYNXT(RVAL, BITGEN)
+      CALL npynxt(rval, bitgen)
 
-      RETURN
       END
+
+      DOUBLE PRECISION FUNCTION gasdev( dummy )
+      implicit none
+
+      external npygas
+      integer dummy
+      integer*8 bitgen
+      COMMON /npy/bitgen
+
+      call NPYGAS(gasdev, bitgen)
+
+      end
+
+      REAL FUNCTION spgasdev( dummy )
+      implicit none
+
+      external npygas
+      integer dummy
+      integer*8 bitgen
+      COMMON /npy/bitgen
+      double precision rval
+
+      call NPYGAS(rval, bitgen)
+
+      spgasdev = real(rval)
+
+      end
 
       SUBROUTINE RMMARD( RVEC,LENV,ISEQ )
       implicit none
@@ -22,7 +47,6 @@
         RVEC(IVEC) = RVAL
       ENDDO
 
-      RETURN
       END
 
 C=======================================================================
@@ -47,7 +71,6 @@ C-----------------------------------------------------------------------
         RVEC(IVEC) = RVAL
       ENDDO
 
-      RETURN
       END
 
 C=======================================================================
@@ -63,7 +86,6 @@ C-----------------------------------------------------------------------
 
       CALL NPYRNG(DRANF)
 
-      RETURN
       END
 
 C=======================================================================
@@ -76,7 +98,6 @@ C-----------------------------------------------------------------------
 
       CALL NPYRNG(SIMRND)
 
-      RETURN
       END
 
 C=======================================================================
@@ -104,7 +125,6 @@ C-----------------------------------------------------------------------
       S_RNDM = SIMRND()
 #endif
 
-      RETURN
       END
 
 C-----------------------------------------------------------------------
@@ -115,7 +135,6 @@ C-----------------------------------------------------------------------
 
       CALL NPYRNG(PYR)
 
-      RETURN
       END
 
       DOUBLE PRECISION FUNCTION RNDM()
@@ -128,7 +147,6 @@ C-----------------------------------------------------------------------
 
       CALL NPYRNG(RNDM)
 
-      RETURN
       END
 
       DOUBLE PRECISION FUNCTION PSRAN()
@@ -141,7 +159,6 @@ C-----------------------------------------------------------------------
 
       CALL NPYRNG(PSRAN)
 
-      RETURN
       END
 
       DOUBLE PRECISION FUNCTION RANF()
@@ -154,7 +171,6 @@ C-----------------------------------------------------------------------
 
       CALL NPYRNG(RANF)
 
-      RETURN
       END
 
 
@@ -168,7 +184,6 @@ C-----------------------------------------------------------------------
 
       CALL NPYRNG(RLU)
 
-      RETURN
       END
 
       DOUBLE PRECISION FUNCTION DT_RNDM(VDUMMY)
@@ -183,5 +198,4 @@ C-----------------------------------------------------------------------
 
       CALL NPYRNG(DT_RNDM)
 
-      RETURN
       END

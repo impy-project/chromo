@@ -440,12 +440,6 @@ python module _sib23c00 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /schg/ ichg
         end subroutine sibhep
-        function gasdev(idum) ! in :_sib23c00:CMakeFiles/_sib23c00.dir/sibyll_init.fpp
-            integer :: idum
-            integer, optional :: iset=0
-            double precision :: gasdev
-            common /rndmgas/ iset
-        end function gasdev
         subroutine impy_openlogfile(fname,opunit) ! in :_sib23c00:CMakeFiles/_sib23c00.dir/logging.f
             character*300 :: fname
             integer :: opunit
@@ -458,6 +452,12 @@ python module _sib23c00 ! in
             integer*8 :: bitgen
             common /npy/ bitgen
         end subroutine npyrng
+        function gasdev(dummy) ! in :_sib23c00:CMakeFiles/_sib23c00.dir/rangen.fpp
+            integer :: dummy
+            integer*8 :: bitgen
+            double precision :: gasdev
+            common /npy/ bitgen
+        end function gasdev
     end interface 
 end python module _sib23c00
 

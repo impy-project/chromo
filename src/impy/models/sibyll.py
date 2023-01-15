@@ -56,8 +56,6 @@ class SIBYLLRun(MCRun):
         self._lib.s_debug.ndebug = impy.debug_level
 
         self._lib.sibini()
-        # Set the internal state of GASDEV function (rng) to 0
-        self._lib.rndmgas.iset = 0
         self._lib.pdg_ini()
 
         # This calls _set_event_kinematics which uses self._lib.isib_pdg2pid

@@ -71,12 +71,18 @@ endmacro()
 
 use_alternate_linker_if_available(mold)
 
+# location of npyrandom and npymath
+find_library(NUMPY_MATH npymath PATHS ${NUMPY_INCLUDE_DIRS}/../lib)
+find_library(NUMPY_RANDOM npyrandom PATHS ${NUMPY_INCLUDE_DIRS}/../../random/lib)
+
 # Print out the discovered paths
 cmake_print_variables(PYTHON_EXECUTABLE)
 cmake_print_variables(PYTHON_INCLUDE_DIRS)
 cmake_print_variables(PYTHON_LIBRARIES)
 cmake_print_variables(F2PY_INCLUDE_DIR)
 cmake_print_variables(NUMPY_INCLUDE_DIRS)
+cmake_print_variables(NUMPY_MATH)
+cmake_print_variables(NUMPY_RANDOM)
 cmake_print_variables(BUILD_sib23c00)
 cmake_print_variables(BUILD_sib23c02)
 cmake_print_variables(BUILD_sib23c03)
