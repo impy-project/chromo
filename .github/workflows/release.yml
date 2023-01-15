@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-12]
+        os: [macos-12]
         arch: [native]
         py: [cp37, cp38, cp39, cp310, cp311]
         # exclude:
@@ -20,6 +20,7 @@ jobs:
         #     - os: macos-12
         #       arch: arm64
         #       py: cp38
+        # os: [ubuntu-latest, windows-latest, macos-12]
         # os: [ubuntu-latest, windows-latest]
         # arch: [native, arm64]
         # py: [cp37, cp38, cp39, cp310]
@@ -30,6 +31,10 @@ jobs:
         with:
           submodules: true
 
+
+      # Remove after January 16th 2023 when GA switches to 14.2 by default
+      - if: ${{ matrix.os == 'macos-12' }}
+        run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
 
       - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'native'}}
         name: Setup gfortran for Macos
