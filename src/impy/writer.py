@@ -240,3 +240,23 @@ class Hepmc:
 
 def lhe(file):
     raise SystemExit("LHE not yet supported")
+
+
+class Null:
+    """
+    Null writer.
+
+    It does not do anything. Useful for benchmarks.
+    """
+
+    def __init__(self, file, model):
+        pass
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, *args):
+        pass
+
+    def write(self, event):
+        pass

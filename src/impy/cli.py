@@ -68,6 +68,7 @@ FORMATS = {
     "hepmcgz": writer.Hepmc,
     "root": writer.Root,
     "svg": writer.Svg,
+    "null": writer.Null,
     # "lhe",
     # "lhegz",
 }
