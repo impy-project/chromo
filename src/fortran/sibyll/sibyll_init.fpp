@@ -90,6 +90,11 @@ C-----------------------------------------------------------------------
 #ifndef SIBYLL_21
 C***********************************************************************
 C     Gaussian deviation
+C
+C     Computes a normal distributed number with the Marsaglia polar
+C     method. The method always computes two normal numbers, so the
+C     extra one is stored on the first call and returned on the second
+C     call.
 C***********************************************************************
       DOUBLE PRECISION FUNCTION GASDEV(IDUM)
       DOUBLE PRECISION GSET,V1,V2,R,FAC,S_RNDM

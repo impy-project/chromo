@@ -440,6 +440,12 @@ python module _sib23c02 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /schg/ ichg
         end subroutine sibhep
+        function gasdev(idum) ! in :_sib23c02:CMakeFiles/_sib23c02.dir/sibyll_init.fpp
+            integer :: idum
+            integer, optional :: iset=0
+            double precision :: gasdev
+            common /rndmgas/ iset
+        end function gasdev
         subroutine impy_openlogfile(fname,opunit) ! in :_sib23c02:CMakeFiles/_sib23c02.dir/logging.f
             character*300 :: fname
             integer :: opunit

@@ -206,7 +206,7 @@ f2py_add_module(_sib23
 ### sib23c01
 f2py_add_module(_sib23c01
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS}
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c01.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -222,7 +222,7 @@ f2py_add_module(_sib23c01
 ### sib23d
 f2py_add_module(_sib23d
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS}
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3d.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -619,7 +619,7 @@ f2py_add_module(_phojet193
 if(BUILD_sib23c00)
   f2py_add_module(_sib23c00
     FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS}
+    ${SIBYLL_COMMON_FUNCTIONS} gasdev
     SOURCES
     ${fortran_dir}/sibyll/sibyll2.3c00.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -635,7 +635,7 @@ endif()
 if(BUILD_sib23c02)
   f2py_add_module(_sib23c02
     FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS}
+    ${SIBYLL_COMMON_FUNCTIONS} gasdev
     SOURCES
     ${fortran_dir}/sibyll/sibyll2.3c02.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -651,7 +651,7 @@ endif()
 if(BUILD_sib23c03)
   f2py_add_module(_sib23c03
     FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS}
+    ${SIBYLL_COMMON_FUNCTIONS} gasdev
     SOURCES
     ${fortran_dir}/sibyll/sibyll2.3c03.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
