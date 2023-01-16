@@ -181,7 +181,6 @@ class CMakeBuild(build_ext):
         output_file = Path(extdir) / (target + suffix)
         targets = [f"_{m}" for m in get_models()]
         if not output_file.exists() or target == targets[0]:  # any target is fine
-
             cmd = [cmake_exe, "--build", ".", "-t", *targets] + build_args
             if verbose:
                 force_print(" ".join(cmd))
