@@ -64,6 +64,7 @@ class DpmjetIIIRun(MCRun):
 
     def __init__(self, evt_kin, *, seed=None):
         import chromo
+
         super().__init__(seed)
 
         data_dir = _cached_data_dir(self._data_url)
