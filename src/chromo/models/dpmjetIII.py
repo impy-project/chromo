@@ -80,7 +80,6 @@ class DpmjetIIIRun(MCRun):
             info(3, "DPMJET data dir is at", pfile)
             self._lib.poinou.datdir = fortran_chars(self._lib.poinou.datdir, pfile)
             self._lib.poinou.lendir = len(pfile)
-
         # TODO: Rename the common block to chromo
         if hasattr(self._lib, "dtchro"):
             evap_file = data_dir + self._evap_file_name
