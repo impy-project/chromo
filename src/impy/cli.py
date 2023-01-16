@@ -183,7 +183,7 @@ def parse_arguments():
         model_number = int(args.model)
         Model = MODELS[model_number]
     except KeyError:
-        raise SystemExit(f"Error: model number {args.model} is invalid {VALID_MODELS}")
+        raise SystemExit(f"Error: model={args.model} is invalid ({VALID_MODELS})")
     except ValueError:
         # args.model is not a number.
         # Find model that matches string spec.
@@ -278,7 +278,7 @@ def parse_arguments():
             args.out = Path(args.out).with_suffix(ext)
 
     if args.output not in FORMATS:
-        raise SystemExit(f"Error: unknown format {args.output} {VALID_FORMATS}")
+        raise SystemExit(f"Error: unknown format {args.output} ({VALID_FORMATS})")
 
     return args
 
