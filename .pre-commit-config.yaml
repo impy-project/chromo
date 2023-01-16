@@ -39,7 +39,7 @@ repos:
   rev: 6.0.0
   hooks:
   - id: flake8
-    files: impy/[^_].*\.py
+    files: chromo/[^_].*\.py
     args: [--config, setup.cfg]
 
 # # Enable the following later
@@ -48,7 +48,7 @@ repos:
 #   rev: 6.1.1
 #   hooks:
 #   - id: pydocstyle
-#     files: impy/[^_].*\.py
+#     files: chromo/[^_].*\.py
 
 # # CMake formatting
 # - repo: https://github.com/cheshirekow/cmake-format-precommit

@@ -1,7 +1,7 @@
-from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.util import fortran_chars, _cached_data_dir
-from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles
+from chromo.common import MCRun, MCEvent, CrossSectionData
+from chromo.util import fortran_chars, _cached_data_dir
+from chromo.kinematics import EventFrame
+from chromo.constants import standard_projectiles
 from particle import literals as lp
 
 
@@ -74,7 +74,7 @@ class PHOJETRun(MCRun):
     _targets = {lp.proton.pdgid, lp.neutron.pdgid}
     _param_file_name = "dpmjpar.dat"
     _data_url = (
-        "https://github.com/impy-project/impy"
+        "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
 
@@ -94,21 +94,22 @@ class PHOJETRun(MCRun):
             self._lib.poinou.lendir = len(pfile)
 
         # Set debug level of the generator
-        import impy
+        import chromo
 
         for i in range(self._lib.podebg.ideb.size):
-            self._lib.podebg.ideb[i] = impy.debug_level
+            self._lib.podebg.ideb[i] = chromo.debug_level
 
         # Setup logging
         lun = 6  # stdout
+        verbosity = 5 if chromo.debug_level else 1
         # Standalone phojet IO block
         if hasattr(self._lib, "poinou"):
             print(1)
             self._lib.poinou.lo = lun
-            self._lib.poinou.lpri = 50
+            self._lib.poinou.lpri = verbosity
         if hasattr(self._lib, "dtflka"):
             self._lib.dtflka.lout = lun
-            self._lib.dtflka.lpri = 50
+            self._lib.dtflka.lpri = verbosity
         elif hasattr(self._lib, "dtiont"):
             self._lib.dtiont.lout = lun
         else:
@@ -119,7 +120,7 @@ class PHOJETRun(MCRun):
 
         # Initialize PHOJET's parameters
         # If PHOJET is run through the DPMJET library, this init needs -2 else -1
-        if self._lib.pho_init(-1, lun, 50):
+        if self._lib.pho_init(-1, lun, verbosity):
             raise RuntimeError("unable to initialize or set LUN")
 
         process_switch = self._lib.poprcs.ipron
@@ -205,7 +206,7 @@ class Phojet112(PHOJETRun):
         lp.proton.pdgid,
     }  # FIXME: should allow photons and hadrons
     _data_url = (
-        "https://github.com/impy-project/impy"
+        "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
     )
 

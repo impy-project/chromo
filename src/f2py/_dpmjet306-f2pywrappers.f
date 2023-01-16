@@ -589,12 +589,12 @@ C     It contains Fortran 77 wrappers to fortran functions.
       call setupfunc(nevent,icasca)
       end
 
-      subroutine f2pyinitdtimpy(setupfunc)
+      subroutine f2pyinitdtchro(setupfunc)
       external setupfunc
       character*1024 fnevap
       character*1024 fnpara
       character*5 version
-      common /dtimpy/ fnevap,fnpara,version
+      common /dtchro/ fnevap,fnpara,version
       call setupfunc(fnevap,fnpara,version)
       end
 

@@ -1,7 +1,7 @@
-from impy.version import __version__
-from impy import models
-from impy import kinematics
-from impy import constants
+from chromo.version import __version__
+from chromo import models
+from chromo import kinematics
+from chromo import constants
 import os
 
 debug_level = int(os.environ.get("DEBUG", "0"))

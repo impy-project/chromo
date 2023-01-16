@@ -365,8 +365,8 @@ extern void F_FUNC(params,PARAMS)(void);
 extern void F_FUNC(set0,SET0)(void);
 extern void F_FUNC(urqini,URQINI)(int*,int*);
 extern void F_FUNC(chepevt,CHEPEVT)(void);
-extern void F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE)(string,int*,size_t);
-extern void F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE)(int*);
+extern void F_FUNC_US(chromo_openlogfile,chromo_OPENLOGFILE)(string,int*,size_t);
+extern void F_FUNC_US(chromo_closelogfile,chromo_CLOSELOGFILE)(int*);
 extern void F_FUNC_US(init_rmmard,INIT_RMMARD)(int*);
 /*eof externroutines*/
 
@@ -2799,14 +2799,14 @@ f2py_stop_clock();
 }
 /******************************* end of chepevt *******************************/
 
-/****************************** impy_openlogfile ******************************/
-static char doc_f2py_rout__urqmd34_impy_openlogfile[] = "\
-impy_openlogfile(fname,opunit)\n\nWrapper for ``impy_openlogfile``.\
+/****************************** chromo_openlogfile ******************************/
+static char doc_f2py_rout__urqmd34_chromo_openlogfile[] = "\
+chromo_openlogfile(fname,opunit)\n\nWrapper for ``chromo_openlogfile``.\
 \n\nParameters\n----------\n"
 "fname : input string(len=300)\n"
 "opunit : input int";
-/* extern void F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE)(string,int*,size_t); */
-static PyObject *f2py_rout__urqmd34_impy_openlogfile(const PyObject *capi_self,
+/* extern void F_FUNC_US(chromo_openlogfile,chromo_OPENLOGFILE)(string,int*,size_t); */
+static PyObject *f2py_rout__urqmd34_chromo_openlogfile(const PyObject *capi_self,
                            PyObject *capi_args,
                            PyObject *capi_keywds,
                            void (*f2py_func)(string,int*,size_t)) {
@@ -2826,16 +2826,16 @@ static PyObject *f2py_rout__urqmd34_impy_openlogfile(const PyObject *capi_self,
 f2py_start_clock();
 #endif
   if (!PyArg_ParseTupleAndKeywords(capi_args,capi_keywds,\
-    "OO|:_urqmd34.impy_openlogfile",\
+    "OO|:_urqmd34.chromo_openlogfile",\
     capi_kwlist,&fname_capi,&opunit_capi))
     return NULL;
 /*frompyobj*/
   /* Processing variable fname */
   slen(fname) = 300;
-  f2py_success = string_from_pyobj(&fname,&slen(fname),"",fname_capi,"string_from_pyobj failed in converting 1st argument `fname' of _urqmd34.impy_openlogfile to C string");
+  f2py_success = string_from_pyobj(&fname,&slen(fname),"",fname_capi,"string_from_pyobj failed in converting 1st argument `fname' of _urqmd34.chromo_openlogfile to C string");
   if (f2py_success) {
   /* Processing variable opunit */
-    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_urqmd34.impy_openlogfile() 2nd argument (opunit) can't be converted to int");
+    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_urqmd34.chromo_openlogfile() 2nd argument (opunit) can't be converted to int");
   if (f2py_success) {
 /*end of frompyobj*/
 #ifdef F2PY_REPORT_ATEXIT
@@ -2876,15 +2876,15 @@ f2py_stop_clock();
 #endif
   return capi_buildvalue;
 }
-/************************** end of impy_openlogfile **************************/
+/************************** end of chromo_openlogfile **************************/
 
-/***************************** impy_closelogfile *****************************/
-static char doc_f2py_rout__urqmd34_impy_closelogfile[] = "\
-impy_closelogfile(opunit)\n\nWrapper for ``impy_closelogfile``.\
+/***************************** chromo_closelogfile *****************************/
+static char doc_f2py_rout__urqmd34_chromo_closelogfile[] = "\
+chromo_closelogfile(opunit)\n\nWrapper for ``chromo_closelogfile``.\
 \n\nParameters\n----------\n"
 "opunit : input int";
-/* extern void F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE)(int*); */
-static PyObject *f2py_rout__urqmd34_impy_closelogfile(const PyObject *capi_self,
+/* extern void F_FUNC_US(chromo_closelogfile,chromo_CLOSELOGFILE)(int*); */
+static PyObject *f2py_rout__urqmd34_chromo_closelogfile(const PyObject *capi_self,
                            PyObject *capi_args,
                            PyObject *capi_keywds,
                            void (*f2py_func)(int*)) {
@@ -2901,12 +2901,12 @@ static PyObject *f2py_rout__urqmd34_impy_closelogfile(const PyObject *capi_self,
 f2py_start_clock();
 #endif
   if (!PyArg_ParseTupleAndKeywords(capi_args,capi_keywds,\
-    "O|:_urqmd34.impy_closelogfile",\
+    "O|:_urqmd34.chromo_closelogfile",\
     capi_kwlist,&opunit_capi))
     return NULL;
 /*frompyobj*/
   /* Processing variable opunit */
-    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_urqmd34.impy_closelogfile() 1st argument (opunit) can't be converted to int");
+    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_urqmd34.chromo_closelogfile() 1st argument (opunit) can't be converted to int");
   if (f2py_success) {
 /*end of frompyobj*/
 #ifdef F2PY_REPORT_ATEXIT
@@ -2944,7 +2944,7 @@ f2py_stop_clock();
 #endif
   return capi_buildvalue;
 }
-/************************** end of impy_closelogfile **************************/
+/************************** end of chromo_closelogfile **************************/
 
 /******************************** init_rmmard ********************************/
 static char doc_f2py_rout__urqmd34_init_rmmard[] = "\
@@ -4906,8 +4906,8 @@ static FortranDataDef f2py_routine_defs[] = {
   {"set0",-1,{{-1}},0,(char *)F_FUNC(set0,SET0),(f2py_init_func)f2py_rout__urqmd34_set0,doc_f2py_rout__urqmd34_set0},
   {"urqini",-1,{{-1}},0,(char *)F_FUNC(urqini,URQINI),(f2py_init_func)f2py_rout__urqmd34_urqini,doc_f2py_rout__urqmd34_urqini},
   {"chepevt",-1,{{-1}},0,(char *)F_FUNC(chepevt,CHEPEVT),(f2py_init_func)f2py_rout__urqmd34_chepevt,doc_f2py_rout__urqmd34_chepevt},
-  {"impy_openlogfile",-1,{{-1}},0,(char *)F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE),(f2py_init_func)f2py_rout__urqmd34_impy_openlogfile,doc_f2py_rout__urqmd34_impy_openlogfile},
-  {"impy_closelogfile",-1,{{-1}},0,(char *)F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE),(f2py_init_func)f2py_rout__urqmd34_impy_closelogfile,doc_f2py_rout__urqmd34_impy_closelogfile},
+  {"chromo_openlogfile",-1,{{-1}},0,(char *)F_FUNC_US(chromo_openlogfile,chromo_OPENLOGFILE),(f2py_init_func)f2py_rout__urqmd34_chromo_openlogfile,doc_f2py_rout__urqmd34_chromo_openlogfile},
+  {"chromo_closelogfile",-1,{{-1}},0,(char *)F_FUNC_US(chromo_closelogfile,chromo_CLOSELOGFILE),(f2py_init_func)f2py_rout__urqmd34_chromo_closelogfile,doc_f2py_rout__urqmd34_chromo_closelogfile},
   {"init_rmmard",-1,{{-1}},0,(char *)F_FUNC_US(init_rmmard,INIT_RMMARD),(f2py_init_func)f2py_rout__urqmd34_init_rmmard,doc_f2py_rout__urqmd34_init_rmmard},
 
 /*eof routine_defs*/
@@ -4981,8 +4981,8 @@ PyMODINIT_FUNC PyInit__urqmd34(void) {
 "  set0()\n"
 "  urqini(mdebug,iudebug)\n"
 "  chepevt()\n"
-"  impy_openlogfile(fname,opunit)\n"
-"  impy_closelogfile(opunit)\n"
+"  chromo_openlogfile(fname,opunit)\n"
+"  chromo_closelogfile(opunit)\n"
 "  init_rmmard(iseedin)\n"
 "COMMON blocks:\n""  /versioning/ versiontag(45)\n""  /resonances/ massres(55),widres(55),massmes(40),widmes(40),mmesmn(40),branres(12,25),branmes(28,39),branbs1(11,21),branbs2(4,5),bs1type(4,11),bs2type(4,4),lbs1(11,21),lbs2(4,5),lbm(28,39),jres(55),jmes(40),lbr(12,25),brtype(4,12),pares(55),pames(40),bmtype(4,28),isores(55),isomes(40),strres(55),strmes(40),mlt2it(39),chrmres(55),chrmmes(40)\n""  /sigtabi/ sigmaln(21,2,15),sigmainf(10,20)\n""  /sigtabr/ sigmas(10,100),sigmascal(10,5)\n""  /normsplin/ x_norm(4,800),y_norm(4,800),dx\n""  /cgks/ cgktab(8,8,15,15,8)\n""  /factorials/ logfak(101)\n""  /pydat1/ mstu(200),paru(200),mstj(200),parj(200)\n""  /pydat2/ kchg(500,4),pmas(500,4),parf(2000),vckm(4,4)\n""  /pydat3/ mdcy(500,3),mdme(8000,2),brat(8000),kfdp(8000,5)\n""  /pydat4/ chaf(500,2,16)\n""  /pydatr/ mrpy(6),rrpy(100)\n""  /pysubs/ msel,mselpd,msub(500),kfin(2,81),ckin(200)\n""  /pypars/ mstp(200),parp(200),msti(200),pari(200)\n""  /pyint1/ mint(400),vint(400)\n""  /pyint2/ iset(500),kfpr(500,2),coef(500,20),icol(40,4,2)\n""  /pyint3/ xsfx(2,81),isig(1000,3),sigh(1000)\n""  /pyint4/ mwid(500),wids(500,5)\n""  /pyint5/ ngenpd,ngen(501,3),xsec(501,3)\n""  /pyint6/ proc(501,28)\n""  /pyint7/ sigt(7,7,6)\n""  /pymssm/ imss(100),rmss(100)\n""  /pyssmt/ zmix(4,4),umix(2,2),vmix(2,2),smz(4),smw(2),sfmix(16,4),zmixi(4,4),umixi(2,2),vmixi(2,2)\n""  /pymsrv/ rvlam(3,3,3),rvlamp(3,3,3),rvlamb(3,3,3)\n""  /pytcsm/ itcm(100),rtcm(100)\n""  /pybins/ ihist(4),indx(1000),bin(20000)\n""  /pylh3p/ modsel(200),parmin(100),parext(200),rmsoft(101),au(3,3),ad(3,3),ae(3,3)\n""  /pylh3c/ cpro(2,12),cver(2,12)\n""  /sys/ npart,nbar,nmes,ctag,nsteps,uid_cnt,ranseed,event,ap,at,zp,zt,eos,dectag,nhardres,nsoftres,ndecres,nelcoll,nblcoll,success\n""  /rsys/ time,acttime,bdist,bimp,bmin,ebeam,ecm\n""  /comseed/ firstseed\n""  /logic/ lsct(40000),logsky,logyuk,logcb,logpau\n""  /mdprop/ r0_t(40000),rx_t(40000),ry_t(40000),rz_t(40000)\n""  /cuts/ cutmax,cutpau,cutcb,cutyuk,cutsky,cutdww\n""  /spdata/ spx(500),sppauy(500),outpau(500),spcby(500),outcb(500),spyuky(500),outyuk(500),spskyy(500),outsky(500),spdwwy(500),outdww(500)\n""  /isys/ spin(40000),ncoll(40000),charge(40000),ityp(40000),lstcoll(40000),iso3(40000),origin(40000),uid(40000)\n""  /coor/ r0(40000),rx(40000),ry(40000),rz(40000),p0(40000),px(40000),py(40000),pz(40000),fmass(40000),rww(40000),dectime(40000)\n""  /frag/ tform(40000),xtotfac(40000)\n""  /aios/ airx(40000),airy(40000),airz(40000),aipx(40000),aipy(40000),aipz(40000),aorx(40000,4),aory(40000,4),aorz(40000,4),aopx(40000,4),aopy(40000,4),aopz(40000,4)\n""  /pots/ cb0,yuk0,pau0,sky20,sky30,gamsky,gamyuk,drpau,dppau,gw,sgw,delr,fdel,dt,da,db,dtimestep\n""  /scoor/ r0s(500),rxs(500),rys(500),rzs(500),p0s(500),pxs(500),pys(500),pzs(500),sfmass(500)\n""  /sisys/ sspin(500),scharge(500),sityp(500),siso3(500),suid(500)\n""  /ssys/ nspec\n""  /rtdelay/ p0td(2,40000),pxtd(2,40000),pytd(2,40000),pztd(2,40000),fmasstd(2,40000)\n""  /itdelay/ ityptd(2,40000),iso3td(2,40000)\n""  /svinfo/ itypt(2),uidt(2),origint(2),iso3t(2)\n""  /ffermi/ ffermpx(40000),ffermpy(40000),ffermpz(40000)\n""  /peq/ peq1,peq2\n""  /_BLNK_/ cross(60)\n""  /options/ ctoption(400),ctparam(400)\n""  /optstrings/ ctodc(400,2),ctpdc(400,2)\n""  /loptions/ fixedseed,bf13,bf14,bf15,bf16,bf17,bf18,bf19,bf20\n""  /stables/ nstable,stabvec(20)\n""  /inputs/ nevents,spityp(2),prspflg,trspflg,spiso3(2),outsteps,bflag,srtflag,efuncflag,nsrt,firstev,npb\n""  /input2/ srtmin,srtmax,pbeam,betann,betatar,betapro,pbmin,pbmax\n""  /protarints/ pt_iso3(6000,2),pt_ityp(6000,2),pt_spin(6000,2),pt_charge(6000,2),pt_aa(2),pt_uid(6000,2)\n""  /protarreals/ pt_r0(6000,2),pt_rx(6000,2),pt_ry(6000,2),pt_rz(6000,2),pt_fmass(6000,2),pt_dectime(6000,2),pt_p0(6000,2),pt_px(6000,2),pt_py(6000,2),pt_pz(6000,2),pt_rho(6000,2),pt_pmax(6000,2)\n""  /inewpart/ itypnew(1000),i3new(1000),itot(1000),inew(1000),nexit,iline,strcount,pslot(2),nstring1,nstring2,itypold(2),iso3old(2)\n""  /rnewpart/ pnew(5,1000),xnew(4,1000),betax,betay,betaz,pold(5,2),p0nn,pxnn,pynn,pznn,pnn,mstring(2),pnnout,xtotfacold(2)\n""  /fnewpart/ leadfac(1000)\n""  /frcoor/ frr0(40000),frrx(40000),frry(40000),frrz(40000),frp0(40000),frpx(40000),frpy(40000),frpz(40000)\n""  /boxic/ cbox,boxflag,mbox,bptityp(20),bptiso3(20),bptpart(20),edensflag,para,solid,mbflag,mtest\n""  /boxrc/ lbox,lboxhalbe,lboxd,bptpmax(20),edens,mbp0,mbpx,mbpy,mbpz\n""  /outco2/ sigmatot\n""  /outcom/ tsqrts,tstot,tsigpart,tr0(3),trx(3),try(3),trz(3),ttform(3),txtotfac(3),tp0(3),tpx(3),tpy(3),tpz(3),tm(3),tind(3),tityp(3),tiso3(3),tcoll(3),tstrange(3),tlcoll(3),tcharge(3),torigin(3),tuid(3)\n""  /frgspa/ pjspns,pmix1s(3,8),pmix2s(3,8),pbars,parqls,parrs\n""  /frgcpa/ pjspnc,pmix1c(3,8),pmix2c(3,8),pbarc\n""  /coparm/ parm(8)\n""  /const/ pi\n""  /kappa/ xap\n""  /consti/ consti\n""  /comtry/ ntries\n""  /colltab/ cttime(20001),ctsqrts(20000),ctsigtot(20000),tmin,cti1(20000),cti2(20000),nct,actcol,ctvalid(20000),ctsav(20000),nsav,apt,ctcolfluc(20000)\n""  /energies/ ekinbar,ekinmes,esky2,esky3,eyuk,ecb,epau\n""  /cncc/ ncc\n""  /ini/ bcorr\n""  /decaywidth/ tabx(120),fbtaby(120,55,2),pbtaby(120,2,55,12),fmtaby(120,40,2),pmtaby(120,2,40,28),wtabflg\n""  /brwignorm/ bwbarnorm(55),bwmesnorm(40)\n""  /xsections/ tabxnd(120),frrtaby(120,2,2,25)\n""  /tabnames/ tabname(77)\n""  /hera/ a(16),b(16),n(16),c(16),d(16),p1(16),p2(16)\n""  /regge/ z(16),y1(16),y2(16),s0,s1,eta1,eta2,bb\n""  /hepevt/ nevhep,nhep,isthep(40000),idhep(40000),jmohep(2,40000),jdahep(2,40000),phep(5,40000),vhep(4,40000)\n""  /uqchg/ ichg(40000)\n""  /crranma4/ c(8),u(97,8),ijkl(8),i97(8),j97(8),ntot(8),ntot2(8),jseq\n"".");
   PyDict_SetItemString(d, "__doc__", s);

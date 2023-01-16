@@ -2183,13 +2183,13 @@ python module _phojet193 ! in
             integer :: jseq
             common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
         end subroutine init_rmmard
-        subroutine impy_openlogfile(fname,opunit) ! in :_phojet193:CMakeFiles/_phojet193.dir/logging.f
+        subroutine chromo_openlogfile(fname,opunit) ! in :_phojet193:CMakeFiles/_phojet193.dir/logging.f
             character*300 :: fname
             integer :: opunit
-        end subroutine impy_openlogfile
-        subroutine impy_closelogfile(opunit) ! in :_phojet193:CMakeFiles/_phojet193.dir/logging.f
+        end subroutine chromo_openlogfile
+        subroutine chromo_closelogfile(opunit) ! in :_phojet193:CMakeFiles/_phojet193.dir/logging.f
             integer :: opunit
-        end subroutine impy_closelogfile
+        end subroutine chromo_closelogfile
     end interface 
 end python module _phojet193
 

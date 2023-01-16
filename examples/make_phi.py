@@ -21,9 +21,9 @@ The script generates a ROOT file with three trees.
 """
 
 
-from impy.kinematics import CenterOfMass
-from impy.constants import MeV, TeV, long_lived
-from impy.util import get_all_models
+from chromo.kinematics import CenterOfMass
+from chromo.constants import MeV, TeV, long_lived
+from chromo.util import get_all_models
 from tqdm import tqdm
 import numpy as np
 import numba as nb

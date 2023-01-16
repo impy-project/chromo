@@ -1,8 +1,8 @@
 import numpy as np
-from impy.common import MCRun, MCEvent, CrossSectionData
+from chromo.common import MCRun, MCEvent, CrossSectionData
 from particle import literals as lp
-from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles
+from chromo.kinematics import EventFrame
+from chromo.constants import standard_projectiles
 
 
 class PYTHIA6Event(MCEvent):

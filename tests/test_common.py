@@ -1,4 +1,4 @@
-from impy.common import CrossSectionData
+from chromo.common import CrossSectionData
 import numpy as np
 import dataclasses
 

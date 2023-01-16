@@ -1,4 +1,4 @@
-#ifndef IMPY
+#ifndef CHROMO
 ************************************************************************
 *                                                                      *
 *                 7) Random number generator package                   *

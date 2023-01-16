@@ -6,11 +6,11 @@ CRMC (Cosmic Ray Monte Carlo package) https://web.ikp.kit.edu/rulrich/crmc.html
 
 import argparse
 import os
-from impy import models, __version__ as version
-from impy.kinematics import CenterOfMass, FixedTarget, Momentum
-from impy.util import AZ2pdg, tolerant_string_match, get_all_models, name2pdg
-from impy.constants import MeV, GeV
-from impy import writer
+from chromo import models, __version__ as version
+from chromo.kinematics import CenterOfMass, FixedTarget, Momentum
+from chromo.util import AZ2pdg, tolerant_string_match, get_all_models, name2pdg
+from chromo.constants import MeV, GeV
+from chromo import writer
 from pathlib import Path
 from particle import Particle
 from math import sqrt
@@ -38,7 +38,7 @@ class SpeedColumn(ProgressColumn):
 
 
 # Only add numbers here for models in CRMC.
-# Impy-exclusive models do not get a number and should not be added here.
+# chromo-exclusive models do not get a number and should not be added here.
 MODELS = {
     0: models.EposLHC,
     # 1: models.Epos199,
@@ -169,7 +169,7 @@ def parse_arguments():
     args = parser.parse_args()
 
     if args.version:
-        print(f"impy {version}")
+        print(f"chromo {version}")
         raise SystemExit
 
     max_seed = int(1e9)  # EPOS requirement
@@ -272,7 +272,7 @@ def parse_arguments():
             pid2 = args.target_id
             en = f"{args.sqrts / GeV:.0f}"
             mn = Model.pyname.lower()
-            fn = f"impy_{mn}_{args.seed}_{int(pid1)}_{int(pid2)}_{en}.{ext}"
+            fn = f"chromo_{mn}_{args.seed}_{int(pid1)}_{int(pid2)}_{en}.{ext}"
             odir = os.environ.get("CRMC_OUT", ".")
             args.out = Path(odir) / fn
 
@@ -320,7 +320,7 @@ def main():
 
     console = Console()
     console.print(
-        Panel(msg, title=f"[bold]impy [green]{version}[/green][/bold]", width=78)
+        Panel(msg, title=f"[bold]chromo [green]{version}[/green][/bold]", width=78)
     )
 
     if pr > 0 and ta == 0:  # fixed target mode

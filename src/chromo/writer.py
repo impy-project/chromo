@@ -1,6 +1,6 @@
 import numpy as np
-from impy.constants import quarks_and_diquarks_and_gluons, millibarn, GeV
-from impy.kinematics import CompositeTarget
+from chromo.constants import quarks_and_diquarks_and_gluons, millibarn, GeV
+from chromo.kinematics import CompositeTarget
 import dataclasses
 from pathlib import Path
 
@@ -33,7 +33,7 @@ def _raise_import_error(name, task):
 #   - Branch E is redundant, we skip this to save space
 #   - Extra branches: parent
 #
-# For impy in default configuration, the vertex locations are not interesting,
+# For chromo in default configuration, the vertex locations are not interesting,
 # so we don't write them. Long-lived particles are final state, and there is no
 # interesting information in the vertices of very short-lived particles.
 class Root:

@@ -10,7 +10,6 @@ nul
 fort.7
 output_urtest.txt
 tables.dat
-impy_pdata_cache.cch
 *.f2l
 .vscode/*
 src/dpmjet3.0-6/dpm3usr
@@ -21,8 +20,7 @@ build/**
 dist/*
 *.egg-info
 test_hepmc_writer_*.dat
-impy/lib/*
-impy/tests/*.pkl
+chromo/tests/*.pkl
 .DS_Store
 # LLVM stuff
 *.stb
@@ -40,6 +38,6 @@ __pycache__
 extra.cfg
 pythia*.tgz
 impy-?.?.?
-src/impy/iamdata
+src/chromo/iamdata
 fig/*
 *.svg

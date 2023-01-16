@@ -75327,7 +75327,7 @@ C...PYR
 C...Generates random numbers uniformly distributed between
 C...0 and 1, excluding the endpoints.
  
-#ifndef IMPY
+#ifndef CHROMO
       FUNCTION PYR(IDUMMY)
  
 C...Double precision and integer declarations.
@@ -75486,7 +75486,7 @@ C...Write error.
  
       RETURN
       END
-C #ENDIF IMPY
+C #ENDIF CHROMO
 #endif
 C*********************************************************************
  

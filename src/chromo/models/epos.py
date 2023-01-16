@@ -1,13 +1,13 @@
 import numpy as np
-from impy.kinematics import EventFrame
-from impy.common import MCEvent, MCRun, CrossSectionData
-from impy.util import (
+from chromo.kinematics import EventFrame
+from chromo.common import MCEvent, MCRun, CrossSectionData
+from chromo.util import (
     _cached_data_dir,
     fortran_array_insert,
     fortran_array_remove,
     Nuclei,
 )
-from impy.constants import standard_projectiles
+from chromo.constants import standard_projectiles
 
 
 class EPOSEvent(MCEvent):
@@ -41,12 +41,12 @@ class EposLHC(MCRun):
     _frame = None
     _projectiles = standard_projectiles | Nuclei()
     _data_url = (
-        "https://github.com/impy-project/impy"
+        "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/epos_v001.zip"
     )
 
     def __init__(self, evt_kin, *, seed=None):
-        import impy
+        import chromo
 
         super().__init__(seed)
 
@@ -59,7 +59,7 @@ class EposLHC(MCRun):
             evt_kin.ecm,
             datdir,
             len(datdir),
-            impy.debug_level,
+            chromo.debug_level,
             lun,
         )
 

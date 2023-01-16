@@ -1,7 +1,7 @@
 import numpy as np
-from impy.common import MCRun, MCEvent, RMMARDState, CrossSectionData
-from impy.util import info, Nuclei
-from impy.kinematics import EventFrame
+from chromo.common import MCRun, MCEvent, RMMARDState, CrossSectionData
+from chromo.util import info, Nuclei
+from chromo.kinematics import EventFrame
 import dataclasses
 from particle import literals as lp
 import warnings
@@ -71,11 +71,11 @@ class SIBYLLRun(MCRun):
         super().__init__(seed)
 
         # setup logging
-        import impy
+        import chromo
 
         lun = 6  # stdout
         self._lib.s_debug.lun = lun
-        self._lib.s_debug.ndebug = impy.debug_level
+        self._lib.s_debug.ndebug = chromo.debug_level
 
         self._lib.sibini(self._seed)
         # Set the internal state of GASDEV function (rng) to 0

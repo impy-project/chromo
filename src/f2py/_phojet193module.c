@@ -400,8 +400,8 @@ extern void F_FUNC_US(pho_xsect,PHO_XSECT)(int*,int*,double*);
 extern void F_WRAPPEDFUNC(pycomp,PYCOMP)(int*,int*);
 extern void F_FUNC(pytune,PYTUNE)(int*);
 extern void F_FUNC_US(init_rmmard,INIT_RMMARD)(int*);
-extern void F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE)(string,int*,size_t);
-extern void F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE)(int*);
+extern void F_FUNC_US(chromo_openlogfile,chromo_OPENLOGFILE)(string,int*,size_t);
+extern void F_FUNC_US(chromo_closelogfile,chromo_CLOSELOGFILE)(int*);
 /*eof externroutines*/
 
 /******************** See f2py2e/capi_rules.py: usercode1 ********************/
@@ -2564,14 +2564,14 @@ f2py_stop_clock();
 }
 /***************************** end of init_rmmard *****************************/
 
-/****************************** impy_openlogfile ******************************/
-static char doc_f2py_rout__phojet193_impy_openlogfile[] = "\
-impy_openlogfile(fname,opunit)\n\nWrapper for ``impy_openlogfile``.\
+/****************************** chromo_openlogfile ******************************/
+static char doc_f2py_rout__phojet193_chromo_openlogfile[] = "\
+chromo_openlogfile(fname,opunit)\n\nWrapper for ``chromo_openlogfile``.\
 \n\nParameters\n----------\n"
 "fname : input string(len=300)\n"
 "opunit : input int";
-/* extern void F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE)(string,int*,size_t); */
-static PyObject *f2py_rout__phojet193_impy_openlogfile(const PyObject *capi_self,
+/* extern void F_FUNC_US(chromo_openlogfile,chromo_OPENLOGFILE)(string,int*,size_t); */
+static PyObject *f2py_rout__phojet193_chromo_openlogfile(const PyObject *capi_self,
                            PyObject *capi_args,
                            PyObject *capi_keywds,
                            void (*f2py_func)(string,int*,size_t)) {
@@ -2591,16 +2591,16 @@ static PyObject *f2py_rout__phojet193_impy_openlogfile(const PyObject *capi_self
 f2py_start_clock();
 #endif
   if (!PyArg_ParseTupleAndKeywords(capi_args,capi_keywds,\
-    "OO|:_phojet193.impy_openlogfile",\
+    "OO|:_phojet193.chromo_openlogfile",\
     capi_kwlist,&fname_capi,&opunit_capi))
     return NULL;
 /*frompyobj*/
   /* Processing variable fname */
   slen(fname) = 300;
-  f2py_success = string_from_pyobj(&fname,&slen(fname),"",fname_capi,"string_from_pyobj failed in converting 1st argument `fname' of _phojet193.impy_openlogfile to C string");
+  f2py_success = string_from_pyobj(&fname,&slen(fname),"",fname_capi,"string_from_pyobj failed in converting 1st argument `fname' of _phojet193.chromo_openlogfile to C string");
   if (f2py_success) {
   /* Processing variable opunit */
-    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_phojet193.impy_openlogfile() 2nd argument (opunit) can't be converted to int");
+    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_phojet193.chromo_openlogfile() 2nd argument (opunit) can't be converted to int");
   if (f2py_success) {
 /*end of frompyobj*/
 #ifdef F2PY_REPORT_ATEXIT
@@ -2641,15 +2641,15 @@ f2py_stop_clock();
 #endif
   return capi_buildvalue;
 }
-/************************** end of impy_openlogfile **************************/
+/************************** end of chromo_openlogfile **************************/
 
-/***************************** impy_closelogfile *****************************/
-static char doc_f2py_rout__phojet193_impy_closelogfile[] = "\
-impy_closelogfile(opunit)\n\nWrapper for ``impy_closelogfile``.\
+/***************************** chromo_closelogfile *****************************/
+static char doc_f2py_rout__phojet193_chromo_closelogfile[] = "\
+chromo_closelogfile(opunit)\n\nWrapper for ``chromo_closelogfile``.\
 \n\nParameters\n----------\n"
 "opunit : input int";
-/* extern void F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE)(int*); */
-static PyObject *f2py_rout__phojet193_impy_closelogfile(const PyObject *capi_self,
+/* extern void F_FUNC_US(chromo_closelogfile,chromo_CLOSELOGFILE)(int*); */
+static PyObject *f2py_rout__phojet193_chromo_closelogfile(const PyObject *capi_self,
                            PyObject *capi_args,
                            PyObject *capi_keywds,
                            void (*f2py_func)(int*)) {
@@ -2666,12 +2666,12 @@ static PyObject *f2py_rout__phojet193_impy_closelogfile(const PyObject *capi_sel
 f2py_start_clock();
 #endif
   if (!PyArg_ParseTupleAndKeywords(capi_args,capi_keywds,\
-    "O|:_phojet193.impy_closelogfile",\
+    "O|:_phojet193.chromo_closelogfile",\
     capi_kwlist,&opunit_capi))
     return NULL;
 /*frompyobj*/
   /* Processing variable opunit */
-    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_phojet193.impy_closelogfile() 1st argument (opunit) can't be converted to int");
+    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_phojet193.chromo_closelogfile() 1st argument (opunit) can't be converted to int");
   if (f2py_success) {
 /*end of frompyobj*/
 #ifdef F2PY_REPORT_ATEXIT
@@ -2709,7 +2709,7 @@ f2py_stop_clock();
 #endif
   return capi_buildvalue;
 }
-/************************** end of impy_closelogfile **************************/
+/************************** end of chromo_closelogfile **************************/
 /*eof body*/
 
 /******************* See f2py2e/f90mod_rules.py: buildhooks *******************/
@@ -4687,8 +4687,8 @@ static FortranDataDef f2py_routine_defs[] = {
   {"pycomp",-1,{{-1}},0,(char *)F_WRAPPEDFUNC(pycomp,PYCOMP),(f2py_init_func)f2py_rout__phojet193_pycomp,doc_f2py_rout__phojet193_pycomp},
   {"pytune",-1,{{-1}},0,(char *)F_FUNC(pytune,PYTUNE),(f2py_init_func)f2py_rout__phojet193_pytune,doc_f2py_rout__phojet193_pytune},
   {"init_rmmard",-1,{{-1}},0,(char *)F_FUNC_US(init_rmmard,INIT_RMMARD),(f2py_init_func)f2py_rout__phojet193_init_rmmard,doc_f2py_rout__phojet193_init_rmmard},
-  {"impy_openlogfile",-1,{{-1}},0,(char *)F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE),(f2py_init_func)f2py_rout__phojet193_impy_openlogfile,doc_f2py_rout__phojet193_impy_openlogfile},
-  {"impy_closelogfile",-1,{{-1}},0,(char *)F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE),(f2py_init_func)f2py_rout__phojet193_impy_closelogfile,doc_f2py_rout__phojet193_impy_closelogfile},
+  {"chromo_openlogfile",-1,{{-1}},0,(char *)F_FUNC_US(chromo_openlogfile,chromo_OPENLOGFILE),(f2py_init_func)f2py_rout__phojet193_chromo_openlogfile,doc_f2py_rout__phojet193_chromo_openlogfile},
+  {"chromo_closelogfile",-1,{{-1}},0,(char *)F_FUNC_US(chromo_closelogfile,chromo_CLOSELOGFILE),(f2py_init_func)f2py_rout__phojet193_chromo_closelogfile,doc_f2py_rout__phojet193_chromo_closelogfile},
 
 /*eof routine_defs*/
   {NULL}
@@ -4750,8 +4750,8 @@ PyMODINIT_FUNC PyInit__phojet193(void) {
 "  pycomp = pycomp(kf)\n"
 "  pytune(mytune)\n"
 "  init_rmmard(iseedin)\n"
-"  impy_openlogfile(fname,opunit)\n"
-"  impy_closelogfile(opunit)\n"
+"  chromo_openlogfile(fname,opunit)\n"
+"  chromo_closelogfile(opunit)\n"
 "COMMON blocks:\n""  /hnreac/ umo(296),plabf(296),siin(296),wk(5184),nrk(2,268),nure(30,2)\n""  /dtpart/ aname(210,8),aam(210),ga(210),tau(210),iich(210),iibar(210),k1(210),k2(210)\n""  /hndech/ zkname(602,8),wt(602),nzk(602,3)\n""  /dtflg1/ ifrag(2),iresco,imshl,iresrj,ioulev(6),lemcck,lhadro(10),lseadi,levapo,iframe,itrspt,ifusion,iflow\n""  /dtcomp/ emufra(100),iemuma(100),iemuch(100),ncompo,iemul\n""  /dtflka/ ehfllo,ehflhi,amxpfr,iapflk,izpflk,iatflk,iztflk,nphflk,nthflk,lhadcl,linp,lout,ldat,lpri,iflevg\n""  /dtquar/ iqechr(13),iqbchr(13),iqichr(13),iqschr(13),iqcchr(13),iquchr(13),iqtchr(13),mquark(3,39)\n""  /dthaic/ ipdg2(2,7),ibam2(2,7),ipdg3(2,22),ibam3(2,22),ipdg4(2,29),ibam4(2,29),ipdg5(2,19),ibam5(2,19),iamcin(210)\n""  /dtpain/ btype(30,8)\n""  /hnslop/ sm(25),bbm(25),bbb(25)\n""  /hnredv/ thresh(268),irii(17),ikii(17),ieii(17)\n""  /hndrun/ runtes,eftes\n""  /hnaddh/ amz(16),gaz(16),tauz(16),ichz(16),ibarz(16),k1z(16),k2z(16),wtz(153),ii22,nzk1(153),nzk2(153),nzk3(153)\n""  /hnaddn/ anamz(16,8),zknam4(9,8),zknam5(90,8),zknam6(54,8)\n""  /poinou/ li,lo,lpri,lendir,datdir(1024)\n""  /podebg/ ideb(100),kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard\n""  /popar1/ id_pdg_list(300),id_list(577),name_list(300,12),id_pdg_max\n""  /pocons/ pi,pi2,pi4,gev2mb,q_ch(13),q_ch2(13),q_ch4(13)\n""  /pobeam/ mparconf(2,40),mpmapp(2,40),mpar(2),sqsglobmax,nmpar,idxmpar,nmapp\n""  /pomdls/ mdlna(50,8),iswmdl(50),parmdl(400),ipamdl(400),parfn(1024)\n""  /pohpro/ proc(17,18)\n""  /pohrcs/ hfac(18,40),hwgx(18,40),hsig(18,40),hdpt(18,40),hecm_last,hq2a_last,hq2b_last,iha_last,ihb_last,mh_pro_on(18,5,40),mh_tried(18,5,40),mh_acc_1(18,5,40),mh_acc_2(18,5,40)\n""  /pohtab/ hfac_tab(18,20,10,10,5,40),hwgx_tab(18,20,10,10,5,40),hsig_tab(18,20,10,10,5,40),hdpt_tab(18,20,10,10,5,40),hq2a_tab(10,5,40),hq2b_tab(10,5,40),hecm_tab(20,5,40),ih_q2a_up(5,40),ih_q2b_up(5,40),ih_ecm_up(5,40)\n""  /posbrn/ sigp,sigr,sighd,sighr,sigt1(2),sigt2(2),sigl,sigdp(4),sigd1(2),sigd2(2),dsigh(17)\n""  /pozbrn/ zigp,zigr,zighd,zighr,zigt1(2),zigt2(2),zigl,zigdp(4),zigd1(2),zigd2(2),bpom,breg,bhar,bhad,btr1(2),btr2(2),bloo,bdp(4),bd1(2),bd2(2)\n""  /popreg/ alpom,alpomp,gp(2),b0pom(2),alreg,alregp,gr(2),b0reg(2),gppp,gppr,b0ppp,b0ppr,vdmfac(4),vdmq2f(4),b0har,akfac\n""  /po2cha/ phisup(2),rmass(2),var,ampfac(4),elafac(4),vfac\n""  /popcms/ ecmp,pcmp,pmassp(2),pvirtp(2),gambep(4),sidp,codp,sifp,cofp,nposp(2),idpdg1,idbam1,idpdg2,idbam2\n""  /pocut1/ ptcut(4),ptano(4),fps(4),fph(4),psomin,xsomin\n""  /point3/ sigs,dsighp,sigh,fs,fh,betas(3),aas,ptcon\n""  /poprcs/ iproce,idnodf,idifr1,idifr2,iddpom,ipron(15,4)\n""  /poloop/ ifail(60),rejtit(60,10)\n""  /pofsrc/ pini(5,2),pfin(5,2),pgam(5,2),ighel(2),gyy(2),gq2(2),ggecm,gaimp(2),pfthe(2),pfphi(2),idpsrc(2),idbsrc(2),radsrc(2),amsrc(2),gamsrc(2)\n""  /pogcms/ ecm,pcm,pmass(2),pvirt(2),ifpap(2),ifpab(2)\n""  /pocsec/ sigtot,sigela,sigvm(5,5),sigine,signdf,sigdir,siglsd(2),sighsd(2),sigldd,sighdd,sigcdf(5),sigpom,sigreg,sighar,sigtr1(2),sigtr2(2),sigloo,sigdpo(4),sig1so,sig1ha,sloel,slovm(4,4),sigcor,fsup(2),fsud(2),fsuh(2),ecmfil,p2afil,p2bfil,ipfil,ifafil,ifbfil\n""  /powght/ siggen(4),hswght(11),hswcut(20),evwght(11),ipowgc(11),iswcut(20),ivwght(11)\n""  /porecu/ ipopos(2,500),ipores(500),ipoix1,ipoix2,ipoix3\n""  /pofcut/ ecmin,ecmax,eemin1,eemin2,ymin1,ymax1,ymin2,ymax2,q2min1,q2max1,q2min2,q2max2,thmin1,thmax1,thmin2,thmax2,itag1,itag2\n""  /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp(2),ideqb(2),ihfld(2,2),ihfls(2)\n""  /poevt1/ nevhep,nhep,isthep(8000),idhep(8000),jmohep(2,8000),jdahep(2,8000),phep(5,8000),vhep(4,8000)\n""  /poevt2/ impart(8000),iphist(2,8000),icolor(2,8000)\n""  /pohscl/ aqqal,aqqali,aqqalf,aqqpd,nqqal,nqqali,nqqalf,nqqpd\n""  /podgl1/ q2misr(2),pmisr(2),zmisr(2),al2isr(2),nfsisr\n""  /pockin/ ptwant,as,ah,alns,alnh,z1max,z1dif,z2max,z2dif,pt,ptfin,etac,etad,x1,x2,v,u,w,w1,axx,qqpd,qqal,pdf1(13),pdf2(13),weight,phi1(5),phi2(5),pho1(5),pho2(5),ia,ib,ic,id,iv1,iv2,mspr,irejsc\n""  /potabl/ sigtab(80,20,4,40),sigecm(20,4,40),ecmf(4,40),isimax(40)\n""  /pogaup/ ngaup1,ngaup2,ngauet,ngauin,ngauso\n""  /pohapa/ alqcd2(3,4),bqcd(4),nfbeta,nf\n""  /pohdrn/ qmass(6),bet,pcoudi,pnorm,valprg(2),nfs\n""  /poprob/ prob(20,21,501,4,40),eptab(20,4,40),ieemax,imax,kmax\n""  /pydat1/ mstu(200),paru(200),mstj(200),parj(200)\n""  /pydat2/ kchg(500,4),pmas(500,4),parf(2000),vckm(4,4)\n""  /pydat3/ mdcy(500,3),mdme(8000,2),brat(8000),kfdp(8000,5)\n""  /popar2/ xm_list(300),tau_list(300),gam_list(300),xm_psm2_list(6,6),xm_vem2_list(6,6),xm_b82_list(6,6,6),xm_b102_list(6,6,6),xm_bb82_list(6,6,6,6),xm_bb102_list(6,6,6,6),ich3_list(300),iba3_list(300),iq_list(3,300),id_psm_list(6,6),id_vem_list(6,6),id_b8_list(6,6,6),id_b10_list(6,6,6)\n""  /pospre/ salpom(40),salpomp(40),sgp(2,40),sb0pom(2,40),salreg(40),salregp(40),sgr(2,40),sb0reg(2,40),sgppp(40),sgppr(40),sb0ppp(40),sb0ppr(40),svdmfac(4,40),svdmq2f(4,40),sb0har(40),sakfac(40),sphisup(2,40),srmass(2,40)\n""  /popar3/ wg_sec_list(500),idec_list(3,300),isec_list(3,500)\n""  /point4/ ampel,ampvm(4,4),ampsof,amphar,amlmsd(2),amhmsd(2),amlmdd,amhmdd,ampdp(4)\n""  /pydat4/ chaf(500,2,16)\n""  /pydatr/ mrpy(6),rrpy(100)\n""  /pysubs/ msel,mselpd,msub(500),kfin(2,81),ckin(200)\n""  /pypars/ mstp(200),parp(200),msti(200),pari(200)\n""  /pyint1/ mint(400),vint(400)\n""  /pyint2/ iset(500),kfpr(500,2),coef(500,20),icol(40,4,2)\n""  /pyint3/ xsfx(2,81),isig(1000,3),sigh(1000)\n""  /pyint4/ mwid(500),wids(500,5)\n""  /pyint5/ ngenpd,ngen(501,3),xsec(501,3)\n""  /pyint6/ proc(501,28)\n""  /pyint7/ sigt(7,7,6)\n""  /pymssm/ imss(100),rmss(100)\n""  /pyssmt/ zmix(4,4),umix(2,2),vmix(2,2),smz(4),smw(2),sfmix(16,4),zmixi(4,4),umixi(2,2),vmixi(2,2)\n""  /pymsrv/ rvlam(3,3,3),rvlamp(3,3,3),rvlamb(3,3,3)\n""  /pytcsm/ itcm(100),rtcm(100)\n""  /pypued/ iued(100),rued(100)\n""  /pybins/ ihist(4),indx(1000),bin(20000)\n""  /pylh3p/ modsel(200),parmin(100),parext(200),rmsoft(101),au(3,3),ad(3,3),ae(3,3)\n""  /pylh3c/ cpro(2,12),cver(2,12)\n""  /crranma4/ c(8),u(97,8),ijkl(8),i97(8),j97(8),ntot(8),ntot2(8),jseq\n"".");
   PyDict_SetItemString(d, "__doc__", s);
   Py_DECREF(s);

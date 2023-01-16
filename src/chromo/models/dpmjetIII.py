@@ -1,7 +1,7 @@
-from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.kinematics import EventFrame
-from impy.util import info, _cached_data_dir, fortran_chars, Nuclei
-from impy.constants import standard_projectiles, GeV
+from chromo.common import MCRun, MCEvent, CrossSectionData
+from chromo.kinematics import EventFrame
+from chromo.util import info, _cached_data_dir, fortran_chars, Nuclei
+from chromo.constants import standard_projectiles, GeV
 
 
 class DpmjetIIIEvent(MCEvent):
@@ -55,7 +55,7 @@ class DpmjetIIIRun(MCRun):
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
     _data_url = (
-        "https://github.com/impy-project/impy"
+        "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
     _ecm_min = 1 * GeV
@@ -63,6 +63,8 @@ class DpmjetIIIRun(MCRun):
     _max_A2 = 0
 
     def __init__(self, evt_kin, *, seed=None):
+        import chromo
+
         super().__init__(seed)
 
         data_dir = _cached_data_dir(self._data_url)
@@ -78,17 +80,17 @@ class DpmjetIIIRun(MCRun):
             info(3, "DPMJET data dir is at", pfile)
             self._lib.poinou.datdir = fortran_chars(self._lib.poinou.datdir, pfile)
             self._lib.poinou.lendir = len(pfile)
-
-        if hasattr(self._lib, "dtimpy"):
+        # TODO: Rename the common block to chromo
+        if hasattr(self._lib, "dtchro"):
             evap_file = data_dir + self._evap_file_name
             info(3, "DPMJET evap file at", evap_file)
-            self._lib.dtimpy.fnevap = fortran_chars(self._lib.dtimpy.fnevap, evap_file)
+            self._lib.dtchro.fnevap = fortran_chars(self._lib.dtchro.fnevap, evap_file)
 
         # Setup logging
         lun = 6  # stdout
         if hasattr(self._lib, "dtflka"):
             self._lib.dtflka.lout = lun
-            self._lib.dtflka.lpri = 50
+            self._lib.dtflka.lpri = 5 if chromo.debug_level else 1
         elif hasattr(self._lib, "dtiont"):
             self._lib.dtiont.lout = lun
         else:
@@ -215,7 +217,7 @@ class DpmjetIII306(DpmjetIIIRun):
     _library_name = "_dpmjet306"
     _param_file_name = "fitpar.dat"
     _data_url = (
-        "https://github.com/impy-project/impy"
+        "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
     )
 

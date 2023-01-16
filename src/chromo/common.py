@@ -1,7 +1,7 @@
 """The :mod:`common`module contains the classes that expose the
 interaction model interface to the front-end and/or the user.
 
-Classes derived from :class:`MCEvent` in (for example :mod:`impy.models.sibyll`)
+Classes derived from :class:`MCEvent` in (for example :mod:`chromo.models.sibyll`)
 cast the data from the event generators' particle stacks to numpy arrays.
 The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
@@ -9,20 +9,20 @@ such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 """
 from abc import ABC, abstractmethod
 import numpy as np
-from impy.util import (
+from chromo.util import (
     classproperty,
     select_parents,
     naneq,
     pdg2name,
     Nuclei,
 )
-from impy.constants import (
+from chromo.constants import (
     quarks_and_diquarks_and_gluons,
     long_lived,
     standard_projectiles,
     GeV,
 )
-from impy.kinematics import EventKinematics, CompositeTarget
+from chromo.kinematics import EventKinematics, CompositeTarget
 import dataclasses
 import copy
 from typing import Tuple, Optional
@@ -600,7 +600,7 @@ class MCRun(ABC):
         assert hasattr(self, "_library_name")
         assert hasattr(self, "_event_class")
         assert hasattr(self, "_frame")
-        self._lib = importlib.import_module(f"impy.models.{self._library_name}")
+        self._lib = importlib.import_module(f"chromo.models.{self._library_name}")
 
         if seed is None:
             self._seed = randint(1, 10000000)

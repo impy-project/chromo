@@ -1,9 +1,9 @@
-from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.util import _cached_data_dir, name2pdg
+from chromo.common import MCRun, MCEvent, CrossSectionData
+from chromo.util import _cached_data_dir, name2pdg
 from os import environ
 import numpy as np
-from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles
+from chromo.kinematics import EventFrame
+from chromo.constants import standard_projectiles
 from particle import literals as lp
 
 
@@ -45,7 +45,7 @@ class Pythia8(MCRun):
     }
     _restartable = True
     _data_url = (
-        "https://github.com/impy-project/impy"
+        "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/Pythia8_v002.zip"
     )
 

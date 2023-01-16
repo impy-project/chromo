@@ -451,13 +451,13 @@ python module _sib23d ! in
             double precision :: gasdev
             common /rndmgas/ iset
         end function gasdev
-        subroutine impy_openlogfile(fname,opunit) ! in :_sib23d:CMakeFiles/_sib23d.dir/logging.f
+        subroutine chromo_openlogfile(fname,opunit) ! in :_sib23d:CMakeFiles/_sib23d.dir/logging.f
             character*300 :: fname
             integer :: opunit
-        end subroutine impy_openlogfile
-        subroutine impy_closelogfile(opunit) ! in :_sib23d:CMakeFiles/_sib23d.dir/logging.f
+        end subroutine chromo_openlogfile
+        subroutine chromo_closelogfile(opunit) ! in :_sib23d:CMakeFiles/_sib23d.dir/logging.f
             integer :: opunit
-        end subroutine impy_closelogfile
+        end subroutine chromo_closelogfile
         subroutine init_rmmard(iseedin) ! in :_sib23d:CMakeFiles/_sib23d.dir/rangen.fpp
             integer :: iseedin
             double precision dimension(8) :: c
