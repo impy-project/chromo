@@ -423,9 +423,9 @@ python module _sib23 ! in
             integer dimension(8000) :: llist
             integer :: np
             integer dimension(8000) :: llist1
-            integer dimension(99) :: ichp
-            integer dimension(99) :: istr
-            integer dimension(99) :: ibar
+            integer dimension((sibyll_table_length)) :: ichp
+            integer dimension((sibyll_table_length)) :: istr
+            integer dimension((sibyll_table_length)) :: ibar
             integer :: nevhep
             integer :: nhep
             integer dimension(8000) :: isthep
@@ -469,6 +469,5 @@ python module _sib23 ! in
     end interface 
 end python module _sib23
 
-! This file was auto-generated with f2py (version:1.23.5).
-! See:
-! https://web.archive.org/web/20140822061353/http://cens.ioc.ee/projects/f2py2e
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

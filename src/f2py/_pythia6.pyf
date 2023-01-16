@@ -3,7 +3,7 @@
 
 python module _pythia6 ! in 
     interface  ! in :_pythia6
-        block data pydata ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        block data pydata ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             integer, optional,dimension(200) :: mstu=0
             double precision dimension(200) :: paru
             integer, optional,dimension(200) :: mstj=1
@@ -77,7 +77,7 @@ python module _pythia6 ! in
             integer :: pyk
             integer :: pychge
             integer :: pycomp
-            double precision, optional :: proc(0)='all included subprocesses   '
+            double precision, optional :: proc(0)=all included subprocesses   
             common /pydat1/ mstu,paru,mstj,parj
             common /pydat2/ kchg,pmas,parf,vckm
             common /pydat3/ mdcy,mdme,brat,kfdp
@@ -101,7 +101,7 @@ python module _pythia6 ! in
             common /pylh3p/ modsel,parmin,parext,rmsoft,au,ad,ae
             common /pylh3c/ cpro,cver
         end block data pydata
-        subroutine pyhepc(mconv) ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        subroutine pyhepc(mconv) ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             integer :: mconv
             integer :: n
             integer :: npad
@@ -129,7 +129,7 @@ python module _pythia6 ! in
             common /pydat2/ kchg,pmas,parf,vckm
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
         end subroutine pyhepc
-        subroutine pyinit(frame,beam,target,win) ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        subroutine pyinit(frame,beam,target,win) ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             character*(*) :: frame
             character*(*) :: beam
             character*(*) :: target
@@ -189,7 +189,7 @@ python module _pythia6 ! in
             common /w50511/ nptype,ngroup,nset,mode,nfl,lo,tmas
             common /w50512/ qcdl4,qcdl5
         end subroutine pyinit
-        subroutine pyevnt ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        subroutine pyevnt ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             integer :: npart
             integer :: npartd
             integer dimension(1000) :: ipart
@@ -240,7 +240,7 @@ python module _pythia6 ! in
             common /pyint4/ mwid,wids
             common /pyint5/ ngenpd,ngen,xsec
         end subroutine pyevnt
-        subroutine pyevnw ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        subroutine pyevnw ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             integer :: npart
             integer :: npartd
             integer dimension(1000) :: ipart
@@ -302,7 +302,7 @@ python module _pythia6 ! in
             common /pyint5/ ngenpd,ngen,xsec
             common /pyintm/ kfival,nmi,imi,nvc,xassoc,xpsvc,pvctot,xmi,pt2mi,imisep
         end subroutine pyevnw
-        subroutine pystat(mstat) ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        subroutine pystat(mstat) ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             integer :: mstat
             integer dimension(200) :: mstu
             double precision dimension(200) :: paru
@@ -355,7 +355,7 @@ python module _pythia6 ! in
             common /pymssm/ imss,rmss
             common /pymsrv/ rvlam,rvlamp,rvlamb
         end subroutine pystat
-        subroutine pytune(mytune) ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        subroutine pytune(mytune) ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             integer :: mytune
             integer dimension(200) :: mstu
             double precision dimension(200) :: paru
@@ -368,7 +368,7 @@ python module _pythia6 ! in
             common /pydat1/ mstu,paru,mstj,parj
             common /pypars/ mstp,parp,msti,pari
         end subroutine pytune
-        subroutine pyexec ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        subroutine pyexec ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             integer :: n
             integer :: npad
             integer dimension(4000,5) :: k
@@ -397,7 +397,7 @@ python module _pythia6 ! in
             common /pyint1/ mint,vint
             common /pyint4/ mwid,wids
         end subroutine pyexec
-        function pychge(kf) ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        function pychge(kf) ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             integer :: kf
             integer dimension(500,4) :: kchg
             double precision dimension(500,4) :: pmas
@@ -406,7 +406,7 @@ python module _pythia6 ! in
             integer :: pychge
             common /pydat2/ kchg,pmas,parf,vckm
         end function pychge
-        function pycomp(kf) ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        function pycomp(kf) ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             integer :: kf
             integer dimension(200) :: mstu
             double precision dimension(200) :: paru
@@ -420,7 +420,7 @@ python module _pythia6 ! in
             common /pydat1/ mstu,paru,mstj,parj
             common /pydat2/ kchg,pmas,parf,vckm
         end function pycomp
-        subroutine pyedit(medit) ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        subroutine pyedit(medit) ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             integer :: medit
             integer :: n
             integer :: npad
@@ -442,7 +442,7 @@ python module _pythia6 ! in
             common /pydat2/ kchg,pmas,parf,vckm
             common /pyctag/ nct,mct
         end subroutine pyedit
-        subroutine pylist(mlist) ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        subroutine pylist(mlist) ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             integer :: mlist
             integer :: nevhep
             integer :: nhep
@@ -492,7 +492,7 @@ python module _pythia6 ! in
             common /pydat3/ mdcy,mdme,brat,kfdp
             common /pyctag/ nct,mct
         end subroutine pylist
-        function pyk(i,j) ! in :_pythia6:CMakeFiles/_pythia6.dir/pythia-6.4.28.f
+        function pyk(i,j) ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/pythia-6.4.28.f.proc
             integer :: i
             integer :: j
             integer :: n
@@ -513,14 +513,14 @@ python module _pythia6 ! in
             common /pydat1/ mstu,paru,mstj,parj
             common /pydat2/ kchg,pmas,parf,vckm
         end function pyk
-        subroutine chromo_openlogfile(fname,opunit) ! in :_pythia6:CMakeFiles/_pythia6.dir/logging.f
+        subroutine chromo_openlogfile(fname,opunit) ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/logging.f.proc
             character*300 :: fname
             integer :: opunit
         end subroutine chromo_openlogfile
-        subroutine chromo_closelogfile(opunit) ! in :_pythia6:CMakeFiles/_pythia6.dir/logging.f
+        subroutine chromo_closelogfile(opunit) ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/logging.f.proc
             integer :: opunit
         end subroutine chromo_closelogfile
-        subroutine init_rmmard(iseedin) ! in :_pythia6:CMakeFiles/_pythia6.dir/rangen.fpp
+        subroutine init_rmmard(iseedin) ! in :_pythia6:CMakeFiles/_pythia6.dir/pyf_sources/rangen.f.proc
             integer :: iseedin
             double precision dimension(8) :: c
             double precision dimension(97,8) :: u
@@ -535,6 +535,5 @@ python module _pythia6 ! in
     end interface 
 end python module _pythia6
 
-! This file was auto-generated with f2py (version:1.23.5).
-! See:
-! https://web.archive.org/web/20140822061353/http://cens.ioc.ee/projects/f2py2e
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

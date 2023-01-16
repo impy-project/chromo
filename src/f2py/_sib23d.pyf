@@ -427,9 +427,9 @@ python module _sib23d ! in
             integer dimension(8000) :: llist
             integer :: np
             integer dimension(8000) :: llist1
-            integer dimension(99) :: ichp
-            integer dimension(99) :: istr
-            integer dimension(99) :: ibar
+            integer dimension((sibyll_table_length)) :: ichp
+            integer dimension((sibyll_table_length)) :: istr
+            integer dimension((sibyll_table_length)) :: ibar
             integer :: nevhep
             integer :: nhep
             integer dimension(8000) :: isthep
@@ -445,6 +445,12 @@ python module _sib23d ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /schg/ ichg
         end subroutine sibhep
+        function gasdev(idum) ! in :_sib23d:CMakeFiles/_sib23d.dir/sibyll_init.fpp
+            integer :: idum
+            integer, optional :: iset=0
+            double precision :: gasdev
+            common /rndmgas/ iset
+        end function gasdev
         subroutine chromo_openlogfile(fname,opunit) ! in :_sib23d:CMakeFiles/_sib23d.dir/logging.f
             character*300 :: fname
             integer :: opunit
@@ -467,6 +473,5 @@ python module _sib23d ! in
     end interface 
 end python module _sib23d
 
-! This file was auto-generated with f2py (version:1.23.5).
-! See:
-! https://web.archive.org/web/20140822061353/http://cens.ioc.ee/projects/f2py2e
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

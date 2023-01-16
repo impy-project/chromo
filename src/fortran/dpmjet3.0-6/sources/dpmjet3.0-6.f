@@ -184,7 +184,7 @@
       CHARACTER*1024 FNEVAP
       CHARACTER*1024 FNPARA
       CHARACTER*5 VERSION
-      COMMON /DTCHROMO/ FNEVAP, FNPARA, VERSION
+      COMMON /DTCHRO/ FNEVAP, FNPARA, VERSION
       DATA FNEVAP /'dpmjet.dat'/
       DATA FNPARA /'fitpar.dat'/
       DATA VERSION /'3.0-6'/
@@ -20560,7 +20560,7 @@ C     --------------------------------- EVAPORATION DATA
       CHARACTER*1024 FNEVAP
       CHARACTER*1024 FNPARA
       CHARACTER*5 VERSION
-      COMMON /DTCHROMO/ FNEVAP, FNPARA, VERSION
+      COMMON /DTCHRO/ FNEVAP, FNPARA, VERSION
 
 C---------------------------------------------------------------------
 **sr 17.5.95

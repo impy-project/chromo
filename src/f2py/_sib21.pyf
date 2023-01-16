@@ -277,23 +277,14 @@ python module _sib21 ! in
             integer :: isib_pid2pdg
             common /s_pdg2pid/ id_pdg_list,id_list
         end function isib_pid2pdg
-        function spgasdev(idum) ! in :_sib21:CMakeFiles/_sib21.dir/sib21aux.f
-            integer :: idum
-            integer, optional :: iset=0
-            real :: spgasdev
-            common /rndmgas/ iset
-        end function spgasdev
-        subroutine sibini(seedin) ! in :_sib21:CMakeFiles/_sib21.dir/sibyll_init.fpp
-            integer :: seedin
-        end subroutine sibini
         subroutine sibhep ! in :_sib21:CMakeFiles/_sib21.dir/sibyll_init.fpp
-            double precision dimension(8000,5) :: p
+            real dimension(8000,5) :: p
             integer dimension(8000) :: llist
             integer :: np
             integer dimension(8000) :: llist1
-            integer dimension(99) :: ichp
-            integer dimension(99) :: istr
-            integer dimension(99) :: ibar
+            integer dimension(49) :: ichp
+            integer dimension(49) :: istr
+            integer dimension(49) :: ibar
             integer :: nevhep
             integer :: nhep
             integer dimension(8000) :: isthep
@@ -309,6 +300,15 @@ python module _sib21 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /schg/ ichg
         end subroutine sibhep
+        function spgasdev(idum) ! in :_sib21:CMakeFiles/_sib21.dir/sib21aux.f
+            integer :: idum
+            integer, optional :: iset=0
+            real :: spgasdev
+            common /rndmgas/ iset
+        end function spgasdev
+        subroutine sibini(seedin) ! in :_sib21:CMakeFiles/_sib21.dir/sibyll_init.fpp
+            integer :: seedin
+        end subroutine sibini
         subroutine chromo_openlogfile(fname,opunit) ! in :_sib21:CMakeFiles/_sib21.dir/logging.f
             character*300 :: fname
             integer :: opunit
@@ -331,6 +331,5 @@ python module _sib21 ! in
     end interface 
 end python module _sib21
 
-! This file was auto-generated with f2py (version:1.23.5).
-! See:
-! https://web.archive.org/web/20140822061353/http://cens.ioc.ee/projects/f2py2e
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/
