@@ -10,7 +10,7 @@ import shutil
 import numpy as np
 from typing import Sequence, Set, Tuple, Collection, Union
 from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
-from impy.constants import MeV, nucleon_mass
+from chromo.constants import MeV, nucleon_mass
 from enum import Enum
 import dataclasses
 
@@ -318,7 +318,7 @@ def caller_name(skip=2):
 
 
 def info(min_dbg_level, *args):
-    """Print to console if min_dbg_level <= impy.debug_level.
+    """Print to console if min_dbg_level <= chromo.debug_level.
 
     The function determines automatically the name of caller and appends
     the message to it. Message can be a tuple of strings or objects
@@ -328,9 +328,9 @@ def info(min_dbg_level, *args):
         min_dbg_level (int): Minimum debug level in config for printing
         message (tuple): Any argument or list of arguments that casts to str
     """
-    import impy
+    import chromo
 
-    if min_dbg_level <= impy.debug_level:
+    if min_dbg_level <= chromo.debug_level:
         print(caller_name(), *args)
 
 
@@ -581,8 +581,8 @@ def tolerant_string_match(a, b):
 
 
 def get_all_models(skip=None):
-    from impy import models
-    from impy.common import MCRun
+    from chromo import models
+    from chromo.common import MCRun
 
     if skip is None:
         skip = []

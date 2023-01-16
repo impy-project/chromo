@@ -1,9 +1,9 @@
 import sys
 import os
-from impy.constants import GeV
-from impy.kinematics import EventKinematics
-from impy import impy_config
-from impy.models import DpmjetIII191
+from chromo.constants import GeV
+from chromo.kinematics import EventKinematics
+from chromo import chromo_config
+from chromo.models import DpmjetIII191
 from collections import Counter
 
 # This class will go through the event and decay all particles that should be
@@ -94,7 +94,7 @@ def test_decay_afterburner():
     )
 
     # Watch out this setting!
-    impy_config["pre_slice"] = False
+    chromo_config["pre_slice"] = False
 
     # The rest is pretty standard
     generator = DpmjetIII191(event_kinematics)

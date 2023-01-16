@@ -28,7 +28,7 @@ if not os.environ.get("CI", False):
 
 ext_modules = []
 for model in get_models():
-    ext_modules.append(CMakeExtension(f"impy.models._{model}"))
+    ext_modules.append(CMakeExtension(f"chromo.models._{model}"))
 
 setup(
     zip_safe=False,

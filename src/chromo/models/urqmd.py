@@ -6,10 +6,10 @@
 # The current settings are taken from CORSIKA and they are optimized for speed aparently.
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
-from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.util import info, fortran_array_insert, fortran_array_remove, Nuclei
-from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles, GeV
+from chromo.common import MCRun, MCEvent, CrossSectionData
+from chromo.util import info, fortran_array_insert, fortran_array_remove, Nuclei
+from chromo.kinematics import EventFrame
+from chromo.constants import standard_projectiles, GeV
 import warnings
 
 
@@ -49,7 +49,7 @@ class UrQMD34(MCRun):
         ct_params=None,
         ct_options=None,
     ):
-        import impy
+        import chromo
 
         self._pdg2modid = {
             22: (100, 0),
@@ -126,7 +126,7 @@ class UrQMD34(MCRun):
 
         # logging
         lun = 6  # stdout
-        self._lib.urqini(lun, impy.debug_level)
+        self._lib.urqini(lun, chromo.debug_level)
 
         self._lib.inputs.nevents = 1
         self._lib.rsys.bmin = 0

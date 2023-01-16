@@ -1,8 +1,8 @@
 import numpy as np
-from impy.constants import GeV
-from impy.kinematics import CenterOfMass
+from chromo.constants import GeV
+from chromo.kinematics import CenterOfMass
 from .util import run_in_separate_process
-from impy.util import get_all_models
+from chromo.util import get_all_models
 import pytest
 from collections import Counter
 from particle import literals as lp

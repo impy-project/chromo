@@ -2,7 +2,7 @@
 different inputs required by the low-level event generator interfaces.
 """
 import numpy as np
-from impy.util import (
+from chromo.util import (
     TaggedFloat,
     energy2momentum,
     momentum2energy,
@@ -12,8 +12,8 @@ from impy.util import (
     is_real_nucleus,
     process_particle,
 )
-from impy.constants import nucleon_mass, MeV, GeV, TeV, PeV, EeV
-from impy.util import CompositeTarget, EventFrame
+from chromo.constants import nucleon_mass, MeV, GeV, TeV, PeV, EeV
+from chromo.util import CompositeTarget, EventFrame
 from particle import PDGID
 import dataclasses
 from typing import Union, Tuple

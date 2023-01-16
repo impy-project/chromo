@@ -1,8 +1,8 @@
 import numpy as np
-from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles
-from impy.util import _cached_data_dir, Nuclei
+from chromo.common import MCRun, MCEvent, CrossSectionData
+from chromo.kinematics import EventFrame
+from chromo.constants import standard_projectiles
+from chromo.util import _cached_data_dir, Nuclei
 from particle import literals as lp
 
 
@@ -31,7 +31,7 @@ class QGSJetRun(MCRun):
     _frame = EventFrame.FIXED_TARGET
     _projectiles = standard_projectiles | Nuclei()
     _data_url = (
-        "https://github.com/impy-project/impy"
+        "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/qgsjet_v001.zip"
     )
 
@@ -39,14 +39,14 @@ class QGSJetRun(MCRun):
     _set_final_state_particles_called = True
 
     def __init__(self, evt_kin, *, seed=None):
-        import impy
+        import chromo
 
         super().__init__(seed)
 
         # logging
         lun = 6  # stdout
         datdir = _cached_data_dir(self._data_url)
-        self._lib.cqgsini(datdir, lun, impy.debug_level)
+        self._lib.cqgsini(datdir, lun, chromo.debug_level)
 
         self.kinematics = evt_kin
 

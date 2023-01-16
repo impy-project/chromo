@@ -3105,13 +3105,13 @@ python module _dpmjetIII193 ! in
             integer*8 :: bitgen
             common /npy/ bitgen
         end subroutine npyrng
-        subroutine impy_openlogfile(fname,opunit) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/logging.f
+        subroutine chromo_openlogfile(fname,opunit) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/logging.f
             character*300 :: fname
             integer :: opunit
-        end subroutine impy_openlogfile
-        subroutine impy_closelogfile(opunit) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/logging.f
+        end subroutine chromo_openlogfile
+        subroutine chromo_closelogfile(opunit) ! in :_dpmjetIII193:CMakeFiles/_dpmjetIII193.dir/logging.f
             integer :: opunit
-        end subroutine impy_closelogfile
+        end subroutine chromo_closelogfile
     end interface 
 end python module _dpmjetIII193
 

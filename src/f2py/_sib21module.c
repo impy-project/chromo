@@ -351,8 +351,8 @@ extern void F_WRAPPEDFUNC_US(isib_pdg2pid,ISIB_PDG2PID)(int*,int*);
 extern void F_WRAPPEDFUNC_US(isib_pid2pdg,ISIB_PID2PDG)(int*,int*);
 extern void F_FUNC(sibini,SIBINI)(void);
 extern void F_FUNC(sibhep,SIBHEP)(void);
-extern void F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE)(string,int*,size_t);
-extern void F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE)(int*);
+extern void F_FUNC_US(chromo_openlogfile,CHROMO_OPENLOGFILE)(string,int*,size_t);
+extern void F_FUNC_US(chromo_closelogfile,CHROMO_CLOSELOGFILE)(int*);
 extern void F_FUNC(npyrng,NPYRNG)(double*);
 extern void F_WRAPPEDFUNC(spgasdev,SPGASDEV)(float*,int*);
 /*eof externroutines*/
@@ -1390,14 +1390,14 @@ f2py_stop_clock();
 }
 /******************************* end of sibhep *******************************/
 
-/****************************** impy_openlogfile ******************************/
-static char doc_f2py_rout__sib21_impy_openlogfile[] = "\
-impy_openlogfile(fname,opunit)\n\nWrapper for ``impy_openlogfile``.\
+/****************************** chromo_openlogfile ******************************/
+static char doc_f2py_rout__sib21_chromo_openlogfile[] = "\
+impy_openlogfile(fname,opunit)\n\nWrapper for ``chromo_openlogfile``.\
 \n\nParameters\n----------\n"
 "fname : input string(len=300)\n"
 "opunit : input int";
-/* extern void F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE)(string,int*,size_t); */
-static PyObject *f2py_rout__sib21_impy_openlogfile(const PyObject *capi_self,
+/* extern void F_FUNC_US(chromo_openlogfile,CHROMO_OPENLOGFILE)(string,int*,size_t); */
+static PyObject *f2py_rout__sib21_chromo_openlogfile(const PyObject *capi_self,
                            PyObject *capi_args,
                            PyObject *capi_keywds,
                            void (*f2py_func)(string,int*,size_t)) {
@@ -1417,16 +1417,16 @@ static PyObject *f2py_rout__sib21_impy_openlogfile(const PyObject *capi_self,
 f2py_start_clock();
 #endif
   if (!PyArg_ParseTupleAndKeywords(capi_args,capi_keywds,\
-    "OO|:_sib21.impy_openlogfile",\
+    "OO|:_sib21.chromo_openlogfile",\
     capi_kwlist,&fname_capi,&opunit_capi))
     return NULL;
 /*frompyobj*/
   /* Processing variable fname */
   slen(fname) = 300;
-  f2py_success = string_from_pyobj(&fname,&slen(fname),"",fname_capi,"string_from_pyobj failed in converting 1st argument `fname' of _sib21.impy_openlogfile to C string");
+  f2py_success = string_from_pyobj(&fname,&slen(fname),"",fname_capi,"string_from_pyobj failed in converting 1st argument `fname' of _sib21.chromo_openlogfile to C string");
   if (f2py_success) {
   /* Processing variable opunit */
-    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_sib21.impy_openlogfile() 2nd argument (opunit) can't be converted to int");
+    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_sib21.chromo_openlogfile() 2nd argument (opunit) can't be converted to int");
   if (f2py_success) {
 /*end of frompyobj*/
 #ifdef F2PY_REPORT_ATEXIT
@@ -1467,15 +1467,15 @@ f2py_stop_clock();
 #endif
   return capi_buildvalue;
 }
-/************************** end of impy_openlogfile **************************/
+/************************** end of chromo_openlogfile **************************/
 
-/***************************** impy_closelogfile *****************************/
-static char doc_f2py_rout__sib21_impy_closelogfile[] = "\
-impy_closelogfile(opunit)\n\nWrapper for ``impy_closelogfile``.\
+/***************************** chromo_closelogfile *****************************/
+static char doc_f2py_rout__sib21_chromo_closelogfile[] = "\
+impy_closelogfile(opunit)\n\nWrapper for ``chromo_closelogfile``.\
 \n\nParameters\n----------\n"
 "opunit : input int";
-/* extern void F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE)(int*); */
-static PyObject *f2py_rout__sib21_impy_closelogfile(const PyObject *capi_self,
+/* extern void F_FUNC_US(chromo_closelogfile,CHROMO_CLOSELOGFILE)(int*); */
+static PyObject *f2py_rout__sib21_chromo_closelogfile(const PyObject *capi_self,
                            PyObject *capi_args,
                            PyObject *capi_keywds,
                            void (*f2py_func)(int*)) {
@@ -1492,12 +1492,12 @@ static PyObject *f2py_rout__sib21_impy_closelogfile(const PyObject *capi_self,
 f2py_start_clock();
 #endif
   if (!PyArg_ParseTupleAndKeywords(capi_args,capi_keywds,\
-    "O|:_sib21.impy_closelogfile",\
+    "O|:_sib21.chromo_closelogfile",\
     capi_kwlist,&opunit_capi))
     return NULL;
 /*frompyobj*/
   /* Processing variable opunit */
-    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_sib21.impy_closelogfile() 1st argument (opunit) can't be converted to int");
+    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_sib21.chromo_closelogfile() 1st argument (opunit) can't be converted to int");
   if (f2py_success) {
 /*end of frompyobj*/
 #ifdef F2PY_REPORT_ATEXIT
@@ -1535,7 +1535,7 @@ f2py_stop_clock();
 #endif
   return capi_buildvalue;
 }
-/************************** end of impy_closelogfile **************************/
+/************************** end of chromo_closelogfile **************************/
 
 /*********************************** npyrng ***********************************/
 static char doc_f2py_rout__sib21_npyrng[] = "\
@@ -2209,8 +2209,8 @@ static FortranDataDef f2py_routine_defs[] = {
   {"isib_pid2pdg",-1,{{-1}},0,(char *)F_WRAPPEDFUNC_US(isib_pid2pdg,ISIB_PID2PDG),(f2py_init_func)f2py_rout__sib21_isib_pid2pdg,doc_f2py_rout__sib21_isib_pid2pdg},
   {"sibini",-1,{{-1}},0,(char *)F_FUNC(sibini,SIBINI),(f2py_init_func)f2py_rout__sib21_sibini,doc_f2py_rout__sib21_sibini},
   {"sibhep",-1,{{-1}},0,(char *)F_FUNC(sibhep,SIBHEP),(f2py_init_func)f2py_rout__sib21_sibhep,doc_f2py_rout__sib21_sibhep},
-  {"impy_openlogfile",-1,{{-1}},0,(char *)F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE),(f2py_init_func)f2py_rout__sib21_impy_openlogfile,doc_f2py_rout__sib21_impy_openlogfile},
-  {"impy_closelogfile",-1,{{-1}},0,(char *)F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE),(f2py_init_func)f2py_rout__sib21_impy_closelogfile,doc_f2py_rout__sib21_impy_closelogfile},
+  {"chromo_openlogfile",-1,{{-1}},0,(char *)F_FUNC_US(chromo_openlogfile,CHROMO_OPENLOGFILE),(f2py_init_func)f2py_rout__sib21_chromo_openlogfile,doc_f2py_rout__sib21_chromo_openlogfile},
+  {"chromo_closelogfile",-1,{{-1}},0,(char *)F_FUNC_US(chromo_closelogfile,CHROMO_CLOSELOGFILE),(f2py_init_func)f2py_rout__sib21_chromo_closelogfile,doc_f2py_rout__sib21_chromo_closelogfile},
   {"npyrng",-1,{{-1}},0,(char *)F_FUNC(npyrng,NPYRNG),(f2py_init_func)f2py_rout__sib21_npyrng,doc_f2py_rout__sib21_npyrng},
   {"spgasdev",-1,{{-1}},0,(char *)F_WRAPPEDFUNC(spgasdev,SPGASDEV),(f2py_init_func)f2py_rout__sib21_spgasdev,doc_f2py_rout__sib21_spgasdev},
 
@@ -2262,8 +2262,8 @@ PyMODINIT_FUNC PyInit__sib21(void) {
 "  isib_pid2pdg = isib_pid2pdg(npid)\n"
 "  sibini()\n"
 "  sibhep()\n"
-"  impy_openlogfile(fname,opunit)\n"
-"  impy_closelogfile(opunit)\n"
+"  chromo_openlogfile(fname,opunit)\n"
+"  chromo_closelogfile(opunit)\n"
 "  npyrng(rval)\n"
 "  spgasdev = spgasdev(dummy)\n"
 "COMMON blocks:\n""  /s_plist/ p(8000,5),llist(8000),np\n""  /s_run/ sqs,s,ptmin,xmin,zmin,kb,kt\n""  /s_debug/ ncall,ndebug,lun\n""  /s_chist/ x1j(1400),x2j(1400),x1jsum(20),x2jsum(20),ptjet(1400),phijet(1400),nnpjet(1400),nnpstr(40),nnsof(20),nnjet(20),jdif(20),nw,njet,nsof\n""  /s_ccstr/ x1(40),x2(40),pxb(40),pyb(40),pxt(40),pyt(40),iflb(40),iflt(40)\n""  /s_cldif/ ldiff\n""  /s_cqdis/ ppt0(33),ptflag\n""  /s_cutoff/ str_mass_val,str_mass_sea\n""  /s_plist1/ llist1(8000)\n""  /s_cnam/ namp(50,6)\n""  /s_chp/ ichp(49),istr(49),ibar(49)\n""  /s_czdis/ fa,fb0\n""  /s_czdiss/ fas1,fas2\n""  /s_czlead/ clead,flead\n""  /s_cpspl/ cchik(3,9)\n""  /s_cflafr/ par(20),ipar(10)\n""  /ckfrag/ kodfrag\n""  /s_ccsig/ ssig(61,3),pjetc(21,51,61,2),ssign(61,3),alint(61,3),asqsmin,asqsmax,dasqs,nsqs\n""  /s_ccsig2/ ssig_tot(61,3),ssig_sd1(61,3),ssig_sd2(61,3),ssig_dd(61,3),ssig_b(61,3),ssig_rho(61,3)\n""  /s_csydec/ cbr(102),kdec(612),lbarp(49),idb(49)\n""  /s_mass1/ am(49),am2(49)\n""  /fragmod/ a(10,10,20),ae(10,10,20),eres(10,10),nflagg(10,10)\n""  /cnucms/ b,bmax,ntry,na,nb,ni,nael,nbel,jja(56),jjb(56),jjint(56,56),jjael(56),jjbel(56)\n""  /s_pdg2pid/ id_pdg_list(99),id_list(577)\n""  /hepevt/ nevhep,nhep,isthep(8000),idhep(8000),jmohep(2,8000),jdahep(2,8000),phep(5,8000),vhep(4,8000)\n""  /schg/ ichg(8000)\n""  /npy/ bitgen\n"".");

@@ -33,7 +33,7 @@ c-----------------------------------------------------------------------
       if(irandm.eq.1)write(ifch,*)'cxrangen()= ',cxrangen
       return
       end
-#ifndef IMPY
+#ifndef CHROMO
 c Random number generator from CORSIKA *********************************
 C=======================================================================
       DOUBLE PRECISION FUNCTION DRANF(dummy)

@@ -1,8 +1,8 @@
 import numpy as np
-from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.constants import nucleon_mass
-from impy.constants import microbarn
-from impy.kinematics import EventFrame
+from chromo.common import MCRun, MCEvent, CrossSectionData
+from chromo.constants import nucleon_mass
+from chromo.constants import microbarn
+from chromo.kinematics import EventFrame
 from particle import literals as lp
 
 sophia_interaction_types = [
@@ -52,11 +52,11 @@ class Sophia20(MCRun):
     _ecm_min = 0
 
     def __init__(self, kinematics, *, seed=None, keep_decayed_particles=True):
-        import impy
+        import chromo
 
         super().__init__(seed)
 
-        self._lib.s_plist.ideb = impy.debug_level
+        self._lib.s_plist.ideb = chromo.debug_level
         # Keep decayed particles in the history:
         self._lib.eg_io.keepdc = keep_decayed_particles
 

@@ -40,6 +40,6 @@ __pycache__
 extra.cfg
 pythia*.tgz
 impy-?.?.?
-src/impy/iamdata
+src/chromo/iamdata
 fig/*
 *.svg

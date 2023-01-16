@@ -232,7 +232,7 @@ C     DIMENSION XPARA(5)
       IF (LSTART) THEN
          CALL DT_TITLE
 *   initialization and test of the random number generator
-#ifndef IMPY
+#ifndef CHROMO
          IF (ITRSPT.NE.1) THEN
             CALL DT_RNDMST(22,54,76,92)
             CALL DT_RNDMTE(1)
@@ -883,7 +883,7 @@ C        CALL SHMAKF(IDUM,IDUM,IEMUMA(NCOMPO),IEMUCH(NCOMPO))
 
   260 CONTINUE
       IF (IFIRST.NE.99) THEN
-#ifndef IMPY
+#ifndef CHROMO
          CALL DT_RNDMST(12,34,56,78)
          CALL DT_RNDMTE(1)
 #endif
@@ -1902,7 +1902,7 @@ C        WRITE(LOUT,*) 'CMENER = ',CMENER
 *********************************************************************
 
   590 CONTINUE
-#ifndef IMPY
+#ifndef CHROMO
       IF ((WHAT(1).LT.1.0D0).OR.(WHAT(1).GT.168.0D0)) THEN
          NA1 = 22
       ELSE
@@ -2125,7 +2125,7 @@ C     IF (IDP.EQ.27) IDP = 6
       ENDIF
 
 * initialization of Glauber-formalism (moved to DT_DTUINI, sr 26.3.96)
-**anfe remove dependence on DTUINI when used within impy and run nuclear
+**anfe remove dependence on DTUINI when used within chromo and run nuclear
 *      initilization here
       IF (LEXT) THEN
          IF (NCOMPO.LE.0) THEN

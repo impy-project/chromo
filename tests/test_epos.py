@@ -1,6 +1,6 @@
-from impy.kinematics import CenterOfMass
-from impy.models import EposLHC
-from impy.constants import GeV
+from chromo.kinematics import CenterOfMass
+from chromo.models import EposLHC
+from chromo.constants import GeV
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from .util import (
@@ -144,7 +144,7 @@ def test_set_stable():
 
 
 def test_rmmard():
-    from impy.models import _eposlhc
+    from chromo.models import _eposlhc
 
     rng = np.random.default_rng(1)
     state = rng.__getstate__()

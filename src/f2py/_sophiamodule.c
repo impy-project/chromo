@@ -335,8 +335,8 @@ extern void F_FUNC_US(print_event,PRINT_EVENT)(int*);
 extern void F_WRAPPEDFUNC_US(icon_pdg_sib,ICON_PDG_SIB)(int*,int*);
 extern void F_FUNC(initial,INITIAL)(int*);
 extern void F_FUNC(toevt,TOEVT)(void);
-extern void F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE)(string,int*,size_t);
-extern void F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE)(int*);
+extern void F_FUNC_US(chromo_openlogfile,CHROMO_OPENLOGFILE)(string,int*,size_t);
+extern void F_FUNC_US(chromo_closelogfile,CHROMO_CLOSELOGFILE)(int*);
 extern void F_FUNC(npyrng,NPYRNG)(double*);
 /*eof externroutines*/
 
@@ -803,14 +803,14 @@ f2py_stop_clock();
 }
 /******************************** end of toevt ********************************/
 
-/****************************** impy_openlogfile ******************************/
-static char doc_f2py_rout__sophia_impy_openlogfile[] = "\
-impy_openlogfile(fname,opunit)\n\nWrapper for ``impy_openlogfile``.\
+/****************************** chromo_openlogfile ******************************/
+static char doc_f2py_rout__sophia_chromo_openlogfile[] = "\
+impy_openlogfile(fname,opunit)\n\nWrapper for ``chromo_openlogfile``.\
 \n\nParameters\n----------\n"
 "fname : input string(len=300)\n"
 "opunit : input int";
-/* extern void F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE)(string,int*,size_t); */
-static PyObject *f2py_rout__sophia_impy_openlogfile(const PyObject *capi_self,
+/* extern void F_FUNC_US(chromo_openlogfile,CHROMO_OPENLOGFILE)(string,int*,size_t); */
+static PyObject *f2py_rout__sophia_chromo_openlogfile(const PyObject *capi_self,
                            PyObject *capi_args,
                            PyObject *capi_keywds,
                            void (*f2py_func)(string,int*,size_t)) {
@@ -830,16 +830,16 @@ static PyObject *f2py_rout__sophia_impy_openlogfile(const PyObject *capi_self,
 f2py_start_clock();
 #endif
   if (!PyArg_ParseTupleAndKeywords(capi_args,capi_keywds,\
-    "OO|:_sophia.impy_openlogfile",\
+    "OO|:_sophia.chromo_openlogfile",\
     capi_kwlist,&fname_capi,&opunit_capi))
     return NULL;
 /*frompyobj*/
   /* Processing variable fname */
   slen(fname) = 300;
-  f2py_success = string_from_pyobj(&fname,&slen(fname),"",fname_capi,"string_from_pyobj failed in converting 1st argument `fname' of _sophia.impy_openlogfile to C string");
+  f2py_success = string_from_pyobj(&fname,&slen(fname),"",fname_capi,"string_from_pyobj failed in converting 1st argument `fname' of _sophia.chromo_openlogfile to C string");
   if (f2py_success) {
   /* Processing variable opunit */
-    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_sophia.impy_openlogfile() 2nd argument (opunit) can't be converted to int");
+    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_sophia.chromo_openlogfile() 2nd argument (opunit) can't be converted to int");
   if (f2py_success) {
 /*end of frompyobj*/
 #ifdef F2PY_REPORT_ATEXIT
@@ -880,15 +880,15 @@ f2py_stop_clock();
 #endif
   return capi_buildvalue;
 }
-/************************** end of impy_openlogfile **************************/
+/************************** end of chromo_openlogfile **************************/
 
-/***************************** impy_closelogfile *****************************/
-static char doc_f2py_rout__sophia_impy_closelogfile[] = "\
-impy_closelogfile(opunit)\n\nWrapper for ``impy_closelogfile``.\
+/***************************** chromo_closelogfile *****************************/
+static char doc_f2py_rout__sophia_chromo_closelogfile[] = "\
+impy_closelogfile(opunit)\n\nWrapper for ``chromo_closelogfile``.\
 \n\nParameters\n----------\n"
 "opunit : input int";
-/* extern void F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE)(int*); */
-static PyObject *f2py_rout__sophia_impy_closelogfile(const PyObject *capi_self,
+/* extern void F_FUNC_US(chromo_closelogfile,CHROMO_CLOSELOGFILE)(int*); */
+static PyObject *f2py_rout__sophia_chromo_closelogfile(const PyObject *capi_self,
                            PyObject *capi_args,
                            PyObject *capi_keywds,
                            void (*f2py_func)(int*)) {
@@ -905,12 +905,12 @@ static PyObject *f2py_rout__sophia_impy_closelogfile(const PyObject *capi_self,
 f2py_start_clock();
 #endif
   if (!PyArg_ParseTupleAndKeywords(capi_args,capi_keywds,\
-    "O|:_sophia.impy_closelogfile",\
+    "O|:_sophia.chromo_closelogfile",\
     capi_kwlist,&opunit_capi))
     return NULL;
 /*frompyobj*/
   /* Processing variable opunit */
-    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_sophia.impy_closelogfile() 1st argument (opunit) can't be converted to int");
+    f2py_success = int_from_pyobj(&opunit,opunit_capi,"_sophia.chromo_closelogfile() 1st argument (opunit) can't be converted to int");
   if (f2py_success) {
 /*end of frompyobj*/
 #ifdef F2PY_REPORT_ATEXIT
@@ -948,7 +948,7 @@ f2py_stop_clock();
 #endif
   return capi_buildvalue;
 }
-/************************** end of impy_closelogfile **************************/
+/************************** end of chromo_closelogfile **************************/
 
 /*********************************** npyrng ***********************************/
 static char doc_f2py_rout__sophia_npyrng[] = "\
@@ -1591,8 +1591,8 @@ static FortranDataDef f2py_routine_defs[] = {
   {"icon_pdg_sib",-1,{{-1}},0,(char *)F_WRAPPEDFUNC_US(icon_pdg_sib,ICON_PDG_SIB),(f2py_init_func)f2py_rout__sophia_icon_pdg_sib,doc_f2py_rout__sophia_icon_pdg_sib},
   {"initial",-1,{{-1}},0,(char *)F_FUNC(initial,INITIAL),(f2py_init_func)f2py_rout__sophia_initial,doc_f2py_rout__sophia_initial},
   {"toevt",-1,{{-1}},0,(char *)F_FUNC(toevt,TOEVT),(f2py_init_func)f2py_rout__sophia_toevt,doc_f2py_rout__sophia_toevt},
-  {"impy_openlogfile",-1,{{-1}},0,(char *)F_FUNC_US(impy_openlogfile,IMPY_OPENLOGFILE),(f2py_init_func)f2py_rout__sophia_impy_openlogfile,doc_f2py_rout__sophia_impy_openlogfile},
-  {"impy_closelogfile",-1,{{-1}},0,(char *)F_FUNC_US(impy_closelogfile,IMPY_CLOSELOGFILE),(f2py_init_func)f2py_rout__sophia_impy_closelogfile,doc_f2py_rout__sophia_impy_closelogfile},
+  {"chromo_openlogfile",-1,{{-1}},0,(char *)F_FUNC_US(chromo_openlogfile,CHROMO_OPENLOGFILE),(f2py_init_func)f2py_rout__sophia_chromo_openlogfile,doc_f2py_rout__sophia_chromo_openlogfile},
+  {"chromo_closelogfile",-1,{{-1}},0,(char *)F_FUNC_US(chromo_closelogfile,CHROMO_CLOSELOGFILE),(f2py_init_func)f2py_rout__sophia_chromo_closelogfile,doc_f2py_rout__sophia_chromo_closelogfile},
   {"npyrng",-1,{{-1}},0,(char *)F_FUNC(npyrng,NPYRNG),(f2py_init_func)f2py_rout__sophia_npyrng,doc_f2py_rout__sophia_npyrng},
 
 /*eof routine_defs*/
@@ -1636,8 +1636,8 @@ PyMODINIT_FUNC PyInit__sophia(void) {
 "  icon_pdg_sib = icon_pdg_sib(id)\n"
 "  initial(l0)\n"
 "  toevt()\n"
-"  impy_openlogfile(fname,opunit)\n"
-"  impy_closelogfile(opunit)\n"
+"  chromo_openlogfile(fname,opunit)\n"
+"  chromo_closelogfile(opunit)\n"
 "  npyrng(rval)\n"
 "COMMON blocks:\n""  /eg_io/ keepdc\n""  /s_run/ sqs,s,q2min,xmin,zmin,kb,kt,a1,a2,nproc\n""  /s_plist/ p(2000,5),llist(2000),np,ideb\n""  /s_mass1/ am(49),am2(49)\n""  /s_chp/ s_life(49),ichp(49),istr(49),ibar(49)\n""  /s_csydec/ cbr(102),idb(49),kdec(612),lbarp(49)\n""  /res_prop/ amres(9),sig0(9),width(9),nampres(10,6)\n""  /res_propp/ amresp(9),bgammap(9),widthp(9),ratiojp(9),nampresp(10,6)\n""  /res_propn/ amresn(9),bgamman(9),widthn(9),ratiojn(9),nampresn(10,6)\n""  /crranma4/ c(8),u(97,8),ijkl(8),i97(8),j97(8),ntot(8),ntot2(8),jseq\n""  /s_cnam/ namp(50,6)\n""  /s_resp/ cbrres1p(18),cbrres2p(36),cbrres3p(26),reslimp(36),elimitsp(9),kdecres1p(90),kdecres2p(180),kdecres3p(130),idbres1p(9),idbres2p(9),idbres3p(9)\n""  /s_resn/ cbrres1n(18),cbrres2n(36),cbrres3n(22),reslimn(36),elimitsn(9),kdecres1n(90),kdecres2n(180),kdecres3n(110),idbres1n(9),idbres2n(9),idbres3n(9)\n""  /res_flag/ fres(49),xlimres(49)\n""  /s_czdis/ fa,fb0\n""  /s_czdiss/ fas1,fas2\n""  /s_czlead/ clead,flead\n""  /s_cpspl/ cchik(3,9)\n""  /s_cqdis/ ppt0(33),ptflag\n""  /s_cdif0/ ffd,fbd,fdd\n""  /s_cflafr/ par(8)\n""  /ludat1/ mstu(200),paru(200),mstj(200),parj(200)\n""  /ludat2/ kchg(500,3),pmas(500,4),parf(2000),vckm(4,4)\n""  /ludat3/ mdcy(500,3),mdme(2000,2),brat(2000),kfdp(2000,5)\n""  /ludat4/ chaf(500,8)\n""  /ludatr/ mrlu(6),rrlu(100)\n""  /s_plist1/ llist1(2000)\n""  /hepevt/ nevhep,nhep,isthep(2000),idhep(2000),jmohep(2,2000),jdahep(2,2000),phep(5,2000),vhep(4,2000)\n""  /schg/ ichg(2000),iparnt(2000)\n""  /npy/ bitgen\n"".");
   PyDict_SetItemString(d, "__doc__", s);

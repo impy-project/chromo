@@ -1,6 +1,6 @@
-from impy.kinematics import CenterOfMass
-from impy.models import DpmjetIII191, DpmjetIII193
-from impy.constants import GeV
+from chromo.kinematics import CenterOfMass
+from chromo.models import DpmjetIII191, DpmjetIII193
+from chromo.constants import GeV
 import numpy as np
 from numpy.testing import assert_allclose
 from .util import (

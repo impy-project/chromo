@@ -247,7 +247,7 @@ python module _sophia ! in
             common /ludat4/ chaf
             common /ludatr/ mrlu,rrlu
         end block data ludata
-        subroutine toevt ! in :_sophia:CMakeFiles/_sophia.dir/impy_sophia.f
+        subroutine toevt ! in :_sophia:CMakeFiles/_sophia.dir/chromo_sophia.f
             double precision dimension(2000,5) :: p
             integer dimension(2000) :: llist
             integer :: np
@@ -275,13 +275,13 @@ python module _sophia ! in
             common /schg/ ichg,iparnt
             common /eg_io/ keepdc
         end subroutine toevt
-        subroutine impy_openlogfile(fname,opunit) ! in :_sophia:CMakeFiles/_sophia.dir/logging.f
+        subroutine chromo_openlogfile(fname,opunit) ! in :_sophia:CMakeFiles/_sophia.dir/logging.f
             character*300 :: fname
             integer :: opunit
-        end subroutine impy_openlogfile
-        subroutine impy_closelogfile(opunit) ! in :_sophia:CMakeFiles/_sophia.dir/logging.f
+        end subroutine chromo_openlogfile
+        subroutine chromo_closelogfile(opunit) ! in :_sophia:CMakeFiles/_sophia.dir/logging.f
             integer :: opunit
-        end subroutine impy_closelogfile
+        end subroutine chromo_closelogfile
         subroutine npyrng(rval) ! in :_sophia:CMakeFiles/_sophia.dir/rangen.fpp
             double precision :: rval
             integer*8 :: bitgen

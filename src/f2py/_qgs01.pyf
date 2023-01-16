@@ -276,7 +276,7 @@ python module _qgs01 ! in
             double precision :: sectnu
             common /area48/ asect
         end function sectnu
-        subroutine cqgsini(datdir,lun,debugnum) ! in :_qgs01:CMakeFiles/_qgs01.dir/impy_qgs1.f
+        subroutine cqgsini(datdir,lun,debugnum) ! in :_qgs01:CMakeFiles/_qgs01.dir/chromo_qgs1.f
             character*256 :: datdir
             integer :: lun
             integer :: debugnum
@@ -293,7 +293,7 @@ python module _qgs01 ! in
             common /area43/ moniou
             common /debug/ debug
         end subroutine cqgsini
-        subroutine chepevt ! in :_qgs01:CMakeFiles/_qgs01.dir/impy_qgs1.f
+        subroutine chepevt ! in :_qgs01:CMakeFiles/_qgs01.dir/chromo_qgs1.f
             integer :: nsp
             double precision dimension(4,95000) :: esp
             integer dimension(95000) :: ich
@@ -311,18 +311,18 @@ python module _qgs01 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /qgchg/ ichg
         end subroutine chepevt
-        block data qgsdat ! in :_qgs01:CMakeFiles/_qgs01.dir/impy_qgs1.f
+        block data qgsdat ! in :_qgs01:CMakeFiles/_qgs01.dir/chromo_qgs1.f
             integer, optional,dimension(200) :: ictabl=0
             integer, optional,dimension(21) :: iqtabl=0
             common /crqgslin/ ictabl,iqtabl
         end block data qgsdat
-        subroutine impy_openlogfile(fname,opunit) ! in :_qgs01:CMakeFiles/_qgs01.dir/logging.f
+        subroutine chromo_openlogfile(fname,opunit) ! in :_qgs01:CMakeFiles/_qgs01.dir/logging.f
             character*300 :: fname
             integer :: opunit
-        end subroutine impy_openlogfile
-        subroutine impy_closelogfile(opunit) ! in :_qgs01:CMakeFiles/_qgs01.dir/logging.f
+        end subroutine chromo_openlogfile
+        subroutine chromo_closelogfile(opunit) ! in :_qgs01:CMakeFiles/_qgs01.dir/logging.f
             integer :: opunit
-        end subroutine impy_closelogfile
+        end subroutine chromo_closelogfile
         subroutine npyrng(rval) ! in :_qgs01:CMakeFiles/_qgs01.dir/rangen.fpp
             double precision :: rval
             integer*8 :: bitgen

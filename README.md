@@ -1,4 +1,4 @@
-# impy - (hadronic) interaction models in python
+# chromo - (hadronic) interaction models in python
 
 This package implements are generic user interface to popular event generators used in cosmic ray and high-energy particle physics. The purpose of the package is to simplify working with simulations of particle interactions without the need to use Fortran style interfaces to event generators, 'ASCII input cards' and files or C++ dependencies.  
 
@@ -6,14 +6,14 @@ Simulate interactions with one of the supported event generators
 
 ```python
 import numpy as np
-import impy
+import chromo
 
 # Define the parameters of the collisions
-kinematics = impy.kinematics.CenterOfMass(
-    13 * impy.constants.TeV,
+kinematics = chromo.kinematics.CenterOfMass(
+    13 * chromo.constants.TeV,
     "proton", "proton")
 # Create an instance of an event generator
-generator = impy.models.Sibyll23d(kinematics)
+generator = chromo.models.Sibyll23d(kinematics)
 
 nevents = 0
 average_pt = 0
@@ -61,7 +61,7 @@ print("Average pT for charged pions {0:4.3f}".format(average_pt))
 
 ### From PyPI (not yet available)
 
-    pip install impy
+    pip install chromo
 
 The package will be available as a pre-compiled binary wheels in the future, but for now you have to compile it from source, see next subsection.
 
@@ -71,8 +71,8 @@ Installation from source requires a Python installation setup for development, a
 
 To build from source (the **recursive** flag is important to check out submodules):
 
-    git clone --recursive https://github.com/impy-project/impy
-    cd impy
+    git clone --recursive https://github.com/impy-project/chromo
+    cd chromo
     pip install --no-build-isolation --prefer-binary -v -e .
 
 This takes a while. The command `pip install -v -e .` installs the package in editable mode (for developing the Python layer) and with verbose output, so that you can watch the compilation happening. Warnings can be ignored, but watch out for errors.
@@ -81,7 +81,7 @@ To run the tests or try the examples, it is convenient use this modified `pip in
 
     pip install -v -e .'[test,examples]'
 
-This installs impy and additional optional Python packages to run tests and examples.
+This installs chromo and additional optional Python packages to run tests and examples.
 
 #### Known issues
 
@@ -90,15 +90,15 @@ This installs impy and additional optional Python packages to run tests and exam
     - Apple introduced a bug in the Xcode Command Line Tools Version 14 which produces a linker error when compiling C++ code with gcc. Until this is fixed, the workaround is to downgrade to 13.4, use this link https://download.developer.apple.com/Developer_Tools/Command_Line_Tools_for_Xcode_13.4/Command_Line_Tools_for_Xcode_13.4.dmg and turn off automatic updates in the System Settings, because otherwise your Mac will upgrade to 14 again.
 - setuptools > 60 does not seem to work. Downgrade with `pip install setuptools<60` if you experience problems.
 
-If you cannot fix the installation with these hints, please look into the subsection below which explains how to install in impy in a verified docker environment. The docker environment has a properly set up environment verified by us, so that the installation is guaranteed to succeed.
+If you cannot fix the installation with these hints, please look into the subsection below which explains how to install in chromo in a verified docker environment. The docker environment has a properly set up environment verified by us, so that the installation is guaranteed to succeed.
 
 ### From source in Docker
 
 This guide works on Linux and OSX. You need a running Docker server. Please google how to set up Docker on your machine.
 
-    # download impy
-    git clone --recursive https://github.com/impy-project/impy
-    cd impy
+    # download chromo
+    git clone --recursive https://github.com/impy-project/chromo
+    cd chromo
 
     # download linux image for x86_64 or see below
     docker pull quay.io/pypa/manylinux2014_x86_64
@@ -107,11 +107,11 @@ This guide works on Linux and OSX. You need a running Docker server. Please goog
     # replace the end of the next command accordingly.
     # docker pull quay.io/pypa/manylinux2014_aarch64
     
-    # create docker instance and bind impy directory
-    docker run --rm -d -it --name impy -v "$(pwd)":/app quay.io/pypa/manylinux2014_x86_64
+    # create docker instance and bind chromo directory
+    docker run --rm -d -it --name chromo -v "$(pwd)":/app quay.io/pypa/manylinux2014_x86_64
 
     # enter your docker instance
-    docker exec -it impy /bin/bash
+    docker exec -it chromo /bin/bash
 
     cd /app
 
@@ -119,10 +119,10 @@ This guide works on Linux and OSX. You need a running Docker server. Please goog
     python3.9 -m venv venv
     source venv/bin/activate
 
-    # install impy and dependencies (prefer binary wheels for deps)
+    # install chromo and dependencies (prefer binary wheels for deps)
     pip install --prefer-binary -v -e .
 
-You can now use impy inside the docker instance. If you run Linux, you can also make a wheel inside
+You can now use chromo inside the docker instance. If you run Linux, you can also make a wheel inside
 docker and install it in your host.
 
     # inside docker
@@ -132,7 +132,7 @@ docker and install it in your host.
     # exit docker with ctrl+D
     pip install dist/*.whl
 
-This should allow you to use impy also outside docker. This works only if you use the same Python version inside and outside of docker.
+This should allow you to use chromo also outside docker. This works only if you use the same Python version inside and outside of docker.
 
 ## User interface
 
@@ -160,4 +160,4 @@ Some notes regarding tests.
 
 ## LICENSE
 
-The source code of impy is licensed under the [BSD 3-clause license (see LICENSE for detail)](LICENSE). The source codes of the event generators are individually licensed under different conditions (see the COPYING files located in the subdirectories).
+The source code of chromo is licensed under the [BSD 3-clause license (see LICENSE for detail)](LICENSE). The source codes of the event generators are individually licensed under different conditions (see the COPYING files located in the subdirectories).

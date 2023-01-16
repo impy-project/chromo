@@ -2687,7 +2687,7 @@ python module _urqmd34 ! in
             common /loptions/ fixedseed,bf13,bf14,bf15,bf16,bf17,bf18,bf19,bf20
             common /stables/ nstable,stabvec
         end subroutine urqini
-        subroutine chepevt ! in :_urqmd34:CMakeFiles/_urqmd34.dir/impy_urqmd.f
+        subroutine chepevt ! in :_urqmd34:CMakeFiles/_urqmd34.dir/chromo_urqmd.f
             integer :: npart
             integer :: nbar
             integer :: nmes
@@ -2753,13 +2753,13 @@ python module _urqmd34 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /uqchg/ ichg
         end subroutine chepevt
-        subroutine impy_openlogfile(fname,opunit) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/logging.f
+        subroutine chromo_openlogfile(fname,opunit) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/logging.f
             character*300 :: fname
             integer :: opunit
-        end subroutine impy_openlogfile
-        subroutine impy_closelogfile(opunit) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/logging.f
+        end subroutine chromo_openlogfile
+        subroutine chromo_closelogfile(opunit) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/logging.f
             integer :: opunit
-        end subroutine impy_closelogfile
+        end subroutine chromo_closelogfile
         subroutine npyrng(rval) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/rangen.fpp
             double precision :: rval
             integer*8 :: bitgen

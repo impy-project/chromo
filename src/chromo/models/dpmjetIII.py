@@ -1,7 +1,7 @@
-from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.kinematics import EventFrame
-from impy.util import info, _cached_data_dir, fortran_chars, Nuclei
-from impy.constants import standard_projectiles, GeV
+from chromo.common import MCRun, MCEvent, CrossSectionData
+from chromo.kinematics import EventFrame
+from chromo.util import info, _cached_data_dir, fortran_chars, Nuclei
+from chromo.constants import standard_projectiles, GeV
 
 
 class DpmjetIIIEvent(MCEvent):
@@ -55,7 +55,7 @@ class DpmjetIIIRun(MCRun):
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
     _data_url = (
-        "https://github.com/impy-project/impy"
+        "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
     _ecm_min = 1 * GeV
@@ -215,7 +215,7 @@ class DpmjetIII306(DpmjetIIIRun):
     _library_name = "_dpmjet306"
     _param_file_name = "fitpar.dat"
     _data_url = (
-        "https://github.com/impy-project/impy"
+        "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
     )
 

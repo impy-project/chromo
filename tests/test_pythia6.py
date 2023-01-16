@@ -1,8 +1,8 @@
 # These tests check Pythia6 but also the MCEvent in general.
 # It is not necessary to duplicate all tests for every model.
-from impy.kinematics import CenterOfMass
-from impy.models import Pythia6
-from impy.constants import GeV, TeV
+from chromo.kinematics import CenterOfMass
+from chromo.models import Pythia6
+from chromo.constants import GeV, TeV
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from .util import reference_charge, run_in_separate_process
@@ -151,8 +151,8 @@ def test_pickle(event):
 
 
 def run_pp_collision_copy():
-    from impy.models.pythia6 import PYTHIA6Event
-    from impy.common import EventData
+    from chromo.models.pythia6 import PYTHIA6Event
+    from chromo.common import EventData
 
     evt_kin = CenterOfMass(1 * TeV, 2212, 2212)
     m = Pythia6(evt_kin, seed=4)

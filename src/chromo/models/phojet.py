@@ -1,7 +1,7 @@
-from impy.common import MCRun, MCEvent, CrossSectionData
-from impy.util import fortran_chars, _cached_data_dir
-from impy.kinematics import EventFrame
-from impy.constants import standard_projectiles
+from chromo.common import MCRun, MCEvent, CrossSectionData
+from chromo.util import fortran_chars, _cached_data_dir
+from chromo.kinematics import EventFrame
+from chromo.constants import standard_projectiles
 from particle import literals as lp
 
 
@@ -74,7 +74,7 @@ class PHOJETRun(MCRun):
     _targets = {lp.proton.pdgid, lp.neutron.pdgid}
     _param_file_name = "dpmjpar.dat"
     _data_url = (
-        "https://github.com/impy-project/impy"
+        "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
 
@@ -94,10 +94,10 @@ class PHOJETRun(MCRun):
             self._lib.poinou.lendir = len(pfile)
 
         # Set debug level of the generator
-        import impy
+        import chromo
 
         for i in range(self._lib.podebg.ideb.size):
-            self._lib.podebg.ideb[i] = impy.debug_level
+            self._lib.podebg.ideb[i] = chromo.debug_level
 
         # Setup logging
         lun = 6  # stdout
@@ -205,7 +205,7 @@ class Phojet112(PHOJETRun):
         lp.proton.pdgid,
     }  # FIXME: should allow photons and hadrons
     _data_url = (
-        "https://github.com/impy-project/impy"
+        "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
     )
 
