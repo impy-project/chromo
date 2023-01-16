@@ -1,7 +1,7 @@
 import os
-from impy import models as im
-from impy.constants import TeV
-from impy.kinematics import CenterOfMass
+from chromo import models as im
+from chromo.constants import TeV
+from chromo.kinematics import CenterOfMass
 import pytest
 import pyhepmc
 

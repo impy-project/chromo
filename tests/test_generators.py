@@ -1,5 +1,5 @@
-from impy.constants import GeV
-from impy.kinematics import (
+from chromo.constants import GeV
+from chromo.kinematics import (
     CenterOfMass,
     EventKinematics,
     FixedTarget,
@@ -7,11 +7,11 @@ from impy.kinematics import (
     EventFrame,
     CompositeTarget,
 )
-import impy.models as im
+import chromo.models as im
 import pytest
 from .util import run_in_separate_process
-from impy.util import get_all_models, pdg2name
-import impy
+from chromo.util import get_all_models, pdg2name
+import chromo
 import boost_histogram as bh
 import gzip
 import pickle
@@ -197,7 +197,7 @@ def test_generator(projectile, target, frame, Model):
 
     threshold = 1e-6
 
-    if not (p_value >= threshold) or impy.debug_level > 0:
+    if not (p_value >= threshold) or chromo.debug_level > 0:
         draw_comparison(fn, p_value, h.axes, values, val_ref, cov_ref)
 
     assert p_value >= threshold

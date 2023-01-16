@@ -1,6 +1,6 @@
-from impy.kinematics import CenterOfMass
-from impy.models import Sibyll21
-from impy.constants import TeV, GeV
+from chromo.kinematics import CenterOfMass
+from chromo.models import Sibyll21
+from chromo.constants import TeV, GeV
 from numpy.testing import assert_allclose, assert_equal
 import numpy as np
 from .util import reference_charge, run_in_separate_process

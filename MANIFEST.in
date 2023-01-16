@@ -2,7 +2,7 @@ include *.py
 include *.cmake
 include pyproject.toml
 include CMakeLists.txt
-recursive-exclude src/impy/iamdata *
+recursive-exclude src/chromo/iamdata *
 recursive-include src/f2py *
 recursive-include src/fortran *
 recursive-include src/cpp/pybind11/include *

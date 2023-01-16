@@ -1,10 +1,10 @@
-from impy.kinematics import FixedTarget, CenterOfMass
-from impy.constants import TeV, GeV
-import impy.models as im
+from chromo.kinematics import FixedTarget, CenterOfMass
+from chromo.constants import TeV, GeV
+import chromo.models as im
 import pickle
 import pytest
 from .util import run_in_separate_process
-from impy.util import get_all_models
+from chromo.util import get_all_models
 
 
 def run_rng_state(Model):

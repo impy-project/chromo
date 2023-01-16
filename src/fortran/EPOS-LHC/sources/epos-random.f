@@ -63,7 +63,7 @@ c Important : to be call before ranfst
 c-----------------------------------------------------------------------
       IMPLICIT NONE
       INTEGER          KSEQ
-#ifndef IMPY      
+#ifndef CHROMO      
       PARAMETER        (KSEQ = 2)
 #else
       PARAMETER        (KSEQ = 8)
@@ -101,7 +101,7 @@ c Important : to be call after ranfgt
 c-----------------------------------------------------------------------
       IMPLICIT NONE
       INTEGER          KSEQ
-#ifndef IMPY      
+#ifndef CHROMO      
       PARAMETER        (KSEQ = 2)
 #else
       PARAMETER        (KSEQ = 8)
@@ -199,7 +199,7 @@ c iiseed(2) and iiseed(3) defined in aread
       return
       end
 
-#ifndef IMPY      
+#ifndef CHROMO      
 C=======================================================================
       SUBROUTINE RMMARD( RVEC,LENV,ISEQ )
 C-----------------------------------------------------------------------

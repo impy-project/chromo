@@ -64,7 +64,7 @@ if extra_cfg.exists():
 
 ext_modules = []
 for model in models:
-    ext_modules.append(CMakeExtension(f"impy.models._{model}"))
+    ext_modules.append(CMakeExtension(f"chromo.models._{model}"))
 
 setup(
     zip_safe=False,
