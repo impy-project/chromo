@@ -37,8 +37,8 @@ class SpeedColumn(ProgressColumn):
         return Text(f"{speed:.0f}/s", style="progress.data.speed")
 
 
-# Only add numbers here for models in CRMC.
-# Impy-exclusive models do not get a number and should not be added here.
+# Only add numbers here for backward-compatibility with CRMC.
+# Chromo-exclusive models do not get a number and should not be added here.
 MODELS = {
     0: models.EposLHC,
     # 1: models.Epos199,
@@ -50,7 +50,7 @@ MODELS = {
     7: models.QGSJetII04,
     8: models.Phojet193,
     11: models.QGSJetII03,
-    # in CRMC 12 refers to different DPMJet versions
+    # 12 refers to different DPMJet versions in CRMC
     12: models.DpmjetIII306,
 }
 VALID_MODELS = []
@@ -174,7 +174,7 @@ def parse_arguments():
         raise SystemExit
 
     if args.seed <= 0:
-        args.seed = int.from_bytes(os.urandom(8), "little")
+        args.seed = int.from_bytes(os.urandom(4), "little")
 
     if args.number <= 0:
         raise SystemExit("Error: number must be positive")

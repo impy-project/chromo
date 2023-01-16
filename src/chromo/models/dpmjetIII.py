@@ -63,6 +63,8 @@ class DpmjetIIIRun(MCRun):
     _max_A2 = 0
 
     def __init__(self, evt_kin, *, seed=None):
+        import chromo
+
         super().__init__(seed)
 
         data_dir = _cached_data_dir(self._data_url)
@@ -79,16 +81,17 @@ class DpmjetIIIRun(MCRun):
             self._lib.poinou.datdir = fortran_chars(self._lib.poinou.datdir, pfile)
             self._lib.poinou.lendir = len(pfile)
 
-        if hasattr(self._lib, "dtimpy"):
+        # TODO: Rename the common block to chromo
+        if hasattr(self._lib, "dtchro"):
             evap_file = data_dir + self._evap_file_name
             info(3, "DPMJET evap file at", evap_file)
-            self._lib.dtimpy.fnevap = fortran_chars(self._lib.dtimpy.fnevap, evap_file)
+            self._lib.dtchro.fnevap = fortran_chars(self._lib.dtchro.fnevap, evap_file)
 
         # Setup logging
         lun = 6  # stdout
         if hasattr(self._lib, "dtflka"):
             self._lib.dtflka.lout = lun
-            self._lib.dtflka.lpri = 50
+            self._lib.dtflka.lpri = 5 if chromo.debug_level else 1
         elif hasattr(self._lib, "dtiont"):
             self._lib.dtiont.lout = lun
         else:
