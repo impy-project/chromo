@@ -174,21 +174,21 @@ def test_generator(projectile, target, frame, Model):
         assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
         return
 
+    values = np.reshape(h.values(), -1)
+
     fn = Path(f"{Model.pyname}_{projectile}_{target}_{frame}")
     path_ref = REFERENCE_PATH / fn.with_suffix(".pkl.gz")
-    p_value = None
+
+    reference_generated = False
     if not path_ref.exists():
         # New reference is generated. Check plots to see whether reference makes
         # any sense before committing it.
-        values = run_in_separate_process(run_model, Model, kin, 50, timeout=10000)
-        val_ref = np.reshape(np.mean(values, axis=0), -1)
-        cov_ref = np.cov(np.transpose([np.reshape(x, -1) for x in values]))
+        reference_generated = True
+        ref_values = run_in_separate_process(run_model, Model, kin, 50, timeout=10000)
+        val_ref = np.reshape(np.mean(ref_values, axis=0), -1)
+        cov_ref = np.cov(np.transpose([np.reshape(x, -1) for x in ref_values]))
         with gzip.open(path_ref, "wb") as f:
             pickle.dump((val_ref, cov_ref), f)
-        values = np.reshape(h.values(), -1)
-        p_value = compute_p_value(values, val_ref, cov_ref)
-        draw_comparison(fn, p_value, h.axes, values, val_ref, cov_ref)
-        pytest.xfail(reason="reference does not exist; generated new one, check it")
 
     with gzip.open(path_ref) as f:
         val_ref, cov_ref = pickle.load(f)
@@ -197,7 +197,7 @@ def test_generator(projectile, target, frame, Model):
 
     threshold = 1e-6
 
-    if not (p_value >= threshold) or impy.debug_level > 0:
+    if reference_generated or not (p_value >= threshold) or impy.debug_level > 0:
         draw_comparison(fn, p_value, h.axes, values, val_ref, cov_ref)
 
     assert p_value >= threshold
