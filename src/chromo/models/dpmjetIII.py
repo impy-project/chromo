@@ -63,6 +63,7 @@ class DpmjetIIIRun(MCRun):
     _max_A2 = 0
 
     def __init__(self, evt_kin, *, seed=None):
+        import chromo
         super().__init__(seed)
 
         data_dir = _cached_data_dir(self._data_url)
@@ -88,7 +89,7 @@ class DpmjetIIIRun(MCRun):
         lun = 6  # stdout
         if hasattr(self._lib, "dtflka"):
             self._lib.dtflka.lout = lun
-            self._lib.dtflka.lpri = 50
+            self._lib.dtflka.lpri = 5 if chromo.debug_level else 1
         elif hasattr(self._lib, "dtiont"):
             self._lib.dtiont.lout = lun
         else:

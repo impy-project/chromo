@@ -101,14 +101,15 @@ class PHOJETRun(MCRun):
 
         # Setup logging
         lun = 6  # stdout
+        verbosity = 5 if chromo.debug_level else 1
         # Standalone phojet IO block
         if hasattr(self._lib, "poinou"):
             print(1)
             self._lib.poinou.lo = lun
-            self._lib.poinou.lpri = 50
+            self._lib.poinou.lpri = verbosity
         if hasattr(self._lib, "dtflka"):
             self._lib.dtflka.lout = lun
-            self._lib.dtflka.lpri = 50
+            self._lib.dtflka.lpri = verbosity
         elif hasattr(self._lib, "dtiont"):
             self._lib.dtiont.lout = lun
         else:
@@ -119,7 +120,7 @@ class PHOJETRun(MCRun):
 
         # Initialize PHOJET's parameters
         # If PHOJET is run through the DPMJET library, this init needs -2 else -1
-        if self._lib.pho_init(-1, lun, 50):
+        if self._lib.pho_init(-1, lun, verbosity):
             raise RuntimeError("unable to initialize or set LUN")
 
         process_switch = self._lib.poprcs.ipron
