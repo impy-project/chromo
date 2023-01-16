@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
 
-project(chromolib LANGUAGES Fortran)
+project(chromo LANGUAGES Fortran)
 
 # Find C/CXX compilers that match the Fortran compiler
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
@@ -15,7 +15,7 @@ endif()
 # Delayed toolchain initialization
 enable_language(C CXX)
 
-set(BUILD_dev_dpmjetIII193 CACHE 
+set(BUILD_dev_dpmjetIII193 CACHE
   PATH "source directory for dev_dpmjetIII193")
 option(BUILD_sib23c00 OFF)
 option(BUILD_sib23c02 OFF)
@@ -152,8 +152,8 @@ f2py_add_module(_eposlhc
   ${logging_source}
   ${rangen_source}
   INTERFACE_SOURCES
-  ${fortran_dir}/epos/sources/epos-bas-lhc.f 
-  ${fortran_dir}/epos/sources/epos-ids-lhc.f 
+  ${fortran_dir}/epos/sources/epos-bas-lhc.f
+  ${fortran_dir}/epos/sources/epos-ids-lhc.f
   ${fortran_dir}/epos/sources/epos_interface.f
   ${fortran_dir}/epos/sources/epos-random.f
   ${rangen_source}
@@ -333,7 +333,7 @@ f2py_add_module(_pythia6
 )
 
 ### pythia8
-# About the license and how it affects chromo. 
+# About the license and how it affects chromo.
 # Pythia-8 is licensed under GPL-v2 or higher, which means GPL-v3
 # applies. An excerpt from GPL-v3:
 
@@ -374,7 +374,7 @@ endif()
 
 
 # This part is needed when we figure out the problem with
-# building Pythia8 on Windows 
+# building Pythia8 on Windows
 # if (WIN32)
 # find_package(dlfcn-win32 REQUIRED)
 # set(CMAKE_DL_LIBS dlfcn-win32::dl)
@@ -491,7 +491,7 @@ file(WRITE ${temp_dpmjet_file} "${temp_dpmjet_str}")
 
 execute_process(
   COMMAND
-  ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py 
+  ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py
   ${CMAKE_CURRENT_BINARY_DIR}
   ${fortran_dir}/dpmjetIII-19.1/include
   ${CMAKE_SOURCE_DIR}/${temp_dpmjet_file}
@@ -528,11 +528,11 @@ f2py_add_module(_dpmjetIII191
 ### phojet191
 f2py_add_module(_phojet191
   FUNCTIONS
-  pho_event pycomp pho_init pho_setpar poevt1 
-  poevt2 pho_pname pho_pmass pho_setmdl pho_setpdf 
-  pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini 
-  pho_ptcut pytune pho_rregpar pho_sregpar pho_prevnt 
-  ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt 
+  pho_event pycomp pho_init pho_setpar poevt1
+  poevt2 pho_pname pho_pmass pho_setmdl pho_setpdf
+  pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini
+  pho_ptcut pytune pho_rregpar pho_sregpar pho_prevnt
+  ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
   pho_setpcomb dt_ficonf pho_ghhias ${chromo_functions}
   SOURCES
   ${dpmjetIII191_modded_sources}
@@ -627,7 +627,7 @@ if(BUILD_sib23c00)
     ${rangen_source}
     INCLUDE_DIRS
     ${NUMPY_INCLUDE_DIRS}
-      COMPILE_DEFS
+    COMPILE_DEFS
     ${chromo_definitions}
   )
 endif()
@@ -699,9 +699,9 @@ if(BUILD_dev_dpmjetIII193)
     ${dev_source}/include/dpmjet
     ${dev_source}/include/pythia
     ${dev_source}/include/flinclude
-    ${NUMPY_INCLUDE_DIRS}  
+    ${NUMPY_INCLUDE_DIRS}
     COMPILE_DEFS
     ${chromo_definitions}
   )
-  
+
 endif()
