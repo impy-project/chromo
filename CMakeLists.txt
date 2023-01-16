@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
 
-project(chromolib LANGUAGES Fortran)
+project(chromo LANGUAGES Fortran)
 
 # Find C/CXX compilers that match the Fortran compiler
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
