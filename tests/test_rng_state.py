@@ -17,6 +17,7 @@ def run_rng_state(Model):
         evt_kin = CenterOfMass(13 * TeV, "proton", "proton")
 
     generator = Model(evt_kin, seed=1)
+
     nevents = 10
 
     # Save a initial state to a variable:
@@ -51,7 +52,7 @@ def test_rng_state(Model):
     if Model is im.Pythia8:
         pytest.skip("Pythia8 currently does not support rng_state serialization")
 
-    if Model in (im.UrQMD34, im.EposLHC):
+    if Model is im.UrQMD34:
         pytest.xfail(f"{Model.pyname} fails this test, needs investigation")
 
     run_in_separate_process(run_rng_state, Model)
