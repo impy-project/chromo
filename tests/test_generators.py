@@ -24,9 +24,6 @@ from scipy.stats import chi2
 import platform
 import os
 
-if "CI" in os.environ and platform.system() == "Windows":
-    pytest.skip(reason="skip to speed up CI on Windows")
-
 matplotlib.use("svg")  # need non-interactive backend for CI Windows
 
 THIS_TEST = Path(__file__).stem
@@ -142,7 +139,10 @@ def draw_comparison(fn, p_value, axes, values, val_ref, cov_ref):
     plt.close(fig)
 
 
-@pytest.mark.trylast
+@pytest.mark.skipif(
+    "CI" in os.environ and platform.system() == "Windows",
+    reason="skip to speed up CI on Windows",
+)
 @pytest.mark.parametrize("frame", ("cms", "ft", "cms2ft", "ft2cms"))
 @pytest.mark.parametrize("target", ("p", "air"))
 @pytest.mark.parametrize("projectile", ("gamma", "pi-", "p", "He"))

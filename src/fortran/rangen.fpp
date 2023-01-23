@@ -1,201 +1,166 @@
-      SUBROUTINE npyrng( rval )
+c=======================================================================
+      subroutine npyrng( rval )
+c-----------------------------------------------------------------------
+c  interface to C code
+c-----------------------------------------------------------------------
       implicit none
-
       external npynxt
       double precision rval
       integer*8 bitgen
       common /npy/bitgen
-
-      CALL npynxt(rval, bitgen)
-
-      END
-
-      DOUBLE PRECISION FUNCTION gasdev( dummy )
-      implicit none
-
-      external npygas
-      integer dummy
-      integer*8 bitgen
-      COMMON /npy/bitgen
-
-      call NPYGAS(gasdev, bitgen)
-
+      call npynxt(rval, bitgen)
       end
 
-      REAL FUNCTION spgasdev( dummy )
-      implicit none
+c=======================================================================
+      double precision function simrnd()
+c-----------------------------------------------------------------------
+c  alternative interface to npyrng
+c-----------------------------------------------------------------------
+      call npyrng(simrnd)
+      end
 
+c=======================================================================
+      double precision function gasdev( dummy )
+c-----------------------------------------------------------------------
+c  used by SIBYLL-2.3x
+c-----------------------------------------------------------------------
+      implicit none
       external npygas
       integer dummy
       integer*8 bitgen
-      COMMON /npy/bitgen
+      common /npy/bitgen
+      call npygas(gasdev, bitgen)
+      end
+
+c=======================================================================
+      real function spgasdev( dummy )
+c-----------------------------------------------------------------------
+c  used by SIBYLL-2.1
+c-----------------------------------------------------------------------
+      implicit none
+      external npygas
+      integer dummy
+      integer*8 bitgen
+      common /npy/bitgen
       double precision rval
-
-      call NPYGAS(rval, bitgen)
-
+      call npygas(rval, bitgen)
       spgasdev = real(rval)
-
       end
 
-      SUBROUTINE RMMARD( RVEC,LENV,ISEQ )
+c=======================================================================
+      subroutine rmmard( rvec,lenv,iseq )
+c-----------------------------------------------------------------------
+c  used by epos
+c-----------------------------------------------------------------------
       implicit none
-      DOUBLE PRECISION RVEC(*), RVAL
-      INTEGER ISEQ,LENV,IVEC
+      double precision rvec(*), rval
+      integer iseq,lenv,ivec
+      do ivec = 1, lenv
+        call npyrng(rval)
+        rvec(ivec) = rval
+      enddo
+      end
 
-      DO IVEC = 1, LENV
-        call NPYRNG(RVAL)
-        RVEC(IVEC) = RVAL
-      ENDDO
-
-      END
-
-C=======================================================================
-
-      SUBROUTINE RM48( RVEC,LENV )
-
-C-----------------------------------------------------------------------
-C  R(ANDO)M (NUMBER GENERATOR FOR EVAPORATION MODULE/DPMJET)
-C
-C  THIS SUBROUTINE IS CALLED FROM ROUTINES OF EVAPORATION MODULE.
-C  ARGUMENTS:
-C   RVEC   = DOUBL.PREC. VECTOR FIELD TO BE FILLED WITH RANDOM NUMBERS
-C   LENV   = LENGTH OF VECTOR (# OF RANDNUMBERS TO BE GENERATED)
-C-----------------------------------------------------------------------
-
+c=======================================================================
+      subroutine rm48( rvec,lenv )
+c-----------------------------------------------------------------------
+c  r(ando)m (number generator for evaporation module/dpmjet)
+c
+c  this subroutine is called from routines of evaporation module.
+c  arguments:
+c   rvec   = doubl.prec. vector field to be filled with random numbers
+c   lenv   = length of vector (# of randnumbers to be generated)
+c-----------------------------------------------------------------------
       implicit none
-      DOUBLE PRECISION RVEC(*), RVAL
-      INTEGER LENV,IVEC
+      double precision rvec(*), rval
+      integer lenv,ivec
+      do ivec = 1, lenv
+        call npyrng(rval)
+        rvec(ivec) = rval
+      enddo
+      end
 
-      DO IVEC = 1, LENV
-        call NPYRNG(RVAL)
-        RVEC(IVEC) = RVAL
-      ENDDO
-
-      END
-
-C=======================================================================
-
-      DOUBLE PRECISION FUNCTION DRANF(dummy)
-
+c=======================================================================
+      double precision function dranf(dummy)
+c-----------------------------------------------------------------------
+c  used by epos
+c-----------------------------------------------------------------------
       implicit none
       double precision dummy
+      call npyrng(dranf)
+      end
 
-C-----------------------------------------------------------------------
-C  (SIM)PLIFIED RANDOM NUMBER GENERATOR CALL TO NPYRNG
-C-----------------------------------------------------------------------
-
-      CALL NPYRNG(DRANF)
-
-      END
-
-C=======================================================================
-
-      DOUBLE PRECISION FUNCTION SIMRND()
-
-C-----------------------------------------------------------------------
-C  (SIM)PLIFIED RANDOM NUMBER GENERATOR CALL TO NPYRNG
-C-----------------------------------------------------------------------
-
-      CALL NPYRNG(SIMRND)
-
-      END
-
-C=======================================================================
-
-C====================       WRAPPERS     ===============================
-
-C-----------------------------------------------------------------------
-C  S(IBYLL) R(A)ND(O)M (GENERATOR)
-C-----------------------------------------------------------------------
+c=======================================================================
+c  sibyll random generator
+c-----------------------------------------------------------------------
 #ifdef SIBYLL_21
-#define S_RNDM_RESULT REAL
+      real function s_rndm(dummy)
 #else
-#define S_RNDM_RESULT DOUBLE PRECISION
-#endif
-      S_RNDM_RESULT FUNCTION S_RNDM()
-
-      IMPLICIT NONE
-
-      DOUBLE PRECISION SIMRND
-
+      double precision function s_rndm(dummy)
+#endif 
+c-----------------------------------------------------------------------
+      implicit none
+      integer dummy
+      double precision simrnd
 #ifdef SIBYLL_21
-555   S_RNDM = real(SIMRND())
-      IF ((S_RNDM.LE.0E0).OR.(S_RNDM.GE.1E0)) GOTO 555     
+555   s_rndm = real(simrnd())
+      if ((s_rndm.le.0e0).or.(s_rndm.ge.1e0)) goto 555     
 #else
-      S_RNDM = SIMRND()
+      s_rndm = simrnd()
 #endif
+      end
 
-      END
+c=======================================================================
+      double precision function pyr()
+c-----------------------------------------------------------------------
+c  pythia random generator
+c-----------------------------------------------------------------------
+      implicit none
+      call npyrng(pyr)
+      end
 
-C-----------------------------------------------------------------------
-C  PY(THIA) R(ANDOM GENERATOR)
-C-----------------------------------------------------------------------
-      DOUBLE PRECISION FUNCTION PYR()
-      IMPLICIT NONE
+c=======================================================================
+      double precision function rndm()
+c-----------------------------------------------------------------------
+c  random generator for dpmjet
+c-----------------------------------------------------------------------
+      implicit none
+      call npyrng(rndm)
+      end
 
-      CALL NPYRNG(PYR)
+c=======================================================================
+      double precision function psran()
+c-----------------------------------------------------------------------
+c  random generator for qgsjet
+c-----------------------------------------------------------------------
+      implicit none
+      call npyrng(psran)
+      end
 
-      END
+c=======================================================================
+      double precision function ranf()
+c-----------------------------------------------------------------------
+c  random generator for urqmd
+c-----------------------------------------------------------------------
+      implicit none
+      call npyrng(ranf)
+      end
 
-      DOUBLE PRECISION FUNCTION RNDM()
+c=======================================================================
+      double precision function rlu()
+c-----------------------------------------------------------------------
+c  random generator for jetset
+c-----------------------------------------------------------------------
+      implicit none
+      call npyrng(rlu)
+      end
 
-C-----------------------------------------------------------------------
-C  R(A)ND(O)M (GENERATOR FOR DPMJET)
-C-----------------------------------------------------------------------
-
-      IMPLICIT NONE
-
-      CALL NPYRNG(RNDM)
-
-      END
-
-      DOUBLE PRECISION FUNCTION PSRAN()
-
-C-----------------------------------------------------------------------
-C  RAN(DOM GENERATOR FOR QGSJET)
-C-----------------------------------------------------------------------
-
-      IMPLICIT NONE
-
-      CALL NPYRNG(PSRAN)
-
-      END
-
-      DOUBLE PRECISION FUNCTION RANF()
-
-C-----------------------------------------------------------------------
-C  RAN(DOM GENERATOR FOR URQMD
-C-----------------------------------------------------------------------
-
-      IMPLICIT NONE
-
-      CALL NPYRNG(RANF)
-
-      END
-
-
-      DOUBLE PRECISION FUNCTION RLU()
-
-C-----------------------------------------------------------------------
-C  RLU  RANDOM GENERATOR FOR JETSET
-C-----------------------------------------------------------------------
-
-      IMPLICIT NONE
-
-      CALL NPYRNG(RLU)
-
-      END
-
-      DOUBLE PRECISION FUNCTION DT_RNDM(VDUMMY)
-
-C-----------------------------------------------------------------------
-C  THIS FUNCTON IS CALLED FROM DPM_JET306 ROUTINES.
-C-----------------------------------------------------------------------
-
-      IMPLICIT NONE
-
-      DOUBLE PRECISION VDUMMY
-
-      CALL NPYRNG(DT_RNDM)
-
-      END
+c=======================================================================
+      double precision function dt_rndm(vdummy)
+c-----------------------------------------------------------------------
+c  this functon is called from dpm_jet306 routines.
+c-----------------------------------------------------------------------
+      implicit none
+      double precision vdummy
+      call npyrng(dt_rndm)
+      end

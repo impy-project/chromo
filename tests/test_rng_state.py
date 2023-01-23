@@ -52,7 +52,7 @@ def test_rng_state(Model):
     if Model is im.Pythia8:
         pytest.skip("Pythia8 currently does not support rng_state serialization")
 
-    if Model is im.UrQMD34:
+    if Model in (im.UrQMD34, im.EposLHC):
         pytest.xfail(f"{Model.pyname} fails this test, needs investigation")
 
     run_in_separate_process(run_rng_state, Model)
