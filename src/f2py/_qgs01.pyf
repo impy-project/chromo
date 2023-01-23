@@ -3,7 +3,7 @@
 
 python module _qgs01 ! in 
     interface  ! in :_qgs01
-        subroutine psaini(datdir) ! in :_qgs01:CMakeFiles/_qgs01.dir/pyf_sources/qgsjet01d.f.proc
+        subroutine psaini(datdir) ! in :_qgs01:CMakeFiles/_qgs01.dir/qgsjet01d.f
             character*256 :: datdir
             double precision dimension(10,5,4) :: gsect
             integer dimension(2) :: ia
@@ -107,7 +107,7 @@ python module _qgs01 ! in
             common /area48/ asect
             common /version/ version
         end subroutine psaini
-        subroutine psconf ! in :_qgs01:CMakeFiles/_qgs01.dir/pyf_sources/qgsjet01d.f.proc
+        subroutine psconf ! in :_qgs01:CMakeFiles/_qgs01.dir/qgsjet01d.f
             integer dimension(2) :: ia
             integer :: icz
             integer :: icp
@@ -145,7 +145,7 @@ python module _qgs01 ! in
             integer :: jdifr
             integer :: moniou
             double precision :: gdt
-            double precision :: gdp
+            double precision :: gdp    !so00
             integer :: nwt
             integer :: debug
             common /area1/ ia,icz,icp
@@ -158,11 +158,11 @@ python module _qgs01 ! in
             common /area16/ cc
             common /area40/ jdifr
             common /area43/ moniou
-            common /area45/ gdt,gdp
+            common /area45/ gdt,gdp    !so00
             common /area99/ nwt
             common /debug/ debug
         end subroutine psconf
-        subroutine xxaini(e0n,icp0,iap,iat) ! in :_qgs01:CMakeFiles/_qgs01.dir/pyf_sources/qgsjet01d.f.proc
+        subroutine xxaini(e0n,icp0,iap,iat) ! in :_qgs01:CMakeFiles/_qgs01.dir/qgsjet01d.f
             double precision :: e0n
             integer :: icp0
             integer :: iap
@@ -210,7 +210,7 @@ python module _qgs01 ! in
             double precision dimension(10,5,4) :: gz
             double precision dimension(10,5,4) :: gzp
             double precision :: gdt
-            double precision :: gdp
+            double precision :: gdp   !so00
             integer :: debug
             common /area1/ ia,icz,icp
             common /area2/ s,y0,wp0,wm0
@@ -225,10 +225,10 @@ python module _qgs01 ! in
             common /area35/ sjv0,fjs0
             common /area43/ moniou
             common /area44/ gz,gzp
-            common /area45/ gdt,gdp
+            common /area45/ gdt,gdp   !so00
             common /debug/ debug
         end subroutine xxaini
-        subroutine xxreg(ep0,ic) ! in :_qgs01:CMakeFiles/_qgs01.dir/pyf_sources/qgsjet01d.f.proc
+        subroutine xxreg(ep0,ic) ! in :_qgs01:CMakeFiles/_qgs01.dir/qgsjet01d.f
             double precision dimension(4) :: ep0
             integer :: ic
             double precision dimension(3) :: ey0
@@ -254,7 +254,7 @@ python module _qgs01 ! in
             common /area43/ moniou
             common /debug/ debug
         end subroutine xxreg
-        block data psdata ! in :_qgs01:CMakeFiles/_qgs01.dir/pyf_sources/qgsjet01d.f.proc
+        block data psdata ! in :_qgs01:CMakeFiles/_qgs01.dir/qgsjet01d.f
             double precision, optional,dimension(7) :: x1=.9862838d0
             double precision, optional,dimension(7) :: a1=.03511946d0
             double precision, optional,dimension(2) :: x5=.585786d0
@@ -268,7 +268,7 @@ python module _qgs01 ! in
             common /ar8/ x2,a2
             common /ar9/ x9,a9
         end block data psdata
-        function sectnu(e0n,iap,iat) ! in :_qgs01:CMakeFiles/_qgs01.dir/pyf_sources/qgsjet01d.f.proc
+        function sectnu(e0n,iap,iat) ! in :_qgs01:CMakeFiles/_qgs01.dir/qgsjet01d.f
             double precision :: e0n
             integer :: iap
             integer :: iat
@@ -276,8 +276,7 @@ python module _qgs01 ! in
             double precision :: sectnu
             common /area48/ asect
         end function sectnu
-        subroutine cqgsini(iseedin,datdir,lun,debugnum) ! in :_qgs01:CMakeFiles/_qgs01.dir/pyf_sources/chromo_qgs1.f.proc
-            integer :: iseedin
+        subroutine cqgsini(datdir,lun,debugnum) ! in :_qgs01:CMakeFiles/_qgs01.dir/chromo_qgs1.f
             character*256 :: datdir
             integer :: lun
             integer :: debugnum
@@ -294,7 +293,7 @@ python module _qgs01 ! in
             common /area43/ moniou
             common /debug/ debug
         end subroutine cqgsini
-        subroutine chepevt ! in :_qgs01:CMakeFiles/_qgs01.dir/pyf_sources/chromo_qgs1.f.proc
+        subroutine chepevt ! in :_qgs01:CMakeFiles/_qgs01.dir/chromo_qgs1.f
             integer :: nsp
             double precision dimension(4,95000) :: esp
             integer dimension(95000) :: ich
@@ -312,30 +311,23 @@ python module _qgs01 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /qgchg/ ichg
         end subroutine chepevt
-        block data qgsdat ! in :_qgs01:CMakeFiles/_qgs01.dir/pyf_sources/chromo_qgs1.f.proc
+        block data qgsdat ! in :_qgs01:CMakeFiles/_qgs01.dir/chromo_qgs1.f
             integer, optional,dimension(200) :: ictabl=0
             integer, optional,dimension(21) :: iqtabl=0
             common /crqgslin/ ictabl,iqtabl
         end block data qgsdat
-        subroutine chromo_openlogfile(fname,opunit) ! in :_qgs01:CMakeFiles/_qgs01.dir/pyf_sources/logging.f.proc
+        subroutine chromo_openlogfile(fname,opunit) ! in :_qgs01:CMakeFiles/_qgs01.dir/logging.f
             character*300 :: fname
             integer :: opunit
         end subroutine chromo_openlogfile
-        subroutine chromo_closelogfile(opunit) ! in :_qgs01:CMakeFiles/_qgs01.dir/pyf_sources/logging.f.proc
+        subroutine chromo_closelogfile(opunit) ! in :_qgs01:CMakeFiles/_qgs01.dir/logging.f
             integer :: opunit
         end subroutine chromo_closelogfile
-        subroutine init_rmmard(iseedin) ! in :_qgs01:CMakeFiles/_qgs01.dir/pyf_sources/rangen.f.proc
-            integer :: iseedin
-            double precision dimension(8) :: c
-            double precision dimension(97,8) :: u
-            integer dimension(8) :: ijkl
-            integer dimension(8) :: i97
-            integer dimension(8) :: j97
-            integer dimension(8) :: ntot
-            integer dimension(8) :: ntot2
-            integer :: jseq
-            common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
-        end subroutine init_rmmard
+        subroutine npyrng(rval) ! in :_qgs01:CMakeFiles/_qgs01.dir/rangen.fpp
+            double precision :: rval
+            integer*8 :: bitgen
+            common /npy/ bitgen
+        end subroutine npyrng
     end interface 
 end python module _qgs01
 

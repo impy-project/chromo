@@ -2,13 +2,12 @@ from pathlib import Path
 from setuptools import setup
 import sys
 import subprocess as subp
-import platform
 import os
 
 cwd = Path(__file__).parent
 
 sys.path.append(str(cwd))
-from cmake_ext import CMakeExtension, CMakeBuild  # noqa: E402
+from cmake_ext import CMakeExtension, CMakeBuild, get_models  # noqa: E402
 
 if not os.environ.get("CI", False):
     if (cwd / ".git").exists():
@@ -17,33 +16,9 @@ if not os.environ.get("CI", False):
         # switching between development branches
         subp.check_call(["git", "submodule", "update"])
 
-models = [
-    "eposlhc",
-    "sib21",
-    "sib23",
-    "sib23d",
-    "sib23c01",
-    "qgs01",
-    "qgsII03",
-    "qgsII04",
-    "pythia6",
-    "sophia",
-    "dpmjet306",
-    "phojet112",
-    "phojet191",
-    "phojet193",
-    "dpmjetIII191",
-    "dpmjetIII193",
-]
-
-# urqmd34 doesn't build correctly on Windows
-if platform.system() != "Windows":
-    models.append("urqmd34")
-    models.append("pythia8")
-
-# for convenience, support building extra models via extra.cfg
-# extra.cfg is not tracked by git, so can be freely modified
-# extra.cfg example:
+# for convenience, support building extra models via EXTRA
+# EXTRA is not tracked by git, so can be freely modified
+# EXTRA example:
 # -----
 # sib23c00
 # sib23c02
@@ -51,19 +26,8 @@ if platform.system() != "Windows":
 # dev_dpmjetIII193=/full/path/to/dir/dpmjetIII-19.3
 # ----
 
-extra_cfg = cwd / "extra.cfg"
-
-if extra_cfg.exists():
-    with open(extra_cfg) as f:
-        for model in f:
-            model = model.strip()
-            if model:
-                if "=" in model:
-                    model = model.split("=")[0]
-                models.append(model)
-
 ext_modules = []
-for model in models:
+for model in get_models():
     ext_modules.append(CMakeExtension(f"chromo.models._{model}"))
 
 setup(

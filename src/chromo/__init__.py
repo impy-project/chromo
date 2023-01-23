@@ -1,8 +1,10 @@
-from chromo.version import __version__
 from chromo import models
 from chromo import kinematics
 from chromo import constants
 import os
+from importlib.metadata import version
+
+__version__ = version("chromo")
 
 debug_level = int(os.environ.get("DEBUG", "0"))
 

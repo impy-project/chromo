@@ -15,7 +15,7 @@ endif()
 # Delayed toolchain initialization
 enable_language(C CXX)
 
-set(BUILD_dev_dpmjetIII193 CACHE 
+set(BUILD_dev_dpmjetIII193 CACHE
   PATH "source directory for dev_dpmjetIII193")
 option(BUILD_sib23c00 OFF)
 option(BUILD_sib23c02 OFF)
@@ -62,8 +62,10 @@ macro(use_alternate_linker_if_available linker)
   if(LINKER_EXECUTABLE)
     message(STATUS "Linker detected: ${linker} (${LINKER_EXECUTABLE})")
     if(CLANG AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 12.0.0)
+      message(STATUS "Clang links with ${LINKER_EXECUTABLE}")
       add_link_options(-ld-path=${linker})
     elseif(GCC AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 12.0.0)
+      message(STATUS "GCC links with ${LINKER_EXECUTABLE}")
       add_link_options(-ld-path=${linker})
     endif()
   endif()
@@ -72,6 +74,7 @@ endmacro()
 use_alternate_linker_if_available(mold)
 
 # Print out the discovered paths
+cmake_print_variables(CMAKE_BUILD_TYPE)
 cmake_print_variables(PYTHON_EXECUTABLE)
 cmake_print_variables(PYTHON_INCLUDE_DIRS)
 cmake_print_variables(PYTHON_LIBRARIES)
@@ -132,13 +135,13 @@ set(f2py_dir ${CMAKE_SOURCE_DIR}/src/f2py)
 configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c fortranobject.c COPYONLY)
 set(f2py_source fortranobject.c)
 
-set(chromo_logging chromo_openlogfile chromo_closelogfile)
+set(chromo_functions chromo_openlogfile chromo_closelogfile npyrng)
 set(logging_source ${fortran_dir}/logging.f)
-set(rangen_source ${fortran_dir}/rangen.fpp)
+set(rangen_source ${fortran_dir}/rangen.fpp ${fortran_dir}/rangen.c ${fortran_dir}/normal.c)
 
 
 ### eposlhc
-file(GLOB eposlhc_sources ${fortran_dir}/EPOS-LHC/sources/*.f)
+file(GLOB eposlhc_sources ${fortran_dir}/epos/sources/*.f)
 list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
 
 
@@ -146,20 +149,20 @@ f2py_add_module(_eposlhc
   FUNCTIONS
   aaset ainit aepos afinal hepmcstore
   getcharge idtrafo initepos initeposevt
-  xsection init_rmmard ${chromo_logging}
+  xsection rmmard ${chromo_functions}
   SOURCES
   ${eposlhc_sources}
   ${logging_source}
   ${rangen_source}
   INTERFACE_SOURCES
-  ${fortran_dir}/EPOS-LHC/sources/epos-bas-lhc.f 
-  ${fortran_dir}/EPOS-LHC/sources/epos-ids-lhc.f 
-  ${fortran_dir}/EPOS-LHC/sources/epos_interface.f
-  ${fortran_dir}/EPOS-LHC/sources/epos-random.f
+  ${fortran_dir}/epos/sources/epos-bas-lhc.f
+  ${fortran_dir}/epos/sources/epos-ids-lhc.f
+  ${fortran_dir}/epos/sources/epos_interface.f
+  ${fortran_dir}/epos/sources/epos-random.f
   ${rangen_source}
   ${logging_source}
   INCLUDE_DIRS
-  ${fortran_dir}/EPOS-LHC/sources
+  ${fortran_dir}/epos/sources ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
@@ -169,7 +172,7 @@ f2py_add_module(_eposlhc
 set(SIBYLL_COMMON_FUNCTIONS
   sibyll sibyll_ini sib_sigma_hp sib_sigma_hair sib_sigma_hnuc
   int_nuc decsib decpar sibini sibhep sib_list isib_pid2pdg
-  isib_pdg2pid pdg_ini init_rmmard ${chromo_logging})
+  isib_pdg2pid pdg_ini ${chromo_functions})
 
 f2py_add_module(_sib21
   FUNCTIONS
@@ -180,6 +183,8 @@ f2py_add_module(_sib21
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
   SIBYLL_21
@@ -194,6 +199,8 @@ f2py_add_module(_sib23
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
@@ -202,12 +209,14 @@ f2py_add_module(_sib23
 ### sib23c01
 f2py_add_module(_sib23c01
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS}
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c01.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
@@ -216,12 +225,14 @@ f2py_add_module(_sib23c01
 ### sib23d
 f2py_add_module(_sib23d
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS}
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3d.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
@@ -230,19 +241,21 @@ f2py_add_module(_sib23d
 f2py_add_module(_qgs01
   FUNCTIONS
   cqgsini sectnu xxaini psconf xxreg psaini chepevt
-  init_rmmard ${chromo_logging}
+  ${chromo_functions}
   SOURCES
   ${fortran_dir}/qgsjet/qgsjet01d.f
   ${fortran_dir}/qgsjet/chromo_qgs1.f
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
 
 ### qgsII03
 set(QGSJETII_COMMON_FUNCTIONS
-  cqgsini qgsect qgini qgconf qgreg chepevt init_rmmard ${chromo_logging})
+  cqgsini qgsect qgini qgconf qgreg chepevt ${chromo_functions})
 
 f2py_add_module(_qgsII03
   FUNCTIONS
@@ -252,6 +265,8 @@ f2py_add_module(_qgsII03
   ${fortran_dir}/qgsjet/chromo_qgsII.f
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
@@ -265,11 +280,12 @@ f2py_add_module(_qgsII04
   ${fortran_dir}/qgsjet/chromo_qgsII.f
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
 
-if (NOT WIN32)
 ### urqmd34
 set(urqmd34_sources
   1fluid bessel delpart getmass hepcmp iso numrec pythia6409
@@ -293,31 +309,32 @@ f2py_add_module(_urqmd34
   FUNCTIONS
   urqmd init uinit set0 params uounit strini loginit
   loadwtab norm_init output cascinit nucrad urqini partname
-  chepevt ptsigtot init_rmmard ${chromo_logging}
+  chepevt ptsigtot ${chromo_functions}
   SOURCES
   ${urqmd34_sources}
   INCLUDE_DIRS
-  ${fortran_dir}/urqmd-3.4/sources
+  ${fortran_dir}/urqmd-3.4/sources ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
-endif()
 
 ### pythia6
 f2py_add_module(_pythia6
   FUNCTIONS
   pyinit pyexec pytune pylist pyevnt pyevnw pystat pyedit
-  pyhepc pychge pycomp pyk init_rmmard ${chromo_logging}
+  pyhepc pychge pycomp pyk ${chromo_functions}
   SOURCES
   ${fortran_dir}/pythia6/pythia-6.4.28.f
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
 
 ### pythia8
-# About the license and how it affects chromo. 
+# About the license and how it affects chromo.
 # Pythia-8 is licensed under GPL-v2 or higher, which means GPL-v3
 # applies. An excerpt from GPL-v3:
 
@@ -342,7 +359,6 @@ f2py_add_module(_pythia6
 # To strengthen this position, we compile the original Pythia-8 code into
 # a shared library to which we only link. This makes clear where the boundary
 # between chromo and Pythia-8 is.
-if (NOT WIN32)
 file(GLOB pythia8_sources ${cpp_dir}/pythia83/src/*.cc)
 
 add_library(libpythia8 SHARED ${pythia8_sources})
@@ -354,11 +370,10 @@ target_compile_definitions(libpythia8 PRIVATE XMLDIR="")
 pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
 target_link_libraries(_pythia8 PRIVATE libpythia8)
 install(TARGETS libpythia8 DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-endif()
 
 
 # This part is needed when we figure out the problem with
-# building Pythia8 on Windows 
+# building Pythia8 on Windows
 # if (WIN32)
 # find_package(dlfcn-win32 REQUIRED)
 # set(CMAKE_DL_LIBS dlfcn-win32::dl)
@@ -371,7 +386,7 @@ endif()
 f2py_add_module(_sophia
   FUNCTIONS
   eventgen print_event crossection initial
-  icon_pdg_sib init_rmmard toevt ${chromo_logging}
+  icon_pdg_sib toevt ${chromo_functions}
   SOURCES
   ${fortran_dir}/sophia/SOPHIA20.f
   ${fortran_dir}/sophia/eventgen.f
@@ -381,6 +396,8 @@ f2py_add_module(_sophia
   ${fortran_dir}/sophia/chromo_sophia.f
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
@@ -401,12 +418,14 @@ f2py_add_module(_dpmjet306
   pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout
   pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar pho_prevnt
   ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
-  pho_setpcomb dt_phoxs dt_xshn dt_flahad init_rmmard
-  ${chromo_logging}
+  pho_setpcomb dt_phoxs dt_xshn dt_flahad
+  ${chromo_functions}
   SOURCES
   ${dpmjet306_sources}
   ${rangen_source}
   ${logging_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
@@ -419,11 +438,13 @@ f2py_add_module(_phojet112
   pho_setmdl pho_setpdf pycomp pho_xsect pho_borncs pho_harmci
   pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
-  pho_setpcomb init_rmmard ${chromo_logging}
+  pho_setpcomb ${chromo_functions}
   SOURCES
   ${dpmjet306_sources}
   ${logging_source}
   ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
@@ -469,7 +490,7 @@ file(WRITE ${temp_dpmjet_file} "${temp_dpmjet_str}")
 
 execute_process(
   COMMAND
-  ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py 
+  ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/dpmjetIII191_workaround.py
   ${CMAKE_CURRENT_BINARY_DIR}
   ${fortran_dir}/dpmjetIII-19.1/include
   ${CMAKE_SOURCE_DIR}/${temp_dpmjet_file}
@@ -486,7 +507,7 @@ f2py_add_module(_dpmjetIII191
   pho_setpdf pycomp pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini pho_ptcut
   pytune pho_rregpar pho_sregpar pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint
   pho_harxto pho_harxpt pho_setpcomb dt_phoxs dt_xshn dt_flahad
-  dt_title dt_ficonf pho_ghhias init_rmmard ${chromo_logging}
+  dt_title dt_ficonf pho_ghhias ${chromo_functions}
   SOURCES
   ${dpmjetIII191_modded_sources}
   ${fortran_dir}/dpmjetIII-19.1/common/dummies.f
@@ -497,6 +518,7 @@ f2py_add_module(_dpmjetIII191
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
   ${CMAKE_CURRENT_BINARY_DIR}/include
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
@@ -505,12 +527,12 @@ f2py_add_module(_dpmjetIII191
 ### phojet191
 f2py_add_module(_phojet191
   FUNCTIONS
-  pho_event pycomp pho_init pho_setpar poevt1 
-  poevt2 pho_pname pho_pmass pho_setmdl pho_setpdf 
-  pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini 
-  pho_ptcut pytune pho_rregpar pho_sregpar pho_prevnt 
-  ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt 
-  pho_setpcomb dt_ficonf pho_ghhias init_rmmard ${chromo_logging}
+  pho_event pycomp pho_init pho_setpar poevt1
+  poevt2 pho_pname pho_pmass pho_setmdl pho_setpdf
+  pho_xsect pho_borncs pho_harmci pho_fitout pho_mcini
+  pho_ptcut pytune pho_rregpar pho_sregpar pho_prevnt
+  ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
+  pho_setpcomb dt_ficonf pho_ghhias ${chromo_functions}
   SOURCES
   ${dpmjetIII191_modded_sources}
   ${fortran_dir}/dpmjetIII-19.1/common/dummies.f
@@ -521,6 +543,7 @@ f2py_add_module(_phojet191
   ${fortran_dir}/dpmjetIII-19.1/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.1/include/pythia
   ${CMAKE_CURRENT_BINARY_DIR}/include
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
@@ -549,7 +572,7 @@ f2py_add_module(_dpmjetIII193
   pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
   pho_setpcomb dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias
-  init_rmmard ${chromo_logging}
+  ${chromo_functions}
   SOURCES
   ${dpmjetIII193_sources}
   ${fortran_dir}/dpmjetIII-19.3/common/dummies.f
@@ -560,6 +583,7 @@ f2py_add_module(_dpmjetIII193
   ${fortran_dir}/dpmjetIII-19.3/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.3/include/pythia
   ${fortran_dir}/dpmjetIII-19.3/include/flinclude
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
@@ -572,7 +596,7 @@ f2py_add_module(_phojet193
   pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
   pho_setpcomb pho_ghhias
-  init_rmmard ${chromo_logging}
+  ${chromo_functions}
   SOURCES
   ${dpmjetIII193_sources}
   ${fortran_dir}/dpmjetIII-19.3/common/dummies.f
@@ -583,6 +607,7 @@ f2py_add_module(_phojet193
   ${fortran_dir}/dpmjetIII-19.3/include/dpmjet
   ${fortran_dir}/dpmjetIII-19.3/include/pythia
   ${fortran_dir}/dpmjetIII-19.3/include/flinclude
+  ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
 )
@@ -593,12 +618,14 @@ f2py_add_module(_phojet193
 if(BUILD_sib23c00)
   f2py_add_module(_sib23c00
     FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS}
+    ${SIBYLL_COMMON_FUNCTIONS} gasdev
     SOURCES
     ${fortran_dir}/sibyll/sibyll2.3c00.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
     ${logging_source}
     ${rangen_source}
+    INCLUDE_DIRS
+    ${NUMPY_INCLUDE_DIRS}
     COMPILE_DEFS
     ${chromo_definitions}
   )
@@ -607,12 +634,14 @@ endif()
 if(BUILD_sib23c02)
   f2py_add_module(_sib23c02
     FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS}
+    ${SIBYLL_COMMON_FUNCTIONS} gasdev
     SOURCES
     ${fortran_dir}/sibyll/sibyll2.3c02.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
     ${logging_source}
     ${rangen_source}
+    INCLUDE_DIRS
+    ${NUMPY_INCLUDE_DIRS}
     COMPILE_DEFS
     ${chromo_definitions}
   )
@@ -621,12 +650,14 @@ endif()
 if(BUILD_sib23c03)
   f2py_add_module(_sib23c03
     FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS}
+    ${SIBYLL_COMMON_FUNCTIONS} gasdev
     SOURCES
     ${fortran_dir}/sibyll/sibyll2.3c03.f
     ${fortran_dir}/sibyll/sibyll_init.fpp
     ${logging_source}
     ${rangen_source}
+    INCLUDE_DIRS
+    ${NUMPY_INCLUDE_DIRS}
     COMPILE_DEFS
     ${chromo_definitions}
   )
@@ -656,7 +687,7 @@ if(BUILD_dev_dpmjetIII193)
     pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
     pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
     pho_setpcomb dt_phoxs dt_xshn dt_flahad dt_title pho_ghhias
-    init_rmmard ${chromo_logging}
+    ${chromo_functions}
     SOURCES
     ${dev_dpmjetIII193_sources}
     ${dev_source}/common/dummies.f
@@ -667,8 +698,9 @@ if(BUILD_dev_dpmjetIII193)
     ${dev_source}/include/dpmjet
     ${dev_source}/include/pythia
     ${dev_source}/include/flinclude
+    ${NUMPY_INCLUDE_DIRS}
     COMPILE_DEFS
     ${chromo_definitions}
   )
-  
+
 endif()

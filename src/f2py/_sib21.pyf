@@ -277,6 +277,8 @@ python module _sib21 ! in
             integer :: isib_pid2pdg
             common /s_pdg2pid/ id_pdg_list,id_list
         end function isib_pid2pdg
+        subroutine sibini ! in :_sib21:CMakeFiles/_sib21.dir/sibyll_init.fpp
+        end subroutine sibini
         subroutine sibhep ! in :_sib21:CMakeFiles/_sib21.dir/sibyll_init.fpp
             real dimension(8000,5) :: p
             integer dimension(8000) :: llist
@@ -300,15 +302,6 @@ python module _sib21 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /schg/ ichg
         end subroutine sibhep
-        function spgasdev(idum) ! in :_sib21:CMakeFiles/_sib21.dir/sib21aux.f
-            integer :: idum
-            integer, optional :: iset=0
-            real :: spgasdev
-            common /rndmgas/ iset
-        end function spgasdev
-        subroutine sibini(seedin) ! in :_sib21:CMakeFiles/_sib21.dir/sibyll_init.fpp
-            integer :: seedin
-        end subroutine sibini
         subroutine chromo_openlogfile(fname,opunit) ! in :_sib21:CMakeFiles/_sib21.dir/logging.f
             character*300 :: fname
             integer :: opunit
@@ -316,18 +309,17 @@ python module _sib21 ! in
         subroutine chromo_closelogfile(opunit) ! in :_sib21:CMakeFiles/_sib21.dir/logging.f
             integer :: opunit
         end subroutine chromo_closelogfile
-        subroutine init_rmmard(iseedin) ! in :_sib21:CMakeFiles/_sib21.dir/rangen.fpp
-            integer :: iseedin
-            double precision dimension(8) :: c
-            double precision dimension(97,8) :: u
-            integer dimension(8) :: ijkl
-            integer dimension(8) :: i97
-            integer dimension(8) :: j97
-            integer dimension(8) :: ntot
-            integer dimension(8) :: ntot2
-            integer :: jseq
-            common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
-        end subroutine init_rmmard
+        subroutine npyrng(rval) ! in :_sib21:CMakeFiles/_sib21.dir/rangen.fpp
+            double precision :: rval
+            integer*8 :: bitgen
+            common /npy/ bitgen
+        end subroutine npyrng
+        function spgasdev(dummy) ! in :_sib21:CMakeFiles/_sib21.dir/rangen.fpp
+            integer :: dummy
+            integer*8 :: bitgen
+            real :: spgasdev
+            common /npy/ bitgen
+        end function spgasdev
     end interface 
 end python module _sib21
 

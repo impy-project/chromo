@@ -312,4 +312,11 @@ C     It contains Fortran 77 wrappers to fortran functions.
       call setupfunc(ichg,iparnt)
       end
 
+      subroutine f2pyinitnpy(setupfunc)
+      external setupfunc
+      integer*8 bitgen
+      common /npy/ bitgen
+      call setupfunc(bitgen)
+      end
+
 

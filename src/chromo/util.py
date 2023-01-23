@@ -405,7 +405,7 @@ def _cached_data_dir(url):
         temp_dir = Path(model_dir.parent / f".{model_dir.name}")
         shutil.rmtree(temp_dir, ignore_errors=True)
         if model_dir.exists():
-            shutil.move(model_dir, temp_dir)
+            shutil.move(str(model_dir), str(temp_dir))
         _download_file(zip_file, url)
         if zipfile.is_zipfile(zip_file):
             with zipfile.ZipFile(zip_file, "r") as zf:

@@ -3,7 +3,7 @@
 
 python module _urqmd34 ! in 
     interface  ! in :_urqmd34
-        subroutine norm_init ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/getmass.f.proc
+        subroutine norm_init ! in :_urqmd34:CMakeFiles/_urqmd34.dir/getmass.f
             character*45 :: versiontag
             real*8 dimension(55) :: massres
             real*8 dimension(55) :: widres
@@ -46,13 +46,13 @@ python module _urqmd34 ! in
             common /sigtabr/ sigmas,sigmascal
             common /normsplin/ x_norm,y_norm,dx
         end subroutine norm_init
-        subroutine loginit ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/iso.f.proc
+        subroutine loginit ! in :_urqmd34:CMakeFiles/_urqmd34.dir/iso.f
             real*8 dimension(8,8,15,15,8) :: cgktab
             real*8 dimension(101) :: logfak
             common /cgks/ cgktab
             common /factorials/ logfak
         end subroutine loginit
-        block data pydata ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/pythia6409.f.proc
+        block data pydata ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pythia6409.f
             integer, optional,dimension(200) :: mstu=0
             double precision dimension(200) :: paru
             integer, optional,dimension(200) :: mstj=1
@@ -147,7 +147,7 @@ python module _urqmd34 ! in
             common /pylh3p/ modsel,parmin,parext,rmsoft,au,ad,ae
             common /pylh3c/ cpro,cver
         end block data pydata
-        block data setres ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/blockres.f.proc
+        block data setres ! in :_urqmd34:CMakeFiles/_urqmd34.dir/blockres.f
             character*45, optional :: versiontag='@(#)$urqmd: version 3.4 (30400) $'
             real*8, optional,dimension(55) :: massres=0.938
             real*8, optional,dimension(55) :: widres=0.d0
@@ -237,7 +237,7 @@ python module _urqmd34 ! in
             common /sigtabi/ sigmaln,sigmainf
             common /sigtabr/ sigmas,sigmascal
         end block data setres
-        function partname(ityp) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/ityp2pdg.f.proc
+        function partname(ityp) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/ityp2pdg.f
             integer :: ityp
             character*45 :: versiontag
             real*8 dimension(55) :: massres
@@ -278,7 +278,7 @@ python module _urqmd34 ! in
             common /sigtabi/ sigmaln,sigmainf
             common /sigtabr/ sigmas,sigmascal
         end function partname
-        subroutine output(iunit) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/output.f.proc
+        subroutine output(iunit) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/output.f
             integer :: iunit
             character*45 :: versiontag
             real*8 dimension(55) :: massres
@@ -657,7 +657,7 @@ python module _urqmd34 ! in
             entry getoldevent()
             entry specout(ind,iu)
         end subroutine output
-        function ptsigtot() ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/output.f.proc
+        function ptsigtot() ! in :_urqmd34:CMakeFiles/_urqmd34.dir/output.f
             character*45 :: versiontag
             real*8 dimension(55) :: massres
             real*8 dimension(55) :: widres
@@ -873,7 +873,7 @@ python module _urqmd34 ! in
             common /loptions/ fixedseed,bf13,bf14,bf15,bf16,bf17,bf18,bf19,bf20
             common /stables/ nstable,stabvec
         end function ptsigtot
-        subroutine strini ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/string.f.proc
+        subroutine strini ! in :_urqmd34:CMakeFiles/_urqmd34.dir/string.f
             integer dimension(400) :: ctoption
             real*8 dimension(400) :: ctparam
             character dimension(400,2) :: ctodc
@@ -947,7 +947,7 @@ python module _urqmd34 ! in
             common /coparm/ parm
             common /const/ pi
         end subroutine strini
-        block data d2 ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/string.f.proc
+        block data d2 ! in :_urqmd34:CMakeFiles/_urqmd34.dir/string.f
             real*8, optional :: pjspns=0.5
             real*8 dimension(3,8) :: pmix1s
             real*8 dimension(3,8) :: pmix2s
@@ -970,11 +970,11 @@ python module _urqmd34 ! in
             common /kappa/ xap
             common /consti/ consti
         end block data d2
-        block data d4 ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/string.f.proc
+        block data d4 ! in :_urqmd34:CMakeFiles/_urqmd34.dir/string.f
             integer, optional :: ntries=1000
             common /comtry/ ntries
         end block data d4
-        subroutine urqmd(iflbmax) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/urqmd.f.proc
+        subroutine urqmd(iflbmax) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/urqmd.f
             integer :: iflbmax
             integer :: npart
             integer :: nbar
@@ -1308,7 +1308,7 @@ python module _urqmd34 ! in
             common /energies/ ekinbar,ekinmes,esky2,esky3,eyuk,ecb,epau
             common /cncc/ ncc
         end subroutine urqmd
-        subroutine init ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/init.f.proc
+        subroutine init ! in :_urqmd34:CMakeFiles/_urqmd34.dir/init.f
             integer :: npart
             integer :: nbar
             integer :: nmes
@@ -1642,7 +1642,7 @@ python module _urqmd34 ! in
             common /colltab/ cttime,ctsqrts,ctsigtot,tmin,cti1,cti2,nct,actcol,ctvalid,ctsav,nsav,apt,ctcolfluc
             common /ini/ bcorr
         end subroutine init
-        subroutine loadwtab(io) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/tabinit.f.proc
+        subroutine loadwtab(io) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/tabinit.f
             integer :: io
             character*45 :: versiontag
             real*8 dimension(55) :: massres
@@ -1697,7 +1697,7 @@ python module _urqmd34 ! in
             common /xsections/ tabxnd,frrtaby
             common /tabnames/ tabname
         end subroutine loadwtab
-        subroutine cascinit(zz,aa,nucleus) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/cascinit.f.proc
+        subroutine cascinit(zz,aa,nucleus) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/cascinit.f
             integer :: zz
             integer :: aa
             integer :: nucleus
@@ -1922,7 +1922,7 @@ python module _urqmd34 ! in
             common /protarreals/ pt_r0,pt_rx,pt_ry,pt_rz,pt_fmass,pt_dectime,pt_p0,pt_px,pt_py,pt_pz,pt_rho,pt_pmax
             common /ini/ bcorr
         end subroutine cascinit
-        function nucrad(aa) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/cascinit.f.proc
+        function nucrad(aa) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/cascinit.f
             integer :: aa
             integer :: npart
             integer :: nbar
@@ -2102,7 +2102,7 @@ python module _urqmd34 ! in
             common /loptions/ fixedseed,bf13,bf14,bf15,bf16,bf17,bf18,bf19,bf20
             common /stables/ nstable,stabvec
         end function nucrad
-        block data herafits ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/make22.f.proc
+        block data herafits ! in :_urqmd34:CMakeFiles/_urqmd34.dir/make22.f
             real*8, optional,dimension(16) :: a=48.0
             real*8, optional,dimension(16) :: b=0.
             real*8, optional,dimension(16) :: n=0.
@@ -2113,7 +2113,7 @@ python module _urqmd34 ! in
             integer, parameter,optional :: nfit=16
             common /hera/ a,b,n,c,d,p1,p2
         end block data herafits
-        block data reggefits ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/make22.f.proc
+        block data reggefits ! in :_urqmd34:CMakeFiles/_urqmd34.dir/make22.f
             real*8, optional,dimension(16) :: z=35.45
             real*8, optional,dimension(16) :: y1=42.53
             real*8, optional,dimension(16) :: y2=33.34
@@ -2125,7 +2125,7 @@ python module _urqmd34 ! in
             integer, parameter,optional :: nfit=16
             common /regge/ z,y1,y2,s0,s1,eta1,eta2,bb
         end block data reggefits
-        subroutine params ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/proppot.f.proc
+        subroutine params ! in :_urqmd34:CMakeFiles/_urqmd34.dir/proppot.f
             integer :: npart
             integer :: nbar
             integer :: nmes
@@ -2284,7 +2284,7 @@ python module _urqmd34 ! in
             common /peq/ peq1,peq2
             common cross
         end subroutine params
-        subroutine set0 ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/proppot.f.proc
+        subroutine set0 ! in :_urqmd34:CMakeFiles/_urqmd34.dir/proppot.f
             integer :: npart
             integer :: nbar
             integer :: nmes
@@ -2443,7 +2443,7 @@ python module _urqmd34 ! in
             common /peq/ peq1,peq2
             common cross
         end subroutine set0
-        subroutine urqini(mdebug,iudebug) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/urqinit.f.proc
+        subroutine urqini(mdebug,iudebug) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/urqinit.f
             integer :: mdebug
             integer :: iudebug
             integer :: cbox
@@ -2687,7 +2687,7 @@ python module _urqmd34 ! in
             common /loptions/ fixedseed,bf13,bf14,bf15,bf16,bf17,bf18,bf19,bf20
             common /stables/ nstable,stabvec
         end subroutine urqini
-        subroutine chepevt ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/chromo_urqmd.f.proc
+        subroutine chepevt ! in :_urqmd34:CMakeFiles/_urqmd34.dir/chromo_urqmd.f
             integer :: npart
             integer :: nbar
             integer :: nmes
@@ -2753,25 +2753,18 @@ python module _urqmd34 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /uqchg/ ichg
         end subroutine chepevt
-        subroutine chromo_openlogfile(fname,opunit) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/logging.f.proc
+        subroutine chromo_openlogfile(fname,opunit) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/logging.f
             character*300 :: fname
             integer :: opunit
         end subroutine chromo_openlogfile
-        subroutine chromo_closelogfile(opunit) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/logging.f.proc
+        subroutine chromo_closelogfile(opunit) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/logging.f
             integer :: opunit
         end subroutine chromo_closelogfile
-        subroutine init_rmmard(iseedin) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/pyf_sources/rangen.f.proc
-            integer :: iseedin
-            double precision dimension(8) :: c
-            double precision dimension(97,8) :: u
-            integer dimension(8) :: ijkl
-            integer dimension(8) :: i97
-            integer dimension(8) :: j97
-            integer dimension(8) :: ntot
-            integer dimension(8) :: ntot2
-            integer :: jseq
-            common /crranma4/ c,u,ijkl,i97,j97,ntot,ntot2,jseq
-        end subroutine init_rmmard
+        subroutine npyrng(rval) ! in :_urqmd34:CMakeFiles/_urqmd34.dir/rangen.fpp
+            double precision :: rval
+            integer*8 :: bitgen
+            common /npy/ bitgen
+        end subroutine npyrng
     end interface 
 end python module _urqmd34
 

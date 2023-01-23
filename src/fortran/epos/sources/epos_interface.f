@@ -17,18 +17,19 @@ c for main program
       end
 
 c-----------------------------------------------------------------------
-      subroutine InitEpos(seed, emax, datpath, lpath, idbg, iou)
+      subroutine InitEpos(emax, datpath, lpath, idbg, iou)
 c-----------------------------------------------------------------------
 c General initialization of EPOS
 c anfe: accepts nuclear PDG id instead of A, Z combos
 c-----------------------------------------------------------------------      
       include "epos.inc"
-      real seed, emax
+      real emax
       integer lpath, idbg, iou
       character(*) datpath
       
-      seedi=seed   !seed for random number generator: at start program
-      seedj=seed   !seed for random number generator: for first event
+      ! dummy values
+      seedi=1   !seed for random number generator: at start program
+      seedj=2   !seed for random number generator: for first event
 
 c Initialize decay of particles (all unstable decay)
       nrnody=0

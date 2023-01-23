@@ -55,7 +55,6 @@ class EposLHC(MCRun):
 
         lun = 6  # stdout
         self._lib.initepos(
-            float(self._seed),
             evt_kin.ecm,
             datdir,
             len(datdir),

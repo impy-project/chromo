@@ -144,10 +144,6 @@ c      IDB(31) = -ABS(IDB(31))
 C  eta stable
 C      IDB(23) = -ABS(IDB(23))
 
-C**anfe 2016/01/20 Initialize the non-default RMMARD
-C**                random number generator with default
-C**                seed, if necessary        
-       if (.not.(U(1,1).gt.0D0)) Call INIT_RMMARD(12345)
 C  incoming nucleon
        pm = AM(L0)
        P_nuc(1) = 0.D0

@@ -37,8 +37,8 @@ class SpeedColumn(ProgressColumn):
         return Text(f"{speed:.0f}/s", style="progress.data.speed")
 
 
-# Only add numbers here for models in CRMC.
-# chromo-exclusive models do not get a number and should not be added here.
+# Only add numbers here for backward-compatibility with CRMC.
+# Chromo-exclusive models do not get a number and should not be added here.
 MODELS = {
     0: models.EposLHC,
     # 1: models.Epos199,
@@ -50,7 +50,7 @@ MODELS = {
     7: models.QGSJetII04,
     8: models.Phojet193,
     11: models.QGSJetII03,
-    # in CRMC 12 refers to different DPMJet versions
+    # 12 refers to different DPMJet versions in CRMC
     12: models.DpmjetIII306,
 }
 VALID_MODELS = []
@@ -68,6 +68,7 @@ FORMATS = {
     "hepmcgz": writer.Hepmc,
     "root": writer.Root,
     "svg": writer.Svg,
+    "null": writer.Null,
     # "lhe",
     # "lhegz",
 }
@@ -172,14 +173,8 @@ def parse_arguments():
         print(f"chromo {version}")
         raise SystemExit
 
-    max_seed = int(1e9)  # EPOS requirement
     if args.seed <= 0:
         args.seed = int.from_bytes(os.urandom(4), "little")
-        args.seed %= max_seed  # result of modulus is always positive
-    elif args.seed > max_seed:
-        raise SystemExit(
-            f"Error: {args.seed} is larger " f"than maximum seed ({max_seed})"
-        )
 
     if args.number <= 0:
         raise SystemExit("Error: number must be positive")
@@ -188,7 +183,7 @@ def parse_arguments():
         model_number = int(args.model)
         Model = MODELS[model_number]
     except KeyError:
-        raise SystemExit(f"Error: model number {args.model} is invalid {VALID_MODELS}")
+        raise SystemExit(f"Error: model={args.model} is invalid ({VALID_MODELS})")
     except ValueError:
         # args.model is not a number.
         # Find model that matches string spec.
@@ -283,7 +278,7 @@ def parse_arguments():
             args.out = Path(args.out).with_suffix(ext)
 
     if args.output not in FORMATS:
-        raise SystemExit(f"Error: unknown format {args.output} {VALID_FORMATS}")
+        raise SystemExit(f"Error: unknown format {args.output} ({VALID_FORMATS})")
 
     return args
 
@@ -330,7 +325,7 @@ def main():
 
     task_id = None
     try:
-        model = args.model(evt_kin)
+        model = args.model(evt_kin, seed=args.seed)
         ofile = FORMATS[args.output](args.out, model)
         with ofile:
             # workaround: several models generate extra print when first

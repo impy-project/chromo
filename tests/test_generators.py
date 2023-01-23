@@ -21,6 +21,8 @@ from pathlib import Path
 from particle import literals as lp
 import numpy as np
 from scipy.stats import chi2
+import platform
+import os
 
 matplotlib.use("svg")  # need non-interactive backend for CI Windows
 
@@ -137,7 +139,10 @@ def draw_comparison(fn, p_value, axes, values, val_ref, cov_ref):
     plt.close(fig)
 
 
-@pytest.mark.trylast
+@pytest.mark.skipif(
+    "CI" in os.environ and platform.system() == "Windows",
+    reason="skip to speed up CI on Windows",
+)
 @pytest.mark.parametrize("frame", ("cms", "ft", "cms2ft", "ft2cms"))
 @pytest.mark.parametrize("target", ("p", "air"))
 @pytest.mark.parametrize("projectile", ("gamma", "pi-", "p", "He"))
@@ -163,6 +168,9 @@ def test_generator(projectile, target, frame, Model):
     else:
         assert False  # we should never arrive here
 
+    if Model is im.UrQMD34 and frame == "cms2ft" and p2 == "p":
+        pytest.skip(reason="location of proton delta peak depends on machine")
+
     h = run_in_separate_process(run_model, Model, kin)
     if h is None:
         assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
@@ -170,18 +178,17 @@ def test_generator(projectile, target, frame, Model):
 
     fn = Path(f"{Model.pyname}_{projectile}_{target}_{frame}")
     path_ref = REFERENCE_PATH / fn.with_suffix(".pkl.gz")
-    p_value = None
+
+    reference_generated = False
     if not path_ref.exists():
+        reference_generated = True
         # New reference is generated. Check plots to see whether reference makes
         # any sense before committing it.
-        values = run_in_separate_process(run_model, Model, kin, 50, timeout=10000)
-        val_ref = np.reshape(np.mean(values, axis=0), -1)
-        cov_ref = np.cov(np.transpose([np.reshape(x, -1) for x in values]))
+        ref_values = run_in_separate_process(run_model, Model, kin, 50, timeout=10000)
+        val_ref = np.reshape(np.mean(ref_values, axis=0), -1)
+        cov_ref = np.cov(np.transpose([np.reshape(x, -1) for x in ref_values]))
         with gzip.open(path_ref, "wb") as f:
             pickle.dump((val_ref, cov_ref), f)
-        values = np.reshape(h.values(), -1)
-        draw_comparison(fn, -1, h.axes, values, val_ref, cov_ref)
-        pytest.xfail(reason="reference does not exist; generated new one, check it")
 
     with gzip.open(path_ref) as f:
         val_ref, cov_ref = pickle.load(f)
@@ -197,7 +204,10 @@ def test_generator(projectile, target, frame, Model):
 
     threshold = 1e-6
 
-    if not (p_value >= threshold) or chromo.debug_level > 0:
+    if reference_generated or not (p_value >= threshold) or chromo.debug_level > 0:
         draw_comparison(fn, p_value, h.axes, values, val_ref, cov_ref)
+
+    if reference_generated:
+        pytest.xfail(reason="generated new reference, please check it")
 
     assert p_value >= threshold

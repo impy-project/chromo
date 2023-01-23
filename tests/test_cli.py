@@ -37,7 +37,10 @@ def run(
     match = None
     if stdout is not None:
         actual = r.stdout.decode()
-        match = re.search(stdout, actual)
+        if stdout in actual:  # also check for literal match
+            match = True
+        else:
+            match = re.search(stdout, actual)
         assert match, "\n" + actual
     if stderr is not None:
         actual = r.stderr.decode()

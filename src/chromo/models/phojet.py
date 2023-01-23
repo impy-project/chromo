@@ -79,6 +79,8 @@ class PHOJETRun(MCRun):
     )
 
     def __init__(self, evt_kin, *, seed=None):
+        import chromo
+
         super().__init__(seed)
 
         data_dir = _cached_data_dir(self._data_url)
@@ -94,8 +96,6 @@ class PHOJETRun(MCRun):
             self._lib.poinou.lendir = len(pfile)
 
         # Set debug level of the generator
-        import chromo
-
         for i in range(self._lib.podebg.ideb.size):
             self._lib.podebg.ideb[i] = chromo.debug_level
 

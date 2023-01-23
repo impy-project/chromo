@@ -33,6 +33,7 @@ c-----------------------------------------------------------------------
       if(irandm.eq.1)write(ifch,*)'cxrangen()= ',cxrangen
       return
       end
+#ifndef CHROMO
 c Random number generator from CORSIKA *********************************
 C=======================================================================
       DOUBLE PRECISION FUNCTION DRANF(dummy)
@@ -63,11 +64,7 @@ c Important : to be call before ranfst
 c-----------------------------------------------------------------------
       IMPLICIT NONE
       INTEGER          KSEQ
-#ifndef CHROMO      
       PARAMETER        (KSEQ = 2)
-#else
-      PARAMETER        (KSEQ = 8)
-#endif  
       COMMON /CRRANMA3/CD,CINT,CM,TWOM24,TWOM48,MODCNS
       DOUBLE PRECISION CD,CINT,CM,TWOM24,TWOM48
       INTEGER          MODCNS
@@ -101,11 +98,7 @@ c Important : to be call after ranfgt
 c-----------------------------------------------------------------------
       IMPLICIT NONE
       INTEGER          KSEQ
-#ifndef CHROMO      
       PARAMETER        (KSEQ = 2)
-#else
-      PARAMETER        (KSEQ = 8)
-#endif            
       COMMON /CRRANMA3/CD,CINT,CM,TWOM24,TWOM48,MODCNS
       DOUBLE PRECISION CD,CINT,CM,TWOM24,TWOM48
       INTEGER          MODCNS
@@ -199,7 +192,6 @@ c iiseed(2) and iiseed(3) defined in aread
       return
       end
 
-#ifndef CHROMO      
 C=======================================================================
       SUBROUTINE RMMARD( RVEC,LENV,ISEQ )
 C-----------------------------------------------------------------------
@@ -399,4 +391,46 @@ C  COMPLETE INITIALIZATION BY SKIPPING (NTOT2*MODCNS+NTOT) RANDOMNUMBERS
       ENDIF
       RETURN
       END
-#endif      
+#else
+C     Dummy implementations of PRNG initialization functions.
+C     We use the Numpy RNG so these functions are replaced with
+C     dummies that do nothing. dranf is implemented in rangen.fpp.
+      SUBROUTINE RMMAQD( ISEED, ISEQ, CHOPT )
+      implicit none
+      integer          ISEED(3), ISEQ
+      character        CHOPT*(*), CCHOPT*12
+      return
+      end
+
+      SUBROUTINE ranfgt(seed)
+      implicit none
+      double precision seed
+      return
+      end
+
+      SUBROUTINE ranfini(seed,iseq,iqq)
+      implicit none
+      double precision seed
+      integer iseq, iqq
+      return
+      end
+
+      subroutine ranfcv(seed)
+      implicit none
+      double precision seed
+      return
+      end
+
+      subroutine ranflim(seed)
+      implicit none
+      double precision seed
+      return
+      end
+
+      subroutine ranfst(seed)
+      implicit none
+      double precision seed
+      return
+      end
+
+#endif

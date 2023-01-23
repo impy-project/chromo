@@ -49,8 +49,8 @@ C The common blocks are copied from coms.f in URQMD
 
       INTEGER I, PDGID, IPDG, ISTIDX
 C For K0S/L replacement
-      EXTERNAL SIMRND2
-      DOUBLE PRECISION SIMRND2
+      EXTERNAL SIMRND
+      DOUBLE PRECISION SIMRND
       INTEGER K0SEL(2)
       DATA K0SEL /130, 310/
 
@@ -62,11 +62,9 @@ C For K0S/L replacement
 
 c UrQMD doesn't know K0S or L and produces K0(bar) by default.
 c We will replace those with K0S/L based on a 50/50 rule.
-c Random numbers are sourced from second sequence
-c to avoid interference with the event generator's sequence
 
          IF (ABS(IDHEP(I)).EQ.311) THEN
-            IDHEP(I) = K0SEL(INT(2.D0*SIMRND2()))
+            IDHEP(I) = K0SEL(INT(2.D0*SIMRND()))
          END IF
 
          PHEP(1,I) = px(I)
