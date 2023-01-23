@@ -74,6 +74,7 @@ endmacro()
 use_alternate_linker_if_available(mold)
 
 # Print out the discovered paths
+cmake_print_variables(CMAKE_BUILD_TYPE)
 cmake_print_variables(PYTHON_EXECUTABLE)
 cmake_print_variables(PYTHON_INCLUDE_DIRS)
 cmake_print_variables(PYTHON_LIBRARIES)

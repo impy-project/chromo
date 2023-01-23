@@ -93,15 +93,16 @@ c-----------------------------------------------------------------------
 c=======================================================================
 c  sibyll random generator
 c-----------------------------------------------------------------------
-#ifdef sibyll_21
-      real function s_rndm()
+#ifdef SIBYLL_21
+      real function s_rndm(dummy)
 #else
-      double precision function s_rndm()
+      double precision function s_rndm(dummy)
 #endif 
 c-----------------------------------------------------------------------
       implicit none
+      integer dummy
       double precision simrnd
-#ifdef sibyll_21
+#ifdef SIBYLL_21
 555   s_rndm = real(simrnd())
       if ((s_rndm.le.0e0).or.(s_rndm.ge.1e0)) goto 555     
 #else
