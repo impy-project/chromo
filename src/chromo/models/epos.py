@@ -1,5 +1,5 @@
 import numpy as np
-from chromo.kinematics import EventFrame, CenterOfMass
+from chromo.kinematics import EventFrame
 from chromo.common import MCEvent, MCRun, CrossSectionData
 from chromo.util import (
     _cached_data_dir,
@@ -64,8 +64,6 @@ class EposLHC(MCRun):
 
         self._set_final_state_particles()
         self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.float32])
-        self.kinematics = CenterOfMass(10, "p", "p")
-        self._generate()  # generate dummy event to complete initialization
         self.kinematics = evt_kin
 
     def _cross_section(self, kin=None):
