@@ -62,8 +62,10 @@ macro(use_alternate_linker_if_available linker)
   if(LINKER_EXECUTABLE)
     message(STATUS "Linker detected: ${linker} (${LINKER_EXECUTABLE})")
     if(CLANG AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 12.0.0)
+      message(STATUS "Clang links with ${LINKER_EXECUTABLE}")
       add_link_options(-ld-path=${linker})
     elseif(GCC AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 12.0.0)
+      message(STATUS "GCC links with ${LINKER_EXECUTABLE}")
       add_link_options(-ld-path=${linker})
     endif()
   endif()
@@ -283,7 +285,6 @@ f2py_add_module(_qgsII04
   ${chromo_definitions}
 )
 
-if (NOT WIN32)
 ### urqmd34
 set(urqmd34_sources
   1fluid bessel delpart getmass hepcmp iso numrec pythia6409
@@ -315,7 +316,6 @@ f2py_add_module(_urqmd34
   COMPILE_DEFS
   ${chromo_definitions}
 )
-endif()
 
 ### pythia6
 f2py_add_module(_pythia6
@@ -358,7 +358,6 @@ f2py_add_module(_pythia6
 # To strengthen this position, we compile the original Pythia-8 code into
 # a shared library to which we only link. This makes clear where the boundary
 # between chromo and Pythia-8 is.
-if (NOT WIN32)
 file(GLOB pythia8_sources ${cpp_dir}/pythia83/src/*.cc)
 
 add_library(libpythia8 SHARED ${pythia8_sources})
@@ -370,7 +369,6 @@ target_compile_definitions(libpythia8 PRIVATE XMLDIR="")
 pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
 target_link_libraries(_pythia8 PRIVATE libpythia8)
 install(TARGETS libpythia8 DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-endif()
 
 
 # This part is needed when we figure out the problem with
