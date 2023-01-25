@@ -16,9 +16,9 @@ if not os.environ.get("CI", False):
         # switching between development branches
         subp.check_call(["git", "submodule", "update"])
 
-# for convenience, support building extra models via EXTRA
-# EXTRA is not tracked by git, so can be freely modified
-# EXTRA example:
+# for convenience, support building extra models via extra.cfg
+# extra.cfg is not tracked by git, so can be freely modified
+# extra.cfg example:
 # -----
 # sib23c00
 # sib23c02
