@@ -1,5 +1,4 @@
 import platform
-
 from impy.models.sophia import Sophia20
 from impy.models.sibyll import (
     Sibyll21,
@@ -85,6 +84,17 @@ def fix_macos_installation(logfile):
             "-change",
             python_lib_in_file,
             python_lib_real,
+            ext_file,
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Since Big Sur, codesigning for arm64 is much more strict than it is for x64.
+        # https://stackoverflow.com/a/71753248
+        cmd = [
+            "codesign",
+            "--force",
+            "-s",
+            "-",
             ext_file,
         ]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
