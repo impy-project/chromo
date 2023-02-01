@@ -41,10 +41,9 @@ def cache_value(key, s):
 
 
 def get_models():
-    # You can turn building models on/off by commenting out
-    # or adding lines in model.cfg, which is not tracked by
-    # git, so changes are not committed. Example for adding
-    # other model versions:
+    # for convenience, support building extra models via extra.cfg
+    # extra.cfg is not tracked by git, so can be freely modified
+    # extra.cfg example:
     # -----
     # sib23c00
     # sib23c02
@@ -52,14 +51,17 @@ def get_models():
     # dev_dpmjetIII193=/full/path/to/dir/dpmjetIII-19.3
     # ----
     models = {}
-    path = cwd / "model.cfg"
-    with open(path) as f:
-        for model in f:
-            model = model.strip()
-            if not model or model.startswith("#"):
-                continue
-            model, *mpath = model.split("=")
-            models[model] = mpath[0] if mpath else None
+    for input_file in ("model", "extra"):
+        path = cwd / f"{input_file}.cfg"
+        if not path.exists():
+            continue
+        with open(path) as f:
+            for model in f:
+                model = model.strip()
+                if not model or model.startswith("#"):
+                    continue
+                model, *mpath = model.split("=")
+                models[model] = mpath[0] if mpath else None
 
     # urqmd34 doesn't build correctly on Windows
     if platform.system() == "Windows":
