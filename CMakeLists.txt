@@ -374,6 +374,23 @@ target_compile_definitions(libpythia8 PRIVATE XMLDIR="")
 
 pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
 target_link_libraries(_pythia8 PRIVATE libpythia8)
+
+# Fix rpath for MacOS and Linux
+set(rpath_fix)
+if (APPLE)
+  set(rpath_fix "@loader_path")
+endif()
+
+if (UNIX)
+  set(rpath_fix "$ORIGIN")
+endif()
+
+message(STATUS "rpath_fix = ${rpath_fix}")
+set_target_properties(_pythia8 PROPERTIES
+        BUILD_WITH_INSTALL_RPATH FALSE
+        LINK_FLAGS "-Wl,-rpath,\'${rpath_fix}\'")
+
+
 install(TARGETS libpythia8 DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 
