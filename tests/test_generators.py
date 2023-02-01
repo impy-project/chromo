@@ -140,7 +140,7 @@ def draw_comparison(fn, p_value, axes, values, val_ref, cov_ref):
 
 
 @pytest.mark.skipif(
-    "CI" in os.environ and platform.system() == "Windows",
+    "CI" in os.environ and platform.system() == "windows",
     reason="skip to speed up CI on Windows",
 )
 @pytest.mark.parametrize("frame", ("cms", "ft", "cms2ft", "ft2cms"))

@@ -41,9 +41,10 @@ def cache_value(key, s):
 
 
 def get_models():
-    # for convenience, support building extra models via extra.cfg
-    # extra.cfg is not tracked by git, so can be freely modified
-    # extra.cfg example:
+    # You can turn building models on/off by commenting out
+    # or adding lines in model.cfg, which is not tracked by
+    # git, so changes are not committed. Example for adding
+    # other model versions:
     # -----
     # sib23c00
     # sib23c02
@@ -51,17 +52,14 @@ def get_models():
     # dev_dpmjetIII193=/full/path/to/dir/dpmjetIII-19.3
     # ----
     models = {}
-    for input_file in ("model", "extra"):
-        path = cwd / f"{input_file}.cfg"
-        if not path.exists():
-            continue
-        with open(path) as f:
-            for model in f:
-                model = model.strip()
-                if not model or model.startswith("#"):
-                    continue
-                model, *mpath = model.split("=")
-                models[model] = mpath[0] if mpath else None
+    path = cwd / "model.cfg"
+    with open(path) as f:
+        for model in f:
+            model = model.strip()
+            if not model or model.startswith("#"):
+                continue
+            model, *mpath = model.split("=")
+            models[model] = mpath[0] if mpath else None
 
     # urqmd34 doesn't build correctly on Windows
     if platform.system() == "Windows":
@@ -101,20 +99,10 @@ class CMakeBuild(build_ext):
             f"-DCMAKE_BUILD_TYPE={cfg}",
         ]
 
-        # Read cmake args from extra.cfg
-        extra_cfg = cwd / "extra.cfg"
-        if extra_cfg.exists():
-            with open(extra_cfg) as f:
-                for model in f:
-                    model = model.strip()
-                    if not model:
-                        continue
-                    if "=" in model:
-                        if model[-1] == "/":
-                            model = model[:-1]
-                        cmake_args.append(f"-DBUILD_{model}")
-                    else:
-                        cmake_args.append(f"-DBUILD_{model}=ON")
+        models = get_models()
+        for model, path in models.items():
+            if path is not None:
+                cmake_args.append(f"-DBUILD_{model}={Path(path)}")
 
         # Arbitrary CMake arguments added via environment variable
         # (needed e.g. to build for ARM OSx on conda-forge)
@@ -179,7 +167,7 @@ class CMakeBuild(build_ext):
         target = ext.name.split(".")[-1]
         suffix = sc.get_config_var("EXT_SUFFIX") or sc.get_config_var("SO")
         output_file = Path(extdir) / (target + suffix)
-        targets = [f"_{m}" for m in get_models()]
+        targets = [f"_{m}" for m in models]
         if not output_file.exists() or target == targets[0]:  # any target is fine
             cmd = [cmake_exe, "--build", ".", "-t", *targets] + build_args
             if verbose:

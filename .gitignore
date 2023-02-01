@@ -41,3 +41,4 @@ impy-?.?.?
 src/chromo/iamdata
 fig/*
 *.svg
+model.cfg
