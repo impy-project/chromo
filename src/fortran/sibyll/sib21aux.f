@@ -237,29 +237,3 @@ C-----------------------------------------------------------------------
 
       NEVSIB = NEVSIB + 1
       END
-
-
-      FUNCTION SPGASDEV(Idum)
-C...Gaussian deviation
-      INTEGER ISET
-      COMMON /RNDMGAS/ ISET
-      SAVE
-
-ctp060123      SAVE GSET    
-      DATA ISET/0/
-
-      IF (ISET.EQ.0) THEN
-1       V1=2.*S_RNDM(ISET)-1.
-        V2=2.*S_RNDM(Idum)-1.
-        R=V1**2+V2**2
-        IF(R.GE.1.)GO TO 1
-        FAC=SQRT(-2.*LOG(R)/R)
-        GSET=V1*FAC
-        GASDEV=V2*FAC
-        ISET=1
-      ELSE
-        GASDEV=GSET
-        ISET=0
-      ENDIF
-      RETURN
-      END

@@ -1,4 +1,4 @@
-from impy.util import TaggedFloat
+from chromo.util import TaggedFloat
 
 
 def test_taggedfloat():

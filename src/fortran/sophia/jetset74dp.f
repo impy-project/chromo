@@ -6211,7 +6211,7 @@ C...Purpose: to reconstruct an angle from given x and y coordinates.
       RETURN 
       END 
 
-#ifndef IMPY  
+#ifndef CHROMO  
 C********************************************************************* 
  
 CDECK  ID>, RLU
@@ -6358,7 +6358,7 @@ C...Write error.
  
       RETURN 
       END 
-C #endif IMPY
+C #endif CHROMO
 #endif
 C********************************************************************* 
  

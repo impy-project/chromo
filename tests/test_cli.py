@@ -1,10 +1,10 @@
 import subprocess as subp
-from impy import __version__ as version
-from impy import models as im
+from chromo import __version__ as version
+from chromo import models as im
 import re
 from pathlib import Path
 import pytest
-from impy.cli import MODELS
+from chromo.cli import MODELS
 from particle import Particle
 import pyhepmc
 import uproot
@@ -32,12 +32,15 @@ def run(
     file=None,
     checks=(format_matches_extension,),
 ):
-    r = subp.run(("impy",) + cmd, capture_output=True)
+    r = subp.run(("chromo",) + cmd, capture_output=True)
     assert r.returncode == returncode, r.stderr.decode()
     match = None
     if stdout is not None:
         actual = r.stdout.decode()
-        match = re.search(stdout, actual)
+        if stdout in actual:  # also check for literal match
+            match = True
+        else:
+            match = re.search(stdout, actual)
         assert match, "\n" + actual
     if stderr is not None:
         actual = r.stderr.decode()
@@ -73,7 +76,7 @@ def test_no_args():
 
 
 def test_version():
-    run("-v", stdout=f"impy {version}")
+    run("-v", stdout=f"chromo {version}")
 
 
 def test_minimum():
@@ -81,7 +84,7 @@ def test_minimum():
         "-S",
         "100",
         stdout="Seed[ \t]*([0-9]+)",
-        file="impy_eposlhc_{0}_2212_2212_100.hepmc",
+        file="chromo_eposlhc_{0}_2212_2212_100.hepmc",
     )
 
 
@@ -93,7 +96,7 @@ def test_seed_1(seed):
         "-s",
         f"{seed}",
         stdout="Seed[ \t]*([0-9]+)",
-        file="impy_eposlhc_{0}_2212_2212_100.hepmc",
+        file="chromo_eposlhc_{0}_2212_2212_100.hepmc",
     )
 
 
@@ -104,7 +107,7 @@ def test_seed_2():
         "-s",
         "123",
         stdout="Seed[ \t]*123",
-        file="impy_eposlhc_123_2212_2212_100.hepmc",
+        file="chromo_eposlhc_123_2212_2212_100.hepmc",
     )
 
 
@@ -117,7 +120,7 @@ def test_number_1():
         "-n",
         "123",
         stdout="Collisions[ \t]*123",
-        file="impy_eposlhc_1_2212_2212_100.hepmc",
+        file="chromo_eposlhc_1_2212_2212_100.hepmc",
     )
 
 
@@ -144,7 +147,7 @@ def test_model_1(spec, Model):
         "-m",
         spec,
         stdout=f"Model[ \t]*{Model.label}",
-        file=f"impy_{Model.pyname.lower()}_2_2212_2212_100.hepmc",
+        file=f"chromo_{Model.pyname.lower()}_2_2212_2212_100.hepmc",
     )
 
 
@@ -195,7 +198,7 @@ def test_projectile(spec, expected):
         "-i",
         spec,
         stdout=f"Projectile[ \t]*{name} \\({expected}\\)",
-        file=f"impy_eposlhc_3_{expected}_2212_100.hepmc",
+        file=f"chromo_eposlhc_3_{expected}_2212_100.hepmc",
     )
 
 
@@ -218,7 +221,7 @@ def test_target(spec, expected):
         "-I",
         spec,
         stdout=f"Target[ \t]*{p.name} \\({expected}\\)",
-        file=f"impy_eposlhc_4_2212_{expected}_100.hepmc",
+        file=f"chromo_eposlhc_4_2212_{expected}_100.hepmc",
     )
 
 
@@ -229,7 +232,7 @@ def test_momentum_1():
         "-p 1000",
         "-P -1000",
         stdout="sqrt\\(s\\)[ \t]*2000 GeV",
-        file="impy_eposlhc_5_2212_2212_2000.hepmc",
+        file="chromo_eposlhc_5_2212_2212_2000.hepmc",
     )
 
 
@@ -244,7 +247,7 @@ def test_momentum_2():
 [ |]*Target momentum[ \t]*0 GeV/c *|
 [ |]*sqrt\\(s\\)[ \t]*43.3394 GeV\
 """,
-        file="impy_eposlhc_6_2212_2212_43.hepmc",
+        file="chromo_eposlhc_6_2212_2212_43.hepmc",
     )
 
 
@@ -255,7 +258,7 @@ def test_format_1():
         "-S",
         "100",
         stdout="Format[ \t]*hepmc",
-        file="impy_eposlhc_7_2212_2212_100.hepmc",
+        file="chromo_eposlhc_7_2212_2212_100.hepmc",
     )
 
 
@@ -280,26 +283,24 @@ def test_format_2(format, model):
         "-m",
         model,
         stdout=f"Format[ \t]*{format}",
-        file=f"impy_{pyname}_8_2212_2212_100.{ext}",
+        file=f"chromo_{pyname}_8_2212_2212_100.{ext}",
     )
 
 
-#
-# def test_format_3():
-#    if platform.system() == "Windows":
-#        pytest.xfail(
-#            "Test aborts on Windows with this message: "
-#            "UnicodeEncodeError: 'charmap' codec can't encode character '\u0394'"
-#            " in  position 20049: character maps to <undefined>"
-#        )
-#    run(
-#        "-s",
-#        "9",
-#        "-S",
-#        "100",
-#        "-o",
-#        "svg",
-#        stdout="Format[ \t]*svg",
-#        file="impy_eposlhc_9_2212_2212_100_000.svg",
-#    )
-#
+def test_format_3():
+    if platform.system() == "Windows":
+        pytest.xfail(
+            "Test aborts on Windows with this message: "
+            "UnicodeEncodeError: 'charmap' codec can't encode character '\u0394'"
+            " in  position 20049: character maps to <undefined>"
+        )
+    run(
+        "-s",
+        "9",
+        "-S",
+        "100",
+        "-o",
+        "svg",
+        stdout="Format[ \t]*svg",
+        file="chromo_eposlhc_9_2212_2212_100_000.svg",
+    )

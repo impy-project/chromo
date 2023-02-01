@@ -1,8 +1,8 @@
-from impy.kinematics import CenterOfMass
-from impy.models import EposLHC
-from impy.constants import GeV
+from chromo.kinematics import CenterOfMass
+from chromo.models import EposLHC
+from chromo.constants import GeV
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from .util import (
     reference_charge,
     run_in_separate_process,
@@ -121,8 +121,8 @@ def test_parents(event):
 
 
 def run_set_stable(stable):
-    evt_kin = CenterOfMass(10 * GeV, "proton", "proton")
-    m = EposLHC(evt_kin, seed=4)
+    evt_kin = CenterOfMass(100 * GeV, "proton", "proton")
+    m = EposLHC(evt_kin, seed=1)
     for pid, s in stable.items():
         m.set_stable(pid, s)
     print("stable", m._get_stable())
@@ -141,3 +141,18 @@ def test_set_stable():
 
     # ev2 does not contains final state pi0
     assert np.all(ev2.pid[ev2.status == 1] != pid)
+
+
+def test_rmmard():
+    from chromo.models import _eposlhc
+
+    rng = np.random.default_rng(1)
+    state = rng.__getstate__()
+    _eposlhc.npy.bitgen = rng.bit_generator.ctypes.bit_generator.value
+    a = np.zeros(3)
+    _eposlhc.rmmard(a, 3, 0)
+    assert np.all(a != 0)
+    rng.__setstate__(state)
+    b = np.zeros(3)
+    _eposlhc.rmmard(b, 3, 0)
+    assert_equal(a, b)

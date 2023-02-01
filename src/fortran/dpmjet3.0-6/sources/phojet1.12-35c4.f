@@ -7659,7 +7659,7 @@ C**anfe common block for file handling
       CHARACTER*1024 FNEVAP
       CHARACTER*1024 FNPARA
       CHARACTER*5 VERSION
-      COMMON /DTIMPY/ FNEVAP, FNPARA, VERSION
+      COMMON /DTCHRO/ FNEVAP, FNPARA, VERSION
 
 C  parameter set for   2212 (GRV94 LO)     2212 (GRV94 LO)
       DATA (IDPtab(k,  1),k=1,8) /

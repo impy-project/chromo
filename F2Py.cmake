@@ -89,7 +89,7 @@ function (f2py_add_module target_name)
     # Definitions for source files processing
     set(fortran_defs)
     foreach(_def ${F2PY_ADD_MODULE_COMPILE_DEFS})
-      STRING(APPEND fortran_defs "-D${_def} ")
+      list(APPEND fortran_defs "-D${_def}")
     endforeach()
     
     # Source files processing for *.pyf
@@ -98,12 +98,18 @@ function (f2py_add_module target_name)
       get_filename_component(src_filename ${src_file} NAME)
       set(proc_file CMakeFiles/${target_name}.dir/${src_filename})
 
-      add_custom_command(
-        OUTPUT ${proc_file}
-        COMMAND ${CMAKE_Fortran_COMPILER}
-        -E -cpp ${src_file} ${fortran_defs} -o ${proc_file}
-        DEPENDS ${src_file}
-      )
+      if (src_file MATCHES ".*\.c$")
+        # no preprocessing for C files
+        configure_file(${src_file} ${proc_file} COPYONLY)
+      else()
+        add_custom_command(
+          OUTPUT ${proc_file}
+          COMMAND ${CMAKE_Fortran_COMPILER}
+          -E -cpp ${src_file} ${fortran_defs} -o ${proc_file}
+          DEPENDS ${src_file}
+        )
+      endif()
+
       list(APPEND processed_files ${proc_file})
     endforeach()
 

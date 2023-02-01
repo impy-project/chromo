@@ -1,4 +1,4 @@
-from impy.util import get_all_models, _cached_data_dir
+from chromo.util import get_all_models, _cached_data_dir
 
 urls = set()
 for Model in get_all_models():

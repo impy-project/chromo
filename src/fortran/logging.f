@@ -1,4 +1,4 @@
-      Subroutine impy_openlogfile(fname, opunit)
+      Subroutine chromo_openlogfile(fname, opunit)
         Character*300 fname
         Integer opunit
 
@@ -8,9 +8,9 @@
 
         Open (opunit, File=fname)
 
-      End Subroutine impy_openlogfile
+      End Subroutine chromo_openlogfile
 
-      Subroutine impy_closelogfile(opunit)
+      Subroutine chromo_closelogfile(opunit)
         Integer opunit
 
         If (opunit/=0 .And. opunit/=6) Then
@@ -20,4 +20,4 @@
           write(6,*) 'Error while closing file'
         End If
 
-      End Subroutine impy_closelogfile
+      End Subroutine chromo_closelogfile
