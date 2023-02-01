@@ -210,7 +210,6 @@ class EventData:
             self.nevent,
             self.impact_parameter,
             self.n_wounded,
-            self._npart,
             self.pid.copy(),
             self.status.copy(),
             self.charge.copy(),
@@ -224,6 +223,7 @@ class EventData:
             self.vz.copy(),
             self.vt.copy(),
             self.parents.copy(),
+            self.children.copy() if self.children is not None else None,
         ]
         return t
 
@@ -283,7 +283,6 @@ class EventData:
             self.nevent,
             self.impact_parameter,
             self.n_wounded,
-            len(pid),
             pid,
             self.status[arg],
             self.charge[arg],
@@ -297,6 +296,7 @@ class EventData:
             self.vz[arg],
             self.vt[arg],
             select_parents(arg, self.parents) if update_parents else None,
+            None
         )
 
     @property
@@ -519,7 +519,7 @@ class MCEvent(EventData, ABC):
     # make it so that MCEvent can be saved and is restored as EventData.
     def __getstate__(self):
         # save only EventData sub-state
-        return {k: getattr(self, k) for k in self.__dataclass_fields__}
+        return EventData.__getstate__(self)
 
     def __getnewargs__(self):
         # upon unpickling, create EventData object instead of MCEvent object
