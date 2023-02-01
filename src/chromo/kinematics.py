@@ -152,16 +152,16 @@ class EventKinematics(EventKinematicsBase):
         if particle1 is None or particle2 is None:
             raise ValueError("particle1 and particle2 must be set")
 
-        p1 = process_particle(particle1)
-        p2 = process_particle(particle2)
+        part1 = process_particle(particle1)
+        part2 = process_particle(particle2)
 
-        if isinstance(p1, CompositeTarget):
+        if isinstance(part1, CompositeTarget):
             raise ValueError("Only 2nd particle can be CompositeTarget")
 
-        p2_is_composite = isinstance(p2, CompositeTarget)
+        p2_is_composite = isinstance(part2, CompositeTarget)
 
-        m1 = nucleon_mass if is_real_nucleus(p1) else mass(p1)
-        m2 = nucleon_mass if is_real_nucleus(p2) else mass(p2)
+        m1 = nucleon_mass if is_real_nucleus(part1) else mass(part1)
+        m2 = nucleon_mass if is_real_nucleus(part2) else mass(part2)
 
         beams = (np.zeros(4), np.zeros(4))
 
@@ -228,7 +228,7 @@ class EventKinematics(EventKinematicsBase):
         _betagamma_cm = plab / ecm
 
         super().__init__(
-            frame, p1, p2, ecm, plab, elab, ekin, beams, _gamma_cm, _betagamma_cm
+            frame, part1, part2, ecm, plab, elab, ekin, beams, _gamma_cm, _betagamma_cm
         )
 
 
