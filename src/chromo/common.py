@@ -122,7 +122,7 @@ class EventData:
         PDG IDs of the particles.
     status: 1D array of int
         Status code of the particles (1 = final).
-    charge: 1D array of float
+    charge: 1D array of double
         Charge in units of elementary charge. Fractional for quarks.
     px: 1D array of double
         X coordinate of momentum in GeV/c.
@@ -296,7 +296,7 @@ class EventData:
             self.vz[arg],
             self.vt[arg],
             select_parents(arg, self.parents) if update_parents else None,
-            None
+            None,
         )
 
     @property
