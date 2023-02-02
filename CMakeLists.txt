@@ -77,9 +77,6 @@ cmake_print_variables(PYTHON_INCLUDE_DIRS)
 cmake_print_variables(PYTHON_LIBRARIES)
 cmake_print_variables(F2PY_INCLUDE_DIR)
 cmake_print_variables(NUMPY_INCLUDE_DIRS)
-cmake_print_variables(BUILD_sib23c00)
-cmake_print_variables(BUILD_sib23c02)
-cmake_print_variables(BUILD_sib23c03)
 cmake_print_variables(BUILD_dev_dpmjetIII193)
 
 include_directories(
@@ -608,54 +605,47 @@ f2py_add_module(_phojet193
 
 
 ##### extra optional models follow below ######
+f2py_add_module(_sib23c00
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3c00.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions}
+)
 
-if(BUILD_sib23c00)
-  f2py_add_module(_sib23c00
-    FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} gasdev
-    SOURCES
-    ${fortran_dir}/sibyll/sibyll2.3c00.f
-    ${fortran_dir}/sibyll/sibyll_init.fpp
-    ${logging_source}
-    ${rangen_source}
-    INCLUDE_DIRS
-    ${NUMPY_INCLUDE_DIRS}
-    COMPILE_DEFS
-    ${chromo_definitions}
-  )
-endif()
+f2py_add_module(_sib23c02
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3c02.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions}
+)
 
-if(BUILD_sib23c02)
-  f2py_add_module(_sib23c02
-    FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} gasdev
-    SOURCES
-    ${fortran_dir}/sibyll/sibyll2.3c02.f
-    ${fortran_dir}/sibyll/sibyll_init.fpp
-    ${logging_source}
-    ${rangen_source}
-    INCLUDE_DIRS
-    ${NUMPY_INCLUDE_DIRS}
-    COMPILE_DEFS
-    ${chromo_definitions}
-  )
-endif()
-
-if(BUILD_sib23c03)
-  f2py_add_module(_sib23c03
-    FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} gasdev
-    SOURCES
-    ${fortran_dir}/sibyll/sibyll2.3c03.f
-    ${fortran_dir}/sibyll/sibyll_init.fpp
-    ${logging_source}
-    ${rangen_source}
-    INCLUDE_DIRS
-    ${NUMPY_INCLUDE_DIRS}
-    COMPILE_DEFS
-    ${chromo_definitions}
-  )
-endif()
+f2py_add_module(_sib23c03
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3c03.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions}
+)
 
 if(BUILD_dev_dpmjetIII193)
 
