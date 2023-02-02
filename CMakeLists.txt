@@ -468,12 +468,6 @@ list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR\.f)
 # include those. As a workaround, we generate modified source files and
 # renamed copies of the headers. Not elegant, but works. 🤷‍♂️
 
-file(GLOB dpmjetIII191_sources
-  ${fortran_dir}/dpmjetIII-19.1/src/phojet/*.f
-  ${fortran_dir}/dpmjetIII-19.1/src/pythia/*.f
-  ${fortran_dir}/dpmjetIII-19.1/src/dpmjet/*.f
-)
-
 # Workaround to workaround :) Windows don't like long lists
 # Use temporary file to keep long lists
 set(temp_dpmjet_file temp.dpmjetIII191)
