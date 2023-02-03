@@ -41,7 +41,7 @@ def cache_value(key, s):
 
 
 def get_models():
-    # For convenience, support building extra models via models.cfg.
+    # For convenience, support building other models via models.cfg.
     # models.cfg is not tracked by git, so can be freely modified.
     # If models.cfg exists, it overrides the standard targets to
     # compile. It can be used to compile non-standard models or
@@ -54,30 +54,19 @@ def get_models():
     # sib23c03
     # dev_dpmjetIII193=/full/path/to/dir/dpmjetIII-19.3
     # ----
-    import ast
-
     models = {}
 
-    override = cwd / "models.cfg"
-    if override.exists():
-        # read models from models.cfg if it exists...
-        with open(override) as f:
+    for fn in (cwd / "models.cfg", cwd / "default_models.cfg"):
+        if not fn.exists():
+            continue
+        with open(fn) as f:
             for model in f:
                 model = model.strip()
                 if not model or model.startswith("#"):
                     continue
                 model, *mpath = model.split("=")
                 models[model] = mpath[0] if mpath else None
-
-    else:
-        # ...or read default models from chromo.models.__all__
-        with open(cwd / "src/chromo/models/__init__.py") as f:
-            a = ast.parse(f.read())
-            for child in a.body:
-                if isinstance(child, ast.Assign):
-                    if child.targets[0].id == "__all__":
-                        for model in eval(ast.unparse(child.value)):
-                            models[model] = None
+        break
 
     # urqmd34 doesn't build correctly on Windows
     if platform.system() == "Windows":
