@@ -2,7 +2,7 @@ from chromo.kinematics import CenterOfMass
 from chromo.models import Pythia8
 from chromo.constants import GeV
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from .util import reference_charge, run_in_separate_process
 import pytest
 from functools import lru_cache
@@ -134,3 +134,16 @@ def run_pythia_change_energy():
 
 def test_changing_beams_proton():
     run_in_separate_process(run_pythia_change_energy)
+
+
+def run_pythia_elastic():
+    evt_kin = CenterOfMass(10 * GeV, "p", "p")
+    m = Pythia8(evt_kin, seed=1, config=["SoftQCD:elastic=on"])
+    return [event.copy() for event in m(10)]
+
+
+def test_pythia_elastic():
+    events = run_in_separate_process(run_pythia_elastic)
+    for event in events:
+        assert len(event) == 4
+        assert_equal(event.pid, [2212] * 4)

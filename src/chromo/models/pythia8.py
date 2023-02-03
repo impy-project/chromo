@@ -5,6 +5,8 @@ import numpy as np
 from chromo.kinematics import EventFrame
 from chromo.constants import standard_projectiles
 from particle import literals as lp
+import warnings
+from typing import Collection, List
 
 
 class PYTHIA8Event(MCEvent):
@@ -49,7 +51,20 @@ class Pythia8(MCRun):
         + "/releases/download/zipped_data_v1.0/Pythia8_v002.zip"
     )
 
-    def __init__(self, evt_kin, *, seed=None):
+    def __init__(self, evt_kin, *, seed=None, config=None):
+        """
+
+        Parameters
+        ----------
+        config: str or list of str, optional
+            Pass standard Pythia configuration here. You can use this to change
+            the physics processes which are enabled in Pythia. You can pass a
+            single string that is read from a configuration file or a list of
+            strings, where each string is a single configuration command.
+            If config is not set, 'SoftQCD:inelastic = on' is used to get the
+            equivalent of other generators in chromo.
+        """
+
         super().__init__(seed)
 
         self._lib.hepevt = self._lib.Hepevt()
@@ -63,6 +78,11 @@ class Pythia8(MCRun):
         if "PYTHIA8DATA" in environ:
             del environ["PYTHIA8DATA"]
         self._lib.pythia = self._lib.Pythia(datdir, True)
+
+        if config is None:
+            self._config = ["SoftQCD:inelastic = on"]
+        else:
+            self._config = self._parse_config(config)
 
         # must come last
         self.kinematics = evt_kin
@@ -84,12 +104,15 @@ class Pythia8(MCRun):
         pythia = self._lib.pythia
         pythia.settings.resetAll()
 
-        config = [
+        config = self._config[:]
+
+        # TODO use numpy PRNG instead of Pythia's
+        config += [
+            # use our random seed
             "Random:setSeed = on",
             f"Random:seed = {self._seed}",
             # use center-of-mass frame
             "Beams:frameType = 1",
-            "SoftQCD:inelastic = on",
             # reduce verbosity
             "Print:quiet = on",
             "Next:numberCount = 0",  # do not print progress
@@ -134,3 +157,29 @@ class Pythia8(MCRun):
             # bottleneck, we need to make Hepevt a view of the internal record.
             self._lib.hepevt.fill(self._lib.pythia.event)
         return success
+
+    @staticmethod
+    def _parse_config(config) -> List[str]:
+        # convert config to lines and filter out lines that
+        # we override with our settings in _set_kinematics
+        result: List[str] = []
+        if isinstance(config, str):
+            for line in config.split("\n"):
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                result.append(line)
+        elif isinstance(config, Collection):
+            for item in config:
+                result.append(item.strip())
+
+        ignored = ("Random:", "Beams:", "Print:", "Next:")
+
+        result2: List[str] = []
+        for line in result:
+            for ig in ignored:
+                if line.startswith(ig):
+                    warnings.warn(f"configuration ignored: {line!r}", RuntimeWarning)
+                    break
+            result2.append(line)
+        return result2
