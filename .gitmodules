@@ -10,3 +10,6 @@
 [submodule "src/cpp/pythia8308"]
 	path = src/cpp/pythia83
 	url = https://gitlab.com/Pythia8/releases.git
+[submodule "src/cpp/cpp-member-accessor"]
+	path = src/cpp/cpp-member-accessor
+	url = https://github.com/HDembinski/cpp-member-accessor.git

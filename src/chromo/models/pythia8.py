@@ -1,4 +1,4 @@
-from chromo.common import MCRun, MCEvent, CrossSectionData
+from chromo.common import MCRun, EventData, CrossSectionData
 from chromo.util import _cached_data_dir, name2pdg
 from os import environ
 import numpy as np
@@ -7,24 +7,44 @@ from chromo.constants import standard_projectiles
 from particle import literals as lp
 
 
-class PYTHIA8Event(MCEvent):
-    """Wrapper class around HEPEVT particle stack."""
+class PYTHIA8Event(EventData):
+    """Wrapper for Pythia8 event stack."""
 
-    _hepevt = "hepevt"
-
-    def _charge_init(self, npart):
-        return self._lib.charge_from_pid(
-            self._lib.pythia.particleData, self._lib.hepevt.idhep[:npart]
+    def __init__(self, generator):
+        pythia = generator._pythia
+        event = pythia.event
+        super().__init__(
+            (generator.name, generator.version),
+            generator.kinematics,
+            generator.nevents,
+            self._get_impact_parameter(pythia),
+            self._get_n_wounded(pythia),
+            event.pid(),
+            event.status(),
+            pythia.charge(),
+            event.px(),
+            event.py(),
+            event.pz(),
+            event.en(),
+            event.m(),
+            event.vx(),
+            event.vy(),
+            event.vz(),
+            event.vt(),
+            event.parents(),
+            event.children(),
         )
 
-    def _get_impact_parameter(self):
-        hi = self._lib.pythia.info.hiInfo
+    @staticmethod
+    def _get_impact_parameter(pythia):
+        hi = pythia.info.hiInfo
         if hi is None:
             return np.nan
         return hi.b
 
-    def _get_n_wounded(self):
-        hi = self._lib.pythia.info.hiInfo
+    @staticmethod
+    def _get_n_wounded(pythia):
+        hi = pythia.info.hiInfo
         if hi is None:
             return (0, 0)
         return hi.nPartProj, hi.nPartTarg
@@ -52,8 +72,6 @@ class Pythia8(MCRun):
     def __init__(self, evt_kin, *, seed=None):
         super().__init__(seed)
 
-        self._lib.hepevt = self._lib.Hepevt()
-
         datdir = _cached_data_dir(self._data_url) + "xmldoc"
 
         # Must delete PYTHIA8DATA from environ if it exists, since it overrides
@@ -62,14 +80,14 @@ class Pythia8(MCRun):
         # or init() may fail.
         if "PYTHIA8DATA" in environ:
             del environ["PYTHIA8DATA"]
-        self._lib.pythia = self._lib.Pythia(datdir, True)
+        self._pythia = self._lib.Pythia(datdir, True)
 
         # must come last
         self.kinematics = evt_kin
         self._set_final_state_particles()
 
     def _cross_section(self, kin=None):
-        st = self._lib.pythia.info.sigmaTot
+        st = self._pythia.info.sigmaTot
         return CrossSectionData(
             st.sigmaTot,
             st.sigmaTot - st.sigmaEl,
@@ -81,7 +99,7 @@ class Pythia8(MCRun):
         )
 
     def _set_kinematics(self, kin):
-        pythia = self._lib.pythia
+        pythia = self._pythia
         pythia.settings.resetAll()
 
         config = [
@@ -122,15 +140,7 @@ class Pythia8(MCRun):
             raise RuntimeError("Pythia8 initialization failed")
 
     def _set_stable(self, pdgid, stable):
-        self._lib.pythia.particleData.mayDecay(pdgid, not stable)
+        self._pythia.particleData.mayDecay(pdgid, not stable)
 
     def _generate(self):
-        success = self._lib.pythia.next()
-        if success:
-            # We copy over the event record from Pythia's internal buffer to our
-            # Hepevt-like object. This is not efficient, but easier to
-            # implement. The time needed to copy the record is small compared to
-            # the time needed to generate the event. If this turns out to be a
-            # bottleneck, we need to make Hepevt a view of the internal record.
-            self._lib.hepevt.fill(self._lib.pythia.event)
-        return success
+        return self._pythia.next()

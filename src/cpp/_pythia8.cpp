@@ -1,5 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#include <accessor/accessor.hpp>
 #include <pybind11/iostream.h>
 #include <Pythia8/Event.h>
 #include <Pythia8/Pythia.h>
@@ -13,74 +14,7 @@ namespace py = pybind11;
 using namespace Pythia8;
 using namespace pybind11::literals;
 
-struct Hepevt
-{
-    Hepevt() { reset(10000); }
-
-    void reset(int size)
-    {
-        idhep = py::array_t<int>({size});
-        isthep = py::array_t<int>({size});
-        phep = py::array_t<double>({5, size});
-        vhep = py::array_t<double>({4, size});
-        jmohep = py::array_t<int>({2, size});
-        jdahep = py::array_t<int>({2, size});
-    }
-
-    void fill(const Event &event)
-    {
-        ++nevhep;
-        nhep = event.size();
-        if (nhep > py::len(idhep))
-            reset(nhep);
-
-        auto pid = idhep.mutable_unchecked<1>();
-        auto sta = isthep.mutable_unchecked<1>();
-        auto p = phep.mutable_unchecked<2>();
-        auto v = vhep.mutable_unchecked<2>();
-        auto par = jmohep.mutable_unchecked<2>();
-        auto dau = jdahep.mutable_unchecked<2>();
-        int k = 0;
-        for (const auto &particle : event)
-        {
-            // Record starts with internal particle 90,
-            // skip this to start with beam particles.
-            // This results in Fortran-like indices.
-            if (k == 0 && particle.id() == 90)
-            {
-                --nhep;
-                continue;
-            }
-            pid(k) = particle.id();
-            sta(k) = particle.statusHepMC();
-            p(0, k) = particle.px();
-            p(1, k) = particle.py();
-            p(2, k) = particle.pz();
-            p(3, k) = particle.e();
-            p(4, k) = particle.m();
-            v(0, k) = particle.xProd();
-            v(1, k) = particle.yProd();
-            v(2, k) = particle.zProd();
-            v(3, k) = particle.tProd();
-            par(0, k) = particle.mother1();
-            par(1, k) = particle.mother2();
-            dau(0, k) = particle.daughter1();
-            dau(1, k) = particle.daughter2();
-            ++k;
-        }
-    }
-
-    int nevhep = -1;
-    int nhep = 0;
-    py::array_t<int, py::array::f_style> idhep;
-    py::array_t<int, py::array::f_style> isthep;
-    py::array_t<double, py::array::f_style> phep;
-    py::array_t<double, py::array::f_style> vhep;
-    py::array_t<int, py::array::f_style> jmohep;
-    py::array_t<int, py::array::f_style> jdahep;
-};
-
-double charge_from_pid(const ParticleData &pd, int pid)
+float charge_from_pid(const ParticleData &pd, int pid)
 {
     auto pptr = pd.findParticle(pid);
     assert(pptr); // never nullptr if charge_from_pid is used on particles produced by Pythia
@@ -88,22 +22,89 @@ double charge_from_pid(const ParticleData &pd, int pid)
     return pid == pptr->id() ? pptr->charge() : -pptr->charge();
 }
 
+ACCESSOR_MEMBER(Particle, idSave, int)
+ACCESSOR_MEMBER(Particle, statusSave, int)
+ACCESSOR_MEMBER(Particle, pSave, Vec4)
+ACCESSOR_MEMBER(Particle, mSave, double)
+ACCESSOR_MEMBER(Particle, vProdSave, Vec4)
+ACCESSOR_MEMBER(Particle, mother1Save, int)
+ACCESSOR_MEMBER(Particle, mother2Save, int)
+ACCESSOR_MEMBER(Particle, daughter1Save, int)
+ACCESSOR_MEMBER(Particle, daughter2Save, int)
+ACCESSOR_MEMBER(Vec4, xx, double)
+ACCESSOR_MEMBER(Vec4, yy, double)
+ACCESSOR_MEMBER(Vec4, zz, double)
+ACCESSOR_MEMBER(Vec4, tt, double)
+
+template <class Accessor>
+auto event_array(Event &event)
+{
+    // skip first pseudoparticle
+    auto *ptr = &accessor::accessMember<Accessor>(event[1]);
+    int number = event.size() - 1;
+    int shape[1] = {number};
+    int strides[1] = {sizeof(Particle)};
+    return py::array_t<std::decay_t<decltype(*ptr)>>(shape, strides, ptr);
+}
+
+auto event_status(Event &event)
+{
+    // skip first pseudoparticle
+    py::array_t<int> result(event.size() - 1);
+    int *ptr = result.mutable_data();
+    for (auto pit = event.begin() + 1; pit != event.end(); ++pit)
+        *ptr++ = pit->statusHepMC();
+    return result;
+}
+
+template <class Accessor>
+py::array_t<double> event_array_p(Event &event)
+{
+    // skip first pseudoparticle
+    auto &pref = accessor::accessMember<Particle_pSave>(event[1]);
+    double *ptr = &accessor::accessMember<Accessor>(pref);
+    int number = event.size() - 1;
+    int shape[1] = {number};
+    int strides[1] = {sizeof(Particle)};
+    return py::array_t<double>(shape, strides, ptr);
+}
+
+template <class Accessor>
+py::array_t<double> event_array_v(Event &event)
+{
+    // skip first pseudoparticle
+    auto &pref = accessor::accessMember<Particle_vProdSave>(event[1]);
+    double *ptr = &accessor::accessMember<Accessor>(pref);
+    int number = event.size() - 1;
+    int shape[1] = {number};
+    int strides[1] = {sizeof(Particle)};
+    return py::array_t<double>(shape, strides, ptr);
+}
+
+py::array_t<int> event_array_parents(Event &event)
+{
+    // skip first pseudoparticle
+    auto ptr1 = &accessor::accessMember<Particle_mother1Save>(event[1]);
+    auto ptr2 = &accessor::accessMember<Particle_mother2Save>(event[1]);
+    int number = event.size() - 1;
+    int shape[2] = {number, 2};
+    int strides[2] = {sizeof(Particle), static_cast<int>(ptr2 - ptr1)};
+    return py::array_t<int>(shape, strides, ptr1);
+}
+
+py::array_t<int> event_array_children(Event &event)
+{
+    // skip first pseudoparticle
+    auto ptr1 = &accessor::accessMember<Particle_daughter1Save>(event[1]);
+    auto ptr2 = &accessor::accessMember<Particle_daughter2Save>(event[1]);
+    int number = event.size() - 1;
+    int shape[2] = {number, 2};
+    int strides[2] = {sizeof(Particle), static_cast<int>(ptr2 - ptr1)};
+    return py::array_t<int>(shape, strides, ptr1);
+}
+
 PYBIND11_MODULE(_pythia8, m)
 {
-    py::class_<Hepevt>(m, "Hepevt")
-        .def(py::init<>())
-        .def("fill", &Hepevt::fill)
-        .def_readwrite("nevhep", &Hepevt::nevhep)
-        .def_readwrite("nhep", &Hepevt::nhep)
-        .def_readwrite("idhep", &Hepevt::idhep)
-        .def_readwrite("isthep", &Hepevt::isthep)
-        .def_readwrite("phep", &Hepevt::phep)
-        .def_readwrite("vhep", &Hepevt::vhep)
-        .def_readwrite("jmohep", &Hepevt::jmohep)
-        .def_readwrite("jdahep", &Hepevt::jdahep)
-
-        ;
-
     py::class_<ParticleData>(m, "ParticleData")
         .def("mayDecay", py::overload_cast<int, bool>(&ParticleData::mayDecay))
         .def("addParticle", py::overload_cast<int, string, string, int, int, int, double, double, double, double, double, bool>(&ParticleData::addParticle), "pdgid"_a, "name"_a, "antiname"_a, "spinType"_a = 0, "chargeType"_a = 0, "colType"_a = 0, "m0"_a = 0, "mWidth"_a = 0, "mMin"_a = 0, "mMax"_a = 0, "tau0"_a = 0, "varWidth"_a = false)
@@ -166,8 +167,6 @@ PYBIND11_MODULE(_pythia8, m)
 
         ;
 
-    py::class_<Event>(m, "Event");
-
     py::class_<HIInfo>(m, "HIInfo")
         .def_property_readonly("nPartProj", &HIInfo::nPartProj)
         .def_property_readonly("nPartTarg", &HIInfo::nPartTarg)
@@ -215,12 +214,36 @@ PYBIND11_MODULE(_pythia8, m)
         .def_readwrite("event", &Pythia::event)
         .def_property_readonly("info", [](Pythia &self)
                                { return self.info; })
+        .def("charge",
+             [](Pythia &self)
+             {
+                 // skip first pseudoparticle
+                 int size = self.event.size() - 1;
+                 py::array_t<float> result(size);
+                 float *ptr = result.mutable_data();
+                 for (auto pit = self.event.begin() + 1; pit != self.event.end(); ++pit)
+                     *ptr++ = charge_from_pid(self.particleData, pit->id());
+                 return result;
+             })
 
         ;
 
-    // recipe to only vectorize over pid, but not over ParticleData
-    m.def("charge_from_pid",
-          [](const ParticleData &pd, py::array_t<int> pid)
-          { return py::vectorize([&pd](int pid)
-                                 { return charge_from_pid(pd, pid); })(std::move(pid)); });
+    py::class_<Event>(m, "Event")
+        .def_property_readonly("size", [](Event &self)
+                               { return self.size() - 1; })
+        .def("pid", event_array<Particle_idSave>)
+        .def("status", event_status)
+        .def("m", event_array<Particle_mSave>)
+        .def("px", event_array_p<Vec4_xx>)
+        .def("py", event_array_p<Vec4_yy>)
+        .def("pz", event_array_p<Vec4_zz>)
+        .def("en", event_array_p<Vec4_tt>)
+        .def("vx", event_array_v<Vec4_xx>)
+        .def("vy", event_array_v<Vec4_yy>)
+        .def("vz", event_array_v<Vec4_zz>)
+        .def("vt", event_array_v<Vec4_tt>)
+        .def("parents", event_array_parents)
+        .def("children", event_array_children)
+
+        ;
 }
