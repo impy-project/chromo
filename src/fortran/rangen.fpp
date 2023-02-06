@@ -12,6 +12,27 @@ c-----------------------------------------------------------------------
       end
 
 c=======================================================================
+      function rangen()
+c-----------------------------------------------------------------------
+c  used by EPOS
+c-----------------------------------------------------------------------
+      double precision rval
+      call npyrng(rval)
+ 1    rangen=sngl(rval)
+      if(rangen.le.0.)goto 1
+      if(rangen.ge.1.)goto 1
+      end
+
+c=======================================================================
+      function drangen(dummy)
+c-----------------------------------------------------------------------
+c  used by EPOS
+c-----------------------------------------------------------------------
+      double precision drangen, dummy
+      call npyrng(drangen)
+      end
+
+c=======================================================================
       double precision function simrnd()
 c-----------------------------------------------------------------------
 c  alternative interface to npyrng
@@ -20,12 +41,13 @@ c-----------------------------------------------------------------------
       end
 
 c=======================================================================
-      double precision function gasdev( dummy )
+      function gasdev( dummy )
 c-----------------------------------------------------------------------
 c  used by SIBYLL-2.3x
 c-----------------------------------------------------------------------
       implicit none
       external npygas
+      double precision gasdev
       integer dummy
       integer*8 bitgen
       common /npy/bitgen
@@ -33,32 +55,19 @@ c-----------------------------------------------------------------------
       end
 
 c=======================================================================
-      real function spgasdev( dummy )
+      function spgasdev( dummy )
 c-----------------------------------------------------------------------
 c  used by SIBYLL-2.1
 c-----------------------------------------------------------------------
       implicit none
       external npygas
+      real spgasdev
       integer dummy
       integer*8 bitgen
       common /npy/bitgen
       double precision rval
       call npygas(rval, bitgen)
-      spgasdev = real(rval)
-      end
-
-c=======================================================================
-      subroutine rmmard( rvec,lenv,iseq )
-c-----------------------------------------------------------------------
-c  used by epos
-c-----------------------------------------------------------------------
-      implicit none
-      double precision rvec(*), rval
-      integer iseq,lenv,ivec
-      do ivec = 1, lenv
-        call npyrng(rval)
-        rvec(ivec) = rval
-      enddo
+      spgasdev = sngl(rval)
       end
 
 c=======================================================================
@@ -81,32 +90,42 @@ c-----------------------------------------------------------------------
       end
 
 c=======================================================================
-      double precision function dranf(dummy)
+      subroutine rmmard( rvec,lenv,iseq )
 c-----------------------------------------------------------------------
 c  used by epos
 c-----------------------------------------------------------------------
       implicit none
-      double precision dummy
+      double precision rvec(*)
+      integer lenv,iseq
+      call rm48(rvec,lenv)
+      end
+
+c=======================================================================
+      function dranf(dummy)
+c-----------------------------------------------------------------------
+c  used by epos
+c-----------------------------------------------------------------------
+      implicit none
+      double precision dranf,dummy
       call npyrng(dranf)
       end
 
 c=======================================================================
 c  sibyll random generator
 c-----------------------------------------------------------------------
-#ifdef SIBYLL_21
-      real function s_rndm(dummy)
-#else
-      double precision function s_rndm(dummy)
-#endif 
+      function s_rndm(dummy)
 c-----------------------------------------------------------------------
       implicit none
       integer dummy
-      double precision simrnd
 #ifdef SIBYLL_21
-555   s_rndm = real(simrnd())
-      if ((s_rndm.le.0e0).or.(s_rndm.ge.1e0)) goto 555     
+      real s_rndm
+      double precision rval
+555   call npyrng(rval)
+      if ((rval.le.0e0).or.(rval.ge.1e0)) goto 555
+      s_rndm = sngl(rval)
 #else
-      s_rndm = simrnd()
+      double precision s_rndm
+      call npyrng(s_rndm)
 #endif
       end
 
