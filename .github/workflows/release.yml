@@ -2,44 +2,81 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      upload_to_TestPyPI:
+        description: 'Set to true if upload to TestPyPI is required'
+        required: true
+        default: false
+        type: boolean
+
+  pull_request:
 
 jobs:
-  wheels:
+
+  wheels_on_PR:
+    if: github.event_name == 'pull_request'
     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-
-        os: [macos-latest]
-        arch: [arm64]
-        py: [cp311]
-
-        # os: [ubuntu-latest, windows-latest, macos-latest]
-        # arch: [native, arm64]
-        # py: [cp37, cp38, cp39, cp310, cp311]
-        # exclude:
-        #     - os: macos-latest
-        #       arch: arm64
-        #       py: cp37
-        #     - os: macos-latest
-        #       arch: arm64
-        #       py: cp38
-        #     - os: ubuntu-latest
-        #       arch: arm64
-        #     - os: windows-latest
-        #       arch: arm64
+        os: [ubuntu-latest]
+        arch: [native]
+        py: [cp310]
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
 
-  #     # Remove after January 16th 2023 when GA switches to 14.2 by default
-  #     - if: ${{ matrix.os == 'macos-latest' }}
-  #       run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
+      - name: Setup gfortran for Linux
+        uses: awvwgk/setup-fortran@main
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 11
+
+      - name: cibuildwheel on Linux
+        uses: pypa/cibuildwheel@v2.11.2
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+
+
+
+  wheels:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (${{ github.ref == 'refs/heads/main' }} && startsWith(github.ref, 'refs/tags/v'))
+    name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        arch: [native, arm64]
+        py: [cp37, cp38, cp39, cp310, cp311]
+        exclude:
+            - os: macos-latest
+              arch: arm64
+              py: cp37
+            - os: macos-latest
+              arch: arm64
+              py: cp38
+            - os: ubuntu-latest
+              arch: arm64
+            - os: windows-latest
+              arch: arm64
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native'}}
-        name: Setup gfortran for MacOS
+        name: Setup gfortran for MacOS native
         run: |
           # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
           set -xe
@@ -58,6 +95,7 @@ jobs:
           version: 11
 
       - if: ${{ matrix.os == 'windows-latest' }}
+        name: cibuildwheel on Windows
         uses: pypa/cibuildwheel@v2.11.2
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
@@ -66,12 +104,14 @@ jobs:
           FC: ${{ steps.setup-fortran.outputs.fc }}
 
       - if: ${{ matrix.os == 'ubuntu-latest' }}
+        name: cibuildwheel on Linux
         uses: pypa/cibuildwheel@v2.11.2
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
+        name: cibuildwheel on MacOS native
         uses: pypa/cibuildwheel@v2.11.2
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
@@ -79,6 +119,7 @@ jobs:
           no_proxy: '*'
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'arm64' }}
+        name: cibuildwheel on MacOS arm64
         id: cibw_step
         uses: pypa/cibuildwheel@v2.11.2
         env:
@@ -92,9 +133,10 @@ jobs:
             chmod +x .github/workflows/gfortran_utils.sh
             source .github/workflows/gfortran_utils.sh
             install_arm64_cross_gfortran
-          # Here the path is set by hand!!!
-          # It can be a problem if gfortran will be installed in different place
-          # FC: "/opt/gfortran-darwin-arm64-cross/bin/arm64-apple-darwin20.0.0-gfortran"
+          # Although FC is set in the CIBW_BEFORE_BUILD script above,
+          # it is not found by pip and cmake. So here FC is set by hand!!!
+          # It can be a problem if gfortran will be installed in different place.
+          FC: "/opt/gfortran-darwin-arm64-cross/bin/arm64-apple-darwin20.0.0-gfortran"
           MACOSX_DEPLOYMENT_TARGET: "11.0"
           no_proxy: '*'
 
@@ -102,61 +144,64 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
 
-  # sdist:
-  #   name: source package
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #       with:
-  #         submodules: true
+  sdist:
+    name: source package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
 
-  #     - uses: actions/setup-python@v4
-  #       name: Install Python
-  #       with:
-  #         python-version: '3.9'
+      - uses: actions/setup-python@v4
+        name: Install Python
+        with:
+          python-version: '3.9'
 
-  #     - run: python -m pip install --upgrade pip wheel
-  #     - run: python setup.py sdist
-  #     - run: python -m pip install --prefer-binary -v `echo dist/chromo-*`[test]
-  #     - run: python -m pip install pytest
-  #     - run: python -m pytest -vv
+      - run: python -m pip install --upgrade pip wheel
+      - run: python setup.py sdist
+      - run: python -m pip install --prefer-binary -v `echo dist/chromo-*`[test]
+      - run: python -m pip install pytest
+      - run: python -m pytest -vv
 
-  #     - uses: actions/upload-artifact@v3
-  #       with:
-  #         path: dist/*.tar.gz
+      - uses: actions/upload-artifact@v3
+        with:
+          path: dist/*.tar.gz
 
-  # upload:
-  #   needs: [wheels, sdist]
-  #   runs-on: ubuntu-latest
-  #   if: ${{ github.ref == 'refs/heads/master' }} && startsWith(github.ref, 'refs/tags/v')
-  #   steps:
-  #     - uses: actions/download-artifact@v3
-  #       with:
-  #         name: artifact
-  #         path: dist
+  upload_to_PyPI:
+    name: Upload to PyPI
+    needs: [wheels, sdist]
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }} && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download files in artifact to "dist/" directory
+        uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
 
-  #     - uses: pypa/gh-action-pypi-publish@master
-  #       with:
-  #         user: __token__
-  #         password: ${{secrets.pypi_password}}
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.6.4
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
 
 
-  # upload_all_to_TestPyPI:
-  #   name: Upload to TestPyPI
-  #   needs: [wheels, sdist]
-  #   runs-on: ubuntu-latest
-  #   # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-  #   steps:
-  #     - name: Download files in artifact to "dist/" directory
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: artifact
-  #         path: dist
+  upload_to_TestPyPI:
+    name: Upload to TestPyPI
+    needs: [wheels, sdist]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && ${{ inputs.upload_to_TestPyPI }}
+    steps:
+      - name: Download files in artifact to "dist/" directory
+        uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
 
-  #     - name: Publish package to TestPyPI
-  #       uses: pypa/gh-action-pypi-publish@v1.6.4
-  #       with:
-  #         user: __token__
-  #         repository_url: https://test.pypi.org/legacy/
-  #         password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      - name: Publish package to TestPyPI
+        uses: pypa/gh-action-pypi-publish@v1.6.4
+        with:
+          user: __token__
+          repository_url: https://test.pypi.org/legacy/
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
