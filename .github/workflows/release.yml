@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       upload_to_TestPyPI:
-        description: 'Set to true if upload to TestPyPI is required'
+        description: 'upload to TestPyPI'
         required: true
         default: false
         type: boolean
