@@ -11,12 +11,9 @@ jobs:
       fail-fast: false
       matrix:
 
-        os: [macos-latest, windows-latest]
-        arch: [native, arm64]
+        os: [macos-latest]
+        arch: [arm64]
         py: [cp311]
-        exclude:
-            - os: windows-latest
-              arch: arm64
 
         # os: [ubuntu-latest, windows-latest, macos-latest]
         # arch: [native, arm64]
@@ -95,11 +92,9 @@ jobs:
             chmod +x .github/workflows/gfortran_utils.sh
             source .github/workflows/gfortran_utils.sh
             install_arm64_cross_gfortran
-            gfortran --version
-            which gfortran
           # Here the path is set by hand!!!
           # It can be a problem if gfortran will be installed in different place
-          FC: "/opt/gfortran-darwin-arm64-cross/bin/arm64-apple-darwin20.0.0-gfortran"
+          # FC: "/opt/gfortran-darwin-arm64-cross/bin/arm64-apple-darwin20.0.0-gfortran"
           MACOSX_DEPLOYMENT_TARGET: "11.0"
           no_proxy: '*'
 
