@@ -10,11 +10,15 @@ on:
         type: boolean
 
   pull_request:
+    branches:
+      - main
+    types:
+      - closed
 
 jobs:
 
   wheels_on_PR:
-    if: github.event_name == 'pull_request'
+    if: github.event.pull_request.merged == true
     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
