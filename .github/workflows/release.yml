@@ -18,7 +18,7 @@ on:
 jobs:
 
   wheels_on_PR:
-    if: github.event.pull_request.merged == true
+    if: ${{ github.event.pull_request.merged == true }}
     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -53,8 +53,8 @@ jobs:
 
   wheels:
     if: |
-      github.event_name == 'workflow_dispatch' ||
-      (${{ github.ref == 'refs/heads/main' }} && startsWith(github.ref, 'refs/tags/v'))
+      ${{ github.event_name == 'workflow_dispatch' ||
+      (github.ref == 'refs/heads/main' && startsWith(github.ref, 'refs/tags/v')) }}
     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -71,8 +71,8 @@ jobs:
         #       arch: arm64
         #     - os: windows-latest
         #       arch: arm64
-        os: [macos-latest]
-        arch: [arm64]
+        os: [ubuntu-latest]
+        arch: [native]
         py: [cp39, cp310, cp311]
     steps:
       - uses: actions/checkout@v3
@@ -113,6 +113,10 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_BEFORE_BUILD: |
+            set -xe
+            printenv
+          CI: true
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
         name: cibuildwheel on MacOS native
@@ -175,7 +179,7 @@ jobs:
     name: Upload to PyPI
     needs: [wheels, sdist]
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' }} && startsWith(github.ref, 'refs/tags/v')
+    if: ${{ github.ref == 'refs/heads/main' && startsWith(github.ref, 'refs/tags/v') }}
     steps:
       - name: Download files in artifact to "dist/" directory
         uses: actions/download-artifact@v3
@@ -194,7 +198,7 @@ jobs:
     name: Upload to TestPyPI
     needs: [wheels, sdist]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && ${{ inputs.upload_to_TestPyPI }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload_to_TestPyPI == true }}
     steps:
       - name: Download files in artifact to "dist/" directory
         uses: actions/download-artifact@v3
