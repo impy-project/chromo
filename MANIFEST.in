@@ -2,7 +2,7 @@ include *.py
 include *.cmake
 include pyproject.toml
 include CMakeLists.txt
-include model.cfg
+include default_models.cfg
 recursive-exclude src/chromo/iamdata *
 recursive-include src/f2py *
 recursive-include src/fortran *

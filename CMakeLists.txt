@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.17)
 
 project(chromo LANGUAGES Fortran)
 
+# Use Clang for MacOS
+IF(NOT APPLE)
 # Find C/CXX compilers that match the Fortran compiler
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   # Compiler version is something like XY.Z.N, we want only XY
@@ -10,6 +12,7 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   find_program(CMAKE_CXX_COMPILER "g++-${COMPILER_MAJOR_VERSION}")
 else()
   message(FATAL_ERROR "Unknown Fortran compiler, cannot search for C/CXX compiler")
+endif()
 endif()
 
 # Delayed toolchain initialization
