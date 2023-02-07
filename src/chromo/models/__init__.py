@@ -57,15 +57,19 @@ def fix_macos_installation(logfile):
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
         lib_deps = result.stdout.decode("utf-8")
 
+        # Write to the logfile the list of libraries
+        # required by extension module before fixing
         message = f"\n----------\nFixing {ext_file}:\nBefore\n{lib_deps}"
         with open(logfile, "a") as lf:
             lf.write(message)
 
-        # Search for python....dylib or Python shared library
+        # Search for "Python" shared library
+        # among list of required libraries
         search_res = re.search(
             "^(.*python.*dylib|.*Python).*$", lib_deps, flags=re.MULTILINE
         )
 
+        # Ignore if Python shared library is not found
         if search_res is None:
             message = (
                 'NOT FIXED: Paths  with "Python" or "python*.dylib" strings '
@@ -75,10 +79,12 @@ def fix_macos_installation(logfile):
                 lf.write(message)
             continue
 
+        # Path to Python shared libraries found in the extension file
         python_lib_in_file = search_res.group(1).strip()
+        # Path to Python shared library found on the system
         python_lib_real = str(next(Path(get_config_var("LIBDIR")).glob("libpython*")))
 
-        # Change paths
+        # Fix the file by substituting the correct path
         cmd = [
             "install_name_tool",
             "-change",
@@ -88,6 +94,7 @@ def fix_macos_installation(logfile):
         ]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+        # codesign the fixed file
         # Since Big Sur, codesigning for arm64 is much more strict than it is for x64.
         # https://stackoverflow.com/a/71753248
         cmd = [
@@ -99,6 +106,7 @@ def fix_macos_installation(logfile):
         ]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+        # Log the changes in the file
         cmd = ["otool", "-L", ext_file]
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
         lib_deps = result.stdout.decode("utf-8")

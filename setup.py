@@ -9,7 +9,12 @@ cwd = Path(__file__).parent
 sys.path.append(str(cwd))
 from cmake_ext import CMakeExtension, CMakeBuild, get_models  # noqa: E402
 
-subp.call(["git", "submodule", "update"])
+if not os.environ.get("CI", False):
+    if (cwd / ".git").exists():
+        # make sure that submodules are up-to-date,
+        # it is a common error to forget this when
+        # switching between development branches
+        subp.check_call(["git", "submodule", "update"])
 
 
 # for convenience, support building extra models via extra.cfg

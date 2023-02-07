@@ -4,140 +4,131 @@ on:
   workflow_dispatch:
 
 jobs:
-  # wheels:
-  #   name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: [ubuntu-latest, windows-latest, macos-12]
-  #       arch: [native]
-  #       py: [cp37, cp38, cp39, cp310, cp311]
-  #       # exclude:
-  #       #     - os: macos-12
-  #       #       arch: arm64
-  #       #       py: cp37
-  #       #     - os: macos-12
-  #       #       arch: arm64
-  #       #       py: cp38
-  #       # os: [ubuntu-latest, windows-latest, macos-12]
-  #       # os: [ubuntu-latest, windows-latest]
-  #       # arch: [native, arm64]
-  #       # py: [cp37, cp38, cp39, cp310]
-  #   steps:
+  wheels:
+    name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
 
+        os: [macos-latest, windows-latest]
+        arch: [native, arm64]
+        py: [cp311]
+        exclude:
+            - os: windows-latest
+              arch: arm64
 
-  #     - uses: actions/checkout@v3
-  #       with:
-  #         submodules: true
-
-  #     # graphviz is needed for tests, only install it when compilation succeed
-  #     # How to integrate into cibuildwheels?
-  #     - uses: tlylt/install-graphviz@v1
-
-  #     # Remove after January 16th 2023 when GA switches to 14.2 by default
-  #     - if: ${{ matrix.os == 'macos-12' }}
-  #       run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
-
-  #     - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'native'}}
-  #       name: Setup gfortran for Macos
-  #       run: |
-  #         set -xe
-  #         # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
-  #         chmod +x .github/workflows/gfortran_utils.sh
-  #         source .github/workflows/gfortran_utils.sh
-  #         install_gfortran
-  #         gfortran --version
-  #         which gfortran
-
-
-  #     - if: ${{ matrix.arch == 'aarch64' }}
-  #       uses: docker/setup-qemu-action@v2
-
-  #     - if: ${{ matrix.os != 'macos-12' }}
-  #       uses: awvwgk/setup-fortran@main
-  #       id: setup-fortran
-  #       with:
-  #         compiler: gcc
-  #         version: 11
-
-  #     - if: ${{ matrix.os == 'windows-latest' }}
-  #       uses: pypa/cibuildwheel@v2.11.2
-  #       env:
-  #         CIBW_BUILD_VERBOSITY: 3
-  #         CIBW_BUILD: ${{ matrix.py }}-*
-  #         CIBW_ARCHS: ${{ matrix.arch }}
-  #         CIBW_SKIP: "*musllinux*"
-  #         CMAKE_GENERATOR: "MinGW Makefiles"
-  #         FC: ${{ steps.setup-fortran.outputs.fc }}
-
-  #     - if: ${{ matrix.os == 'ubuntu-latest' }}
-  #       uses: pypa/cibuildwheel@v2.11.2
-  #       env:
-  #         # Check setuptools version
-  #         CIBW_BUILD_VERBOSITY: 3
-  #         CIBW_BUILD: ${{ matrix.py }}-*
-  #         CIBW_ARCHS: ${{ matrix.arch }}
-  #         CIBW_SKIP: "*musllinux*"
-
-  #     - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'native' }}
-  #       uses: pypa/cibuildwheel@v2.11.2
-  #       env:
-  #         # Check setuptools version
-  #         CIBW_BUILD_VERBOSITY: 3
-  #         CIBW_BUILD: ${{ matrix.py }}-*
-  #         CIBW_ARCHS: ${{ matrix.arch }}
-  #         CIBW_SKIP: "*musllinux*"
-  #         no_proxy: '*'
-
-  #     - if: ${{ matrix.os == 'macos-12' &&  matrix.arch == 'arm64' }}
-  #       id: cibw_step
-  #       uses: pypa/cibuildwheel@v2.11.2
-  #       env:
-  #         # Check setuptools version
-  #         CIBW_BUILD_VERBOSITY: 3
-  #         CIBW_BUILD: ${{ matrix.py }}-*
-  #         CIBW_ARCHS: ${{ matrix.arch }}
-  #         CIBW_SKIP: "*musllinux*"
-  #         CIBW_TEST_SKIP: "*_arm64 *_universal2:arm64"
-  #         CIBW_ARCHS_MACOS: arm64
-  #         CIBW_BEFORE_BUILD: |
-  #           set -xe
-  #           # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
-  #           export PLAT="arm64"
-  #           chmod +x .github/workflows/gfortran_utils.sh
-  #           source .github/workflows/gfortran_utils.sh
-  #           install_arm64_cross_gfortran
-  #         FC: "/opt/gfortran-darwin-arm64-cross/bin/arm64-apple-darwin20.0.0-gfortran"
-  #         MACOSX_DEPLOYMENT_TARGET: "11.0"
-  #         no_proxy: '*'
-
-  #     - uses: actions/upload-artifact@v3
-  #       with:
-  #         path: ./wheelhouse/*.whl
-
-  sdist:
-    name: source package
-    runs-on: ubuntu-latest
+        # os: [ubuntu-latest, windows-latest, macos-latest]
+        # arch: [native, arm64]
+        # py: [cp37, cp38, cp39, cp310, cp311]
+        # exclude:
+        #     - os: macos-latest
+        #       arch: arm64
+        #       py: cp37
+        #     - os: macos-latest
+        #       arch: arm64
+        #       py: cp38
+        #     - os: ubuntu-latest
+        #       arch: arm64
+        #     - os: windows-latest
+        #       arch: arm64
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
 
-      - uses: actions/setup-python@v4
-        name: Install Python
-        with:
-          python-version: '3.9'
+  #     # Remove after January 16th 2023 when GA switches to 14.2 by default
+  #     - if: ${{ matrix.os == 'macos-latest' }}
+  #       run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
 
-      - run: python -m pip install --upgrade pip wheel
-      - run: python setup.py sdist
-      - run: python -m pip install --prefer-binary -v `echo dist/chromo-*`[test]
-      - run: python -m pip install pytest
-      - run: python -m pytest -vv
+      - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native'}}
+        name: Setup gfortran for MacOS
+        run: |
+          # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
+          set -xe
+          chmod +x .github/workflows/gfortran_utils.sh
+          source .github/workflows/gfortran_utils.sh
+          install_gfortran
+          gfortran --version
+          which gfortran
+
+      - if: ${{ matrix.os == 'ubuntu-latest' ||  matrix.os == 'windows-latest' }}
+        name: Setup gfortran for Linux or Windows
+        uses: awvwgk/setup-fortran@main
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 11
+
+      - if: ${{ matrix.os == 'windows-latest' }}
+        uses: pypa/cibuildwheel@v2.11.2
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CMAKE_GENERATOR: "MinGW Makefiles"
+          FC: ${{ steps.setup-fortran.outputs.fc }}
+
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        uses: pypa/cibuildwheel@v2.11.2
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+
+      - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
+        uses: pypa/cibuildwheel@v2.11.2
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          no_proxy: '*'
+
+      - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'arm64' }}
+        id: cibw_step
+        uses: pypa/cibuildwheel@v2.11.2
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_ARCHS_MACOS: arm64
+          CIBW_BEFORE_BUILD: |
+            # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
+            set -xe
+            export PLAT="arm64"
+            chmod +x .github/workflows/gfortran_utils.sh
+            source .github/workflows/gfortran_utils.sh
+            install_arm64_cross_gfortran
+            gfortran --version
+            which gfortran
+          # Here the path is set by hand!!!
+          # It can be a problem if gfortran will be installed in different place
+          FC: "/opt/gfortran-darwin-arm64-cross/bin/arm64-apple-darwin20.0.0-gfortran"
+          MACOSX_DEPLOYMENT_TARGET: "11.0"
+          no_proxy: '*'
 
       - uses: actions/upload-artifact@v3
         with:
-          path: dist/*.tar.gz
+          path: ./wheelhouse/*.whl
+
+  # sdist:
+  #   name: source package
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         submodules: true
+
+  #     - uses: actions/setup-python@v4
+  #       name: Install Python
+  #       with:
+  #         python-version: '3.9'
+
+  #     - run: python -m pip install --upgrade pip wheel
+  #     - run: python setup.py sdist
+  #     - run: python -m pip install --prefer-binary -v `echo dist/chromo-*`[test]
+  #     - run: python -m pip install pytest
+  #     - run: python -m pytest -vv
+
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         path: dist/*.tar.gz
 
   # upload:
   #   needs: [wheels, sdist]
@@ -155,59 +146,9 @@ jobs:
   #         password: ${{secrets.pypi_password}}
 
 
-# name: WindowsTest
-
-# on:
-#   workflow_dispatch:
-
-# jobs:
-#   test:
-#     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
-
-#     runs-on: ${{ matrix.os }}
-#     strategy:
-#       fail-fast: false
-#       matrix:
-#         os: [windows-latest]
-#         arch: [native]
-#         py: [cp39]
-#     steps:
-
-#     - uses: actions/checkout@v3
-#       with:
-#         submodules: true
-
-#     - uses: actions/setup-python@v2
-#       with:
-#         python-version: ${{ matrix.python-version }}
-
-#     - uses: awvwgk/setup-fortran@main
-#       id: setup-fortran
-#       with:
-#         compiler: gcc
-#         version: 11
-
-
-#     - run: ${{ env.FC }} --version
-#       env:
-#         FC: ${{ steps.setup-fortran.outputs.fc }}
-
-
-#     - run: python -m pip install --upgrade pip
-#     - name: Installing chromo
-#       run: |
-#         $env:CMAKE_GENERATOR
-#         $env:FC
-#         python -m pip install --prefer-binary -v .[test]
-#       env:
-#         CMAKE_GENERATOR: "MinGW Makefiles"
-#         FC: ${{ steps.setup-fortran.outputs.fc }}
-#     - run: python -m pytest -vv
-
-
   # upload_all_to_TestPyPI:
   #   name: Upload to TestPyPI
-  #   needs: [wheels]
+  #   needs: [wheels, sdist]
   #   runs-on: ubuntu-latest
   #   # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
   #   steps:
