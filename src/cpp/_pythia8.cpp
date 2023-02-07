@@ -1,6 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
-#include <accessor/accessor.hpp>
+#include <private_access.hpp>
 #include <pybind11/iostream.h>
 #include <Pythia8/Event.h>
 #include <Pythia8/Pythia.h>
@@ -22,25 +22,25 @@ float charge_from_pid(const ParticleData &pd, int pid)
     return pid == pptr->id() ? pptr->charge() : -pptr->charge();
 }
 
-ACCESSOR_MEMBER(Particle, idSave, int)
-ACCESSOR_MEMBER(Particle, statusSave, int)
-ACCESSOR_MEMBER(Particle, pSave, Vec4)
-ACCESSOR_MEMBER(Particle, mSave, double)
-ACCESSOR_MEMBER(Particle, vProdSave, Vec4)
-ACCESSOR_MEMBER(Particle, mother1Save, int)
-ACCESSOR_MEMBER(Particle, mother2Save, int)
-ACCESSOR_MEMBER(Particle, daughter1Save, int)
-ACCESSOR_MEMBER(Particle, daughter2Save, int)
-ACCESSOR_MEMBER(Vec4, xx, double)
-ACCESSOR_MEMBER(Vec4, yy, double)
-ACCESSOR_MEMBER(Vec4, zz, double)
-ACCESSOR_MEMBER(Vec4, tt, double)
+PRIVATE_ACCESS_MEMBER(Particle, idSave, int)
+PRIVATE_ACCESS_MEMBER(Particle, statusSave, int)
+PRIVATE_ACCESS_MEMBER(Particle, pSave, Vec4)
+PRIVATE_ACCESS_MEMBER(Particle, mSave, double)
+PRIVATE_ACCESS_MEMBER(Particle, vProdSave, Vec4)
+PRIVATE_ACCESS_MEMBER(Particle, mother1Save, int)
+PRIVATE_ACCESS_MEMBER(Particle, mother2Save, int)
+PRIVATE_ACCESS_MEMBER(Particle, daughter1Save, int)
+PRIVATE_ACCESS_MEMBER(Particle, daughter2Save, int)
+PRIVATE_ACCESS_MEMBER(Vec4, xx, double)
+PRIVATE_ACCESS_MEMBER(Vec4, yy, double)
+PRIVATE_ACCESS_MEMBER(Vec4, zz, double)
+PRIVATE_ACCESS_MEMBER(Vec4, tt, double)
 
 template <class Accessor>
 auto event_array(Event &event)
 {
     // skip first pseudoparticle
-    auto *ptr = &accessor::accessMember<Accessor>(event[1]);
+    auto *ptr = &private_access::member<Accessor>(event[1]);
     int number = event.size() - 1;
     int shape[1] = {number};
     int strides[1] = {sizeof(Particle)};
@@ -61,8 +61,8 @@ template <class Accessor>
 py::array_t<double> event_array_p(Event &event)
 {
     // skip first pseudoparticle
-    auto &pref = accessor::accessMember<Particle_pSave>(event[1]);
-    double *ptr = &accessor::accessMember<Accessor>(pref);
+    auto &pref = private_access::member<Particle_pSave>(event[1]);
+    double *ptr = &private_access::member<Accessor>(pref);
     int number = event.size() - 1;
     int shape[1] = {number};
     int strides[1] = {sizeof(Particle)};
@@ -73,8 +73,8 @@ template <class Accessor>
 py::array_t<double> event_array_v(Event &event)
 {
     // skip first pseudoparticle
-    auto &pref = accessor::accessMember<Particle_vProdSave>(event[1]);
-    double *ptr = &accessor::accessMember<Accessor>(pref);
+    auto &pref = private_access::member<Particle_vProdSave>(event[1]);
+    double *ptr = &private_access::member<Accessor>(pref);
     int number = event.size() - 1;
     int shape[1] = {number};
     int strides[1] = {sizeof(Particle)};
@@ -84,8 +84,8 @@ py::array_t<double> event_array_v(Event &event)
 py::array_t<int> event_array_parents(Event &event)
 {
     // skip first pseudoparticle
-    auto ptr1 = &accessor::accessMember<Particle_mother1Save>(event[1]);
-    auto ptr2 = &accessor::accessMember<Particle_mother2Save>(event[1]);
+    auto ptr1 = &private_access::member<Particle_mother1Save>(event[1]);
+    auto ptr2 = &private_access::member<Particle_mother2Save>(event[1]);
     int number = event.size() - 1;
     int shape[2] = {number, 2};
     int strides[2] = {sizeof(Particle), static_cast<int>(ptr2 - ptr1)};
@@ -95,8 +95,8 @@ py::array_t<int> event_array_parents(Event &event)
 py::array_t<int> event_array_children(Event &event)
 {
     // skip first pseudoparticle
-    auto ptr1 = &accessor::accessMember<Particle_daughter1Save>(event[1]);
-    auto ptr2 = &accessor::accessMember<Particle_daughter2Save>(event[1]);
+    auto ptr1 = &private_access::member<Particle_daughter1Save>(event[1]);
+    auto ptr2 = &private_access::member<Particle_daughter2Save>(event[1]);
     int number = event.size() - 1;
     int shape[2] = {number, 2};
     int strides[2] = {sizeof(Particle), static_cast<int>(ptr2 - ptr1)};
