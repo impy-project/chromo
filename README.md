@@ -1,4 +1,4 @@
-# chromo - Cosmic ray and HadROnic interactiOn MOnte-carlo frontend
+# ![](doc/chromo.svg)<br> Cosmic ray and HadROnic interactiOn MOnte-carlo frontend
 
 This package implements are generic user interface to popular event generators used in cosmic ray and high-energy particle physics. The purpose of the package is to simplify working with simulations of particle interactions without the need to use Fortran style interfaces to event generators, 'ASCII input cards' and files or C++ dependencies.  
 
