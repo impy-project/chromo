@@ -116,7 +116,7 @@ jobs:
           CIBW_BEFORE_BUILD: |
             set -xe
             printenv
-          CI: true
+          CIBW_ENVIRONMENT_PASS_LINUX: CI
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
         name: cibuildwheel on MacOS native
