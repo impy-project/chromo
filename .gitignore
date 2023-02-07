@@ -35,7 +35,7 @@ __pycache__
 *.hepmc
 *.root
 *.gz
-extra.cfg
+models.cfg
 pythia*.tgz
 impy-?.?.?
 src/chromo/iamdata

@@ -24,7 +24,6 @@ def run(Model):
 
 @pytest.mark.parametrize("Model", models)
 def test_to_hepmc3(Model):
-
     if Model == im.UrQMD34:
         pytest.xfail("UrQMD34 FAILS, should be FIXED!!!")
 
@@ -63,7 +62,7 @@ def test_to_hepmc3(Model):
         pa = (pa[0] - 1, pa[1])
         # in case of overlapping ranges of incoming particles
         # the earlier vertex keeps them
-        for (a, b) in unique_vertices:
+        for a, b in unique_vertices:
             if pa != (a, b) and a <= pa[0] < b:
                 pa = b, pa[1]
         unique_vertices.setdefault(pa, []).append(i)

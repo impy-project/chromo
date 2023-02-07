@@ -17,9 +17,6 @@ enable_language(C CXX)
 
 set(BUILD_dev_dpmjetIII193 CACHE
   PATH "source directory for dev_dpmjetIII193")
-option(BUILD_sib23c00 OFF)
-option(BUILD_sib23c02 OFF)
-option(BUILD_sib23c03 OFF)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/src/cpp/pybind11)
 
@@ -80,9 +77,6 @@ cmake_print_variables(PYTHON_INCLUDE_DIRS)
 cmake_print_variables(PYTHON_LIBRARIES)
 cmake_print_variables(F2PY_INCLUDE_DIR)
 cmake_print_variables(NUMPY_INCLUDE_DIRS)
-cmake_print_variables(BUILD_sib23c00)
-cmake_print_variables(BUILD_sib23c02)
-cmake_print_variables(BUILD_sib23c03)
 cmake_print_variables(BUILD_dev_dpmjetIII193)
 
 include_directories(
@@ -196,6 +190,7 @@ f2py_add_module(_sib21
   SIBYLL_21
 )
 
+
 ### sib23
 f2py_add_module(_sib23
   FUNCTIONS
@@ -243,6 +238,7 @@ f2py_add_module(_sib23d
   ${chromo_definitions}
 )
 
+
 ### qgs01
 f2py_add_module(_qgs01
   FUNCTIONS
@@ -258,6 +254,7 @@ f2py_add_module(_qgs01
   COMPILE_DEFS
   ${chromo_definitions}
 )
+
 
 ### qgsII03
 set(QGSJETII_COMMON_FUNCTIONS
@@ -277,6 +274,7 @@ f2py_add_module(_qgsII03
   ${chromo_definitions}
 )
 
+
 ### qgsII04
 f2py_add_module(_qgsII04
   FUNCTIONS
@@ -291,6 +289,7 @@ f2py_add_module(_qgsII04
   COMPILE_DEFS
   ${chromo_definitions}
 )
+
 
 ### urqmd34
 set(urqmd34_sources
@@ -324,6 +323,7 @@ f2py_add_module(_urqmd34
   ${chromo_definitions}
 )
 
+
 ### pythia6
 f2py_add_module(_pythia6
   FUNCTIONS
@@ -338,6 +338,7 @@ f2py_add_module(_pythia6
   COMPILE_DEFS
   ${chromo_definitions}
 )
+
 
 ### pythia8
 # About the license and how it affects chromo.
@@ -405,6 +406,7 @@ install(TARGETS libpythia8 DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 # target_link_libraries(_pythia8 PRIVATE "-static")
 # endif()
 
+
 ### sophia
 f2py_add_module(_sophia
   FUNCTIONS
@@ -424,6 +426,7 @@ f2py_add_module(_sophia
   COMPILE_DEFS
   ${chromo_definitions}
 )
+
 
 ### dpmjet306
 set(dpmjet306_sources
@@ -488,25 +491,8 @@ list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR\.f)
 # include those. As a workaround, we generate modified source files and
 # renamed copies of the headers. Not elegant, but works. 🤷‍♂️
 
-
-### dpmjetIII191
-file(GLOB dpmjetIII191_sources
-  ${fortran_dir}/dpmjetIII-19.1/src/phojet/*.f
-  ${fortran_dir}/dpmjetIII-19.1/src/pythia/*.f
-  ${fortran_dir}/dpmjetIII-19.1/src/dpmjet/*.f
-)
-
-list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDM\.f)
-list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMST\.f)
-list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMTE\.f)
-list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR\.f)
-# cmake does not like filenames with parantheses, but some Fortran files
-# include those. As a workaround, we generate modified source files and
-# renamed copies of the headers. Not elegant, but works. 🤷‍♂️
-
-
 # Workaround to workaround :) Windows don't like long lists
-# User temporary file to keep long lists
+# Use temporary file to keep long lists
 set(temp_dpmjet_file temp.dpmjetIII191)
 string(REPLACE ";"  " " temp_dpmjet_str "${dpmjetIII191_sources}")
 file(WRITE ${temp_dpmjet_file} "${temp_dpmjet_str}")
@@ -520,7 +506,6 @@ execute_process(
 )
 file(READ ${temp_dpmjet_file} dpmjetIII191_modded_sources)
 file(REMOVE ${temp_dpmjet_file})
-
 
 f2py_add_module(_dpmjetIII191
   FUNCTIONS
@@ -637,54 +622,47 @@ f2py_add_module(_phojet193
 
 
 ##### extra optional models follow below ######
+f2py_add_module(_sib23c00
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3c00.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions}
+)
 
-if(BUILD_sib23c00)
-  f2py_add_module(_sib23c00
-    FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} gasdev
-    SOURCES
-    ${fortran_dir}/sibyll/sibyll2.3c00.f
-    ${fortran_dir}/sibyll/sibyll_init.fpp
-    ${logging_source}
-    ${rangen_source}
-    INCLUDE_DIRS
-    ${NUMPY_INCLUDE_DIRS}
-    COMPILE_DEFS
-    ${chromo_definitions}
-  )
-endif()
+f2py_add_module(_sib23c02
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3c02.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions}
+)
 
-if(BUILD_sib23c02)
-  f2py_add_module(_sib23c02
-    FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} gasdev
-    SOURCES
-    ${fortran_dir}/sibyll/sibyll2.3c02.f
-    ${fortran_dir}/sibyll/sibyll_init.fpp
-    ${logging_source}
-    ${rangen_source}
-    INCLUDE_DIRS
-    ${NUMPY_INCLUDE_DIRS}
-    COMPILE_DEFS
-    ${chromo_definitions}
-  )
-endif()
-
-if(BUILD_sib23c03)
-  f2py_add_module(_sib23c03
-    FUNCTIONS
-    ${SIBYLL_COMMON_FUNCTIONS} gasdev
-    SOURCES
-    ${fortran_dir}/sibyll/sibyll2.3c03.f
-    ${fortran_dir}/sibyll/sibyll_init.fpp
-    ${logging_source}
-    ${rangen_source}
-    INCLUDE_DIRS
-    ${NUMPY_INCLUDE_DIRS}
-    COMPILE_DEFS
-    ${chromo_definitions}
-  )
-endif()
+f2py_add_module(_sib23c03
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3c03.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions}
+)
 
 if(BUILD_dev_dpmjetIII193)
 
