@@ -148,7 +148,8 @@ set(rangen_source ${fortran_dir}/rangen.fpp ${fortran_dir}/rangen.c ${fortran_di
 ### eposlhc
 file(GLOB eposlhc_sources ${fortran_dir}/epos/sources/*.f)
 list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
-
+list(FILTER eposlhc_sources EXCLUDE REGEX epos-random\.f)
+list(APPEND eposlhc_sources ${fortran_dir}/epos/epos-random-dummy.f)
 
 f2py_add_module(_eposlhc
   FUNCTIONS
