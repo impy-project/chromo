@@ -370,6 +370,10 @@ target_include_directories(libpythia8 PUBLIC ${cpp_dir}/pythia83/include)
 target_compile_definitions(libpythia8 PRIVATE XMLDIR="")
 
 pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
+target_include_directories(_pythia8 PUBLIC 
+  ${cpp_dir}/pybind11/include
+  ${cpp_dir}
+)
 target_link_libraries(_pythia8 PRIVATE libpythia8)
 install(TARGETS libpythia8 DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
