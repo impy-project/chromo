@@ -344,10 +344,11 @@ class EventData:
     @property
     def elab(self):
         """Return kinetic energy in laboratory frame."""
+        from chromo.util import EventFrame
         kin = self.kin
-        if self.frame == "laboratory":
+        if kin.frame == EventFrame.FIXED_TARGET:
             return self.en
-        return kin.gamma_cm * self.en + kin.betagamma_z_cm * self.pz
+        return kin._gamma_cm * self.en + kin._betagamma_cm * self.pz
 
     @property
     def ekin(self):
