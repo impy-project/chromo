@@ -177,27 +177,7 @@ class EventData:
 
         This may return a copy if the result cannot represented as a view.
         """
-        return EventData(
-            self.generator,
-            self.kin,
-            self.nevent,
-            self.impact_parameter,
-            self.n_wounded,
-            self.pid[arg],
-            self.status[arg],
-            self.charge[arg],
-            self.px[arg],
-            self.py[arg],
-            self.pz[arg],
-            self.en[arg],
-            self.m[arg],
-            self.vx[arg],
-            self.vy[arg],
-            self.vz[arg],
-            self.vt[arg],
-            select_parents(arg, self.parents),
-            None,
-        )
+        return self._select(arg, True)
 
     def __len__(self):
         """Return number of particles."""
@@ -223,15 +203,39 @@ class EventData:
         bt = dataclasses.astuple(other)
         return all(eq(a, b) for (a, b) in zip(at, bt))
 
+    def __getstate__(self):
+        t = [
+            self.generator,
+            self.kin.copy(),
+            self.nevent,
+            self.impact_parameter,
+            self.n_wounded,
+            self.pid.copy(),
+            self.status.copy(),
+            self.charge.copy(),
+            self.px.copy(),
+            self.py.copy(),
+            self.pz.copy(),
+            self.en.copy(),
+            self.m.copy(),
+            self.vx.copy(),
+            self.vy.copy(),
+            self.vz.copy(),
+            self.vt.copy(),
+            self.parents.copy(),
+            self.children.copy() if self.children is not None else None,
+        ]
+        return t
+
+    def __setstate__(self, state):
+        for f, v in zip(dataclasses.fields(self), state):
+            setattr(self, f.name, v)
+
     def copy(self):
         """
         Return event copy.
         """
-        # this should be implemented with the help of copy
-        copies = []
-        for obj in dataclasses.astuple(self):
-            copies.append(obj.copy() if hasattr(obj, "copy") else obj)
-
+        copies = self.__getstate__()
         return EventData(*copies)
 
     def final_state(self):
@@ -241,7 +245,7 @@ class EventData:
         The final state is generator-specific, but usually contains only
         long-lived particles.
         """
-        return self._fast_selection(self.status == 1)
+        return self._select(self.status == 1, False)
 
     def final_state_charged(self):
         """
@@ -251,7 +255,7 @@ class EventData:
         Additionally, this selects only charged particles which can be
         seen by a tracking detector.
         """
-        return self._fast_selection((self.status == 1) & (self.charge != 0))
+        return self._select((self.status == 1) & (self.charge != 0), False)
 
     def without_parton_shower(self):
         """
@@ -268,15 +272,32 @@ class EventData:
             mask &= apid != pid
         return self[mask]
 
-    def _fast_selection(self, arg):
+    def _select(self, arg, update_parents):
         # This selection is faster than __getitem__, because we skip
         # parent selection, which is just wasting time if we select only
         # final state particles.
-        save = self.parents
-        self.parents = None
-        event = self[arg]
-        self.parents = save
-        return event
+        pid = self.pid[arg]
+        return EventData(
+            self.generator,
+            self.kin,
+            self.nevent,
+            self.impact_parameter,
+            self.n_wounded,
+            pid,
+            self.status[arg],
+            self.charge[arg],
+            self.px[arg],
+            self.py[arg],
+            self.pz[arg],
+            self.en[arg],
+            self.m[arg],
+            self.vx[arg],
+            self.vy[arg],
+            self.vz[arg],
+            self.vt[arg],
+            select_parents(arg, self.parents) if update_parents else None,
+            None,
+        )
 
     @property
     def pt(self):
@@ -323,10 +344,12 @@ class EventData:
     @property
     def elab(self):
         """Return kinetic energy in laboratory frame."""
+        from chromo.util import EventFrame
+
         kin = self.kin
-        if self.frame == "laboratory":
+        if kin.frame == EventFrame.FIXED_TARGET:
             return self.en
-        return kin.gamma_cm * self.en + kin.betagamma_z_cm * self.pz
+        return kin._gamma_cm * self.en + kin._betagamma_cm * self.pz
 
     @property
     def ekin(self):
@@ -498,7 +521,7 @@ class MCEvent(EventData, ABC):
     # make it so that MCEvent can be saved and is restored as EventData.
     def __getstate__(self):
         # save only EventData sub-state
-        return {k: getattr(self, k) for k in self.__dataclass_fields__}
+        return EventData.__getstate__(self)
 
     def __getnewargs__(self):
         # upon unpickling, create EventData object instead of MCEvent object
@@ -602,8 +625,10 @@ class MCRun(ABC):
     def _generate(self):
         """The method to generate a new event.
 
-        Returns:
-            bool : True if event was successfully generated and False otherwise.
+        Returns
+        -------
+        bool
+            True if event was successfully generated and False otherwise.
         """
         pass
 
