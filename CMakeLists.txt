@@ -2,17 +2,18 @@ cmake_minimum_required(VERSION 3.17)
 
 project(chromo LANGUAGES Fortran)
 
-# Use Clang for MacOS
+# Force usage of gcc
+# For MacOS turn it off to use Clang
 IF(NOT APPLE)
-# Find C/CXX compilers that match the Fortran compiler
-if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  # Compiler version is something like XY.Z.N, we want only XY
-  string(REGEX MATCH "[0-9]+" COMPILER_MAJOR_VERSION ${CMAKE_Fortran_COMPILER_VERSION})
-  find_program(CMAKE_C_COMPILER "gcc-${COMPILER_MAJOR_VERSION}")
-  find_program(CMAKE_CXX_COMPILER "g++-${COMPILER_MAJOR_VERSION}")
-else()
-  message(FATAL_ERROR "Unknown Fortran compiler, cannot search for C/CXX compiler")
-endif()
+  # Find C/CXX compilers that match the Fortran compiler
+  if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    # Compiler version is something like XY.Z.N, we want only XY
+    string(REGEX MATCH "[0-9]+" COMPILER_MAJOR_VERSION ${CMAKE_Fortran_COMPILER_VERSION})
+    find_program(CMAKE_C_COMPILER "gcc-${COMPILER_MAJOR_VERSION}")
+    find_program(CMAKE_CXX_COMPILER "g++-${COMPILER_MAJOR_VERSION}")
+  else()
+    message(FATAL_ERROR "Unknown Fortran compiler, cannot search for C/CXX compiler")
+  endif()
 endif()
 
 # Delayed toolchain initialization
@@ -380,20 +381,19 @@ target_compile_definitions(libpythia8 PRIVATE XMLDIR="")
 pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
 target_link_libraries(_pythia8 PRIVATE libpythia8)
 
-# Fix rpath for MacOS and Linux
-set(rpath_fix)
-if (APPLE)
-  set(rpath_fix "@loader_path")
-endif()
+# Add . directory to rpath for MacOS and Linux
+# It enables _pythia8 to search for dependencies (libpythia8)
+# in its own directory. Windows does it by default.
+set(pythia8_rpath_fix)
+if(UNIX AND NOT APPLE)
+  set(pythia8_rpath_fix "$ORIGIN")
+elseif(APPLE)
+  set(pythia8_rpath_fix "@loader_path")
+endif()  
 
-if (UNIX)
-  set(rpath_fix "$ORIGIN")
-endif()
-
-message(STATUS "rpath_fix = ${rpath_fix}")
 set_target_properties(_pythia8 PROPERTIES
         BUILD_WITH_INSTALL_RPATH FALSE
-        LINK_FLAGS "-Wl,-rpath,\'${rpath_fix}\'")
+        LINK_FLAGS "-Wl,-rpath,\'${pythia8_rpath_fix}\'")
 
 
 install(TARGETS libpythia8 DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
