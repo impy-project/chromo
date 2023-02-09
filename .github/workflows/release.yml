@@ -114,6 +114,7 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_BEFORE_TEST: yum install graphviz
           CIBW_ENVIRONMENT_PASS_LINUX: CI
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
