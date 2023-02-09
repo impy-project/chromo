@@ -25,7 +25,6 @@ global-exclude .*.yaml
 prune tests
 prune bench
 prune build
-prune src/impy/iamdata
 prune src/cpp/pybind11/docs
 prune src/cpp/pybind11/tests
 prune src/cpp/pybind11/pybind11
