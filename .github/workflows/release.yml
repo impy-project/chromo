@@ -44,6 +44,8 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_BEFORE_TEST: yum install graphviz
+          CIBW_ENVIRONMENT_PASS_LINUX: CI
 
       - uses: actions/upload-artifact@v3
         with:
@@ -163,6 +165,8 @@ jobs:
         name: Install Python
         with:
           python-version: '3.9'
+
+      - uses: tlylt/install-graphviz@v1
 
       - run: python -m pip install --upgrade pip wheel
       - run: python setup.py sdist
