@@ -9,7 +9,6 @@ from particle import Particle
 import pyhepmc
 import uproot
 import platform
-import os
 
 
 def format_matches_extension(p):
