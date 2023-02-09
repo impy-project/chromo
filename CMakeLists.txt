@@ -30,8 +30,7 @@ include(CMakePrintHelpers)
 include(F2Py)
 find_package(pybind11 CONFIG)
 
-# cannot use find_package(Python), we need PythonLibsNew from pybind11
-find_package(PythonLibsNew REQUIRED)
+find_package(Python REQUIRED COMPONENTS Interpreter Development)
 
 # in Numpy-1.22+, this becomes easier: import numpy.f2py; print(numpy.f2py.get_include())
 if (NOT F2PY_INCLUDE_DIR)
