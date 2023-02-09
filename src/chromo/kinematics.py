@@ -170,6 +170,7 @@ class EventKinematics(EventKinematicsBase):
             frame = frame or EventFrame.CENTER_OF_MASS
             ecm = ecm
             elab = ecm2elab(ecm, m1, m2)
+            ekin = elab - m1
             plab = energy2momentum(elab, m1)
         # Input specification as 4-vectors
         elif beam is not None:
@@ -188,6 +189,7 @@ class EventKinematics(EventKinematicsBase):
             # have to change in this class, like all the boosts
             ecm = energy2momentum(s[3], s[2])
             elab = ecm2elab(ecm, m1, m2)
+            ekin = elab - m1
             plab = energy2momentum(elab, m1)
         # Input specification in lab frame
         elif elab is not None:
@@ -195,6 +197,7 @@ class EventKinematics(EventKinematicsBase):
                 raise ValueError("projectile energy > projectile mass required")
             frame = frame or EventFrame.FIXED_TARGET
             elab = elab
+            ekin = elab - m1
             plab = energy2momentum(elab, m1)
             ecm = elab2ecm(elab, m1, m2)
         elif ekin is not None:
@@ -206,6 +209,7 @@ class EventKinematics(EventKinematicsBase):
             frame = frame or EventFrame.FIXED_TARGET
             plab = plab
             elab = momentum2energy(plab, m1)
+            ekin = elab - m1
             ecm = elab2ecm(elab, m1, m2)
         else:
             assert False  # this should never happen
