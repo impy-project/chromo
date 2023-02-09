@@ -345,6 +345,7 @@ class EventData:
     def elab(self):
         """Return kinetic energy in laboratory frame."""
         from chromo.util import EventFrame
+
         kin = self.kin
         if kin.frame == EventFrame.FIXED_TARGET:
             return self.en
