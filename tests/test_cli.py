@@ -9,6 +9,7 @@ from particle import Particle
 import pyhepmc
 import uproot
 import platform
+import os
 
 
 def format_matches_extension(p):
@@ -294,6 +295,13 @@ def test_format_3():
             "UnicodeEncodeError: 'charmap' codec can't encode character '\u0394'"
             " in  position 20049: character maps to <undefined>"
         )
+
+    if (platform.system() == "Linux") and ("CIBUILDWHEEL" in os.environ):
+        pytest.xfail(
+            "Skip it because of the problems with graphviz installation "
+            "in manylinux container in cibuildwheel"
+        )
+
     run(
         "-s",
         "9",

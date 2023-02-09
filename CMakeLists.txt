@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.17)
 project(chromo LANGUAGES Fortran)
 
 # Force usage of gcc
-# For MacOS turn it off to use Clang
-IF(NOT APPLE)
+# For MacOS arm64 turn it off to use Clang
+IF(NOT (APPLE AND (CMAKE_OSX_ARCHITECTURES EQUAL "arm64")))
   # Find C/CXX compilers that match the Fortran compiler
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     # Compiler version is something like XY.Z.N, we want only XY

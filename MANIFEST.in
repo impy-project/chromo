@@ -13,6 +13,7 @@ include src/cpp/pybind11/tools/*
 include src/cpp/_pythia8.cpp
 recursive-include src/cpp/pythia83/include *
 recursive-include src/cpp/pythia83/src *
+include src/cpp/private_access.hpp
 include src/cpp/pythia83/COPYING
 include src/cpp/pythia83/AUTHORS
 

@@ -38,85 +38,8 @@ __all__ = (
 )
 
 
-# This is a workaround of a problem with "fixed" wheels
-# which is produced by "delocate" package on cibuildwheels
-# It changes Python -> the path of libpython in the "*.so" files
-# using standard "otool" and "install_name_tool" routines
-def fix_macos_installation(logfile):
-    import subprocess
-    import re
-    from pathlib import Path
-    from distutils.sysconfig import get_config_var
-
-    models_dir = Path(__file__).parent
-    for ext_file in models_dir.glob("*.so"):
-        ext_file = str(ext_file)
-
-        # Get libraries required by extension module
-        cmd = ["otool", "-L", ext_file]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE)
-        lib_deps = result.stdout.decode("utf-8")
-
-        # Write to the logfile the list of libraries
-        # required by extension module before fixing
-        message = f"\n----------\nFixing {ext_file}:\nBefore\n{lib_deps}"
-        with open(logfile, "a") as lf:
-            lf.write(message)
-
-        # Search for "Python" shared library
-        # among list of required libraries
-        search_res = re.search(
-            "^(.*python.*dylib|.*Python).*$", lib_deps, flags=re.MULTILINE
-        )
-
-        # Ignore if Python shared library is not found
-        if search_res is None:
-            message = (
-                'NOT FIXED: Paths  with "Python" or "python*.dylib" strings '
-                "isn't found inside shared library file"
-            )
-            with open(logfile, "a") as lf:
-                lf.write(message)
-            continue
-
-        # Path to Python shared libraries found in the extension file
-        python_lib_in_file = search_res.group(1).strip()
-        # Path to Python shared library found on the system
-        python_lib_real = str(next(Path(get_config_var("LIBDIR")).glob("libpython*")))
-
-        # Fix the file by substituting the correct path
-        cmd = [
-            "install_name_tool",
-            "-change",
-            python_lib_in_file,
-            python_lib_real,
-            ext_file,
-        ]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        # codesign the fixed file
-        # Since Big Sur, codesigning for arm64 is much more strict than it is for x64.
-        # https://stackoverflow.com/a/71753248
-        cmd = [
-            "codesign",
-            "--force",
-            "-s",
-            "-",
-            ext_file,
-        ]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        # Log the changes in the file
-        cmd = ["otool", "-L", ext_file]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE)
-        lib_deps = result.stdout.decode("utf-8")
-
-        message = f"\nAfter\n{lib_deps}"
-        with open(logfile, "a") as lf:
-            lf.write(message)
-
-
 if platform.system() == "Darwin":
+    from ..util import fix_macos_installation
     from pathlib import Path
 
     logfile = Path(__file__).parent / "macos_fixed_ext.log"

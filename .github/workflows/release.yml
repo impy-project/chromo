@@ -2,13 +2,6 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      upload_to_TestPyPI:
-        description: 'upload to TestPyPI'
-        required: true
-        default: false
-        type: boolean
-
   pull_request:
     branches:
       - main
@@ -44,7 +37,6 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_BEFORE_TEST: yum install graphviz
           CIBW_ENVIRONMENT_PASS_LINUX: CI
 
       - uses: actions/upload-artifact@v3
@@ -116,7 +108,6 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_BEFORE_TEST: yum install graphviz
           CIBW_ENVIRONMENT_PASS_LINUX: CI
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
@@ -195,23 +186,4 @@ jobs:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
 
-
-  upload_to_TestPyPI:
-    name: Upload to TestPyPI
-    needs: [wheels, sdist]
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload_to_TestPyPI == true }}
-    steps:
-      - name: Download files in artifact to "dist/" directory
-        uses: actions/download-artifact@v3
-        with:
-          name: artifact
-          path: dist
-
-      - name: Publish package to TestPyPI
-        uses: pypa/gh-action-pypi-publish@v1.6.4
-        with:
-          user: __token__
-          repository_url: https://test.pypi.org/legacy/
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
