@@ -77,6 +77,10 @@ jobs:
           submodules: true
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native'}}
+        name: Install graphviz for tests on MacOS native
+        uses: tlylt/install-graphviz@v1
+
+      - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native'}}
         name: Setup gfortran for MacOS native
         run: |
           # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels

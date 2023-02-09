@@ -288,11 +288,6 @@ def test_format_2(format, model):
     )
 
 
-@pytest.mark.skipif(
-    "CI" in os.environ,
-    reason="skip on CI, because cibuildwheel has problems with "
-    "graphviz installation",
-)
 def test_format_3():
     if platform.system() == "Windows":
         pytest.xfail(
