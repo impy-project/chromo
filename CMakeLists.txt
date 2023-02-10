@@ -30,8 +30,7 @@ include(CMakePrintHelpers)
 include(F2Py)
 find_package(pybind11 CONFIG)
 
-# cannot use find_package(Python), we need PythonLibsNew from pybind11
-find_package(PythonLibsNew REQUIRED)
+find_package(Python REQUIRED COMPONENTS Interpreter Development)
 
 # in Numpy-1.22+, this becomes easier: import numpy.f2py; print(numpy.f2py.get_include())
 if (NOT F2PY_INCLUDE_DIR)
@@ -53,22 +52,6 @@ if (NOT NUMPY_INCLUDE_DIRS)
   )
   set(NUMPY_INCLUDE_DIRS "${_numpy_directory}" CACHE STRING "NumPy source directory location" FORCE)
 endif()
-
-macro(use_alternate_linker_if_available linker)
-  find_program(LINKER_EXECUTABLE ld.${linker})
-  if(LINKER_EXECUTABLE)
-    message(STATUS "Linker detected: ${linker} (${LINKER_EXECUTABLE})")
-    if(CLANG AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 12.0.0)
-      message(STATUS "Clang links with ${LINKER_EXECUTABLE}")
-      add_link_options(-ld-path=${linker})
-    elseif(GCC AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 12.0.0)
-      message(STATUS "GCC links with ${LINKER_EXECUTABLE}")
-      add_link_options(-ld-path=${linker})
-    endif()
-  endif()
-endmacro()
-
-use_alternate_linker_if_available(mold)
 
 # Print out the discovered paths
 cmake_print_variables(CMAKE_BUILD_TYPE)
