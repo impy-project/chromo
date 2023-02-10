@@ -65,8 +65,6 @@ print("Average pT for charged pions {0:4.3f}".format(average_pt))
 
 The package will be available as a pre-compiled binary wheels in the future, but for now you have to compile it from source, see next subsection.
 
-On Mac OS X the installation from pre-compiled binary wheels requires command line utils `otool`, `install_name_tool`, and `codesign` from Xcode Command Line Tools to be available on the system. The command `xcode-select --install` installs Xcode Command Line Tools.
-
 ### From source
 
 Installation from source requires a Python installation setup for development, as well as C and Fortran compilers.

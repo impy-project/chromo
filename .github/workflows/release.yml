@@ -54,20 +54,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest]
-        arch: [arm64]
-        py: [cp310]
-        # os: [ubuntu-latest, windows-latest, macos-latest]
-        # arch: [native, arm64]
-        # py: [cp38, cp39, cp310, cp311]
-        # exclude:
-        #     - os: macos-latest
-        #       arch: arm64
-        #       py: cp38
-        #     - os: ubuntu-latest
-        #       arch: arm64
-        #     - os: windows-latest
-        #       arch: arm64
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        arch: [native, arm64]
+        py: [cp38, cp39, cp310, cp311]
+        exclude:
+            - os: macos-latest
+              arch: arm64
+              py: cp38
+            - os: ubuntu-latest
+              arch: arm64
+            - os: windows-latest
+              arch: arm64
     steps:
       - uses: actions/checkout@v3
         with:
@@ -136,7 +133,6 @@ jobs:
             chmod +x .github/workflows/gfortran_utils.sh
             source .github/workflows/gfortran_utils.sh
             install_arm64_cross_gfortran
-            printenv
           # Although FC is set in the CIBW_BEFORE_BUILD script above,
           # it is not found by pip and cmake. So here FC is set by hand!!!
           # It can be a problem if gfortran will be installed in different place.

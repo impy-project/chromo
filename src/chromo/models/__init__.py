@@ -1,4 +1,3 @@
-import platform
 from chromo.models.sophia import Sophia20
 from chromo.models.sibyll import (
     Sibyll21,
@@ -36,12 +35,3 @@ __all__ = (
     "Pythia6",
     "Pythia8",
 )
-
-
-if platform.system() == "Darwin":
-    from ..util import fix_macos_installation
-    from pathlib import Path
-
-    logfile = Path(__file__).parent / "macos_fixed_ext.log"
-    if not logfile.exists():
-        fix_macos_installation(logfile)
