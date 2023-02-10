@@ -1,4 +1,5 @@
 from chromo.kinematics import (
+    CenterOfMass,
     FixedTarget,
     TotalEnergy,
     KinEnergy,
@@ -81,3 +82,9 @@ def test_fixed_target_bad_input():
 
     with pytest.raises(ValueError):
         FixedTarget(100 * GeV, t, "p")
+
+
+def test_copy():
+    a = CenterOfMass(10, "p", "p")
+    b = a.copy()
+    assert a == b
