@@ -1,4 +1,5 @@
-from impy.kinematics import (
+from chromo.kinematics import (
+    CenterOfMass,
     FixedTarget,
     TotalEnergy,
     KinEnergy,
@@ -8,8 +9,8 @@ from impy.kinematics import (
     GeV,
     MeV,
 )
-from impy.constants import nucleon_mass
-from impy.util import AZ2pdg, energy2momentum
+from chromo.constants import nucleon_mass
+from chromo.util import AZ2pdg, energy2momentum
 from particle import literals as lp
 from pytest import approx
 import pytest
@@ -81,3 +82,9 @@ def test_fixed_target_bad_input():
 
     with pytest.raises(ValueError):
         FixedTarget(100 * GeV, t, "p")
+
+
+def test_copy():
+    a = CenterOfMass(10, "p", "p")
+    b = a.copy()
+    assert a == b

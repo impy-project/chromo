@@ -1,25 +1,16 @@
-    
-      SUBROUTINE SIBINI(SEEDIN)
+
+      SUBROUTINE SIBINI()
 
 C-----------------------------------------------------------------------
 C  SIB(YLL) INI(TIALIZATION)
 C
 C  FIRST INITIALIZATION OF SIBYLL PROGRAM PACKAGE.
 C  THIS SUBROUTINE IS CALLED FROM START.
-C  ARGUMENT:
-C   SEED   : ANY INTEGER TO BE USED AS RANDOM GENERATOR SEED
 C-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER          ASEED(3)
-      INTEGER          SEEDIN
-      SAVE
 C-----------------------------------------------------------------------
-
-C  init the random number generator
-      Call INIT_RMMARD(SEEDIN)
-
 
       CALL SIBYLL_INI
       CALL SIGMA_INI
@@ -67,7 +58,7 @@ C-----------------------------------------------------------------------
 
       NHEP = NP
       NEVHEP = NEVSIB
-      
+
       DO I=1,NP
          IF (ABS(LLIST(I)).LT.10000) THEN
             ISTHEP(I) = 1
@@ -78,7 +69,7 @@ C-----------------------------------------------------------------------
          IDHEP(I) = ISIB_PID2PDG(MOD(LLIST(I),10000))
          JMOHEP(1,I) = LLIST1(I)
          JMOHEP(2,I) = LLIST1(I)
-#ifndef SIBYLL_21
+#ifdef SIBYLL_21
          PHEP(1,I) = DBLE(P(I,1))
          PHEP(2,I) = DBLE(P(I,2))
          PHEP(3,I) = DBLE(P(I,3))
@@ -95,31 +86,3 @@ C-----------------------------------------------------------------------
 
       NEVSIB = NEVSIB + 1
       END
-
-#ifndef SIBYLL_21
-      DOUBLE PRECISION FUNCTION GASDEV(Idum)
-C***********************************************************************
-C     Gaussian deviation
-C***********************************************************************
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      IMPLICIT INTEGER(I-N)
-      COMMON /RNDMGAS/ ISET
-      SAVE
-      DATA ISET/0/      
-      gasdev=idum
-      IF (ISET.EQ.0) THEN
-1       V1=2.D0*S_RNDM(0)-1.D0
-        V2=2.D0*S_RNDM(1)-1.D0
-        R=V1**2+V2**2
-        IF(R.GE.1.D0)GO TO 1
-        FAC=SQRT(-2.D0*LOG(R)/R)
-        GSET=V1*FAC
-        GASDEV=V2*FAC
-        ISET=1
-      ELSE
-        GASDEV=GSET
-        ISET=0
-      ENDIF
-      RETURN
-      END
-#endif         

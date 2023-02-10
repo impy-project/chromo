@@ -1,8 +1,8 @@
 # These tests check Pythia6 but also the MCEvent in general.
 # It is not necessary to duplicate all tests for every model.
-from impy.kinematics import CenterOfMass
-from impy.models import Pythia6
-from impy.constants import GeV, TeV
+from chromo.kinematics import CenterOfMass
+from chromo.models import Pythia6
+from chromo.constants import GeV, TeV
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from .util import reference_charge

@@ -15,10 +15,7 @@
 # This function expects the following variables to be set:
 #
 #   PYTHON_EXECUTABLE
-#   PYTHON_LIBRARIES
 #   F2PY_INCLUDE_DIR
-#   PYTHON_MODULE_EXTENSION
-#   PYTHON_MODULE_PREFIX
 #   f2py_source
 #   f2py_dir
 #
@@ -89,7 +86,7 @@ function (f2py_add_module target_name)
     # Definitions for source files processing
     set(fortran_defs)
     foreach(_def ${F2PY_ADD_MODULE_COMPILE_DEFS})
-      STRING(APPEND fortran_defs "-D${_def} ")
+      list(APPEND fortran_defs "-D${_def}")
     endforeach()
     
     # Source files processing for *.pyf
@@ -98,12 +95,18 @@ function (f2py_add_module target_name)
       get_filename_component(src_filename ${src_file} NAME)
       set(proc_file CMakeFiles/${target_name}.dir/${src_filename})
 
-      add_custom_command(
-        OUTPUT ${proc_file}
-        COMMAND ${CMAKE_Fortran_COMPILER}
-        -E -cpp ${src_file} ${fortran_defs} -o ${proc_file}
-        DEPENDS ${src_file}
-      )
+      if (src_file MATCHES ".*\.c$")
+        # no preprocessing for C files
+        configure_file(${src_file} ${proc_file} COPYONLY)
+      else()
+        add_custom_command(
+          OUTPUT ${proc_file}
+          COMMAND ${CMAKE_Fortran_COMPILER}
+          -E -cpp ${src_file} ${fortran_defs} -o ${proc_file}
+          DEPENDS ${src_file}
+        )
+      endif()
+
       list(APPEND processed_files ${proc_file})
     endforeach()
 
@@ -151,16 +154,13 @@ function (f2py_add_module target_name)
 
   endif()
 
-  add_library(${target_name} MODULE
+  Python_add_library(${target_name} MODULE WITH_SOABI
     ${f2py_source}
     ${modulec_file}
     ${f2pywrap_file}
     ${F2PY_ADD_MODULE_SOURCES}
   )
 
-  if (PYTHON_LIBRARIES) # may not be available (e.g. on manylinux)
-    target_link_libraries(${target_name} PRIVATE ${PYTHON_LIBRARIES})
-  endif()
   if (F2PY_ADD_MODULE_INCLUDE_DIRS)
     target_include_directories(${target_name}
     PRIVATE ${F2PY_ADD_MODULE_INCLUDE_DIRS})
@@ -178,8 +178,5 @@ function (f2py_add_module target_name)
   if (WIN32)
     target_link_libraries(${target_name} PUBLIC "-static")
   endif()
-  set_property(TARGET ${target_name} PROPERTY SUFFIX ${PYTHON_MODULE_EXTENSION})
-  # must be a string, so that empty string works correcty
-  set_property(TARGET ${target_name} PROPERTY PREFIX "${PYTHON_MODULE_PREFIX}")
 
 endfunction()

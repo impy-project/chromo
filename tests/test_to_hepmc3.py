@@ -1,18 +1,17 @@
-from impy.kinematics import CenterOfMass
-from impy import models as im
-from impy.constants import GeV
-from impy.models.sophia import Sophia20
-from impy.util import get_all_models
+from chromo.kinematics import CenterOfMass
+from chromo import models as im
+from chromo.constants import GeV
+from chromo.models.sophia import Sophia20
+from chromo.util import get_all_models
 import numpy as np
 import pytest
 
-# generate list of all models in impy.models
+# generate list of all models in chromo.models
 models = get_all_models()
 
 
 @pytest.mark.parametrize("Model", models)
 def test_to_hepmc3(Model):
-
     if Model == im.UrQMD34:
         pytest.xfail("UrQMD34 FAILS, should be FIXED!!!")
 
@@ -38,7 +37,7 @@ def test_to_hepmc3(Model):
     # special case for Pythia8, which does not contain parton shower
     elif Model is im.Pythia8:
         # parton shower is skipped
-        from impy.constants import quarks_and_diquarks_and_gluons
+        from chromo.constants import quarks_and_diquarks_and_gluons
 
         ma = True
         apid = np.abs(event.pid)
@@ -57,7 +56,7 @@ def test_to_hepmc3(Model):
         pa = (pa[0] - 1, pa[1])
         # in case of overlapping ranges of incoming particles
         # the earlier vertex keeps them
-        for (a, b) in unique_vertices:
+        for a, b in unique_vertices:
             if pa != (a, b) and a <= pa[0] < b:
                 pa = b, pa[1]
         unique_vertices.setdefault(pa, []).append(i)

@@ -64,7 +64,7 @@ jobs:
       - run: python -m pip install --upgrade pip wheel
       - run: python setup.py sdist
 
-      - run: python -m pip install dist/impy-*
+      - run: python -m pip install dist/chromo-*
       - run: python -m pip install pytest
       - run: python -m pytest
 

@@ -1,6 +1,6 @@
-from impy.writer import Root
-from impy.common import CrossSectionData, EventData
-from impy.kinematics import EventKinematics, CompositeTarget
+from chromo.writer import Root
+from chromo.common import CrossSectionData, EventData
+from chromo.kinematics import EventKinematics, CompositeTarget
 import numpy as np
 import uproot
 from numpy.testing import assert_equal, assert_allclose

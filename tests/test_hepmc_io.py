@@ -1,12 +1,12 @@
 from pathlib import Path
-from impy.constants import GeV
-from impy.kinematics import CenterOfMass, FixedTarget
-import impy.models as im
+from chromo.constants import GeV
+from chromo.kinematics import CenterOfMass, FixedTarget
+import chromo.models as im
 import pytest
 import pyhepmc
-from impy.util import get_all_models
+from chromo.util import get_all_models
 
-# generate list of all models in impy.models
+# generate list of all models in chromo.models
 models = get_all_models()
 
 
@@ -17,7 +17,7 @@ models = get_all_models()
 def test_hepmc_io(Model):
     # To run this test do `pytest tests/test_hepmc_writer.py`
     # This test fails because the event record written by HepMC3 C++ is bad,
-    # a lot of particles are missing. Either a bug in the original impy record or a
+    # a lot of particles are missing. Either a bug in the original chromo record or a
     # bug in the HepMC3 C++ code (not the pyhepmc code).
 
     test_file = Path(f"{Path(__file__).stem}_{Model.pyname}.dat")

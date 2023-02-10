@@ -1,4 +1,4 @@
-from impy.util import pdg2AZ, name2pdg
+from chromo.util import pdg2AZ, name2pdg
 from particle import Particle, literals as lp
 
 

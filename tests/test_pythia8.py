@@ -1,8 +1,8 @@
-from impy.kinematics import CenterOfMass
-from impy.models import Pythia8
-from impy.constants import GeV
+from chromo.kinematics import CenterOfMass
+from chromo.models import Pythia8
+from chromo.constants import GeV
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from .util import reference_charge
 import pytest
 from functools import lru_cache
@@ -120,15 +120,23 @@ def test_photo_hadron_collision():
     assert np.sum(apid == 211) > 0
 
 
-def run_pythia_change_energy():
-    m = Pythia8(seed=1)
-    kin = CenterOfMass(10 * GeV, "p", "p")
-    for event in m(kin, 1):
+def test_changing_beams_proton():
+    evt_kin = CenterOfMass(10 * GeV, "p", "p")
+    m = Pythia8(evt_kin, seed=1)
+    for event in m(1):
         assert_allclose(event.en[:2], 5 * GeV)
     kin = CenterOfMass(100 * GeV, "p", "p")
     for event in m(kin, 1):
         assert_allclose(event.en[:2], 50 * GeV)
 
 
-def test_changing_beams_proton():
-    run_pythia_change_energy()
+def test_event(event):
+    assert_equal(event.pid[:2], (2212, 2212))
+
+
+def test_pythia_elastic():
+    evt_kin = CenterOfMass(10 * GeV, "p", "p")
+    m = Pythia8(evt_kin, seed=1, config=["SoftQCD:elastic=on"])
+    for event in m(10):
+        assert len(event) == 4
+        assert_equal(event.pid, [2212] * 4)

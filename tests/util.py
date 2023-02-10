@@ -26,7 +26,7 @@ def run_in_separate_process(fn, *args, timeout=600):
     # Some models need to initialize same fortran code, which can only be
     # initialized once. As a workaround, we run each model in a separate
     # Process.
-    debug = int(environ.get("DEBUG", "0"))
+    debug = abs(int(environ.get("DEBUG", "0")))
     if debug >= 10:
         out = fn(*args)
     else:
