@@ -5,7 +5,7 @@ project(chromo LANGUAGES Fortran)
 # Force usage of gcc
 # For MacOS arm64 turn it off to use Clang
 message(STATUS "CMAKE_OSX_ARCHITECTURES = ${CMAKE_OSX_ARCHITECTURES}")
-IF(NOT (APPLE AND (CMAKE_OSX_ARCHITECTURES EQUAL "arm64")))
+IF(NOT (APPLE AND (CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")))
   # Find C/CXX compilers that match the Fortran compiler
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     # Compiler version is something like XY.Z.N, we want only XY
