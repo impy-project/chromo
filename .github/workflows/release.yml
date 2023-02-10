@@ -108,7 +108,7 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_BEFORE_BUILD: yum install python3-devel
+          CIBW_BEFORE_BUILD: yum install -y python3-devel.x86_64
           CIBW_ENVIRONMENT_PASS_LINUX: CI
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
