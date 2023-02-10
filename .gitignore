@@ -37,6 +37,6 @@ __pycache__
 *.gz
 models.cfg
 pythia*.tgz
-impy-?.?.?
+chromo-?.?.?
 src/chromo/iamdata
 fig/*

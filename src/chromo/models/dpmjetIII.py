@@ -1,4 +1,4 @@
-from chromo.common import Model, MCEvent, CrossSectionData
+from chromo.common import MCRun, MCEvent, CrossSectionData
 from chromo.kinematics import EventFrame
 from chromo.util import info, _cached_data_dir, fortran_chars, Nuclei, is_real_nucleus
 from chromo.constants import standard_projectiles, GeV
@@ -37,7 +37,7 @@ class DpmjetIIIEvent(MCEvent):
 # =========================================================================
 # DpmjetIIIMCRun
 # =========================================================================
-class DpmjetIIIRun(Model):
+class DpmjetIIIRun(MCRun):
     """Implements all abstract attributes of MCRun for the
     DPMJET-III series of event generators.
 

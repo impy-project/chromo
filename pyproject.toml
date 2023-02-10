@@ -17,9 +17,9 @@ testpaths = ["tests"]
 filterwarnings = [
     "error::numpy.VisibleDeprecationWarning",
     "error::DeprecationWarning",
-    "ignore::impy.AliveInstanceWarning",
-    "ignore::impy.FixedStableListWarning",
-    "ignore::impy.OutputWarning",
+    "ignore::chromo.AliveInstanceWarning",
+    "ignore::chromo.FixedStableListWarning",
+    "ignore::chromo.OutputWarning",
 ]
 
 [tool.cibuildwheel]
