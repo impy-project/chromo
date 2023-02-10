@@ -34,8 +34,10 @@ include(CMakePrintHelpers)
 include(F2Py)
 find_package(pybind11 CONFIG)
 
-# find_package(Python REQUIRED COMPONENTS Interpreter Development)
-find_package(Python REQUIRED COMPONENTS Development)
+
+set(Python3_FIND_VIRTUALENV FIRST)
+find_package(Python REQUIRED COMPONENTS Interpreter Development)
+# find_package(Python REQUIRED COMPONENTS Development)
 
 # in Numpy-1.22+, this becomes easier: import numpy.f2py; print(numpy.f2py.get_include())
 if (NOT F2PY_INCLUDE_DIR)
