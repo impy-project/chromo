@@ -90,9 +90,9 @@ if (UNIX)
   if (APPLE)
     set(is_fortran "$<COMPILE_LANGUAGE:Fortran>")
     set(is_greater_v10 "$<VERSION_GREATER:$<Fortran_COMPILER_VERSION>,10.0.0>")
-    set(meet_requirements "$<AND:${is_fortran},${is_greater_v10}>")
+    set(is_gfortran_greater_v10 "$<AND:${is_fortran},${is_greater_v10}>")
     add_compile_options(
-      $<${meet_requirements}:-fallow-argument-mismatch>)
+      $<${is_gfortran_greater_v10}:-fallow-argument-mismatch>)
   else()
     add_compile_options(
       $<$<COMPILE_LANGUAGE:Fortran>:-Wno-argument-mismatch>)
@@ -104,7 +104,7 @@ else() # Windows MinGW!
     $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
-	  $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
+    $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
     $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
   )
   # TODO
@@ -372,10 +372,10 @@ target_link_libraries(_pythia8 PRIVATE libpythia8)
 # It enables _pythia8 to search for dependencies (libpythia8)
 # in its own directory. Windows does it by default.
 set(pythia8_rpath_fix)
-if(UNIX AND NOT APPLE)
-  set(pythia8_rpath_fix "$ORIGIN")
-elseif(APPLE)
+if(APPLE)
   set(pythia8_rpath_fix "@loader_path")
+elseif(UNIX)
+  set(pythia8_rpath_fix "$ORIGIN")
 endif()  
 
 set_target_properties(_pythia8 PROPERTIES
