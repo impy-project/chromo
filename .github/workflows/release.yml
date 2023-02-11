@@ -70,6 +70,9 @@ jobs:
         with:
           submodules: true
 
+      - if: ${{ matrix.arch == 'aarch64' }}
+        uses: docker/setup-qemu-action@v2
+
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native'}}
         name: Install graphviz for tests on MacOS native
         uses: tlylt/install-graphviz@v1
@@ -109,6 +112,7 @@ jobs:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_ENVIRONMENT_PASS_LINUX: CI
+          FC: ${{ steps.setup-fortran.outputs.fc }}
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
         name: cibuildwheel on MacOS native
