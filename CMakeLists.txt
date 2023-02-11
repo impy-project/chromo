@@ -36,6 +36,7 @@ find_package(pybind11 CONFIG)
 
 
 set(Python3_FIND_VIRTUALENV ONLY)
+message("VIRTUAL_ENV = $ENV{VIRTUAL_ENV}")
 message("TEST: Python3_FIND_VIRTUALENV = ${Python3_FIND_VIRTUALENV}")
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 # find_package(Python REQUIRED COMPONENTS Development)
