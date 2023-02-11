@@ -36,7 +36,7 @@ find_package(pybind11 CONFIG)
 
 
 set(Python3_FIND_VIRTUALENV FIRST)
-find_package(Python COMPONENTS Interpreter Development)
+find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 # find_package(Python REQUIRED COMPONENTS Development)
 
 # in Numpy-1.22+, this becomes easier: import numpy.f2py; print(numpy.f2py.get_include())
