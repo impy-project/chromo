@@ -110,7 +110,11 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
-          CIBW_ENVIRONMENT: VIRTUAL_ENV=$(builtin cd $(dirname `which python`)/../; pwd)
+          build: |
+            $pythonPath = Join-Path $env:CIBW_PREFIX "python.exe"
+            $venvPath = Join-Path (Split-Path (Split-Path $pythonPath)) "venv"
+            $env:VIRTUAL_ENV = $venvPath
+            cibuildwheel
 
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         name: cibuildwheel on Linux
@@ -120,7 +124,9 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_ENVIRONMENT_PASS_LINUX: CI
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-          CIBW_ENVIRONMENT: VIRTUAL_ENV=$(builtin cd $(dirname `which python`)/../; pwd)
+          build: |
+            export CIBW_BEFORE_BUILD="export VIRTUAL_ENV=$(dirname $(dirname $(readlink -f ${CIBW_PREFIX}/bin/python)))/venv"
+            cibuildwheel
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
         name: cibuildwheel on MacOS native
@@ -129,7 +135,9 @@ jobs:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           no_proxy: '*'
-          CIBW_ENVIRONMENT: VIRTUAL_ENV=$(builtin cd $(dirname `which python`)/../; pwd)
+          build: |
+            export CIBW_BEFORE_BUILD="export VIRTUAL_ENV=$(dirname $(dirname $(readlink -f ${CIBW_PREFIX}/bin/python)))/venv"
+            cibuildwheel
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'arm64' }}
         name: cibuildwheel on MacOS arm64
