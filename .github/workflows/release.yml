@@ -111,10 +111,10 @@ jobs:
           CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
           CIBW_BEFORE_BUILD: |
-            $pythonPath = Get-Command python | Select-Object -ExpandProperty Source
-            $venvPath = Join-Path (Split-Path (Split-Path $pythonPath)) "venv"
-            $env:VIRTUAL_ENV = $venvPath
-            Get-ChildItem Env:
+            # Just a comment
+            set -xe
+            export VIRTUAL_ENV=$(dirname $(dirname $(readlink -f $(where python))))/venv
+            printenv
 
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         name: cibuildwheel on Linux
@@ -125,6 +125,8 @@ jobs:
           CIBW_ENVIRONMENT_PASS_LINUX: CI
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           CIBW_BEFORE_BUILD: |
+            # Just a comment
+            set -xe
             export VIRTUAL_ENV=$(dirname $(dirname $(readlink -f $(which python))))/venv
             printenv
 
@@ -136,6 +138,8 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           no_proxy: '*'
           CIBW_BEFORE_BUILD: |
+            # Just a comment
+            set -xe
             export VIRTUAL_ENV=$(dirname $(dirname $(readlink -f $(which python))))/venv
             printenv
 
