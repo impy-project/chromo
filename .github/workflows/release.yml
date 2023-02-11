@@ -51,6 +51,9 @@ jobs:
       (github.ref == 'refs/heads/main' && startsWith(github.ref, 'refs/tags/v')) }}
     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -108,7 +111,7 @@ jobs:
           CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
           CIBW_BEFORE_BUILD: |
-            export VIRTUAL_ENV=parentdir=$(builtin cd $(dirname `which python`)/../; pwd)
+            export VIRTUAL_ENV=$(builtin cd $(dirname `which python`)/../; pwd)
             echo $VIRTUAL_ENV
 
       - if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -120,7 +123,7 @@ jobs:
           CIBW_ENVIRONMENT_PASS_LINUX: CI
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           CIBW_BEFORE_BUILD: |
-            export VIRTUAL_ENV=parentdir=$(builtin cd $(dirname `which python`)/../; pwd)
+            export VIRTUAL_ENV=$(builtin cd $(dirname `which python`)/../; pwd)
             echo $VIRTUAL_ENV
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
@@ -131,7 +134,7 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           no_proxy: '*'
           CIBW_BEFORE_BUILD: |
-            export VIRTUAL_ENV=parentdir=$(builtin cd $(dirname `which python`)/../; pwd)
+            export VIRTUAL_ENV=$(builtin cd $(dirname `which python`)/../; pwd)
             echo $VIRTUAL_ENV
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'arm64' }}
@@ -149,7 +152,7 @@ jobs:
             chmod +x .github/workflows/gfortran_utils.sh
             source .github/workflows/gfortran_utils.sh
             install_arm64_cross_gfortran
-            export VIRTUAL_ENV=parentdir=$(builtin cd $(dirname `which python`)/../; pwd)
+            export VIRTUAL_ENV=$(builtin cd $(dirname `which python`)/../; pwd)
             echo $VIRTUAL_ENV
           # Although FC is set in the CIBW_BEFORE_BUILD script above,
           # it is not found by pip and cmake. So here FC is set by hand!!!
