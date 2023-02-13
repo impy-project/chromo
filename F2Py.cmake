@@ -61,12 +61,11 @@ function (f2py_add_module target_name)
   set(pyf_file ${target_name}.pyf)
   set(modulec_file ${target_name}module.c)
   set(f2pywrap_file ${target_name}-f2pywrappers.f)
+  set(log_file ${target_name}.log)
 
   if (NOT F2PY_ADD_MODULE_INTERFACE_SOURCES)
     set(F2PY_ADD_MODULE_INTERFACE_SOURCES ${F2PY_ADD_MODULE_SOURCES})
   endif()
-
-  set(log_file ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.log)
 
   if (F2PY_ADD_MODULE_INCLUDE_DIRS)
     STRING(JOIN ":" _joined_dirs ${F2PY_ADD_MODULE_INCLUDE_DIRS})
