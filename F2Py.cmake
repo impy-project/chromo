@@ -154,7 +154,7 @@ function (f2py_add_module target_name)
 
   endif()
 
-  Python_add_library(${target_name} MODULE WITH_SOABI
+  Python_add_library(${target_name} MODULE
     ${f2py_source}
     ${modulec_file}
     ${f2pywrap_file}
@@ -177,5 +177,7 @@ function (f2py_add_module target_name)
   if (WIN32)
     target_link_libraries(${target_name} PUBLIC "-static")
   endif()
+
+  set_property(TARGET ${target_name} PROPERTY SUFFIX ${PYTHON_MODULE_EXTENSION})
 
 endfunction()

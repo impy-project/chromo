@@ -38,8 +38,10 @@ find_package(pybind11 CONFIG)
 set(Python3_FIND_VIRTUALENV ONLY)
 message("VIRTUAL_ENV = $ENV{VIRTUAL_ENV}")
 message("TEST: Python3_FIND_VIRTUALENV = ${Python3_FIND_VIRTUALENV}")
+find_package(PythonLibsNew REQUIRED)
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 # find_package(Python REQUIRED COMPONENTS Development)
+# find_package(PythonLibsNew REQUIRED)
 
 # in Numpy-1.22+, this becomes easier: import numpy.f2py; print(numpy.f2py.get_include())
 if (NOT F2PY_INCLUDE_DIR)
@@ -69,6 +71,7 @@ cmake_print_variables(PYTHON_INCLUDE_DIRS)
 cmake_print_variables(PYTHON_LIBRARIES)
 cmake_print_variables(F2PY_INCLUDE_DIR)
 cmake_print_variables(NUMPY_INCLUDE_DIRS)
+cmake_print_variables(PYTHON_MODULE_EXTENSION)
 cmake_print_variables(BUILD_dev_dpmjetIII193)
 
 include_directories(
