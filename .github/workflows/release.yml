@@ -102,7 +102,6 @@ jobs:
       - if: ${{ matrix.os == 'windows-latest' }}
         name: cibuildwheel on Windows
         uses: pypa/cibuildwheel@v2.11.2
-        shell: pwsh
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
