@@ -192,6 +192,66 @@ c iiseed(2) and iiseed(3) defined in aread
       end
 
 C=======================================================================
+      SUBROUTINE RMMARD( RVEC,LENV,ISEQ )
+C-----------------------------------------------------------------------
+C  C(ONE)X
+C  R(ANDO)M (NUMBER GENERATOR OF) MAR(SAGLIA TYPE) D(OUBLE PRECISION)
+C
+C  THESE ROUTINES (RMMARD,RMMAQD) ARE MODIFIED VERSIONS OF ROUTINES
+C  FROM THE CERN LIBRARIES. DESCRIPTION OF ALGORITHM SEE:
+C               http://consult.cern.ch/shortwrups/v113/top.html
+C  IT HAS BEEN CHECKED THAT RESULTS ARE BIT-IDENTICAL WITH CERN
+C  DOUBLE PRECISION RANDOM NUMBER GENERATOR RMM48, DESCRIBED IN
+C               http://consult.cern.ch/shortwrups/v116/top.html
+C  ARGUMENTS:
+C   RVEC   = DOUBLE PREC. VECTOR FIELD TO BE FILLED WITH RANDOM NUMBERS
+C   LENV   = LENGTH OF VECTOR (# OF RANDNUMBERS TO BE GENERATED)
+C   ISEQ   = # OF RANDOM SEQUENCE
+C
+C  VERSION OF D. HECK FOR DOUBLE PRECISION RANDOM NUMBERS.
+C  ADAPTATION  : T. PIEROG    IK  FZK KARLSRUHE FROM D. HECK VERSION
+C  DATE     : Feb  17, 2009
+C-----------------------------------------------------------------------
+      IMPLICIT NONE
+      INTEGER          KSEQ
+      PARAMETER        (KSEQ = 2)
+      COMMON /CRRANMA3/CD,CINT,CM,TWOM24,TWOM48,MODCNS
+      DOUBLE PRECISION CD,CINT,CM,TWOM24,TWOM48
+      INTEGER          MODCNS
+      COMMON /CRRANMA4/C,U,IJKL,I97,J97,NTOT,NTOT2,JSEQ
+      DOUBLE PRECISION C(KSEQ),U(97,KSEQ),UNI
+      INTEGER          IJKL(KSEQ),I97(KSEQ),J97(KSEQ),
+     *                 NTOT(KSEQ),NTOT2(KSEQ),JSEQ
+      DOUBLE PRECISION RVEC(*)
+      INTEGER          ISEQ,IVEC,LENV
+      SAVE
+C-----------------------------------------------------------------------
+      IF ( ISEQ .GT. 0  .AND.  ISEQ .LE. KSEQ ) JSEQ = ISEQ
+    
+      DO   IVEC = 1, LENV
+        UNI = U(I97(JSEQ),JSEQ) - U(J97(JSEQ),JSEQ)
+        IF ( UNI .LT. 0.D0 ) UNI = UNI + 1.D0
+        U(I97(JSEQ),JSEQ) = UNI
+        I97(JSEQ)  = I97(JSEQ) - 1
+        IF ( I97(JSEQ) .EQ. 0 ) I97(JSEQ) = 97
+        J97(JSEQ)  = J97(JSEQ) - 1
+        IF ( J97(JSEQ) .EQ. 0 ) J97(JSEQ) = 97
+        C(JSEQ)    = C(JSEQ) - CD
+        IF ( C(JSEQ) .LT. 0.D0 ) C(JSEQ)  = C(JSEQ) + CM
+        UNI        = UNI - C(JSEQ)
+        IF ( UNI .LT. 0.D0 ) UNI = UNI + 1.D0
+C  AN EXACT ZERO HERE IS VERY UNLIKELY, BUT LET'S BE SAFE.
+        IF ( UNI .EQ. 0.D0 ) UNI = TWOM48
+        RVEC(IVEC) = UNI
+      ENDDO
+      NTOT(JSEQ) = NTOT(JSEQ) + LENV
+      IF ( NTOT(JSEQ) .GE. MODCNS )  THEN
+        NTOT2(JSEQ) = NTOT2(JSEQ) + 1
+        NTOT(JSEQ)  = NTOT(JSEQ) - MODCNS
+      ENDIF
+      RETURN
+      END
+C=======================================================================
       SUBROUTINE RMMAQD( ISEED, ISEQ, CHOPT )
 C-----------------------------------------------------------------------
 C  R(ANDO)M (NUMBER GENERATOR OF) MA(RSAGLIA TYPE INITIALIZATION) DOUBLE
