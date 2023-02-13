@@ -17,7 +17,6 @@
 #   PYTHON_EXECUTABLE
 #   F2PY_INCLUDE_DIR
 #   f2py_source
-#   f2py_dir
 #
 # The following arguments are accepted:
 #
@@ -59,9 +58,6 @@ function (f2py_add_module target_name)
     "FUNCTIONS;INCLUDE_DIRS;INTERFACE_SOURCES;SOURCES;COMPILE_DEFS"
     ${ARGN})
 
-
-  # f2py files that exist in f2py source directory
-  # In case of absence the files are regenerated
   set(pyf_file ${target_name}.pyf)
   set(modulec_file ${target_name}module.c)
   set(f2pywrap_file ${target_name}-f2pywrappers.f)
@@ -77,7 +73,6 @@ function (f2py_add_module target_name)
     set(f2py_include_paths --include-paths ${_joined_dirs})
   endif()
 
-  message(STATUS "f2py_add_module: Generating ${pyf_file}")
   # Definitions for source files processing
   set(fortran_defs)
   foreach(_def ${F2PY_ADD_MODULE_COMPILE_DEFS})
@@ -118,9 +113,6 @@ function (f2py_add_module target_name)
     DEPENDS ${processed_files}
   )
   
-  message(STATUS "f2py_add_module: Generating ${modulec_file}")
-  message(STATUS "f2py_add_module: Generating ${f2pywrap_file}")
-
   # Generate in binary directory and copy to source directory.
   add_custom_command(
     OUTPUT ${modulec_file} ${f2pywrap_file}
