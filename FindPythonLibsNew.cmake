@@ -253,3 +253,29 @@ else()
 
   # CI doesn't work at this place - change to just warning
   if(NOT PYTHON_LIBRARY)
+     message(WARNING "Python library not found (this may be ok)")
+  endif()
+endif()
+
+mark_as_advanced(PYTHON_LIBRARY PYTHON_INCLUDE_DIR)
+
+# We use PYTHON_INCLUDE_DIR, PYTHON_LIBRARY and PYTHON_DEBUG_LIBRARY for the
+# cache entries because they are meant to specify the location of a single
+# library. We now set the variables listed by the documentation for this
+# module.
+set(PYTHON_INCLUDE_DIRS "${PYTHON_INCLUDE_DIR}")
+set(PYTHON_LIBRARIES "${PYTHON_LIBRARY}")
+if(NOT PYTHON_DEBUG_LIBRARY)
+  set(PYTHON_DEBUG_LIBRARY "")
+endif()
+set(PYTHON_DEBUG_LIBRARIES "${PYTHON_DEBUG_LIBRARY}")
+
+find_package_message(PYTHON "Found PythonLibs: ${PYTHON_LIBRARY}"
+                     "${PYTHON_EXECUTABLE}${PYTHON_VERSION_STRING}")
+
+set(PYTHONLIBS_FOUND TRUE)
+set(PythonLibsNew_FOUND TRUE)
+
+if(NOT PYTHON_MODULE_PREFIX)
+  set(PYTHON_MODULE_PREFIX "")
+endif()
