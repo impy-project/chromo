@@ -177,7 +177,5 @@ function (f2py_add_module target_name)
   if (WIN32)
     target_link_libraries(${target_name} PUBLIC "-static")
   endif()
-
-  # set_property(TARGET ${target_name} PROPERTY SUFFIX ${PYTHON_MODULE_EXTENSION})
-
+  
 endfunction()

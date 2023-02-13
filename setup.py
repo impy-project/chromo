@@ -27,7 +27,9 @@ if not os.environ.get("CI", False):
 # dev_dpmjetIII193=/full/path/to/dir/dpmjetIII-19.3
 # ----
 
-# Set environment variable for venv
+# Set environment variable VIRTUAL_ENV to venv directory
+# It is required in FindPython to find a correct version of python
+# when venv is used in cibuildwheels
 os.environ["VIRTUAL_ENV"] = str(Path(sys.executable).absolute().parents[1])
 
 ext_modules = []
