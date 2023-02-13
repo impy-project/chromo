@@ -27,6 +27,9 @@ if not os.environ.get("CI", False):
 # dev_dpmjetIII193=/full/path/to/dir/dpmjetIII-19.3
 # ----
 
+# Set environment variable for venv
+os.environ["VIRTUAL_ENV"] = str(Path(sys.executable).absolute().parents[1])
+
 ext_modules = []
 for model in get_models():
     ext_modules.append(CMakeExtension(f"chromo.models._{model}"))

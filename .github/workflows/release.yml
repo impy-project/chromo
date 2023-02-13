@@ -107,11 +107,6 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
-          CIBW_BEFORE_BUILD: |
-            dir Env:
-            python .github/workflows/get_env.py
-            .github/workflows/set_virtual_env.ps1
-            dir Env:
 
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         name: cibuildwheel on Linux
@@ -121,12 +116,6 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_ENVIRONMENT_PASS_LINUX: CI
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-          CIBW_BEFORE_BUILD: |
-            set -xe
-            which python
-            python .github/workflows/get_env.py
-            source .github/workflows/set_virtual_env.sh
-            printenv
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
         name: cibuildwheel on MacOS native
@@ -135,12 +124,6 @@ jobs:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           no_proxy: '*'
-          CIBW_BEFORE_BUILD: |
-            set -xe
-            which python
-            python .github/workflows/get_env.py
-            source .github/workflows/set_virtual_env.sh
-            printenv
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'arm64' }}
         name: cibuildwheel on MacOS arm64
@@ -157,13 +140,11 @@ jobs:
             chmod +x .github/workflows/gfortran_utils.sh
             source .github/workflows/gfortran_utils.sh
             install_arm64_cross_gfortran
-            printenv
           # Although FC is set in the CIBW_BEFORE_BUILD script above,
           # it is not found by pip and cmake. So here FC is set by hand!!!
           # It can be a problem if gfortran will be installed in different place.
           FC: "/opt/gfortran-darwin-arm64-cross/bin/arm64-apple-darwin20.0.0-gfortran"
           MACOSX_DEPLOYMENT_TARGET: "11.0"
-          CIBW_ENVIRONMENT: VIRTUAL_ENV=$(builtin cd $(dirname `which python`)/../; pwd)
           no_proxy: '*'
 
       - uses: actions/upload-artifact@v3
