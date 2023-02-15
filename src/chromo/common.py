@@ -733,8 +733,9 @@ class MCRun(ABC):
                     kin3.p2 = component
                     # this calls cross_section recursively, which is fine
                     cs = self.cross_section(kin3)
-                    for i, val in enumerate(dataclasses.astuple(cs)):
-                        cross_section[i] += fraction * val
+                    for field, value in dataclasses.asdict(cs).items():
+                        val = getattr(cross_section, field) + fraction * value
+                        setattr(cross_section, field, val)
                 return cross_section
             else:
                 return self._cross_section(kin)
