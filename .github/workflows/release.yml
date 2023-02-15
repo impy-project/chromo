@@ -74,6 +74,11 @@ jobs:
       - if: ${{ matrix.arch == 'aarch64' }}
         uses: docker/setup-qemu-action@v2
 
+      # Remove after January 16th 2023 when GA switches to 14.2 by default
+      # Remove someday when migration for all nodes will be finished
+      - if: ${{ matrix.os == 'macos-latest' }}
+        run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
+
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native'}}
         name: Install graphviz for tests on MacOS native
         uses: tlylt/install-graphviz@v1
