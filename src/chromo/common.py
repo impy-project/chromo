@@ -715,7 +715,7 @@ class MCRun(ABC):
         """
         self.set_stable(pdgid, False)
 
-    def cross_section(self, kin=None):
+    def cross_section(self, kin=None, precision=None):
         """Cross sections according to current setup.
 
         Parameters
@@ -738,10 +738,10 @@ class MCRun(ABC):
                         setattr(cross_section, field, val)
                 return cross_section
             else:
-                return self._cross_section(kin)
+                return self._cross_section(kin, precision)
 
     @abstractmethod
-    def _cross_section(self, kin):
+    def _cross_section(self, kin, *args):
         pass
 
     @abstractmethod
