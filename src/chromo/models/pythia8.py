@@ -165,6 +165,9 @@ class Pythia8(MCRun):
     def _set_stable(self, pdgid, stable):
         self._pythia.particleData.mayDecay(pdgid, not stable)
 
+    def _get_stable(self):
+        return {p.id for p in self._pythia.particleData if not p.mayDecay}
+
     def _generate(self):
         return self._pythia.next()
 

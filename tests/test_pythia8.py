@@ -140,3 +140,11 @@ def test_pythia_elastic():
     for event in m(10):
         assert len(event) == 4
         assert_equal(event.pid, [2212] * 4)
+
+
+def test_pythia_get_stable():
+    evt_kin = CenterOfMass(10 * GeV, "p", "p")
+    m = Pythia8(evt_kin, seed=1)
+    pd = m._pythia.particleData
+    for x in pd:
+        print(x)
