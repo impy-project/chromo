@@ -119,7 +119,7 @@ class CrossSectionData:
         if not isinstance(number, (int, float)):
             raise ValueError("* works only with float")
 
-        fields_to_add = [
+        fields_to_multiply = [
             "total",
             "inelastic",
             "elastic",
@@ -130,7 +130,7 @@ class CrossSectionData:
         ]
         result = CrossSectionData()
         for field, value in dataclasses.asdict(self).items():
-            if field in fields_to_add:
+            if field in fields_to_multiply:
                 setattr(result, field, value * number)
         return result
 
