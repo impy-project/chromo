@@ -65,8 +65,9 @@ VALID_MODELS = ", ".join(sorted(VALID_MODELS))
 
 FORMATS = {
     "hepmc": writer.Hepmc,
-    "hepmcgz": writer.Hepmc,
+    "hepmc:gz": writer.Hepmc,
     "root": writer.Root,
+    "root:vertex": lambda *args: writer.Root(*args, write_vertices=True),
     "svg": writer.Svg,
     "null": writer.Null,
     # "lhe",
@@ -76,9 +77,10 @@ VALID_FORMATS = f"{', '.join(FORMATS)}"
 
 
 def extension(format):
-    if format.endswith("gz"):
-        return format[:-2] + ".gz"
-    return format
+    extension, *options = format.split(":")
+    if "gz" in options:
+        return f"{extension}.gz"
+    return extension
 
 
 def process_particle(x):

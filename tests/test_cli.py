@@ -262,20 +262,23 @@ def test_format_1():
     )
 
 
-@pytest.mark.parametrize("format", ("hepmc", "hepmcgz", "root"))
+@pytest.mark.parametrize("format", ("hepmc", "hepmc:gz", "root", "root:vertex"))
 @pytest.mark.parametrize("model", ("EPOS-LHC", "SIBYLL-2.1", "Pythia-6.4"))
 def test_format_2(format, model):
-    ext = format
-    if ext.endswith("gz"):
-        ext = ext[:-2] + ".gz"
+    ext, *options = format.split(":")
+    if "gz" in options:
+        ext += ".gz"
 
     pyname = {"EPOS-LHC": "eposlhc", "SIBYLL-2.1": "sibyll21", "Pythia-6.4": "pythia6"}[
         model
     ]
 
+    # seeds must be unique to not have clashing file names
+    seed = "888" if "vertex" in options else "8"
+
     run(
         "-s",
-        "8",
+        seed,
         "-S",
         "100",
         "-o",
@@ -283,7 +286,7 @@ def test_format_2(format, model):
         "-m",
         model,
         stdout=f"Format[ \t]*{format}",
-        file=f"chromo_{pyname}_8_2212_2212_100.{ext}",
+        file=f"chromo_{pyname}_{seed}_2212_2212_100.{ext}",
     )
 
 
