@@ -166,7 +166,13 @@ class Pythia8(MCRun):
         self._pythia.particleData.mayDecay(pdgid, not stable)
 
     def _get_stable(self):
-        return {p.id for p in self._pythia.particleData if not p.mayDecay}
+        r = set()
+        for p in self._pythia.particleData.all():
+            if p.tau0 > 1e-5 and not p.mayDecay:
+                r.add(p.id)
+                if p.hasAnti:
+                    r.add(-p.id)
+        return r
 
     def _generate(self):
         return self._pythia.next()

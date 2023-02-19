@@ -168,8 +168,12 @@ def parse_arguments():
         help="output file name (generated if none provided); "
         "format is guessed from the file extension if --output is not specified",
     )
-    # TODO add more details on how to configure
-    parser.add_argument("-c", "--config", help="configuration file for generator")
+    parser.add_argument(
+        "-c",
+        "--config",
+        help="configuration file for generator; configuration is Python code which "
+        "interacts with the variable `model` that represents the model instance",
+    )
 
     args = parser.parse_args()
 
@@ -292,12 +296,8 @@ def parse_arguments():
         code = ["def configure(model):\n"]
         for line in open(fn):
             code.append(f"    {line}")
-        code = "".join(code)
-        try:
-            args.config = exec("".join(code))
-        except Exception:
-            print(code)
-            raise
+        args.config = "".join(code)
+
     return args
 
 
@@ -345,7 +345,13 @@ def main():
     try:
         model = args.model(evt_kin, seed=args.seed)
         if args.config:
-            args.config(model)
+            try:
+                d = {}
+                exec(args.config, d)
+                d["configure"](model)
+            except Exception:
+                print(f"Error in configuration code:\n\n{args.config}")
+                raise
         ofile = FORMATS[args.output](args.out, model)
         with ofile:
             # workaround: several models generate extra print when first

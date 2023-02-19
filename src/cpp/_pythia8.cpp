@@ -110,9 +110,16 @@ PYBIND11_MODULE(_pythia8, m)
         .def("addParticle", py::overload_cast<int, string, string, int, int, int, double, double, double, double, double, bool>(&ParticleData::addParticle), "pdgid"_a, "name"_a, "antiname"_a, "spinType"_a = 0, "chargeType"_a = 0, "colType"_a = 0, "m0"_a = 0, "mWidth"_a = 0, "mMin"_a = 0, "mMax"_a = 0, "tau0"_a = 0, "varWidth"_a = false)
         .def("isParticle", &ParticleData::isParticle)
         .def("findParticle", py::overload_cast<int>(&ParticleData::findParticle))
-        .def("__iter__",
-            [](ParticleData &self) { return py::make_value_iterator(self); },
-            py::keep_alive<0, 1>())
+        // TODO better style is .def("__iter__", ...) and return make_value_iterator
+        // here, but this leads to segfault which I cannot fix right now
+        .def("all",
+             [](ParticleData &self)
+             {
+                 py::list pl;
+                 for (auto p : self)
+                     pl.append(p.second);
+                 return pl;
+             })
 
         ;
 

@@ -9,6 +9,8 @@ from particle import Particle
 import pyhepmc
 import uproot
 import platform
+import numpy as np
+import tempfile
 
 
 def format_matches_extension(p):
@@ -32,35 +34,36 @@ def run(
     file=None,
     checks=(format_matches_extension,),
 ):
-    r = subp.run(("chromo",) + cmd, capture_output=True)
-    assert r.returncode == returncode, r.stderr.decode()
-    match = None
-    if stdout is not None:
-        actual = r.stdout.decode()
-        if stdout in actual:  # also check for literal match
-            match = True
-        else:
-            match = re.search(stdout, actual)
-        assert match, "\n" + actual
-    if stderr is not None:
-        actual = r.stderr.decode()
-        if stderr in actual:  # also check for literal match
-            match = True
-        else:
-            match = re.search(stderr, actual)
-        assert match, f"\n  [expected] {stderr}\n  [  got   ] {actual}"
-    if file:
-        if match is not None:
-            p = Path(file.format(*match.groups()))
-        else:
-            p = Path(file)
-        assert p.exists()
+    with tempfile.TemporaryDirectory() as cwd:
+        r = subp.run(("chromo",) + cmd, cwd=cwd, capture_output=True)
+        assert r.returncode == returncode, r.stderr.decode()
+        match = None
+        if stdout is not None:
+            actual = r.stdout.decode()
+            if stdout in actual:  # also check for literal match
+                match = True
+            else:
+                match = re.search(stdout, actual)
+            assert match, "\n" + actual
+        if stderr is not None:
+            actual = r.stderr.decode()
+            if stderr in actual:  # also check for literal match
+                match = True
+            else:
+                match = re.search(stderr, actual)
+            assert match, f"\n  [expected] {stderr}\n  [  got   ] {actual}"
+        if file:
+            if match is not None:
+                p = Path(cwd) / file.format(*match.groups())
+            else:
+                p = Path(cwd) / file
+            assert p.exists()
 
-        if checks:
-            for check in checks:
-                check(p)
+            if checks:
+                for check in checks:
+                    check(p)
 
-        p.unlink()
+            p.unlink()
 
 
 # In the tests below, make sure that all output files
@@ -291,12 +294,6 @@ def test_format_2(format, model):
 
 
 def test_format_3():
-    if platform.system() == "Windows":
-        pytest.xfail(
-            "Test aborts on Windows with this message: "
-            "UnicodeEncodeError: 'charmap' codec can't encode character '\u0394'"
-            " in  position 20049: character maps to <undefined>"
-        )
     run(
         "-s",
         "9",
@@ -307,3 +304,43 @@ def test_format_3():
         stdout="Format[ \t]*svg",
         file="chromo_eposlhc_9_2212_2212_100_000.svg",
     )
+
+
+@pytest.mark.parametrize("make_pi_0_stable", (False, True))
+def test_config(make_pi_0_stable):
+    def check(p):
+        import pyhepmc
+        from particle import literals as lp
+
+        with pyhepmc.open(p) as f:
+            event = f.read()
+            is_final = event.numpy.particles.status == 1
+            is_pi_0 = event.numpy.particles.pid == lp.pi_0.pdgid
+            if make_pi_0_stable:
+                assert np.sum(is_final & is_pi_0) > 0
+            else:
+                assert np.sum(is_final & is_pi_0) == 0
+
+    ofile = f"pi_0_stable_{make_pi_0_stable}.hepmc"
+
+    with tempfile.NamedTemporaryFile("w") as config:
+        config.write(
+                f"""
+from particle import literals as lp
+model.set_stable(lp.pi_0.pdgid, {make_pi_0_stable!r})
+"""
+            )
+        config.flush()
+
+        run(
+            "-s",
+            "10",
+            "-S",
+            "100",
+            "-c",
+            config.name,
+            "-f",
+            ofile,
+            file=ofile,
+            checks=(check,),
+        )
