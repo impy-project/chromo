@@ -325,11 +325,11 @@ def test_config(make_pi_0_stable):
 
     with tempfile.NamedTemporaryFile("w") as config:
         config.write(
-                f"""
+            f"""
 from particle import literals as lp
 model.set_stable(lp.pi_0.pdgid, {make_pi_0_stable!r})
 """
-            )
+        )
         config.flush()
 
         run(
