@@ -2,7 +2,6 @@ from chromo.common import MCRun, MCEvent, CrossSectionData
 from chromo.kinematics import EventFrame
 from chromo.util import info, _cached_data_dir, fortran_chars, Nuclei
 from chromo.constants import standard_projectiles, GeV
-from copy import copy
 
 
 class DpmjetIIIEvent(MCEvent):
@@ -113,17 +112,12 @@ class DpmjetIIIRun(MCRun):
         self._lib.pydat1.mstj[21 - 1] = 1
         self._lib.pydat1.mstj[22 - 1] = 2
         self._set_final_state_particles()
-        self.set_cross_section_precision()
 
     def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
         # we override to set precision
         if (kin.p1.A and kin.p1.A > 1) or kin.p2.A > 1:
             assert kin.p2.A >= 1, "DPMJET requires nucleons or nuclei on side 2."
-            if self._cross_section_precision is not None:
-                saved = copy(self._lib.dtglgp.jstatb)
-                # Set number of trials for Glauber model integration
-                self._lib.dtglgp.jstatb = self._cross_section_precision
             self._lib.dt_xsglau(
                 kin.p1.A or 1,
                 kin.p2.A or 1,
@@ -137,8 +131,6 @@ class DpmjetIIIRun(MCRun):
                 1,
                 1,
             )
-            if self._cross_section_precision is not None:
-                self._lib.dtglgp.jstatb = saved
             return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
         else:
             stot, sela = self._lib.dt_xshn(
@@ -148,14 +140,20 @@ class DpmjetIIIRun(MCRun):
 
         # TODO set more cross-sections
 
-    def set_cross_section_precision(self, precision=None):
-        self._cross_section_precision = precision
+    def set_hA_AA_glauber_trials(self, ntrials=1000):
+        """Set number of trials for Glauber model integration.
 
-    def get_cross_section_precision(self):
-        if self._cross_section_precision is None:
-            return self._lib.dtglgp.jstatb
-        else:
-            return self._cross_section_precision
+        Larger number of `ntrials` reduces the fluctuations in the cross section,
+        thus, making it more smooth. Smaller number of `ntrials` makes calculations of
+        cross section faster.
+
+        Args:
+            ntrials (int, optional): number of trials. Defaults to 1000.
+        """
+        self._lib.dtglgp.jstatb = ntrials
+
+    def get_hA_AA_glauber_trials(self):
+        return self._lib.dtglgp.jstatb
 
     def _set_kinematics(self, kin):
         # Save maximal mass that has been initialized
