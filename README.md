@@ -56,8 +56,8 @@ print("Average pT for charged pions {0:4.3f}".format(average_pt))
 
 ## Supported platforms
 
-- Python 3.6+
-- Linux, Mac OS X, or Windows
+- Python 3.8+
+- Linux, Mac OS X, Windows
 
 ### From PyPI (not yet available)
 
