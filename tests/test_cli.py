@@ -307,3 +307,16 @@ def test_format_3():
         stdout="Format[ \t]*svg",
         file="chromo_eposlhc_9_2212_2212_100_000.svg",
     )
+
+
+def test_filename_option():
+    run(
+        "-s",
+        "10",
+        "-S",
+        "100",
+        "-f",
+        "foobar",
+        file="foobar",
+        checks=(),
+    )
