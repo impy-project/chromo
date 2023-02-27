@@ -325,8 +325,6 @@ def main():
     else:  # cms mode
         evt_kin = CenterOfMass(args.sqrts, args.projectile_id, args.target_id)
 
-    print("DEBUG", args.out)
-
     task_id = None
     try:
         model = args.model(evt_kin, seed=args.seed)
