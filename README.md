@@ -73,20 +73,20 @@ To build from source (the **recursive** flag is important to check out submodule
 
     git clone --recursive https://github.com/impy-project/chromo
     cd chromo
-    pip install --no-build-isolation --prefer-binary -v -e .
+    pip install --prefer-binary -v -e .
 
-This takes a while. The command `pip install -v -e .` installs the package in editable mode (for developing the Python layer) and with verbose output, so that you can watch the compilation happening. Warnings can be ignored, but watch out for errors.
+This takes a while. The command installs the package in editable mode (for developing the Python layer) and with verbose output, so that you can watch the compilation happening. Warnings can be ignored, but watch out for errors. Pip automatically creates a virtual environment and downloads dependencies for the build, prefering to install binary wheels of older versions of dependencies if the most recent version has no binary wheel, so you don't have to compile dependencies as well.
 
-To run the tests or try the examples, it is convenient use this modified `pip install` instead:
+To run the tests or try the examples, use this modified `pip install` instead:
 
-    pip install -v -e .'[test,examples]'
+    pip install --prefer-binary -v -e .'[test,examples]'
 
-This installs chromo and additional optional Python packages to run tests and examples.
+which installes chromo and additional optional Python packages that are used in the tests and examples, but not required to run chromo.
 
 #### Known issues
 
 - On OSX
-    - You need to install gcc and gfortran with homebrew, and you need to set those compilers explicitly. If you have gcc-12, do `CC=gcc-12 CXX=g++-12 pip install ...`
+    - You need to install gcc and gfortran with homebrew.
     - Apple introduced a bug in the Xcode Command Line Tools Version 14 which produces a linker error when compiling C++ code with gcc. Until this is fixed, the workaround is to downgrade to 13.4, use this link https://download.developer.apple.com/Developer_Tools/Command_Line_Tools_for_Xcode_13.4/Command_Line_Tools_for_Xcode_13.4.dmg and turn off automatic updates in the System Settings, because otherwise your Mac will upgrade to 14 again.
 - setuptools > 60 does not seem to work. Downgrade with `pip install setuptools<60` if you experience problems.
 
@@ -147,8 +147,8 @@ There are two ways to interact with the code.
 Some notes regarding tests.
 
 - Tests are run in parallel by default with `pytest-xdist`. To disable this, use the option `-n 0`.
-- The test `test_generators` takes a long time. It is marked to be run last. You can skip it with the option `-k "not test_generators"`.
-- Tests which run a model do so in a separate process, because most models can only instantiated once. This prevents using `--pdb` to start the debugger at the point of failure. You can prefix the pytest call like this `DEBUG=10 python -m pytest ...` to run the model in the current process. This will only work once for each model and lead to failures afterwards.
+- The test `test_generators` takes a long time. You can skip it with the option `-k "not test_generators"`.
+- Tests which run a model do so in a separate process, because most models can only be instantiated once. This prevents using `--pdb` to start the debugger at the point of failure. You can prefix the pytest call like this `DEBUG=10 python -m pytest ...` to run the model in the current process. This will only work once for each model and lead to failures afterwards.
 
 ## Authors
 
