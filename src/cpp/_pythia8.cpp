@@ -88,7 +88,7 @@ py::array_t<int> event_array_parents(Event &event)
     auto ptr2 = &private_access::member<Particle_mother2Save>(event[1]);
     int number = event.size() - 1;
     int shape[2] = {number, 2};
-    int strides[2] = {sizeof(Particle), static_cast<int>(ptr2 - ptr1)};
+    int strides[2] = {sizeof(Particle), sizeof(int)};
     return py::array_t<int>(shape, strides, ptr1);
 }
 
@@ -99,7 +99,7 @@ py::array_t<int> event_array_children(Event &event)
     auto ptr2 = &private_access::member<Particle_daughter2Save>(event[1]);
     int number = event.size() - 1;
     int shape[2] = {number, 2};
-    int strides[2] = {sizeof(Particle), static_cast<int>(ptr2 - ptr1)};
+    int strides[2] = {sizeof(Particle), sizeof(int)};
     return py::array_t<int>(shape, strides, ptr1);
 }
 
