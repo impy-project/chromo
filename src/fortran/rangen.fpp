@@ -17,14 +17,13 @@ c-----------------------------------------------------------------------
 c  used by EPOS
 c-----------------------------------------------------------------------
       double precision rval
-      call npyrng(rval)
- 1    rangen=sngl(rval)
-      if(rangen.le.0.)goto 1
-      if(rangen.ge.1.)goto 1
+ 20   call npyrng(rval)
+      if(rval.le.0.or.rval.ge.1) goto 20
+      rangen=sngl(rval)
       end
 
 c=======================================================================
-      function drangen(dummy)
+      function drangen( dummy )
 c-----------------------------------------------------------------------
 c  used by EPOS
 c-----------------------------------------------------------------------

@@ -278,12 +278,12 @@ def parse_arguments():
             fn = f"chromo_{mn}_{args.seed}_{int(pid1)}_{int(pid2)}_{en}.{ext}"
             odir = os.environ.get("CRMC_OUT", ".")
             args.out = Path(odir) / fn
-
-        if not args.out.suffixes[-2:]:
-            ext = "." + args.output
-            if ext.endswith("gz"):
-                ext = ext[:-2] + ".gz"
-            args.out = Path(args.out).with_suffix(ext)
+            # append extension
+            if not args.out.suffixes[-2:]:
+                ext = "." + args.output
+                if ext.endswith("gz"):
+                    ext = ext[:-2] + ".gz"
+                args.out = Path(args.out).with_suffix(ext)
 
     if args.output not in FORMATS:
         raise SystemExit(f"Error: unknown format {args.output} ({VALID_FORMATS})")

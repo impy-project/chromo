@@ -344,3 +344,16 @@ model.set_stable(lp.pi_0.pdgid, {make_pi_0_stable!r})
             file=ofile,
             checks=(check,),
         )
+
+
+def test_filename_option():
+    run(
+        "-s",
+        "10",
+        "-S",
+        "100",
+        "-f",
+        "foobar",
+        file="foobar",
+        checks=(),
+    )
