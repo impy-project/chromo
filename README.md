@@ -67,7 +67,7 @@ The package will be available as a pre-compiled binary wheels in the future, but
 
 ### From source
 
-Installation from source requires a Python installation setup for development, as well as C and Fortran compilers.
+Installation from source requires a Python installation setup for development, as well as C/C++ and Fortran compilers.
 
 To build from source (the **recursive** flag is important to check out submodules):
 
