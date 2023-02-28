@@ -89,6 +89,8 @@ If you want to work on the Fortran sources, it is more convenient to install a d
 
     python setup.py develop
 
+You need to install the build environment manually for this to succeed. Check the key `[build-system.requires]` in `pyproject.toml` which packages are required.
+
 Unlike the pip command, this command reuses build artefacts that were previously generated, so you don't have to recompile everything every time. Another convenience for developers is the optional file `models.cfg`. If it exists, only models are build which are listed there. See `default_models.cfg` for the full list.
 
 #### Known issues
