@@ -84,7 +84,8 @@ def test_children(event):
 
 
 def test_parents(event):
-    assert event.parents.shape == (len(event), 2)
+    n = len(event)
+    assert event.parents.shape == (n, 2)
     # same particles have no parents
     assert sum(x[0] == 0 and x[1] == 0 for x in event.parents) > 0
 
@@ -93,6 +94,8 @@ def test_parents(event):
 
     # some particles have multiple parents
     assert sum(x[0] > 0 and x[1] > 0 for x in event.parents) > 0
+
+    assert sum(x[1] >= 0 and x[1] < len(event) for x in event.parents) == n
 
 
 @pytest.mark.skip(reason="Simulating nuclei in Pythia8 is very time-consuming")
