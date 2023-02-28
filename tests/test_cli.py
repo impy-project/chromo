@@ -323,7 +323,7 @@ def test_config(make_pi_0_stable):
 
     ofile = f"pi_0_stable_{make_pi_0_stable}.hepmc"
 
-    with tempfile.NamedTemporaryFile("w") as config:
+    with tempfile.NamedTemporaryFile("w+") as config:
         config.write(
             f"""
 from particle import literals as lp
