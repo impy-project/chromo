@@ -83,6 +83,14 @@ To run the tests or try the examples, use this modified `pip install` instead:
 
 which installes chromo and additional optional Python packages that are used in the tests and examples, but not required to run chromo.
 
+#### For developers
+
+If you want to work on the Fortran sources, it is more convenient to install a development version of Chromo with setuptools.
+
+    python setup.py develop
+
+Unlike the pip command, this command reuses build artefacts that were previously generated, so you don't have to recompile everything every time. Another convenience for developers is the optional file `models.cfg`. If it exists, only models are build which are listed there. See `default_models.cfg` for the full list.
+
 #### Known issues
 
 - On OSX
