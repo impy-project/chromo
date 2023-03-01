@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.17)
 
 project(chromo LANGUAGES Fortran)
 
@@ -35,7 +35,6 @@ include(F2Py)
 find_package(pybind11 CONFIG)
 
 
-message(STATUS "VIRTUAL_ENV = $ENV{VIRTUAL_ENV}")
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 
 # in Numpy-1.22+, this becomes easier: import numpy.f2py; print(numpy.f2py.get_include())

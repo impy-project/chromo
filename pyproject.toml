@@ -25,7 +25,7 @@ filterwarnings = [
 skip = ["*-musllinux_*", "cp310-win32", "cp310-manylinux_i686"]
 test-extras = ["test"]
 test-command = "python {package}/download_data.py && python -m pytest -vv {package}/tests"
-test-skip = ["*_arm64", "*universal2:arm64"]
+test-skip = ["*_arm64"]
 # to match numpy, we use manylinux2014 for cp310+
 manylinux-x86_64-image = "manylinux2014"
 manylinux-i686-image = "manylinux2014"
