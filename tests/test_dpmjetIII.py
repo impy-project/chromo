@@ -10,34 +10,30 @@ def run_cross_section_ntrials():
     air = chromo.util.CompositeTarget([("N", 0.78), ("O", 0.22)])
     event_kin = chromo.kinematics.FixedTarget(1e3, "proton", air)
 
-    default_ntrials = 1000
-    # Check the default ntrials
-    assert event_generator.get_hA_AA_glauber_trials() == default_ntrials
+    default_precision = 1000
+    # Check the default precision
+    assert event_generator.hA_AA_glauber_trials == default_precision
 
     # Set a new one
-    other_ntrials = 58
-    event_generator.set_hA_AA_glauber_trials(other_ntrials)
-    assert event_generator.get_hA_AA_glauber_trials() == other_ntrials
+    other_precision = 58
+    event_generator.hA_AA_glauber_trials = other_precision
+    assert event_generator.hA_AA_glauber_trials == other_precision
 
-    # Set to a default ntrials
-    event_generator.set_hA_AA_glauber_trials()
-    assert event_generator.get_hA_AA_glauber_trials() == default_ntrials
+    trials = 10
 
-    nruns = 10
-
-    # With small ntrials
-    event_generator.set_hA_AA_glauber_trials(1)
-    cross_section_run1 = np.empty(nruns, dtype=np.float64)
-    for i in range(nruns):
+    # With small precision
+    event_generator.hA_AA_glauber_trials = 1
+    cross_section_run1 = np.empty(trials, dtype=np.float64)
+    for i in range(trials):
         cross_section_run1[i] = event_generator.cross_section(event_kin).inelastic
 
-    # With default ntrials
-    event_generator.set_hA_AA_glauber_trials()
-    cross_section_run2 = np.empty(nruns, dtype=np.float64)
-    for i in range(nruns):
+    # With default precision
+    event_generator.hA_AA_glauber_trials = 1000
+    cross_section_run2 = np.empty(trials, dtype=np.float64)
+    for i in range(trials):
         cross_section_run2[i] = event_generator.cross_section(event_kin).inelastic
 
-    # Standard deviation should be large for small ntrials
+    # Standard deviation should be large for small precision
     assert np.std(cross_section_run1) > np.std(cross_section_run2)
 
 

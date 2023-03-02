@@ -95,47 +95,11 @@ class CrossSectionData:
     def __ne__(self, other):
         return not self == other
 
-    def __iadd__(self, other):
-        if not isinstance(other, CrossSectionData):
-            raise ValueError("+= works only with CrossSectionData class")
+    def __getitem__(self, item):
+        return getattr(self, item)
 
-        fields_to_add = [
-            "total",
-            "inelastic",
-            "elastic",
-            "diffractive_xb",
-            "diffractive_ax",
-            "diffractive_xx",
-            "diffractive_axb",
-        ]
-
-        for field, other_value in dataclasses.asdict(other).items():
-            if field in fields_to_add:
-                self_value = getattr(self, field) + other_value
-                setattr(self, field, self_value)
-        return self
-
-    def __mul__(self, number):
-        if not isinstance(number, (int, float)):
-            raise ValueError("* works only with float")
-
-        fields_to_multiply = [
-            "total",
-            "inelastic",
-            "elastic",
-            "diffractive_xb",
-            "diffractive_ax",
-            "diffractive_xx",
-            "diffractive_axb",
-        ]
-        result = CrossSectionData()
-        for field, value in dataclasses.asdict(self).items():
-            if field in fields_to_multiply:
-                setattr(result, field, value * number)
-        return result
-
-    def __rmul__(self, number):
-        return self.__mul__(number)
+    def __setitem__(self, item, value):
+        setattr(self, item, value)
 
 
 # Do we need EventData.n_spectators in addition to EventData.n_wounded?
@@ -774,7 +738,9 @@ class MCRun(ABC):
                 for component, fraction in zip(kin2.p2.components, kin2.p2.fractions):
                     kin3.p2 = component
                     # this calls cross_section recursively, which is fine
-                    cross_section += fraction * self.cross_section(kin3)
+                    cs = self.cross_section(kin3)
+                    for field in dataclasses.fields(cs):
+                        cross_section[field.name] += fraction * cs[field.name]
                 return cross_section
             else:
                 return self._cross_section(kin)

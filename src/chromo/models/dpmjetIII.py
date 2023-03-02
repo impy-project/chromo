@@ -140,7 +140,12 @@ class DpmjetIIIRun(MCRun):
 
         # TODO set more cross-sections
 
-    def set_hA_AA_glauber_trials(self, ntrials=1000):
+    @property
+    def hA_AA_glauber_trials(self):
+        return self._lib.dtglgp.jstatb
+
+    @hA_AA_glauber_trials.setter
+    def hA_AA_glauber_trials(self, ntrials):
         """Set number of trials for Glauber model integration.
 
         Larger number of `ntrials` reduces the fluctuations in the cross section,
@@ -148,12 +153,9 @@ class DpmjetIIIRun(MCRun):
         cross section faster.
 
         Args:
-            ntrials (int, optional): number of trials. Defaults to 1000.
+            ntrials: number of trials. Default is 1000 (set at model initialisation).
         """
         self._lib.dtglgp.jstatb = ntrials
-
-    def get_hA_AA_glauber_trials(self):
-        return self._lib.dtglgp.jstatb
 
     def _set_kinematics(self, kin):
         # Save maximal mass that has been initialized
