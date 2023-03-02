@@ -209,6 +209,7 @@ PYBIND11_MODULE(_pythia8, m)
         .def("init", &Pythia::init, py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
         .def("next", py::overload_cast<>(&Pythia::next))
         .def("readString", &Pythia::readString, "setting"_a, "warn"_a = true)
+        .def("forceHadronLevel", &Pythia::forceHadronLevel, "find_junctions"_a = true)
         .def_readwrite("particleData", &Pythia::particleData)
         .def_readwrite("settings", &Pythia::settings)
         .def_readwrite("event", &Pythia::event)
@@ -244,6 +245,8 @@ PYBIND11_MODULE(_pythia8, m)
         .def("vt", event_array_v<Vec4_tt>)
         .def("parents", event_array_parents)
         .def("children", event_array_children)
+        .def("reset", &Event::reset)
+        .def("append", py::overload_cast<int, int, int, int, double, double, double, double, double, double, double>(&Event::append), "pdgid"_a, "status"_a, "col"_a, "acol"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a = 0, "scale"_a = 0, "pol"_a = 9.)
 
         ;
 }
