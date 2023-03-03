@@ -145,7 +145,7 @@ def test_elastic():
         assert_equal(event.pid, [2212] * 4)
 
 
-def test_pythia_gamma_p():
+def test_gamma_p():
     evt_kin = CenterOfMass(10 * GeV, "gamma", "p")
     m = Pythia8(evt_kin, seed=1)
     for event in m(10):
