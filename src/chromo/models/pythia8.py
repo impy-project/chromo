@@ -168,6 +168,8 @@ class Pythia8(MCRun):
     def _get_stable(self):
         r = set()
         for p in self._pythia.particleData.all():
+            # the p.tau0 > 1e-5 cut should not be necessary, but without it,
+            # Pythia8 reports nuclei and some BSM particles like tau' as stable
             if p.tau0 > 1e-5 and not p.mayDecay:
                 r.add(p.id)
                 if p.hasAnti:
