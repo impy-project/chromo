@@ -12,23 +12,23 @@ def run_cross_section_ntrials():
 
     default_precision = 1000
     # Check the default precision
-    assert event_generator.hA_AA_glauber_trials == default_precision
+    assert event_generator.glauber_trials == default_precision
 
     # Set a new one
     other_precision = 58
-    event_generator.hA_AA_glauber_trials = other_precision
-    assert event_generator.hA_AA_glauber_trials == other_precision
+    event_generator.glauber_trials = other_precision
+    assert event_generator.glauber_trials == other_precision
 
     trials = 10
 
     # With small precision
-    event_generator.hA_AA_glauber_trials = 1
+    event_generator.glauber_trials = 1
     cross_section_run1 = np.empty(trials, dtype=np.float64)
     for i in range(trials):
         cross_section_run1[i] = event_generator.cross_section(event_kin).inelastic
 
     # With default precision
-    event_generator.hA_AA_glauber_trials = 1000
+    event_generator.glauber_trials = 1000
     cross_section_run2 = np.empty(trials, dtype=np.float64)
     for i in range(trials):
         cross_section_run2[i] = event_generator.cross_section(event_kin).inelastic

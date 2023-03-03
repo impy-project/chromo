@@ -141,7 +141,7 @@ class DpmjetIIIRun(MCRun):
         # TODO set more cross-sections
 
     @property
-    def hA_AA_glauber_trials(self):
+    def glauber_trials(self):
         """Number of trials for Glauber model integration
 
         Default is 1000 (set at model initialisation).
@@ -151,8 +151,8 @@ class DpmjetIIIRun(MCRun):
         """
         return self._lib.dtglgp.jstatb
 
-    @hA_AA_glauber_trials.setter
-    def _(self, ntrials):
+    @glauber_trials.setter
+    def glauber_trials(self, ntrials):
         self._lib.dtglgp.jstatb = ntrials
 
     def _set_kinematics(self, kin):
