@@ -148,11 +148,4 @@ def test_pythia_elastic():
 def test_pythia_get_stable():
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
     m = Pythia8(evt_kin, seed=1)
-    diff = m._get_stable() - set(long_lived)
-    if diff:
-        from chromo.util import pdg2name
-
-        for x in diff:
-            print(pdg2name(x))
-
     assert m._get_stable() == set(long_lived)
