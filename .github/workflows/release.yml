@@ -2,47 +2,153 @@ name: Release
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
 
 jobs:
+
+  wheels_on_PR:
+    if: ${{ github.event.pull_request.merged == true }}
+    name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        arch: [native]
+        py: [cp310]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Setup gfortran for Linux
+        uses: awvwgk/setup-fortran@main
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 11
+
+      - name: cibuildwheel on Linux
+        uses: pypa/cibuildwheel@v2.11.2
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_ENVIRONMENT_PASS_LINUX: CI
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+
+
+
   wheels:
+    if: |
+      ${{ github.event_name == 'workflow_dispatch' ||
+      (github.ref == 'refs/heads/main' && startsWith(github.ref, 'refs/tags/v')) }}
     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        arch: [auto, aarch64]
-        py: [cp37, cp38, cp39, cp310]
-        include:
-          - os: macos-latest
-            py: cp38
-            arch: universal2
-          - os: macos-latest
-            py: cp39
-            arch: universal2
-          - os: macos-latest
-            py: cp310
-            arch: universal2
+        arch: [native, arm64]
+        py: [cp38, cp39, cp310, cp311]
         exclude:
-          - os: windows-latest
-            arch: aarch64
-          - os: macos-latest
-            arch: aarch64
-    env:
-      CIBW_BUILD: ${{ matrix.py }}-*
-      CIBW_ARCHS_LINUX: ${{ matrix.arch }}
+            - os: macos-latest
+              arch: arm64
+              py: cp38
+            - os: ubuntu-latest
+              arch: arm64
+            - os: windows-latest
+              arch: arm64
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
 
       - if: ${{ matrix.arch == 'aarch64' }}
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
 
-      - uses: pypa/cibuildwheel@v2.3.1
+      # Remove after January 16th 2023 when GA switches to 14.2 by default
+      # Remove someday when migration for all nodes will be finished
+      - if: ${{ matrix.os == 'macos-latest' }}
+        run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
+
+      - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native'}}
+        name: Install graphviz for tests on MacOS native
+        uses: tlylt/install-graphviz@v1
+
+      - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native'}}
+        name: Setup gfortran for MacOS native
+        run: |
+          # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
+          set -xe
+          chmod +x .github/workflows/gfortran_utils.sh
+          source .github/workflows/gfortran_utils.sh
+          install_gfortran
+          gfortran --version
+          which gfortran
+
+      - if: ${{ matrix.os == 'ubuntu-latest' ||  matrix.os == 'windows-latest' }}
+        name: Setup gfortran for Linux or Windows
+        uses: awvwgk/setup-fortran@main
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 11
+
+      - if: ${{ matrix.os == 'windows-latest' }}
+        name: cibuildwheel on Windows
+        uses: pypa/cibuildwheel@v2.11.2
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
+          CMAKE_GENERATOR: "MinGW Makefiles"
+          FC: ${{ steps.setup-fortran.outputs.fc }}
+
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        name: cibuildwheel on Linux
+        uses: pypa/cibuildwheel@v2.11.2
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_ENVIRONMENT_PASS_LINUX: CI
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+
+      - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
+        name: cibuildwheel on MacOS native
+        uses: pypa/cibuildwheel@v2.11.2
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          no_proxy: '*'
+
+      - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'arm64' }}
+        name: cibuildwheel on MacOS arm64
+        id: cibw_step
+        uses: pypa/cibuildwheel@v2.11.2
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_ARCHS_MACOS: arm64
+          CIBW_BEFORE_BUILD: |
+            # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
+            set -xe
+            export PLAT="arm64"
+            chmod +x .github/workflows/gfortran_utils.sh
+            source .github/workflows/gfortran_utils.sh
+            install_arm64_cross_gfortran
+          # Although FC is set in the CIBW_BEFORE_BUILD script above,
+          # it is not found by pip and cmake. So here FC is set by hand!!!
+          # It can be a problem if gfortran will be installed in different place.
+          FC: "/opt/gfortran-darwin-arm64-cross/bin/arm64-apple-darwin20.0.0-gfortran"
+          MACOSX_DEPLOYMENT_TARGET: "11.0"
+          no_proxy: '*'
 
       - uses: actions/upload-artifact@v3
         with:
@@ -61,28 +167,33 @@ jobs:
         with:
           python-version: '3.9'
 
+      - uses: tlylt/install-graphviz@v1
+
       - run: python -m pip install --upgrade pip wheel
       - run: python setup.py sdist
-
-      - run: python -m pip install dist/chromo-*
-      - run: python -m pip install pytest
-      - run: python -m pytest
+      - run: python -m pip install --prefer-binary -v `echo dist/chromo-*`[test]
+      - run: python -m pytest -vv
 
       - uses: actions/upload-artifact@v3
         with:
           path: dist/*.tar.gz
 
-  upload:
+  upload_to_PyPI:
+    name: Upload to PyPI
     needs: [wheels, sdist]
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/master' }}
+    if: ${{ github.ref == 'refs/heads/main' && startsWith(github.ref, 'refs/tags/v') }}
     steps:
-      - uses: actions/download-artifact@v3
+      - name: Download files in artifact to "dist/" directory
+        uses: actions/download-artifact@v3
         with:
           name: artifact
           path: dist
 
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.6.4
         with:
           user: __token__
-          password: ${{secrets.pypi_password}}
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+
