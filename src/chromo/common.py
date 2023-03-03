@@ -95,11 +95,13 @@ class CrossSectionData:
     def __ne__(self, other):
         return not self == other
 
-    def __getitem__(self, item):
-        return getattr(self, item)
-
-    def __setitem__(self, item, value):
-        setattr(self, item, value)
+    def _mul_radd(self, factor, other):
+        for field in dataclasses.fields(self):
+            setattr(
+                self,
+                field.name,
+                getattr(self, field.name) + factor * getattr(other, field.name),
+            )
 
 
 # Do we need EventData.n_spectators in addition to EventData.n_wounded?
@@ -738,9 +740,7 @@ class MCRun(ABC):
                 for component, fraction in zip(kin2.p2.components, kin2.p2.fractions):
                     kin3.p2 = component
                     # this calls cross_section recursively, which is fine
-                    cs = self.cross_section(kin3)
-                    for field in dataclasses.fields(cs):
-                        cross_section[field.name] += fraction * cs[field.name]
+                    cross_section._mul_radd(fraction, self.cross_section(kin3))
                 return cross_section
             else:
                 return self._cross_section(kin)

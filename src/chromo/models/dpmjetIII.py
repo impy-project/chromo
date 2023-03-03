@@ -142,19 +142,17 @@ class DpmjetIIIRun(MCRun):
 
     @property
     def hA_AA_glauber_trials(self):
-        return self._lib.dtglgp.jstatb
+        """Number of trials for Glauber model integration
 
-    @hA_AA_glauber_trials.setter
-    def hA_AA_glauber_trials(self, ntrials):
-        """Set number of trials for Glauber model integration.
-
+        Default is 1000 (set at model initialisation).
         Larger number of `ntrials` reduces the fluctuations in the cross section,
         thus, making it more smooth. Smaller number of `ntrials` makes calculations of
         cross section faster.
-
-        Args:
-            ntrials: number of trials. Default is 1000 (set at model initialisation).
         """
+        return self._lib.dtglgp.jstatb
+
+    @hA_AA_glauber_trials.setter
+    def _(self, ntrials):
         self._lib.dtglgp.jstatb = ntrials
 
     def _set_kinematics(self, kin):
