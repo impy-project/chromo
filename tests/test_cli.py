@@ -334,16 +334,21 @@ def test_config(make_pi_0_stable):
             else:
                 assert np.sum(is_final & is_pi_0) == 0
 
-    ofile = f"pi_0_stable_{make_pi_0_stable}.hepmc"
+    # Trying to create the config file as a read-write
+    # temporary file fails in CI on windows, so we create
+    # the file in a temporary directory instead.
+    with tempfile.TemporaryDirectory() as d:
+        config = Path(d) / "config.py"
 
-    with tempfile.NamedTemporaryFile("w+") as config:
-        config.write(
-            f"""
+        with open(config, "w") as f:
+            f.write(
+                f"""
 from particle import literals as lp
 model.set_stable(lp.pi_0.pdgid, {make_pi_0_stable!r})
 """
-        )
-        config.flush()
+            )
+
+        ofile = f"pi_0_stable_{make_pi_0_stable}.hepmc"
 
         run(
             "-s",
@@ -351,7 +356,7 @@ model.set_stable(lp.pi_0.pdgid, {make_pi_0_stable!r})
             "-S",
             "100",
             "-c",
-            config.name,
+            config,
             "-f",
             ofile,
             file=ofile,
