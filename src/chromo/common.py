@@ -554,7 +554,6 @@ class MCRun(ABC):
         assert hasattr(self, "_frame")
         self._lib = importlib.import_module(f"chromo.models.{self._library_name}")
 
-        self._seed = seed
         self._rng = np.random.default_rng(seed)
         if hasattr(self._lib, "npy"):
             self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
@@ -589,7 +588,9 @@ class MCRun(ABC):
 
     @property
     def seed(self):
-        return self._seed
+        # This is using private interface to get the seed. This may be brittle.
+        # I did not find a way to get the seed using the public API.
+        return self._rng._bit_generator._seed_seq.entropy
 
     @classproperty
     def name(cls):
