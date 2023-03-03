@@ -296,7 +296,7 @@ def parse_arguments():
         code = ["def configure(model):\n"]
         for line in open(fn):
             code.append(f"    {line}")
-        args.config = "".join(code)
+        args.config_code = "".join(code)
 
     return args
 
@@ -347,10 +347,10 @@ def main():
         if args.config:
             try:
                 d = {}
-                exec(args.config, d)
+                exec(args.config_code, d)
                 d["configure"](model)
             except Exception:
-                print(f"Error in configuration code:\n\n{args.config}")
+                print(f"Error in configuration code:\n\n{args.config_code}")
                 raise
         ofile = FORMATS[args.output](args.out, model)
         with ofile:
