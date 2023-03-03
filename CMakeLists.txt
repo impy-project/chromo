@@ -2,14 +2,18 @@ cmake_minimum_required(VERSION 3.17)
 
 project(chromo LANGUAGES Fortran)
 
-# Find C/CXX compilers that match the Fortran compiler
-if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  # Compiler version is something like XY.Z.N, we want only XY
-  string(REGEX MATCH "[0-9]+" COMPILER_MAJOR_VERSION ${CMAKE_Fortran_COMPILER_VERSION})
-  find_program(CMAKE_C_COMPILER "gcc-${COMPILER_MAJOR_VERSION}")
-  find_program(CMAKE_CXX_COMPILER "g++-${COMPILER_MAJOR_VERSION}")
-else()
-  message(FATAL_ERROR "Unknown Fortran compiler, cannot search for C/CXX compiler")
+# Force usage of gcc
+# For MacOS arm64 turn it off to use Clang
+IF(NOT (APPLE AND (CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")))
+  # Find C/CXX compilers that match the Fortran compiler
+  if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    # Compiler version is something like XY.Z.N, we want only XY
+    string(REGEX MATCH "[0-9]+" COMPILER_MAJOR_VERSION ${CMAKE_Fortran_COMPILER_VERSION})
+    find_program(CMAKE_C_COMPILER "gcc-${COMPILER_MAJOR_VERSION}")
+    find_program(CMAKE_CXX_COMPILER "g++-${COMPILER_MAJOR_VERSION}")
+  else()
+    message(FATAL_ERROR "Unknown Fortran compiler, cannot search for C/CXX compiler")
+  endif()
 endif()
 
 # Delayed toolchain initialization
@@ -30,7 +34,8 @@ include(CMakePrintHelpers)
 include(F2Py)
 find_package(pybind11 CONFIG)
 
-find_package(Python REQUIRED COMPONENTS Interpreter Development)
+
+find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 
 # in Numpy-1.22+, this becomes easier: import numpy.f2py; print(numpy.f2py.get_include())
 if (NOT F2PY_INCLUDE_DIR)
@@ -80,11 +85,15 @@ if (UNIX)
   add_compile_options(
     -Wno-uninitialized
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
+    $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
   )
   if (APPLE)
+    set(is_fortran "$<COMPILE_LANGUAGE:Fortran>")
+    set(is_greater_v10 "$<VERSION_GREATER:$<Fortran_COMPILER_VERSION>,10.0.0>")
+    set(is_gfortran_greater_v10 "$<AND:${is_fortran},${is_greater_v10}>")
     add_compile_options(
-      $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>)
+      $<${is_gfortran_greater_v10}:-fallow-argument-mismatch>)
   else()
     add_compile_options(
       $<$<COMPILE_LANGUAGE:Fortran>:-Wno-argument-mismatch>)
@@ -93,9 +102,10 @@ else() # Windows MinGW!
 	add_compile_options(
     -Wno-uninitialized
     -w
+    $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
-	  $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
+    $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
     $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
   )
   # TODO
@@ -358,6 +368,22 @@ target_include_directories(_pythia8 PUBLIC
   ${cpp_dir}
 )
 target_link_libraries(_pythia8 PRIVATE libpythia8)
+
+# Add . directory to rpath for MacOS and Linux
+# It enables _pythia8 to search for dependencies (libpythia8)
+# in its own directory. Windows does it by default.
+set(pythia8_rpath_fix)
+if(APPLE)
+  set(pythia8_rpath_fix "@loader_path")
+elseif(UNIX)
+  set(pythia8_rpath_fix "$ORIGIN")
+endif()  
+
+set_target_properties(_pythia8 PROPERTIES
+        BUILD_WITH_INSTALL_RPATH FALSE
+        LINK_FLAGS "-Wl,-rpath,\'${pythia8_rpath_fix}\'")
+
+
 install(TARGETS libpythia8 DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 
