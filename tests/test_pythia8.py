@@ -138,8 +138,15 @@ def test_event(event):
 
 
 def test_pythia_elastic():
-    evt_kin = CenterOfMass(10 * GeV, "p", "p")
-    m = Pythia8(evt_kin, seed=1, config=["SoftQCD:elastic=on"])
+    kin = CenterOfMass(10 * GeV, "p", "p")
+    m = Pythia8(kin, seed=1, config=["SoftQCD:elastic=on"])
     for event in m(10):
         assert len(event) == 4
         assert_equal(event.pid, [2212] * 4)
+
+
+def test_pythia_gamma_p():
+    kin = CenterOfMass(10 * GeV, "gamma", "p")
+    m = Pythia8(kin, seed=1)
+    for event in m(10):
+        assert len(event) > 2
