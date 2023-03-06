@@ -76,4 +76,7 @@ jobs:
       - name: Show variables0
         run: echo '${{ toJSON(github) }}'
 
+      - name: Show variables1
+        run: echo 'RUN'  
+
 
