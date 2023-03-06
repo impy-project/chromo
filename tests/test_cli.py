@@ -9,7 +9,22 @@ from particle import Particle
 import pyhepmc
 import uproot
 import platform
+import numpy as np
+import tempfile
 import os
+
+
+# Implementation notes:
+#
+# Most of these tests generate files, which are then checked to pass
+# certain criteria. The utility function `run` automates most of the
+# boilerplate, it can also check the stdout or stderr and you can pass
+# configuration.
+#
+# Generating files with potentially conflicting names can cause tests
+# to fail seemingly randomly when pytext-xdist is used to run tests in
+# parallel. To avoid that, `run` creates the output in a unique
+# temporary directory.
 
 
 def format_matches_extension(p):
@@ -31,37 +46,45 @@ def run(
     stdout=None,
     stderr=None,
     file=None,
+    config=None,
     checks=(format_matches_extension,),
 ):
-    r = subp.run(("chromo",) + cmd, capture_output=True)
-    assert r.returncode == returncode, r.stderr.decode()
-    match = None
-    if stdout is not None:
-        actual = r.stdout.decode()
-        if stdout in actual:  # also check for literal match
-            match = True
-        else:
-            match = re.search(stdout, actual)
-        assert match, "\n" + actual
-    if stderr is not None:
-        actual = r.stderr.decode()
-        if stderr in actual:  # also check for literal match
-            match = True
-        else:
-            match = re.search(stderr, actual)
-        assert match, f"\n  [expected] {stderr}\n  [  got   ] {actual}"
-    if file:
-        if match is not None:
-            p = Path(file.format(*match.groups()))
-        else:
-            p = Path(file)
-        assert p.exists()
+    with tempfile.TemporaryDirectory() as cwd:
+        cwd = Path(cwd)
+        if config:
+            with open(cwd / "config.cfg", "w") as f:
+                f.write(config)
 
-        if checks:
-            for check in checks:
-                check(p)
+            cmd += ("-c", "config.cfg")
+        r = subp.run(("chromo",) + cmd, cwd=cwd, capture_output=True)
+        assert r.returncode == returncode, r.stderr.decode()
+        match = None
+        if stdout is not None:
+            actual = r.stdout.decode()
+            if stdout in actual:  # also check for literal match
+                match = True
+            else:
+                match = re.search(stdout, actual)
+            assert match, "\n" + actual
+        if stderr is not None:
+            actual = r.stderr.decode()
+            if stderr in actual:  # also check for literal match
+                match = True
+            else:
+                match = re.search(stderr, actual)
+            assert match, f"\n  [expected] {stderr}\n  [  got   ] {actual}"
+        if file:
+            if match is not None:
+                p = cwd / file.format(*match.groups())
+            else:
+                p = cwd / file
+            assert p.exists()
 
-        p.unlink()
+            if checks:
+                for check in checks:
+                    check(p)
+
+            p.unlink()
 
 
 # In the tests below, make sure that all output files
@@ -313,6 +336,42 @@ def test_format_3():
         "svg",
         stdout="Format[ \t]*svg",
         file="chromo_eposlhc_9_2212_2212_100_000.svg",
+    )
+
+
+@pytest.mark.parametrize("make_pi_0_stable", (False, True))
+def test_config(make_pi_0_stable):
+    def check(p):
+        import pyhepmc
+        from particle import literals as lp
+
+        with pyhepmc.open(p) as f:
+            event = f.read()
+            is_final = event.numpy.particles.status == 1
+            is_pi_0 = event.numpy.particles.pid == lp.pi_0.pdgid
+            if make_pi_0_stable:
+                assert np.sum(is_final & is_pi_0) > 0
+            else:
+                assert np.sum(is_final & is_pi_0) == 0
+
+    config = f"""
+from particle import literals as lp
+model.set_stable(lp.pi_0.pdgid, {make_pi_0_stable!r})
+"""
+
+    ofile = f"pi_0_stable_{make_pi_0_stable}.hepmc"
+
+    run(
+        "-s",
+        "10",
+        "-S",
+        "100",
+        "-f",
+        ofile,
+        file=ofile,
+        config=config,
+        stdout="Configuration[ \t]*config.cfg",
+        checks=(check,),
     )
 
 
