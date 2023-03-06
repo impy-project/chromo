@@ -14,6 +14,19 @@ import tempfile
 import os
 
 
+# Implementation notes:
+#
+# Most of these tests generate files, which are then checked to pass
+# certain criteria. The utility function `run` automates most of the
+# boilerplate, it can also check the stdout or stderr and you can pass
+# configuration.
+#
+# Generating files with potentially conflicting names can cause tests
+# to fail seemingly randomly when pytext-xdist is used to run tests in
+# parallel. To avoid that, `run` creates the output in a unique
+# temporary directory.
+
+
 def format_matches_extension(p):
     ext = p.suffixes
     _, model, seed, pid1, pid2, en, *rest = p.stem.split("_")
@@ -33,9 +46,16 @@ def run(
     stdout=None,
     stderr=None,
     file=None,
+    config=None,
     checks=(format_matches_extension,),
 ):
     with tempfile.TemporaryDirectory() as cwd:
+        cwd = Path(cwd)
+        if config:
+            with open(cwd / "config.cfg", "w") as f:
+                f.write(config)
+
+            cmd += ("-c", "config.cfg")
         r = subp.run(("chromo",) + cmd, cwd=cwd, capture_output=True)
         assert r.returncode == returncode, r.stderr.decode()
         match = None
@@ -55,9 +75,9 @@ def run(
             assert match, f"\n  [expected] {stderr}\n  [  got   ] {actual}"
         if file:
             if match is not None:
-                p = Path(cwd) / file.format(*match.groups())
+                p = cwd / file.format(*match.groups())
             else:
-                p = Path(cwd) / file
+                p = cwd / file
             assert p.exists()
 
             if checks:
@@ -334,34 +354,25 @@ def test_config(make_pi_0_stable):
             else:
                 assert np.sum(is_final & is_pi_0) == 0
 
-    # Trying to create the config file as a read-write
-    # temporary file fails in CI on windows, so we create
-    # the file in a temporary directory instead.
-    with tempfile.TemporaryDirectory() as d:
-        config = Path(d) / "config.py"
-
-        with open(config, "w") as f:
-            f.write(
-                f"""
+    config = f"""
 from particle import literals as lp
 model.set_stable(lp.pi_0.pdgid, {make_pi_0_stable!r})
 """
-            )
 
-        ofile = f"pi_0_stable_{make_pi_0_stable}.hepmc"
+    ofile = f"pi_0_stable_{make_pi_0_stable}.hepmc"
 
-        run(
-            "-s",
-            "10",
-            "-S",
-            "100",
-            "-c",
-            config,
-            "-f",
-            ofile,
-            file=ofile,
-            checks=(check,),
-        )
+    run(
+        "-s",
+        "10",
+        "-S",
+        "100",
+        "-f",
+        ofile,
+        file=ofile,
+        config=config,
+        stdout="Configuration[ \t]*config.cfg",
+        checks=(check,),
+    )
 
 
 def test_filename_option():
