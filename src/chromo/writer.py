@@ -202,7 +202,8 @@ class Svg:
         odir, name, ext = self._template
         fn = Path(odir) / f"{name}_{self._idx:03}{ext}"
         self._idx += 1
-        with open(fn, "w") as f:
+        # explicit utf-8 encoding is required on Windows
+        with open(fn, "w", encoding="utf-8") as f:
             f.write(svg)
 
 

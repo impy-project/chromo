@@ -113,15 +113,11 @@ class DpmjetIIIRun(MCRun):
         self._lib.pydat1.mstj[22 - 1] = 2
         self._set_final_state_particles()
 
-    def _cross_section(self, kin=None, precision=None):
+    def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
         # we override to set precision
         if (kin.p1.A and kin.p1.A > 1) or kin.p2.A > 1:
             assert kin.p2.A >= 1, "DPMJET requires nucleons or nuclei on side 2."
-            if precision is not None:
-                saved = self._lib.dtglgp.jstatb
-                # Set number of trials for Glauber model integration
-                self._lib.dtglgp.jstatb = precision
             self._lib.dt_xsglau(
                 kin.p1.A or 1,
                 kin.p2.A or 1,
@@ -135,8 +131,6 @@ class DpmjetIIIRun(MCRun):
                 1,
                 1,
             )
-            if precision is not None:
-                self._lib.dtglgp.jstatb = saved
             return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
         else:
             stot, sela = self._lib.dt_xshn(
@@ -145,6 +139,21 @@ class DpmjetIIIRun(MCRun):
             return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
 
         # TODO set more cross-sections
+
+    @property
+    def glauber_trials(self):
+        """Number of trials for Glauber model integration
+
+        Default is 1000 (set at model initialisation).
+        Larger number of `ntrials` reduces the fluctuations in the cross section,
+        thus, making it more smooth. Smaller number of `ntrials` makes calculations of
+        cross section faster.
+        """
+        return self._lib.dtglgp.jstatb
+
+    @glauber_trials.setter
+    def glauber_trials(self, ntrials):
+        self._lib.dtglgp.jstatb = ntrials
 
     def _set_kinematics(self, kin):
         # Save maximal mass that has been initialized

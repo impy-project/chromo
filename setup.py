@@ -16,6 +16,7 @@ if not os.environ.get("CI", False):
         # switching between development branches
         subp.check_call(["git", "submodule", "update"])
 
+
 # for convenience, support building extra models via extra.cfg
 # extra.cfg is not tracked by git, so can be freely modified
 # extra.cfg example:
@@ -25,6 +26,14 @@ if not os.environ.get("CI", False):
 # sib23c03
 # dev_dpmjetIII193=/full/path/to/dir/dpmjetIII-19.3
 # ----
+
+# Set environment variable VIRTUAL_ENV to venv directory
+# It is required in FindPython to find a correct version of python
+# when venv is used in cibuildwheel. It is rather the problem of
+# cibuildwheel, which uses venv without activating it. So setting
+# VIRTUAL_ENV imitates the activation. The workaround should be remove
+# when `cibuildwheel` fixes this problem.
+os.environ["VIRTUAL_ENV"] = str(Path(sys.executable).absolute().parents[1])
 
 ext_modules = []
 for model in get_models():

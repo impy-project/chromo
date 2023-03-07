@@ -1,6 +1,6 @@
 from chromo.kinematics import CenterOfMass
 from chromo.models import Pythia8
-from chromo.constants import GeV
+from chromo.constants import GeV, long_lived
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from .util import reference_charge
@@ -153,3 +153,9 @@ def test_seed(seed):
         assert m.seed >= 0
     else:
         assert m.seed == seed
+
+
+def test_pythia_get_stable():
+    evt_kin = CenterOfMass(10 * GeV, "p", "p")
+    m = Pythia8(evt_kin, seed=1)
+    assert m._get_stable() == set(long_lived)

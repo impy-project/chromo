@@ -2,6 +2,7 @@ include *.py
 include *.cmake
 include pyproject.toml
 include CMakeLists.txt
+include default_models.cfg
 recursive-exclude src/chromo/iamdata *
 recursive-include src/f2py *
 recursive-include src/fortran *
@@ -10,10 +11,11 @@ include src/cpp/pybind11/CMakeLists.txt
 include src/cpp/pybind11/LICENSE
 include src/cpp/pybind11/tools/*
 include src/cpp/_pythia8.cpp
-recursive-include src/cpp/pythia8307/include *
-recursive-include src/cpp/pythia8307/src *
-include src/cpp/pythia8307/COPYING
-include src/cpp/pythia8307/AUTHORS
+recursive-include src/cpp/pythia83/include *
+recursive-include src/cpp/pythia83/src *
+include src/cpp/private_access.hpp
+include src/cpp/pythia83/COPYING
+include src/cpp/pythia83/AUTHORS
 
 global-exclude .git*
 global-exclude *.tgz
