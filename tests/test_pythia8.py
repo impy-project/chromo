@@ -137,12 +137,22 @@ def test_event(event):
     assert_equal(event.pid[:2], (2212, 2212))
 
 
-def test_pythia_elastic():
+def test_elastic():
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
     m = Pythia8(evt_kin, seed=1, config=["SoftQCD:elastic=on"])
     for event in m(10):
         assert len(event) == 4
         assert_equal(event.pid, [2212] * 4)
+
+
+@pytest.mark.parametrize("seed", (None, 0, 1, int(1e10)))
+def test_seed(seed):
+    evt_kin = CenterOfMass(10 * GeV, "p", "p")
+    m = Pythia8(evt_kin, seed=seed)
+    if seed is None:
+        assert m.seed >= 0
+    else:
+        assert m.seed == seed
 
 
 def test_pythia_get_stable():
