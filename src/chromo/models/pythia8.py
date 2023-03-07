@@ -126,12 +126,17 @@ class Pythia8(MCRun):
 
         # TODO use numpy PRNG instead of Pythia's
         config += [
-            "Random:setSeed = on",  # Use our random seed
-            # Pythia accepts only seeds smaller than int(2.14e9)
-            f"Random:seed = {self.seed % int(2.14e9)}",
-            "Beams:frameType = 1",  # Use center-of-mass frame
-            "Print:quiet = on",  # Reduce verbosity
-            "Next:numberCount = 0",  # do not print progress
+            # Use our random seed
+            "Random:setSeed = on",
+            # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000.
+            # This may change in the future if they switch to a different PRNG.
+            f"Random:seed = {self.seed % 900_000_000}",
+            # Use center-of-mass frame
+            "Beams:frameType = 1",
+            # Reduce verbosity
+            "Print:quiet = on",
+            # do not print progress
+            "Next:numberCount = 0",
         ]
 
         if (kin.p1.A or 0) > 1 or (kin.p2.A or 1) > 1:
