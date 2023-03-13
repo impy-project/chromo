@@ -47,7 +47,7 @@ CLI via a HEPMC output that can be piped in Rivet or other tools supporting the 
 ## Output formats
 
 - plain Python `event` objects
-- HEPMC
+- HEPMC (optionally gzip compressed)
 - ROOT (via uproot)
 - ..gzip compressed/uncompressed
 - event views via SVG  
