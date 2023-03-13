@@ -49,7 +49,7 @@ CLI via a HEPMC output that can be piped in Rivet or other tools supporting the 
 - plain Python `event` objects
 - HEPMC (optionally gzip compressed)
 - ROOT (via uproot)
-- event views via SVG  
+- event views via SVG (via pyhepmc package)
 
 ## Supported models
 
