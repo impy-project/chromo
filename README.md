@@ -74,7 +74,7 @@ Please note that `chromo` only provides a user interface for the following model
 | [UrQMD 3.4](https://inspirehep.net/literature/468266) [+ second citation](https://inspirehep.net/literature/507334)    |  hN, hA, AA* | unavailable on Windows |
 
 
-*h* = hadron, *A* = nucleus, *g* = gamma, *e* = electron/positron
+*h* = hadron, *N* = nucleon (p or n), *A* = nucleus, *g* = gamma, *e* = electron/positron
 
 ## Installation via PyPI
 
