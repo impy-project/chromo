@@ -1,8 +1,12 @@
 # ![](doc/chromo.svg)<br> Cosmic ray and HadROnic interactiOn MOnte-carlo frontend
 
-This package implements are generic user interface to popular event generators used in cosmic ray and high-energy particle physics. The purpose of the package is to simplify working with simulations of particle interactions without the need to use Fortran style interfaces to event generators, 'ASCII input cards' and files or C++ dependencies.  
+This package provides a simple and generic user interface to popular event generators used in cosmic ray and high-energy particle physics. By removing the need for complicated Fortran-style interfaces, ASCII input cards, and C++ dependencies, the package simplifies the simulation of particle interactions, making it easier and faster for a wider audience to access.
 
-Simulate interactions with one of the supported event generators 
+## Usage
+
+### Python user interface
+
+To simulate interactions with one of the supported event generators, import the package and define the parameters of the collision. Then, create an instance of an event generator, and generate events.
 
 ```python
 import numpy as np
@@ -34,131 +38,58 @@ average_pt = average_pt / nevents
 print("Average pT for charged pions {0:4.3f}".format(average_pt))
 ```
 
+Further examples, such as [this](examples/compare_models.ipynb) can be found in the examples folder.
+
+### Command line user interface (CLI) 
+
+Installing `chromo` also makes a command-line interface available. If your Python runtime environment is properly set up, you can do
+
+     chromo --help
+
+To see the help of the command-line interface. If that does not work, just replace `chromo` with `python -m chromo`. The command-line interface was designed to feel familiar for users of [CRMC](https://gitlab.iap.kit.edu/AirShowerPhysics/crmc). The CLI can write events in a variety of output formats, as detailed below.
+CLI via a HEPMC output that can be piped in Rivet or other tools supporting the format.
+
+## Output formats
+
+- HEPMC (optionally gzip compressed)
+- ROOT (via uproot)
+- event views via SVG (via pyhepmc package)
+
 ## Supported models
 
-- DPMJET-III 3.0.6 & PHOJET 1.12-35
-- DPMJET-III 19.1 & PHOJET 19.1
-- DPMJET-III 19.3 & PHOJET 19.3
-- EPOS-LHC
-- PYTHIA 6.4
-- PYTHIA 8.3
-- QGSJet-01
-- QGSJet-II-03
-- QGSJet-II-04
-- SIBYLL-2.1
-- SIBYLL-2.3
-- SIBYLL-2.3c
-- SIBYLL-2.3d
-- SOPHIA 2.0
-- UrQMD 3.4
+Please note that `chromo` only provides a user interface for the following models, and does not contain any particle physics models itself. When using any of these models in public-facing work, it is important to properly cite the original model reference by following the links below. Additionally, if you find `chromo` useful in your work, we would appreciate an acknowledgement, footnote, or link to `chromo`.
 
-## Installation
+| Interaction model                                         | Supported proj/targ       | Comment                         | 
+|------------------------------------------------------------|---------------------------|--------------------------------|
+| [DPMJET-III 3.0.6](https://inspirehep.net/literature/538940) & [PHOJET 1.12-35](https://inspirehep.net/literature/373339)      | *hN, gg, gN, hA, gA, AA*  | |
+| [DPMJET-III & PHOJET 19.1 and 19.3](https://inspirehep.net/literature/1503512) [(repo on GitHub)](https://github.com/DPMJET/DPMJET) |  *hN, gg, gN, hA, gA, AA* | |
+| [EPOS-LHC](https://inspirehep.net/literature/1236629)     | *hN, hA, AA*              | |
+| [PYTHIA 6.4](https://inspirehep.net/literature/712925)    | *hN, ee, gg, gN*          | |
+| [PYTHIA 8.3](https://inspirehep.net/literature/2056998) (https://pythia.org/) | *hN, ee, gg, gN* & *hA, AA* (Argantyr) | unavailable on Windows |
+| [QGSJet-01](https://inspirehep.net/literature/460408)     | *hN, hA, AA*              | |
+| [QGSJet-II-03](https://inspirehep.net/literature/667881)  | *hN, hA, AA*              | |
+| [QGSJet-II-04](https://inspirehep.net/literature/872658)  | *hN, hA, AA*              | |
+| [SIBYLL-2.1](https://inspirehep.net/literature/823839)    | *hN, hA (A<=20)*          | |
+| [SIBYLL-2.3d](https://inspirehep.net/literature/1768983)  | *hN, hA (A<=20)*          | incl. legacy versions -2.3/-2.3c |
+| [SOPHIA 2.0](https://inspirehep.net/literature/497602)    | *gN*                      | |
+| [UrQMD 3.4](https://inspirehep.net/literature/468266) [+ second citation](https://inspirehep.net/literature/507334)    |  hN, hA, AA* | unavailable on Windows |
 
-## Supported platforms
+
+*h* = hadron, *A* = nucleus, *g* = gamma, *e* = electron/positron
+
+## Installation via PyPI
+
+### Supported platforms
 
 - Python 3.8+
-- Linux, Mac OS X, Windows
+- Linux, Mac OS X (x86 and M1/M2), Windows
 
-### From PyPI (not yet available)
+The recommended way to install `chromo` is by using the pre-compiled binary wheel, which is available for most common architectures and Python versions
 
     pip install chromo
 
-The package will be available as a pre-compiled binary wheels in the future, but for now you have to compile it from source, see next subsection.
+Advanced and developer installation instructions can be found [here](doc/dev_docs.md).
 
-### From source
-
-Installation from source requires a Python installation setup for development, as well as C/C++ and Fortran compilers.
-
-To build from source (the **recursive** flag is important to check out submodules):
-
-    git clone --recursive https://github.com/impy-project/chromo
-    cd chromo
-    pip install --prefer-binary -v -e .
-
-This takes a while. The command installs the package in editable mode (for developing the Python layer) and with verbose output, so that you can watch the compilation happening. Warnings can be ignored, but watch out for errors. Pip automatically creates a virtual environment and downloads dependencies for the build, prefering to install binary wheels of older versions of dependencies if the most recent version has no binary wheel, so you don't have to compile dependencies as well.
-
-To run the tests or try the examples, use this modified `pip install` instead:
-
-    pip install --prefer-binary -v -e .'[test,examples]'
-
-which installes chromo and additional optional Python packages that are used in the tests and examples, but not required to run chromo.
-
-#### For developers
-
-If you want to work on the Fortran sources, it is more convenient to install a development version of Chromo with setuptools.
-
-    python setup.py develop
-
-You need to install the build environment manually for this to succeed. Check the key `[build-system.requires]` in `pyproject.toml` which packages are required.
-
-Unlike the pip command, this command reuses build artefacts that were previously generated, so you don't have to recompile everything every time. Another convenience for developers is the optional file `models.cfg`. If it exists, only models are build which are listed there. See `default_models.cfg` for the full list.
-
-#### Known issues
-
-- On OSX
-    - You need to install gcc and gfortran with homebrew.
-    - Apple introduced a bug in the Xcode Command Line Tools Version 14 which produces a linker error when compiling C++ code with gcc. Until this is fixed, the workaround is to downgrade to 13.4, use this link https://download.developer.apple.com/Developer_Tools/Command_Line_Tools_for_Xcode_13.4/Command_Line_Tools_for_Xcode_13.4.dmg and turn off automatic updates in the System Settings, because otherwise your Mac will upgrade to 14 again.
-- setuptools > 60 does not seem to work. Downgrade with `pip install setuptools<60` if you experience problems.
-
-If you cannot fix the installation with these hints, please look into the subsection below which explains how to install in chromo in a verified docker environment. The docker environment has a properly set up environment verified by us, so that the installation is guaranteed to succeed.
-
-### From source in Docker
-
-This guide works on Linux and OSX. You need a running Docker server. Please google how to set up Docker on your machine.
-
-    # download chromo
-    git clone --recursive https://github.com/impy-project/chromo
-    cd chromo
-
-    # download linux image for x86_64 or see below
-    docker pull quay.io/pypa/manylinux2014_x86_64
- 
-    # For aarch64 or VM on Apple Silicon use the following image and
-    # replace the end of the next command accordingly.
-    # docker pull quay.io/pypa/manylinux2014_aarch64
-    
-    # create docker instance and bind chromo directory
-    docker run --rm -d -it --name chromo -v "$(pwd)":/app quay.io/pypa/manylinux2014_x86_64
-
-    # enter your docker instance
-    docker exec -it chromo /bin/bash
-
-    cd /app
-
-    # select python version, e.g. 3.9, and enter virtual environment
-    python3.9 -m venv venv
-    source venv/bin/activate
-
-    # install chromo and dependencies (prefer binary wheels for deps)
-    pip install --prefer-binary -v -e .
-
-You can now use chromo inside the docker instance. If you run Linux, you can also make a wheel inside
-docker and install it in your host.
-
-    # inside docker
-    pip install wheel
-    python setup.py bdist_wheel
-
-    # exit docker with ctrl+D
-    pip install dist/*.whl
-
-This should allow you to use chromo also outside docker. This works only if you use the same Python version inside and outside of docker.
-
-## User interface
-
-There are two ways to interact with the code.
-
-1. As in the example above, via plain python in scripts or Jupyter notebooks. Look at this [example](examples/compare_models.ipynb).
-
-2. Via a HEPMC output that can be piped in Rivet or other tools supporting the format.
-
-## Running tests
-
-Some notes regarding tests.
-
-- Tests are run in parallel by default with `pytest-xdist`. To disable this, use the option `-n 0`.
-- The test `test_generators` takes a long time. You can skip it with the option `-k "not test_generators"`.
-- Tests which run a model do so in a separate process, because most models can only be instantiated once. This prevents using `--pdb` to start the debugger at the point of failure. You can prefix the pytest call like this `DEBUG=10 python -m pytest ...` to run the model in the current process. This will only work once for each model and lead to failures afterwards.
 
 ## Authors
 
