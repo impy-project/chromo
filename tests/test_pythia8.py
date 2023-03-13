@@ -151,7 +151,7 @@ def test_gamma_p():
     for event in m(10):
         assert len(event) > 2
 
-        
+
 @pytest.mark.parametrize("seed", (None, 0, 1, int(1e10)))
 def test_seed(seed):
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
