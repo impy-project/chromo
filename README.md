@@ -42,7 +42,7 @@ Further examples, such as [this](examples/compare_models.ipynb) can be found in 
 
 ### Command line user interface (CLI) 
 
-CLI Via a HEPMC output that can be piped in Rivet or other tools supporting the format.
+CLI via a HEPMC output that can be piped in Rivet or other tools supporting the format.
 
 ## Output formats
 
