@@ -168,6 +168,12 @@ def parse_arguments():
         help="output file name (generated if none provided); "
         "format is guessed from the file extension if --output is not specified",
     )
+    parser.add_argument(
+        "-c",
+        "--config",
+        help="configuration file for generator; configuration is Python code which "
+        "interacts with the variable `model` that represents the model instance",
+    )
 
     args = parser.parse_args()
 
@@ -282,14 +288,25 @@ def parse_arguments():
     if args.output not in FORMATS:
         raise SystemExit(f"Error: unknown format {args.output} ({VALID_FORMATS})")
 
-    return args
+    configuration = ""
+    if args.config:
+        fn = Path(args.config)
+        if not fn.exists():
+            raise SystemExit(f"Error: configuration file {args.config} does not exist")
+
+        lines = ["def configure(model):\n"]
+        for line in open(fn):
+            lines.append(f"    {line}")
+        configuration = "".join(lines)
+
+    return args, configuration
 
 
 def main():
     from rich.console import Console
     from rich.panel import Panel
 
-    args = parse_arguments()
+    args, configuration = parse_arguments()
 
     p1 = Particle.from_pdgid(args.projectile_id)
     p2 = Particle.from_pdgid(args.target_id)
@@ -314,6 +331,8 @@ def main():
   [repr.str]Seed[/repr.str]\t\t[repr.number]{args.seed}[/repr.number]
   [repr.str]Format[/repr.str]\t{args.output}\
 """
+    if args.config:
+        msg += f"\n  [repr.str]Configuration[/repr.str]\t{args.config}"
 
     console = Console()
     console.print(
@@ -328,6 +347,14 @@ def main():
     task_id = None
     try:
         model = args.model(evt_kin, seed=args.seed)
+        if configuration:
+            try:
+                d = {}
+                exec(configuration, d)
+                d["configure"](model)
+            except Exception:
+                print(f"Error in configuration code:\n\n{configuration}")
+                raise
         ofile = FORMATS[args.output](args.out, model)
         with ofile:
             # workaround: several models generate extra print when first

@@ -128,12 +128,15 @@ class Pythia8(MCRun):
         config += [
             # use our random seed
             "Random:setSeed = on",
-            f"Random:seed = {self._seed}",
+            # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
+            # this may change in the future if they switch to a different PRNG
+            f"Random:seed = {self.seed % 900_000_000}",
             # use center-of-mass frame
             "Beams:frameType = 1",
             # reduce verbosity
             "Print:quiet = on",
-            "Next:numberCount = 0",  # do not print progress
+            # do not print progress
+            "Next:numberCount = 0",
         ]
 
         if (kin.p1.A or 0) > 1 or (kin.p2.A or 1) > 1:
@@ -164,6 +167,17 @@ class Pythia8(MCRun):
 
     def _set_stable(self, pdgid, stable):
         self._pythia.particleData.mayDecay(pdgid, not stable)
+
+    def _get_stable(self):
+        r = set()
+        for p in self._pythia.particleData.all():
+            # the p.tau0 > 1e-5 cut should not be necessary, but without it,
+            # Pythia8 reports nuclei and some BSM particles like tau' as stable
+            if p.tau0 > 1e-5 and not p.mayDecay:
+                r.add(p.id)
+                if p.hasAnti:
+                    r.add(-p.id)
+        return r
 
     def _generate(self):
         return self._pythia.next()
