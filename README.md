@@ -60,21 +60,21 @@ Please note that `chromo` only provides a user interface for the following model
 
 | Interaction model                                         | Supported proj/targ       | Comment                         | 
 |------------------------------------------------------------|---------------------------|--------------------------------|
-| [DPMJET-III 3.0.6](https://inspirehep.net/literature/538940) & [PHOJET 1.12-35](https://inspirehep.net/literature/373339)      | *hN, gg, gN, hA, gA, AA*  | |
-| [DPMJET-III & PHOJET 19.1 and 19.3](https://inspirehep.net/literature/1503512) [(repo on GitHub)](https://github.com/DPMJET/DPMJET) |  *hN, gg, gN, hA, gA, AA* | |
+| [DPMJET-III 3.0.6](https://inspirehep.net/literature/538940) & [PHOJET 1.12-35](https://inspirehep.net/literature/373339)      | *hN, γγ, γN, hA, γA, AA*  | |
+| [DPMJET-III & PHOJET 19.1 and 19.3](https://inspirehep.net/literature/1503512) [(repo on GitHub)](https://github.com/DPMJET/DPMJET) |  *hN, γγ, γN, hA, γA, AA* | |
 | [EPOS-LHC](https://inspirehep.net/literature/1236629)     | *hN, hA, AA*              | |
-| [PYTHIA 6.4](https://inspirehep.net/literature/712925)    | *hN, ee, gg, gN*          | |
-| [PYTHIA 8.3](https://inspirehep.net/literature/2056998) (https://pythia.org/) | *hN, ee, gg, gN* & *hA, AA* (Argantyr) | unavailable on Windows |
+| [PYTHIA 6.4](https://inspirehep.net/literature/712925)    | *hN, ee, γγ, γN*          | |
+| [PYTHIA 8.3](https://inspirehep.net/literature/2056998) (https://pythia.org/) | *hN, ee, γγ, γN* & *hA, AA* (Argantyr) | unavailable on Windows |
 | [QGSJet-01](https://inspirehep.net/literature/460408)     | *hN, hA, AA*              | |
 | [QGSJet-II-03](https://inspirehep.net/literature/667881)  | *hN, hA, AA*              | |
 | [QGSJet-II-04](https://inspirehep.net/literature/872658)  | *hN, hA, AA*              | |
 | [SIBYLL-2.1](https://inspirehep.net/literature/823839)    | *hN, hA (A<=20)*          | |
 | [SIBYLL-2.3d](https://inspirehep.net/literature/1768983)  | *hN, hA (A<=20)*          | incl. legacy versions -2.3/-2.3c |
-| [SOPHIA 2.0](https://inspirehep.net/literature/497602)    | *gN*                      | |
+| [SOPHIA 2.0](https://inspirehep.net/literature/497602)    | *γN*                      | |
 | [UrQMD 3.4](https://inspirehep.net/literature/468266) [+ second citation](https://inspirehep.net/literature/507334)    |  hN, hA, AA* | unavailable on Windows |
 
 
-*h* = hadron, *N* = nucleon (p or n), *A* = nucleus, *g* = gamma, *e* = electron/positron
+*h* = hadron, *N* = nucleon (p or n), *A* = nucleus, *γ* = photon, *e* = electron/positron
 
 ## Installation via PyPI
 
