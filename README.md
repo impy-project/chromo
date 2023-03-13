@@ -46,14 +46,13 @@ Installing `chromo` also makes a command-line interface available. If your Pytho
 
      chromo --help
 
-To see the help of the command-line interface. If that does not work, just replace `chromo` with `python -m chromo`. The command-line interface was designed to feel familiar for users of [CRMC](https://gitlab.iap.kit.edu/AirShowerPhysics/crmc). The CLI can write events in a variety of output formats, as detailed below.
-CLI via a HEPMC output that can be piped in Rivet or other tools supporting the format.
+To see the help of the command-line interface. If that does not work, just replace `chromo` with `python -m chromo`. The command-line interface was designed to feel familiar for users of [CRMC](https://gitlab.iap.kit.edu/AirShowerPhysics/crmc). The CLI can write events in a variety of output formats, as detailed below. HepMC output can be piped into RIVET and many other tools supporting the format.
 
 ## Output formats
 
-- HEPMC (optionally gzip compressed)
+- HepMC (via pyhepmc, optionally gzip compressed)
 - ROOT (via uproot)
-- event views via SVG (via pyhepmc package)
+- SVG images of events (via pyhepmc package)
 
 ## Supported models
 
