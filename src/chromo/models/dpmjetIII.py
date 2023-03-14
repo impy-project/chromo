@@ -213,10 +213,11 @@ class DpmjetIIIRun(MCRun):
 
 class DpmjetIII191(DpmjetIIIRun):
     _version = "19.1"
+    _projectiles = standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112}
     _library_name = "_dpmjetIII191"
 
 
-class DpmjetIII193(DpmjetIIIRun):
+class DpmjetIII193(DpmjetIII191):
     _version = "19.3"
     _library_name = "_dpmjetIII193"
 
