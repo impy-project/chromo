@@ -145,6 +145,13 @@ def test_elastic():
         assert_equal(event.pid, [2212] * 4)
 
 
+def test_gamma_p():
+    evt_kin = CenterOfMass(10 * GeV, "gamma", "p")
+    m = Pythia8(evt_kin, seed=1)
+    for event in m(10):
+        assert len(event) > 2
+
+
 @pytest.mark.parametrize("seed", (None, 0, 1, int(1e10)))
 def test_seed(seed):
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
@@ -155,7 +162,7 @@ def test_seed(seed):
         assert m.seed == seed
 
 
-def test_pythia_get_stable():
+def test_get_stable():
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
     m = Pythia8(evt_kin, seed=1)
     assert m._get_stable() == set(long_lived)
