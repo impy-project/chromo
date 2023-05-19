@@ -85,9 +85,13 @@ if (UNIX)
   add_compile_options(
     -Wno-uninitialized
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
-    $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
   )
+  if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
+    add_compile_options(
+      $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
+    )
+  endif()
   if (APPLE)
     set(is_fortran "$<COMPILE_LANGUAGE:Fortran>")
     set(is_greater_v10 "$<VERSION_GREATER:$<Fortran_COMPILER_VERSION>,10.0.0>")
@@ -102,12 +106,16 @@ else() # Windows MinGW!
 	add_compile_options(
     -Wno-uninitialized
     -w
-    $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
     $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
     $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
   )
+  if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
+    add_compile_options(
+      $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
+    )
+  endif()
   # TODO
   # set(FLAGS -fast -fpe0)
   # set(FLAGSF90 ${FLAGS} -ffree-form -Wobsolescent -fno-second-underscore)
@@ -146,7 +154,7 @@ f2py_add_module(_eposlhc
   ${fortran_dir}/epos/sources/epos-bas-lhc.f
   ${fortran_dir}/epos/sources/epos-ids-lhc.f
   ${fortran_dir}/epos/sources/epos_interface.f
-  ${fortran_dir}/epos/sources/epos-random.f
+  # ${fortran_dir}/epos/sources/epos-random.f
   ${rangen_source}
   ${logging_source}
   INCLUDE_DIRS
@@ -298,6 +306,10 @@ list(APPEND urqmd34_sources
   ${logging_source}
   ${rangen_source}
 )
+set(urqmd34_interface_sources ${urqmd34_sources})
+list(FILTER urqmd34_interface_sources EXCLUDE REGEX newpart\.f)
+list(FILTER urqmd34_interface_sources EXCLUDE REGEX uhmerge\.f)
+list(FILTER urqmd34_interface_sources EXCLUDE REGEX iso\.f)
 f2py_add_module(_urqmd34
   FUNCTIONS
   urqmd init uinit set0 params uounit strini loginit
@@ -305,6 +317,8 @@ f2py_add_module(_urqmd34
   chepevt ptsigtot ${chromo_functions}
   SOURCES
   ${urqmd34_sources}
+  INTERFACE_SOURCES
+  ${urqmd34_interface_sources}
   INCLUDE_DIRS
   ${fortran_dir}/urqmd-3.4/sources ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
