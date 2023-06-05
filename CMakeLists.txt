@@ -117,7 +117,7 @@ endif()
 set(chromo_definitions CHROMO)
 set(fortran_dir ${CMAKE_SOURCE_DIR}/src/fortran)
 set(cpp_dir ${CMAKE_SOURCE_DIR}/src/cpp)
-set(f2py_dir ${CMAKE_SOURCE_DIR}/src/f2py)
+set(f2py_dir ${CMAKE_CURRENT_BINARY_DIR})
 # Copy fortranobject.c to get rid of deep folder nesting
 configure_file(${F2PY_INCLUDE_DIR}/fortranobject.c fortranobject.c COPYONLY)
 set(f2py_source fortranobject.c)

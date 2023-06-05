@@ -39,4 +39,3 @@ models.cfg
 pythia*.tgz
 src/chromo/iamdata
 fig/*
-/src/f2py/

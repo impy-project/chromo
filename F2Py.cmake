@@ -59,12 +59,9 @@ function (f2py_add_module target_name)
     "FUNCTIONS;INCLUDE_DIRS;INTERFACE_SOURCES;SOURCES;COMPILE_DEFS"
     ${ARGN})
 
-
-  # f2py files that exist in f2py source directory
-  # In case of absence the files are regenerated
-  set(pyf_file ${f2py_dir}/${target_name}.pyf)
-  set(modulec_file ${f2py_dir}/${target_name}module.c)
-  set(f2pywrap_file ${f2py_dir}/${target_name}-f2pywrappers.f)
+  set(pyf_file ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.pyf)
+  set(modulec_file ${CMAKE_CURRENT_BINARY_DIR}/${target_name}module.c)
+  set(f2pywrap_file ${CMAKE_CURRENT_BINARY_DIR}/${target_name}-f2pywrappers.f)
 
   if (NOT F2PY_ADD_MODULE_INTERFACE_SOURCES)
     set(F2PY_ADD_MODULE_INTERFACE_SOURCES ${F2PY_ADD_MODULE_SOURCES})
