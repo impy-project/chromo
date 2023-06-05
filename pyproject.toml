@@ -4,7 +4,7 @@ requires = [
     "wheel",
     "cmake",
     "ninja",
-    "setuptools @ git+https://github.com/HaoZeke/numpy.git@fix22648",
+    "numpy @ git+https://github.com/HaoZeke/numpy.git@fix22648",
 ]
 #build-backend = "setuptools.build_meta"
 
