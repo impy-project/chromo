@@ -113,6 +113,12 @@ else() # Windows MinGW!
   # set(FLAGSF90 ${FLAGS} -ffree-form -Wobsolescent -fno-second-underscore)
 endif()
 
+if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
+    add_compile_options(
+      $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
+    )
+  endif()
+
 ### common for all models
 set(chromo_definitions CHROMO)
 set(fortran_dir ${CMAKE_SOURCE_DIR}/src/fortran)
@@ -146,7 +152,7 @@ f2py_add_module(_eposlhc
   ${fortran_dir}/epos/sources/epos-bas-lhc.f
   ${fortran_dir}/epos/sources/epos-ids-lhc.f
   ${fortran_dir}/epos/sources/epos_interface.f
-  ${fortran_dir}/epos/sources/epos-random.f
+  ${fortran_dir}/epos/epos-random-dummy.f
   ${rangen_source}
   ${logging_source}
   INCLUDE_DIRS
@@ -298,6 +304,10 @@ list(APPEND urqmd34_sources
   ${logging_source}
   ${rangen_source}
 )
+set(urqmd34_interface_sources ${urqmd34_sources})
+list(FILTER urqmd34_interface_sources EXCLUDE REGEX newpart\.f)
+list(FILTER urqmd34_interface_sources EXCLUDE REGEX uhmerge\.f)
+list(FILTER urqmd34_interface_sources EXCLUDE REGEX iso\.f)
 f2py_add_module(_urqmd34
   FUNCTIONS
   urqmd init uinit set0 params uounit strini loginit
@@ -305,6 +315,8 @@ f2py_add_module(_urqmd34
   chepevt ptsigtot ${chromo_functions}
   SOURCES
   ${urqmd34_sources}
+  INTERFACE_SOURCES
+  ${urqmd34_interface_sources}
   INCLUDE_DIRS
   ${fortran_dir}/urqmd-3.4/sources ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
