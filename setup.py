@@ -14,7 +14,8 @@ if not os.environ.get("CI", False):
         # make sure that submodules are up-to-date,
         # it is a common error to forget this when
         # switching between development branches
-        subp.check_call(["git", "submodule", "update"])
+        # subp.check_call(["git", "submodule", "update"])
+        pass
 
 # for convenience, support building extra models via extra.cfg
 # extra.cfg is not tracked by git, so can be freely modified

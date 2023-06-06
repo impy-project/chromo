@@ -138,7 +138,6 @@ function (f2py_add_module target_name)
     target_compile_definitions(${target_name}
     PRIVATE ${F2PY_ADD_MODULE_COMPILE_DEFS})
   endif()  
-  target_compile_options(${target_name} PRIVATE -cpp)
   # Link dll statically in Windows
   # It can be potentially a PROBLEM!!!
   # But this is the only way found to build a working library on Windows.
