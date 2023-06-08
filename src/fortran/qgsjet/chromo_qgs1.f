@@ -9,7 +9,7 @@ C  INITIALIZES QGSJET MODEL quitely and fully.
 C  THIS SUBROUTINE IS CALLED FROM START.
 C-----------------------------------------------------------------------
       IMPLICIT NONE
-      CHARACTER DATDIR*(256)
+      CHARACTER*256 DATDIR
 
       COMMON /AREA8/   WWM,BE(4),DC(5),DETA,ALMPT
       DOUBLE PRECISION WWM,BE,DC,DETA,ALMPT

@@ -272,8 +272,8 @@ def fortran_chars(array_ref, char_seq):
     len_arr = int(str(array_ref.dtype)[2:])
     len_seq = len(char_seq)
     return np.array(
-        [c for c in char_seq + (len_arr - len_seq) * " "], dtype="S" + str(len_arr)
-    )
+        [char_seq + (len_arr - len_seq) * " "], dtype="S" + str(len_arr)
+    )[0]
 
 
 def caller_name(skip=2):
