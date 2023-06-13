@@ -266,9 +266,6 @@ def process_particle(x):
 def fortran_chars(array_ref, char_seq):
     """Helper to set fortran character arrays with python strings"""
     info(10, "Setting fortran array with", char_seq)
-    # Reset
-    import numpy as np
-
     len_arr = int(str(array_ref.dtype)[2:])
     len_seq = len(char_seq)
     return str.encode(char_seq + (len_arr - len_seq) * " ")
