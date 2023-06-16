@@ -201,6 +201,7 @@ class Pythia8(MCRun):
 
         result2: List[str] = []
         for line in result:
+            line = line.strip()
             for ig in ignored:
                 if line.startswith(ig):
                     warnings.warn(f"configuration ignored: {line!r}", RuntimeWarning)
