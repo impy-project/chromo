@@ -7,10 +7,11 @@ import numpy
 
 with TemporaryDirectory() as d:
     subp.run(["pip", "download", "numpy~=1.19.0"], cwd=d)
-    p = list(Path(d).glob("numpy-1.19*"))[0]
+    d = Path(d)
+    p = list(d.glob("numpy-1.19*"))[0]
     with zipfile.ZipFile(p) as f:
-        p = [x for x in f.namelist() if x.endswith("numpy/f2py/")][0]
-        p = f.extract(p)
+        f.extractall(d)
+    p = list(d.glob("numpy*/numpy/f2py"))[0]
     p2 = Path(numpy.__file__).parent / "f2py"
     shutil.rmtree(p2)
     shutil.copytree(p, p2)
