@@ -250,8 +250,21 @@ class EventData:
         """
         Return filtered event with only final state particles.
 
-        The final state is generator-specific, but usually contains only
-        long-lived particles.
+        The final state contains all particles which do not have children.
+
+        Unless the generator configuration is modified (see exceptions below),
+        this means that the final state consists of prompt long-lived particles.
+
+        Long-lived particles have live-times > 30 ps. Prompt particles either
+        originate directly from primary interaction or have only parents with
+        life-times < 30 ps. This is the ALICE definition of "promptness",
+        see ALICE-PUBLIC-2017-005, which is identical to the definition by the
+        "LHC Physics Center at CERN Minimum Bias and Underlying Event working group".
+
+        Exceptions: Some generators deviate from this scheme. SIBYLL-2.1 does not
+        produce Omega- and its antiparticle, so the final state never contains them.
+        The QGSJet family does not produce Omega-, Xi-, Xi0, Sigma-, Sigma+ and their
+        antiparticles.
         """
         return self._select(self.status == 1, False)
 
@@ -767,9 +780,11 @@ class MCRun(ABC):
         self._is_initialized.append(self._library_name)
 
     def _set_final_state_particles(self):
-        """Defines particles as stable for the default 'tau_stable'
-        value in the config."""
+        """
+        Defines particles as stable.
 
+        All long-lived particles (tau > 30 ps) are considered stable.
+        """
         for pdgid in long_lived:
             self._set_stable(pdgid, True)
 
