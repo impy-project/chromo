@@ -185,3 +185,8 @@ class Sibyll23c03(Sibyll23c):
 class Sibyll23d(Sibyll23c):
     _version = "2.3d"
     _library_name = "_sib23d"
+
+
+class Sibyll23d_DEV(Sibyll23d):
+    _version = "2.3d_dev"
+    _library_name = "_dev_sib23d"
