@@ -622,7 +622,7 @@ f2py_add_module(_phojet193
 )
 
 
-##### extra optional models follow below ######
+##### optional models follow below ######
 f2py_add_module(_sib23c00
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} gasdev
