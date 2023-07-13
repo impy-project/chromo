@@ -9,6 +9,7 @@
 #include <Pythia8/HIUserHooks.h>
 #include <array>
 #include <cassert>
+#include <cmath>
 
 namespace py = pybind11;
 using namespace Pythia8;
@@ -103,6 +104,28 @@ py::array_t<int> event_array_children(Event &event)
     return py::array_t<int>(shape, strides, ptr1);
 }
 
+// refills "event" stack with particles 
+// having pid and energy
+void refill_stack(Event &event,
+                    const ParticleData &pd,
+                    py::array_t<int> &pid,
+                    py::array_t<double> &energy) 
+{
+    int id = 0;
+    double en = 0.;
+    double mass = 0.;
+    double pz = 0.;
+    
+    event.reset();
+    for (int i = 0; i != pid.size(); ++i) {
+        id = pid.at(i);
+        en = energy.at(i);
+        mass = pd.findParticle(id)->m0();
+        pz = std::sqrt((en - mass)*(en + mass));
+        event.append(id, 91, 0, 0, 0., 0., pz, en, mass);
+    }    
+}
+
 PYBIND11_MODULE(_pythia8, m)
 {
     py::class_<ParticleData>(m, "ParticleData")
@@ -120,7 +143,6 @@ PYBIND11_MODULE(_pythia8, m)
                      pl.append(p.second);
                  return pl;
              })
-
         ;
 
     py::class_<ParticleDataEntry, ParticleDataEntryPtr>(m, "ParticleDataEntry")
@@ -237,6 +259,12 @@ PYBIND11_MODULE(_pythia8, m)
                  return result;
              })
 
+        .def("refill_decay_stack",
+             [](Pythia &self, py::array_t<int> &pid,
+                              py::array_t<double> &energy)
+             {
+                refill_stack(self.event, self.particleData, pid, energy);
+             })     
         ;
 
     py::class_<Event>(m, "Event")
