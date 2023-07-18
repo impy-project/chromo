@@ -36,6 +36,7 @@ PRIVATE_ACCESS_MEMBER(Vec4, xx, double)
 PRIVATE_ACCESS_MEMBER(Vec4, yy, double)
 PRIVATE_ACCESS_MEMBER(Vec4, zz, double)
 PRIVATE_ACCESS_MEMBER(Vec4, tt, double)
+PRIVATE_ACCESS_MEMBER(Event, entry, vector<Pythia8::Particle>)
 
 template <class Accessor>
 auto event_array(Event &event)
@@ -104,25 +105,70 @@ py::array_t<int> event_array_children(Event &event)
     return py::array_t<int>(shape, strides, ptr1);
 }
 
+// refills "event" stack with particles
+void fill_event(Event &event,
+                    py::array_t<int> &pid,
+                    py::array_t<int> &status,
+                    py::array_t<double> &px,
+                    py::array_t<double> &py,
+                    py::array_t<double> &pz,
+                    py::array_t<double> &energy,
+                    py::array_t<double> &mass) 
+{
+    const double spare_mem = 1.5L;
+    double fill_size = pid.size();
+
+    // Reserve before appending for efficiency
+    auto &evt = private_access::member<Event_entry>(event);
+    evt.reserve(static_cast<int>(spare_mem*fill_size));
+    event.reset();
+
+    // Get a raw reference to numpy array
+    auto pid_ = pid.unchecked<1>();
+    auto status_ = status.unchecked<1>();
+    auto px_ = px.unchecked<1>();
+    auto py_ = py.unchecked<1>();
+    auto pz_ = pz.unchecked<1>();
+    auto energy_ = energy.unchecked<1>();
+    auto mass_ = mass.unchecked<1>();
+
+    for (int i = 0; i != fill_size; ++i) {
+        event.append(pid_[i], status_[i], 0, 0,
+                      px_[i], py_[i], pz_[i], energy_[i], mass_[i]);
+    }    
+}
+
+// Special case:
 // refills "event" stack with particles 
 // having pid and energy
-void refill_stack(Event &event,
+void fill_event(Event &event,
                     const ParticleData &pd,
                     py::array_t<int> &pid,
                     py::array_t<double> &energy) 
 {
+    const double spare_mem = 1.5L;
+    double fill_size = pid.size();
+
+    // Reserve before appending for efficiency
+    auto &evt = private_access::member<Event_entry>(event);
+    evt.reserve(static_cast<int>(spare_mem*fill_size));
+    event.reset();
+
+    // Get a raw reference to numpy array
+    auto pid_ = pid.unchecked<1>();
+    auto energy_ = energy.unchecked<1>();
+
     int id = 0;
     double en = 0.;
-    double mass = 0.;
+    double mass = 0;
     double pz = 0.;
-    
-    event.reset();
-    for (int i = 0; i != pid.size(); ++i) {
-        id = pid.at(i);
-        en = energy.at(i);
+
+    for (int i = 0; i != fill_size; ++i) {
+        id = pid_[i];
+        en = energy_[i];
         mass = pd.findParticle(id)->m0();
-        pz = std::sqrt((en - mass)*(en + mass));
-        event.append(id, 91, 0, 0, 0., 0., pz, en, mass);
+        pz = std::sqrt((en - mass)*(en + mass));    
+        event.append(pid_[i], 91, 0, 0, 0., 0., pz, en, mass);
     }    
 }
 
@@ -259,11 +305,11 @@ PYBIND11_MODULE(_pythia8, m)
                  return result;
              })
 
-        .def("refill_decay_stack",
+        .def("fill_event",
              [](Pythia &self, py::array_t<int> &pid,
                               py::array_t<double> &energy)
              {
-                refill_stack(self.event, self.particleData, pid, energy);
+                fill_event(self.event, self.particleData, pid, energy);
              })     
         ;
 
@@ -285,6 +331,16 @@ PYBIND11_MODULE(_pythia8, m)
         .def("children", event_array_children)
         .def("reset", &Event::reset)
         .def("append", py::overload_cast<int, int, int, int, double, double, double, double, double, double, double>(&Event::append), "pdgid"_a, "status"_a, "col"_a, "acol"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a = 0, "scale"_a = 0, "pol"_a = 9.)
-
+        .def("fill",
+            [](Event &self, 
+                py::array_t<int> &pid,
+                py::array_t<int> &status,
+                py::array_t<double> &px,
+                py::array_t<double> &py,
+                py::array_t<double> &pz,
+                py::array_t<double> &energy,
+                py::array_t<double> &mass) {
+                fill_event(self, pid, status, px, py, pz, energy, mass);
+            })
         ;
 }
