@@ -9,7 +9,6 @@
 #include <Pythia8/HIUserHooks.h>
 #include <array>
 #include <cassert>
-#include <cmath>
 
 namespace py = pybind11;
 using namespace Pythia8;
@@ -36,7 +35,6 @@ PRIVATE_ACCESS_MEMBER(Vec4, xx, double)
 PRIVATE_ACCESS_MEMBER(Vec4, yy, double)
 PRIVATE_ACCESS_MEMBER(Vec4, zz, double)
 PRIVATE_ACCESS_MEMBER(Vec4, tt, double)
-PRIVATE_ACCESS_MEMBER(Event, entry, vector<Pythia8::Particle>)
 
 template <class Accessor>
 auto event_array(Event &event)
@@ -106,7 +104,7 @@ py::array_t<int> event_array_children(Event &event)
 }
 
 // refills "event" stack with particles
-void fill_event(Event &event,
+void fill(Event &event,
                     py::array_t<int> &pid,
                     py::array_t<int> &status,
                     py::array_t<double> &px,
@@ -115,14 +113,6 @@ void fill_event(Event &event,
                     py::array_t<double> &energy,
                     py::array_t<double> &mass) 
 {
-    const double spare_mem = 1.5L;
-    double fill_size = pid.size();
-
-    // Reserve before appending for efficiency
-    auto &evt = private_access::member<Event_entry>(event);
-    evt.reserve(static_cast<int>(spare_mem*fill_size));
-    event.reset();
-
     // Get a raw reference to numpy array
     auto pid_ = pid.unchecked<1>();
     auto status_ = status.unchecked<1>();
@@ -132,43 +122,10 @@ void fill_event(Event &event,
     auto energy_ = energy.unchecked<1>();
     auto mass_ = mass.unchecked<1>();
 
-    for (int i = 0; i != fill_size; ++i) {
+    event.reset();
+    for (int i = 0; i != pid.size(); ++i) {
         event.append(pid_[i], status_[i], 0, 0,
                       px_[i], py_[i], pz_[i], energy_[i], mass_[i]);
-    }    
-}
-
-// Special case:
-// refills "event" stack with particles 
-// having pid and energy
-void fill_event(Event &event,
-                    const ParticleData &pd,
-                    py::array_t<int> &pid,
-                    py::array_t<double> &energy) 
-{
-    const double spare_mem = 1.5L;
-    double fill_size = pid.size();
-
-    // Reserve before appending for efficiency
-    auto &evt = private_access::member<Event_entry>(event);
-    evt.reserve(static_cast<int>(spare_mem*fill_size));
-    event.reset();
-
-    // Get a raw reference to numpy array
-    auto pid_ = pid.unchecked<1>();
-    auto energy_ = energy.unchecked<1>();
-
-    int id = 0;
-    double en = 0.;
-    double mass = 0;
-    double pz = 0.;
-
-    for (int i = 0; i != fill_size; ++i) {
-        id = pid_[i];
-        en = energy_[i];
-        mass = pd.findParticle(id)->m0();
-        pz = std::sqrt((en - mass)*(en + mass));    
-        event.append(pid_[i], 91, 0, 0, 0., 0., pz, en, mass);
     }    
 }
 
@@ -304,13 +261,6 @@ PYBIND11_MODULE(_pythia8, m)
                      *ptr++ = charge_from_pid(self.particleData, pit->id());
                  return result;
              })
-
-        .def("fill_event",
-             [](Pythia &self, py::array_t<int> &pid,
-                              py::array_t<double> &energy)
-             {
-                fill_event(self.event, self.particleData, pid, energy);
-             })     
         ;
 
     py::class_<Event>(m, "Event")
@@ -340,7 +290,7 @@ PYBIND11_MODULE(_pythia8, m)
                 py::array_t<double> &pz,
                 py::array_t<double> &energy,
                 py::array_t<double> &mass) {
-                fill_event(self, pid, status, px, py, pz, energy, mass);
+                fill(self, pid, status, px, py, pz, energy, mass);
             })
         ;
 }

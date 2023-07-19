@@ -1,13 +1,12 @@
 import chromo
-import numpy as np
 from chromo.common import EventData
 from pathlib import Path
-import importlib
 from .util import run_in_separate_process
 
 
 def init_pythia8():
-    lib = importlib.import_module(f"chromo.models._pythia8")
+    from chromo.models import _pythia8 as lib
+
     chromo_path = Path(chromo.__file__).parent
     xml_path = chromo_path / "iamdata/Pythia8/xmldoc"
     pythia = lib.Pythia(str(xml_path), False)
@@ -84,21 +83,6 @@ def fill_result(pythia, event):
     return get_pythia_event(pythia, event.kin)
 
 
-def append_result_short(pythia, event):
-    pythia.event.reset()
-    for i in range(len(event)):
-        mass = pythia.particleData.findParticle(event.pid[i]).m0
-        en = event.en[i]
-        pz = np.sqrt((en + mass) * (en - mass))
-        pythia.event.append(event.pid[i], 91, 0, 0, 0.0, 0.0, pz, en, mass)
-    return get_pythia_event(pythia, event.kin)
-
-
-def fill_result_short(pythia, event):
-    pythia.fill_event(event.pid, event.en)
-    return get_pythia_event(pythia, event.kin)
-
-
 def run_event_fill():
     """
     Tests that `pythia.event.fill` and `pythia.event.append`
@@ -112,29 +96,11 @@ def run_event_fill():
     and uses `pythia.event.append` in C++ loop
     """
     pythia = init_pythia8()
-
     for event in init_events(10):
         fill_res = fill_result(pythia, event)
         append_res = append_result(pythia, event)
         assert fill_res == append_res
 
 
-def run_event_fill_short():
-    """
-    Tests `pythia.fill_event` - short version
-    if we are interested only in energy
-    """
-    pythia = init_pythia8()
-
-    for event in init_events(10):
-        fill_res = fill_result_short(pythia, event)
-        append_res = append_result_short(pythia, event)
-        assert fill_res == append_res
-
-
 def test_event_fill():
     run_in_separate_process(run_event_fill)
-
-
-def test_event_fill_short():
-    run_in_separate_process(run_event_fill_short)
