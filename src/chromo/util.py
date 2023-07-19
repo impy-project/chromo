@@ -13,6 +13,7 @@ from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
 from chromo.constants import MeV, nucleon_mass
 from enum import Enum
 import dataclasses
+import copy
 
 EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
 
@@ -56,6 +57,19 @@ class CompositeTarget:
         self.components = tuple(c)
         self.fractions = fractions / np.sum(fractions)
         self.fractions.flags["WRITEABLE"] = False
+
+    def copy(self):
+        new_target = CompositeTarget([("N", 1)])
+        for field in dataclasses.fields(CompositeTarget):
+            setattr(new_target, field.name, copy.copy(getattr(self, field.name)))
+        return new_target
+
+    def __eq__(self, other):
+        return (
+            (self.label == other.label)
+            & (self.components == other.components)
+            & (np.allclose(self.fractions, other.fractions))
+        )
 
     @property
     def Z(self):
