@@ -65,6 +65,8 @@ class CompositeTarget:
         return new_target
 
     def __eq__(self, other):
+        if not isinstance(other, CompositeTarget):
+            return False
         return (
             (self.label == other.label)
             & (self.components == other.components)

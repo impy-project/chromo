@@ -35,6 +35,7 @@ def test_CompositeTarget_copy():
     target1 = target.copy()
     assert target1 is not target
     assert target1 == target
+    assert target != "p"
 
 
 def test_fixed_target():
