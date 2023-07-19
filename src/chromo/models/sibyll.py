@@ -1,6 +1,7 @@
 from chromo.common import MCRun, MCEvent, CrossSectionData
 from chromo.util import info, Nuclei
 from chromo.kinematics import EventFrame
+from chromo.constants import standard_projectiles
 from particle import literals as lp
 import warnings
 
@@ -93,7 +94,7 @@ class SIBYLLRun(MCRun):
         event setup (energy, projectile, target)"""
         kin = self.kinematics
         sib_id = self._cross_section_projectiles[abs(kin.p1)]
-        sigma = self._lib.sib_sigma_hair(sib_id, self._ecm)
+        sigma = self._lib.sib_sigma_hair(sib_id, kin.ecm)
         if isinstance(sigma, tuple):
             return sigma[0]
         return sigma
@@ -137,34 +138,55 @@ class Sibyll23(SIBYLLRun):
 
 class Sibyll23c(SIBYLLRun):
     _version = "2.3c"
+    _projectiles = standard_projectiles | {
+        3112,
+        3122,
+        3312,
+        3322,
+        3222,
+        411,
+        421,
+        4232,
+        431,
+        4122,
+        4132,
+        4232,
+        431,
+        4332,
+    }
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c00(SIBYLLRun):
+class Sibyll23c00(Sibyll23c):
     _version = "2.3c00"
     _library_name = "_sib23c00"
 
 
 # identical to 2.3c
-class Sibyll23c01(SIBYLLRun):
+class Sibyll23c01(Sibyll23c):
     _version = "2.3c01"
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c02(SIBYLLRun):
+class Sibyll23c02(Sibyll23c):
     _version = "2.3c02"
     _library_name = "_sib23c02"
 
 
 # The c03 version was also in CORSIKA until 2020
-class Sibyll23c03(SIBYLLRun):
+class Sibyll23c03(Sibyll23c):
     _version = "2.3c03"
     _library_name = "_sib23c03"
 
 
 # The latest patch c04 was renamed to d, to generate less confusion
-class Sibyll23d(SIBYLLRun):
+class Sibyll23d(Sibyll23c):
     _version = "2.3d"
     _library_name = "_sib23d"
+
+
+class Sibyll23d_DEV(Sibyll23d):
+    _version = "2.3d_dev"
+    _library_name = "_dev_sib23d"
