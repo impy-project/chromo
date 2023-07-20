@@ -1,24 +1,12 @@
 import chromo
 from chromo.common import EventData
-from pathlib import Path
 from .util import run_in_separate_process
 
 
 def init_pythia8():
-    from chromo.models import _pythia8 as lib
-
-    chromo_path = Path(chromo.__file__).parent
-    xml_path = chromo_path / "iamdata/Pythia8/xmldoc"
-    pythia = lib.Pythia(str(xml_path), False)
-    seed = 1
-    pythia.settings.resetAll()
-    pythia.readString("Random:setSeed = on")
-    pythia.readString(f"Random:seed = {seed}")
-    pythia.readString("Print:quiet = on")
-    pythia.readString("ProcessLevel:all = off")
-    pythia.readString("ParticleDecays:tau0Max = 1e100")
-    pythia.init()
-    return pythia
+    config = ["ProcessLevel:all = off" "ParticleDecays:tau0Max = 1e100"]
+    pythia8 = chromo.models.Pythia8(seed=1, config=config, banner=False)
+    return pythia8._pythia
 
 
 def init_events(nevents):
