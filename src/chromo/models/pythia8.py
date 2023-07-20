@@ -71,7 +71,7 @@ class Pythia8(MCRun):
         + "/releases/download/zipped_data_v1.0/Pythia8_v002.zip"
     )
 
-    def __init__(self, evt_kin, *, seed=None, config=None):
+    def __init__(self, evt_kin=None, *, seed=None, config=None, banner=True):
         """
 
         Parameters
@@ -95,7 +95,7 @@ class Pythia8(MCRun):
         # or init() may fail.
         if "PYTHIA8DATA" in environ:
             del environ["PYTHIA8DATA"]
-        self._pythia = self._lib.Pythia(datdir, True)
+        self._pythia = self._lib.Pythia(datdir, banner)
 
         if config is None:
             self._config = ["SoftQCD:inelastic = on"]
@@ -103,7 +103,10 @@ class Pythia8(MCRun):
             self._config = self._parse_config(config)
 
         # must come last
-        self.kinematics = evt_kin
+        if evt_kin is None:
+            self._set_decay_mode()
+        else:
+            self.kinematics = evt_kin
         self._set_final_state_particles()
 
     def _cross_section(self, kin=None):
@@ -118,10 +121,20 @@ class Pythia8(MCRun):
             st.sigmaAXB,
         )
 
-    def _set_kinematics(self, kin):
-        pythia = self._pythia
-        pythia.settings.resetAll()
+    def _set_decay_mode(self):
+        config = self._config[:]
+        config += [
+            # use our random seed
+            "Random:setSeed = on",
+            # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
+            # this may change in the future if they switch to a different PRNG
+            f"Random:seed = {self.seed % 900_000_000}",
+            # reduce verbosity
+            "Print:quiet = on",
+        ]
+        self._init_pythia(config)
 
+    def _set_kinematics(self, kin):
         config = self._config[:]
 
         # TODO use numpy PRNG instead of Pythia's
@@ -156,6 +169,12 @@ class Pythia8(MCRun):
             f"Beams:idB = {int(kin.p2)}",
             f"Beams:eCM = {kin.ecm}",
         ]
+
+        self._init_pythia(config)
+
+    def _init_pythia(self, config):
+        pythia = self._pythia
+        pythia.settings.resetAll()
 
         for line in config:
             if not pythia.readString(line):
