@@ -33,8 +33,8 @@ class PYTHIA8Event(EventData):
             event.vy(),
             event.vz(),
             event.vt(),
-            event.parents(),
-            event.children(),
+            event.mothers(),
+            event.daughters(),
         )
 
     @staticmethod

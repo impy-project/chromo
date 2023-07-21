@@ -71,31 +71,31 @@ def test_vertex(event):
     assert np.sum(event.vt != 0) > 0
 
 
-def test_children(event):
-    assert event.children.shape == (len(event), 2)
-    # some particles have no children
-    assert sum(x[0] == 0 and x[1] == 0 for x in event.children) > 0
+def test_daughters(event):
+    assert event.daughters.shape == (len(event), 2)
+    # some particles have no daughters
+    assert sum(x[0] == 0 and x[1] == 0 for x in event.daughters) > 0
 
-    # somes particles have single children (elastic scattering in parton shower)
-    assert sum(x[0] > 0 and x[1] == 0 for x in event.children) > 0
+    # somes particles have single daughters (elastic scattering in parton shower)
+    assert sum(x[0] > 0 and x[1] == 0 for x in event.daughters) > 0
 
-    # some particles have multiple children
-    assert sum(x[0] > 0 and x[1] > 0 for x in event.children) > 0
+    # some particles have multiple daughters
+    assert sum(x[0] > 0 and x[1] > 0 for x in event.daughters) > 0
 
 
-def test_parents(event):
+def test_mothers(event):
     n = len(event)
-    assert event.parents.shape == (n, 2)
-    # same particles have no parents
-    assert sum(x[0] == 0 and x[1] == 0 for x in event.parents) > 0
+    assert event.mothers.shape == (n, 2)
+    # same particles have no mothers
+    assert sum(x[0] == 0 and x[1] == 0 for x in event.mothers) > 0
 
-    # most particles have a single parent
-    assert sum(x[0] > 0 and x[1] == 0 for x in event.parents) > 0
+    # most particles have a single mother
+    assert sum(x[0] > 0 and x[1] == 0 for x in event.mothers) > 0
 
-    # some particles have multiple parents
-    assert sum(x[0] > 0 and x[1] > 0 for x in event.parents) > 0
+    # some particles have multiple mothers
+    assert sum(x[0] > 0 and x[1] > 0 for x in event.mothers) > 0
 
-    assert sum(x[1] >= 0 and x[1] < len(event) for x in event.parents) == n
+    assert sum(x[1] >= 0 and x[1] < len(event) for x in event.mothers) == n
 
 
 @pytest.mark.skip(reason="Simulating nuclei in Pythia8 is very time-consuming")

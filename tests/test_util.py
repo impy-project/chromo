@@ -5,17 +5,17 @@ from particle import literals as lp
 from pytest import approx
 
 
-def test_select_parents():
+def test_select_mothers():
     mask = np.array([False, True, False])
-    assert util.select_parents(mask, None) is None
+    assert util.select_mothers(mask, None) is None
 
-    parents = np.array([[0, 0], [1, 2], [2, 0]])
-    par = util.select_parents(mask, parents)
+    mothers = np.array([[0, 0], [1, 2], [2, 0]])
+    par = util.select_mothers(mask, mothers)
     assert_equal(par, [[0, 0]])
 
     mask = np.array([False, True, True])
-    parents = np.array([[0, 0], [1, 2], [2, 0]])
-    par = util.select_parents(mask, parents)
+    mothers = np.array([[0, 0], [1, 2], [2, 0]])
+    par = util.select_mothers(mask, mothers)
     assert_equal(par, [[0, 0], [1, 0]])
 
 

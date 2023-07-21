@@ -66,28 +66,28 @@ def test_vertex(event):
     assert np.sum(event.vt != 0) > 0
 
 
-def test_children(event):
-    assert event.children.shape == (len(event), 2)
-    # some particles have no children
-    assert sum(x[0] == 0 and x[1] == 0 for x in event.children) > 0
+def test_daughters(event):
+    assert event.daughters.shape == (len(event), 2)
+    # some particles have no daughters
+    assert sum(x[0] == 0 and x[1] == 0 for x in event.daughters) > 0
 
-    # no particles have single children (no elastic scattering)
-    assert sum(x[0] > 0 and x[1] == 0 for x in event.children) == 0
+    # no particles have single daughters (no elastic scattering)
+    assert sum(x[0] > 0 and x[1] == 0 for x in event.daughters) == 0
 
-    # some particles have multiple children
-    assert sum(x[0] > 0 and x[1] > 0 for x in event.children) > 0
+    # some particles have multiple daughters
+    assert sum(x[0] > 0 and x[1] > 0 for x in event.daughters) > 0
 
 
-def test_parents(event):
-    assert event.parents.shape == (len(event), 2)
-    # same particles have no parents
-    assert sum(x[0] == 0 and x[1] == 0 for x in event.parents) > 0
+def test_mothers(event):
+    assert event.mothers.shape == (len(event), 2)
+    # same particles have no mothers
+    assert sum(x[0] == 0 and x[1] == 0 for x in event.mothers) > 0
 
-    # most particles have a single parent
-    assert sum(x[0] > 0 and x[1] == 0 for x in event.parents) > 0
+    # most particles have a single mother
+    assert sum(x[0] > 0 and x[1] == 0 for x in event.mothers) > 0
 
-    # some particles have multiple parents
-    assert sum(x[0] > 0 and x[1] > 0 for x in event.parents) > 0
+    # some particles have multiple mothers
+    assert sum(x[0] > 0 and x[1] > 0 for x in event.mothers) > 0
 
 
 def run_is_view():
@@ -118,7 +118,7 @@ def test_is_view():
 def test_final_state(event):
     ev1 = event.final_state()
     ev2 = event[event.status == 1]
-    ev2.parents = None  # event.final_state() drops parents
+    ev2.mothers = None  # event.final_state() drops mother
     assert_equal(ev1, ev2)
 
 
@@ -127,8 +127,8 @@ def test_final_state_charged(event):
     ev2 = event[(event.status == 1) & (event.charge != 0)]
     ev3 = event[event.status == 1]
     ev3 = ev3[ev3.charge != 0]
-    ev2.parents = None  # event.final_state() drops parents
-    ev3.parents = None  # event.final_state() drops parents
+    ev2.mothers = None  # event.final_state() drops mothers
+    ev3.mothers = None  # event.final_state() drops mothers
     assert_equal(ev1, ev2)
     assert_equal(ev1, ev3)
 

@@ -126,11 +126,11 @@ def run(Model, requested):
                 all_charged.append(nch)
                 if n_phi > 0:
                     if np.all(event.pid[:2] == 2212) and np.all(
-                        event.parents[:2, 0] == 0
+                        event.mothers[:2, 0] == 0
                     ):
                         event = event[2:]  # cut beam particles
                     ma = event.pid == phi_pid
-                    imot = event.parents[:, 0] - 1
+                    imot = event.mothers[:, 0] - 1
                     eta += list(event.eta[ma])
                     pt += list(event.pt[ma] / MeV)
                     prompt += [

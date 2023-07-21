@@ -203,7 +203,7 @@ class Root(Writer):
         self._lengths.append(b - a)
         for key, val in self._particle_buffers.items():
             if key == "parent":
-                val[a:b] = event.parents[:, 0] - 1
+                val[a:b] = event.mothers[:, 0] - 1
             elif key == "pdgid":
                 val[a:b] = event.pid
             else:

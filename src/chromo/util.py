@@ -499,7 +499,7 @@ class classproperty:
         return self.f(owner)
 
 
-def _select_parents(mask, parents):
+def _select_mothers(mask, mothers):
     # This algorithm is slow in pure Python and should be
     # speed up by compiling the logic.
 
@@ -509,9 +509,9 @@ def _select_parents(mask, parents):
     if mask[0] and mask[1]:
         fallback = (1, 2)
 
-    n = len(parents)
+    n = len(mothers)
     indices = np.arange(n)[mask] + 1
-    result = parents[mask]
+    result = mothers[mask]
     mapping = {old: i + 1 for i, old in enumerate(indices)}
 
     n = len(result)
@@ -534,11 +534,11 @@ def _select_parents(mask, parents):
     return result
 
 
-def select_parents(arg, parents):
-    if parents is None:
+def select_mothers(arg, mothers):
+    if mothers is None:
         return None
 
-    n = len(parents)
+    n = len(mothers)
 
     if isinstance(arg, np.ndarray) and arg.dtype is bool:
         mask = arg
@@ -549,14 +549,14 @@ def select_parents(arg, parents):
     with warnings.catch_warnings():
         # suppress numba safety warning that we can ignore
         warnings.simplefilter("ignore")
-        return _select_parents(mask, parents)
+        return _select_mothers(mask, mothers)
 
 
 try:
     # accelerate with numba if numba is available
     import numba as nb
 
-    _select_parents = nb.njit(_select_parents)
+    _select_mothers = nb.njit(_select_mothers)
 
 except ModuleNotFoundError:
     pass

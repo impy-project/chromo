@@ -52,7 +52,7 @@ def test_to_hepmc3(Model):
         event = event[ma]
 
     unique_vertices = {}
-    for i, pa in enumerate(event.parents):
+    for i, pa in enumerate(event.mothers):
         assert pa.shape == (2,)
         if np.all(pa == 0):
             continue
