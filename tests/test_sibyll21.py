@@ -40,7 +40,7 @@ def test_mothers(event):
 
     assert np.sum(ma) > 0
 
-    idx = event.mothers[ma, 0] - 1
+    idx = event.mothers[ma, 0]
 
     # remove beam particles (if any)
     ma = event.status[idx] != 3

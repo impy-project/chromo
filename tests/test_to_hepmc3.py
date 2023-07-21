@@ -54,12 +54,12 @@ def test_to_hepmc3(Model):
     unique_vertices = {}
     for i, pa in enumerate(event.mothers):
         assert pa.shape == (2,)
-        if np.all(pa == 0):
+        if np.all(pa == -1):
             continue
         # normalize intervals
-        if pa[1] == 0:
+        if pa[1] == -1:
             pa = (pa[0], pa[0])
-        pa = (pa[0] - 1, pa[1])
+        pa = (pa[0], pa[1])
         # in case of overlapping ranges of incoming particles
         # the earlier vertex keeps them
         for a, b in unique_vertices:
@@ -71,7 +71,7 @@ def test_to_hepmc3(Model):
     # that's a requirement for a valid particle history
     nmax = len(event.px)
     for i, (a, b) in enumerate(unique_vertices):
-        assert a >= 0 or a == -1
+        assert a >= -1
         assert b <= nmax, (
             f"vertex {i} has parent range {(a, b)} which "
             f"exceeds particle record nmax={nmax}"
@@ -113,9 +113,9 @@ def test_to_hepmc3(Model):
     for v in hev.vertices:
         pi = [p.id - 1 for p in v.particles_in]
         if len(pi) == 1:
-            pa = (pi[0], pi[0] + 1)
+            pa = (pi[0], pi[0])
         else:
-            pa = (min(pi), max(pi) + 1)
+            pa = (min(pi), max(pi))
         children = [p.id - 1 for p in v.particles_out]
         hev_vertices[pa] = children
 

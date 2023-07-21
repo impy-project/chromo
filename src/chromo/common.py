@@ -429,8 +429,8 @@ class EventData:
             m=ev.m,
             pid=ev.pid,
             status=ev.status,
-            parents=ev.mothers,
-            children=ev.daughters,
+            parents=ev.mothers + 1 if ev.mothers is not None else None,
+            children=ev.daughters + 1 if ev.daughters is not None else None,
             vx=ev.vx,
             vy=ev.vy,
             vz=ev.vz,
@@ -493,8 +493,14 @@ class MCEvent(EventData, ABC):
         phep = getattr(evt, self._phep)[:, sel]
         vhep = getattr(evt, self._vhep)[:, sel]
 
-        mothers = getattr(evt, self._jmohep).T[sel] if self._jmohep else None
-        daughters = getattr(evt, self._jdahep).T[sel] if self._jdahep else None
+        mothers = getattr(evt, self._jmohep).T[sel] - 1 if self._jmohep else None
+        daughters = getattr(evt, self._jdahep).T[sel] - 1 if self._jdahep else None
+        # Fix special cases
+        if mothers is not None:
+            mothers[mothers == -2] = -1
+
+        if daughters is not None:
+            daughters[daughters == -2] = -1
 
         EventData.__init__(
             self,

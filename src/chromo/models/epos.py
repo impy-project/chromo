@@ -17,7 +17,7 @@ class EPOSEvent(MCEvent):
         super().__init__(generator)
         # EPOS sets mothers of beam particles to (-1, -1).
         # We change it to (0, 0)
-        self.mothers[self.status == 4] = 0
+        self.mothers[self.status == 4] = -1
 
     def _charge_init(self, npart):
         return self._lib.charge_vect(self._lib.hepevt.idhep[:npart])
