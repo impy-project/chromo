@@ -493,14 +493,16 @@ class MCEvent(EventData, ABC):
         phep = getattr(evt, self._phep)[:, sel]
         vhep = getattr(evt, self._vhep)[:, sel]
 
-        mothers = getattr(evt, self._jmohep).T[sel] - 1 if self._jmohep else None
-        daughters = getattr(evt, self._jdahep).T[sel] - 1 if self._jdahep else None
-        # Fix special cases
-        if mothers is not None:
-            mothers[mothers == -2] = -1
-
-        if daughters is not None:
-            daughters[daughters == -2] = -1
+        mothers = (
+            np.maximum(getattr(evt, self._jmohep).T[sel] - 1, -1)
+            if self._jmohep
+            else None
+        )
+        daughters = (
+            np.maximum(getattr(evt, self._jdahep).T[sel] - 1, -1)
+            if self._jdahep
+            else None
+        )
 
         EventData.__init__(
             self,
