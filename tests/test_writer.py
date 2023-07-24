@@ -105,7 +105,7 @@ def test_Root(write_vertices, overflow, target):
         for i, event in enumerate(events):
             assert_equal(d["pdgid"][i], event.pid[2:])
             assert_allclose(d["px"][i], event.px[2:])
-            assert_equal(d["parent"][i], np.maximum(event.mothers[2:, 0] - 2, 0))
+            assert_equal(d["parent"][i], np.maximum(event.mothers[2:, 0] - 2, -1))
             if write_vertices:
                 assert_allclose(d["vx"][i], event.vx[2:])
 

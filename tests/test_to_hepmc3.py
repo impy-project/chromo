@@ -72,9 +72,9 @@ def test_to_hepmc3(Model):
     nmax = len(event.px)
     for i, (a, b) in enumerate(unique_vertices):
         assert a >= -1
-        assert b <= nmax, (
+        assert b <= nmax - 1, (
             f"vertex {i} has parent range {(a, b)} which "
-            f"exceeds particle record nmax={nmax}"
+            f"exceeds particle record nmax={nmax - 1}"
         )
 
     # not all vertices have locations different from zero,

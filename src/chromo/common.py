@@ -407,8 +407,8 @@ class EventData:
             # TODO check if this costs significant amount of time and speed it up if so
             mask = (self.status == 1) | (self.status == 2) | (self.status == 4)
             ev = self[mask]
-            mask = (ev.mothers[:, 0] == 1) | (ev.mothers[:, 0] == 2)
-            ev.mothers[mask] = (1, 2)
+            mask = (ev.mothers[:, 0] == 0) | (ev.mothers[:, 0] == 1)
+            ev.mothers[mask] = (0, 1)
         elif model in ("UrQMD", "PhoJet", "DPMJET-III"):
             # can only save final state until history is fixed
             warnings.warn(
@@ -429,8 +429,8 @@ class EventData:
             m=ev.m,
             pid=ev.pid,
             status=ev.status,
-            parents=ev.mothers + 1 if ev.mothers is not None else None,
-            children=ev.daughters + 1 if ev.daughters is not None else None,
+            parents=(ev.mothers + 1) if ev.mothers is not None else None,
+            children=(ev.daughters + 1) if ev.daughters is not None else None,
             vx=ev.vx,
             vy=ev.vy,
             vz=ev.vz,

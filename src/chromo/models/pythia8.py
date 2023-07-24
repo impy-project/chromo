@@ -33,8 +33,8 @@ class PYTHIA8Event(EventData):
             event.vy(),
             event.vz(),
             event.vt(),
-            event.mothers(),
-            event.daughters(),
+            np.maximum(event.mothers() - 1, -1),
+            np.maximum(event.daughters() - 1, -1),
         )
 
     @staticmethod

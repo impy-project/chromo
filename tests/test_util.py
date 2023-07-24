@@ -9,14 +9,14 @@ def test_select_mothers():
     mask = np.array([False, True, False])
     assert util.select_mothers(mask, None) is None
 
-    mothers = np.array([[0, 0], [1, 2], [2, 0]])
+    mothers = np.array([[-1, -1], [0, 1], [1, -1]])
     par = util.select_mothers(mask, mothers)
-    assert_equal(par, [[0, 0]])
+    assert_equal(par, [[-1, -1]])
 
     mask = np.array([False, True, True])
-    mothers = np.array([[0, 0], [1, 2], [2, 0]])
+    mothers = np.array([[-1, -1], [0, 1], [1, -1]])
     par = util.select_mothers(mask, mothers)
-    assert_equal(par, [[0, 0], [1, 0]])
+    assert_equal(par, [[-1, -1], [0, -1]])
 
 
 def test_tolerant_string_match():
