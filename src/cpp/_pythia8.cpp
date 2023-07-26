@@ -105,13 +105,13 @@ py::array_t<int> event_array_children(Event &event)
 
 // refills "event" stack with particles
 void fill(Event &event,
-                    py::array_t<int> &pid,
-                    py::array_t<int> &status,
-                    py::array_t<double> &px,
-                    py::array_t<double> &py,
-                    py::array_t<double> &pz,
-                    py::array_t<double> &energy,
-                    py::array_t<double> &mass) 
+          py::array_t<int> &pid,
+          py::array_t<int> &status,
+          py::array_t<double> &px,
+          py::array_t<double> &py,
+          py::array_t<double> &pz,
+          py::array_t<double> &energy,
+          py::array_t<double> &mass) 
 {
     // Get a raw reference to numpy array
     auto pid_ = pid.unchecked<1>();
@@ -125,7 +125,7 @@ void fill(Event &event,
     event.reset();
     for (int i = 0; i != pid.size(); ++i) {
         event.append(pid_[i], status_[i], 0, 0,
-                      px_[i], py_[i], pz_[i], energy_[i], mass_[i]);
+                     px_[i], py_[i], pz_[i], energy_[i], mass_[i]);
     }    
 }
 
@@ -281,16 +281,6 @@ PYBIND11_MODULE(_pythia8, m)
         .def("children", event_array_children)
         .def("reset", &Event::reset)
         .def("append", py::overload_cast<int, int, int, int, double, double, double, double, double, double, double>(&Event::append), "pdgid"_a, "status"_a, "col"_a, "acol"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a = 0, "scale"_a = 0, "pol"_a = 9.)
-        .def("fill",
-            [](Event &self, 
-                py::array_t<int> &pid,
-                py::array_t<int> &status,
-                py::array_t<double> &px,
-                py::array_t<double> &py,
-                py::array_t<double> &pz,
-                py::array_t<double> &energy,
-                py::array_t<double> &mass) {
-                fill(self, pid, status, px, py, pz, energy, mass);
-            })
+        .def("fill", &fill)
         ;
 }

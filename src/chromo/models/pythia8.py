@@ -71,7 +71,7 @@ class Pythia8(MCRun):
         + "/releases/download/zipped_data_v1.0/Pythia8_v002.zip"
     )
 
-    def __init__(self, evt_kin=None, *, seed=None, config=None, banner=True):
+    def __init__(self, evt_kin, *, seed=None, config=None, banner=True):
         """
 
         Parameters
@@ -102,9 +102,21 @@ class Pythia8(MCRun):
         else:
             self._config = self._parse_config(config)
 
+        # Common settings
+        self._config += [
+            # use our random seed
+            "Random:setSeed = on",
+            # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
+            # this may change in the future if they switch to a different PRNG
+            f"Random:seed = {self.seed % 900_000_000}",
+            # reduce verbosity
+            "Print:quiet = on",
+        ]
+
         # must come last
         if evt_kin is None:
-            self._set_decay_mode()
+            # Decay mode
+            self._init_pythia(self._config)
         else:
             self.kinematics = evt_kin
         self._set_final_state_particles()
@@ -121,33 +133,13 @@ class Pythia8(MCRun):
             st.sigmaAXB,
         )
 
-    def _set_decay_mode(self):
-        config = self._config[:]
-        config += [
-            # use our random seed
-            "Random:setSeed = on",
-            # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
-            # this may change in the future if they switch to a different PRNG
-            f"Random:seed = {self.seed % 900_000_000}",
-            # reduce verbosity
-            "Print:quiet = on",
-        ]
-        self._init_pythia(config)
-
     def _set_kinematics(self, kin):
         config = self._config[:]
 
         # TODO use numpy PRNG instead of Pythia's
         config += [
-            # use our random seed
-            "Random:setSeed = on",
-            # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
-            # this may change in the future if they switch to a different PRNG
-            f"Random:seed = {self.seed % 900_000_000}",
             # use center-of-mass frame
             "Beams:frameType = 1",
-            # reduce verbosity
-            "Print:quiet = on",
             # do not print progress
             "Next:numberCount = 0",
         ]

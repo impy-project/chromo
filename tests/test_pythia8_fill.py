@@ -4,15 +4,7 @@ from .util import run_in_separate_process
 import pytest
 import sys
 
-pytestmark = pytest.mark.skipif(
-    sys.platform == "win32", reason="Pythia8 does not run on windows"
-)
-
-
-def init_pythia8():
-    config = ["ProcessLevel:all = off" "ParticleDecays:tau0Max = 1e100"]
-    pythia8 = chromo.models.Pythia8(seed=1, config=config, banner=False)
-    return pythia8._pythia
+pytest.mark.skipif(sys.platform == "win32", reason="Pythia8 does not run on windows")
 
 
 def init_events(nevents):
@@ -89,7 +81,11 @@ def run_event_fill():
     `pythia.event.fill` resets event stack by `pythia.event.reset()`
     and uses `pythia.event.append` in C++ loop
     """
-    pythia = init_pythia8()
+
+    config = ["ProcessLevel:all = off" "ParticleDecays:tau0Max = 1e100"]
+    pythia8 = chromo.models.Pythia8(None, seed=1, config=config, banner=False)
+    pythia = pythia8._pythia
+
     for event in init_events(10):
         fill_res = fill_result(pythia, event)
         append_res = append_result(pythia, event)
