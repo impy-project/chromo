@@ -4,9 +4,8 @@ from .util import run_in_separate_process
 import pytest
 import sys
 
-pytestmark = pytest.mark.skipif(
-    sys.platform == "win32", reason="Pythia8 does not run on windows"
-)
+if sys.platform == "win32":
+    pytest.skip("Pythia8 does not run on windows", allow_module_level=True)
 
 
 def init_events(nevents):
