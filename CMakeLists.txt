@@ -22,8 +22,6 @@ enable_language(C CXX)
 set(BUILD_dev_dpmjetIII193 CACHE
   PATH "source directory for dev_dpmjetIII193")
 
-set(BUILD_dev_sib23d CACHE
-  PATH "source directory for dev_sib23d")  
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/src/cpp/pybind11)
 
@@ -69,7 +67,6 @@ cmake_print_variables(PYTHON_LIBRARIES)
 cmake_print_variables(F2PY_INCLUDE_DIR)
 cmake_print_variables(NUMPY_INCLUDE_DIRS)
 cmake_print_variables(BUILD_dev_dpmjetIII193)
-cmake_print_variables(BUILD_dev_sib23d)
 
 include_directories(
   ${PYTHON_INCLUDE_DIRS}
@@ -221,6 +218,21 @@ f2py_add_module(_sib23d
   ${SIBYLL_COMMON_FUNCTIONS} gasdev
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3d.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions}
+)
+
+
+f2py_add_module(_sib23d_star
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3d-star.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}
@@ -704,27 +716,5 @@ if(BUILD_dev_dpmjetIII193)
     COMPILE_DEFS
     ${chromo_definitions}
   )
-
-endif()
-
-
-### dev_sib23d
-if(BUILD_dev_sib23d)
-
-  set(dev_sib23d_source ${BUILD_dev_sib23d})
-
-  f2py_add_module(_dev_sib23d
-  FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
-  SOURCES
-  ${dev_sib23d_source}/sibyll2.3d-star.f
-  ${fortran_dir}/sibyll/sibyll_init.fpp
-  ${logging_source}
-  ${rangen_source}
-  INCLUDE_DIRS
-  ${NUMPY_INCLUDE_DIRS}
-  COMPILE_DEFS
-  ${chromo_definitions}
-)
 
 endif()

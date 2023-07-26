@@ -56,6 +56,9 @@ class SIBYLLRun(MCRun):
         self._lib.s_debug.lun = lun
         self._lib.s_debug.ndebug = chromo.debug_level
 
+        if hasattr(self, "_sstar_param"):
+            self._lib.s_star.imod = self._sstar_param
+
         self._lib.sibini()
         self._lib.pdg_ini()
 
@@ -187,6 +190,31 @@ class Sibyll23d(Sibyll23c):
     _library_name = "_sib23d"
 
 
-class Sibyll23d_DEV(Sibyll23d):
-    _version = "2.3d_dev"
-    _library_name = "_dev_sib23d"
+class Sibyll23d_STAR_NoEnh(Sibyll23d):
+    _version = "2.3d*_noenh"
+    _library_name = "_sib23d_star"
+    _sstar_param = 0
+
+
+class Sibyll23d_STAR_RHO(Sibyll23d_STAR_NoEnh):
+    _version = "2.3d*_rho"
+    _library_name = "_sib23d_star"
+    _sstar_param = 1
+
+
+class Sibyll23d_STAR_BAR(Sibyll23d_STAR_NoEnh):
+    _version = "2.3d*_bar"
+    _library_name = "_sib23d_star"
+    _sstar_param = 2
+
+
+class Sibyll23d_STAR_STRANGE(Sibyll23d_STAR_NoEnh):
+    _version = "2.3d*_strange"
+    _library_name = "_sib23d_star"
+    _sstar_param = 3
+
+
+class Sibyll23d_STAR_MIXED(Sibyll23d_STAR_NoEnh):
+    _version = "2.3d*_mix"
+    _library_name = "_sib23d_star"
+    _sstar_param = 4

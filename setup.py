@@ -25,7 +25,6 @@ if not os.environ.get("CI", False):
 # sib23c02
 # sib23c03
 # dev_dpmjetIII193=/full/path/to/dir/dpmjetIII-19.3
-# dev_sibyll23d=/full/path/to/dir/dpmjetIII-19.3
 # ----
 
 # Set environment variable VIRTUAL_ENV to venv directory
