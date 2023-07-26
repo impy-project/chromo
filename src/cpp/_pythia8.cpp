@@ -81,7 +81,7 @@ py::array_t<double> event_array_v(Event &event)
     return py::array_t<double>(shape, strides, ptr);
 }
 
-py::array_t<int> event_array_parents(Event &event)
+py::array_t<int> event_array_mothers(Event &event)
 {
     // skip first pseudoparticle
     auto ptr1 = &private_access::member<Particle_mother1Save>(event[1]);
@@ -92,7 +92,7 @@ py::array_t<int> event_array_parents(Event &event)
     return py::array_t<int>(shape, strides, ptr1);
 }
 
-py::array_t<int> event_array_children(Event &event)
+py::array_t<int> event_array_daughters(Event &event)
 {
     // skip first pseudoparticle
     auto ptr1 = &private_access::member<Particle_daughter1Save>(event[1]);
@@ -253,8 +253,8 @@ PYBIND11_MODULE(_pythia8, m)
         .def("vy", event_array_v<Vec4_yy>)
         .def("vz", event_array_v<Vec4_zz>)
         .def("vt", event_array_v<Vec4_tt>)
-        .def("parents", event_array_parents)
-        .def("children", event_array_children)
+        .def("mothers", event_array_mothers)
+        .def("daughters", event_array_daughters)
         .def("reset", &Event::reset)
         .def("append", py::overload_cast<int, int, int, int, double, double, double, double, double, double, double>(&Event::append), "pdgid"_a, "status"_a, "col"_a, "acol"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a = 0, "scale"_a = 0, "pol"_a = 9.)
 

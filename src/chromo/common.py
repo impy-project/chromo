@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from chromo.util import (
     classproperty,
-    select_parents,
+    select_mothers,
     naneq,
     pdg2name,
     Nuclei,
@@ -150,13 +150,13 @@ class EventData:
         Z coordinate of particle in mm.
     vt: 1D array of double
         Time of particle in s.
-    parents: 2D array of int or None
+    mothers: 2D array of int or None
         This array has shape (N, 2) for N particles. The two numbers
         are a range of indices pointing to parent particle(s). This
         array is not available for all generators and it is not
-        available for filtered events. In those cases, parents is None.
-    children: 2D array of int or None
-        Same as parents.
+        available for filtered events. In those cases, mothers is None.
+    daughters: 2D array of int or None
+        Same as mothers.
     """
 
     generator: Tuple[str, str]
@@ -176,8 +176,8 @@ class EventData:
     vy: np.ndarray
     vz: np.ndarray
     vt: np.ndarray
-    parents: Optional[np.ndarray]
-    children: Optional[np.ndarray]
+    mothers: Optional[np.ndarray]
+    daughters: Optional[np.ndarray]
 
     def __getitem__(self, arg):
         """
@@ -230,8 +230,8 @@ class EventData:
             self.vy.copy(),
             self.vz.copy(),
             self.vt.copy(),
-            self.parents.copy(),
-            self.children.copy() if self.children is not None else None,
+            self.mothers.copy() if self.mothers is not None else None,
+            self.daughters.copy() if self.daughters is not None else None,
         ]
         return t
 
@@ -280,7 +280,7 @@ class EventData:
             mask &= apid != pid
         return self[mask]
 
-    def _select(self, arg, update_parents):
+    def _select(self, arg, update_mothers):
         # This selection is faster than __getitem__, because we skip
         # parent selection, which is just wasting time if we select only
         # final state particles.
@@ -303,7 +303,7 @@ class EventData:
             self.vy[arg],
             self.vz[arg],
             self.vt[arg],
-            select_parents(arg, self.parents) if update_parents else None,
+            select_mothers(arg, self.mothers) if update_mothers else None,
             None,
         )
 
@@ -407,8 +407,8 @@ class EventData:
             # TODO check if this costs significant amount of time and speed it up if so
             mask = (self.status == 1) | (self.status == 2) | (self.status == 4)
             ev = self[mask]
-            mask = (ev.parents[:, 0] == 1) | (ev.parents[:, 0] == 2)
-            ev.parents[mask] = (1, 2)
+            mask = (ev.mothers[:, 0] == 0) | (ev.mothers[:, 0] == 1)
+            ev.mothers[mask] = (0, 1)
         elif model in ("UrQMD", "PhoJet", "DPMJET-III"):
             # can only save final state until history is fixed
             warnings.warn(
@@ -429,8 +429,8 @@ class EventData:
             m=ev.m,
             pid=ev.pid,
             status=ev.status,
-            parents=ev.parents,
-            children=ev.children,
+            parents=(ev.mothers + 1) if ev.mothers is not None else None,
+            children=(ev.daughters + 1) if ev.daughters is not None else None,
             vx=ev.vx,
             vy=ev.vy,
             vz=ev.vz,
@@ -493,8 +493,16 @@ class MCEvent(EventData, ABC):
         phep = getattr(evt, self._phep)[:, sel]
         vhep = getattr(evt, self._vhep)[:, sel]
 
-        parents = getattr(evt, self._jmohep).T[sel] if self._jmohep else None
-        children = getattr(evt, self._jdahep).T[sel] if self._jdahep else None
+        mothers = (
+            np.maximum(getattr(evt, self._jmohep).T[sel] - 1, -1)
+            if self._jmohep
+            else None
+        )
+        daughters = (
+            np.maximum(getattr(evt, self._jdahep).T[sel] - 1, -1)
+            if self._jdahep
+            else None
+        )
 
         EventData.__init__(
             self,
@@ -508,8 +516,8 @@ class MCEvent(EventData, ABC):
             self._charge_init(npart),
             *phep,
             *vhep,
-            parents,
-            children,
+            mothers,
+            daughters,
         )
 
     @abstractmethod
