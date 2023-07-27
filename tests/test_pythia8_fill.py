@@ -3,6 +3,7 @@ from chromo.common import EventData
 from .util import run_in_separate_process
 import pytest
 import sys
+import numpy as np
 
 if sys.platform == "win32":
     pytest.skip("Pythia8 does not run on windows", allow_module_level=True)
@@ -40,8 +41,8 @@ def get_pythia_event(pythia, evt_kin):
         pevent.vy(),
         pevent.vz(),
         pevent.vt(),
-        pevent.parents(),
-        pevent.children(),
+        np.maximum(pevent.mothers() - 1, -1),
+        np.maximum(pevent.daughters() - 1, -1),
     )
     return res.copy()
 
