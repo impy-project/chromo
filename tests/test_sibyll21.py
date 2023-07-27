@@ -27,20 +27,20 @@ def test_charge(event):
     assert_allclose(event.charge, expected)
 
 
-def test_children(event):
-    assert event.children is None
+def test_daughters(event):
+    assert event.daughters is None
 
 
-def test_parents(event):
+def test_mothers(event):
     # check that there are particles with a single parent
     # and that parent is short-lived or an initial particle
 
-    d = event.parents[:, 1] - event.parents[:, 0]
-    ma = (d == 0) & (event.parents[:, 0] > 0)
+    d = event.mothers[:, 1] - event.mothers[:, 0]
+    ma = (d == 0) & (event.mothers[:, 0] > 0)
 
     assert np.sum(ma) > 0
 
-    idx = event.parents[ma, 0] - 1
+    idx = event.mothers[ma, 0]
 
     # remove beam particles (if any)
     ma = event.status[idx] != 3

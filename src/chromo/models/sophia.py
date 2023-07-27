@@ -31,7 +31,7 @@ class SophiaEvent(MCEvent):
         """Returns the array of zero-based indices
         of the decayed parent particles.
         Index -1 means that there is no parent particle.
-        It throw an exception (via MCEvent.parents)
+        It throw an exception (via MCEvent.mothers)
         if selection is applied
         """
         return self._lib.schg.iparnt[: self.npart]
