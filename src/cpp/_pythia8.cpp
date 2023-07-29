@@ -17,9 +17,12 @@ using namespace pybind11::literals;
 float charge_from_pid(const ParticleData &pd, int pid)
 {
     auto pptr = pd.findParticle(pid);
-    assert(pptr); // never nullptr if charge_from_pid is used on particles produced by Pythia
-    // ParticleData returns partice even if anti-particle pid is used
-    return pid == pptr->id() ? pptr->charge() : -pptr->charge();
+    if (pptr) {
+        // ParticleData returns partice even if anti-particle pid is used
+        return pid == pptr->id() ? pptr->charge() : -pptr->charge();
+    } else {
+        return 0;
+    }    
 }
 
 PRIVATE_ACCESS_MEMBER(Particle, idSave, int)
