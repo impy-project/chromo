@@ -103,6 +103,32 @@ py::array_t<int> event_array_daughters(Event &event)
     return py::array_t<int>(shape, strides, ptr1);
 }
 
+// refills "event" stack with particles
+void fill(Event &event,
+          py::array_t<int> &pid,
+          py::array_t<int> &status,
+          py::array_t<double> &px,
+          py::array_t<double> &py,
+          py::array_t<double> &pz,
+          py::array_t<double> &energy,
+          py::array_t<double> &mass) 
+{
+    // Get a raw reference to numpy array
+    auto pid_ = pid.unchecked<1>();
+    auto status_ = status.unchecked<1>();
+    auto px_ = px.unchecked<1>();
+    auto py_ = py.unchecked<1>();
+    auto pz_ = pz.unchecked<1>();
+    auto energy_ = energy.unchecked<1>();
+    auto mass_ = mass.unchecked<1>();
+
+    event.reset();
+    for (int i = 0; i != pid.size(); ++i) {
+        event.append(pid_[i], status_[i], 0, 0,
+                     px_[i], py_[i], pz_[i], energy_[i], mass_[i]);
+    }    
+}
+
 PYBIND11_MODULE(_pythia8, m)
 {
     py::class_<ParticleData>(m, "ParticleData")
@@ -120,7 +146,6 @@ PYBIND11_MODULE(_pythia8, m)
                      pl.append(p.second);
                  return pl;
              })
-
         ;
 
     py::class_<ParticleDataEntry, ParticleDataEntryPtr>(m, "ParticleDataEntry")
@@ -236,7 +261,6 @@ PYBIND11_MODULE(_pythia8, m)
                      *ptr++ = charge_from_pid(self.particleData, pit->id());
                  return result;
              })
-
         ;
 
     py::class_<Event>(m, "Event")
@@ -257,6 +281,6 @@ PYBIND11_MODULE(_pythia8, m)
         .def("daughters", event_array_daughters)
         .def("reset", &Event::reset)
         .def("append", py::overload_cast<int, int, int, int, double, double, double, double, double, double, double>(&Event::append), "pdgid"_a, "status"_a, "col"_a, "acol"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a = 0, "scale"_a = 0, "pol"_a = 9.)
-
+        .def("fill", &fill)
         ;
 }
