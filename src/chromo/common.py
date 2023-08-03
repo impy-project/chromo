@@ -575,6 +575,7 @@ class MCRun(ABC):
         if hasattr(self._lib, "npy"):
             self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
         self._apply_afterburner = False
+        self._final_state_particles = np.array([], dtype=np.int64)
 
     def __call__(self, nevents):
         """Generator function (in python sence)
@@ -712,6 +713,30 @@ class MCRun(ABC):
         self._kinematics = kin
         self._set_kinematics(kin)
 
+    @property
+    def final_state_particles(self):
+        """Returns sorted list"""
+        uids = np.unique(self._final_state_particles)
+        return list(uids[np.argsort(2 * np.abs(uids) - (uids < 0))])
+
+    def _update_final_state_particles(self, pdgid, stable):
+        unique_pdgid = np.unique(pdgid)
+
+        if stable:
+            self._final_state_particles = np.append(
+                self._final_state_particles, unique_pdgid
+            )
+        else:
+            is_stable = np.logical_not(
+                np.isin(self._final_state_particles, unique_pdgid)
+            )
+            self._final_state_particles = self._final_state_particles[is_stable]
+
+        if self._apply_afterburner:
+            self._afterburner.set_stable_decaying(
+                theonly_stable_pids=self._final_state_particles
+            )
+
     def set_stable(self, pdgid, stable=True):
         """Prevent decay of unstable particles
 
@@ -725,8 +750,10 @@ class MCRun(ABC):
         if abs(pdgid) == 311:
             self._set_stable(130, stable)
             self._set_stable(310, stable)
+            self._update_final_state_particles([130, 310], stable)
         else:
             self._set_stable(pdgid, stable)
+            self._update_final_state_particles(pdgid, stable)
 
     def set_unstable(self, pdgid):
         """Convenience funtion for `self.set_stable(..., stable=False)`
@@ -786,11 +813,16 @@ class MCRun(ABC):
             self._set_stable(pdgid, True)
 
         self._set_final_state_particles_called = True
+        self._update_final_state_particles(long_lived, stable=True)
 
-    def _switch_on_autoburner(self, seed=None):
+    def switch_afterburner(self, on=True, seed=None):
+        if not on:
+            self._apply_afterburner = False
+            return
+
         try:
             self._afterburner = DecayAfterburner(
-                seed=seed, theonly_stable_pids=long_lived
+                seed=seed, theonly_stable_pids=self._final_state_particles
             )
         except ModuleNotFoundError as ex:
             import warnings
