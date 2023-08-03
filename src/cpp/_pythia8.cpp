@@ -9,6 +9,7 @@
 #include <Pythia8/HIUserHooks.h>
 #include <array>
 #include <cassert>
+#include <limits>
 
 namespace py = pybind11;
 using namespace Pythia8;
@@ -17,13 +18,13 @@ using namespace pybind11::literals;
 float charge_from_pid(const ParticleData &pd, int pid)
 {
     auto pptr = pd.findParticle(pid);
-    // throw exception if unknown pid is met
+    // return NaN if unknown pid is met
     if (pptr == nullptr) {
-        throw std::domain_error("Unknown PDG ID for Pythia");
-    }
-
+        return std::numeric_limits<float>::quiet_NaN();
+    } else {
     // ParticleData returns partice even if anti-particle pid is used
-    return pid == pptr->id() ? pptr->charge() : -pptr->charge();
+        return pid == pptr->id() ? pptr->charge() : -pptr->charge();
+    }
 }
 
 PRIVATE_ACCESS_MEMBER(Particle, idSave, int)
@@ -254,34 +255,6 @@ PYBIND11_MODULE(_pythia8, m)
         .def_readwrite("event", &Pythia::event)
         .def_property_readonly("info", [](Pythia &self)
                                { return self.info; })
-
-        .def("charge_nothrow",
-            [](Pythia &self)
-            {
-                // skip first pseudoparticle
-                int size = self.event.size() - 1;
-                py::array_t<float> result(size);
-                py::array_t<bool> not_valid(size);              
-                
-                float *ptr = result.mutable_data();
-                bool *vptr = not_valid.mutable_data();
-                for (auto pit = self.event.begin() + 1; pit != self.event.end(); ++pit) {
-
-                    try {
-                        *ptr = charge_from_pid(self.particleData, pit->id());
-                        *vptr = false;
-                    } catch (std::domain_error& ex) {
-                        *ptr = 777;
-                        *vptr = true;
-                    }
-                    ++ptr;
-                    ++vptr;
-
-                }   
-
-                return py::make_tuple(result, not_valid);
-            })
-
         .def("charge",
              [](Pythia &self)
              {

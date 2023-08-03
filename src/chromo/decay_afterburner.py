@@ -94,10 +94,7 @@ class DecayAfterburner:
         pevent = self.pythia.event
         event.pid = pevent.pid()
         event.status = pevent.status()
-        event.charge, not_valid = self.pythia.charge_nothrow()
-        if np.any(not_valid[init_len:]):
-            raise RuntimeError("Produced particles have unknown to Pythia PDG ID")
-
+        event.charge = self.pythia.charge()
         event.px = pevent.px()
         event.py = pevent.py()
         event.pz = pevent.pz()
