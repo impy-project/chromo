@@ -14,7 +14,9 @@ if sys.platform == "win32":
 def run_decay_afterburner(model, evt_kin, stable_particles, decaying_particles):
     seed = 1
     after_burner = DecayAfterburner(
-        seed=seed, stable_pids=stable_particles, decaying_pids=decaying_particles
+        seed=seed,
+        extra_stable_pids=stable_particles,
+        extra_decaying_pids=decaying_particles,
     )
     gen = model(evt_kin, seed=seed)
 
@@ -28,17 +30,19 @@ def run_decay_afterburner(model, evt_kin, stable_particles, decaying_particles):
 
         # Assert that all particles that should decay have been decayed
         not_decayed0 = np.sum(
-            np.isin(event0.pid, after_burner.decaying_pids) & (event0.status == 1)
+            np.isin(event0.pid, after_burner.all_decaying_pids) & (event0.status == 1)
         )
         not_decayed1 = np.sum(
-            np.isin(event.pid, after_burner.decaying_pids) & (event.status == 1)
+            np.isin(event.pid, after_burner.all_decaying_pids) & (event.status == 1)
         )
         if not_decayed0 > 0:
             assert not_decayed1 == 0
 
         # Assert that stable particles haven't decayed
-        stable0 = np.isin(event0.pid, after_burner.stable_pids) & (event0.status == 1)
-        stable1 = np.isin(event.pid, after_burner.stable_pids) & (event.status == 1)
+        stable0 = np.isin(event0.pid, after_burner.all_stable_pids) & (
+            event0.status == 1
+        )
+        stable1 = np.isin(event.pid, after_burner.all_stable_pids) & (event.status == 1)
         # Assert that number of stable particles of given type hasn't decreased
         assert np.sum(stable0) <= np.sum(stable1)
         # Assert that stable particles haven't decayed

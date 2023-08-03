@@ -29,6 +29,7 @@ from typing import Tuple, Optional
 from contextlib import contextmanager
 import warnings
 from particle import Particle
+from chromo.decay_afterburner import DecayAfterburner
 
 
 # Do we need EventData.n_spectators in addition to EventData.n_wounded?
@@ -573,6 +574,7 @@ class MCRun(ABC):
         self._rng = np.random.default_rng(seed)
         if hasattr(self._lib, "npy"):
             self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
+        self._apply_afterburner = False
 
     def __call__(self, nevents):
         """Generator function (in python sence)
@@ -590,6 +592,8 @@ class MCRun(ABC):
                     event = self._event_class(self)
                     # boost into frame requested by user
                     self.kinematics.apply_boost(event, self._frame)
+                    if self._apply_afterburner:
+                        self._afterburner(event)
                     yield event
                     continue
                 nretries += 1
@@ -782,6 +786,24 @@ class MCRun(ABC):
             self._set_stable(pdgid, True)
 
         self._set_final_state_particles_called = True
+
+    def _switch_on_autoburner(self, seed=None):
+        try:
+            self._afterburner = DecayAfterburner(
+                seed=seed, theonly_stable_pids=long_lived
+            )
+        except ModuleNotFoundError as ex:
+            import warnings
+
+            warnings.warn(
+                f"DecayAutoburner not available:\n{ex}\n"
+                "Some particles may not decay",
+                RuntimeWarning,
+            )
+            self._apply_afterburner = False
+            return
+
+        self._apply_afterburner = True
 
     @contextmanager
     def _temporary_kinematics(self, kin):

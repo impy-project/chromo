@@ -3,50 +3,136 @@ import numpy as np
 
 
 class DecayAfterburner:
-    def __init__(self, seed=None, stable_pids=None, decaying_pids=None):
+    def __init__(
+        self,
+        seed=None,
+        extra_stable_pids=None,
+        extra_decaying_pids=None,
+        theonly_stable_pids=None,
+        theonly_decaying_pids=None,
+    ):
         """
         Initialize the DecayAfterburner with Pythia8 and set particle types for decay.
 
         Parameters:
             seed (int): Random seed for Pythia8 initialization.
-            stable_pids (list[int]): A list of PDG IDs corresponding to particles
-                                     that should be considered stable.
-            decaying_pids (list[int]): A list of PDG IDs corresponding to particles
-                                       that should be considered decaying.
+            extra_stable_pids (list[int]): List of additional PDG IDs
+            for stable particles.
+            extra_decaying_pids (list[int]): List of additional PDG IDs
+            for decaying particles.
+            theonly_stable_pids (list[int]): List of PDG IDs
+            for exclusively stable particles (all other are decaying if they can decay).
+            theonly_decaying_pids (list[int]): List of PDG IDs
+            for exclusively decaying particles (all other are stable).
 
         Notes:
-            - If both `stable_pids` and `decaying_pids` are `None`,
-              Pythia8 defaults are applied.
-            - If the same PDG ID appears in both `stable_pids` and `decaying_pids`,
-              `decaying_pids` takes precedence over `stable_pids`.
+            - If both `extra_stable_pids` and `extra_decaying_pids`
+            are provided, check for duplicates.
+            - If `theonly_stable_pids` or `theonly_decaying_pids`
+            are provided, ensure exclusivity.
         """
         # Initialize Pythia8 with specific configurations
         config = ["ProcessLevel:all = off", "ParticleDecays:tau0Max = 1e100"]
         pythia8 = chromo.models.Pythia8(None, seed=seed, config=config, banner=False)
         self.pythia = pythia8._pythia
 
+        self.set_stable_decaying(
+            extra_stable_pids,
+            extra_decaying_pids,
+            theonly_stable_pids,
+            theonly_decaying_pids,
+        )
+
+    def set_stable_decaying(
+        self,
+        extra_stable_pids=None,
+        extra_decaying_pids=None,
+        theonly_stable_pids=None,
+        theonly_decaying_pids=None,
+    ):
+        self.extra_stable_pids = extra_stable_pids
+        self.extra_decaying_pids = extra_decaying_pids
+        self.theonly_stable_pids = theonly_stable_pids
+        self.theonly_decaying_pids = theonly_decaying_pids
+        # Check for duplicates in extra_stable_pids and extra_decaying_pids
+        if (extra_stable_pids is not None) and (extra_decaying_pids is not None):
+            dup_pids = set(extra_stable_pids) & set(extra_decaying_pids)
+            if dup_pids:
+                raise ValueError(
+                    f"Duplicates found in {dup_pids} between "
+                    "extra_stable_pids and extra_decaying_pids"
+                )
+
         # Set particles as stable or decaying based on the provided lists
-        if stable_pids is not None:
-            for pid in stable_pids:
+        if extra_stable_pids is not None:
+            for pid in extra_stable_pids:
                 self.pythia.particleData.mayDecay(pid, False)
 
-        if decaying_pids is not None:
-            for pid in decaying_pids:
+        if extra_decaying_pids is not None:
+            for pid in extra_decaying_pids:
                 self.pythia.particleData.mayDecay(pid, True)
 
-        # Store the provided stable and decaying PDG IDs for future reference
-        self.stable_pids = stable_pids
-        self.decaying_pids = decaying_pids
+        # Handle exclusive stability options
+        if theonly_stable_pids is not None:
+            self._set_exclusive_stability(theonly_stable_pids, False)
+
+        if theonly_decaying_pids is not None:
+            self._set_exclusive_stability(theonly_decaying_pids, True)
+
+        # Store stable and decaying PDG IDs for future reference
+        all_stable_pids = []
+        all_decaying_pids = []
+        for pentry in self.pythia.particleData.all():
+            if pentry.mayDecay and pentry.canDecay:
+                if pentry.hasAnti:
+                    all_decaying_pids.append(pentry.antiId)
+                all_decaying_pids.append(pentry.id)
+            else:
+                if pentry.hasAnti:
+                    all_stable_pids.append(pentry.antiId)
+                all_stable_pids.append(pentry.id)
+
+        self.all_decaying_pids = np.array(all_decaying_pids, dtype=np.int64)
+        self.all_stable_pids = np.array(all_stable_pids, dtype=np.int64)
+
+    def _set_exclusive_stability(self, pids, is_decaying):
+        """
+        Set particles exclusively as stable or decaying based on the provided list.
+
+        Parameters:
+            pids (list[int]): List of PDG IDs for particles to be exclusively set.
+            is_decaying (bool): True if the particles should be set as decaying,
+            False for stable.
+
+        Raises:
+            ValueError: If exclusivity conditions are not met.
+        """
+        if (
+            sum(
+                x is not None
+                for x in [
+                    self.extra_stable_pids,
+                    self.extra_decaying_pids,
+                    self.theonly_stable_pids,
+                    self.theonly_decaying_pids,
+                ]
+            )
+            != 1
+        ):
+            raise ValueError(
+                "theonly_stable_pids or theonly_decaying_pids can be set "
+                "if all other options are None"
+            )
+
+        # Set particles exclusively as stable or decaying
+        for pentry in self.pythia.particleData.all():
+            self.pythia.particleData.mayDecay(pentry.id, not is_decaying)
+        for pid in pids:
+            self.pythia.particleData.mayDecay(pid, is_decaying)
 
     def __call__(self, event):
         """
         Decay particles in the provided `event` that are marked as `decaying`.
-
-        A particle is considered `decaying` if its PDG ID is present in the
-        `decaying_pids` list provided during the constructor's initialization
-        or if it is set to decay by default in Pythia8.
-        The `stable_pids` specified during the constructor's initialization are
-        used to set particles as stable.
 
         After the call, `event` contains both the initial particles and
         the newly produced particles through decay.
@@ -54,9 +140,6 @@ class DecayAfterburner:
 
         Parameters:
             event (Event): The event containing particles to be decayed.
-
-        Raises:
-            RuntimeError: If any produced particles have an unknown PDG ID.
         """
         # Return if the event is empty
         if len(event.pid) == 0:
