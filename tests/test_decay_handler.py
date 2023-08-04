@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 import sys
 
-from chromo.decay_afterburner import DecayAfterburner
+from chromo.decay_handler import Pythia8DecayHandler
 from chromo.util import get_all_models
 from .util import run_in_separate_process
 
@@ -11,9 +11,9 @@ if sys.platform == "win32":
     pytest.skip("Pythia8 does not run on windows", allow_module_level=True)
 
 
-def run_decay_afterburner(model, evt_kin, stable_particles, decaying_particles):
+def run_decay_handler(model, evt_kin, stable_particles, decaying_particles):
     seed = 1
-    after_burner = DecayAfterburner(
+    decay_handler = Pythia8DecayHandler(
         seed=seed,
         extra_stable_pids=stable_particles,
         extra_decaying_pids=decaying_particles,
@@ -22,7 +22,7 @@ def run_decay_afterburner(model, evt_kin, stable_particles, decaying_particles):
 
     for event in gen(10):
         event0 = event.copy()
-        after_burner(event)
+        decay_handler(event)
 
         # Assert that decay has happend
         event_dec = event[0 : len(event0)]
@@ -30,19 +30,21 @@ def run_decay_afterburner(model, evt_kin, stable_particles, decaying_particles):
 
         # Assert that all particles that should decay have been decayed
         not_decayed0 = np.sum(
-            np.isin(event0.pid, after_burner.all_decaying_pids) & (event0.status == 1)
+            np.isin(event0.pid, decay_handler.all_decaying_pids) & (event0.status == 1)
         )
         not_decayed1 = np.sum(
-            np.isin(event.pid, after_burner.all_decaying_pids) & (event.status == 1)
+            np.isin(event.pid, decay_handler.all_decaying_pids) & (event.status == 1)
         )
         if not_decayed0 > 0:
             assert not_decayed1 == 0
 
         # Assert that stable particles haven't decayed
-        stable0 = np.isin(event0.pid, after_burner.all_stable_pids) & (
+        stable0 = np.isin(event0.pid, decay_handler.all_stable_pids) & (
             event0.status == 1
         )
-        stable1 = np.isin(event.pid, after_burner.all_stable_pids) & (event.status == 1)
+        stable1 = np.isin(event.pid, decay_handler.all_stable_pids) & (
+            event.status == 1
+        )
         # Assert that number of stable particles of given type hasn't decreased
         assert np.sum(stable0) <= np.sum(stable1)
         # Assert that stable particles haven't decayed
@@ -62,7 +64,7 @@ def run_decay_afterburner(model, evt_kin, stable_particles, decaying_particles):
 
 
 @pytest.mark.parametrize("Model", get_all_models())
-def test_decay_afterburner(Model):
+def test_decay_handler(Model):
     stable_particles = [111]
     decaying_particles = [-211, 211, 13, -13, 2112]
 
@@ -81,5 +83,5 @@ def test_decay_afterburner(Model):
         evt_kin = chromo.kinematics.FixedTarget(100, "p", "O")
 
     run_in_separate_process(
-        run_decay_afterburner, Model, evt_kin, stable_particles, decaying_particles
+        run_decay_handler, Model, evt_kin, stable_particles, decaying_particles
     )

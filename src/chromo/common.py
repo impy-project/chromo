@@ -29,7 +29,7 @@ from typing import Tuple, Optional
 from contextlib import contextmanager
 import warnings
 from particle import Particle
-from chromo.decay_afterburner import DecayAfterburner
+from chromo.decay_handler import Pythia8DecayHandler
 
 
 # Do we need EventData.n_spectators in addition to EventData.n_wounded?
@@ -574,7 +574,7 @@ class MCRun(ABC):
         self._rng = np.random.default_rng(seed)
         if hasattr(self._lib, "npy"):
             self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
-        self._apply_afterburner = False
+        self._apply_decay_handler = False
         self._final_state_particles = np.array([], dtype=np.int64)
 
     def __call__(self, nevents):
@@ -593,8 +593,8 @@ class MCRun(ABC):
                     event = self._event_class(self)
                     # boost into frame requested by user
                     self.kinematics.apply_boost(event, self._frame)
-                    if self._apply_afterburner:
-                        self._afterburner(event)
+                    if self._apply_decay_handler:
+                        self._decay_handler(event)
                     yield event
                     continue
                 nretries += 1
@@ -732,8 +732,8 @@ class MCRun(ABC):
             )
             self._final_state_particles = self._final_state_particles[is_stable]
 
-        if self._apply_afterburner:
-            self._afterburner.set_stable_decaying(
+        if self._apply_decay_handler:
+            self._decay_handler.set_stable_decaying(
                 theonly_stable_pids=self._final_state_particles
             )
 
@@ -815,27 +815,27 @@ class MCRun(ABC):
         self._set_final_state_particles_called = True
         self._update_final_state_particles(long_lived, stable=True)
 
-    def switch_afterburner(self, on=True, seed=None):
+    def switch_decay_handler(self, on=True, seed=None):
         if not on:
-            self._apply_afterburner = False
+            self._apply_decay_handler = False
             return
 
         try:
-            self._afterburner = DecayAfterburner(
+            self._decay_handler = Pythia8DecayHandler(
                 seed=seed, theonly_stable_pids=self._final_state_particles
             )
         except ModuleNotFoundError as ex:
             import warnings
 
             warnings.warn(
-                f"DecayAutoburner not available:\n{ex}\n"
+                f"Pythia8DecayHandler not available:\n{ex}\n"
                 "Some particles may not decay",
                 RuntimeWarning,
             )
-            self._apply_afterburner = False
+            self._apply_decay_handler = False
             return
 
-        self._apply_afterburner = True
+        self._apply_decay_handler = True
 
     @contextmanager
     def _temporary_kinematics(self, kin):
