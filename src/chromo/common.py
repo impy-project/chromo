@@ -593,7 +593,14 @@ class MCRun(ABC):
                     event = self._event_class(self)
                     # boost into frame requested by user
                     self.kinematics.apply_boost(event, self._frame)
-                    if self._apply_decay_handler:
+                    if self._apply_decay_handler and (
+                        not np.all(
+                            np.isin(
+                                event.pid[event.status == 1],
+                                self._final_state_particles,
+                            )
+                        )
+                    ):
                         self._decay_handler(event)
                     yield event
                     continue
@@ -734,7 +741,7 @@ class MCRun(ABC):
 
         if self._apply_decay_handler:
             self._decay_handler.set_stable_decaying(
-                theonly_stable_pids=self._final_state_particles
+                stable_pids=self._final_state_particles
             )
 
     def set_stable(self, pdgid, stable=True):
@@ -814,15 +821,20 @@ class MCRun(ABC):
 
         self._set_final_state_particles_called = True
         self._update_final_state_particles(long_lived, stable=True)
+        self._switch_decay_handler()
 
-    def switch_decay_handler(self, on=True, seed=None):
+    def _switch_decay_handler(self, on=True, seed=None):
         if not on:
+            self._apply_decay_handler = False
+            return
+
+        if self.pyname == "Pythia8":
             self._apply_decay_handler = False
             return
 
         try:
             self._decay_handler = Pythia8DecayHandler(
-                seed=seed, theonly_stable_pids=self._final_state_particles
+                seed=seed, stable_pids=self._final_state_particles
             )
         except ModuleNotFoundError as ex:
             import warnings
