@@ -54,7 +54,7 @@ To see the help of the command-line interface. If that does not work, just repla
 - ROOT (via uproot)
 - SVG images of events (via pyhepmc package)
 
-## Supported models
+## Supported models and how to cite them
 
 Please note that `chromo` only provides a user interface for the following models, and does not contain any particle physics models itself. When using any of these models in public-facing work, it is important to properly cite the original model reference by following the links below. Additionally, if you find `chromo` useful in your work, we would appreciate an acknowledgement, footnote, or link to `chromo`.
 
