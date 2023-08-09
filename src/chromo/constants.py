@@ -98,8 +98,7 @@ all_decaying_ctau = get_all_decaying_ctau()
 all_decaying_pids = [pid for pid in all_decaying_ctau]
 
 
-def split_stable_decaying(tau0, mm=False):
-    decaying = []
+def long_lived_for(tau0, mm=False):
     stable = []
     if mm:
         ctau0 = tau0
@@ -109,15 +108,12 @@ def split_stable_decaying(tau0, mm=False):
     for pid, ctau in all_decaying_ctau.items():
         if ctau > ctau0:
             stable.append(pid)
-        else:
-            decaying.append(pid)
-    return stable, decaying
+    return stable
 
 
 # Default definition of final state particle
 # All particles with proper lifetime shorter than this
 # will decay
 tau_stable = 30e-12  # 30 ps, typical value at LHC
-stable, decaying = split_stable_decaying(tau_stable)
 # standard long-lived particles with life-time > 30 ps
-long_lived = tuple(stable)
+long_lived = tuple(long_lived_for(tau_stable))
