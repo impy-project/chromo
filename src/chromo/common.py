@@ -24,6 +24,7 @@ from chromo.constants import (
     all_decaying_pids,
 )
 from chromo.kinematics import EventKinematics, CompositeTarget
+from chromo.util import unique_sorted_pids
 import dataclasses
 import copy
 from typing import Tuple, Optional
@@ -723,8 +724,7 @@ class MCRun(ABC):
     @property
     def final_state_particles(self):
         """Returns sorted list"""
-        uids = np.unique(self._final_state_particles)
-        return tuple(uids[np.argsort(2 * np.abs(uids) - (uids < 0))])
+        return tuple(unique_sorted_pids(self._final_state_particles))
 
     @final_state_particles.setter
     def final_state_particles(self, pdgid):
