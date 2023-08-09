@@ -576,8 +576,6 @@ class MCRun(ABC):
         self._rng = np.random.default_rng(seed)
         if hasattr(self._lib, "npy"):
             self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
-        self._apply_decay_handler = False
-        self._final_state_particles = np.array([], dtype=np.int64)
 
     def __call__(self, nevents):
         """Generator function (in python sence)
@@ -595,15 +593,15 @@ class MCRun(ABC):
                     event = self._event_class(self)
                     # boost into frame requested by user
                     self.kinematics.apply_boost(event, self._frame)
-                    # if self._apply_decay_handler and (
-                    #     not np.all(
-                    #         np.isin(
-                    #             event.pid[event.status == 1],
-                    #             self._final_state_particles,
-                    #         )
-                    #     )
-                    # ):
-                    #     self._decay_handler(event)
+                    if self._apply_decay_handler and (
+                        not np.all(
+                            np.isin(
+                                event.pid[event.status == 1],
+                                self._final_state_particles,
+                            )
+                        )
+                    ):
+                        self._decay_handler(event)
                     yield event
                     continue
                 nretries += 1
@@ -830,22 +828,17 @@ class MCRun(ABC):
         """Defines particles as stable for the default 'tau_stable'
         value in the config."""
 
+        self._set_decay_handler()
         self.final_state_particles = long_lived
         self._set_final_state_particles_called = True
 
-    def _switch_decay_handler(self, on=True, seed=None):
-        if not on:
-            self._apply_decay_handler = False
-            return
-
+    def _set_decay_handler(self, seed=None):
         if self.pyname == "Pythia8":
             self._apply_decay_handler = False
             return
 
         try:
-            self._decay_handler = Pythia8DecayHandler(
-                seed=seed, stable_pids=self._final_state_particles
-            )
+            self._decay_handler = Pythia8DecayHandler(seed=seed)
         except ModuleNotFoundError as ex:
             import warnings
 
