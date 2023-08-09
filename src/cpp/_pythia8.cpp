@@ -18,13 +18,13 @@ using namespace pybind11::literals;
 float charge_from_pid(const ParticleData &pd, int pid)
 {
     auto pptr = pd.findParticle(pid);
+    
     // return NaN if unknown pid is met
-    if (pptr == nullptr) {
+    if (pptr == nullptr) 
         return std::numeric_limits<float>::quiet_NaN();
-    } else {
+    
     // ParticleData returns partice even if anti-particle pid is used
-        return pid == pptr->id() ? pptr->charge() : -pptr->charge();
-    }
+    return pid == pptr->id() ? pptr->charge() : -pptr->charge();
 }
 
 PRIVATE_ACCESS_MEMBER(Particle, idSave, int)
