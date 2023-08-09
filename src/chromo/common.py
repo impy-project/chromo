@@ -752,9 +752,7 @@ class MCRun(ABC):
             self._final_state_particles = self._final_state_particles[is_stable]
 
         if self._apply_decay_handler:
-            self._decay_handler.set_stable_decaying(
-                stable_pids=self._final_state_particles
-            )
+            self._decay_handler.set_stable(self._final_state_particles)
 
     def set_stable(self, pdgid, stable=True):
         """Prevent decay of unstable particles
@@ -838,7 +836,7 @@ class MCRun(ABC):
             return
 
         try:
-            self._decay_handler = Pythia8DecayHandler(seed=seed)
+            self._decay_handler = Pythia8DecayHandler([], seed=seed)
         except ModuleNotFoundError as ex:
             import warnings
 

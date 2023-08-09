@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 import sys
 
+from chromo.constants import long_lived_for
 from chromo.decay_handler import Pythia8DecayHandler
 from chromo.util import get_all_models
 from .util import run_in_separate_process
@@ -11,13 +12,9 @@ if sys.platform == "win32":
     pytest.skip("Pythia8 does not run on windows", allow_module_level=True)
 
 
-def run_decay_handler(model, evt_kin, stable_particles, decaying_particles):
+def run_decay_handler(model, evt_kin, stable_particles):
     seed = 1
-    decay_handler = Pythia8DecayHandler(
-        seed=seed,
-        extra_stable_pids=stable_particles,
-        extra_decaying_pids=decaying_particles,
-    )
+    decay_handler = Pythia8DecayHandler(stable_particles, seed)
     gen = model(evt_kin, seed=seed)
 
     for event in gen(10):
@@ -65,14 +62,13 @@ def run_decay_handler(model, evt_kin, stable_particles, decaying_particles):
 
 @pytest.mark.parametrize("Model", get_all_models())
 def test_decay_handler(Model):
-    stable_particles = [111]
-    decaying_particles = [-211, 211, 13, -13, 2112]
+    stable_particles = long_lived_for(30e-12)
 
     if Model.name in ["UrQMD", "QGSJet"]:
         # UrQMD produce neutrons = 2112 with wrong masses
         # QGSJet produce neutrons with proton mass
         # Pythia8 ignores them for decay
-        decaying_particles = [-211, 211, 13, -13]
+        stable_particles = stable_particles
 
     if Model.name in ["PhoJet", "Pythia"]:
         evt_kin = chromo.kinematics.FixedTarget(100, "p", "p")
@@ -82,6 +78,4 @@ def test_decay_handler(Model):
     else:
         evt_kin = chromo.kinematics.FixedTarget(100, "p", "O")
 
-    run_in_separate_process(
-        run_decay_handler, Model, evt_kin, stable_particles, decaying_particles
-    )
+    run_in_separate_process(run_decay_handler, Model, evt_kin, stable_particles)
