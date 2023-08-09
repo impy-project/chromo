@@ -86,9 +86,13 @@ if (UNIX)
   add_compile_options(
     -Wno-uninitialized
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
-    $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
   )
+  if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
+    add_compile_options(
+      $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
+    )
+  endif()
   if (APPLE)
     set(is_fortran "$<COMPILE_LANGUAGE:Fortran>")
     set(is_greater_v10 "$<VERSION_GREATER:$<Fortran_COMPILER_VERSION>,10.0.0>")
@@ -103,12 +107,16 @@ else() # Windows MinGW!
 	add_compile_options(
     -Wno-uninitialized
     -w
-    $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
     $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
     $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
   )
+  if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
+    add_compile_options(
+      $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
+    )
+  endif()
   # TODO
   # set(FLAGS -fast -fpe0)
   # set(FLAGSF90 ${FLAGS} -ffree-form -Wobsolescent -fno-second-underscore)
