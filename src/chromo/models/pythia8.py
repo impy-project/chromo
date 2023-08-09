@@ -33,8 +33,8 @@ class PYTHIA8Event(EventData):
             event.vy(),
             event.vz(),
             event.vt(),
-            event.parents(),
-            event.children(),
+            np.maximum(event.mothers() - 1, -1),
+            np.maximum(event.daughters() - 1, -1),
         )
 
     @staticmethod
@@ -71,7 +71,7 @@ class Pythia8(MCRun):
         + "/releases/download/zipped_data_v1.0/Pythia8_v002.zip"
     )
 
-    def __init__(self, evt_kin, *, seed=None, config=None):
+    def __init__(self, evt_kin, *, seed=None, config=None, banner=True):
         """
 
         Parameters
@@ -95,15 +95,30 @@ class Pythia8(MCRun):
         # or init() may fail.
         if "PYTHIA8DATA" in environ:
             del environ["PYTHIA8DATA"]
-        self._pythia = self._lib.Pythia(datdir, True)
+        self._pythia = self._lib.Pythia(datdir, banner)
 
         if config is None:
             self._config = ["SoftQCD:inelastic = on"]
         else:
             self._config = self._parse_config(config)
 
+        # Common settings
+        self._config += [
+            # use our random seed
+            "Random:setSeed = on",
+            # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
+            # this may change in the future if they switch to a different PRNG
+            f"Random:seed = {self.seed % 900_000_000}",
+            # reduce verbosity
+            "Print:quiet = on",
+        ]
+
         # must come last
-        self.kinematics = evt_kin
+        if evt_kin is None:
+            # Decay mode
+            self._init_pythia(self._config)
+        else:
+            self.kinematics = evt_kin
         self._set_final_state_particles()
 
     def _cross_section(self, kin=None):
@@ -119,22 +134,12 @@ class Pythia8(MCRun):
         )
 
     def _set_kinematics(self, kin):
-        pythia = self._pythia
-        pythia.settings.resetAll()
-
         config = self._config[:]
 
         # TODO use numpy PRNG instead of Pythia's
         config += [
-            # use our random seed
-            "Random:setSeed = on",
-            # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
-            # this may change in the future if they switch to a different PRNG
-            f"Random:seed = {self.seed % 900_000_000}",
             # use center-of-mass frame
             "Beams:frameType = 1",
-            # reduce verbosity
-            "Print:quiet = on",
             # do not print progress
             "Next:numberCount = 0",
         ]
@@ -156,6 +161,12 @@ class Pythia8(MCRun):
             f"Beams:idB = {int(kin.p2)}",
             f"Beams:eCM = {kin.ecm}",
         ]
+
+        self._init_pythia(config)
+
+    def _init_pythia(self, config):
+        pythia = self._pythia
+        pythia.settings.resetAll()
 
         for line in config:
             if not pythia.readString(line):
@@ -201,6 +212,7 @@ class Pythia8(MCRun):
 
         result2: List[str] = []
         for line in result:
+            line = line.strip()
             for ig in ignored:
                 if line.startswith(ig):
                     warnings.warn(f"configuration ignored: {line!r}", RuntimeWarning)
