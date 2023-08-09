@@ -734,23 +734,7 @@ class MCRun(ABC):
         for pid in pdgid:
             self._set_stable(pid, True)
 
-        self._update_final_state_particles(pdgid, None)
-
-    def _update_final_state_particles(self, pdgid, stable):
-        unique_pdgid = np.unique(pdgid)
-
-        if stable is None:
-            self._final_state_particles = unique_pdgid
-        elif stable:
-            self._final_state_particles = np.append(
-                self._final_state_particles, unique_pdgid
-            ).astype(np.int64)
-        else:
-            is_stable = np.logical_not(
-                np.isin(self._final_state_particles, unique_pdgid)
-            )
-            self._final_state_particles = self._final_state_particles[is_stable]
-
+        self._final_state_particles = np.unique(pdgid)
         if self._apply_decay_handler:
             self._decay_handler.set_stable(self._final_state_particles)
 
@@ -767,10 +751,21 @@ class MCRun(ABC):
         if abs(pdgid) == 311:
             self._set_stable(130, stable)
             self._set_stable(310, stable)
-            self._update_final_state_particles([130, 310], stable)
+            pdgid_list = [130, 310]
         else:
             self._set_stable(pdgid, stable)
-            self._update_final_state_particles(pdgid, stable)
+            pdgid_list = pdgid
+
+        if stable:
+            self._final_state_particles = np.append(
+                self._final_state_particles, pdgid_list
+            ).astype(np.int64)
+        else:
+            is_stable = np.logical_not(np.isin(self._final_state_particles, pdgid_list))
+            self._final_state_particles = self._final_state_particles[is_stable]
+
+        if self._apply_decay_handler:
+            self._decay_handler.set_stable(self._final_state_particles)
 
     def set_unstable(self, pdgid):
         """Convenience funtion for `self.set_stable(..., stable=False)`
