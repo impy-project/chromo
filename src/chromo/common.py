@@ -21,6 +21,7 @@ from chromo.constants import (
     long_lived,
     standard_projectiles,
     GeV,
+    all_decaying_pids,
 )
 from chromo.kinematics import EventKinematics, CompositeTarget
 import dataclasses
@@ -555,6 +556,7 @@ class MCRun(ABC):
     _set_final_state_particles_called = False
     _projectiles = standard_projectiles
     _targets = Nuclei()
+    _decaying_pids = all_decaying_pids
     _ecm_min = 10 * GeV  # default for many models
     nevents = 0  # number of generated events so far
 
@@ -593,15 +595,15 @@ class MCRun(ABC):
                     event = self._event_class(self)
                     # boost into frame requested by user
                     self.kinematics.apply_boost(event, self._frame)
-                    if self._apply_decay_handler and (
-                        not np.all(
-                            np.isin(
-                                event.pid[event.status == 1],
-                                self._final_state_particles,
-                            )
-                        )
-                    ):
-                        self._decay_handler(event)
+                    # if self._apply_decay_handler and (
+                    #     not np.all(
+                    #         np.isin(
+                    #             event.pid[event.status == 1],
+                    #             self._final_state_particles,
+                    #         )
+                    #     )
+                    # ):
+                    #     self._decay_handler(event)
                     yield event
                     continue
                 nretries += 1
@@ -724,15 +726,27 @@ class MCRun(ABC):
     def final_state_particles(self):
         """Returns sorted list"""
         uids = np.unique(self._final_state_particles)
-        return list(uids[np.argsort(2 * np.abs(uids) - (uids < 0))])
+        return tuple(uids[np.argsort(2 * np.abs(uids) - (uids < 0))])
+
+    @final_state_particles.setter
+    def final_state_particles(self, pdgid):
+        for pid in self._decaying_pids:
+            self._set_stable(pid, False)
+
+        for pid in pdgid:
+            self._set_stable(pid, True)
+
+        self._update_final_state_particles(pdgid, None)
 
     def _update_final_state_particles(self, pdgid, stable):
         unique_pdgid = np.unique(pdgid)
 
-        if stable:
+        if stable is None:
+            self._final_state_particles = unique_pdgid
+        elif stable:
             self._final_state_particles = np.append(
                 self._final_state_particles, unique_pdgid
-            )
+            ).astype(np.int64)
         else:
             is_stable = np.logical_not(
                 np.isin(self._final_state_particles, unique_pdgid)
@@ -816,12 +830,8 @@ class MCRun(ABC):
         """Defines particles as stable for the default 'tau_stable'
         value in the config."""
 
-        for pdgid in long_lived:
-            self._set_stable(pdgid, True)
-
+        self.final_state_particles = long_lived
         self._set_final_state_particles_called = True
-        self._update_final_state_particles(long_lived, stable=True)
-        self._switch_decay_handler()
 
     def _switch_decay_handler(self, on=True, seed=None):
         if not on:

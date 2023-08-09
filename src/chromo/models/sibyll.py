@@ -1,8 +1,113 @@
 from chromo.common import MCRun, MCEvent, CrossSectionData
 from chromo.util import info, Nuclei
 from chromo.kinematics import EventFrame
+from chromo.util import unique_sorted_pids
 from particle import literals as lp
 import warnings
+
+
+sibyll_decaying_pids = [
+    111,
+    113,
+    -211,
+    211,
+    -213,
+    213,
+    221,
+    223,
+    -321,
+    321,
+    331,
+    333,
+    -411,
+    411,
+    -413,
+    413,
+    -421,
+    421,
+    -423,
+    423,
+    -431,
+    431,
+    441,
+    443,
+    -1114,
+    1114,
+    -2112,
+    2112,
+    -2114,
+    2114,
+    -2214,
+    2214,
+    -2224,
+    2224,
+    -3112,
+    3112,
+    -3114,
+    3114,
+    -3122,
+    3122,
+    -3212,
+    3212,
+    -3214,
+    3214,
+    -3222,
+    3222,
+    -3224,
+    3224,
+    -3312,
+    3312,
+    -3314,
+    3314,
+    -3322,
+    3322,
+    -3324,
+    3324,
+    -3334,
+    3334,
+    -4112,
+    4112,
+    -4114,
+    4114,
+    -4122,
+    4122,
+    -4132,
+    4132,
+    -4212,
+    4212,
+    -4214,
+    4214,
+    -4222,
+    4222,
+    -4224,
+    4224,
+    -4232,
+    4232,
+    -4314,
+    4314,
+    -4324,
+    4324,
+    -4332,
+    4332,
+]
+
+sibyll21_decaying_pids = sibyll_decaying_pids + [-10311, 10311, -10321, 10321]
+# sibyll21_decaying_pids = sibyll_decaying_pids
+sibyll21_decaying_pids = list(unique_sorted_pids(sibyll21_decaying_pids))
+
+sibyll23_decaying_pids = sibyll_decaying_pids + [
+    -13,
+    13,
+    -15,
+    15,
+    130,
+    310,
+    -313,
+    313,
+    -323,
+    323,
+]
+sibyll23_decaying_pids = list(unique_sorted_pids(sibyll23_decaying_pids))
 
 
 class SibyllEvent(MCEvent):
@@ -103,6 +208,9 @@ class SIBYLLRun(MCRun):
         assert self._production_id != 0
 
     def _set_stable(self, pdgid, stable):
+        if pdgid not in self._decaying_pids:
+            return
+
         sid = abs(self._lib.isib_pdg2pid(pdgid))
         if abs(pdgid) == 311:
             info(1, "Ignores K0. Using K0L/S instead")
@@ -128,43 +236,55 @@ class SIBYLLRun(MCRun):
 class Sibyll21(SIBYLLRun):
     _version = "2.1"
     _library_name = "_sib21"
+    _decaying_pids = sibyll21_decaying_pids
+
+    def __init__(self, evt_kin, *, seed=None):
+        super().__init__(evt_kin, seed=seed)
+
+        # Setting of muons and kaons as stable
+        # patches the problem of freezing for Sibyll21
+        for pdgid in [-13, 13, 130, 310]:
+            sid = abs(self._lib.isib_pdg2pid(pdgid))
+            idb = self._lib.s_csydec.idb
+            idb[sid - 1] = -abs(idb[sid - 1])
 
 
 class Sibyll23(SIBYLLRun):
     _version = "2.3"
     _library_name = "_sib23"
+    _decaying_pids = sibyll23_decaying_pids
 
 
-class Sibyll23c(SIBYLLRun):
+class Sibyll23c(Sibyll23):
     _version = "2.3c"
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c00(SIBYLLRun):
+class Sibyll23c00(Sibyll23):
     _version = "2.3c00"
     _library_name = "_sib23c00"
 
 
 # identical to 2.3c
-class Sibyll23c01(SIBYLLRun):
+class Sibyll23c01(Sibyll23):
     _version = "2.3c01"
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c02(SIBYLLRun):
+class Sibyll23c02(Sibyll23):
     _version = "2.3c02"
     _library_name = "_sib23c02"
 
 
 # The c03 version was also in CORSIKA until 2020
-class Sibyll23c03(SIBYLLRun):
+class Sibyll23c03(Sibyll23):
     _version = "2.3c03"
     _library_name = "_sib23c03"
 
 
 # The latest patch c04 was renamed to d, to generate less confusion
-class Sibyll23d(SIBYLLRun):
+class Sibyll23d(Sibyll23):
     _version = "2.3d"
     _library_name = "_sib23d"

@@ -687,3 +687,12 @@ class Nuclei:
 
     def __ror__(self, other: Set[PDGID]):
         return self.__or__(other)
+
+
+def unique_sorted_pids(ids):
+    """np.arrays of unique ids sorted by abs value
+    with negative value first, e.g.
+    -11, 11, -12, 12, ...
+    """
+    uids = np.unique(np.fromiter(ids, dtype=np.int64))
+    return uids[np.argsort(2 * np.abs(uids) - (uids < 0))]

@@ -4,6 +4,7 @@ from chromo.constants import nucleon_mass
 from chromo.constants import microbarn
 from chromo.kinematics import EventFrame
 from particle import literals as lp
+import warnings
 
 sophia_interaction_types = [
     "multipion production (fragmentation)",
@@ -13,6 +14,64 @@ sophia_interaction_types = [
     "diffractive scattering: N \u03B3 \u2192 N \u03C9",
     "fragmentation in resonance region",
     "excitation/decay of resonance",
+]
+
+
+sophia_decaying_pids = [
+    -13,
+    13,
+    111,
+    113,
+    130,
+    -211,
+    211,
+    -213,
+    213,
+    221,
+    223,
+    310,
+    -313,
+    313,
+    -321,
+    321,
+    -323,
+    323,
+    331,
+    333,
+    -1114,
+    1114,
+    -2112,
+    2112,
+    -2114,
+    2114,
+    -2214,
+    2214,
+    -2224,
+    2224,
+    -3112,
+    3112,
+    -3114,
+    3114,
+    -3122,
+    3122,
+    -3212,
+    3212,
+    -3214,
+    3214,
+    -3222,
+    3222,
+    -3224,
+    3224,
+    -3312,
+    3312,
+    -3314,
+    3314,
+    -3322,
+    3322,
+    -3324,
+    3324,
+    -3334,
+    3334,
 ]
 
 
@@ -49,6 +108,7 @@ class Sophia20(MCRun):
     _frame = EventFrame.FIXED_TARGET
     _projectiles = {lp.photon.pdgid}
     _targets = {lp.p.pdgid, lp.n.pdgid}
+    _decaying_pids = sophia_decaying_pids
     _ecm_min = 0
 
     def __init__(self, kinematics, *, seed=None, keep_decayed_particles=True):
@@ -87,10 +147,15 @@ class Sophia20(MCRun):
         self._lib.initial(self._nucleon_code)
 
     def _set_stable(self, pdgid, stable):
+        if pdgid not in self._decaying_pids:
+            return
+
         sid = abs(self._lib.icon_pdg_sib(pdgid)) - 1
         idb = self._lib.s_csydec.idb
         if sid < 0 or sid > idb.size:
-            raise ValueError(f"{pdgid} is unknown")
+            warnings.warn(f"{pdgid} unknown to UrQMD", RuntimeWarning)
+            return
+
         if stable:
             idb[sid] = -abs(idb[sid])
         else:
