@@ -827,6 +827,9 @@ class MCRun(ABC):
         self.final_state_particles = long_lived
         self._set_final_state_particles_called = True
 
+    def _switch_decay_handler(self, on):
+        self._apply_decay_handler = on
+
     def _set_decay_handler(self, seed=None):
         if self.pyname == "Pythia8":
             self._apply_decay_handler = False
