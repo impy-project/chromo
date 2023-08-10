@@ -33,7 +33,7 @@ def test_generator(Model):
     else:
         kin = CenterOfMass(1000 * GeV, "p", "p")
     counts = run_in_separate_process(
-        run_model, Model, kin, 1000 if Model in (im.EposLHC, im.UrQMD34) else 10000
+        run_model, Model, kin, 1000 if Model in (im.EposLHC, im.UrQMD34) else 20000
     )
 
     # Known issues:

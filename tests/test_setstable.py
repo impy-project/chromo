@@ -38,7 +38,7 @@ def run_model(Model, stable):
 @pytest.mark.parametrize("Model", get_all_models())
 def test_setstable(Model, stable):
     if not stable:
-        if any(part in Model.name for part in ("DPMJET", "PhoJet")):
+        if "DPMJET" in Model.name:
             pytest.xfail(
                 f"{Model.pyname} does not support decaying charged pions or any kaons"
             )

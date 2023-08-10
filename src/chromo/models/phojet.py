@@ -153,6 +153,8 @@ class PHOJETRun(MCRun):
             raise RuntimeError(
                 "initialization failed with the current event kinematics"
             )
+        # Prevent PHOJET from overwriting decay settings
+        self._lib.pomdls.iswmdl[5] = 1
 
     def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
