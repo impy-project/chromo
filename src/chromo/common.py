@@ -594,15 +594,17 @@ class MCRun(ABC):
                     event = self._event_class(self)
                     # boost into frame requested by user
                     self.kinematics.apply_boost(event, self._frame)
-                    if self._apply_decay_handler and (
-                        not np.all(
+                    if self._apply_decay_handler:
+                        status1_pids = event.pid[event.status == 1]
+                        may_decay = np.isin(status1_pids, all_decaying_pids)
+
+                        if not np.all(
                             np.isin(
-                                event.pid[event.status == 1],
+                                status1_pids[may_decay],
                                 self._final_state_particles,
                             )
-                        )
-                    ):
-                        self._decay_handler(event)
+                        ):
+                            self._decay_handler(event)
                     yield event
                     continue
                 nretries += 1

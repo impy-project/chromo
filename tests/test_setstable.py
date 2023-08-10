@@ -10,6 +10,7 @@ from particle import literals as lp
 
 decay_list = [
     lp.pi_plus.pdgid,
+    lp.pi_minus.pdgid,
     lp.K_plus.pdgid,
     lp.pi_0.pdgid,
     lp.K_S_0.pdgid,
