@@ -111,6 +111,7 @@ class DpmjetIIIRun(MCRun):
         # Set PYTHIA decay flags to follow all changes to MDCY
         self._lib.pydat1.mstj[21 - 1] = 1
         self._lib.pydat1.mstj[22 - 1] = 2
+        self._lib.dtfrpa.ovwtdc = False
         self._set_final_state_particles()
 
     def _cross_section(self, kin=None):

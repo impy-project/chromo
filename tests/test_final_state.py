@@ -37,10 +37,10 @@ def test_generator(Model):
     )
 
     # Known issues:
-    # SIBYLL-2.1 produces no Omega-
+    # SIBYLL-2.1 and UrQMD produce no Omega-
     # QGSJet family procues no Omega-, Xi0, Xi-, Sigma+, Sigma-
     known_issues = np.zeros_like(counts, dtype=bool)
-    if Model is im.Sibyll21:
+    if Model in [im.Sibyll21, im.UrQMD34]:
         for i, pid in enumerate(long_lived_hadrons):
             if abs(pid) == lp.Omega_minus.pdgid:
                 known_issues[i] = True
