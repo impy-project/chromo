@@ -28,12 +28,18 @@ def run_decay_handler(model, evt_kin, stable_particles):
         assert np.sum(event_dec.status != 1) >= np.sum(event0.status != 1)
 
         # Assert that all particles that should decay have been decayed
-        not_decayed0 = np.isin(event0.pid, decay_handler.all_decaying_pids) & (event0.status == 1)
-        not_decayed1 = np.isin(event.pid, decay_handler.all_decaying_pids) & (event.status == 1)
+        not_decayed0 = np.isin(event0.pid, decay_handler.all_decaying_pids) & (
+            event0.status == 1
+        )
+        not_decayed1 = np.isin(event.pid, decay_handler.all_decaying_pids) & (
+            event.status == 1
+        )
 
         if np.sum(not_decayed0) > 0:
             failed_to_decay = event.pid[not_decayed1]
-            assert np.sum(not_decayed1) == 0, f"{failed_to_decay} with status {event.status[not_decayed1]} do not decay"
+            assert (
+                np.sum(not_decayed1) == 0
+            ), f"{failed_to_decay} with status {event.status[not_decayed1]} do not decay"
 
         # Assert that stable particles haven't decayed
         stable0 = np.isin(event0.pid, decay_handler.all_stable_pids) & (
@@ -62,11 +68,13 @@ def run_decay_handler(model, evt_kin, stable_particles):
 
 @pytest.mark.parametrize("Model", get_all_models())
 def test_decay_handler(Model):
-    stable_particles = long_lived_for(30e-12)       
-    
-    if ((os.environ.get("CI", False))
+    stable_particles = long_lived_for(30e-12)
+
+    if (
+        (os.environ.get("CI", False))
         and (platform.system() == "Darwin")
-        and  (Model.name == "UrQMD")) :
+        and (Model.name == "UrQMD")
+    ):
         pytest.xfail(
             f"For {Model.pyname} DecayHandler fails to decay all decaying particles on MacOS CI"
         )
