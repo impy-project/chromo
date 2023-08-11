@@ -4,9 +4,12 @@ from chromo.kinematics import EventFrame
 from chromo.util import unique_sorted_pids
 from particle import literals as lp
 import warnings
+import numpy as np
 
 
 sibyll_decaying_pids = [
+    -13,
+    13,
     111,
     113,
     -211,
@@ -15,6 +18,8 @@ sibyll_decaying_pids = [
     213,
     221,
     223,
+    130,
+    310,
     -321,
     321,
     331,
@@ -96,12 +101,8 @@ sibyll21_decaying_pids = sibyll_decaying_pids + [-10311, 10311, -10321, 10321]
 sibyll21_decaying_pids = list(unique_sorted_pids(sibyll21_decaying_pids))
 
 sibyll23_decaying_pids = sibyll_decaying_pids + [
-    -13,
-    13,
     -15,
     15,
-    130,
-    310,
     -313,
     313,
     -323,
@@ -167,7 +168,7 @@ class SIBYLLRun(MCRun):
         # which works only after an initialization call to self._lib.pdg_ini()
         self.kinematics = evt_kin
 
-        self._set_final_state_particles()
+        super()._set_final_state_particles()
 
     def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
@@ -238,15 +239,14 @@ class Sibyll21(SIBYLLRun):
     _library_name = "_sib21"
     _decaying_pids = sibyll21_decaying_pids
 
-    def __init__(self, evt_kin, *, seed=None):
-        super().__init__(evt_kin, seed=seed)
+    def _set_final_state_particles(self, pdgid):
+        if not np.all(np.isin([-13, 13, -2112, 2112], pdgid)):
+            raise ValueError(
+                "Sibyll21 hangs when pdgs [-13, 13, -2112, 2112] are set as decaying.\n"
+                "final_state_particles should contain [-13, 13, -2112, 2112]"
+            )
 
-        # Setting of muons and kaons as stable
-        # patches the problem of freezing for Sibyll21
-        for pdgid in [-13, 13, 130, 310]:
-            sid = abs(self._lib.isib_pdg2pid(pdgid))
-            idb = self._lib.s_csydec.idb
-            idb[sid - 1] = -abs(idb[sid - 1])
+        super()._set_final_state_particles(pdgid)
 
 
 class Sibyll23(SIBYLLRun):

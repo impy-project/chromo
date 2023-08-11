@@ -10,7 +10,6 @@ from particle import literals as lp
 
 decay_list = [
     lp.pi_plus.pdgid,
-    lp.pi_minus.pdgid,
     lp.K_plus.pdgid,
     lp.pi_0.pdgid,
     lp.K_S_0.pdgid,
@@ -30,7 +29,6 @@ def run_model(Model, stable):
     c = Counter()
     for event in model(100):
         ev = event.final_state()
-
         c.update(ev.pid)
     return c
 
@@ -43,8 +41,6 @@ def test_setstable(Model, stable):
             pytest.xfail(
                 f"{Model.pyname} does not support decaying charged pions or any kaons"
             )
-        if "QGSJet" in Model.name:
-            pytest.xfail(f"{Model.pyname} does not support changing decays")
     if "UrQMD" in Model.name:
         pytest.xfail(f"{Model.pyname} does not support changing decays")
 

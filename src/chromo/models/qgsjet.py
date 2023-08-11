@@ -49,6 +49,7 @@ class QGSJetRun(MCRun):
         self._lib.cqgsini(datdir, lun, chromo.debug_level)
 
         self.kinematics = evt_kin
+        self._switch_decay_handler(on=True)
         self._set_final_state_particles()
 
     def _set_stable(self, pdgid, stable):

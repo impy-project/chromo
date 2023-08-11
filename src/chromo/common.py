@@ -573,6 +573,7 @@ class MCRun(ABC):
         assert hasattr(self, "_event_class")
         assert hasattr(self, "_frame")
         self._lib = importlib.import_module(f"chromo.models.{self._library_name}")
+        self._apply_decay_handler = False
 
         self._rng = np.random.default_rng(seed)
         if hasattr(self._lib, "npy"):
@@ -730,15 +731,7 @@ class MCRun(ABC):
 
     @final_state_particles.setter
     def final_state_particles(self, pdgid):
-        for pid in self._decaying_pids:
-            self._set_stable(pid, False)
-
-        for pid in pdgid:
-            self._set_stable(pid, True)
-
-        self._final_state_particles = np.unique(pdgid)
-        if self._apply_decay_handler:
-            self._decay_handler.set_stable(self._final_state_particles)
+        self._set_final_state_particles(pdgid)
 
     def set_stable(self, pdgid, stable=True):
         """Prevent decay of unstable particles
@@ -756,7 +749,11 @@ class MCRun(ABC):
             pdgid_list = [130, 310]
         else:
             self._set_stable(pdgid, stable)
-            pdgid_list = pdgid
+            pdgid_list = [pdgid]
+
+            if self._apply_decay_handler:
+                if -pdgid in self._decaying_pids:
+                    pdgid_list.append(-pdgid)
 
         if stable:
             self._final_state_particles = np.append(
@@ -767,7 +764,7 @@ class MCRun(ABC):
             self._final_state_particles = self._final_state_particles[is_stable]
 
         if self._apply_decay_handler:
-            self._decay_handler.set_stable(self._final_state_particles)
+            self._set_stable_for_decay_handler()
 
     def set_unstable(self, pdgid):
         """Convenience funtion for `self.set_stable(..., stable=False)`
@@ -819,34 +816,58 @@ class MCRun(ABC):
         assert self._library_name not in self._is_initialized, message
         self._is_initialized.append(self._library_name)
 
-    def _set_final_state_particles(self):
-        """Defines particles as stable for the default 'tau_stable'
-        value in the config."""
+    def _set_final_state_particles(self, pdgid=long_lived):
+        """By default defines particles as stable
+        for the default 'tau_stable' value in the config."""
 
-        self._set_decay_handler()
-        self.final_state_particles = long_lived
+        for pid in self._decaying_pids:
+            self._set_stable(pid, False)
+
+        for pid in pdgid:
+            self._set_stable(pid, True)
+
+        self._final_state_particles = np.unique(pdgid)
+        is_decaying = np.isin(self._final_state_particles, self._decaying_pids)
+        self._final_state_particles = self._final_state_particles[is_decaying]
+
+        if self._apply_decay_handler:
+            self._set_stable_for_decay_handler()
+
         self._set_final_state_particles_called = True
 
-    def _switch_decay_handler(self, on):
-        self._apply_decay_handler = on
+    def _set_stable_for_decay_handler(self):
+        # Pythia8DecayHandler can decay only pairs particle-antiparticle
+        # Therefore we should exclude antiparticles from decaying
+        anti_particles = -self._final_state_particles
+        has_anti_particles = np.isin(anti_particles, self._decaying_pids)
+        anti_particles = anti_particles[has_anti_particles]
+        for pid in anti_particles:
+            self._set_stable(pid, True)
 
-    def _set_decay_handler(self, seed=None):
-        if self.pyname == "Pythia8":
+        self._final_state_particles = np.unique(
+            np.append(self._final_state_particles, anti_particles).astype(np.int64)
+        )
+
+        self._decay_handler.set_stable(self._final_state_particles)
+
+    def _switch_decay_handler(self, on=True, *, seed=None):
+        if (not on) or (self.pyname == "Pythia8"):
             self._apply_decay_handler = False
             return
 
-        try:
-            self._decay_handler = Pythia8DecayHandler([], seed=seed)
-        except ModuleNotFoundError as ex:
-            import warnings
+        if not hasattr(self, "_decay_handler"):
+            try:
+                self._decay_handler = Pythia8DecayHandler([], seed=seed)
+            except ModuleNotFoundError as ex:
+                import warnings
 
-            warnings.warn(
-                f"Pythia8DecayHandler not available:\n{ex}\n"
-                "Some particles may not decay",
-                RuntimeWarning,
-            )
-            self._apply_decay_handler = False
-            return
+                warnings.warn(
+                    f"Pythia8DecayHandler not available:\n{ex}\n"
+                    "Some particles may not decay",
+                    RuntimeWarning,
+                )
+                self._apply_decay_handler = False
+                return
 
         self._apply_decay_handler = True
 
