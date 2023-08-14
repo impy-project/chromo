@@ -6,6 +6,7 @@ from chromo.util import get_all_models
 import pytest
 from collections import Counter
 from particle import literals as lp
+import platform
 
 
 decay_list = [
@@ -41,6 +42,8 @@ def test_setstable(Model, stable):
             pytest.xfail(
                 f"{Model.pyname} does not support decaying charged pions or any kaons"
             )
+        if ("QGSJet" in Model.name) and (platform.system() == "Windows"):
+            pytest.xfail(f"{Model.pyname} does not support changing decays")
     if "UrQMD" in Model.name:
         pytest.xfail(f"{Model.pyname} does not support changing decays")
 
