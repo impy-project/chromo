@@ -23,6 +23,9 @@ class EPOSEvent(MCEvent):
     def _get_n_wounded(self):
         return int(self._lib.cevt.npjevt), int(self._lib.cevt.ntgevt)
 
+    def _add_init_beam_info(self):
+        self._fill_initial_beam()
+
 
 class EposLHC(MCRun):
     """Implements all abstract attributes of MCRun for the

@@ -19,6 +19,9 @@ class SibyllEvent(MCEvent):
     def _get_n_wounded(self):
         return self._lib.cnucms.na, self._lib.cnucms.nb
 
+    def _add_init_beam_info(self):
+        self._append_initial_beam()
+
     @property
     def n_NN_interactions(self):
         """Number of inelastic nucleon-nucleon interactions"""

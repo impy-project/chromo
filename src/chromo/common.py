@@ -537,11 +537,16 @@ class MCEvent(EventData, ABC):
         # upon unpickling, create EventData object instead of MCEvent object
         return (EventData,)
 
+    @abstractmethod
     def _add_init_beam_info(self):
-        self._fill_initial_beam()
+        pass
 
     def _fill_initial_beam(self):
-        ibeam = self.kin._initial_beam_data
+        if self.kin._initial_beam_data is None:
+            ibeam = self.kin._get_beam_data(self.kin)
+        else:
+            ibeam = self.kin._initial_beam_data
+
         for attr_field in ibeam._data_attr:
             attr_beam = getattr(ibeam, attr_field)
             attr_event = getattr(self, attr_field)
@@ -553,10 +558,32 @@ class MCEvent(EventData, ABC):
                             axis=1
                         )
                     ] = [0, 1]
+
+                    if self.generator == ("PhoJet", "19.3"):
+                        # Phojet193 produces mothers with first index > second index
+                        # pyhepmc produces an error when trying to restore such events
+                        # from the file recorded by Hepmc writer (writing is OK)
+                        # Fix:
+                        # Swap if first index is smaller than second, i.e.
+                        # if [6, 4], then change to [4, 6]
+                        # Additional condition if that both indeces > 0
+                        condition = (attr_event > 0).all(axis=1)
+                        condition[condition] = (
+                            attr_event[condition, 0] > attr_event[condition, 1]
+                        )
+                        (attr_event[condition, 0], attr_event[condition, 1]) = (
+                            attr_event[condition, 1],
+                            attr_event[condition, 0],
+                        )
+
                     attr_event[0:2, :] = [-1, -1]
 
     def _append_initial_beam(self):
-        ibeam = self.kin._initial_beam_data
+        if self.kin._initial_beam_data is None:
+            ibeam = self.kin._get_beam_data(self.kin)
+        else:
+            ibeam = self.kin._initial_beam_data
+
         for attr_field in ibeam._data_attr:
             attr_beam = getattr(ibeam, attr_field)
             attr_event = getattr(self, attr_field)

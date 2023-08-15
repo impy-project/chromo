@@ -26,6 +26,9 @@ class SophiaEvent(MCEvent):
     def _charge_init(self, npart):
         return self._lib.schg.ichg[:npart]
 
+    def _add_init_beam_info(self):
+        self._append_initial_beam()
+
     @property
     def decayed_parent(self):
         """Returns the array of zero-based indices

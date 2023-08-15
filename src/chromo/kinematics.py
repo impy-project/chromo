@@ -239,16 +239,17 @@ class EventKinematics(EventKinematicsBase):
 
         self._set_beam_data()
 
-    def _set_beam_data(self):
-        self._initial_beam_data = BeamData(
-            pid=np.array([int(self.p1), int(self.p2)]),
+    @staticmethod
+    def _get_beam_data(kin):
+        return BeamData(
+            pid=np.array([int(kin.p1), int(kin.p2)]),
             status=np.array([4, 4]),
-            charge=np.array([self.p1.charge, self.p2.charge]),
+            charge=np.array([kin.p1.charge, kin.p2.charge]),
             px=np.zeros((2,), dtype=np.float64),
             py=np.zeros((2,), dtype=np.float64),
-            pz=np.array([self.beams[0][2], self.beams[1][2]]),
-            en=np.array([self.beams[0][3], self.beams[1][3]]),
-            m=np.array([self.m1, self.m2]),
+            pz=np.array([kin.beams[0][2], kin.beams[1][2]]),
+            en=np.array([kin.beams[0][3], kin.beams[1][3]]),
+            m=np.array([kin.m1, kin.m2]),
             vx=np.zeros((2,), dtype=np.float64),
             vy=np.zeros((2,), dtype=np.float64),
             vz=np.zeros((2,), dtype=np.float64),
@@ -256,6 +257,13 @@ class EventKinematics(EventKinematicsBase):
             mothers=np.array([[-1, -1], [-1, -1]], dtype=np.int32),
             daughters=np.array([[-1, -1], [-1, -1]], dtype=np.int32),
         )
+
+    def _set_beam_data(self):
+        if isinstance(self.p2, CompositeTarget):
+            self._initial_beam_data = None
+            return
+
+        self._initial_beam_data = self._get_beam_data(self)
 
 
 class CenterOfMass(EventKinematics):

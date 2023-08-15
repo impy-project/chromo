@@ -28,20 +28,8 @@ def test_to_hepmc3(Model):
         pytest.xfail("UrQMD34 FAILS, should be FIXED!!!")
 
     event = run_in_separate_process(run, Model)
-
-    # special case for models that only have final-state particles
-    if Model is im.UrQMD34 or Model.name in ("PhoJet", "DPMJET-III"):
-        hev = event.to_hepmc3()
-        # only final state is stored
-        fs = event.final_state()
-        assert len(hev.particles) == len(fs)
-        for i, p in enumerate(hev.particles):
-            assert p.pid == fs.pid[i]
-            assert p.status == fs.status[i]
-        assert len(hev.vertices) == 0
-        return  # test ends here
     # special case for Pythia8, which does not contain the parton show
-    elif Model is im.Pythia8:
+    if Model is im.Pythia8:
         # parton shower is skipped
         from chromo.constants import quarks_and_diquarks_and_gluons
 
@@ -63,8 +51,8 @@ def test_to_hepmc3(Model):
         # in case of overlapping ranges of incoming particles
         # the earlier vertex keeps them
         for a, b in unique_vertices:
-            if pa != (a, b) and a <= pa[0] < b:
-                pa = b, pa[1]
+            if pa != (a, b) and a <= pa[0] <= b:
+                pa = b + 1, pa[1]
         unique_vertices.setdefault(pa, []).append(i)
 
     # check that parent ranges do not exceed particle range;

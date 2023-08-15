@@ -47,6 +47,9 @@ class PhojetEvent(MCEvent):
         """Total number of realized hard cuts"""
         return self._lib.podebg.khard
 
+    def _add_init_beam_info(self):
+        self._fill_initial_beam()
+
     # def elastic_t(self):
     #     """Squared momentum transfer t for elastic interaction.
 
