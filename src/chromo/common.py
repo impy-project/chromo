@@ -409,14 +409,6 @@ class EventData:
             ev = self[mask]
             mask = (ev.mothers[:, 0] == 0) | (ev.mothers[:, 0] == 1)
             ev.mothers[mask] = (0, 1)
-        elif model in ("UrQMD", "PhoJet", "DPMJET-III"):
-            # can only save final state until history is fixed
-            warnings.warn(
-                f"{model}-{version}: only final state particles "
-                "available in HepMC3 event",
-                RuntimeWarning,
-            )
-            ev = self.final_state()
         else:
             ev = self
 
@@ -520,6 +512,8 @@ class MCEvent(EventData, ABC):
             daughters,
         )
 
+        self._add_init_beam_info()
+
     @abstractmethod
     def _charge_init(self, npart):
         # override this in derived to get charge info
@@ -542,6 +536,44 @@ class MCEvent(EventData, ABC):
     def __getnewargs__(self):
         # upon unpickling, create EventData object instead of MCEvent object
         return (EventData,)
+
+    def _add_init_beam_info(self):
+        self._fill_initial_beam()
+
+    def _fill_initial_beam(self):
+        ibeam = self.kin._initial_beam_data
+        for attr_field in ibeam._data_attr:
+            attr_beam = getattr(ibeam, attr_field)
+            attr_event = getattr(self, attr_field)
+            if attr_event is not None:
+                attr_event[0:2] = attr_beam
+                if attr_field in ["mothers"]:
+                    attr_event[
+                        np.isin(attr_event, [[-1, -1], [0, -1], [1, -1], [1, 1]]).all(
+                            axis=1
+                        )
+                    ] = [0, 1]
+                    attr_event[0:2, :] = [-1, -1]
+
+    def _append_initial_beam(self):
+        ibeam = self.kin._initial_beam_data
+        for attr_field in ibeam._data_attr:
+            attr_beam = getattr(ibeam, attr_field)
+            attr_event = getattr(self, attr_field)
+            if attr_field in ["mothers", "daughters"]:
+                if attr_event is None:
+                    res = None
+                else:
+                    res = np.append(attr_beam, attr_event + 2).reshape((-1, 2))
+                    # Change [1, 1] to [0, 1]
+                    if attr_field == "mothers":
+                        res[np.all(res == [1, 1], axis=1)] = [0, 1]
+                    if attr_field == "daughters":
+                        res[np.all(res == [1, 1], axis=1)] = [-1, -1]
+
+            else:
+                res = np.append(attr_beam, attr_event)
+            setattr(self, attr_field, res)
 
 
 # =========================================================================

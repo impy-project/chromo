@@ -22,6 +22,9 @@ class UrQMDEvent(MCEvent):
     def _get_impact_parameter(self):
         return self._lib.rsys.bimp
 
+    def _add_init_beam_info(self):
+        self._append_initial_beam()
+
 
 class UrQMD34(MCRun):
     """Implements all abstract attributes of MCRun for the

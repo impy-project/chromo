@@ -17,6 +17,9 @@ class QGSJET1Event(MCEvent):
         """Type of diffration"""
         return self._lib.jdiff.jdiff
 
+    def _add_init_beam_info(self):
+        self._append_initial_beam()
+
 
 class QGSJET2Event(QGSJET1Event):
     def _get_impact_parameter(self):

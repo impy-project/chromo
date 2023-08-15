@@ -230,9 +230,31 @@ class EventKinematics(EventKinematicsBase):
 
         _gamma_cm = (elab + m2) / ecm
         _betagamma_cm = plab / ecm
+        self.m1 = m1
+        self.m2 = m2
 
         super().__init__(
             frame, part1, part2, ecm, plab, elab, ekin, beams, _gamma_cm, _betagamma_cm
+        )
+
+        self._set_beam_data()
+
+    def _set_beam_data(self):
+        self._initial_beam_data = BeamData(
+            pid=np.array([int(self.p1), int(self.p2)]),
+            status=np.array([4, 4]),
+            charge=np.array([self.p1.charge, self.p2.charge]),
+            px=np.zeros((2,), dtype=np.float64),
+            py=np.zeros((2,), dtype=np.float64),
+            pz=np.array([self.beams[0][2], self.beams[1][2]]),
+            en=np.array([self.beams[0][3], self.beams[1][3]]),
+            m=np.array([self.m1, self.m2]),
+            vx=np.zeros((2,), dtype=np.float64),
+            vy=np.zeros((2,), dtype=np.float64),
+            vz=np.zeros((2,), dtype=np.float64),
+            vt=np.zeros((2,), dtype=np.float64),
+            mothers=np.array([[-1, -1], [-1, -1]], dtype=np.int32),
+            daughters=np.array([[-1, -1], [-1, -1]], dtype=np.int32),
         )
 
 
@@ -272,3 +294,40 @@ class FixedTarget(EventKinematics):
                 f"{energy!r} is neither a number nor one of "
                 "TotalEnergy, KinEnergy, Momentum"
             )
+
+
+class BeamData:
+    _data_attr = [
+        "pid",
+        "status",
+        "charge",
+        "px",
+        "py",
+        "pz",
+        "en",
+        "m",
+        "vx",
+        "vy",
+        "vz",
+        "vt",
+        "mothers",
+        "daughters",
+    ]
+
+    def __init__(
+        self, pid, status, charge, px, py, pz, en, m, vx, vy, vz, vt, mothers, daughters
+    ):
+        self.pid = pid
+        self.status = status
+        self.charge = charge
+        self.px = px
+        self.py = py
+        self.pz = pz
+        self.en = en
+        self.m = m
+        self.vx = vx
+        self.vy = vy
+        self.vz = vz
+        self.vt = vt
+        self.mothers = mothers
+        self.daughters = daughters
