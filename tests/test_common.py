@@ -1,5 +1,5 @@
 from chromo.common import CrossSectionData, EventData, MCEvent
-from chromo.kinematics import CenterOfMass
+from chromo.kinematics import CenterOfMass, EventFrame
 import numpy as np
 import dataclasses
 import pickle
@@ -91,6 +91,7 @@ class DummyEvent(MCEvent):
             name="foo",
             version="bar",
             kinematics=CenterOfMass(10, "p", "p"),
+            _frame=EventFrame.CENTER_OF_MASS,
         )
 
         super().__init__(generator)

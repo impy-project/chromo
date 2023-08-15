@@ -495,7 +495,7 @@ class MCEvent(EventData, ABC):
             if self._jdahep
             else None
         )
-
+        self._generator_frame = generator._frame
         EventData.__init__(
             self,
             (generator.name, generator.version),
@@ -541,12 +541,24 @@ class MCEvent(EventData, ABC):
     def _add_init_beam_info(self):
         pass
 
-    def _fill_initial_beam(self):
+    def _get_ibeam(self):
         if self.kin._initial_beam_data is None:
             ibeam = self.kin._get_beam_data(self.kin)
         else:
             ibeam = self.kin._initial_beam_data
 
+        if ibeam.ref_frame != self._generator_frame:
+            # Boost current ref frame (ibeam.ref_frame)
+            # to generators ref frame (self._generator_frame)
+            # Use apply_boost use self.kin.frame
+            self.kin.frame = self._generator_frame
+            self.kin.apply_boost(ibeam, ibeam.ref_frame)
+            self.kin.frame = ibeam.ref_frame
+            ibeam.ref_frame = self._generator_frame
+        return ibeam
+
+    def _fill_initial_beam(self):
+        ibeam = self._get_ibeam()
         for attr_field in ibeam._data_attr:
             attr_beam = getattr(ibeam, attr_field)
             attr_event = getattr(self, attr_field)
@@ -579,11 +591,7 @@ class MCEvent(EventData, ABC):
                     attr_event[0:2, :] = [-1, -1]
 
     def _append_initial_beam(self):
-        if self.kin._initial_beam_data is None:
-            ibeam = self.kin._get_beam_data(self.kin)
-        else:
-            ibeam = self.kin._initial_beam_data
-
+        ibeam = self._get_ibeam()
         for attr_field in ibeam._data_attr:
             attr_beam = getattr(ibeam, attr_field)
             attr_event = getattr(self, attr_field)

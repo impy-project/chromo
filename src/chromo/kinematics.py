@@ -242,6 +242,7 @@ class EventKinematics(EventKinematicsBase):
     @staticmethod
     def _get_beam_data(kin):
         return BeamData(
+            ref_frame=kin.frame,
             pid=np.array([int(kin.p1), int(kin.p2)]),
             status=np.array([4, 4]),
             charge=np.array([kin.p1.charge, kin.p2.charge]),
@@ -262,7 +263,6 @@ class EventKinematics(EventKinematicsBase):
         if isinstance(self.p2, CompositeTarget):
             self._initial_beam_data = None
             return
-
         self._initial_beam_data = self._get_beam_data(self)
 
 
@@ -323,8 +323,24 @@ class BeamData:
     ]
 
     def __init__(
-        self, pid, status, charge, px, py, pz, en, m, vx, vy, vz, vt, mothers, daughters
+        self,
+        ref_frame,
+        pid,
+        status,
+        charge,
+        px,
+        py,
+        pz,
+        en,
+        m,
+        vx,
+        vy,
+        vz,
+        vt,
+        mothers,
+        daughters,
     ):
+        self.ref_frame = ref_frame
         self.pid = pid
         self.status = status
         self.charge = charge
