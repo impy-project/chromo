@@ -28,7 +28,7 @@ def test_to_hepmc3(Model):
         pytest.xfail("UrQMD34 FAILS, should be FIXED!!!")
 
     event = run_in_separate_process(run, Model)
-    # special case for Pythia8, which does not contain the parton show
+    # special case for Pythia8, which does not contain the parton shower
     if Model is im.Pythia8:
         # parton shower is skipped
         from chromo.constants import quarks_and_diquarks_and_gluons
