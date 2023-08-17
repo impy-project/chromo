@@ -17,6 +17,7 @@ from chromo.util import CompositeTarget, EventFrame
 from particle import PDGID
 import dataclasses
 from typing import Union, Tuple
+from types import SimpleNamespace
 
 
 __all__ = (
@@ -82,7 +83,7 @@ class EventKinematicsBase:
     _gamma_cm: float
     _betagamma_cm: float
 
-    def apply_boost(self, event, generator_frame):
+    def apply_boost(self, event, generator_frame, inverse=False):
         if generator_frame == self.frame:
             return
         CMS = EventFrame.CENTER_OF_MASS
@@ -95,6 +96,11 @@ class EventKinematicsBase:
             raise NotImplementedError(
                 f"Boosts from {generator_frame} to {self.frame} are not yet supported"
             )
+
+        # Inverse transformation
+        if inverse:
+            bg = -bg
+
         g = self._gamma_cm
         en = g * event.en + bg * event.pz
         pz = bg * event.en + g * event.pz
@@ -237,20 +243,27 @@ class EventKinematics(EventKinematicsBase):
             frame, part1, part2, ecm, plab, elab, ekin, beams, _gamma_cm, _betagamma_cm
         )
 
-        self._set_beam_data()
+        self._beam_data = None
 
-    @staticmethod
-    def _get_beam_data(kin):
-        return BeamData(
-            ref_frame=kin.frame,
-            pid=np.array([int(kin.p1), int(kin.p2)]),
+    def _get_beam_data(self, generator_frame):
+        if self._beam_data is not None:
+            return self._beam_data
+
+        event_like = SimpleNamespace(
+            pz=np.array([self.beams[0][2], self.beams[1][2]]),
+            en=np.array([self.beams[0][3], self.beams[1][3]]),
+        )
+        self.apply_boost(event_like, generator_frame, inverse=True)
+
+        self._beam_data = dict(
+            pid=np.array([int(self.p1), int(self.p2)]),
             status=np.array([4, 4]),
-            charge=np.array([kin.p1.charge, kin.p2.charge]),
+            charge=np.array([self.p1.charge, self.p2.charge]),
             px=np.zeros((2,), dtype=np.float64),
             py=np.zeros((2,), dtype=np.float64),
-            pz=np.array([kin.beams[0][2], kin.beams[1][2]]),
-            en=np.array([kin.beams[0][3], kin.beams[1][3]]),
-            m=np.array([kin.m1, kin.m2]),
+            pz=event_like.pz,
+            en=event_like.en,
+            m=np.array([self.m1, self.m2]),
             vx=np.zeros((2,), dtype=np.float64),
             vy=np.zeros((2,), dtype=np.float64),
             vz=np.zeros((2,), dtype=np.float64),
@@ -259,11 +272,7 @@ class EventKinematics(EventKinematicsBase):
             daughters=np.array([[-1, -1], [-1, -1]], dtype=np.int32),
         )
 
-    def _set_beam_data(self):
-        if isinstance(self.p2, CompositeTarget):
-            self._initial_beam_data = None
-            return
-        self._initial_beam_data = self._get_beam_data(self)
+        return self._beam_data
 
 
 class CenterOfMass(EventKinematics):
@@ -302,56 +311,3 @@ class FixedTarget(EventKinematics):
                 f"{energy!r} is neither a number nor one of "
                 "TotalEnergy, KinEnergy, Momentum"
             )
-
-
-class BeamData:
-    _data_attr = [
-        "pid",
-        "status",
-        "charge",
-        "px",
-        "py",
-        "pz",
-        "en",
-        "m",
-        "vx",
-        "vy",
-        "vz",
-        "vt",
-        "mothers",
-        "daughters",
-    ]
-
-    def __init__(
-        self,
-        ref_frame,
-        pid,
-        status,
-        charge,
-        px,
-        py,
-        pz,
-        en,
-        m,
-        vx,
-        vy,
-        vz,
-        vt,
-        mothers,
-        daughters,
-    ):
-        self.ref_frame = ref_frame
-        self.pid = pid
-        self.status = status
-        self.charge = charge
-        self.px = px
-        self.py = py
-        self.pz = pz
-        self.en = en
-        self.m = m
-        self.vx = vx
-        self.vy = vy
-        self.vz = vz
-        self.vt = vt
-        self.mothers = mothers
-        self.daughters = daughters

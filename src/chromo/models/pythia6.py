@@ -13,9 +13,6 @@ class PYTHIA6Event(MCEvent):
         # TODO accelerate by implementing this loop in Fortran
         return np.fromiter((self._lib.pychge(ki) / 3 for ki in k), np.double)
 
-    def _add_init_beam_info(self):
-        pass
-
 
 class Pythia6(MCRun):
     """Implements all abstract attributes of MCRun for the

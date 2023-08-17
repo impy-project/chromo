@@ -537,78 +537,44 @@ class MCEvent(EventData, ABC):
         # upon unpickling, create EventData object instead of MCEvent object
         return (EventData,)
 
-    @abstractmethod
     def _add_init_beam_info(self):
         pass
 
-    def _get_ibeam(self):
-        if self.kin._initial_beam_data is None:
-            ibeam = self.kin._get_beam_data(self.kin)
-        else:
-            ibeam = self.kin._initial_beam_data
-
-        if ibeam.ref_frame != self._generator_frame:
-            # Boost current ref frame (ibeam.ref_frame)
-            # to generators ref frame (self._generator_frame)
-            # Use apply_boost use self.kin.frame
-            self.kin.frame = self._generator_frame
-            self.kin.apply_boost(ibeam, ibeam.ref_frame)
-            self.kin.frame = ibeam.ref_frame
-            ibeam.ref_frame = self._generator_frame
-        return ibeam
-
     def _fill_initial_beam(self):
-        ibeam = self._get_ibeam()
-        for attr_field in ibeam._data_attr:
-            attr_beam = getattr(ibeam, attr_field)
-            attr_event = getattr(self, attr_field)
-            if attr_event is not None:
-                attr_event[0:2] = attr_beam
-                if attr_field in ["mothers"]:
-                    attr_event[
-                        np.isin(attr_event, [[-1, -1], [0, -1], [1, -1], [1, 1]]).all(
+        beam = self.kin._get_beam_data(self._generator_frame)
+        for field, beam_field in beam.items():
+            event_field = getattr(self, field)
+            if event_field is not None:
+                if field == "mothers":
+                    # all mothers that looks like [-1, -1], [0, -1], [1, -1], [1, 1]
+                    # are changed to [0, 1], i.e. attach to a common vertex
+                    # of to beam particles
+                    event_field[
+                        np.isin(event_field, [[-1, -1], [0, -1], [1, -1], [1, 1]]).all(
                             axis=1
                         )
                     ] = [0, 1]
 
-                    if self.generator == ("PhoJet", "19.3"):
-                        # Phojet193 produces mothers with first index > second index
-                        # pyhepmc produces an error when trying to restore such events
-                        # from the file recorded by Hepmc writer (writing is OK)
-                        # Fix:
-                        # Swap if first index is smaller than second, i.e.
-                        # if [6, 4], then change to [4, 6]
-                        # Additional condition if that both indeces > 0
-                        condition = (attr_event > 0).all(axis=1)
-                        condition[condition] = (
-                            attr_event[condition, 0] > attr_event[condition, 1]
-                        )
-                        (attr_event[condition, 0], attr_event[condition, 1]) = (
-                            attr_event[condition, 1],
-                            attr_event[condition, 0],
-                        )
-
-                    attr_event[0:2, :] = [-1, -1]
+                event_field[0:2] = beam_field
 
     def _append_initial_beam(self):
-        ibeam = self._get_ibeam()
-        for attr_field in ibeam._data_attr:
-            attr_beam = getattr(ibeam, attr_field)
-            attr_event = getattr(self, attr_field)
-            if attr_field in ["mothers", "daughters"]:
-                if attr_event is None:
-                    res = None
+        beam = self.kin._get_beam_data(self._generator_frame)
+        for field, beam_field in beam.items():
+            event_field = getattr(self, field)
+            if field in ["mothers", "daughters"]:
+                if event_field is None:
+                    continue
                 else:
-                    res = np.append(attr_beam, attr_event + 2).reshape((-1, 2))
+                    res = np.append(beam_field, event_field + 2).reshape((-1, 2))
                     # Change [1, 1] to [0, 1]
-                    if attr_field == "mothers":
+                    if field == "mothers":
                         res[np.all(res == [1, 1], axis=1)] = [0, 1]
-                    if attr_field == "daughters":
+                    if field == "daughters":
                         res[np.all(res == [1, 1], axis=1)] = [-1, -1]
 
             else:
-                res = np.append(attr_beam, attr_event)
-            setattr(self, attr_field, res)
+                res = np.append(beam_field, event_field)
+            setattr(self, field, res)
 
 
 # =========================================================================
