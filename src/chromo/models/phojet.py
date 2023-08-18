@@ -61,11 +61,9 @@ class PhojetEvent(MCEvent):
     #         np.square(self._lib.poevt1.phep[0:4, 0] -
     #                   self._lib.poevt1.phep[0:4, 5]))
 
-
-class Phojet193Event(PhojetEvent):
     def _fill_initial_beam(self):
         super()._fill_initial_beam()
-        # Phojet193 produces mothers with first index > second index
+        # Phojet produces mothers with first index > second index
         # pyhepmc produces an error when trying to restore such events
         # from the file recorded by Hepmc writer (writing is OK)
         # Fix:
@@ -242,4 +240,3 @@ class Phojet191(PHOJETRun):
 class Phojet193(PHOJETRun):
     _version = "19.3"
     _library_name = "_phojet193"
-    _event_class = Phojet193Event
