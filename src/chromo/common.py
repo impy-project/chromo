@@ -828,7 +828,7 @@ class MCRun(ABC):
             self._set_stable(pid, True)
 
         self._final_state_particles = np.unique(pdgid)
-        is_decaying = np.isin(self._final_state_particles, self._decaying_pids)
+        is_decaying = np.isin(self._final_state_particles, list(self._decaying_pids))
         self._final_state_particles = self._final_state_particles[is_decaying]
 
         if self._apply_decay_handler:
@@ -840,7 +840,7 @@ class MCRun(ABC):
         # Pythia8DecayHandler can decay only pairs particle-antiparticle
         # Therefore we should exclude antiparticles from decaying
         anti_particles = -self._final_state_particles
-        has_anti_particles = np.isin(anti_particles, self._decaying_pids)
+        has_anti_particles = np.isin(anti_particles, list(self._decaying_pids))
         anti_particles = anti_particles[has_anti_particles]
         for pid in anti_particles:
             self._set_stable(pid, True)
