@@ -52,6 +52,8 @@ def get_epos_decaying_pids():
     ]
 
     decaying_pids = []
+    # From all decaying particles take that
+    # are known to epos
     for pid in long_lived_for():
         if (abs(pid) not in unknown_pids_epos) and (abs(pid) < unknown_pids_epos[-1]):
             decaying_pids.append(pid)
