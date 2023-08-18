@@ -1,7 +1,6 @@
 from chromo.common import MCRun, MCEvent, CrossSectionData
 from chromo.util import info, Nuclei
 from chromo.kinematics import EventFrame
-from chromo.util import unique_sorted_pids
 from particle import literals as lp
 import warnings
 import numpy as np
@@ -98,7 +97,7 @@ sibyll_decaying_pids = [
 
 sibyll21_decaying_pids = sibyll_decaying_pids + [-10311, 10311, -10321, 10321]
 # sibyll21_decaying_pids = sibyll_decaying_pids
-sibyll21_decaying_pids = list(unique_sorted_pids(sibyll21_decaying_pids))
+sibyll21_decaying_pids = set(sibyll21_decaying_pids)
 
 sibyll23_decaying_pids = sibyll_decaying_pids + [
     -15,
@@ -108,7 +107,7 @@ sibyll23_decaying_pids = sibyll_decaying_pids + [
     -323,
     323,
 ]
-sibyll23_decaying_pids = list(unique_sorted_pids(sibyll23_decaying_pids))
+sibyll23_decaying_pids = set(sibyll23_decaying_pids)
 
 
 class SibyllEvent(MCEvent):

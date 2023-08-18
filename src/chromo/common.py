@@ -558,7 +558,7 @@ class MCRun(ABC):
     _set_final_state_particles_called = False
     _projectiles = standard_projectiles
     _targets = Nuclei()
-    _decaying_pids = all_decaying_pids
+    _decaying_pids = set(all_decaying_pids)
     _ecm_min = 10 * GeV  # default for many models
     nevents = 0  # number of generated events so far
 

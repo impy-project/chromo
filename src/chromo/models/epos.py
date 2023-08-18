@@ -61,7 +61,7 @@ def get_epos_decaying_pids():
     return decaying_pids
 
 
-epos_decaying_pids = get_epos_decaying_pids()
+epos_decaying_pids = set(get_epos_decaying_pids())
 
 
 class EPOSEvent(MCEvent):
