@@ -255,22 +255,22 @@ class EventKinematics(EventKinematicsBase):
         )
         self.apply_boost(event_like, generator_frame, inverse=True)
 
-        self._beam_data = dict(
-            pid=np.array([int(self.p1), int(self.p2)]),
-            status=np.array([4, 4]),
-            charge=np.array([self.p1.charge, self.p2.charge]),
-            px=np.zeros((2,), dtype=np.float64),
-            py=np.zeros((2,), dtype=np.float64),
-            pz=event_like.pz,
-            en=event_like.en,
-            m=np.array([self.m1, self.m2]),
-            vx=np.zeros((2,), dtype=np.float64),
-            vy=np.zeros((2,), dtype=np.float64),
-            vz=np.zeros((2,), dtype=np.float64),
-            vt=np.zeros((2,), dtype=np.float64),
-            mothers=np.array([[-1, -1], [-1, -1]], dtype=np.int32),
-            daughters=np.array([[-1, -1], [-1, -1]], dtype=np.int32),
-        )
+        self._beam_data = {
+            "pid": np.array([int(self.p1), int(self.p2)]),
+            "status": np.array([4, 4]),
+            "charge": np.array([self.p1.charge, self.p2.charge]),
+            "px": np.zeros((2,), dtype=np.float64),
+            "py": np.zeros((2,), dtype=np.float64),
+            "pz": event_like.pz,
+            "en": event_like.en,
+            "m": np.array([self.m1, self.m2]),
+            "vx": np.zeros((2,), dtype=np.float64),
+            "vy": np.zeros((2,), dtype=np.float64),
+            "vz": np.zeros((2,), dtype=np.float64),
+            "vt": np.zeros((2,), dtype=np.float64),
+            "mothers": np.array([[-1, -1], [-1, -1]], dtype=np.int32),
+            "daughters": np.array([[-1, -1], [-1, -1]], dtype=np.int32),
+        }
 
         return self._beam_data
 

@@ -561,17 +561,15 @@ class MCEvent(EventData, ABC):
         beam = self.kin._get_beam_data(self._generator_frame)
         for field, beam_field in beam.items():
             event_field = getattr(self, field)
+            if event_field is None:
+                continue
             if field in ["mothers", "daughters"]:
-                if event_field is None:
-                    continue
-                else:
-                    res = np.append(beam_field, event_field + 2).reshape((-1, 2))
-                    # Change [1, 1] to [0, 1]
-                    if field == "mothers":
-                        res[np.all(res == [1, 1], axis=1)] = [0, 1]
-                    if field == "daughters":
-                        res[np.all(res == [1, 1], axis=1)] = [-1, -1]
-
+                res = np.append(beam_field, event_field + 2).reshape((-1, 2))
+                # Change [1, 1] to [0, 1]
+                if field == "mothers":
+                    res[np.all(res == [1, 1], axis=1)] = [0, 1]
+                if field == "daughters":
+                    res[np.all(res == [1, 1], axis=1)] = [-1, -1]
             else:
                 res = np.append(beam_field, event_field)
             setattr(self, field, res)
