@@ -7,9 +7,15 @@
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
 from chromo.common import MCRun, MCEvent, CrossSectionData
-from chromo.util import info, fortran_array_insert, fortran_array_remove, Nuclei
+from chromo.util import (
+    info,
+    fortran_array_insert,
+    fortran_array_remove,
+    Nuclei,
+    long_lived_for,
+)
 from chromo.kinematics import EventFrame
-from chromo.constants import standard_projectiles, GeV, all_decaying_pids
+from chromo.constants import standard_projectiles, GeV
 import warnings
 
 
@@ -225,7 +231,7 @@ def get_urqmd_decaying_pids():
     ]
 
     decaying_pids = []
-    for pid in all_decaying_pids:
+    for pid in long_lived_for():
         if (abs(pid) not in unknown_pids_urqmd) and (abs(pid) < unknown_pids_urqmd[-1]):
             decaying_pids.append(pid)
 

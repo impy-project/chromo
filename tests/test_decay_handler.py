@@ -5,7 +5,7 @@ import sys
 import os
 import platform
 
-from chromo.constants import long_lived_for
+from chromo.constants import long_lived
 from chromo.decay_handler import Pythia8DecayHandler
 from chromo.util import get_all_models
 from .util import run_in_separate_process
@@ -68,7 +68,7 @@ def run_decay_handler(model, evt_kin, stable_particles):
 
 @pytest.mark.parametrize("Model", get_all_models())
 def test_decay_handler(Model):
-    stable_particles = long_lived_for(30e-12)
+    stable_particles = long_lived
 
     if (
         (os.environ.get("CI", False))

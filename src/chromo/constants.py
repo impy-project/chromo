@@ -1,13 +1,8 @@
-# This dependency might be overkill for just reading a few
-# variables. Should be changed at some point.
-from scipy.constants import speed_of_light as _c_SI
 from particle import literals as lp
-import particle
-import math
 
-c = 1e2 * _c_SI
-cm2sec = 1e-2 / _c_SI
-sec2cm = _c_SI * 1e2
+speed_of_light = 299792458e2  # cm/s
+cm2sec = 1 / speed_of_light
+sec2cm = speed_of_light
 eV = 1e-9
 keV = 1e-6
 MeV = 1e-3
@@ -79,41 +74,32 @@ air_composition = {
     1000180400: 0.00934,  # argon
 }
 
-
-def get_all_decaying_ctau():
-    all_decaying_ctau = {}
-    for p in particle.Particle.findall():
-        if (
-            (p.ctau is not None)
-            and (not math.isinf(p.ctau))
-            and (not math.isnan(p.ctau))
-            and (abs(int(p.pdgid)) < 1000000000)
-        ):
-            all_decaying_ctau[int(p.pdgid)] = p.ctau
-
-    return all_decaying_ctau
-
-
-all_decaying_ctau = get_all_decaying_ctau()
-all_decaying_pids = [pid for pid in all_decaying_ctau]
-
-
-def long_lived_for(tau0, mm=False):
-    stable = []
-    if mm:
-        ctau0 = tau0
-    else:
-        ctau0 = tau0 * c * 1e1  # in mm
-
-    for pid, ctau in all_decaying_ctau.items():
-        if ctau > ctau0:
-            stable.append(pid)
-    return stable
-
-
 # Default definition of final state particle
 # All particles with proper lifetime shorter than this
 # will decay
 tau_stable = 30e-12  # 30 ps, typical value at LHC
 # standard long-lived particles with life-time > 30 ps
-long_lived = tuple(long_lived_for(tau_stable))
+long_lived = (
+    13,
+    -13,
+    130,
+    211,
+    -211,
+    310,
+    321,
+    -321,
+    2112,
+    -2112,
+    3112,
+    -3112,
+    3122,
+    -3122,
+    3222,
+    -3222,
+    3312,
+    -3312,
+    3322,
+    -3322,
+    3334,
+    -3334,
+)

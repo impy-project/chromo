@@ -10,9 +10,10 @@ import shutil
 import numpy as np
 from typing import Sequence, Set, Tuple, Collection, Union
 from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
-from chromo.constants import MeV, nucleon_mass
+from chromo.constants import MeV, nucleon_mass, sec2cm
 from enum import Enum
 import dataclasses
+import math
 
 EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
 
@@ -696,3 +697,28 @@ def unique_sorted_pids(ids):
     """
     uids = np.unique(np.fromiter(ids, dtype=np.int64))
     return uids[np.argsort(2 * np.abs(uids) - (uids < 0))]
+
+
+def long_lived_for(tau=0, mm=False):
+    """
+    Returns decaying particles stable for tau sec,
+    (or mm if mm=True). By default returns all
+    unstable particles excluding nuclei.
+    """
+    if not mm:
+        tau = tau * sec2cm * 1e1  # in mm
+
+    long_lived = []
+    for p in Particle.findall():
+        pid = int(p.pdgid)
+        ctau = p.ctau
+        if (
+            (ctau is not None)
+            and (not math.isinf(ctau))
+            and (not math.isnan(ctau))
+            and (abs(pid) < 1000000000)  # exclude nuclei
+            and (ctau > tau)
+        ):
+            long_lived.append(pid)
+
+    return long_lived

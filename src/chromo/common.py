@@ -21,10 +21,9 @@ from chromo.constants import (
     long_lived,
     standard_projectiles,
     GeV,
-    all_decaying_pids,
 )
 from chromo.kinematics import EventKinematics, CompositeTarget
-from chromo.util import unique_sorted_pids
+from chromo.util import unique_sorted_pids, long_lived_for
 import dataclasses
 import copy
 from typing import Tuple, Optional
@@ -32,6 +31,8 @@ from contextlib import contextmanager
 import warnings
 from particle import Particle
 from chromo.decay_handler import Pythia8DecayHandler
+
+all_decaying_pids = long_lived_for()
 
 
 # Do we need EventData.n_spectators in addition to EventData.n_wounded?

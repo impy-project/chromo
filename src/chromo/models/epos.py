@@ -6,8 +6,9 @@ from chromo.util import (
     fortran_array_insert,
     fortran_array_remove,
     Nuclei,
+    long_lived_for,
 )
-from chromo.constants import standard_projectiles, all_decaying_pids
+from chromo.constants import standard_projectiles
 
 
 def get_epos_decaying_pids():
@@ -51,7 +52,7 @@ def get_epos_decaying_pids():
     ]
 
     decaying_pids = []
-    for pid in all_decaying_pids:
+    for pid in long_lived_for():
         if (abs(pid) not in unknown_pids_epos) and (abs(pid) < unknown_pids_epos[-1]):
             decaying_pids.append(pid)
 
