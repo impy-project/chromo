@@ -49,8 +49,8 @@ class DpmjetIIIRun(MCRun):
     _name = "DPMJET-III"
     _event_class = DpmjetIIIEvent
     _frame = None
-    # DPMJet is supposed to support photons as projectiles, but fails
-    _projectiles = standard_projectiles | Nuclei()
+    # TODO: DPMJet supports photons as projectiles
+    _projectiles = standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311}
     _targets = _projectiles
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
@@ -213,11 +213,10 @@ class DpmjetIIIRun(MCRun):
 
 class DpmjetIII191(DpmjetIIIRun):
     _version = "19.1"
-    _projectiles = standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311}
     _library_name = "_dpmjetIII191"
 
 
-class DpmjetIII193(DpmjetIII191):
+class DpmjetIII193(DpmjetIIIRun):
     _version = "19.3"
     _library_name = "_dpmjetIII193"
 
@@ -225,6 +224,7 @@ class DpmjetIII193(DpmjetIII191):
 class DpmjetIII306(DpmjetIIIRun):
     _version = "3.0-6"
     _library_name = "_dpmjet306"
+    _projectiles = standard_projectiles | Nuclei()
     _param_file_name = "fitpar.dat"
     _data_url = (
         "https://github.com/impy-project/chromo"

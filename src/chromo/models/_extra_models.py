@@ -3,11 +3,11 @@ from chromo.models.sibyll import (  # noqa
     Sibyll23c01,
     Sibyll23c02,
     Sibyll23c03,
-    Sibyll23d_STAR_NoEnh,
-    Sibyll23d_STAR_RHO,
-    Sibyll23d_STAR_BAR,
-    Sibyll23d_STAR_STRANGE,
-    Sibyll23d_STAR_MIXED,
+    Sibyll23StarNoEnh,
+    Sibyll23StarRHO,
+    Sibyll23StarBAR,
+    Sibyll23StarSTRANGE,
+    Sibyll23StarMIXED,
 )
 
 from chromo.models.dpmjetIII import DpmjetIII193_DEV  # noqa
@@ -18,9 +18,8 @@ __all__ = (
     "Sibyll23c02",
     "Sibyll23c03",
     "DpmjetIII193_DEV",
-    "Sibyll23d_STAR_NoEnh",
-    "Sibyll23d_STAR_RHO",
-    "Sibyll23d_STAR_BAR",
-    "Sibyll23d_STAR_STRANGE",
-    "Sibyll23d_STAR_MIXED",
+    "Sibyll23StarNoEnh",
+    "Sibyll23StarRHO",
+    "Sibyll23StarBAR",
+    "Sibyll23StarSTRANGE",
 )

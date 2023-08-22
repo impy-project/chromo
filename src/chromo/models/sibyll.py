@@ -33,6 +33,22 @@ class SIBYLLRun(MCRun):
     _name = "SIBYLL"
     _event_class = SibyllEvent
     _frame = EventFrame.CENTER_OF_MASS
+    _projectiles = standard_projectiles | {
+        3112,
+        3122,
+        3312,
+        3322,
+        3222,
+        411,
+        421,
+        4232,
+        431,
+        4122,
+        4132,
+        4232,
+        431,
+        4332,
+    }
     _targets = Nuclei(a_max=20)
     _cross_section_projectiles = {
         p.pdgid: sib_id
@@ -131,90 +147,76 @@ class SIBYLLRun(MCRun):
 
 class Sibyll21(SIBYLLRun):
     _version = "2.1"
+    _projectiles = standard_projectiles
     _library_name = "_sib21"
 
 
 class Sibyll23(SIBYLLRun):
     _version = "2.3"
+    _projectiles = standard_projectiles
     _library_name = "_sib23"
 
 
 class Sibyll23c(SIBYLLRun):
     _version = "2.3c"
-    _projectiles = standard_projectiles | {
-        3112,
-        3122,
-        3312,
-        3322,
-        3222,
-        411,
-        421,
-        4232,
-        431,
-        4122,
-        4132,
-        4232,
-        431,
-        4332,
-    }
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c00(Sibyll23c):
+class Sibyll23c00(SIBYLLRun):
     _version = "2.3c00"
     _library_name = "_sib23c00"
 
 
 # identical to 2.3c
-class Sibyll23c01(Sibyll23c):
+class Sibyll23c01(SIBYLLRun):
     _version = "2.3c01"
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c02(Sibyll23c):
+class Sibyll23c02(SIBYLLRun):
     _version = "2.3c02"
     _library_name = "_sib23c02"
 
 
 # The c03 version was also in CORSIKA until 2020
-class Sibyll23c03(Sibyll23c):
+class Sibyll23c03(SIBYLLRun):
     _version = "2.3c03"
     _library_name = "_sib23c03"
 
 
 # The latest patch c04 was renamed to d, to generate less confusion
-class Sibyll23d(Sibyll23c):
+class Sibyll23d(SIBYLLRun):
     _version = "2.3d"
     _library_name = "_sib23d"
 
 
-class Sibyll23d_STAR_NoEnh(Sibyll23d):
-    _version = "2.3d*_noenh"
+class Sibyll23StarNoEnh(Sibyll23d):
+    _version = "2.3Star-noenh"
     _library_name = "_sib23d_star"
     _sstar_param = 0
 
 
-class Sibyll23d_STAR_RHO(Sibyll23d_STAR_NoEnh):
-    _version = "2.3d*_rho"
+class Sibyll23StarRho(Sibyll23StarNoEnh):
+    _version = "2.3Star-rho"
     _library_name = "_sib23d_star"
     _sstar_param = 1
 
 
-class Sibyll23d_STAR_BAR(Sibyll23d_STAR_NoEnh):
-    _version = "2.3d*_bar"
+class Sibyll23StarBar(Sibyll23StarNoEnh):
+    _version = "2.3Star-bar"
     _library_name = "_sib23d_star"
     _sstar_param = 2
 
 
-class Sibyll23d_STAR_STRANGE(Sibyll23d_STAR_NoEnh):
-    _version = "2.3d*_strange"
+class Sibyll23StarStrange(Sibyll23StarNoEnh):
+    _version = "2.3Star-strange"
     _library_name = "_sib23d_star"
     _sstar_param = 3
 
 
-class Sibyll23d_STAR_MIXED(Sibyll23d_STAR_NoEnh):
-    _version = "2.3d*_mix"
+class Sibyll23StarMixed(Sibyll23StarNoEnh):
+    _version = "2.3Star-mix"
     _library_name = "_sib23d_star"
     _sstar_param = 4
