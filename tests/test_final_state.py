@@ -19,7 +19,7 @@ def run_model(Model, kin, number=1000):
     for event in gen(number):
         ev = event.final_state()
         h.fill(ev.pid)
-    return h.values()
+    return h.values().astype(int)
 
 
 @pytest.mark.skipif(
@@ -40,9 +40,13 @@ def test_generator(Model):
     # SIBYLL-2.1 and UrQMD produce no Omega-
     # QGSJet family procues no Omega-, Xi0, Xi-, Sigma+, Sigma-
     known_issues = np.zeros_like(counts, dtype=bool)
-    if Model in [im.Sibyll21, im.UrQMD34]:
+    if Model == im.Sibyll21:
         for i, pid in enumerate(long_lived_hadrons):
             if abs(pid) == lp.Omega_minus.pdgid:
+                known_issues[i] = True
+    elif Model == im.UrQMD34:
+        for i, pid in enumerate(long_lived_hadrons):
+            if pid == lp.Omega_minus.pdgid:
                 known_issues[i] = True
     elif Model.pyname.startswith("QGSJet"):
         for i, pid in enumerate(long_lived_hadrons):
@@ -62,4 +66,11 @@ def test_generator(Model):
         if n == 0 and not ki
     )
     test = np.all((counts > 0) ^ known_issues)
-    assert test, msg
+    assert test, (
+        msg
+        + ", ".join(
+            f"{pid} {n} {ki}"
+            for pid, n, ki in zip(long_lived_hadrons, counts, known_issues)
+        )
+        + f"__: {(counts > 0) ^ known_issues}"
+    )
