@@ -240,7 +240,7 @@ f2py_add_module(_sib23d_star
   FUNCTIONS
   ${SIBYLL_COMMON_FUNCTIONS} gasdev
   SOURCES
-  ${fortran_dir}/sibyll/sibyll2.3d-star.f
+  ${fortran_dir}/sibyll/sibyll2.3d-star-p02.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}

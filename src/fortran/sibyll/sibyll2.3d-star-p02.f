@@ -7,7 +7,7 @@ C         SSSSSS    IIIIIII  BBBBB       YY       LLLLLLL  LLLLLLL
 C=======================================================================
 C  Code for SIBYLL:  hadronic interaction Monte Carlo event generator
 C=======================================================================
-C     Version 2.3d-star (Jun-01-2017, modified Jun-26-2023)
+C     Version 2.3d-star-p02 (Jun-01-2017, modified Aug-22-2023)
 C
 C     ===>
 C          Sibyll 2.3d-star
@@ -31,6 +31,8 @@ C     1    : rho-meson enhancement
 C     2    : baryon pair enhancement
 C     3    : kaon enhancement       
 C     4    : mixed enhancement (rho&baryon), default
+C     5    : rho-mix (rho component of mixed model)
+C     6    : baryon-mix (baryon component of mixed model)  
 C
 C       By   Eun-Joo Ahn
 C            Ralph Engel
@@ -133,8 +135,6 @@ C     LLIST (1:NP) : codes of final particles
       COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
       INTEGER NW_max
       PARAMETER (NW_max = 20)
-      INTEGER IMOD
-      COMMON /S_STAR/ IMOD
 C     parameters that represent: NW: max. number of wounded nucleons,
 C     NS,NH: max. number of soft and hard interactions
 c      PARAMETER (NW_max = 20)
@@ -505,7 +505,7 @@ C-----------------------------------------------------------------------
      *     /,' ','| Publication to be cited when using this program: |',
      *     /,' ','| Eun-Joo AHN et al., Phys.Rev. D80 (2009) 094003  |',
      *     /,' ','| F. RIEHN et al., Phys.Rev. D102 (2020) 063002    |',
-     *     /,' ','| last modifications: F. Riehn (06/26/2023)        |',
+     *     /,' ','| last modifications: F. Riehn (08/22/2023)        |',
      *     /,' ','====================================================',
      *     /)
 
@@ -562,6 +562,10 @@ C=======================================================================
          CALL STRANGE_INI
       ELSEIF(IMOD.eq.4)THEN
          CALL VECTOR_BARYON_INI
+      ELSEIF(IMOD.EQ.5)THEN
+         CALL VECTORMIX_INI
+      ELSEIF(IMOD.eq.6)THEN
+         CALL BARYONMIX_INI         
       ELSE
          WRITE(*,*) 'SIBYLL STAR. Wrong initialization!'
          STOP
@@ -629,6 +633,38 @@ c     energy threshold (GeV center-of-mass)
       
 C=======================================================================
 
+      SUBROUTINE BARYONMIX_INI
+
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      IMPLICIT INTEGER(I-N)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+c     muon extension via baryon enhancement
+c     
+c     enhancement model (1: vector, 2: strangeness, 3: baryons)
+      IPAR(94) = 3
+c     energy dependence (0:none, 1: logarithmic)
+      IPAR(96) = 1
+c     which projectiles (0:all, 1: mesons only)
+      IPAR(97) = 0
+c     LE 
+c     exchange rate
+      PAR(75) = 0.5
+c     power of xf weight (0: no weighting (all weight=1), 1: weight = xf)
+      PAR(159) = 0.7            
+c     energy threshold (GeV center-of-mass)
+      PAR(160) = 5.
+
+      WRITE(*,*),'===================================================='
+      WRITE(*,*),'=  BARYON ENHANCEMENT 1                            ='
+      WRITE(*,*),'===================================================='
+      END
+      
+C=======================================================================
+
       SUBROUTINE VECTOR_INI
 
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -661,6 +697,38 @@ c     which projectiles (0:all, 1: mesons only)
       
 C=======================================================================
 
+      SUBROUTINE VECTORMIX_INI
+
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      IMPLICIT INTEGER(I-N)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+c     muon extension via vector (rho0) enhancement
+c     
+c     enhancement model (1: vector, 2: strangeness, 3: baryons)
+      IPAR(94) = 1
+c     exchange rate
+      PAR(75) = 0.8
+c     power of xf weight (0: no weighting (all weight=1), 1: weight = xf)
+      PAR(159) = 0.4
+c     energy threshold (GeV center-of-mass)
+      PAR(160) = 5.      
+c     energy dependence (0:none, 1: logarithmic)
+      IPAR(96) = 1
+c     which projectiles (0:all, 1: mesons only)
+      IPAR(97) = 1
+
+      WRITE(*,*),'===================================================='
+      WRITE(*,*),'=  RHO0 ENHANCEMENT 2                              ='
+      WRITE(*,*),'===================================================='
+
+      END
+      
+C=======================================================================
+      
       SUBROUTINE VECTOR_BARYON_INI
 
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -12825,6 +12893,18 @@ c                        print*,' ineutron:', ineutron
                         iflip = -1 + 2*int(0.5D0 + S_RNDM(I3))
                         id1 = (13+ineutron)*iflip
                         id2 = (-13-ineutron)*iflip
+                        if(ndebug.gt.0)then
+                           write(lun,*) 'force baryons:'
+                           if(ipart(icomb,3).eq.0)then
+                              write(lun,*) 'replacing indices:' ,i1, i2
+                              write(lun,*) 'ids:', llist(i1), llist(i2)
+                           else
+                              write(lun,*) 'replacing indices:',i1,i2,i3
+                              write(lun,*) 'ids:', llist(i1), llist(i2),
+     &                             llist(i3)
+                           endif
+                           write(lun,*)' with baryon pair!'
+                        endif
 c                        print*,' new ids: ', id1, id2
 c     determine momenta of new particles and write to stack
                         enew = xm/2.D0
@@ -13273,6 +13353,7 @@ c     next neighbours
 c            print*,'max increment:',incrmax
             do incr1=1,incrmax
                I2 = I1 + incr1
+               if(abs(llist(i2)).gt.10000) goto 300
 c     two-particle combination
 c               print*,' checking two particle combination..'
 c               print*,' indices:' ,i1, i2
@@ -13310,7 +13391,10 @@ c     realize exchange?
                   id1 = 27
                   id2 = llist(i2)
                   aid2 = mod(abs(id2),10000)
-c                  print*,' new ids: ', id1, id2
+                  if(ndebug.gt.0)then
+                     print*,' indices:' ,i1, i2
+                     print*,' new ids: ', id1, id2
+                  endif
 c     determine momenta of new particles and write to stack
                   do kk=1,4
                      gambet(kk) = ptot(kk)/xm
