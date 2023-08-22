@@ -34856,6 +34856,12 @@ C  Lund sigma parameter in pt distribution
 C  (default=0.36)
         PARJ(21)=0.36
       ENDIF
+
+**anfe patch 2023.08.23
+C force particle decay to follow MDCy definition
+      IF (idefab.GE.4) THEN
+         MSTj(22) = 1
+      END IF
 C
 C  prevent particles decaying
       IF(IDEFAU.LT.0) THEN

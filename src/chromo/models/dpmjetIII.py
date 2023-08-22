@@ -107,11 +107,10 @@ class DpmjetIIIRun(MCRun):
             self._lib.pomdls.parmdl[75] = 0.05
 
         # Prevent DPMJET from overwriting decay settings
-        # self._lib.dtfrpa.ovwtdc = False
-        # Set PYTHIA decay flags to follow all changes to MDCY
-        self._lib.pydat1.mstj[21 - 1] = 1
-        self._lib.pydat1.mstj[22 - 1] = 2
         self._lib.dtfrpa.ovwtdc = False
+        # Tell DPMJET/PHOJET to not overwrite decay settings
+        self._lib.pomdls.iswmdl[6 - 1] = 4
+
         self._set_final_state_particles()
 
     def _cross_section(self, kin=None):

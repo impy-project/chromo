@@ -38,14 +38,14 @@ def run_model(Model, stable):
 @pytest.mark.parametrize("Model", get_all_models())
 def test_setstable(Model, stable):
     if not stable:
-        if "DPMJET" in Model.name:
-            pytest.xfail(
-                f"{Model.pyname} does not support decaying charged pions or any kaons"
-            )
+        # if "DPMJET" in Model.name:
+        #     pytest.xfail(
+        #         f"{Model.pyname} does not support decaying charged pions or any kaons"
+        #     )
         if "QGSJet" in Model.name:
             pytest.xfail(f"{Model.pyname} does not support changing decays")
-    if "UrQMD" in Model.name:
-        pytest.xfail(f"{Model.pyname} does not support changing decays")
+    # if "UrQMD" in Model.name:
+    #     pytest.xfail(f"{Model.pyname} does not support changing decays")
 
     c = run_in_separate_process(run_model, Model, stable)
 

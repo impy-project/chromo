@@ -141,9 +141,9 @@ class PHOJETRun(MCRun):
         # direct photon interaction (for incoming photons only)
         process_switch[7, 0] = 1
 
-        # Set PYTHIA decay flags to follow all changes to MDCY
-        self._lib.pydat1.mstj[21 - 1] = 1
-        self._lib.pydat1.mstj[22 - 1] = 2
+        # Tell PHOJET to not overwrite decay settings
+        self._lib.pomdls.iswmdl[6 - 1] = 4
+
         self._set_final_state_particles()
 
         self.kinematics = evt_kin
@@ -153,8 +153,6 @@ class PHOJETRun(MCRun):
             raise RuntimeError(
                 "initialization failed with the current event kinematics"
             )
-        # Prevent PHOJET from overwriting decay settings
-        self._lib.pomdls.iswmdl[5] = 1
 
     def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
