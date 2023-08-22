@@ -51,7 +51,7 @@ MODELS = {
     8: models.Phojet193,
     11: models.QGSJetII03,
     # 12 refers to different DPMJet versions in CRMC
-    12: models.DpmjetIII306,
+    12: models.DpmjetIII307,
 }
 VALID_MODELS = []
 for M in get_all_models():

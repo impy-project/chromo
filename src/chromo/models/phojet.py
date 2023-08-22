@@ -198,7 +198,7 @@ class PHOJETRun(MCRun):
 
 
 class Phojet112(PHOJETRun):
-    _version = "1.12-35"
+    _version = "1.12-36"
     _library_name = "_phojet112"
     _param_file_name = "fitpar.dat"
     _projectiles = {

@@ -5,10 +5,10 @@
 
  This directory contains the following files:
 
-   dpmjet3.0-6.f      DPMJET code version 3.0 without interface to FLUKA
-   phojet1.12-35c4.f  PHOJET code version 1.12
+   dpmjet3.0-7.f      DPMJET code version 3.0 without interface to FLUKA
+   phojet1.12-36c4.f  PHOJET code version 1.12
    pythia6115dpm3v1.f PYTHIA code version 6.1
-   user3.0-6.f        user code to be used with dpmjet3.0-6.f
+   user3.0-7.f        user code to be used with dpmjet3.0-7.f
                     
    fpe.o              auxiliary routine to trap floating point exceptions
                       (only used under Linux)
@@ -42,7 +42,7 @@
     requirements. See the routine for further details and information.
  2. Compile/link using 'make'
  3. Start the event generation, for example
-        dpmjet3.0-6 < {input file name}  > {output file name}  &
+        dpmjet3.0-7 < {input file name}  > {output file name}  &
 
 
  Please note:

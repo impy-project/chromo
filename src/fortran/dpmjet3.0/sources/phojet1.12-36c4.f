@@ -548,12 +548,12 @@ C  define input/output units
       WRITE(LO,*) '    please send suggestions / bug reports etc. to:'
       WRITE(LO,*) '             ralph.engel@fzk.de'
       WRITE(LO,*) ' ==================================================='
-      WRITE(LO,*) '   $Date: 2000/06/25 21:59:19 $'
-      WRITE(LO,*) '   $Revision: 1.12.1.35 $'
-
+      WRITE(LO,*) '   $Date: 2023/08/23 21:59:19 $'
+      WRITE(LO,*) '   $Revision: 1.12.1.36 $'
       WRITE(LO,*) '   (code version with interface to PYTHIA 6.x)'
-
       WRITE(LO,*) '   (code version for usage in DPMJET 3.x)'
+      WRITE(LO,*) '   (minor fix for chromo by A. Fedynitch)'
+      WRITE(LO,*) '   https://github.com/impy-project/chromo'
 
       WRITE(LO,*) ' ==================================================='
       WRITE(LO,*)
@@ -17250,7 +17250,7 @@ C  color string configurations including collapsed strings and hadrons
       DIMENSION IJOIN(100)
 
       IREJ = 0
-      IF(ABS(ISWMDL(6)).GT.3) THEN
+      IF(ABS(ISWMDL(6)).GT.4) THEN
         WRITE(LO,'(/1X,2A,I3)') 'PHO_STRFRA:ERROR: ',
      &    'invalid value of ISWMDL(6)',ISWMDL(6)
         CALL PHO_ABORT
@@ -34826,7 +34826,7 @@ C  input/output channels
       INTEGER PYCOMP
 
       IDEFAB = ABS(IDEFAU)
-
+      WRITE(6, *) 'PHO_FRAINI called with', IDEFAB
       IF(IDEFAB.EQ.0) THEN
         WRITE(LO,'(/1X,A)') 'PHO_FRAINI: hadronization switched off'
         RETURN
@@ -34838,6 +34838,7 @@ C  defaults
       DEF41 = PARJ(41)
       DEF42 = PARJ(42)
       DEF21 = PARJ(21)
+      DEF22 = PARJ(22)
 
 C  declare stable particles
       IF(IDEFAB.GE.2) MSTJ(22) = 2
