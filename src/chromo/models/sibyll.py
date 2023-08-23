@@ -86,16 +86,39 @@ class SIBYLLRun(MCRun):
 
     def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
-        if kin.p2.A > 1:
-            # TODO figure out what this returns exactly:
-            # self._lib.sib_sigma_hnuc
+        if kin.p1.A > 1:
             warnings.warn(
-                f"cross-section for nuclear targets not yet supported in {self.label}",
+                f"Cross section for nuclear projectiles not supported in {self.label}",
                 RuntimeWarning,
             )
             return CrossSectionData()
 
         sib_id = self._cross_section_projectiles[abs(kin.p1)]
+
+        if kin.p2.A > 19:
+            raise ValueError(
+                f"{self.label} does not support nuclear targets heavier than 19"
+            )
+        if kin.p2.A > 1 and self.version == "2.1":
+            raise ValueError(
+                f"{self.label} 2.1 does not (yet) support nuclear targets."
+            )
+
+        if kin.p2.A > 1:
+            alam = 1.0  # Not used
+            icsmod = 1  # use Sibyll p-p cross section as input
+            iparm = 2  # use Goulianos param. for inel. coupling param.
+            self._lib.sig_had_nuc(sib_id, kin.p2.A, kin.ecm, alam, icsmod, iparm)
+            nsig = self._lib.nucsig
+            return CrossSectionData(
+                total=float(nsig.sigt),
+                prod=float(nsig.sigt - nsig.sigqe),
+                quasielastic=float(nsig.sigqe),
+                inelastic=float(nsig.siginel),
+                diffractive_sum=float(nsig.sigqsd),
+                diffractive_xb=float(nsig.sigsd),
+                elastic=float(nsig.sigel),
+            )
 
         tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sib_id, kin.ecm)
         return CrossSectionData(

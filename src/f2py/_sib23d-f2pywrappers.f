@@ -276,6 +276,24 @@ C     It contains Fortran 77 wrappers to fortran functions.
       call setupfunc(aw,aw2)
       end
 
+      subroutine f2pyinitnucsig(setupfunc)
+      external setupfunc
+      double precision sigt
+      double precision sigel
+      double precision siginel
+      double precision sigqe
+      double precision sigsd
+      double precision sigqsd
+      double precision sigppt
+      double precision sigppel
+      double precision sigppsd
+      integer itg
+      common /nucsig/ sigt,sigel,siginel,sigqe,sigsd,sigqsd,sigppt
+     &,sigppel,sigppsd,itg
+      call setupfunc(sigt,sigel,siginel,sigqe,sigsd,sigqsd,sigppt,
+     &sigppel,sigppsd,itg)
+      end
+
       subroutine f2pyinitsib_rnk(setupfunc)
       external setupfunc
       integer lrnk(8000)
@@ -313,24 +331,6 @@ C     It contains Fortran 77 wrappers to fortran functions.
      &ssig_rho
       call setupfunc(ssig_tot,ssig_sd1,ssig_sd2,ssig_dd,ssig_b,ssi
      &g_rho)
-      end
-
-      subroutine f2pyinitnucsig(setupfunc)
-      external setupfunc
-      double precision sigt
-      double precision sigel
-      double precision siginel
-      double precision sigqe
-      double precision sigsd
-      double precision sigqsd
-      double precision sigppt
-      double precision sigppel
-      double precision sigppsd
-      integer itg
-      common /nucsig/ sigt,sigel,siginel,sigqe,sigsd,sigqsd,sigppt
-     &,sigppel,sigppsd,itg
-      call setupfunc(sigt,sigel,siginel,sigqe,sigsd,sigqsd,sigppt,
-     &sigppel,sigppsd,itg)
       end
 
       subroutine f2pyinits_czgen(setupfunc)

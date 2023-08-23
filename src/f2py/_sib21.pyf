@@ -250,6 +250,18 @@ python module _sib21 ! in
             integer dimension(56) :: jjbel
             common /cnucms/ b,bmax,ntry,na,nb,ni,nael,nbel,jja,jjb,jjint,jjael,jjbel
         end subroutine int_nuc
+        subroutine glauber(ja,ssig,slope,alpha,sigt,sigel,sigqel) ! in :_sib21:CMakeFiles/_sib21.dir/sibyll_21.f
+            integer :: ja
+            real :: ssig
+            real :: slope
+            real :: alpha
+            real :: sigt
+            real :: sigel
+            real :: sigqel
+            real :: r0
+            real :: r02
+            common /ca0sh/ r0,r02
+        end subroutine glauber
         subroutine pdg_ini ! in :_sib21:CMakeFiles/_sib21.dir/sib21aux.f
             integer :: ncall
             integer :: ndebug

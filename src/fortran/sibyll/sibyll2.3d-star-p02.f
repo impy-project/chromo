@@ -115,7 +115,9 @@ c     external type declarations
       INTEGER K_beam, IATARG
 
 c     COMMONs
-
+C**anfe adding S_STAR common here to wrap it in f2py
+      INTEGER IMOD
+      COMMON /S_STAR/ IMOD
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       INTEGER LDIFF
