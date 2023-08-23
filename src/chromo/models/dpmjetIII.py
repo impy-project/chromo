@@ -118,6 +118,8 @@ class DpmjetIIIRun(MCRun):
         # we override to set precision
         if (kin.p1.A and kin.p1.A > 1) or kin.p2.A > 1:
             assert kin.p2.A >= 1, "DPMJET requires nucleons or nuclei on side 2."
+            # Enable total and elastic cross section calculation
+            self._lib.dtglgp.lprod = False
             self._lib.dt_xsglau(
                 kin.p1.A or 1,
                 kin.p2.A or 1,
@@ -131,7 +133,17 @@ class DpmjetIIIRun(MCRun):
                 1,
                 1,
             )
-            return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
+            glxs = self._lib.dtglxs
+            return CrossSectionData(
+                total=glxs.xstot[0, 0, 0],
+                elastic=glxs.xsela[0, 0, 0],
+                inelastic=glxs.xstot[0, 0, 0] - glxs.xsela[0, 0, 0],
+                prod=glxs.xspro[0, 0, 0],
+                quasielastic=glxs.xsqep[0, 0, 0]
+                + glxs.xsqet[0, 0, 0]
+                + glxs.xsqe2[0, 0, 0]
+                + glxs.xsela[0, 0, 0],
+            )
         else:
             stot, sela = self._lib.dt_xshn(
                 self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm

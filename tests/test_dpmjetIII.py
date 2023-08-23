@@ -1,6 +1,17 @@
 import numpy as np
+from numpy.testing import assert_allclose
+
 import chromo
+from chromo.constants import GeV
+from chromo.util import naneq
+
 from .util import run_in_separate_process
+
+
+def run_cross_section(p1, p2):
+    evt_kin = chromo.kinematics.CenterOfMass(10 * GeV, p1, p2)
+    m = chromo.models.DpmjetIII193(evt_kin, seed=1)
+    return m.cross_section()
 
 
 def run_cross_section_ntrials():
@@ -39,3 +50,35 @@ def run_cross_section_ntrials():
 
 def test_cross_section_ntrials():
     run_in_separate_process(run_cross_section_ntrials)
+
+
+def test_cross_section_pp():
+    c = run_in_separate_process(run_cross_section, "p", "p")
+    assert_allclose(c.total, 38.9, atol=0.1)
+    assert_allclose(c.inelastic, 32.1, atol=0.1)
+    assert_allclose(c.elastic, 6.9, atol=0.1)
+    assert_allclose(
+        c.non_diffractive,
+        c.inelastic,
+    )
+    naneq(c.diffractive_ax, np.nan)
+    naneq(c.diffractive_xb, np.nan)
+    naneq(c.diffractive_xx, np.nan)
+    naneq(c.diffractive_axb, np.nan)
+
+
+def test_cross_section_pA():
+    c = run_in_separate_process(run_cross_section, "p", "O16")
+    assert_allclose(c.total, 446.1, atol=0.1)
+    assert_allclose(c.inelastic, 328.0, atol=0.1)
+    assert_allclose(c.elastic, 118.1, atol=0.1)
+    assert_allclose(c.prod, 298.7, atol=0.1)
+    assert_allclose(c.quasielastic, 144.6, atol=0.1)
+    assert_allclose(
+        c.non_diffractive,
+        c.inelastic,
+    )
+    naneq(c.diffractive_ax, np.nan)
+    naneq(c.diffractive_xb, np.nan)
+    naneq(c.diffractive_xx, np.nan)
+    naneq(c.diffractive_axb, np.nan)
