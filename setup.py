@@ -17,15 +17,7 @@ if not os.environ.get("CI", False):
         subp.check_call(["git", "submodule", "update"])
 
 
-# for convenience, support building extra models via model.cfg
-# model.cfg is not tracked by git, so can be freely modified
-# model.cfg example:
-# -----
-# sib23c00
-# sib23c02
-# sib23c03
-# dev_dpmjetIII193=/full/path/to/dir/dpmjetIII-19.3
-# ----
+# "Refer to the comments for 'cmake_ext.py:get_models()' on instructions for adding additional models."
 
 # Set environment variable VIRTUAL_ENV to venv directory
 # It is required in FindPython to find a correct version of python
