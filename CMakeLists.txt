@@ -173,7 +173,7 @@ set(SIBYLL_COMMON_FUNCTIONS
 
 f2py_add_module(_sib21
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} spgasdev
+  ${SIBYLL_COMMON_FUNCTIONS} spgasdev glauber
   SOURCES
   ${fortran_dir}/sibyll/sibyll_21.f
   ${fortran_dir}/sibyll/sib21aux.f
@@ -191,7 +191,7 @@ f2py_add_module(_sib21
 ### sib23
 f2py_add_module(_sib23
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -207,7 +207,7 @@ f2py_add_module(_sib23
 ### sib23c01
 f2py_add_module(_sib23c01
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c01.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -223,7 +223,7 @@ f2py_add_module(_sib23c01
 ### sib23d
 f2py_add_module(_sib23d
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3d.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -238,7 +238,7 @@ f2py_add_module(_sib23d
 
 f2py_add_module(_sib23d_star
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3d-star-p02.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -645,7 +645,7 @@ f2py_add_module(_phojet193
 ##### optional models follow below ######
 f2py_add_module(_sib23c00
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c00.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -659,7 +659,7 @@ f2py_add_module(_sib23c00
 
 f2py_add_module(_sib23c02
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c02.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -673,7 +673,7 @@ f2py_add_module(_sib23c02
 
 f2py_add_module(_sib23c03
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c03.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
