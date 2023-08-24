@@ -22,7 +22,7 @@ class UrQMDEvent(MCEvent):
     def _get_impact_parameter(self):
         return self._lib.rsys.bimp
 
-    def _add_init_beam_info(self):
+    def _add_initial_beam(self):
         self._prepend_initial_beam()
 
 

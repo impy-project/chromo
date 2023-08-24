@@ -47,7 +47,7 @@ class PhojetEvent(MCEvent):
         """Total number of realized hard cuts"""
         return self._lib.podebg.khard
 
-    def _add_init_beam_info(self):
+    def _add_initial_beam(self):
         self._replace_initial_beam()
 
     # def elastic_t(self):

@@ -26,7 +26,7 @@ class DpmjetIIIEvent(MCEvent):
     def _get_n_wounded(self):
         return self._lib.dtglcp.nwasam, self._lib.dtglcp.nwbsam
 
-    def _add_init_beam_info(self):
+    def _add_initial_beam(self):
         self._replace_initial_beam()
 
     # Unfortunately not that simple since this is bounced through

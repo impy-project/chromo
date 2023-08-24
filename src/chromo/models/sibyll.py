@@ -19,7 +19,7 @@ class SibyllEvent(MCEvent):
     def _get_n_wounded(self):
         return self._lib.cnucms.na, self._lib.cnucms.nb
 
-    def _add_init_beam_info(self):
+    def _add_initial_beam(self):
         self._prepend_initial_beam()
 
     @property

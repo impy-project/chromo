@@ -512,7 +512,7 @@ class MCEvent(EventData, ABC):
             daughters,
         )
 
-        self._add_init_beam_info()
+        self._add_initial_beam()
 
     @abstractmethod
     def _charge_init(self, npart):
@@ -537,7 +537,7 @@ class MCEvent(EventData, ABC):
         # upon unpickling, create EventData object instead of MCEvent object
         return (EventData,)
 
-    def _add_init_beam_info(self):
+    def _add_initial_beam(self):
         pass
 
     def _replace_initial_beam(self):

@@ -23,7 +23,7 @@ class EPOSEvent(MCEvent):
     def _get_n_wounded(self):
         return int(self._lib.cevt.npjevt), int(self._lib.cevt.ntgevt)
 
-    def _add_init_beam_info(self):
+    def _add_initial_beam(self):
         self._replace_initial_beam()
 
 

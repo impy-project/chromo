@@ -26,7 +26,7 @@ class SophiaEvent(MCEvent):
     def _charge_init(self, npart):
         return self._lib.schg.ichg[:npart]
 
-    def _add_init_beam_info(self):
+    def _add_initial_beam(self):
         self._prepend_initial_beam()
 
     @property
