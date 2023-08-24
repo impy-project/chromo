@@ -20,7 +20,7 @@ class SibyllEvent(MCEvent):
         return self._lib.cnucms.na, self._lib.cnucms.nb
 
     def _add_init_beam_info(self):
-        self._append_initial_beam()
+        self._prepend_initial_beam()
 
     @property
     def n_NN_interactions(self):

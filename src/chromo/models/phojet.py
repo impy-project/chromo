@@ -48,7 +48,7 @@ class PhojetEvent(MCEvent):
         return self._lib.podebg.khard
 
     def _add_init_beam_info(self):
-        self._fill_initial_beam()
+        self._replace_initial_beam()
 
     # def elastic_t(self):
     #     """Squared momentum transfer t for elastic interaction.
@@ -61,8 +61,8 @@ class PhojetEvent(MCEvent):
     #         np.square(self._lib.poevt1.phep[0:4, 0] -
     #                   self._lib.poevt1.phep[0:4, 5]))
 
-    def _fill_initial_beam(self):
-        super()._fill_initial_beam()
+    def _replace_initial_beam(self):
+        super()._replace_initial_beam()
         # Phojet produces mothers with first index > second index
         # pyhepmc produces an error when trying to restore such events
         # from the file recorded by Hepmc writer (writing is OK)

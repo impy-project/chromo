@@ -24,7 +24,7 @@ class EPOSEvent(MCEvent):
         return int(self._lib.cevt.npjevt), int(self._lib.cevt.ntgevt)
 
     def _add_init_beam_info(self):
-        self._fill_initial_beam()
+        self._replace_initial_beam()
 
 
 class EposLHC(MCRun):

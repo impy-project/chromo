@@ -27,7 +27,7 @@ class SophiaEvent(MCEvent):
         return self._lib.schg.ichg[:npart]
 
     def _add_init_beam_info(self):
-        self._append_initial_beam()
+        self._prepend_initial_beam()
 
     @property
     def decayed_parent(self):

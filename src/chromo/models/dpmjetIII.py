@@ -27,7 +27,7 @@ class DpmjetIIIEvent(MCEvent):
         return self._lib.dtglcp.nwasam, self._lib.dtglcp.nwbsam
 
     def _add_init_beam_info(self):
-        self._fill_initial_beam()
+        self._replace_initial_beam()
 
     # Unfortunately not that simple since this is bounced through
     # entire code as argument not in COMMON

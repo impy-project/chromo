@@ -23,7 +23,7 @@ class UrQMDEvent(MCEvent):
         return self._lib.rsys.bimp
 
     def _add_init_beam_info(self):
-        self._append_initial_beam()
+        self._prepend_initial_beam()
 
 
 class UrQMD34(MCRun):

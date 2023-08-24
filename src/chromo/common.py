@@ -540,7 +540,7 @@ class MCEvent(EventData, ABC):
     def _add_init_beam_info(self):
         pass
 
-    def _fill_initial_beam(self):
+    def _replace_initial_beam(self):
         beam = self.kin._get_beam_data(self._generator_frame)
         for field, beam_field in beam.items():
             event_field = getattr(self, field)
@@ -557,7 +557,7 @@ class MCEvent(EventData, ABC):
 
                 event_field[0:2] = beam_field
 
-    def _append_initial_beam(self):
+    def _prepend_initial_beam(self):
         beam = self.kin._get_beam_data(self._generator_frame)
         for field, beam_field in beam.items():
             event_field = getattr(self, field)

@@ -100,7 +100,7 @@ class DummyEvent(MCEvent):
         return np.zeros(npart)
 
     def _add_init_beam_info(self):
-        self._append_initial_beam()
+        self._prepend_initial_beam()
 
 
 def test_MCEvent_copy():
