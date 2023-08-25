@@ -54,6 +54,8 @@ def test_cross_section_ntrials():
 
 def test_cross_section_pp():
     c = run_in_separate_process(run_cross_section, "p", "p")
+    # These are the expected rounded numbers from the DPMJET
+    # for pp at 10 GeV
     assert_allclose(c.total, 38.9, atol=0.1)
     assert_allclose(c.inelastic, 32.1, atol=0.1)
     assert_allclose(c.elastic, 6.9, atol=0.1)

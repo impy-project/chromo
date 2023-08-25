@@ -55,8 +55,10 @@ class CrossSectionData:
     elastic : float
         Cross section for pure elastic scattering of incoming particle
         without any new particle generation.
+    prod : float
+        Particle production cross section, defined as total minus elastic.
     quasielastic : float
-        Nuclear cross section defined as total minus quasielastic.
+        Total quasielastic cross section (includes elastic).
     diffractive_xb : float
         Single diffractive cross section. Particle 2 remains intact,
         particles are produced around Particle 1.
@@ -92,16 +94,13 @@ class CrossSectionData:
     def diffractive(self):
         if float(self.diffractive_sum) > 0.0:
             return self.diffractive_sum
-        return sum(
-            [
-                np.nan_to_num(cs)
-                for cs in (
-                    self.diffractive_xb,
-                    self.diffractive_ax,
-                    self.diffractive_xx,
-                    self.diffractive_axb,
-                )
-            ]
+        return np.nansum(
+            (
+                self.diffractive_xb,
+                self.diffractive_ax,
+                self.diffractive_xx,
+                self.diffractive_axb,
+            )
         )
 
     def __eq__(self, other):
