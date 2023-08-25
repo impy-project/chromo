@@ -485,16 +485,24 @@ class MCEvent(EventData, ABC):
         phep = getattr(evt, self._phep)[:, sel]
         vhep = getattr(evt, self._vhep)[:, sel]
 
-        mothers = (
-            np.maximum(getattr(evt, self._jmohep).T[sel] - 1, -1)
-            if self._jmohep
-            else None
-        )
-        daughters = (
-            np.maximum(getattr(evt, self._jdahep).T[sel] - 1, -1)
-            if self._jdahep
-            else None
-        )
+        mothers = None
+        if self._jmohep is not None:
+            mothers = getattr(evt, self._jmohep).T[sel]
+            # Adjust original mothers where < 0 to be positive
+            # A mother < 0 indicates a string for Phojet and Dpmjet
+            mothers[mothers < 0] *= -1
+            # Adjust indices to start from 0
+            mothers = mothers - 1
+
+        # Similar treatment for daughters
+        daughters = None
+        if self._jdahep is not None:
+            daughters = getattr(evt, self._jdahep).T[sel]
+            # Adjust original daughters where < 0 to be positive
+            daughters[daughters < 0] *= -1
+            # Adjust indices to start from 0
+            daughters = daughters - 1
+
         self._generator_frame = generator._frame
         EventData.__init__(
             self,
@@ -544,18 +552,21 @@ class MCEvent(EventData, ABC):
         beam = self.kin._get_beam_data(self._generator_frame)
         for field, beam_field in beam.items():
             event_field = getattr(self, field)
-            if event_field is not None:
-                if field == "mothers":
-                    # all mothers that looks like [-1, -1], [0, -1], [1, -1], [1, 1]
-                    # are changed to [0, 1], i.e. attach to a common vertex
-                    # of to beam particles
-                    event_field[
-                        np.isin(event_field, [[-1, -1], [0, -1], [1, -1], [1, 1]]).all(
-                            axis=1
-                        )
-                    ] = [0, 1]
 
-                event_field[0:2] = beam_field
+            if event_field is None:
+                continue
+
+            if field == "mothers":
+                # all mothers that looks like [-1, -1], [0, -1], [1, -1], [1, 1]
+                # are changed to [0, 1], i.e. attach to a common vertex
+                # of to beam particles
+                event_field[
+                    np.isin(event_field, [[-1, -1], [0, -1], [1, -1], [1, 1]]).all(
+                        axis=1
+                    )
+                ] = [0, 1]
+
+            event_field[0:2] = beam_field
 
     def _prepend_initial_beam(self):
         beam = self.kin._get_beam_data(self._generator_frame)
