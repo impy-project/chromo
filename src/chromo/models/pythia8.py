@@ -109,9 +109,11 @@ class Pythia8(MCRun):
             # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
             # this may change in the future if they switch to a different PRNG
             f"Random:seed = {self.seed % 900_000_000}",
-            # reduce verbosity
-            "Print:quiet = on",
         ]
+
+        # Add "Print:quiet = on" if no "Print:quiet" is in config
+        if not any("Print:quiet" in s for s in self._config):
+            self._config.append("Print:quiet = on")
 
         # must come last
         if evt_kin is None:
@@ -208,7 +210,7 @@ class Pythia8(MCRun):
             for item in config:
                 result.append(item.strip())
 
-        ignored = ("Random:", "Beams:", "Print:", "Next:")
+        ignored = ("Random:", "Beams:", "Next:")
 
         result2: List[str] = []
         for line in result:
