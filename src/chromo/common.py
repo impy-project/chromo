@@ -485,24 +485,6 @@ class MCEvent(EventData, ABC):
         phep = getattr(evt, self._phep)[:, sel]
         vhep = getattr(evt, self._vhep)[:, sel]
 
-        mothers = None
-        if self._jmohep is not None:
-            mothers = getattr(evt, self._jmohep).T[sel]
-            # Adjust original mothers where < 0 to be positive
-            # A mother < 0 indicates a string for Phojet and Dpmjet
-            mothers[mothers < 0] *= -1
-            # Adjust indices to start from 0
-            mothers = mothers - 1
-
-        # Similar treatment for daughters
-        daughters = None
-        if self._jdahep is not None:
-            daughters = getattr(evt, self._jdahep).T[sel]
-            # Adjust original daughters where < 0 to be positive
-            daughters[daughters < 0] *= -1
-            # Adjust indices to start from 0
-            daughters = daughters - 1
-
         self._generator_frame = generator._frame
         EventData.__init__(
             self,
@@ -516,11 +498,12 @@ class MCEvent(EventData, ABC):
             self._charge_init(npart),
             *phep,
             *vhep,
-            mothers,
-            daughters,
+            mothers=getattr(evt, self._jmohep).T[sel] if self._jmohep else None,
+            daughters=getattr(evt, self._jdahep).T[sel] if self._jdahep else None,
         )
 
-        self._add_initial_beam()
+        self._history_zero_indexing()
+        self._repair_initial_beam()
 
     @abstractmethod
     def _charge_init(self, npart):
@@ -545,28 +528,12 @@ class MCEvent(EventData, ABC):
         # upon unpickling, create EventData object instead of MCEvent object
         return (EventData,)
 
-    def _add_initial_beam(self):
+    def _repair_initial_beam(self):
         pass
 
-    def _replace_initial_beam(self):
-        beam = self.kin._get_beam_data(self._generator_frame)
-        for field, beam_field in beam.items():
-            event_field = getattr(self, field)
-
-            if event_field is None:
-                continue
-
-            if field == "mothers":
-                # all mothers that looks like [-1, -1], [0, -1], [1, -1], [1, 1]
-                # are changed to [0, 1], i.e. attach to a common vertex
-                # of to beam particles
-                event_field[
-                    np.isin(event_field, [[-1, -1], [0, -1], [1, -1], [1, 1]]).all(
-                        axis=1
-                    )
-                ] = [0, 1]
-
-            event_field[0:2] = beam_field
+    def _history_zero_indexing(self):
+        self.mothers = self.mothers - 1
+        self.daughters = self.daughters - 1
 
     def _prepend_initial_beam(self):
         beam = self.kin._get_beam_data(self._generator_frame)
@@ -575,14 +542,9 @@ class MCEvent(EventData, ABC):
             if event_field is None:
                 continue
             if field in ["mothers", "daughters"]:
-                res = np.append(beam_field, event_field + 2).reshape((-1, 2))
-                # Change [1, 1] to [0, 1]
-                if field == "mothers":
-                    res[np.all(res == [1, 1], axis=1)] = [0, 1]
-                if field == "daughters":
-                    res[np.all(res == [1, 1], axis=1)] = [-1, -1]
+                res = np.concatenate((beam_field, event_field + 2))
             else:
-                res = np.append(beam_field, event_field)
+                res = np.concatenate((beam_field, event_field))
             setattr(self, field, res)
 
 

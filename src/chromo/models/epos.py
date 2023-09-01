@@ -23,8 +23,48 @@ class EPOSEvent(MCEvent):
     def _get_n_wounded(self):
         return int(self._lib.cevt.npjevt), int(self._lib.cevt.ntgevt)
 
-    def _add_initial_beam(self):
-        self._replace_initial_beam()
+    def _history_zero_indexing(self):
+        # Beam particles are [-1, -1], but indexing starts from 1
+        # adjust to [0, 0]
+        condition = (self.mothers == [-1, -1]).all(axis=1)
+        self.mothers[condition] = [0, 0]
+
+        # Adjust to zero-base indexing
+        self.mothers = self.mothers - 1
+
+        # Set [i, i] to [i, -1]
+        condition = self.mothers[:, 0] == self.mothers[:, 1]
+        self.mothers[condition, 1] = -1
+
+        self.daughters = self.daughters - 1
+        condition = self.daughters[:, 0] == self.daughters[:, 1]
+        self.daughters[condition, 1] = -1
+
+    def _repair_initial_beam(self):
+        # Insert nucleus as a first entry and attach
+        # beam protons appeared in Epos
+        # It is more logical to add target as a second entry
+        # but then history doesn't follow hepmc rules
+        beam = self.kin._get_beam_data(self._generator_frame)
+        # Don't do anything if it's not a nucleus
+        if np.abs(beam["pid"][1]) < 1000000000:
+            return
+        for field, beam_field in beam.items():
+            event_field = getattr(self, field)
+            res = np.concatenate((beam_field[1:], event_field))
+            setattr(self, field, res)
+
+        # Repair history
+        self.mothers[self.mothers > -1] += 1
+        self.daughters[self.daughters > -1] += 1
+
+        # Attach all beam protons to beam nucleus
+        is_beam = self.status == 4
+        is_beam[0:2] = False
+        self.mothers[is_beam] = [0, -1]
+
+        beam_indices = np.where(is_beam)[0]
+        self.daughters[0] = [beam_indices[0], beam_indices[-1]]
 
 
 class EposLHC(MCRun):

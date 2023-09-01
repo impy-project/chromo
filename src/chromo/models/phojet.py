@@ -1,5 +1,5 @@
 from chromo.common import MCRun, MCEvent, CrossSectionData
-from chromo.util import fortran_chars, _cached_data_dir
+from chromo.util import fortran_chars, _cached_data_dir, phojet_dpmjet_hepmc
 from chromo.kinematics import EventFrame
 from chromo.constants import standard_projectiles
 from particle import literals as lp
@@ -47,8 +47,15 @@ class PhojetEvent(MCEvent):
         """Total number of realized hard cuts"""
         return self._lib.podebg.khard
 
-    def _add_initial_beam(self):
-        self._replace_initial_beam()
+    def _history_zero_indexing(self):
+        # Adjust original mothers where < 0 to be positive
+        # A mother < 0 indicates a string for Phojet
+        self.mothers[self.mothers < 0] *= -1
+        self.mothers = self.mothers - 1
+        self.daughters = self.daughters - 1
+
+    def to_hepmc3(self, genevent=None):
+        return super(PhojetEvent, phojet_dpmjet_hepmc(self)).to_hepmc3(genevent)
 
     # def elastic_t(self):
     #     """Squared momentum transfer t for elastic interaction.
@@ -60,24 +67,6 @@ class PhojetEvent(MCEvent):
     #     return np.sum(
     #         np.square(self._lib.poevt1.phep[0:4, 0] -
     #                   self._lib.poevt1.phep[0:4, 5]))
-
-    def _replace_initial_beam(self):
-        super()._replace_initial_beam()
-        # Phojet produces mothers with first index > second index
-        # pyhepmc produces an error when trying to restore such events
-        # from the file recorded by Hepmc writer (writing is OK)
-        # Fix:
-        # Swap if first index is smaller than second, i.e.
-        # if [6, 4], then change to [4, 6]
-        # Additional condition if that both indeces > 0
-
-        mothers = getattr(self, "mothers")
-        condition = (mothers > 0).all(axis=1)
-        condition[condition] = mothers[condition, 0] > mothers[condition, 1]
-        (mothers[condition, 0], mothers[condition, 1]) = (
-            mothers[condition, 1],
-            mothers[condition, 0],
-        )
 
 
 class PHOJETRun(MCRun):

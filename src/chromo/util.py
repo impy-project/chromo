@@ -13,6 +13,7 @@ from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
 from chromo.constants import MeV, nucleon_mass
 from enum import Enum
 import dataclasses
+from copy import copy
 
 EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
 
@@ -687,3 +688,41 @@ class Nuclei:
 
     def __ror__(self, other: Set[PDGID]):
         return self.__or__(other)
+
+
+def phojet_dpmjet_hepmc(event):
+    """Attach all final state particles to beam particles.
+    `event` isn't changed. We fix a copy of `event`
+
+    This is a temporary fix until it will be
+    figured out how to reconcile complex history
+    produced by Phojet or Dpmjet with requirements
+    of hepmc format
+
+    Args:
+        event (MCEvent): event to fix
+
+    Returns:
+        MCEvent: fixed copy of event
+    """
+    # Filter out final state and beam particles
+    # Set beam to 1 to save beam particles at filtering
+    beam_status = event.status[0:2]
+    event.status[0:2] = 1
+    final_event = event.final_state()
+    event.status[0:2] = beam_status
+
+    # We fix copy of the event
+    final_copy = copy(event)
+
+    # Copy from final_event(EventData class) to
+    # final_copy(DpmjetIIIEvent, PhojetEvent) because we cannot
+    # use bare EventData directly in to_hepmc3 function
+    for field in dataclasses.fields(final_event):
+        filtered = getattr(final_event, field.name)
+        setattr(final_copy, field.name, filtered)
+
+    final_copy.mothers = np.full((len(final_copy), 2), [-1, -1])
+    final_copy.mothers[2:] = [0, 1]
+    final_copy.daughters = np.full((len(final_copy), 2), [-1, -1])
+    return final_copy

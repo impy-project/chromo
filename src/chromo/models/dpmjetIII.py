@@ -1,6 +1,12 @@
 from chromo.common import MCRun, MCEvent, CrossSectionData
 from chromo.kinematics import EventFrame
-from chromo.util import info, _cached_data_dir, fortran_chars, Nuclei
+from chromo.util import (
+    info,
+    _cached_data_dir,
+    fortran_chars,
+    Nuclei,
+    phojet_dpmjet_hepmc,
+)
 from chromo.constants import standard_projectiles, GeV
 
 
@@ -26,8 +32,14 @@ class DpmjetIIIEvent(MCEvent):
     def _get_n_wounded(self):
         return self._lib.dtglcp.nwasam, self._lib.dtglcp.nwbsam
 
-    def _add_initial_beam(self):
-        self._replace_initial_beam()
+    def _repair_initial_beam(self):
+        beam = self.kin._get_beam_data(self._generator_frame)
+        for field in ["pid", "status", "pz", "en", "m"]:
+            event_field = getattr(self, field)
+            event_field[0:2] = beam[field]
+
+    def to_hepmc3(self, genevent=None):
+        return super(DpmjetIIIEvent, phojet_dpmjet_hepmc(self)).to_hepmc3(genevent)
 
     # Unfortunately not that simple since this is bounced through
     # entire code as argument not in COMMON
