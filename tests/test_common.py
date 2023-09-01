@@ -6,6 +6,7 @@ import pickle
 from types import SimpleNamespace
 import pytest
 from numpy.testing import assert_equal
+from chromo.util import get_all_models
 
 
 @pytest.fixture
@@ -117,3 +118,28 @@ def test_EventData_select(evt):
 
     x = evt[[True, False, True]]
     assert_equal(x.pid, [1, 3])
+
+
+@pytest.mark.parametrize("Model", get_all_models())
+def test_models_beam(Model):
+    """Tests whether all models have correct beam particles"""
+    evt_kin = CenterOfMass(100, "proton", "proton")
+    if Model.pyname in "Sophia20":
+        evt_kin = CenterOfMass(100, "photon", "proton")
+    elif Model.name in "DPMJET-III":
+        evt_kin = CenterOfMass(100, "N", "O")
+    elif Model.name in ["SIBYLL"]:
+        evt_kin = CenterOfMass(100, "p", "O")
+
+    generator = Model(evt_kin, seed=1)
+    for event in generator(100):
+        event.kin._beam_data = None
+        beam = event.kin._get_beam_data(event.kin.frame)
+        event.kin._beam_data = None
+        for field, beam_field in beam.items():
+            event_field = getattr(event, field)
+            if event_field is None or field == "daughters":
+                continue
+            assert np.allclose(
+                event_field[0:2], beam_field
+            ), f"{field}: {np.allclose(event_field[0:2], beam_field)}, {event_field[0:2]}, {beam_field}"

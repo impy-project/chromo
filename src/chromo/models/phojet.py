@@ -54,6 +54,9 @@ class PhojetEvent(MCEvent):
         self.mothers = self.mothers - 1
         self.daughters = self.daughters - 1
 
+    def _repair_initial_beam(self):
+        self.status[0:2] = 4
+
     def to_hepmc3(self, genevent=None):
         return super(PhojetEvent, phojet_dpmjet_hepmc(self)).to_hepmc3(genevent)
 

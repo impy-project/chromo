@@ -707,7 +707,7 @@ def phojet_dpmjet_hepmc(event):
     """
     # Filter out final state and beam particles
     # Set beam to 1 to save beam particles at filtering
-    beam_status = event.status[0:2]
+    beam_status = copy(event.status[0:2])
     event.status[0:2] = 1
     final_event = event.final_state()
     event.status[0:2] = beam_status

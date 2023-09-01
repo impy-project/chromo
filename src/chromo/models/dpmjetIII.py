@@ -34,7 +34,7 @@ class DpmjetIIIEvent(MCEvent):
 
     def _repair_initial_beam(self):
         beam = self.kin._get_beam_data(self._generator_frame)
-        for field in ["pid", "status", "pz", "en", "m"]:
+        for field in ["pid", "status", "charge", "px", "py", "pz", "en", "m"]:
             event_field = getattr(self, field)
             event_field[0:2] = beam[field]
 

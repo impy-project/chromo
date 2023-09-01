@@ -41,6 +41,7 @@ class EPOSEvent(MCEvent):
         self.daughters[condition, 1] = -1
 
     def _repair_initial_beam(self):
+        # projectile and target are switched!!!
         # Insert nucleus as a first entry and attach
         # beam protons appeared in Epos
         # It is more logical to add target as a second entry
