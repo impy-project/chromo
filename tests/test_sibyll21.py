@@ -35,8 +35,7 @@ def test_mothers(event):
     # check that there are particles with a single parent
     # and that parent is short-lived or an initial particle
 
-    d = event.mothers[:, 1] - event.mothers[:, 0]
-    ma = (d == 0) & (event.mothers[:, 0] > 0)
+    ma = (event.mothers[:, 0] > 0) & (event.mothers[:, 1] == -1)
 
     assert np.sum(ma) > 0
 

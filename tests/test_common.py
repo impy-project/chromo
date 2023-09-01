@@ -99,9 +99,6 @@ class DummyEvent(MCEvent):
     def _charge_init(self, npart):
         return np.zeros(npart)
 
-    def _repair_initial_beam(self):
-        self._prepend_initial_beam()
-
 
 def test_MCEvent_copy():
     evt = DummyEvent()

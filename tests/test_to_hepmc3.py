@@ -24,8 +24,15 @@ def run(Model):
 
 @pytest.mark.parametrize("Model", models)
 def test_to_hepmc3(Model):
-    if Model == im.UrQMD34:
-        pytest.xfail("UrQMD34 FAILS, should be FIXED!!!")
+    if Model.name in ("PhoJet", "DPMJET-III"):
+        # hepmc history is different from the history
+        # contained in mothers and daughters
+        # see `util.phojet_dpmjet_hepmc` function
+        pytest.xfail(
+            "PhoJet and DPMJET-III has complex history, "
+            "so for now their hepmc history contains "
+            "only final particles, should be FIXED!!!"
+        )
 
     event = run_in_separate_process(run, Model)
     # special case for Pythia8, which does not contain the parton shower
