@@ -6,6 +6,9 @@ from .util import run_in_separate_process
 from chromo.util import get_all_models
 import numpy as np
 import pytest
+from chromo.writer import Hepmc
+from pathlib import Path
+import pyhepmc
 
 # generate list of all models in chromo.models
 models = get_all_models()
@@ -115,3 +118,33 @@ def test_to_hepmc3(Model):
         hev_vertices[pa] = children
 
     assert unique_vertices == hev_vertices
+
+
+@pytest.mark.parametrize("Model", models)
+def test_io_hepmc(Model):
+    """Checks whether recorded events are read back"""
+    evt_kin = CenterOfMass(100 * GeV, "proton", "proton")
+    if Model is Sophia20:
+        evt_kin = CenterOfMass(100 * GeV, "photon", "proton")
+    generator = Model(evt_kin, seed=1)
+
+    filename = Path(f"{generator.pyname}_test.hepmc")
+
+    for event in generator(100):
+        # Write event
+        with Hepmc(file=filename, model=event.generator[0]) as f:
+            f.write(event)
+
+        event_number = None
+        # Read event
+        with pyhepmc.open(filename) as f:
+            for evt in f:
+                event_number = evt.event_number
+
+        # Assert that the event read back
+        assert (
+            event_number is not None
+        ), f"Pyhepmc could read event from file {filename}"
+
+    # delete file
+    filename.unlink(missing_ok=True)
