@@ -803,7 +803,7 @@ class MCRun(ABC):
             self._final_state_particles = self._final_state_particles[is_stable]
 
         if self._apply_decay_handler:
-            self._set_stable_for_decay_handler()
+            self._set_antiparticles_as_stable()
 
     def set_unstable(self, pdgid):
         """Convenience funtion for `self.set_stable(..., stable=False)`
