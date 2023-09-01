@@ -120,8 +120,7 @@ def test_to_hepmc3(Model):
     assert unique_vertices == hev_vertices
 
 
-@pytest.mark.parametrize("Model", models)
-def test_io_hepmc(Model):
+def run_test_io_hepmc(Model):
     """Checks whether recorded events are read back"""
     evt_kin = CenterOfMass(100 * GeV, "proton", "proton")
     if Model is Sophia20:
@@ -148,3 +147,8 @@ def test_io_hepmc(Model):
 
     # delete file
     filename.unlink(missing_ok=True)
+
+
+@pytest.mark.parametrize("Model", models)
+def test_io_hepmc(Model):
+    run_in_separate_process(run_test_io_hepmc, Model)
