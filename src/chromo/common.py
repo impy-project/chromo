@@ -765,6 +765,10 @@ class MCRun(ABC):
             >>> evt_kin = chromo.kinematics.FixedTarget(100, "p", "p")
             >>> gen = chromo.models.QGSJetII04(evt_kin)
             >>> generator.final_state_particles = [211, -211, 13, -13]
+
+            If you need to set particles as stable for those with a lifetime
+            greater than `tau_stable`:
+            >>> generator.final_state_particles = chromo.util.long_lived_for(tau_stable)
         """
         self._set_final_state_particles(pdgid)
 
