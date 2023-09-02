@@ -68,8 +68,13 @@ function (f2py_add_module target_name)
   endif()
 
   if (F2PY_ADD_MODULE_INCLUDE_DIRS)
-    STRING(JOIN ":" _joined_dirs ${F2PY_ADD_MODULE_INCLUDE_DIRS})
-    set(f2py_include_paths --include-paths ${_joined_dirs})
+    if (WIN32)
+      STRING(JOIN $<SEMICOLON> _joined_dirs ${F2PY_ADD_MODULE_INCLUDE_DIRS})
+      set(f2py_include_paths --include-paths \"${_joined_dirs}\")
+    else()
+      STRING(JOIN ":" _joined_dirs ${F2PY_ADD_MODULE_INCLUDE_DIRS})
+      set(f2py_include_paths --include-paths ${_joined_dirs})
+    endif()
   endif()
 
   # Definitions for source files processing
