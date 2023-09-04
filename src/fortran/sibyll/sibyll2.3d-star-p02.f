@@ -7,12 +7,36 @@ C         SSSSSS    IIIIIII  BBBBB       YY       LLLLLLL  LLLLLLL
 C=======================================================================
 C  Code for SIBYLL:  hadronic interaction Monte Carlo event generator
 C=======================================================================
-C   Version 2.3c03 (Jun-01-2017, modified Aug-22-2019)
+C     Version 2.3d-star-p02 (Jun-01-2017, modified Aug-22-2023)
 C
-C     with CHARM production
+C     ===>
+C          Sibyll 2.3d-star
+C           ==
+C          Sibyll 2.3d with artificially enhanced muon production
+C     ===>
+C
+C     variants:  ad-hoc increase number of muons achieved by replacing
+C     pairs/triples of pions with:      
+C
+C         * rho-mesons
+C         * p-pbar/n-nbar pairs
+C         * kaons      
+C
+C     to make this work ALL particle decays are treated internally!
+C
+C     To switch between variants set IMOD in COMMON S_STAR
+C     values are:
+C     0    : no enhancement (but internal decays so this is only approx. equal to sib2.3d)
+C     1    : rho-meson enhancement
+C     2    : baryon pair enhancement
+C     3    : kaon enhancement       
+C     4    : mixed enhancement (rho&baryon), default
+C     5    : rho-mix (rho component of mixed model)
+C     6    : baryon-mix (baryon component of mixed model)  
 C
 C       By   Eun-Joo Ahn
 C            Ralph Engel
+C            A. Fedynitch      
 C            R.S. Fletcher
 C            T.K. Gaisser
 C            Paolo Lipari
@@ -26,12 +50,14 @@ C
 C      For a correct copy contact:
 C                sein@fnal.gov
 C                ralph.engel@kit.edu
+C                afedynitch@gmail.com 
 C                gaisser@bartol.udel.edu
 C                paolo.lipari@roma1.infn.it
 C                friehn@lip.pt
 C                stanev@bartol.udel.edu
 C     
 C     last changes relative to Sibyll 2.3c:
+C     * no pi0 suppression in minijets
 C     * added cross section tables for hadron-nitrogen and hadron-oxygen
 C       (changed S_CCSIG common)
 C     * no remnant in high mass diff. events (pi0-had scattering)
@@ -89,7 +115,9 @@ c     external type declarations
       INTEGER K_beam, IATARG
 
 c     COMMONs
-
+C**anfe adding S_STAR common here to wrap it in f2py
+      INTEGER IMOD
+      COMMON /S_STAR/ IMOD
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
       INTEGER LDIFF
@@ -245,17 +273,22 @@ c         stop
       ENDIF
 
 c     exchange pions with vector mesons
-      IF(IPAR(45).ne.0) then
+      IF(IPAR(45).ne.0.and.IPAR(94).eq.0) then
          xchgRate = PAR(75)
-         CALL FORCE_VECTORS(xchgRate,1,NP)
+         CALL FORCE_VECTORS(xchgRate,0,1.D0,0.D0,1,NP)
       endif
 
 c     exchange pi0 with charged pions for meson projectiles
       IF(IPAR(50).ne.0.and.IABS(KBM).lt.13) then
          xchgrate = PAR(136)
          CALL REMOVE_PI0(xchgRate,1,NP)
-      endif
-      
+      endif      
+
+c     more generic muon enhancements (UHECR 2022)
+c     this routine modifies the final state! in particular all resonance decays are enacted!
+      IF(IPAR(94).ne.0)THEN
+         call MUON_ENHANCEMENTS
+      ENDIF
       
 C...list final state particles
       if(Ndebug.gt.10) CALL SIB_LIST(LUN)
@@ -458,24 +491,28 @@ C-----------------------------------------------------------------------
       WRITE(*,100)
  100  FORMAT(' ','====================================================',
      *     /,' ','|                                                  |',
-     *     /,' ','|                 S I B Y L L  2.3c                |',
+     *     /,' ','|                 S I B Y L L  2.3d-*              |',
      *     /,' ','|                                                  |',
+     *     /,' ','|           ==> MUON ENHANCED VERSION <==          |',
+     *     /,' ','|                                                  |',      
+     *     /,' ','|  ad-hoc increase of muons by replacing pairs of  |',
+     *     /,' ','|  pions with baryons,rho0 or kaons !              |',
+     *     /,' ','|                                                  |',            
      *     /,' ','|         HADRONIC INTERACTION MONTE CARLO         |',
      *     /,' ','|                        BY                        |',
      *     /,' ','|            Eun-Joo AHN, Felix RIEHN              |',
-     *     /,' ','|     R. ENGEL, R.S. FLETCHER, T.K. GAISSER        |',
-     *     /,' ','|               P. LIPARI, T. STANEV               |',
+     *     /,' ','|      R. ENGEL, A. FEDYNITCH, R.S. FLETCHER,      |',
+     *     /,' ','|       T.K. GAISSER, P. LIPARI, T. STANEV         |',
      *     /,' ','|                                                  |',
      *     /,' ','| Publication to be cited when using this program: |',
      *     /,' ','| Eun-Joo AHN et al., Phys.Rev. D80 (2009) 094003  |',
-     *     /,' ','| F. RIEHN et al., Proc. 35th Int. Cosmic Ray Conf.|',
-     *     /,' ','|           Bexco, Busan, Korea, cont. 301 (2017)  |',
-     *     /,' ','|                                                  |',
-     *     /,' ','| last modifications: F. Riehn (08/22/2019)        |',
+     *     /,' ','| F. RIEHN et al., Phys.Rev. D102 (2020) 063002    |',
+     *     /,' ','| last modifications: F. Riehn (08/22/2023)        |',
      *     /,' ','====================================================',
      *     /)
 
       CALL PAR_INI
+      CALL SIBYLL_STAR_INI
       CALL DIFF_INI
       CALL JET_INI
       CALL PDF_INI
@@ -485,7 +522,7 @@ C-----------------------------------------------------------------------
       CALL DEC_INI
 c...  charm frag. normalisation
       CALL ZNORMAL
-
+      
       END
 
 C=======================================================================
@@ -511,9 +548,270 @@ c     valence string charm rate
 c     minijet charm rate
       PAR(27) = 0.D0
       END
+
+C=======================================================================      
+      SUBROUTINE SIBYLL_STAR_INI
+      IMPLICIT NONE
+      INTEGER IMOD
+      COMMON /S_STAR/ IMOD
+      IF(IMOD.eq.0)THEN
+         CALL STD_INI
+      ELSEIF(IMOD.EQ.1)THEN
+         CALL VECTOR_INI
+      ELSEIF(IMOD.eq.2)THEN
+         CALL BARYON_INI
+      ELSEIF(IMOD.eq.3)THEN
+         CALL STRANGE_INI
+      ELSEIF(IMOD.eq.4)THEN
+         CALL VECTOR_BARYON_INI
+      ELSEIF(IMOD.EQ.5)THEN
+         CALL VECTORMIX_INI
+      ELSEIF(IMOD.eq.6)THEN
+         CALL BARYONMIX_INI         
+      ELSE
+         WRITE(*,*) 'SIBYLL STAR. Wrong initialization!'
+         STOP
+      ENDIF
+
+      END
+      
+C=======================================================================
+      SUBROUTINE STD_INI
+
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      IMPLICIT INTEGER(I-N)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+
+c     enhancement model (1: vector, 2: strangeness, 3: baryons, -1: no enhancement but do decays internally)
+      IPAR(94) = -1
+
+      WRITE(*,*),'===================================================='
+      WRITE(*,*),'= NO ENHANCEMENT, BUT DECAYS ARE HANDLED IN SIBYLL ='
+      WRITE(*,*),'===================================================='
+      END
       
 C=======================================================================
 
+      SUBROUTINE BARYON_INI
+
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      IMPLICIT INTEGER(I-N)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+c     muon extension via baryon enhancement
+c     
+c     enhancement model (1: vector, 2: strangeness, 3: baryons)
+      IPAR(94) = 30
+c     energy dependence (0:none, 1: logarithmic)
+      IPAR(96) = 1
+c     which projectiles (0:all, 1: mesons only)
+      IPAR(97) = 0
+c     LE 
+c     exchange rate
+      PAR(75) = 0.5
+c     power of xf weight (0: no weighting (all weight=1), 1: weight = xf)
+      PAR(159) = 0.7            
+c     energy threshold (GeV center-of-mass)
+      PAR(160) = 5.
+c     HE
+c     exchange rate
+      PAR(161) = 0.25
+c     power of xf weight (0: no weighting (all weight=1), 1: weight = xf)
+      PAR(163) = 0.0            
+c     energy threshold (GeV center-of-mass)
+      PAR(162) = 13000.      
+
+      WRITE(*,*),'===================================================='
+      WRITE(*,*),'=  BARYON ENHANCEMENT 4  LE & HE                   ='
+      WRITE(*,*),'===================================================='
+      END
+      
+C=======================================================================
+
+      SUBROUTINE BARYONMIX_INI
+
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      IMPLICIT INTEGER(I-N)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+c     muon extension via baryon enhancement
+c     
+c     enhancement model (1: vector, 2: strangeness, 3: baryons)
+      IPAR(94) = 3
+c     energy dependence (0:none, 1: logarithmic)
+      IPAR(96) = 1
+c     which projectiles (0:all, 1: mesons only)
+      IPAR(97) = 0
+c     LE 
+c     exchange rate
+      PAR(75) = 0.5
+c     power of xf weight (0: no weighting (all weight=1), 1: weight = xf)
+      PAR(159) = 0.7            
+c     energy threshold (GeV center-of-mass)
+      PAR(160) = 5.
+
+      WRITE(*,*),'===================================================='
+      WRITE(*,*),'=  BARYON ENHANCEMENT 1                            ='
+      WRITE(*,*),'===================================================='
+      END
+      
+C=======================================================================
+
+      SUBROUTINE VECTOR_INI
+
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      IMPLICIT INTEGER(I-N)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+c     muon extension via vector (rho0) enhancement
+c     
+c     enhancement model (1: vector, 2: strangeness, 3: baryons)
+      IPAR(94) = 1
+c     exchange rate
+      PAR(75) = 0.8
+c     power of xf weight (0: no weighting (all weight=1), 1: weight = xf)
+      PAR(159) = 0.3            
+c     energy threshold (GeV center-of-mass)
+      PAR(160) = 5.      
+c     energy dependence (0:none, 1: logarithmic)
+      IPAR(96) = 1
+c     which projectiles (0:all, 1: mesons only)
+      IPAR(97) = 1
+
+      WRITE(*,*),'===================================================='
+      WRITE(*,*),'=  RHO0 ENHANCEMENT 2                              ='
+      WRITE(*,*),'===================================================='
+
+      END
+      
+C=======================================================================
+
+      SUBROUTINE VECTORMIX_INI
+
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      IMPLICIT INTEGER(I-N)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+c     muon extension via vector (rho0) enhancement
+c     
+c     enhancement model (1: vector, 2: strangeness, 3: baryons)
+      IPAR(94) = 1
+c     exchange rate
+      PAR(75) = 0.8
+c     power of xf weight (0: no weighting (all weight=1), 1: weight = xf)
+      PAR(159) = 0.4
+c     energy threshold (GeV center-of-mass)
+      PAR(160) = 5.      
+c     energy dependence (0:none, 1: logarithmic)
+      IPAR(96) = 1
+c     which projectiles (0:all, 1: mesons only)
+      IPAR(97) = 1
+
+      WRITE(*,*),'===================================================='
+      WRITE(*,*),'=  RHO0 ENHANCEMENT 2                              ='
+      WRITE(*,*),'===================================================='
+
+      END
+      
+C=======================================================================
+      
+      SUBROUTINE VECTOR_BARYON_INI
+
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      IMPLICIT INTEGER(I-N)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+c     muon extension via vector (rho0) enhancement
+c     
+c     enhancement model (1: vector, 2: strangeness, 3: baryons)
+      IPAR(94) = 4
+c     exchange rate
+      PAR(75) = 0.8
+c     power of xf weight (0: no weighting (all weight=1), 1: weight = xf)
+      PAR(159) = 0.4            
+c     energy threshold (GeV center-of-mass)
+      PAR(160) = 5.      
+c     energy dependence (0:none, 1: logarithmic)
+      IPAR(96) = 1
+c     which projectiles (0:all, 1: mesons only)
+      IPAR(97) = 1
+
+c     baryon part
+c     exchange rate
+      PAR(161) = 0.5
+c     power of xf weight (0: no weighting (all weight=1), 1: weight = xf)
+      PAR(163) = 0.7            
+c     energy threshold (GeV center-of-mass)
+      PAR(162) = 5.      
+c     which projectiles (0:all, 1: mesons only)
+      IPAR(98) = 0      
+
+      WRITE(*,*),'===================================================='
+      WRITE(*,*),'=  RHO0 & BARYON ENHANCEMENT 1                     ='
+      WRITE(*,*),'===================================================='
+
+      END
+      
+C=======================================================================
+
+      SUBROUTINE STRANGE_INI
+
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      IMPLICIT INTEGER(I-N)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+c     muon extension via strangeness enhancement
+c     
+c     enhancement model (1: vector, 2: strangeness, 3: baryons)
+      IPAR(94) = 20
+c     energy dependence (0:none, 1: logarithmic)
+      IPAR(96) = 1
+c     which projectiles (0:all, 1: mesons only)
+      IPAR(97) = 0
+C     LE
+c     exchange rate
+      PAR(75) = 0.5
+c     power of xf weight (0: no weighting (all weight=1), 1: weight = xf)
+      PAR(159) = 0.8            
+c     energy threshold (GeV center-of-mass)
+      PAR(160) = 5.
+C     HE
+c     exchange rate
+      PAR(161) = 0.3
+c     power of xf weight (0: no weighting (all weight=1), 1: weight = xf)
+      PAR(163) = 0.            
+c     energy threshold (GeV center-of-mass)
+      PAR(162) = 13000.      
+
+      WRITE(*,*),'===================================================='
+      WRITE(*,*),'=  STRANGENESS ENHANCEMENT 3  LE & HE              ='
+      WRITE(*,*),'===================================================='
+      END
+      
+C=======================================================================
+      
       SUBROUTINE PAR_INI
 
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -541,6 +839,7 @@ C=======================================================================
       COMMON /XSCTN_FIT/ PARS( 50 , 2 )
       DOUBLE PRECISION STR_mass_val, STR_mass_val_hyp, STR_mass_sea
       COMMON /S_CUTOFF/ STR_mass_val, STR_mass_val_hyp, STR_mass_sea
+      COMMON /S_STAR/ IMOD
       SAVE
       DATA (PARS(K,1),K=    1,NPARFIT) /
      &3.9223D+01,4.2055D+01,5.0913D-02,-4.0000D-01,2.0000D-01,
@@ -554,9 +853,11 @@ C=======================================================================
      &2.0000D+00,2.9191D+00,2.5000D-01,5.4000D-01,1.0000D+00,
      &-8.8000D-01,5.4000D-01,5.4895D-01,9.0000D-01,5.4000D-01,
      &6.5000D-02,9.0000D-01/
-c
+      DATA IMOD /4/
+c     
 c     adjusted central particle production
 c     23rc5.4frgB1 aka retune5 aka Sibyll 2.3.5
+c     including muon boost. parameters: ipar45, ipar94, par75, par159, par160
       PAR(1) = 4.0000D-02
       PAR(2) = 2.5000D-01
       PAR(3) = 5.0000D-01
@@ -631,7 +932,7 @@ c     23rc5.4frgB1 aka retune5 aka Sibyll 2.3.5
       PAR(72) = 3.8000D-01
       PAR(73) = 5.0000D-01
       PAR(74) = 6.0000D-01
-      PAR(75) = 0.0000D+00
+      PAR(75) = 0.0000D+00      ! rate for ad-hoc exchange of pion w. rho, strange particles or baryons
       PAR(76) = 3.5298D-01
       PAR(77) = 7.0000D-01
       PAR(78) = 2.0000D+00
@@ -715,11 +1016,11 @@ c     23rc5.4frgB1 aka retune5 aka Sibyll 2.3.5
       PAR(156) = 5.0000D-01
       PAR(157) = 8.0000D-01
       PAR(158) = 0.0000D+00
-      PAR(159) = 0.0000D+00
-      PAR(160) = 0.0000D+00
-      PAR(161) = 0.0000D+00
-      PAR(162) = 0.0000D+00
-      PAR(163) = 0.0000D+00
+      PAR(159) = 0.0000D-00     ! exponent of xf weighting for enhancement
+      PAR(160) = 0.0000D+00     ! start energy for enhancements in CoM and GeV
+      PAR(161) = 0.0000D+00     ! 2nd HE rate
+      PAR(162) = 0.0000D+00     ! start energy for HE enhancements in CoM and GeV
+      PAR(163) = 0.0000D+00     ! exponent of xf weighting for enhancement at HE
       PAR(164) = 0.0000D+00
       PAR(165) = 0.0000D+00
       PAR(166) = 0.0000D+00
@@ -801,7 +1102,7 @@ c     23rc5.4frgB1 aka retune5 aka Sibyll 2.3.5
       IPAR(42) = 3
       IPAR(43) = 1
       IPAR(44) = 0
-      IPAR(45) = 0
+      IPAR(45) = 0  ! model for exchange pi0 with rho0, rate is par(75), switch between before or after decay is ipar(94)
       IPAR(46) = 2
       IPAR(47) = 6
       IPAR(48) = 1
@@ -850,10 +1151,11 @@ c     23rc5.4frgB1 aka retune5 aka Sibyll 2.3.5
       IPAR(91) = 0
       IPAR(92) = 1
       IPAR(93) = 1
-      IPAR(94) = 0
-      IPAR(95) = 0
-      IPAR(96) = 0
-      IPAR(97) = 0
+c     ! force vectors (1) or strangeness (2) or baryons (3) after decays have been processed, rate is par75      
+      IPAR(94) = 0              
+      IPAR(95) = 1
+      IPAR(96) = 0              ! energy dependence of enhancements (0: none, 1: logarithmic) threshold in par160
+      IPAR(97) = 0              ! enable enhancement for meson projectiles only
       IPAR(98) = 0
       IPAR(99) = 0
       IPAR(100) = 0
@@ -1074,7 +1376,7 @@ C...  Splitting parameters
      &     24*3.D0,76*0.D0,8*2.D0,40*0.D0,12*2.D0,40*0.D0,24*3.D0,
      &     40*0.D0/
 C...Parameters of flavor formation 
-c     last in use: 158
+c     last in use: 160
       DATA PAR/0.04D0,0.3D0,0.3D0,0.14D0,0.3D0,0.3D0,0.15D0,0.D0,7.D0, ! 10
      &     2*0.D0,0.9D0,0.2D0,4*0.04D0,0.5D0,0.8D0,0.5D0,              ! 20 
      &     0.8D0,6.D0,0.5D0,0.004D0,5*0.D0,0.7D0,                      ! 30
@@ -1091,12 +1393,12 @@ c     last in use: 158
      &     0.0001D0,0.5D0,31.10362D0,-15.29012D0,6.5D0,                ! 135
      &     0.D0,4 *0.D0,                                               ! 140
      &     1.D0,0.D0,0.5D0,0.D0,0.5D0,0.D0,0.3D0,0.8D0,0.08D0,0.004D0, ! 150
-     &     2.D0,1.D0,1.D0,1.D0,1.D0,1.D0,0.D0,1.D0,2*0.D0,             ! 160      
+     &     2.D0,1.D0,1.D0,1.D0,1.D0,1.D0,0.D0,1.D0,1.D0,0.D0,          ! 160      
      &     40*0.D0/                                                    ! 200
-c     last in use:93
+c     last in use:98
       DATA IPAR /9*0,1,0,1,8*0,20*0,    ! 40
      &     9*0,0,2,9*0,                 ! 60
-     &     100,25*0,2,1,0,0,0,1,0,7*0/  ! 100   
+     &     100,25*0,2,1,0,0,0,1,0,0,0,0,0,0,2*0/  ! 100   
 
 C...Fragmentation of nuclei
       DATA KODFRAG /0/
@@ -4012,7 +4314,7 @@ c     similar to pythia
          IF(ZMAX.GT.0.85D0) 
      +        ZDIV=ZMAX-0.6D0/FB**2+(FA/FB)*dLOG((0.01D0+FA)/FB)
 C...  Choice if z, preweighted for peaks at low or high z
- 100     Z=S_RNDM(0)
+ 100     Z=max(S_RNDM(0),1.e-8)
          IDIV=1
          FPRE=1.D0
          IF (ZMAX.LT.0.1D0)  THEN
@@ -7115,21 +7417,66 @@ c     Sigmas stable
          IDB(i) = -abs(IDB(i))
       enddo
       IDB(35) = -abs(IDB(35))
-C     Eta stable
-cfr   in reasonable contex eta is never stable !
-      
-cdh  initializing the pythia routines is done in corsika/SIBINI
-c     IF(IPAR(44).eq.1)THEN
-c     use pythia decay routine
-c        if (ndebug .gt. 0 ) write(LUN,*) ' using PYTHIA decay routine...'
-c        CALL PYDEC_INI
-c     endif
 
       if (ndebug .gt. 0 ) 
      *       write(lun,*)' ------------------------------------------'
       end
 C=======================================================================
 
+      SUBROUTINE DEC_INI_EXT
+
+C-----------------------------------------------------------------------
+C     decay initialization routine for muon enhancements
+C     sets which particles should decay and wich should be stable
+C-----------------------------------------------------------------------
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      IMPLICIT INTEGER(I-N)
+
+      DOUBLE PRECISION CBR
+      INTEGER KDEC,LBARP,IDB
+      COMMON /S_CSYDEC/ CBR(223+16+12+8), KDEC(1338+6*(16+12+8)),
+     &     LBARP(99), IDB(99)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
+      SAVE
+      
+      if ( ndebug .gt. 0 ) then
+        write(lun,*)' -----------------------------------------'
+        write(lun,*)' SIBYLL DEC_INI: setting particle decays!'
+        write(lun,*)'  to be used in stand-alone SIBYLL only ! '
+        write(lun,*)' -----------------------------------------'
+      endif
+
+C...  Make all particles unstable
+      DO J=1,99
+         IDB(J) = abs(IDB(J))
+      ENDDO
+      
+C...  Definition of stable particles (muon, pions, kaons)
+      DO J=4,12
+         IDB(J) = -abs(IDB(J))
+      ENDDO
+
+C     Lambda/Anti-lambda stable
+      if (ndebug .gt. 0 ) write(lun,*)' making LAMBDA stable..'
+      IDB(39) = -abs(IDB(39))
+
+c     Charged sigmas stable
+      if (ndebug .gt. 0 ) write(lun,*)' making SIGMAs stable..'
+      IDB(34) = -abs(IDB(34))
+      IDB(36) = -abs(IDB(36))
+
+      if (ndebug .gt. 0 ) 
+     *       write(lun,*)' ------------------------------------------'
+      end
+C=======================================================================
+      
       SUBROUTINE STRING_FRAG_4FLV
      +     (E0,IFL1,IFL2,PX1,PY1,PX2,PY2,IFBAD,IFQRK)
 
@@ -10313,7 +10660,7 @@ C     f = 1/(1+exp((x-x0)/alpha))
 C-----------------------------------------------------------------------
       IMPLICIT NONE
 c     externals
-      DOUBLE PRECISION XARG,X0,XALPH
+      DOUBLE PRECISION XARG,X0,XALPH,XE
 c     COMMONs
 
 C--------------------------------------------------------------------
@@ -10331,7 +10678,8 @@ C--------------------------------------------------------------------
       SAVE
 
 c     internals
-      fermi=1.D0+exp((xarg-x0)/xalph)
+      xe = max((xarg-x0)/xalph,-10.D0)
+      fermi=1.D0+exp(xe)
       fermi=1.D0/fermi
       END
 C=======================================================================
@@ -10591,7 +10939,8 @@ C--------------------------------------------------------------------
      &     PAR1_def,PAR24_def,PAR3_def,PAR2_1_def,PAR2_2_def,PAR5_def,
      &     PAR6_def,PAR24_2_def,XM,QMASS,DBETJ      
       DIMENSION PST(5),PBM(5),PTG(5)
-      INTEGER IST,ITGST,IBMST,IPID,IFLB,IFLT,NOLD,IS,IFL1,IFBAD,IDM
+      INTEGER IST,ITGST,IBMST,IPID,IFLB,IFLT,NOLD,IS,IFL1,IFBAD,IDM,
+     &     ipar82_def
       SAVE
       DATA PGG /1.D0/
 
@@ -10674,7 +11023,15 @@ c     change vector rate and kaon vector rate
          PAR(6) = PAR(74)       ! P_K* from K
          
       ENDIF
-
+      
+C...  switch off pi0 suppression
+c     should only be applied for remnant, diff and valence
+c     in case of meson projectile
+      ipar82_def = IPAR(82)
+      IF(IPAR(95).eq.1)THEN
+         IPAR(82) = 0
+      ENDIF
+      
       NOLD = NP
       IF ( (E0.LT.8.D0) .OR. (S_RNDM(0).GT.PGG)) THEN
 C...  one string case, q - qbar
@@ -10725,7 +11082,8 @@ c     leading charm fraction
             PAR(2) = PAR2_1_def
             PAR(5) = PAR5_def
             PAR(6) = PAR6_def
-            PAR(3) = PAR3_def 
+            PAR(3) = PAR3_def
+            IPAR(82) = ipar82_def       
             RETURN
          ENDIF
       ELSE
@@ -10744,7 +11102,8 @@ c      DBETJ = (DX1J-DX2J)/(DX1J+DX2J)
       PAR(2) = PAR2_1_def
       PAR(5) = PAR5_def
       PAR(6) = PAR6_def
-      PAR(3) = PAR3_def 
+      PAR(3) = PAR3_def
+      IPAR(82) = ipar82_def  
       IBAD = 0
       END
 C=======================================================================
@@ -12327,7 +12686,770 @@ c     scale for interactions other than first if Nw>1
       END
 C=======================================================================
 
-      SUBROUTINE FORCE_VECTORS(XRATE,N1,N2)
+      SUBROUTINE FORCE_BARYONS(XRATE1,IEDEP,ETHR,XFEXP,IPROJ,N1,N2)
+
+C-----------------------------------------------------------------------
+      IMPLICIT NONE
+
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
+C     The final particle output is contained in COMMON /S_PLIST/    
+C     NP           : number of final particles
+C     P(1:NP, 1:5) : 4-momenta + masses of the final particles 
+C     LLIST (1:NP) : codes of final particles
+      DOUBLE PRECISION P
+      INTEGER NP,LLIST,NP_max
+      PARAMETER (NP_max=8000)
+      COMMON /S_PLIST/ P(NP_max,5), LLIST(NP_max), NP
+      INTEGER NW_max
+      PARAMETER (NW_max = 20)
+      INTEGER LLIST1
+      COMMON /S_PLIST1/ LLIST1(8000)
+C--------------------------------------------------------------------
+C     SIBYLL common blocks containing event information       \FR'14
+C--------------------------------------------------------------------
+
+C     EVENT INFO COMMON
+C     contains overall interaction properties, like
+C     SQS : center-of-mass energy
+C     S   :         "       "     squared
+C     PTmin : low pt cut of QCD cross section, 
+C             i.e. minimal pt of hard minijets
+C     Xmin : low-x bound for PDFs, 
+C            i.e. minimal momentum fraction of hard partons
+C     Zmin : logarithm of that
+C     KB : PID of beam hadron
+C     KT() : PID of target
+C     IAT : mass number of target
+      DOUBLE PRECISION SQS,S,PTmin,XMIN,ZMIN
+      INTEGER KB,IAT,KT
+      COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, KB, KT(NW_max), IAT
+      DOUBLE PRECISION AM,AM2
+      COMMON /S_MASS1/ AM(99), AM2(99)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+
+      INTEGER NFORIG,NPORIG,NIORIG,IPFLAG,IIFLAG,KINT
+      COMMON /S_PARTO/ NFORIG(NP_max),NPORIG(NP_max),NIORIG(NP_max),
+     &IPFLAG,IIFLAG,KINT
+
+C--------------------------------------------------------------------
+C     SIBYLL utility common blocks containing constants       \FR'14
+C--------------------------------------------------------------------
+      DOUBLE PRECISION EPS3,EPS5,EPS8,EPS10
+      COMMON /SIB_EPS/ EPS3,EPS5,EPS8,EPS10
+
+      DOUBLE PRECISION PI,TWOPI,CMBARN
+      COMMON /SIB_CST/ PI,TWOPI,CMBARN
+
+      DOUBLE PRECISION FACN
+      DIMENSION FACN(3:10)
+      COMMON /SIB_FAC/ FACN
+
+c     external types
+      double precision xrate1, ethr, xfexp
+      integer n1,n2,iedep,iproj
+
+c     internal types
+      integer ncomb
+      parameter (ncomb=7)
+      integer kk,i1,i2,i3,kba,ineutron,incrmax,incr1,incr2,id1,id2,
+     &     iflip,icount,ipart,icomb,ismeson
+      DIMENSION ipart(ncomb,3),ismeson(99)
+      double precision S_RNDM,xrate,ecm_max,pmin,xmass2,th
+     &     ,ptot,ptmp,p1,p2,p3,gamma,gambet,xm,enew,pnew,ph,pn,p1new,
+     &     p2new,xf,xff,p1p,p1pt,sthp,cthp,pt1p,p1newt,p2newt,p2p,p2pt,
+     &     p3p,p3pt,pt2p,pts,pz2,px,py
+      
+      DIMENSION ptot(5),ptmp(5),p1(5),p2(5),p2p(4),p3p(4),
+     &     p3(5),gambet(4),p1new(5),p2new(5),pn(4),p1p(4)
+      EQUIVALENCE (gambet(4),gamma)
+      SAVE
+      DATA IPART /6,7,8,6,6,7,8, 6,8,7,6,7,8,7, 0,0,0,6,8,6,6/
+      DATA ISMESON /5*0,7*1,87*0/
+      DATA ECM_MAX /1.36987D+05/ ! 10^19eV in ecm and gev for protons
+      DATA PMIN /0.05D0/          ! minimal momentum in GeV
+      
+      KBA = IABS(KB)
+      
+c     energy dependence
+      if(iedep.eq.0) then
+         xrate = xrate1
+      elseif(iedep.eq.1)then
+         xrate=xrate1 * max(0.D0,log(SQS/ethr)/log(ecm_max/ethr))
+      endif
+      if(iproj.eq.1) then
+c     meson projectiles only
+         if(ismeson(kba).ne.1) return         
+      endif      
+
+c      CALL SIB_LIST(6)
+c      print*,'xrate', xrate
+      icount = 0
+c     check if candidate (pi0, pi+, pi-)      
+c      icomb = 1
+c     loop over particle stack
+      DO I1=N1,N2
+c         print*,'checking index:',I1
+         DO icomb=1,ncomb
+c            print*,'**** checking index:',I1
+c            print*,'combination:',icomb
+            IF(llist(I1).eq.ipart(icomb,1)) then
+c     next neighbours         
+               incrmax = max(0,min(5,MIN(N2,NP)-I1))
+c               print*,'max increment:',incrmax
+               do incr1=1,incrmax
+                  I2 = I1 + incr1
+                  if(llist(I2).ne.ipart(icomb,2)) goto 300 ! next particle2
+                  if(ipart(icomb,3).eq.0)then
+c     two-particle combination
+c                     print*,' 2 particle combination found!'
+c                     print*,' indices:' ,i1, i2
+c                     print*,' ids:', llist(i1), llist(i2)
+c     sufficient mass?
+                     do kk=1,5
+                        p1(kk) = p(i1,kk)
+                        p2(kk) = p(i2,kk)
+                        p3(kk) = 0.D0
+                     enddo
+                     call ADD_4VECS(P1,P2,ptot)
+                     call four_length(ptot,xmass2)
+                     if(xmass2.le.4*(pmin**2+am2(13))) then
+c                       print*,'insufficient mass!'
+                        goto 300 ! next particle2
+                     else
+                        goto 500 ! implement exchange
+                     endif
+                     
+                  endif
+                  do incr2=1,incrmax
+                     if(incr1.eq.incr2) goto 400 ! next particle3
+                     I3 = I1 + incr2
+c     print*,'checking..',i1,i2,i3
+                     if(llist(I3).ne.ipart(icomb,3)) goto 400 ! next particle3
+c     pi0,pi+,pi- combination found!
+c                     print*,' combination found!'
+c                     print*,' indices:' ,i1, i2, i3
+c                     print*,' ids:', llist(i1), llist(i2), llist(i3)
+c     sufficient mass?
+                     do kk=1,5
+                        p1(kk) = p(i1,kk)
+                        p2(kk) = p(i2,kk)
+                        p3(kk) = p(i3,kk)
+                     enddo
+                     call ADD_4VECS(P1,P2,ptmp)
+                     call ADD_4VECS(ptmp,P3,ptot)
+                     call four_length(ptot,xmass2)
+                     if(xmass2.le.4*(pmin**2+am2(13))) then
+c                        print*,'insufficient mass!'
+                        goto 400 ! next particle3
+                     endif                     
+ 500                 continue                     
+                     xm = sqrt(xmass2)
+c                     print*,'-------'
+c                     print*,' sufficient mass! mass', xm                     
+c     calc. initial momenta in 2-particle center-of-mass (eg. p1'--> p1p)
+c     use these to calculate the angles which then define pt after the exchange
+                     do kk=1,4
+                        gambet(kk) = ptot(kk)/xm
+                     enddo
+c                     print*,'ptot:', ptot
+c                     print*,'gambet',gambet
+CC                     call sib_altra(gambet(4),-gambet(1),-gambet(2)
+CC     &                    ,-gambet(3),p1(1),p1(2),p1(3),p1(4),
+CC     &                    p1pt,p1p(1),p1p(2),p1p(3),p1p(4))
+CC                     call sib_altra(gambet(4),-gambet(1),-gambet(2)
+CC     &                    ,-gambet(3),p2(1),p2(2),p2(3),p2(4),
+CC     &                    p2pt,p2p(1),p2p(2),p2p(3),p2p(4))
+CC                     call sib_altra(gambet(4),-gambet(1),-gambet(2)
+CC     &                    ,-gambet(3),p3(1),p3(2),p3(3),p3(4),
+CC     &                    p3pt,p3p(1),p3p(2),p3p(3),p3p(4))                     
+c                     print*,'p1:',p1
+CC                     pt1p = sqrt(p1p(1)**2+p1p(2)**2)
+CC                     pt2p = sqrt(p2p(1)**2+p2p(2)**2)
+c                     print*,'p1p:',p1p,sqrt(p1p(4)**2-p1p(3)**2-pt1p**2)
+c                     print*,'p2:',p2
+c                     print*,'p2p:',p2p
+c                     print*,'p3:',p3
+c                     print*,'p3p:',p3p
+c                     print*,'pt prime, p prime:',pt1p,p1pt
+c                     print*,'pt 2 prime, p 2 prime:',
+c     &                    pt2p,p2pt
+c                     print*,'pt 3 prime, p 2 prime:',
+c     &                    sqrt(p3p(1)**2+p3p(2)**2),p3pt                     
+CC                     sthp = min(pt1p/p1pt,pt2p/p2pt) ! sin(theta')
+CC                     cthp = max(p1p(3)/p1pt,p2p(3)/p2pt) ! cos(theta')
+c                     print*,'sthp,cthp:', sthp, cthp, acos(cthp)*180./PI       
+c     realize exchange?
+                     xf = 2.D0*p(i1,3)/SQS
+                     xff = abs(xf)**xfexp
+                     IF(S_RNDM(I1).lt.xff.and.S_RNDM(I1).lt.xrate)then
+                        icount = icount + 1
+c                        print*,' replacing with baryon pair'
+                        ineutron = int(0.5D0+S_RNDM(I2))
+c                        print*,' ineutron:', ineutron
+                        if(xmass2.le.4*(pmin**2+am2(14))) ineutron = 0 ! neutron not possible
+                        iflip = -1 + 2*int(0.5D0 + S_RNDM(I3))
+                        id1 = (13+ineutron)*iflip
+                        id2 = (-13-ineutron)*iflip
+                        if(ndebug.gt.0)then
+                           write(lun,*) 'force baryons:'
+                           if(ipart(icomb,3).eq.0)then
+                              write(lun,*) 'replacing indices:' ,i1, i2
+                              write(lun,*) 'ids:', llist(i1), llist(i2)
+                           else
+                              write(lun,*) 'replacing indices:',i1,i2,i3
+                              write(lun,*) 'ids:', llist(i1), llist(i2),
+     &                             llist(i3)
+                           endif
+                           write(lun,*)' with baryon pair!'
+                        endif
+c                        print*,' new ids: ', id1, id2
+c     determine momenta of new particles and write to stack
+                        enew = xm/2.D0
+                        pnew = sqrt(xmass2/4.D0-am2(abs(id1)))
+                        ph = S_RNDM(I2)*TWOPI
+c     diq pt
+ 80                     call ptdis_4flv(12,pn(1),pn(2))
+                        call ptdis_4flv(1,px,py)
+                        pn(1) = 1.8*pn(1) + px
+                        pn(2) = 1.8*pn(2) + py
+                        pts = pn(1)**2+pn(2)**2
+                        pz2 = pnew**2-pts
+                        if(pz2.lt.0.D0) goto 80                        
+                        pn(1) = cos(ph) * sqrt(pts)
+                        pn(2) = sin(ph) * sqrt(pts)
+                        pn(3) = sqrt(pz2)
+                        pn(4) = enew
+c                        print*,'enew,pnew:', enew,pnew
+c                        print*,'p1n',pn
+c                        print*,'ptn',pnew*sthp,sqrt(pn(1)**2+pn(2)**2)
+c                        print*,'m2',enew**2-pnew**2
+c                        print*,'m2 vec:',pn(4)**2-pn(1)**2-pn(2)**2
+c     &                       -pn(3)**2
+c                        print*,'gamma:', gamma
+                        p1new(5) = am(abs(id1))
+                        p2new(5) = am(abs(id2))
+                        call sib_altra(gamma,
+     &                       gambet(1),gambet(2),gambet(3),
+     &                       pn(1),pn(2),pn(3),pn(4),
+     &                       p1newt,p1new(1),p1new(2),p1new(3),p1new(4))
+                        call sib_altra(gamma,
+     &                       gambet(1),gambet(2),gambet(3),
+     &                       -pn(1),-pn(2),-pn(3),pn(4),
+     &                       p2newt,p2new(1),p2new(2),p2new(3),p2new(4))          
+c                        print*,'p1new:' , p1new
+c                        print*,'p2new:' , p2new
+c                        call four_length(p1new,xm)
+c                        print*,'p1mass_2:', xm, am2(abs(id1))
+c                        sqrt(p1new(4)**2-p1new(1)**2
+c     &                       -p1new(2)**2-p1new(3)**2)
+c                        call four_length(p2new,xm)
+c                        print*,'p2mass_2:', xm, am2(abs(id2))
+
+c                        print*,'pt1 :', sqrt(p1(1)**2+p1(2)**2)
+c                        print*,'pt2 :', sqrt(p2(1)**2+p2(2)**2)
+                        
+c                        print*,'pt1 new:', sqrt(p1new(1)**2+p1new(2)**2)
+c                        print*,'pt2 new:', sqrt(p2new(1)**2+p2new(2)**2)
+c                        if(sqrt(p2new(1)**2+p2new(2)**2).gt.80)stop
+c                        if(sqrt(p1new(1)**2+p1new(2)**2).gt.80)stop
+c     write to stack
+                        llist(i1) = id1
+                        llist(i2) = id2
+                        do kk=1,5
+                           p(i1,kk) = p1new(kk)
+                           p(i2,kk) = p2new(kk)
+                        enddo
+c     3-->2 exchange! reduce stack by moving last particle to position 3
+                        if(ipart(icomb,3).ne.0)then
+                           llist(i3) = llist(NP)
+                           llist1(i3) = llist1(NP)
+                           nporig(i3) = nporig(NP)
+                           nforig(i3) = nforig(NP)
+                           do kk=1,5
+                              p(i3,kk) = p(NP,kk)
+                           enddo                     
+                           NP = NP - 1
+                        endif
+                     endif      ! end realize exchange?
+                     goto 100   ! next index I1
+ 400                 continue
+                  enddo         ! end I3
+ 300              continue
+               enddo            ! end I2
+            ENDIF               ! check I1?
+ 200        continue            
+         ENDDO                  ! end combinations
+ 100     continue
+      ENDDO ! end i1
+c      print*,icount, 'replacements done'
+      if(ndebug.ge.5) CALL SIB_LIST(6)
+      END
+C=======================================================================
+
+      SUBROUTINE FORCE_STRANGE(XRATE1,IEDEP,ETHR,XFEXP,IPROJ,N1,N2)
+
+C-----------------------------------------------------------------------
+      IMPLICIT NONE
+
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
+C     The final particle output is contained in COMMON /S_PLIST/    
+C     NP           : number of final particles
+C     P(1:NP, 1:5) : 4-momenta + masses of the final particles 
+C     LLIST (1:NP) : codes of final particles
+      DOUBLE PRECISION P
+      INTEGER NP,LLIST,NP_max
+      PARAMETER (NP_max=8000)
+      COMMON /S_PLIST/ P(NP_max,5), LLIST(NP_max), NP
+      INTEGER NW_max
+      PARAMETER (NW_max = 20)
+      INTEGER LLIST1
+      COMMON /S_PLIST1/ LLIST1(8000)
+C--------------------------------------------------------------------
+C     SIBYLL common blocks containing event information       \FR'14
+C--------------------------------------------------------------------
+
+C     EVENT INFO COMMON
+C     contains overall interaction properties, like
+C     SQS : center-of-mass energy
+C     S   :         "       "     squared
+C     PTmin : low pt cut of QCD cross section, 
+C             i.e. minimal pt of hard minijets
+C     Xmin : low-x bound for PDFs, 
+C            i.e. minimal momentum fraction of hard partons
+C     Zmin : logarithm of that
+C     KB : PID of beam hadron
+C     KT() : PID of target
+C     IAT : mass number of target
+      DOUBLE PRECISION SQS,S,PTmin,XMIN,ZMIN
+      INTEGER KB,IAT,KT
+      COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, KB, KT(NW_max), IAT
+      DOUBLE PRECISION AM,AM2
+      COMMON /S_MASS1/ AM(99), AM2(99)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+
+      INTEGER NFORIG,NPORIG,NIORIG,IPFLAG,IIFLAG,KINT
+      COMMON /S_PARTO/ NFORIG(NP_max),NPORIG(NP_max),NIORIG(NP_max),
+     &IPFLAG,IIFLAG,KINT
+
+C--------------------------------------------------------------------
+C     SIBYLL utility common blocks containing constants       \FR'14
+C--------------------------------------------------------------------
+      DOUBLE PRECISION EPS3,EPS5,EPS8,EPS10
+      COMMON /SIB_EPS/ EPS3,EPS5,EPS8,EPS10
+
+      DOUBLE PRECISION PI,TWOPI,CMBARN
+      COMMON /SIB_CST/ PI,TWOPI,CMBARN
+
+      DOUBLE PRECISION FACN
+      DIMENSION FACN(3:10)
+      COMMON /SIB_FAC/ FACN
+
+c     external types
+      double precision xrate1, ethr, xfexp
+      integer n1,n2,iedep,iproj
+
+c     internal types
+      integer ncomb
+      parameter (ncomb=7)
+      integer kk,i1,i2,i3,kba,ineutral,incrmax,incr1,incr2,id1,id2,
+     &     iflip,icount,ipart,icomb,ismeson
+      DIMENSION ipart(ncomb,3),ismeson(99)
+      double precision S_RNDM,xrate,ecm_max,pmin,xmass2,pts
+     &     ,ptot,ptmp,p1,p2,p3,gamma,gambet,xm,enew,pnew,ph,pn,p1new,
+     &     p2new,xf,xff,p1newt,p2newt,sthp,cthp,p1p,p1pt,ptp,px,py,pz2
+      
+      DIMENSION ptot(5),ptmp(5),p1(5),p2(5),p1p(4),
+     &     p3(5),gambet(4),p1new(5),p2new(5),pn(4)
+      EQUIVALENCE (gambet(4),gamma)
+      SAVE
+      DATA IPART /6,7,8,6,6,7,8, 6,8,7,6,7,8,7, 0,0,0,6,8,6,6/
+      DATA ISMESON /5*0,7*1,87*0/
+      DATA ECM_MAX /1.36987D+05/ ! 10^19eV in ecm and gev for protons
+      DATA PMIN /0.05D0/          ! minimal momentum in GeV
+      
+      KBA = IABS(KB)
+      
+c     energy dependence
+      if(iedep.eq.0) then
+         xrate = xrate1
+      elseif(iedep.eq.1)then
+         xrate=xrate1 * max(0.D0,log(SQS/ethr)/log(ecm_max/ethr))
+      endif
+      if(IPROJ.eq.1) then
+c     meson projectiles only
+         if(ismeson(kba).ne.1) return         
+      endif      
+
+c      CALL SIB_LIST(6)
+c      print*,'xrate', xrate
+      icount = 0
+c     check if candidate (pi0, pi+, pi-)      
+c      icomb = 1
+c     loop over particle stack
+      DO I1=N1,N2
+c         print*,'checking index:',I1
+         DO icomb=1,ncomb
+c            print*,'**** checking index:',I1
+c            print*,'combination:',icomb
+            IF(llist(I1).eq.ipart(icomb,1)) then
+c     next neighbours         
+               incrmax = max(0,min(5,MIN(N2,NP)-I1))
+c               print*,'max increment:',incrmax
+               do incr1=1,incrmax
+                  I2 = I1 + incr1
+                  if(llist(I2).ne.ipart(icomb,2)) goto 300 ! next particle2
+                  if(ipart(icomb,3).eq.0)then
+c     two-particle combination
+c                     print*,' 2 particle combination found!'
+c                     print*,' indices:' ,i1, i2
+c                     print*,' ids:', llist(i1), llist(i2)
+c     sufficient mass?
+                     do kk=1,5
+                        p1(kk) = p(i1,kk)
+                        p2(kk) = p(i2,kk)
+                     enddo
+                     call ADD_4VECS(P1,P2,ptot)
+                     call four_length(ptot,xmass2)
+                     if(xmass2.le.4*(pmin**2+am2(9))) then
+c                       print*,'insufficient mass!'
+                        goto 300 ! next particle2
+                     else
+                        goto 500 ! implement exchange
+                     endif
+                     
+                  endif
+                  do incr2=1,incrmax
+                     if(incr1.eq.incr2) goto 400 ! next particle3
+                     I3 = I1 + incr2
+c                     print*,'checking..',i1,i2,i3
+                     if(llist(I3).ne.ipart(icomb,3)) goto 400 ! next particle3
+c     pi0,pi+,pi- combination found!
+c                     print*,' combination found!'
+c                     print*,' indices:' ,i1, i2, i3
+c                     print*,' ids:', llist(i1), llist(i2), llist(i3)
+c     sufficient mass?
+                     do kk=1,5
+                        p1(kk) = p(i1,kk)
+                        p2(kk) = p(i2,kk)
+                        p3(kk) = p(i3,kk)
+                     enddo
+                     call ADD_4VECS(P1,P2,ptmp)
+                     call ADD_4VECS(ptmp,P3,ptot)
+                     call four_length(ptot,xmass2)
+                     if(xmass2.le.4*(pmin**2+am2(13))) then
+c                        print*,'insufficient mass!'
+                        goto 400 ! next particle3
+                     endif
+ 500                 continue                     
+                     xm = sqrt(xmass2)                    
+c     calc. initial momenta in 2-particle center-of-mass (eg. p1'--> p1p)
+c     use these to calculate the angles which then define pt after the exchange
+                     do kk=1,4
+                        gambet(kk) = ptot(kk)/xm
+                     enddo
+CC                     call sib_altra(gambet(4),-gambet(1),-gambet(2)
+CC     &                    ,-gambet(3),p1(1),p1(2),p1(3),p1(4),
+CC     &                    p1pt,p1p(1),p1p(2),p1p(3),p1p(4))
+CC                     ptp = sqrt(p1p(1)**2+p1p(2)**2)
+CC                     sthp = ptp/p1pt ! sin(theta')
+CC                     cthp = p1p(3)/p1pt ! cos(theta')                     
+c     realize exchange?
+                     xf = 2.D0*p(i1,3)/SQS
+                     xff = abs(xf)**xfexp
+                     IF(S_RNDM(I1).lt.xff.and.S_RNDM(I1).lt.xrate)then
+                        icount = icount + 1
+c                        print*,' replacing with new pair'
+                        ineutral = int(0.5D0+S_RNDM(I2)) ! 0 or 1
+c                        print*,' ineutral:', ineutral
+                        if(xmass2.le.4*(pmin**2+am2(21))) ineutral = 0 ! neutron not possible
+                        iflip = int(0.5D0+S_RNDM(I3)) ! 0 or 1
+                        if(0.5D0.lt.S_RNDM(I1).and.
+     &                       xmass2.gt.4*(pmin**2+am2(28)))then
+                           if(xmass2.le.4*(pmin**2+am2(30)))
+     &                          ineutral = 0 ! neutron not possible
+                           id1 = 28+iflip + 2*ineutral ! k*+:28 k*-: 29 k*0: 30 k*0bar: 31
+                           id2 = 29-iflip + 2*ineutral
+                        else
+                           id1 = 9+iflip + 12*ineutral ! k+:9 k-: 10 k0: 21 k0bar: 22
+                           id2 = 10-iflip + 12*ineutral                           
+                        endif                           
+c                        print*,' new ids: ', id1, id2
+c     determine momenta of new particles and write to stack
+                        enew = xm/2.D0
+                        pnew = sqrt(xmass2/4.D0-am2(abs(id1)))                        
+                        ph = S_RNDM(I2)*TWOPI
+c     diq pt
+ 80                     call ptdis_4flv(3,pn(1),pn(2))
+                        call ptdis_4flv(1,px,py)
+                        pn(1) = 1.8*pn(1) + px
+                        pn(2) = 1.8*pn(2) + py
+                        pts = pn(1)**2+pn(2)**2
+                        pz2 = pnew**2-pts
+                        if(pz2.lt.0.D0) goto 80                        
+                        pn(1) = cos(ph) * sqrt(pts)
+                        pn(2) = sin(ph) * sqrt(pts)
+                        pn(3) = sqrt(pz2)
+                        pn(4) = enew                        
+                       call sib_altra(gamma,
+     &                       gambet(1),gambet(2),gambet(3),
+     &                       pn(1),pn(2),pn(3),pn(4),
+     &                       p1newt,p1new(1),p1new(2),p1new(3),p1new(4))
+                        call sib_altra(gamma,
+     &                       gambet(1),gambet(2),gambet(3),
+     &                       -pn(1),-pn(2),-pn(3),pn(4),
+     &                       p2newt,p2new(1),p2new(2),p2new(3),p2new(4))          
+                        p1new(5) = am(abs(id1))
+                        p2new(5) = am(abs(id2))
+c     write to stack
+                        llist(i1) = id1
+                        llist(i2) = id2
+                        do kk=1,5
+                           p(i1,kk) = p1new(kk)
+                           p(i2,kk) = p2new(kk)
+                        enddo
+c     3-->2 exchange! reduce stack by moving last particle to position 3
+                        if(ipart(icomb,3).ne.0)then
+                           llist(i3) = llist(NP)
+                           llist1(i3) = llist1(NP)
+                           nporig(i3) = nporig(NP)
+                           nforig(i3) = nforig(NP)
+                           do kk=1,5
+                              p(i3,kk) = p(NP,kk)
+                           enddo                     
+                           NP = NP - 1
+                        endif
+                     endif      ! end realize exchange?
+                     goto 100   ! next index I1
+ 400                 continue
+                  enddo         ! end I3
+ 300              continue
+               enddo            ! end I2
+            ENDIF               ! check I1?
+ 200        continue            
+         ENDDO                  ! end combinations
+ 100     continue
+      ENDDO ! end i1
+c      print*,icount, 'replacements done'
+      if(ndebug.ge.5) CALL SIB_LIST(6)
+      END
+      
+C=======================================================================
+
+      SUBROUTINE FORCE_VECTORS1(XRATE1,IEDEP,ETHR,XFEXP,IPROJ,N1,N2)
+
+C-----------------------------------------------------------------------
+      IMPLICIT NONE
+
+      INTEGER NCALL, NDEBUG, LUN
+      COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
+C     The final particle output is contained in COMMON /S_PLIST/    
+C     NP           : number of final particles
+C     P(1:NP, 1:5) : 4-momenta + masses of the final particles 
+C     LLIST (1:NP) : codes of final particles
+      DOUBLE PRECISION P
+      INTEGER NP,LLIST,NP_max
+      PARAMETER (NP_max=8000)
+      COMMON /S_PLIST/ P(NP_max,5), LLIST(NP_max), NP
+      INTEGER NW_max
+      PARAMETER (NW_max = 20)
+      INTEGER LLIST1
+      COMMON /S_PLIST1/ LLIST1(8000)
+C--------------------------------------------------------------------
+C     SIBYLL common blocks containing event information       \FR'14
+C--------------------------------------------------------------------
+
+C     EVENT INFO COMMON
+C     contains overall interaction properties, like
+C     SQS : center-of-mass energy
+C     S   :         "       "     squared
+C     PTmin : low pt cut of QCD cross section, 
+C             i.e. minimal pt of hard minijets
+C     Xmin : low-x bound for PDFs, 
+C            i.e. minimal momentum fraction of hard partons
+C     Zmin : logarithm of that
+C     KB : PID of beam hadron
+C     KT() : PID of target
+C     IAT : mass number of target
+      DOUBLE PRECISION SQS,S,PTmin,XMIN,ZMIN
+      INTEGER KB,IAT,KT
+      COMMON /S_RUN/ SQS, S, PTmin, XMIN, ZMIN, KB, KT(NW_max), IAT
+      DOUBLE PRECISION AM,AM2
+      COMMON /S_MASS1/ AM(99), AM2(99)
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+
+      INTEGER NFORIG,NPORIG,NIORIG,IPFLAG,IIFLAG,KINT
+      COMMON /S_PARTO/ NFORIG(NP_max),NPORIG(NP_max),NIORIG(NP_max),
+     &IPFLAG,IIFLAG,KINT
+
+C--------------------------------------------------------------------
+C     SIBYLL utility common blocks containing constants       \FR'14
+C--------------------------------------------------------------------
+      DOUBLE PRECISION EPS3,EPS5,EPS8,EPS10
+      COMMON /SIB_EPS/ EPS3,EPS5,EPS8,EPS10
+
+      DOUBLE PRECISION PI,TWOPI,CMBARN
+      COMMON /SIB_CST/ PI,TWOPI,CMBARN
+
+      DOUBLE PRECISION FACN
+      DIMENSION FACN(3:10)
+      COMMON /SIB_FAC/ FACN
+
+c     external types
+      double precision xrate1, ethr, xfexp
+      integer n1,n2,iedep,iproj
+
+c     internal types
+      integer kk,i1,i2,kba,incrmax,incr1,id1,id2,
+     &     icount,ismeson,aid2
+      
+      DIMENSION ismeson(99)
+      double precision S_RNDM,xrate,ecm_max,pmin,xmass2,xmin2,
+     &     ptot,p1,p2,gamma,gambet,xm,pnew,ph,pn,p1new,
+     &     p2new,pawt,enew1,enew2,xf,xff,p2newt,p1newt,ptp,p1p,p1pt,
+     &     sthp, cthp,px,py,pts,pz2
+      
+      DIMENSION ptot(5),p1(5),p2(5),p1p(4),
+     &     gambet(4),p1new(5),p2new(5),pn(4)
+      EQUIVALENCE (gambet(4),gamma)
+      SAVE
+      DATA ISMESON /5*0,7*1,87*0/
+      DATA ECM_MAX /1.36987D+05/ ! 10^19eV in ecm and gev for protons
+      DATA PMIN /0.05D0/          ! minimal momentum in GeV
+      
+      KBA = IABS(KB)
+      
+c     energy dependence
+      if(iedep.eq.0) then
+         xrate = xrate1
+      elseif(iedep.eq.1)then
+         xrate=xrate1 * max(0.D0,log(SQS/ethr)/log(ecm_max/ethr))
+      endif
+      if(IPROJ.eq.1) then
+c     meson projectiles only
+         if(ismeson(kba).ne.1) return         
+      endif      
+
+c      CALL SIB_LIST(6)
+c      print*,'xrate', xrate
+      icount = 0
+c     loop over particle stack
+      DO I1=N1,N2
+c         print*,'**** checking index:',I1
+         IF(llist(I1).eq.6) then
+c     next neighbours         
+            incrmax = max(0,min(5,MIN(N2,NP)-I1))
+c            print*,'max increment:',incrmax
+            do incr1=1,incrmax
+               I2 = I1 + incr1
+               if(abs(llist(i2)).gt.10000) goto 300
+c     two-particle combination
+c               print*,' checking two particle combination..'
+c               print*,' indices:' ,i1, i2
+c               print*,' ids:', llist(i1), llist(i2)
+c     sufficient mass?
+               do kk=1,5
+                  p1(kk) = p(i1,kk)
+                  p2(kk) = p(i2,kk)
+               enddo
+               call ADD_4VECS(P1,P2,ptot)
+               call four_length(ptot,xmass2)
+               aid2 = mod(abs(llist(i2)),10000)
+               xmin2 = am2(27)+am2(aid2)
+               xmin2 = xmin2+2*(pmin**2+am(27)*am(aid2))
+               if(xmass2.le.xmin2) then
+c                  print*,'insufficient mass!', xmass2, xmin2
+                  goto 300      ! next particle2
+               endif
+               xm = sqrt(xmass2)
+c     print*,' sufficient mass! mass', xm, xmin2
+               do kk=1,4
+                  gambet(kk) = ptot(kk)/xm
+               enddo
+CC               call sib_altra(gambet(4),-gambet(1),-gambet(2)
+CC     &              ,-gambet(3),p1(1),p1(2),p1(3),p1(4),
+CC     &              p1pt,p1p(1),p1p(2),p1p(3),p1p(4))
+CC               ptp = sqrt(p1p(1)**2+p1p(2)**2)
+CC               sthp = ptp/p1pt  ! sin(theta')
+CC               cthp = p1p(3)/p1pt ! cos(theta')
+c     realize exchange?
+               xf = 2.D0*p(i1,3)/SQS
+               xff = abs(xf)**xfexp
+               IF(S_RNDM(I1).lt.xff.and.S_RNDM(I1).lt.xrate)then
+                  icount = icount + 1
+                  id1 = 27
+                  id2 = llist(i2)
+                  aid2 = mod(abs(id2),10000)
+                  if(ndebug.gt.0)then
+                     print*,' indices:' ,i1, i2
+                     print*,' new ids: ', id1, id2
+                  endif
+c     determine momenta of new particles and write to stack
+                  do kk=1,4
+                     gambet(kk) = ptot(kk)/xm
+                  enddo
+                  enew1 = (xmass2-am2(aid2)+am2(id1))/(2.D0*xm)
+                  enew2 = (xmass2+am2(aid2)-am2(id1))/(2.D0*xm)
+                  pnew = pawt(xm,am(aid2),am(id1)) 
+                  ph = S_RNDM(I2)*TWOPI
+CCc     use angles from initial state
+CC                  pn(1) = pnew * sthp * cos(ph)
+CC                  pn(2) = pnew * sthp * sin(ph)
+CC                  pn(3) = pnew * cthp
+ 80               call ptdis_4flv(2,pn(1),pn(2))
+                  call ptdis_4flv(1,px,py)
+                  pn(1) = 1.*pn(1) + px
+                  pn(2) = 1.*pn(2) + py
+                  pts = pn(1)**2+pn(2)**2
+                  pz2 = pnew**2-pts
+                  if(pz2.lt.0.D0) goto 80                        
+                  pn(1) = cos(ph) * sqrt(pts)
+                  pn(2) = sin(ph) * sqrt(pts)
+                  pn(3) = sqrt(pz2)
+                  call sib_altra(gamma,
+     &                 gambet(1),gambet(2),gambet(3),
+     &                 pn(1),pn(2),pn(3),enew1,
+     &                 p1newt,p1new(1),p1new(2),p1new(3),p1new(4))
+                  call sib_altra(gamma,
+     &                 gambet(1),gambet(2),gambet(3),
+     &                 -pn(1),-pn(2),-pn(3),enew2,
+     &                 p2newt,p2new(1),p2new(2),p2new(3),p2new(4))          
+                  p1new(5) = am(abs(id1))
+                  p2new(5) = am(aid2)
+c     write to stack
+                  llist(i1) = id1
+                  llist(i2) = id2
+                  do kk=1,5
+                     p(i1,kk) = p1new(kk)
+                     p(i2,kk) = p2new(kk)
+                  enddo
+               endif            ! end realize exchange?
+               goto 100         ! next index I1
+ 300           continue
+            enddo               ! end I2
+         ENDIF                  ! check I1?
+ 100     continue
+      ENDDO ! end i1
+c      print*,icount, 'replacements done'
+      if(ndebug.ge.5) CALL SIB_LIST(6)
+      END
+      
+C=======================================================================
+      
+      SUBROUTINE FORCE_VECTORS(XRATE1,IEDEP,ETHR,XFEXP,N1,N2)
 
 C-----------------------------------------------------------------------
       IMPLICIT NONE
@@ -12389,13 +13511,13 @@ C--------------------------------------------------------------------
       COMMON /SIB_FAC/ FACN
 
 c     external types
-      double precision xrate
-      integer n1,n2
+      double precision xrate1, ethr, xfexp
+      integer n1,n2,iedep
 
 c     internal types
-      integer ipi2vec,lcon,lreschex,ll,la,la_new,i,j,kba
-      DIMENSION IPI2VEC(99)
-      double precision pz2,xmts,xf,xfs,S_RNDM!,pts
+      integer ipi2vec,ismeson,lcon,lreschex,ll,la,la_new,i,j,kba
+      DIMENSION IPI2VEC(99),ISMESON(99)
+      double precision pz2,xmts,xf,xfs,S_RNDM,xff,xrate,ecm_max !,pts
       
       DIMENSION LCON(6:43),LRESCHEX(6:39)
       INTEGER IFIRST
@@ -12407,19 +13529,40 @@ c     charge and spin exchange map, i.e. pip -> rho0
 c     approximate, proton and neutron should go to N(1520) not Delta
       DATA LRESCHEX /26,27,27,31,30,9,9,42,41,19*0,45,44,45,48,47,39/ 
       DATA IFIRST /0/
+      DATA ECM_MAX /1.36987D+05/  ! 10^19eV in ecm and gev for protons
 
       if(ifirst.eq.0)then
          print *,'initializing..'
          do j=1,99
             IPI2VEC(J) = J
+            ismeson(j) = 0
          enddo
-         IPI2VEC(6) = 27      ! pi(0) ---> rho(0)
-         IPI2VEC(7) = 25      ! pi+   ---> rho+
-         IPI2VEC(8) = 26      ! pi-   ---> rho-
+         IPI2VEC(6) = 27        ! pi(0) ---> rho(0)
+         IPI2VEC(7) = 25        ! pi+   ---> rho+
+         IPI2VEC(8) = 26        ! pi-   ---> rho-
+
+         ISMESON(7) = 1         ! pi+
+         ISMESON(8) = 1         ! pi-
+         ISMESON(9) = 1         ! k+
+         ISMESON(10) = 1        ! k-
+         ISMESON(11) = 1        ! k0s
+         ISMESON(12) = 1        ! k0l
+
          ifirst = 1
       endif
 
       KBA = IABS(KB)
+      
+c     energy dependence
+      if(iedep.eq.0) then
+         xrate = xrate1
+      elseif(iedep.eq.1)then
+         xrate=xrate1 * max(0.D0,log(SQS/ethr)/log(ecm_max/ethr))
+      endif
+      if(IPAR(97).eq.1) then
+c     meson projectiles only
+         if(ismeson(kba).ne.1) return         
+      endif           
       
       IF(IPAR(45).eq.1)THEN
 c     trivial exchange model      
@@ -12511,6 +13654,49 @@ c     put back on mass shell
                endif
             endif
          enddo
+         
+      ELSEIF(IPAR(45).eq.5)THEN
+c     trivial exchange model, neutral pions only      
+         do I=N1,N2
+c     replace pions with vector mesons
+            LL = mod(llist(I),10000)
+            LA = abs(LL)
+            IF(LA.eq.6.and.S_RNDM(I).lt.xrate)then
+c     put back on mass shell
+               la_new = IPI2VEC(LA)
+               xmts = p(i,1)**2 + p(i,2)**2 + am2(la_new)
+               pz2 = p(i,4)**2 - xmts
+               if(pz2.gt.EPS8)then
+                  p(i,3) = sign(sqrt(pz2),p(i,3))
+                  p(i,5) = am(la_new)
+                  LLIST(I) = ISIGN(la_new,ll)
+               endif
+            endif
+         enddo
+
+      ELSEIF(IPAR(45).eq.6)THEN
+c     trivial exchange model, neutral pions only, weighted by xF
+         do I=N1,N2
+c     replace pions with vector mesons
+            LL = mod(llist(I),10000)
+            LA = abs(LL)
+            IF(LA.eq.6)then
+               xf = 2.D0*p(i,3)/SQS
+               xff = abs(xf)**xfexp
+               IF(S_RNDM(I).lt.xff.and.S_RNDM(LA).lt.xrate)then
+c     put back on mass shell
+                  la_new = IPI2VEC(LA)
+                  xmts = p(i,1)**2 + p(i,2)**2 + am2(la_new)
+                  pz2 = p(i,4)**2 - xmts
+                  if(pz2.gt.EPS8)then
+                     p(i,3) = sign(sqrt(pz2),p(i,3))
+                     p(i,5) = am(la_new)
+                     LLIST(I) = ISIGN(la_new,ll)
+                  endif
+               endif
+            endif
+         enddo
+         
       ENDIF
       if(ndebug.ge.5) CALL SIB_LIST(6)
       END
@@ -13825,10 +15011,138 @@ c     decay with sibyll
          endif
          NN = NN+1
       ENDDO
-
+      
 c      CALL SIB_LIST(20)
-
       END
+
+C=======================================================================
+      SUBROUTINE DEC_SET(Imode)
+C-----------------------------------------------------------------------
+C...  Routine to store/write decay configuration
+C-----------------------------------------------------------------------     
+      IMPLICIT NONE
+c     decay common
+      DOUBLE PRECISION CBR
+      INTEGER KDEC,LBARP,IDB
+      COMMON /S_CSYDEC/ CBR(223+16+12+8), KDEC(1338+6*(16+12+8)),
+     &     LBARP(99), IDB(99)
+
+      INTEGER Imode,IDBST,Iset,I
+      DIMENSION IDBST(99)      
+      SAVE
+      DATA Iset/0/      
+      IF(IMODE.EQ.1)THEN
+         if(Iset.eq.0) then
+            print*,'no decay configuration to restore known!',
+     &           ' run dec_set with -1 first!'
+            stop
+         endif
+         DO I=1,99
+            IDB(I)=IDBST(i)
+         ENDDO
+      ELSEIF(IMODE.EQ.-1)THEN
+         DO I=1,99
+            IDBST(I)=IDB(i)
+         ENDDO
+         Iset = 1
+      ELSE
+         PRINT*,'WRONG USE OF DEC_SET!'
+         STOP
+      ENDIF         
+      END
+C=======================================================================
+      
+      SUBROUTINE MUON_ENHANCEMENTS 
+C-----------------------------------------------------------------------
+C...  routine that enacts different enhancements of muons in eas by
+c     modifying the final state
+c      
+c     Parameters:
+c      
+c     model: IPAR(94)
+c      
+c       -1: none but execute decays in sibyll event generation
+c        0: none/do not call
+c        1: rho0
+c        2: strangeness (single threshold)
+c        20: strangeness (dual threshold, allows different enhancement at LE and HE )
+c        3: baryons (single threshold)
+c        30: baryons (dual threshold, allows different enhancement at LE and HE )
+c        4: mixed enhancement: rho0 & baryons
+C-----------------------------------------------------------------------
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      IMPLICIT INTEGER(I-N)
+C     The final particle output is contained in COMMON /S_PLIST/    
+C     NP           : number of final particles
+C     P(1:NP, 1:5) : 4-momenta + masses of the final particles 
+C     LLIST (1:NP) : codes of final particles
+      DOUBLE PRECISION P
+      INTEGER NP,LLIST,NP_max
+      PARAMETER (NP_max=8000)
+      COMMON /S_PLIST/ P(NP_max,5), LLIST(NP_max), NP
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
+      SAVE
+
+c     store initial decay configuration
+      call dec_set(-1)      
+c     set decay configuration for enhancements
+      call dec_ini_ext
+c     run decay routine
+      call decsib
+c     reset decay configuration
+      call dec_set(1)
+c     post-process
+      xchgRate = PAR(75)        ! rate
+      iedep = IPAR(96)          ! energy dependence (0: none, 1: log)
+      eThr = PAR(160)           ! energy threshold
+      xfexp = PAR(159)          ! xf-weighting
+      iproj = IPAR(97)          ! projectiles (0: all, 1: mesons only)
+      if(IPAR(94).eq.1)then      
+         CALL FORCE_VECTORS1(xchgRate,iedep,ethr,xfexp,iproj,1,NP)
+         
+      elseif(IPAR(94).eq.2)then
+         call FORCE_STRANGE(xchgRate,iedep,ethr,xfexp,iproj,1,NP)
+
+      elseif(IPAR(94).eq.20)then
+c     low-energy enhancement
+         call FORCE_STRANGE(xchgRate,iedep,ethr,xfexp,iproj,1,NP)
+c     high-energy enhancement         
+         xchgRateHE = PAR(161)
+         ethrHE = PAR(162)
+         xfHE = PAR(163)
+         call FORCE_STRANGE(xchgRateHE,iedep,ethrHE,xfHE,iproj,1,NP)
+
+      elseif(IPAR(94).eq.3)then         
+         call FORCE_BARYONS(xchgRate,iedep,ethr,xfexp,iproj,1,NP)
+
+      elseif(IPAR(94).eq.30)then
+c     low-energy enhancement
+         call FORCE_BARYONS(xchgRate,iedep,ethr,xfexp,iproj,1,NP)
+c     high-energy enhancement         
+         xchgRateHE = PAR(161)
+         ethrHE = PAR(162)
+         xfHE = PAR(163)
+         call FORCE_BARYONS(xchgRateHE,iedep,ethrHE,xfHE,iproj,1,NP)
+
+      elseif(IPAR(94).eq.4)then ! mixed enhancement rho0 & baryons
+c     parameters of vector enhancement are default ones, set by vector_ini
+c     (rate: par75, edep: ipar96, Ethr: par160, xfexponent: par159)
+         CALL FORCE_VECTORS1(xchgRate,iedep,ethr,xfexp,iproj,1,NP)
+c     parameters of baryon enhancement are rate: par161, Ethr: par162, xfexponent: par163, projectile: ipar98
+c     energy dependence is same as vector enhancement
+         xRateBAR = PAR(161)
+         ethrBAR = PAR(162)
+         xfBAR = PAR(163)
+         iprojBAR = IPAR(98)
+         call FORCE_BARYONS(xRateBAR,iedep,ethrBAR,xfBAR,iprojBAR,1,NP)
+         
+      endif
+      END
+      
 C=======================================================================
 
       SUBROUTINE SIB_SIGMA_HP
@@ -14108,7 +15422,7 @@ C                  SIGela     elastic cross section
 C-----------------------------------------------------------------------
 Cf2py integer, intent(in) :: L,IAT
 Cf2py double precision, intent(in) :: SQS
-Cf2py double precision, intent(out) :: SIGprod,SIGbdif, SIGela
+Cf2py double precision, intent(out) :: SIGprod,SIGbdif,SIGela
       IMPLICIT NONE
 
       INTEGER NS_max, NH_max
@@ -20048,7 +21362,7 @@ C..........................................................................
       IMPLICIT INTEGER(I-N)
 
       PARAMETER (IAMAX=56)
-      PARAMETER (IAMAX2=3136)
+      PARAMETER (IAMAX2=3136)          
       COMMON  /CPROBAB/ PROBA(IAMAX), DPROBA(IAMAX), 
      +   PROBB(IAMAX), DPROBB(IAMAX), PROBI(IAMAX2), DPROBI(IAMAX2),
      +   P1AEL(0:IAMAX),DP1AEL(0:IAMAX),P1BEL(0:IAMAX), DP1BEL(0:IAMAX),
@@ -20161,7 +21475,7 @@ C..........................................................................
       IMPLICIT INTEGER(I-N)
 
       PARAMETER (IAMAX=56)
-      PARAMETER (IAMAX2=3136)
+      PARAMETER (IAMAX2=3136)          
       COMMON  /CPROBAB/ PROBA(IAMAX), DPROBA(IAMAX), 
      +   PROBB(IAMAX), DPROBB(IAMAX), PROBI(IAMAX2), DPROBI(IAMAX2),
      +   P1AEL(0:IAMAX),DP1AEL(0:IAMAX),P1BEL(0:IAMAX), DP1BEL(0:IAMAX),

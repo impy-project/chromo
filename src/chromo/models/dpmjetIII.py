@@ -49,8 +49,8 @@ class DpmjetIIIRun(MCRun):
     _name = "DPMJET-III"
     _event_class = DpmjetIIIEvent
     _frame = None
-    # DPMJet is supposed to support photons as projectiles, but fails
-    _projectiles = standard_projectiles | Nuclei()
+    # TODO: DPMJet supports photons as projectiles
+    _projectiles = standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311}
     _targets = _projectiles
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
@@ -121,6 +121,8 @@ class DpmjetIIIRun(MCRun):
         # we override to set precision
         if (kin.p1.A and kin.p1.A > 1) or kin.p2.A > 1:
             assert kin.p2.A >= 1, "DPMJET requires nucleons or nuclei on side 2."
+            # Enable total and elastic cross section calculation
+            self._lib.dtglgp.lprod = False
             self._lib.dt_xsglau(
                 kin.p1.A or 1,
                 kin.p2.A or 1,
@@ -134,7 +136,17 @@ class DpmjetIIIRun(MCRun):
                 1,
                 1,
             )
-            return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
+            glxs = self._lib.dtglxs
+            return CrossSectionData(
+                total=glxs.xstot[0, 0, 0],
+                elastic=glxs.xsela[0, 0, 0],
+                inelastic=glxs.xstot[0, 0, 0] - glxs.xsela[0, 0, 0],
+                prod=glxs.xspro[0, 0, 0],
+                quasielastic=glxs.xsqep[0, 0, 0]
+                + glxs.xsqet[0, 0, 0]
+                + glxs.xsqe2[0, 0, 0]
+                + glxs.xsela[0, 0, 0],
+            )
         else:
             stot, sela = self._lib.dt_xshn(
                 self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
@@ -227,6 +239,7 @@ class DpmjetIII193(DpmjetIIIRun):
 class DpmjetIII307(DpmjetIIIRun):
     _version = "3.0-7"
     _library_name = "_dpmjet307"
+    _projectiles = standard_projectiles | Nuclei()
     _param_file_name = "fitpar.dat"
     _data_url = (
         "https://github.com/impy-project/chromo"

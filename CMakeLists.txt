@@ -22,6 +22,7 @@ enable_language(C CXX)
 set(BUILD_dev_dpmjetIII193 CACHE
   PATH "source directory for dev_dpmjetIII193")
 
+
 add_subdirectory(${CMAKE_SOURCE_DIR}/src/cpp/pybind11)
 
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -85,9 +86,13 @@ if (UNIX)
   add_compile_options(
     -Wno-uninitialized
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
-    $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
   )
+  if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
+    add_compile_options(
+      $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
+    )
+  endif()
   if (APPLE)
     set(is_fortran "$<COMPILE_LANGUAGE:Fortran>")
     set(is_greater_v10 "$<VERSION_GREATER:$<Fortran_COMPILER_VERSION>,10.0.0>")
@@ -102,12 +107,16 @@ else() # Windows MinGW!
 	add_compile_options(
     -Wno-uninitialized
     -w
-    $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
     $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
     $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
   )
+  if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
+    add_compile_options(
+      $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
+    )
+  endif()
   # TODO
   # set(FLAGS -fast -fpe0)
   # set(FLAGSF90 ${FLAGS} -ffree-form -Wobsolescent -fno-second-underscore)
@@ -164,7 +173,7 @@ set(SIBYLL_COMMON_FUNCTIONS
 
 f2py_add_module(_sib21
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} spgasdev
+  ${SIBYLL_COMMON_FUNCTIONS} spgasdev glauber
   SOURCES
   ${fortran_dir}/sibyll/sibyll_21.f
   ${fortran_dir}/sibyll/sib21aux.f
@@ -182,7 +191,7 @@ f2py_add_module(_sib21
 ### sib23
 f2py_add_module(_sib23
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -198,7 +207,7 @@ f2py_add_module(_sib23
 ### sib23c01
 f2py_add_module(_sib23c01
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c01.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -214,9 +223,24 @@ f2py_add_module(_sib23c01
 ### sib23d
 f2py_add_module(_sib23d
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3d.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions}
+)
+
+
+f2py_add_module(_sib23d_star
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3d-star-p02.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}
@@ -298,6 +322,10 @@ list(APPEND urqmd34_sources
   ${logging_source}
   ${rangen_source}
 )
+set(urqmd34_interface_sources ${urqmd34_sources})
+list(FILTER urqmd34_interface_sources EXCLUDE REGEX newpart\.f)
+list(FILTER urqmd34_interface_sources EXCLUDE REGEX uhmerge\.f)
+list(FILTER urqmd34_interface_sources EXCLUDE REGEX iso\.f)
 f2py_add_module(_urqmd34
   FUNCTIONS
   urqmd init uinit set0 params uounit strini loginit
@@ -305,6 +333,8 @@ f2py_add_module(_urqmd34
   chepevt ptsigtot ${chromo_functions}
   SOURCES
   ${urqmd34_sources}
+  INTERFACE_SOURCES
+  ${urqmd34_interface_sources}
   INCLUDE_DIRS
   ${fortran_dir}/urqmd-3.4/sources ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
@@ -612,10 +642,10 @@ f2py_add_module(_phojet193
 )
 
 
-##### extra optional models follow below ######
+##### optional models follow below ######
 f2py_add_module(_sib23c00
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c00.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -629,7 +659,7 @@ f2py_add_module(_sib23c00
 
 f2py_add_module(_sib23c02
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c02.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -643,7 +673,7 @@ f2py_add_module(_sib23c02
 
 f2py_add_module(_sib23c03
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c03.f
   ${fortran_dir}/sibyll/sibyll_init.fpp

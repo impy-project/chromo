@@ -264,6 +264,14 @@ C     It contains Fortran 77 wrappers to fortran functions.
      &jjael,jjbel)
       end
 
+      subroutine f2pyinitca0sh(setupfunc)
+      external setupfunc
+      real r0
+      real r02
+      common /ca0sh/ r0,r02
+      call setupfunc(r0,r02)
+      end
+
       subroutine f2pyinits_pdg2pid(setupfunc)
       external setupfunc
       integer id_pdg_list(99)

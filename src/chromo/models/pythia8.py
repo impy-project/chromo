@@ -124,13 +124,13 @@ class Pythia8(MCRun):
     def _cross_section(self, kin=None):
         st = self._pythia.info.sigmaTot
         return CrossSectionData(
-            st.sigmaTot,
-            st.sigmaTot - st.sigmaEl,
-            st.sigmaEl,
-            st.sigmaAX,
-            st.sigmaXB,
-            st.sigmaXX,
-            st.sigmaAXB,
+            total=st.sigmaTot,
+            inelastic=st.sigmaTot - st.sigmaEl,
+            elastic=st.sigmaEl,
+            diffractive_ax=st.sigmaAX,
+            diffractive_xb=st.sigmaXB,
+            diffractive_xx=st.sigmaXX,
+            diffractive_axb=st.sigmaAXB,
         )
 
     def _set_kinematics(self, kin):

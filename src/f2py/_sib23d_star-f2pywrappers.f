@@ -26,6 +26,13 @@ C     It contains Fortran 77 wrappers to fortran functions.
       end
 
 
+      subroutine f2pyinits_star(setupfunc)
+      external setupfunc
+      integer imod
+      common /s_star/ imod
+      call setupfunc(imod)
+      end
+
       subroutine f2pyinits_debug(setupfunc)
       external setupfunc
       integer ncall
@@ -305,17 +312,18 @@ C     It contains Fortran 77 wrappers to fortran functions.
       external setupfunc
       double precision ssig(61,3)
       double precision pjetc(21,81,61,2)
-      double precision ssign(61,3)
-      double precision ssignsd(61,3)
-      double precision alint(61,3)
+      double precision ssign(61,3,3)
+      double precision ssignsd(61,3,3)
+      double precision ssignel(61,3,3)
+      double precision alint(61,3,3)
       double precision asqsmin
       double precision asqsmax
       double precision dasqs
       integer nsqs
-      common /s_ccsig/ ssig,pjetc,ssign,ssignsd,alint,asqsmin,asqs
-     &max,dasqs,nsqs
-      call setupfunc(ssig,pjetc,ssign,ssignsd,alint,asqsmin,asqsma
-     &x,dasqs,nsqs)
+      common /s_ccsig/ ssig,pjetc,ssign,ssignsd,ssignel,alint,asqs
+     &min,asqsmax,dasqs,nsqs
+      call setupfunc(ssig,pjetc,ssign,ssignsd,ssignel,alint,asqsmi
+     &n,asqsmax,dasqs,nsqs)
       end
 
       subroutine f2pyinits_ccsig2(setupfunc)

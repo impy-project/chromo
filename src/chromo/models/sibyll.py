@@ -1,6 +1,7 @@
 from chromo.common import MCRun, MCEvent, CrossSectionData
 from chromo.util import info, Nuclei
 from chromo.kinematics import EventFrame
+from chromo.constants import standard_projectiles
 from particle import literals as lp
 import warnings
 
@@ -32,6 +33,22 @@ class SIBYLLRun(MCRun):
     _name = "SIBYLL"
     _event_class = SibyllEvent
     _frame = EventFrame.CENTER_OF_MASS
+    _projectiles = standard_projectiles | {
+        3112,
+        3122,
+        3312,
+        3322,
+        3222,
+        411,
+        421,
+        4232,
+        431,
+        4122,
+        4132,
+        4232,
+        431,
+        4332,
+    }
     _targets = Nuclei(a_max=20)
     _cross_section_projectiles = {
         p.pdgid: sib_id
@@ -55,6 +72,9 @@ class SIBYLLRun(MCRun):
         self._lib.s_debug.lun = lun
         self._lib.s_debug.ndebug = chromo.debug_level
 
+        if hasattr(self, "_sstar_param"):
+            self._lib.s_star.imod = self._sstar_param
+
         self._lib.sibini()
         self._lib.pdg_ini()
 
@@ -66,16 +86,39 @@ class SIBYLLRun(MCRun):
 
     def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
-        if kin.p2.A > 1:
-            # TODO figure out what this returns exactly:
-            # self._lib.sib_sigma_hnuc
+        if kin.p1.A > 1:
             warnings.warn(
-                f"cross-section for nuclear targets not yet supported in {self.label}",
+                f"Cross section for nuclear projectiles not supported in {self.label}",
                 RuntimeWarning,
             )
             return CrossSectionData()
 
         sib_id = self._cross_section_projectiles[abs(kin.p1)]
+
+        if kin.p2.A > 19:
+            raise ValueError(
+                f"{self.label} does not support nuclear targets heavier than 19"
+            )
+        if kin.p2.A > 1 and self.version == "2.1":
+            raise ValueError(
+                f"{self.label} 2.1 does not (yet) support nuclear targets."
+            )
+
+        if kin.p2.A > 1:
+            alam = 1.0  # Not used
+            icsmod = 1  # use Sibyll p-p cross section as input
+            iparm = 2  # use Goulianos param. for inel. coupling param.
+            self._lib.sig_had_nuc(sib_id, kin.p2.A, kin.ecm, alam, icsmod, iparm)
+            nsig = self._lib.nucsig
+            return CrossSectionData(
+                total=float(nsig.sigt),
+                prod=float(nsig.sigt - nsig.sigqe),
+                quasielastic=float(nsig.sigqe),
+                inelastic=float(nsig.siginel),
+                diffractive_sum=float(nsig.sigqsd),
+                diffractive_xb=float(nsig.sigsd),
+                elastic=float(nsig.sigel),
+            )
 
         tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sib_id, kin.ecm)
         return CrossSectionData(
@@ -93,7 +136,7 @@ class SIBYLLRun(MCRun):
         event setup (energy, projectile, target)"""
         kin = self.kinematics
         sib_id = self._cross_section_projectiles[abs(kin.p1)]
-        sigma = self._lib.sib_sigma_hair(sib_id, self._ecm)
+        sigma = self._lib.sib_sigma_hair(sib_id, kin.ecm)
         if isinstance(sigma, tuple):
             return sigma[0]
         return sigma
@@ -127,11 +170,13 @@ class SIBYLLRun(MCRun):
 
 class Sibyll21(SIBYLLRun):
     _version = "2.1"
+    _projectiles = standard_projectiles
     _library_name = "_sib21"
 
 
 class Sibyll23(SIBYLLRun):
     _version = "2.3"
+    _projectiles = standard_projectiles
     _library_name = "_sib23"
 
 
@@ -168,3 +213,33 @@ class Sibyll23c03(SIBYLLRun):
 class Sibyll23d(SIBYLLRun):
     _version = "2.3d"
     _library_name = "_sib23d"
+
+
+class Sibyll23StarNoEnh(Sibyll23d):
+    _version = "2.3Star-noenh"
+    _library_name = "_sib23d_star"
+    _sstar_param = 0
+
+
+class Sibyll23StarRho(Sibyll23StarNoEnh):
+    _version = "2.3Star-rho"
+    _library_name = "_sib23d_star"
+    _sstar_param = 1
+
+
+class Sibyll23StarBar(Sibyll23StarNoEnh):
+    _version = "2.3Star-bar"
+    _library_name = "_sib23d_star"
+    _sstar_param = 2
+
+
+class Sibyll23StarStrange(Sibyll23StarNoEnh):
+    _version = "2.3Star-strange"
+    _library_name = "_sib23d_star"
+    _sstar_param = 3
+
+
+class Sibyll23StarMixed(Sibyll23StarNoEnh):
+    _version = "2.3Star-mix"
+    _library_name = "_sib23d_star"
+    _sstar_param = 4

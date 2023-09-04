@@ -1,12 +1,13 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module _sib23c01 ! in 
-    interface  ! in :_sib23c01
-        subroutine sibyll(k_beam,iatarg,ecm) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+python module _sib23d_star ! in 
+    interface  ! in :_sib23d_star
+        subroutine sibyll(k_beam,iatarg,ecm) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer :: k_beam
             integer :: iatarg
             double precision :: ecm
+            integer :: imod
             integer :: ncall
             integer :: ndebug
             integer :: lun
@@ -30,6 +31,7 @@ python module _sib23c01 ! in
             double precision :: twopi
             double precision :: cmbarn
             double precision dimension(8) :: facn
+            common /s_star/ imod
             common /s_debug/ ncall,ndebug,lun
             common /s_cldif/ ldiff
             common /s_plist/ p,llist,np
@@ -39,9 +41,9 @@ python module _sib23c01 ! in
             common /sib_cst/ pi,twopi,cmbarn
             common /sib_fac/ facn
         end subroutine sibyll
-        subroutine sibyll_ini ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        subroutine sibyll_ini ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
         end subroutine sibyll_ini
-        block data param_ini ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        block data param_ini ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer, optional :: ncall=0
             integer, optional :: ndebug=0
             integer, optional :: lun=7
@@ -86,7 +88,7 @@ python module _sib23c01 ! in
             common /sib_fac/ facn
             common /ckfrag/ kodfrag
         end block data param_ini
-        subroutine sib_list(lun) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        subroutine sib_list(lun) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer :: lun
             integer :: ncall
             integer :: ndebug
@@ -139,14 +141,14 @@ python module _sib23c01 ! in
             common /s_cnam/ namp
             common /s_rmnt/ xrmass,xrmex,irmnt,krb,krt
         end subroutine sib_list
-        function isib_pid2pdg(npid) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        function isib_pid2pdg(npid) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer :: npid
             integer dimension(99) :: id_pdg_list
             integer dimension(577) :: id_list
             integer :: isib_pid2pdg
             common /s_pdg2pid/ id_pdg_list,id_list
         end function isib_pid2pdg
-        function isib_pdg2pid(npdg) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        function isib_pdg2pid(npdg) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer :: npdg
             integer dimension(99) :: ipid_pdg_list
             integer dimension(577) :: id_list
@@ -162,7 +164,7 @@ python module _sib23c01 ! in
             common /s_debug/ ncall,ndebug,lun
             common /s_csydec/ cbr,kdec,lbarp,idb
         end function isib_pdg2pid
-        subroutine pdg_ini ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        subroutine pdg_ini ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer :: ncall
             integer :: ndebug
             integer :: lun
@@ -171,11 +173,11 @@ python module _sib23c01 ! in
             common /s_debug/ ncall,ndebug,lun
             common /s_pdg2pid/ id_pdg_list,id_list
         end subroutine pdg_ini
-        block data kflv_ini ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        block data kflv_ini ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer dimension(4,43) :: kflv
             common /s_kflv/ kflv
         end block data kflv_ini
-        subroutine decpar(la,p0,nd,ll,p) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        subroutine decpar(la,p0,nd,ll,p) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer :: la
             double precision dimension(5) :: p0
             integer :: nd
@@ -201,7 +203,7 @@ python module _sib23c01 ! in
             common /sib_cst/ pi,twopi,cmbarn
             common /sib_fac/ facn
         end subroutine decpar
-        block data datdec ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        block data datdec ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             double precision dimension(259) :: cbr
             integer dimension(1554) :: kdec
             integer, optional,dimension(99) :: lbarp=1
@@ -225,7 +227,7 @@ python module _sib23c01 ! in
             common /s_chm/ ichm
             common /s_cnam/ namp
         end block data datdec
-        subroutine sig_had_nuc(l,ia,ecm,alam,icsmod,iparm) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        subroutine sig_had_nuc(l,ia,ecm,alam,icsmod,iparm) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer :: l
             integer :: ia
             double precision :: ecm
@@ -251,7 +253,7 @@ python module _sib23c01 ! in
             common /sib_cst/ pi,twopi,cmbarn
             common /s_mass1/ am,am2
         end subroutine sig_had_nuc
-        subroutine decsib ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        subroutine decsib ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer :: ncall
             integer :: ndebug
             integer :: lun
@@ -283,7 +285,7 @@ python module _sib23c01 ! in
             common /s_cflafr/ par,ipar
             common /sib_rnk/ lrnk
         end subroutine decsib
-        subroutine sib_sigma_hp(l0,sqs,sigt,sigel,siginel,sigdif,slope,rho) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        subroutine sib_sigma_hp(l0,sqs,sigt,sigel,siginel,sigdif,slope,rho) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer intent(in) :: l0
             double precision intent(in) :: sqs
             double precision intent(out) :: sigt
@@ -297,9 +299,10 @@ python module _sib23c01 ! in
             integer :: lun
             double precision dimension(61,3) :: ssig
             double precision dimension(21,81,61,2) :: pjetc
-            double precision dimension(61,3) :: ssign
-            double precision dimension(61,3) :: ssignsd
-            double precision dimension(61,3) :: alint
+            double precision dimension(61,3,3) :: ssign
+            double precision dimension(61,3,3) :: ssignsd
+            double precision dimension(61,3,3) :: ssignel
+            double precision dimension(61,3,3) :: alint
             double precision :: asqsmin
             double precision :: asqsmax
             double precision :: dasqs
@@ -319,13 +322,13 @@ python module _sib23c01 ! in
             double precision :: cmbarn
             double precision dimension(8) :: facn
             common /s_debug/ ncall,ndebug,lun
-            common /s_ccsig/ ssig,pjetc,ssign,ssignsd,alint,asqsmin,asqsmax,dasqs,nsqs
+            common /s_ccsig/ ssig,pjetc,ssign,ssignsd,ssignel,alint,asqsmin,asqsmax,dasqs,nsqs
             common /s_ccsig2/ ssig_tot,ssig_sd1,ssig_sd2,ssig_dd,ssig_b,ssig_rho
             common /sib_eps/ eps3,eps5,eps8,eps10
             common /sib_cst/ pi,twopi,cmbarn
             common /sib_fac/ facn
         end subroutine sib_sigma_hp
-        subroutine sib_sigma_hair(l,sqs,sigprod,sigbdif) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        subroutine sib_sigma_hair(l,sqs,sigprod,sigbdif) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer intent(in) :: l
             double precision intent(in) :: sqs
             double precision intent(out) :: sigprod
@@ -335,30 +338,33 @@ python module _sib23c01 ! in
             integer :: lun
             double precision dimension(61,3) :: ssig
             double precision dimension(21,81,61,2) :: pjetc
-            double precision dimension(61,3) :: ssign
-            double precision dimension(61,3) :: ssignsd
-            double precision dimension(61,3) :: alint
+            double precision dimension(61,3,3) :: ssign
+            double precision dimension(61,3,3) :: ssignsd
+            double precision dimension(61,3,3) :: ssignel
+            double precision dimension(61,3,3) :: alint
             double precision :: asqsmin
             double precision :: asqsmax
             double precision :: dasqs
             integer :: nsqs
             common /s_debug/ ncall,ndebug,lun
-            common /s_ccsig/ ssig,pjetc,ssign,ssignsd,alint,asqsmin,asqsmax,dasqs,nsqs
+            common /s_ccsig/ ssig,pjetc,ssign,ssignsd,ssignel,alint,asqsmin,asqsmax,dasqs,nsqs
         end subroutine sib_sigma_hair
-        subroutine sib_sigma_hnuc(l,iat,sqs,sigprod,sigbdif) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        subroutine sib_sigma_hnuc(l,iat,sqs,sigprod,sigbdif,sigela) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer intent(in) :: l
             integer intent(in) :: iat
             double precision intent(in) :: sqs
             double precision intent(out) :: sigprod
             double precision intent(out) :: sigbdif
+            double precision intent(out) :: sigela
             integer :: ncall
             integer :: ndebug
             integer :: lun
             double precision dimension(61,3) :: ssig
             double precision dimension(21,81,61,2) :: pjetc
-            double precision dimension(61,3) :: ssign
-            double precision dimension(61,3) :: ssignsd
-            double precision dimension(61,3) :: alint
+            double precision dimension(61,3,3) :: ssign
+            double precision dimension(61,3,3) :: ssignsd
+            double precision dimension(61,3,3) :: ssignel
+            double precision dimension(61,3,3) :: alint
             double precision :: asqsmin
             double precision :: asqsmax
             double precision :: dasqs
@@ -382,13 +388,13 @@ python module _sib23c01 ! in
             double precision :: sigppsd
             integer :: itg
             common /s_debug/ ncall,ndebug,lun
-            common /s_ccsig/ ssig,pjetc,ssign,ssignsd,alint,asqsmin,asqsmax,dasqs,nsqs
+            common /s_ccsig/ ssig,pjetc,ssign,ssignsd,ssignel,alint,asqsmin,asqsmax,dasqs,nsqs
             common /sib_eps/ eps3,eps5,eps8,eps10
             common /sib_cst/ pi,twopi,cmbarn
             common /sib_fac/ facn
             common /nucsig/ sigt,sigel,siginel,sigqe,sigsd,sigqsd,sigppt,sigppel,sigppsd,itg
         end subroutine sib_sigma_hnuc
-        block data pdfini ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        block data pdfini ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             double precision, optional,dimension(2) :: xa=1.d-06
             double precision, optional,dimension(2) :: xb=0.1d0
             double precision, optional :: xmax=0.800000011921d0
@@ -410,14 +416,14 @@ python module _sib23c01 ! in
             integer, optional :: nz=200
             common /s_czgen/ xa,xb,xmax,za,zb,zmax,dx,dz,apart,ffa,ffb,dfx,dfz,xx,zz,ffx,ffz,nx,nz
         end block data pdfini
-        block data frag_data ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        block data frag_data ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             double precision dimension(10,10,20) :: a
             double precision dimension(10,10,20) :: ae
             double precision dimension(10,10) :: eres
             integer dimension(10,10) :: nflagg
             common /fragmod/ a,ae,eres,nflagg
         end block data frag_data
-        subroutine int_nuc(ia,ib,sig0,sigel) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+        subroutine int_nuc(ia,ib,sig0,sigel) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll2.3d-star-p02.f
             integer :: ia
             integer :: ib
             double precision :: sig0
@@ -441,9 +447,9 @@ python module _sib23c01 ! in
             common /cnucms/ b,bmax,ntry,na,nb,ni,nael,nbel,jja,jjb,jjint,jjael,jjbel
             common /sib_cst/ pi,twopi,cmbarn
         end subroutine int_nuc
-        subroutine sibini ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll_init.fpp
+        subroutine sibini ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll_init.fpp
         end subroutine sibini
-        subroutine sibhep ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll_init.fpp
+        subroutine sibhep ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/sibyll_init.fpp
             double precision dimension(8000,5) :: p
             integer dimension(8000) :: llist
             integer :: np
@@ -466,26 +472,26 @@ python module _sib23c01 ! in
             common /hepevt/ nevhep,nhep,isthep,idhep,jmohep,jdahep,phep,vhep
             common /schg/ ichg
         end subroutine sibhep
-        subroutine chromo_openlogfile(fname,opunit) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/logging.f
+        subroutine chromo_openlogfile(fname,opunit) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/logging.f
             character*300 :: fname
             integer :: opunit
         end subroutine chromo_openlogfile
-        subroutine chromo_closelogfile(opunit) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/logging.f
+        subroutine chromo_closelogfile(opunit) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/logging.f
             integer :: opunit
         end subroutine chromo_closelogfile
-        subroutine npyrng(rval) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/rangen.fpp
+        subroutine npyrng(rval) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/rangen.fpp
             double precision :: rval
             integer*8 :: bitgen
             common /npy/ bitgen
         end subroutine npyrng
-        function gasdev(dummy) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/rangen.fpp
+        function gasdev(dummy) ! in :_sib23d_star:CMakeFiles/_sib23d_star.dir/rangen.fpp
             integer :: dummy
             integer*8 :: bitgen
             double precision :: gasdev
             common /npy/ bitgen
         end function gasdev
     end interface 
-end python module _sib23c01
+end python module _sib23d_star
 
 ! This file was auto-generated with f2py (version:2).
 ! See http://cens.ioc.ee/projects/f2py2e/

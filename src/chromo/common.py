@@ -36,55 +36,71 @@ from particle import Particle
 # If we want this, it should be computed dynamically via a property.
 @dataclasses.dataclass
 class CrossSectionData:
-    """Information of cross-sections returned by the generator.
+    """Information of cross sections returned by the generator.
 
     The class is driven by the amount of detail that Pythia-8 provides.
     Most other generators do not fill all attributes. When information is missing,
     the attributes contain NaN. The fields are intentionally redundant, since
-    some generators may provide only the total cross-section or only the inelastic
-    cross-section.
+    some generators may provide only the total cross section or only the inelastic
+    cross section.
 
-    All cross-sections are in millibarn.
+    All cross sections are in millibarn.
 
     Attributes
     ----------
     total : float
-        Total cross-section (elastic + inelastic).
+        Total cross section (elastic + inelastic).
     inelastic : float
-        Inelastic cross-section. Includes diffractive cross-sections.
+        Inelastic cross section. Includes diffractive cross sections.
     elastic : float
-        Cross-section for pure elastic scattering of incoming particle
+        Cross section for pure elastic scattering of incoming particle
         without any new particle generation.
+    prod : float
+        Particle production cross section, defined as total minus elastic.
+    quasielastic : float
+        Total quasielastic cross section (includes elastic).
     diffractive_xb : float
-        Single diffractive cross-section. Particle 2 remains intact,
+        Single diffractive cross section. Particle 2 remains intact,
         particles are produced around Particle 1.
     diffractive_ax : float
-        Single diffractive cross-section. Particle 1 remains intact,
+        Single diffractive cross section. Particle 1 remains intact,
         particles are produced around Particle 2.
     diffractive_xx : float
-        Double diffractive cross-section. Central rapidity gap, but
+        Double diffractive cross section. Central rapidity gap, but
         paricles are producted around both beam particles.
     diffractive_axb : float
-        Central diffractive cross-section (e.g.
+        Central diffractive cross section (e.g.
         pomeron-pomeron interaction.)
+    diffractive_sum : float
+        Sum of diffractive cross sections.
     """
 
     total: float = np.nan
     inelastic: float = np.nan
     elastic: float = np.nan
+    prod: float = np.nan
+    quasielastic: float = np.nan
     diffractive_xb: float = np.nan
     diffractive_ax: float = np.nan
     diffractive_xx: float = np.nan
     diffractive_axb: float = np.nan
+    diffractive_sum: float = np.nan
 
     @property
     def non_diffractive(self):
-        return (
-            self.inelastic
-            - self.diffractive_xb
-            - self.diffractive_ax
-            - self.diffractive_xx
-            - self.diffractive_axb
+        return self.inelastic - self.diffractive
+
+    @property
+    def diffractive(self):
+        if float(self.diffractive_sum) > 0.0:
+            return self.diffractive_sum
+        return np.nansum(
+            (
+                self.diffractive_xb,
+                self.diffractive_ax,
+                self.diffractive_xx,
+                self.diffractive_axb,
+            )
         )
 
     def __eq__(self, other):
@@ -415,8 +431,8 @@ class EventData:
         if model == "Pythia" and version.startswith("8"):
             # to get a valid GenEvent we must
             # 1) select only particles produced after the parton shower
-            # 2) connect particles attached to a single beam particle (diffractive events)
-            #    to the common interaction vertex (1, 2)
+            # 2) connect particles attached to a single beam particle
+            # (diffractive events) to the common interaction vertex (1, 2)
             # TODO check if this costs significant amount of time and speed it up if so
             mask = (self.status == 1) | (self.status == 2) | (self.status == 4)
             ev = self[mask]
