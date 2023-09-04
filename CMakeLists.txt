@@ -420,14 +420,14 @@ f2py_add_module(_sophia
 
 
 ### dpmjet306
-set(dpmjet306_sources
-  ${fortran_dir}/dpmjet3.0-6/sources/dpmjet3.0-6.f
-  ${fortran_dir}/dpmjet3.0-6/sources/phojet1.12-35c4.f
-  ${fortran_dir}/dpmjet3.0-6/sources/pythia6115dpm3v1.f
-  ${fortran_dir}/dpmjet3.0-6/sources/user3.0-6.f
+set(dpmjet307_sources
+  ${fortran_dir}/dpmjet3.0/sources/dpmjet3.0-7.f
+  ${fortran_dir}/dpmjet3.0/sources/phojet1.12-36c4.f
+  ${fortran_dir}/dpmjet3.0/sources/pythia6115dpm3v1.f
+  ${fortran_dir}/dpmjet3.0/sources/user3.0-7.f
 )
 
-f2py_add_module(_dpmjet306
+f2py_add_module(_dpmjet307
   FUNCTIONS
   pho_event dt_init dt_kkinc idt_icihad dt_xsglau
   pycomp dt_initjs dt_inucas dt_evtout idt_ipdgha
@@ -438,7 +438,7 @@ f2py_add_module(_dpmjet306
   pho_setpcomb dt_phoxs dt_xshn dt_flahad
   ${chromo_functions}
   SOURCES
-  ${dpmjet306_sources}
+  ${dpmjet307_sources}
   ${rangen_source}
   ${logging_source}
   INCLUDE_DIRS
@@ -457,7 +457,7 @@ f2py_add_module(_phojet112
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
   pho_setpcomb ${chromo_functions}
   SOURCES
-  ${dpmjet306_sources}
+  ${dpmjet307_sources}
   ${logging_source}
   ${rangen_source}
   INCLUDE_DIRS
