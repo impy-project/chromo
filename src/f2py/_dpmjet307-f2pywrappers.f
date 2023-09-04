@@ -372,10 +372,11 @@ C     It contains Fortran 77 wrappers to fortran functions.
       double precision pdbsea(3)
       integer isig0
       integer ipi0
+      logical ovwtdc
       common /dtfrpa/ mstux,parux,mstjx,parjx,imstu,iparu,imstj,ip
-     &arj,nmstu,nparu,nmstj,nparj,pdb,pdbsea,isig0,ipi0
+     &arj,nmstu,nparu,nmstj,nparj,pdb,pdbsea,isig0,ipi0,ovwtdc
       call setupfunc(mstux,parux,mstjx,parjx,imstu,iparu,imstj,ipa
-     &rj,nmstu,nparu,nmstj,nparj,pdb,pdbsea,isig0,ipi0)
+     &rj,nmstu,nparu,nmstj,nparj,pdb,pdbsea,isig0,ipi0,ovwtdc)
       end
 
       subroutine f2pyinitdtdiqb(setupfunc)

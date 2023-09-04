@@ -42,7 +42,7 @@ class DpmjetIIIRun(MCRun):
     DPMJET-III series of event generators.
 
     It should work identically for the new 'dpmjet3' module and the legacy
-    dpmjet306. No special constructor is necessary and everything is
+    dpmjet307. No special constructor is necessary and everything is
     handled by the default constructor of the base class.
     """
 
@@ -107,10 +107,13 @@ class DpmjetIIIRun(MCRun):
             self._lib.pomdls.parmdl[75] = 0.05
 
         # Prevent DPMJET from overwriting decay settings
-        # self._lib.dtfrpa.ovwtdc = False
-        # Set PYTHIA decay flags to follow all changes to MDCY
+        self._lib.dtfrpa.ovwtdc = False
+        # Tell PHOJET to not overwrite decay settings
+        self._lib.pomdls.iswmdl[6 - 1] = 4
+        # Recover the decay settings due to how DPMJET works
         self._lib.pydat1.mstj[21 - 1] = 1
-        self._lib.pydat1.mstj[22 - 1] = 2
+        self._lib.pydat1.mstj[22 - 1] = 1
+
         self._set_final_state_particles()
 
     def _cross_section(self, kin=None):
@@ -233,9 +236,9 @@ class DpmjetIII193(DpmjetIIIRun):
     _library_name = "_dpmjetIII193"
 
 
-class DpmjetIII306(DpmjetIIIRun):
-    _version = "3.0-6"
-    _library_name = "_dpmjet306"
+class DpmjetIII307(DpmjetIIIRun):
+    _version = "3.0-7"
+    _library_name = "_dpmjet307"
     _projectiles = standard_projectiles | Nuclei()
     _param_file_name = "fitpar.dat"
     _data_url = (

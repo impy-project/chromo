@@ -135,7 +135,8 @@
 * flags for particle decays
       COMMON /DTFRPA/ MSTUX(20),PARUX(20),MSTJX(20),PARJX(20),
      &                IMSTU(20),IPARU(20),IMSTJ(20),IPARJ(20),
-     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,IPI0
+     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,
+     &                IPI0, OVwtdc
 * diquark-breaking mechanism
       COMMON /DTDIQB/ DBRKR(3,8),DBRKA(3,8),CHAM1,CHAM3,CHAB1,CHAB3
 * nucleon-nucleon event-generator
@@ -187,7 +188,7 @@
       COMMON /DTCHRO/ FNEVAP, FNPARA, VERSION
       DATA FNEVAP /'dpmjet.dat'/
       DATA FNPARA /'fitpar.dat'/
-      DATA VERSION /'3.0-6'/
+      DATA VERSION /'3.0-7'/
 
       INTEGER PYCOMP
 
@@ -2211,7 +2212,8 @@ C     IF (IDP.EQ.27) IDP = 6
 * flags for particle decays
       COMMON /DTFRPA/ MSTUX(20),PARUX(20),MSTJX(20),PARJX(20),
      &                IMSTU(20),IPARU(20),IMSTJ(20),IPARJ(20),
-     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,IPI0
+     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,
+     &                IPI0, OVwtdc
 * cuts for variable energy runs
       COMMON /DTVARE/ VARELO,VAREHI,VARCLO,VARCHI
 * Glauber formalism: flags and parameters for statistics
@@ -2382,7 +2384,8 @@ C     IF (NEVHKK.EQ.5) CALL DT_EVTOUT(4)
 * flags for particle decays
       COMMON /DTFRPA/ MSTUX(20),PARUX(20),MSTJX(20),PARJX(20),
      &                IMSTU(20),IPARU(20),IMSTJ(20),IPARJ(20),
-     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,IPI0
+     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,
+     &                IPI0, OVwtdc
 * diquark-breaking mechanism
       COMMON /DTDIQB/ DBRKR(3,8),DBRKA(3,8),CHAM1,CHAM3,CHAB1,CHAB3
 * nucleon-nucleon event-generator
@@ -3513,7 +3516,8 @@ C #include "dtu_dtevtp.inc"
 * flags for particle decays
       COMMON /DTFRPA/ MSTUX(20),PARUX(20),MSTJX(20),PARJX(20),
      &                IMSTU(20),IPARU(20),IMSTJ(20),IPARJ(20),
-     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,IPI0
+     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,
+     &                IPI0, OVwtdc
 * nucleon-nucleon event-generator
       CHARACTER*8 CMODEL
       LOGICAL LPHOIN
@@ -15589,7 +15593,7 @@ C     ISU = 4
 *                = 2 DTUNUC settings                                   *
 * This version dated 16.02.96 is written by S. Roesler                 *
 *                                                                      *
-* Last change 27.12.2006 by S. Roesler.                                *
+* Last change 23.12.2023 by A. Fedynitch.                              *
 ************************************************************************
 
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -15605,11 +15609,16 @@ C     ISU = 4
 * flags for particle decays
       COMMON /DTFRPA/ MSTUX(20),PARUX(20),MSTJX(20),PARJX(20),
      &                IMSTU(20),IPARU(20),IMSTJ(20),IPARJ(20),
-     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,IPI0
+     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,
+     &                IPI0, OVwtdc
 * flags for input different options
       LOGICAL LEMCCK,LHADRO,LSEADI,LEVAPO
       COMMON /DTFLG1/ IFRAG(2),IRESCO,IMSHL,IRESRJ,IOULEV(6),
      &                LEMCCK,LHADRO(0:9),LSEADI,LEVAPO,IFRAME,ITRSPT
+
+C**af a flag to prevent overwriting decay settings
+      LOGICAL OVwtdc
+      DATA OVwtdc /.True./
 
       INTEGER PYCOMP
 
@@ -15637,38 +15646,30 @@ C     ISU = 4
          PDEF18 = PARJ(18)
          PDEF19 = PARJ(19)
          PDEF21 = PARJ(21)
+         PDEF22 = PARJ(22)
          PDEF42 = PARJ(42)
          MDEF12 = MSTJ(12)
 * LUJETS / PYJETS array-dimensions
          MSTU(4) = 4000
 * increase maximum number of JETSET-error prints
          MSTU(22) = 50000
-* prevent particles decaying
-         DO 1 I=1,35
-            IF (I.LT.34) THEN
-               KC = PYCOMP(IDXSTA(I))
-               IF (KC.GT.0) THEN
-                  IF (I.EQ.2) THEN
-*  pi0 decay
-C                    MDCY(KC,1) = 1
-                     MDCY(KC,1) = 0
-**cr mode
-C                 ELSEIF ((I.EQ.4).OR.(I.EQ. 6).OR.
-C   &                    (I.EQ.8).OR.(I.EQ.10)) THEN
-C                 ELSEIF (I.EQ.4) THEN
-C                    MDCY(KC,1) = 1
-**
-                  ELSE
-                     MDCY(KC,1) = 0
-                  ENDIF
-               ENDIF
-            ELSEIF (((I.EQ.34).OR.(I.EQ.35)).AND.(ISIG0.EQ.0)) THEN
-               KC = PYCOMP(IDXSTA(I))
-               IF (KC.GT.0) THEN
-                  MDCY(KC,1) = 0
-               ENDIF
-            ENDIF
-    1    CONTINUE
+
+C**anfe patch 2023.08.23
+C prevent particles from decaying
+      IF (OVwtdc) THEN
+         DO i = 1 , 35
+            IF ( i.LT.34 ) THEN
+
+               kc = PYCOMP(idxsta(i))  
+               MDCy(kc,1) = 0
+
+            ELSE IF ((ABS(idxsta(i)).EQ.3212).AND.(ISIg0.EQ.0))
+     &                THEN
+               kc = PYCOMP(idxsta(i))
+               MDCy(kc,1) = 0
+            END IF
+         END DO
+      END IF
 *
 *
 * popcorn:
@@ -15809,6 +15810,7 @@ C           PARJ(42) = 1.0D0
             PARJ(7)  = PDEF7
             PARJ(18) = PDEF18
             PARJ(21) = PDEF21
+            PARJ(22) = PDEF22
             PARJ(42) = PDEF42
          ENDIF
       ELSE
@@ -15821,6 +15823,7 @@ C           PARJ(42) = 1.0D0
          PARJ(18) = PDEF18
          PARJ(19) = PDEF19
          PARJ(21) = PDEF21
+         PARJ(22) = PDEF22
          PARJ(42) = PDEF42
          MSTJ(12) = MDEF12
       ENDIF
@@ -27108,7 +27111,7 @@ C     WRITE(LOUT,1000) DAT,TIM
 
       CHARACTER*6 CVERSI
       CHARACTER*11 CCHANG
-      DATA CVERSI,CCHANG /'3.0-6 ',' 5 May 2012'/
+      DATA CVERSI,CCHANG /'3.0-7 ','23 Aug 2023'/
 
       CALL DT_XTIME
       WRITE(LOUT,1000) CVERSI,CCHANG
@@ -27215,7 +27218,7 @@ C      IF (NCOMPO.GT.0) CALL DT_LTINI(ID,EPN,PPN,ECM)
 * Initialization and output of run-statistics.                         *
 *              MODE  = 1     initialization                            *
 *                    = 2     output                                    *
-* This version dated 23.01.94 is written by S. Roesler                 *
+* This version dated 23.08.23 is written by A. Fedynitch               *
 ************************************************************************
 
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -27245,7 +27248,8 @@ C      IF (NCOMPO.GT.0) CALL DT_LTINI(ID,EPN,PPN,ECM)
 * flags for particle decays
       COMMON /DTFRPA/ MSTUX(20),PARUX(20),MSTJX(20),PARJX(20),
      &                IMSTU(20),IPARU(20),IMSTJ(20),IPARJ(20),
-     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,IPI0
+     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,
+     &                IPI0, OVwtdc
 * diquark-breaking mechanism
       COMMON /DTDIQB/ DBRKR(3,8),DBRKA(3,8),CHAM1,CHAM3,CHAB1,CHAB3
 
@@ -39321,7 +39325,8 @@ C     ENDIF
 * flags for particle decays
       COMMON /DTFRPA/ MSTUX(20),PARUX(20),MSTJX(20),PARJX(20),
      &                IMSTU(20),IPARU(20),IMSTJ(20),IPARJ(20),
-     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,IPI0
+     &                NMSTU,NPARU,NMSTJ,NPARJ,PDB,PDBSEA(3),ISIG0,
+     &                IPI0, OVwtdc
 
 *
 * chain identifiers

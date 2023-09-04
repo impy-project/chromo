@@ -3,7 +3,7 @@
 
 python module _phojet112 ! in 
     interface  ! in :_phojet112
-        block data dt_defset ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-6.f
+        block data dt_defset ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-7.f
             integer, optional,dimension(2) :: ifrag=2
             integer, optional :: iresco=1
             integer, optional :: imshl=1
@@ -31,7 +31,7 @@ python module _phojet112 ! in
             common /dtcomp/ emufra,iemuma,iemuch,ncompo,iemul
             common /dtiont/ linp,lout,ldat
         end block data dt_defset
-        block data dt_hadprp ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-6.f
+        block data dt_hadprp ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-7.f
             integer, optional,dimension(13) :: iqechr=-2
             integer, optional,dimension(13) :: iqbchr=6*-1
             integer, optional,dimension(13) :: iqichr=4*0
@@ -54,7 +54,7 @@ python module _phojet112 ! in
             common /dthaic/ ipdg2,ibam2,ipdg3,ibam3,ipdg4,ibam4,ipdg5,ibam5,iamcin
             common /dtpain/ btype
         end block data dt_hadprp
-        block data dt_blkd46 ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-6.f
+        block data dt_blkd46 ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-7.f
             character dimension(210,8),intent(c) :: aname
             double precision dimension(210) :: aam
             double precision dimension(210) :: ga
@@ -67,14 +67,14 @@ python module _phojet112 ! in
             double precision :: ammuon
             common /dtpart/ aname,aam,ga,tau,iich,iibar,k1,k2
         end block data dt_blkd46
-        block data dt_blkd47 ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-6.f
+        block data dt_blkd47 ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-7.f
             character dimension(602,8),intent(c) :: zkname
             double precision dimension(602) :: wt
             integer dimension(602,3) :: nzk
             integer, parameter,optional :: idmax9=602
             common /hndech/ zkname,wt,nzk
         end block data dt_blkd47
-        block data dt_bdevap ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-6.f
+        block data dt_bdevap ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-7.f
             logical :: lgbias
             logical :: lgbana
             double precision :: alpign
@@ -248,7 +248,7 @@ python module _phojet112 ! in
             common /fkhet7/ cosks,sinks,costh,sinth,cosphi,sinphi
             common /fkinpf/ iang,ifiss,ib0,igeom,istrag,keydk
         end block data dt_bdevap
-        block data dt_bdnopt ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-6.f
+        block data dt_bdnopt ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-7.f
             logical :: lgbias
             logical :: lgbana
             double precision dimension(100) :: cxheav
@@ -475,7 +475,7 @@ python module _phojet112 ! in
             common /fkpare/ dpower,fsprd0,fshpfn,rn1gsc,rn2gsc,ldiffr,lpower,linctv,levprt,lheavy,ldeexg,lgdhpr,lpreex,lhlfix,lprfix,lparwv,ilvmod,jlvmod,llvmod,lsngch,lschdf
             common /fkresn/ amntar,ammtar,amnzm1,ammzm1,amnnm1,ammnm1,anow,znow,ancoll,zncoll,ammlft,amnlft,eres,ekres,amnres,ammres,ptres,pxres,pyres,pzres,ptres2,ktarp,ktarn,igreyp,igreyn,ipreeh,iprdeu,iprtri,ipr3he,ipr4he,icres,ibres,istres,ievapl,ievaph,ievneu,ievpro,ievdeu,ievtri,iev3he,iev4he,ideexg,ibtar,ichtar,ibleft,icleft,iother,lrnfss,lfragm
         end block data dt_bdnopt
-        block data dt_bdpree ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-6.f
+        block data dt_bdpree ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-7.f
             logical :: lgbias
             logical :: lgbana
             double precision :: pmnpis
@@ -1056,12 +1056,12 @@ python module _phojet112 ! in
             common /fknlev/ paenuc,shenuc,defrmi,defmag,ennclv,ranclv,cumrad,rusnuc,enplvl,ennlvl,jusnuc,ntanuc,navnuc,nlsnuc,nconuc,nsknuc,nhanuc,nusnuc,nacnuc,jmxnuc,iprnuc,jprnuc,magnum,magnuc,mgsnuc,mgssnc,nsbshl,nmnsbs,nprnuc,inuclv,lclvsl,lflvsl,lrlvsl,leqsbl
             common /fkparn/ ekori,pxori,pyori,pzori,ptori,taufor,ennuc,pnucl,ekfnuc,xstnuc,ystnuc,zstnuc,pxnucl,pynucl,pznucl,rstnuc,freepa,crrpan,crrpap,bstnuc,agenuc,taufpa,rhnucl,bndgav,defmin,kpnucl,krfnuc,ilinuc,inucts,isfnuc,kpori,ibori,ibnucl,npnuc,nnucts
         end block data dt_bdpree
-        block data dt_runtt ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-6.f
+        block data dt_runtt ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-7.f
             double precision, optional :: runtes=100.d0
             double precision, optional :: eftes=100.d0
             common /hndrun/ runtes,eftes
         end block data dt_runtt
-        block data dt_noname ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-6.f
+        block data dt_noname ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-7.f
             double precision, optional,dimension(25) :: sm=0.8d0
             double precision, optional,dimension(25) :: bbm= 0.85d0
             double precision, optional,dimension(25) :: bbb=  0.9d0
@@ -1072,7 +1072,7 @@ python module _phojet112 ! in
             common /hnslop/ sm,bbm,bbb
             common /hnredv/ thresh,irii,ikii,ieii
         end block data dt_noname
-        block data dt_zk ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-6.f
+        block data dt_zk ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-7.f
             double precision, optional,dimension(16) :: amz=3*2.2d0
             double precision, optional,dimension(16) :: gaz=3*.2d0
             double precision, optional,dimension(16) :: tauz=16*0.d0
@@ -1092,7 +1092,7 @@ python module _phojet112 ! in
             common /hnaddh/ amz,gaz,tauz,ichz,ibarz,k1z,k2z,wtz,ii22,nzk1,nzk2,nzk3
             common /hnaddn/ anamz,zknam4,zknam5,zknam6
         end block data dt_zk
-        block data dt_blkd43 ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-6.f
+        block data dt_blkd43 ! in :_phojet112:CMakeFiles/_phojet112.dir/dpmjet3.0-7.f
             double precision dimension(296) :: umo
             double precision dimension(296) :: plabf
             double precision, optional,dimension(296) :: siin=296*0.d0
@@ -1141,7 +1141,7 @@ python module _phojet112 ! in
             integer dimension(532) :: nrklin
             common /hnreac/ umo,plabf,siin,wk,nrk,nure
         end block data dt_blkd43
-        subroutine pho_init(linp,lout,irej) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_init(linp,lout,irej) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: linp
             integer :: lout
             integer intent(inout) :: irej
@@ -1279,7 +1279,7 @@ python module _phojet112 ! in
             common /pydat2/ kchg,pmas,parf,vckm
             common /pydat3/ mdcy,mdme,brat,kfdp
         end subroutine pho_init
-        subroutine pho_setmdl(indx,ival,imode) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_setmdl(indx,ival,imode) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: indx
             integer :: ival
             integer :: imode
@@ -1292,7 +1292,7 @@ python module _phojet112 ! in
             common /poinou/ li,lo
             common /pomdls/ mdlna,iswmdl,parmdl,ipamdl
         end subroutine pho_setmdl
-        subroutine pho_borncs(ip,ifhard,xm1,xm2,xm3,xm4) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_borncs(ip,ifhard,xm1,xm2,xm3,xm4) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: ip
             integer :: ifhard
             double precision :: xm1
@@ -1447,7 +1447,7 @@ python module _phojet112 ! in
             common /pocut1/ ptcut,ptano,fps,fph,psomin,xsomin
             common /point3/ sigs,dsighp,sigh,fs,fh,betas,aas,ptcon
         end subroutine pho_borncs
-        subroutine pho_xsect(ip,ifhard,ee) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_xsect(ip,ifhard,ee) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: ip
             integer :: ifhard
             double precision :: ee
@@ -1552,7 +1552,7 @@ python module _phojet112 ! in
             common /pogcms/ ecm,pcm,pmass,pvirt,ifpap,ifpab
             common /point4/ ampel,ampvm,ampsof,amphar,amlmsd,amhmsd,amlmdd,amhmdd,ampdp
         end subroutine pho_xsect
-        subroutine pho_event(nev,p1,p2,fac,irej) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_event(nev,p1,p2,fac,irej) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: nev
             double precision dimension(4) :: p1
             double precision dimension(4) :: p2
@@ -1679,7 +1679,7 @@ python module _phojet112 ! in
             common /pohrcs/ hfac,hwgx,hsig,hdpt,hecm_last,hq2a_last,hq2b_last,iha_last,ihb_last,mh_pro_on,mh_tried,mh_acc_1,mh_acc_2
             common /porecu/ ipopos,ipores,ipoix1,ipoix2,ipoix3
         end subroutine pho_event
-        subroutine pho_mcini ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_mcini ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: li
             integer :: lo
             integer dimension(100) :: ideb
@@ -1802,7 +1802,7 @@ python module _phojet112 ! in
             common /poprob/ prob,eptab,ieemax,imax,kmax
             common /potabl/ sigtab,sigecm,isimax
         end subroutine pho_mcini
-        subroutine pho_harint(ipp,ecm,p2v1,p2v2,i1,i2,k1,k2,mspom) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_harint(ipp,ecm,p2v1,p2v2,i1,i2,k1,k2,mspom) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: ipp
             double precision :: ecm
             double precision :: p2v1
@@ -1967,7 +1967,7 @@ python module _phojet112 ! in
             common /pockin/ ptwant,as,ah,alns,alnh,z1max,z1dif,z2max,z2dif,pt,ptfin,etac,etad,x1,x2,v,u,w,w1,axx,qqpd,qqal,pdf1,pdf2,weight,phi1,phi2,pho1,pho2,ia,ib,ic,id,iv1,iv2,mspr,irejsc
             common /potabl/ sigtab,sigecm,isimax
         end subroutine pho_harint
-        function pho_ptcut(ecm,ip) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        function pho_ptcut(ecm,ip) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             double precision :: ecm
             integer :: ip
             integer :: li
@@ -1996,7 +1996,7 @@ python module _phojet112 ! in
             common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
             common /pomdls/ mdlna,iswmdl,parmdl,ipamdl
         end function pho_ptcut
-        subroutine pho_harmci(ip,emaxf) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_harmci(ip,emaxf) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: ip
             double precision :: emaxf
             integer :: li
@@ -2105,7 +2105,7 @@ python module _phojet112 ! in
             common /pohtab/ hfac_tab,hwgx_tab,hsig_tab,hdpt_tab,hq2a_tab,hq2b_tab,hecm_tab,ih_q2a_up,ih_q2b_up,ih_ecm_up
             common /powght/ siggen,hswght,hswcut,evwght,ipowgc,iswcut,ivwght
         end subroutine pho_harmci
-        subroutine pho_harxpt(ecmh,pt,ipro,dsigmc) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_harxpt(ecmh,pt,ipro,dsigmc) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             double precision :: ecmh
             double precision :: pt
             integer :: ipro
@@ -2177,7 +2177,7 @@ python module _phojet112 ! in
             common /pohapa/ alqcd2,bqcd,nfbeta,nf
             common /pohdrn/ qmass,bet,pcoudi,pnorm,valprg,nfs
         end subroutine pho_harxpt
-        subroutine pho_harxto(ecmh,ptcutr,ptcutd,dsigmc,dsdptc) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_harxto(ecmh,ptcutr,ptcutd,dsigmc,dsdptc) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             double precision :: ecmh
             double precision :: ptcutr
             double precision :: ptcutd
@@ -2250,7 +2250,7 @@ python module _phojet112 ! in
             common /pohdrn/ qmass,bet,pcoudi,pnorm,valprg,nfs
             common /pohapa/ alqcd2,bqcd,nfbeta,nf
         end subroutine pho_harxto
-        subroutine pho_setpdf(idpdg,ityp,ipar,iset,iext,ipaval,mode) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_setpdf(idpdg,ityp,ipar,iset,iext,ipaval,mode) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: idpdg
             integer :: ityp
             integer :: ipar
@@ -2289,7 +2289,7 @@ python module _phojet112 ! in
             common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
             common /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp,ideqb,ihfld,ihfls
         end subroutine pho_setpdf
-        function ipho_pdg2id(idpdg) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        function ipho_pdg2id(idpdg) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: idpdg
             integer :: li
             integer :: lo
@@ -2317,7 +2317,7 @@ python module _phojet112 ! in
             common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
             common /popar1/ id_pdg_list,id_list,name_list,id_pdg_max
         end function ipho_pdg2id
-        function ipho_id2pdg(idcpc) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        function ipho_id2pdg(idcpc) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: idcpc
             integer :: li
             integer :: lo
@@ -2345,7 +2345,7 @@ python module _phojet112 ! in
             common /podebg/ ideb,kspom,khpom,ksreg,khdir,kaccep,kstrg,khtrg,ksloo,khloo,ksdpo,khdpo,kevent,ksoft,khard
             common /popar1/ id_pdg_list,id_list,name_list,id_pdg_max
         end function ipho_id2pdg
-        function pho_pname(id,mode) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        function pho_pname(id,mode) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: id
             integer :: mode
             integer :: li
@@ -2388,7 +2388,7 @@ python module _phojet112 ! in
             common /popar1/ id_pdg_list,id_list,name_list,id_pdg_max
             common /popar2/ xm_list,tau_list,gam_list,xm_psm2_list,xm_vem2_list,xm_b82_list,xm_b102_list,xm_bb82_list,xm_bb102_list,ich3_list,iba3_list,iq_list,id_psm_list,id_vem_list,id_b8_list,id_b10_list
         end function pho_pname
-        function pho_pmass(id,mode) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        function pho_pmass(id,mode) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: id
             integer :: mode
             integer :: li
@@ -2457,7 +2457,7 @@ python module _phojet112 ! in
             common /popar2/ xm_list,tau_list,gam_list,xm_psm2_list,xm_vem2_list,xm_b82_list,xm_b102_list,xm_bb82_list,xm_bb102_list,ich3_list,iba3_list,iq_list,id_psm_list,id_vem_list,id_b8_list,id_b10_list
             common /pydat1/ mstu,paru,mstj,parj
         end function pho_pmass
-        subroutine pho_prevnt(npart) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_prevnt(npart) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: npart
             integer :: li
             integer :: lo
@@ -2522,7 +2522,7 @@ python module _phojet112 ! in
             common /poevt2/ impart,iphist,icolor
             common /pohdfl/ ecmn,pcmn,secm,spcm,xpsub,xtsub,ideqp,ideqb,ihfld,ihfls
         end subroutine pho_prevnt
-        subroutine pho_setpar(iside,idpdg,idcpc,pvir) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-35c4.f
+        subroutine pho_setpar(iside,idpdg,idcpc,pvir) ! in :_phojet112:CMakeFiles/_phojet112.dir/phojet1.12-36c4.f
             integer :: iside
             integer :: idpdg
             integer :: idcpc

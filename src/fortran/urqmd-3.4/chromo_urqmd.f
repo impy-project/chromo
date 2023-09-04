@@ -64,7 +64,7 @@ c UrQMD doesn't know K0S or L and produces K0(bar) by default.
 c We will replace those with K0S/L based on a 50/50 rule.
 
          IF (ABS(IDHEP(I)).EQ.311) THEN
-            IDHEP(I) = K0SEL(INT(2.D0*SIMRND()))
+            IDHEP(I) = K0SEL(1 + INT(2.D0*SIMRND()))
          END IF
 
          PHEP(1,I) = px(I)
