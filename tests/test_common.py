@@ -62,6 +62,31 @@ def test_cross_section_eq():
     assert cx1 != cx2
 
 
+def test_non_diffractive():
+    csd = CrossSectionData(inelastic=10.0, diffractive_xb=3.0, diffractive_sum=8.0)
+    assert csd.non_diffractive == 2.0
+
+
+def test_diffractive():
+    csd = CrossSectionData(
+        diffractive_xb=3.0, diffractive_ax=2.0, diffractive_xx=1.0, diffractive_axb=4.0
+    )
+    assert csd.diffractive == 10.0
+
+    csd.diffractive_sum = 5.0
+    assert csd.diffractive == 5.0
+
+
+def test_mul_radd():
+    csd1 = CrossSectionData(total=5.0, inelastic=10.0)
+    csd2 = CrossSectionData(total=10.0, inelastic=5.0)
+
+    csd1._mul_radd(2, csd2)
+
+    assert_equal(csd1.total, 25.0)
+    assert_equal(csd1.inelastic, 20.0)
+
+
 def test_EventData_copy_and_pickle(evt):
     evt2 = evt.copy()
     assert evt2 == evt

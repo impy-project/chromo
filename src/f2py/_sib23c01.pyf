@@ -225,6 +225,32 @@ python module _sib23c01 ! in
             common /s_chm/ ichm
             common /s_cnam/ namp
         end block data datdec
+        subroutine sig_had_nuc(l,ia,ecm,alam,icsmod,iparm) ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
+            integer :: l
+            integer :: ia
+            double precision :: ecm
+            double precision :: alam
+            integer :: icsmod
+            integer :: iparm
+            double precision :: sigt
+            double precision :: sigel
+            double precision :: siginel
+            double precision :: sigqe
+            double precision :: sigsd
+            double precision :: sigqsd
+            double precision :: sigppt
+            double precision :: sigppel
+            double precision :: sigppsd
+            integer :: itg
+            double precision :: pi
+            double precision :: twopi
+            double precision :: cmbarn
+            double precision dimension(99) :: am
+            double precision dimension(99) :: am2
+            common /nucsig/ sigt,sigel,siginel,sigqe,sigsd,sigqsd,sigppt,sigppel,sigppsd,itg
+            common /sib_cst/ pi,twopi,cmbarn
+            common /s_mass1/ am,am2
+        end subroutine sig_had_nuc
         subroutine decsib ! in :_sib23c01:CMakeFiles/_sib23c01.dir/sibyll2.3c01.f
             integer :: ncall
             integer :: ndebug
