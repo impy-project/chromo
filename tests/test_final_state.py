@@ -44,6 +44,11 @@ def test_generator(Model):
         for i, pid in enumerate(long_lived_hadrons):
             if abs(pid) == lp.Omega_minus.pdgid:
                 known_issues[i] = True
+    elif Model == im.Sibyll23StarMixed:
+        pytest.skip(
+            reason="Sibyll23* it works differently compared to normal SIBYLL."
+            " We won't get short lived particles out of it."
+        )
     elif Model == im.UrQMD34:
         for i, pid in enumerate(long_lived_hadrons):
             if pid == lp.Omega_minus.pdgid:

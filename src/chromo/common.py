@@ -438,6 +438,19 @@ class EventData:
             ev = self[mask]
             mask = (ev.mothers[:, 0] == 0) | (ev.mothers[:, 0] == 1)
             ev.mothers[mask] = (0, 1)
+        elif model == "PhoJet":
+            # Decayed particles are not saved by PhoJet
+            # It should be fixed
+            mask = (self.status == 1) | (self.status == 4)
+            ev = self[mask]
+        elif model == "DPMJET-III":
+            mask = (
+                (self.status == 1)
+                | (self.status == 2)
+                | (self.status == 4)
+                | (self.pid == 99999)
+            )
+            ev = self[mask]
         else:
             ev = self
 

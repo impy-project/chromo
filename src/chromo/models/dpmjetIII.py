@@ -5,7 +5,6 @@ from chromo.util import (
     _cached_data_dir,
     fortran_chars,
     Nuclei,
-    phojet_dpmjet_hepmc,
 )
 from chromo.constants import standard_projectiles, GeV
 
@@ -37,9 +36,6 @@ class DpmjetIIIEvent(MCEvent):
         for field in ["pid", "status", "charge", "px", "py", "pz", "en", "m"]:
             event_field = getattr(self, field)
             event_field[0:2] = beam[field]
-
-    def to_hepmc3(self, genevent=None):
-        return super(DpmjetIIIEvent, phojet_dpmjet_hepmc(self)).to_hepmc3(genevent)
 
     # Unfortunately not that simple since this is bounced through
     # entire code as argument not in COMMON
@@ -239,6 +235,11 @@ class DpmjetIIIRun(MCRun):
         )
         self._lib.dtevno.nevent += 1
         return not reject
+
+    def print_original_event(self, mode=1):
+        if hasattr(self._lib, "dtflka"):
+            self._lib.dtflka.lpri = 5
+        self._lib.dt_evtout(mode)
 
 
 class DpmjetIII191(DpmjetIIIRun):

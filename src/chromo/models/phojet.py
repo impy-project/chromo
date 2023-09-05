@@ -1,5 +1,5 @@
 from chromo.common import MCRun, MCEvent, CrossSectionData
-from chromo.util import fortran_chars, _cached_data_dir, phojet_dpmjet_hepmc
+from chromo.util import fortran_chars, _cached_data_dir
 from chromo.kinematics import EventFrame
 from chromo.constants import standard_projectiles
 from particle import literals as lp
@@ -56,9 +56,6 @@ class PhojetEvent(MCEvent):
 
     def _repair_initial_beam(self):
         self.status[0:2] = 4
-
-    def to_hepmc3(self, genevent=None):
-        return super(PhojetEvent, phojet_dpmjet_hepmc(self)).to_hepmc3(genevent)
 
     # def elastic_t(self):
     #     """Squared momentum transfer t for elastic interaction.
@@ -208,6 +205,11 @@ class PHOJETRun(MCRun):
 
     def _generate(self):
         return not self._lib.pho_event(1, self.p1, self.p2)[1]
+
+    def print_original_event(self, mode=2):
+        if hasattr(self._lib, "poinou"):
+            self._lib.poinou.lpri = 5
+        self._lib.pho_prevnt(mode)
 
 
 class Phojet112(PHOJETRun):
