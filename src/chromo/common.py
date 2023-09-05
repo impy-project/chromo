@@ -418,6 +418,12 @@ class EventData:
         """
         import pyhepmc  # delay import
 
+        if not pyhepmc.__version__ >= "2.13.2":
+            raise RuntimeError(
+                f"current pyhepm version is {pyhepmc.__version__} < 2.13.2"
+                f"\nPlease `pip install pyhepmc==2.13.2` or later version",
+            )
+
         model, version = self.generator
 
         if genevent is None:
@@ -463,12 +469,13 @@ class EventData:
             m=ev.m,
             pid=ev.pid,
             status=ev.status,
-            parents=(ev.mothers + 1) if ev.mothers is not None else None,
-            children=(ev.daughters + 1) if ev.daughters is not None else None,
+            parents=ev.mothers if ev.mothers is not None else None,
+            children=ev.daughters if ev.daughters is not None else None,
             vx=ev.vx,
             vy=ev.vy,
             vz=ev.vz,
             vt=ev.vt,
+            fortran=False,
         )
 
         return genevent
