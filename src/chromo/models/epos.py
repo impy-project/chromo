@@ -117,6 +117,10 @@ class EposLHC(MCRun):
         return CrossSectionData(
             total=total,
             inelastic=inel,
+            prod=total
+            - el
+            - sd
+            - dd,  # TODO: We need to ask Tanguy if this is correct to get sigprod
             elastic=el,
             diffractive_xb=sd / 2,  # this is an approximation
             diffractive_ax=sd / 2,  # this is an approximation

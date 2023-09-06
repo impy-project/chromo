@@ -1,6 +1,7 @@
 from chromo import models
 from chromo import kinematics
 from chromo import constants
+
 import os
 from importlib.metadata import version
 

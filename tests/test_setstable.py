@@ -15,6 +15,7 @@ decay_list = [
     lp.pi_0.pdgid,
     lp.K_S_0.pdgid,
     lp.K_L_0.pdgid,
+    lp.Lambda.pdgid,
 ]
 
 
@@ -37,15 +38,11 @@ def run_model(Model, stable):
 @pytest.mark.parametrize("stable", (False, True))
 @pytest.mark.parametrize("Model", get_all_models())
 def test_setstable(Model, stable):
-    if not stable:
-        if any(part in Model.name for part in ("DPMJET", "PhoJet")):
-            pytest.xfail(
-                f"{Model.pyname} does not support decaying charged pions or any kaons"
-            )
-        if ("QGSJet" in Model.name) and (platform.system() == "Windows"):
-            pytest.xfail(f"{Model.pyname} does not support changing decays")
     if "UrQMD" in Model.name:
         pytest.xfail(f"{Model.pyname} does not support changing decays")
+    if not stable:
+        if ("QGSJet" in Model.name) and (platform.system() == "Windows"):
+            pytest.xfail(f"{Model.pyname} does not support changing decays")
 
     c = run_in_separate_process(run_model, Model, stable)
 
