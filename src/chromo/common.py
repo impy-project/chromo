@@ -768,8 +768,8 @@ class MCRun(ABC):
 
             If you need to set particles as stable for those with a lifetime
             greater than `tau_stable`:
-            >>> generator.final_state_particles = chromo.util
-                                                  .select_long_lived(tau_stable)
+            >>> generator.final_state_particles = (chromo.util
+                                                  .select_long_lived(tau_stable))
         """
         self._set_final_state_particles(pdgid)
 
