@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 
 
-sibyll_unstable_pids = [
+_sibyll_unstable_pids = [
     -13,
     13,
     111,
@@ -95,10 +95,10 @@ sibyll_unstable_pids = [
     4332,
 ]
 
-sibyll21_unstable_pids = set(sibyll_unstable_pids + [-10311, 10311, -10321, 10321])
+_sibyll21_unstable_pids = set(_sibyll_unstable_pids + [-10311, 10311, -10321, 10321])
 
-sibyll23_unstable_pids = set(
-    sibyll_unstable_pids
+_sibyll23_unstable_pids = set(
+    _sibyll_unstable_pids
     + [
         -15,
         15,
@@ -236,7 +236,7 @@ class SIBYLLRun(MCRun):
 class Sibyll21(SIBYLLRun):
     _version = "2.1"
     _library_name = "_sib21"
-    _unstable_pids = sibyll21_unstable_pids
+    _unstable_pids = _sibyll21_unstable_pids
 
     def _set_final_state_particles(self, pdgid):
         if not np.all(np.isin([-13, 13, -2112, 2112], pdgid)):
@@ -251,7 +251,7 @@ class Sibyll21(SIBYLLRun):
 class Sibyll23(SIBYLLRun):
     _version = "2.3"
     _library_name = "_sib23"
-    _unstable_pids = sibyll23_unstable_pids
+    _unstable_pids = _sibyll23_unstable_pids
 
 
 class Sibyll23c(Sibyll23):

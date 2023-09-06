@@ -17,7 +17,7 @@ sophia_interaction_types = [
 ]
 
 
-sophia_unstable_pids = set(
+_sophia_unstable_pids = set(
     [
         -13,
         13,
@@ -110,7 +110,7 @@ class Sophia20(MCRun):
     _frame = EventFrame.FIXED_TARGET
     _projectiles = {lp.photon.pdgid}
     _targets = {lp.p.pdgid, lp.n.pdgid}
-    _unstable_pids = sophia_unstable_pids
+    _unstable_pids = _sophia_unstable_pids
     _ecm_min = 0
 
     def __init__(self, kinematics, *, seed=None, keep_decayed_particles=True):

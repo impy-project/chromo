@@ -11,7 +11,7 @@ from chromo.util import (
 from chromo.constants import standard_projectiles
 
 
-def get_epos_unstable_pids():
+def _epos_unstable_pids():
     unknown_pids_epos = [
         117,
         119,
@@ -61,9 +61,6 @@ def get_epos_unstable_pids():
     return unstable_pids
 
 
-epos_unstable_pids = set(get_epos_unstable_pids())
-
-
 class EPOSEvent(MCEvent):
     """Wrapper class around EPOS particle stack."""
 
@@ -88,7 +85,7 @@ class EposLHC(MCRun):
     _event_class = EPOSEvent
     _frame = None
     _projectiles = standard_projectiles | Nuclei()
-    _unstable_pids = epos_unstable_pids
+    _unstable_pids = set(_epos_unstable_pids())
     _data_url = (
         "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/epos_v001.zip"

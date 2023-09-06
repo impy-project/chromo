@@ -28,7 +28,7 @@ class UrQMDEvent(MCEvent):
         return self._lib.rsys.bimp
 
 
-urqmd_unstable_pids = set(
+_urqmd_unstable_pids = set(
     [
         111,
         113,
@@ -108,7 +108,7 @@ class UrQMD34(MCRun):
     _library_name = "_urqmd34"
     _event_class = UrQMDEvent
     _frame = EventFrame.FIXED_TARGET
-    _unstable_pids = urqmd_unstable_pids
+    _unstable_pids = _urqmd_unstable_pids
     _projectiles = standard_projectiles | Nuclei()
     _ecm_min = 2 * GeV
 
