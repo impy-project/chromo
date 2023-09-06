@@ -28,10 +28,10 @@ def run_decay_handler(model, evt_kin, stable_particles):
         assert np.sum(event_dec.status != 1) >= np.sum(event0.status != 1)
 
         # Assert that all particles that should decay have been decayed
-        not_decayed0 = np.isin(event0.pid, decay_handler.all_decaying_pids) & (
+        not_decayed0 = np.isin(event0.pid, decay_handler.all_unstable_pids) & (
             event0.status == 1
         )
-        not_decayed1 = np.isin(event.pid, decay_handler.all_decaying_pids) & (
+        not_decayed1 = np.isin(event.pid, decay_handler.all_unstable_pids) & (
             event.status == 1
         )
 
@@ -53,15 +53,23 @@ def run_decay_handler(model, evt_kin, stable_particles):
         # Assert that stable particles haven't decayed
         assert np.all(stable0 == stable1[0 : len(event0)])
 
-        # Assert that initial stack is preserved in decayed stack
-        # Fix after decay
+        # Assert that initial stack is preserved in decayed stack, i.e.
+        # original particles haven't been changed, except for
+        # status and daughters
+
+        # We want to use comparison operation which compares
+        # all fields. Because some fields have changed, assign them
+        # to original values to pass assertion
         event_dec.status = event0.status
         event_dec.daughters = event0.daughters
         # event_dec is np.float32: 1/3, 2/3 are represented differently
         # from event0.charge (np.float64), therefore:
         event0.charge = np.array(event0.charge, dtype=np.float32)
 
-        # Fix after selection
+        # `event_dec = event[0 : len(event0)]` operation changes
+        # mothers by using `_select_mothers`
+        # revert this so that comparison
+        # `event_dec == event0` will pass assertion
         event_dec.mothers = event.mothers[0 : len(event0)]
         assert event_dec == event0
 
@@ -76,7 +84,7 @@ def test_decay_handler(Model):
         and (Model.name == "UrQMD")
     ):
         pytest.xfail(
-            f"For {Model.pyname} DecayHandler fails to decay all decaying particles on MacOS CI"
+            f"For {Model.pyname} DecayHandler fails to decay all unstable particles on MacOS CI"
         )
 
     if Model.name in ["PhoJet", "Pythia"]:

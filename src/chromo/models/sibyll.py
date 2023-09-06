@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 
 
-sibyll_decaying_pids = [
+sibyll_unstable_pids = [
     -13,
     13,
     111,
@@ -95,19 +95,19 @@ sibyll_decaying_pids = [
     4332,
 ]
 
-sibyll21_decaying_pids = sibyll_decaying_pids + [-10311, 10311, -10321, 10321]
-# sibyll21_decaying_pids = sibyll_decaying_pids
-sibyll21_decaying_pids = set(sibyll21_decaying_pids)
+sibyll21_unstable_pids = set(sibyll_unstable_pids + [-10311, 10311, -10321, 10321])
 
-sibyll23_decaying_pids = sibyll_decaying_pids + [
-    -15,
-    15,
-    -313,
-    313,
-    -323,
-    323,
-]
-sibyll23_decaying_pids = set(sibyll23_decaying_pids)
+sibyll23_unstable_pids = set(
+    sibyll_unstable_pids
+    + [
+        -15,
+        15,
+        -313,
+        313,
+        -323,
+        323,
+    ]
+)
 
 
 class SibyllEvent(MCEvent):
@@ -208,7 +208,7 @@ class SIBYLLRun(MCRun):
         assert self._production_id != 0
 
     def _set_stable(self, pdgid, stable):
-        if pdgid not in self._decaying_pids:
+        if pdgid not in self._unstable_pids:
             return
 
         sid = abs(self._lib.isib_pdg2pid(pdgid))
@@ -236,12 +236,12 @@ class SIBYLLRun(MCRun):
 class Sibyll21(SIBYLLRun):
     _version = "2.1"
     _library_name = "_sib21"
-    _decaying_pids = sibyll21_decaying_pids
+    _unstable_pids = sibyll21_unstable_pids
 
     def _set_final_state_particles(self, pdgid):
         if not np.all(np.isin([-13, 13, -2112, 2112], pdgid)):
             raise ValueError(
-                "Sibyll21 hangs when pdgs [-13, 13, -2112, 2112] are set as decaying.\n"
+                "Sibyll21 hangs when pdgs [-13, 13, -2112, 2112] are set as unstable.\n"
                 "final_state_particles should contain [-13, 13, -2112, 2112]"
             )
 
@@ -251,7 +251,7 @@ class Sibyll21(SIBYLLRun):
 class Sibyll23(SIBYLLRun):
     _version = "2.3"
     _library_name = "_sib23"
-    _decaying_pids = sibyll23_decaying_pids
+    _unstable_pids = sibyll23_unstable_pids
 
 
 class Sibyll23c(Sibyll23):

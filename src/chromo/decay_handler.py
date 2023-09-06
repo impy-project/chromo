@@ -14,7 +14,7 @@ class Pythia8DecayHandler:
         Parameters:
             seed (int): Random seed for Pythia8 initialization.
             stable_pids (list[int]): List of PDG IDs
-            for stable particles (all other are decaying).
+            for stable particles (all other will decay).
 
         """
         # Initialize Pythia8 with specific configurations
@@ -25,33 +25,33 @@ class Pythia8DecayHandler:
         self.set_stable(stable_pids)
 
     def set_stable(self, stable_pids):
-        # Set all particles as decaying
+        # Set all particles as unstable
         for pentry in self.pythia.particleData.all():
             self.pythia.particleData.mayDecay(pentry.id, True)
 
-        # Set stable_pids as decaying
+        # Set stable_pids as stable
         for pid in stable_pids:
             self.pythia.particleData.mayDecay(pid, False)
 
-        # Store stable and decaying PDG IDs for future reference
+        # Store stable and unstable PDG IDs for future reference
         all_stable_pids = []
-        all_decaying_pids = []
+        all_unstable_pids = []
         for pentry in self.pythia.particleData.all():
             if pentry.mayDecay and pentry.canDecay:
                 if pentry.hasAnti:
-                    all_decaying_pids.append(pentry.antiId)
-                all_decaying_pids.append(pentry.id)
+                    all_unstable_pids.append(pentry.antiId)
+                all_unstable_pids.append(pentry.id)
             else:
                 if pentry.hasAnti:
                     all_stable_pids.append(pentry.antiId)
                 all_stable_pids.append(pentry.id)
 
-        self.all_decaying_pids = np.array(all_decaying_pids, dtype=np.int64)
+        self.all_unstable_pids = np.array(all_unstable_pids, dtype=np.int64)
         self.all_stable_pids = np.array(all_stable_pids, dtype=np.int64)
 
     def __call__(self, event):
         """
-        Decay particles in the provided `event` that are marked as `decaying`.
+        Decay particles in the provided `event` that are not set as `stable`.
 
         After the call, `event` contains both the initial particles and
         the newly produced particles through decay.

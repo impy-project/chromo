@@ -699,11 +699,11 @@ def unique_sorted_pids(ids):
     return uids[np.argsort(2 * np.abs(uids) - (uids < 0))]
 
 
-def long_lived_for(tau=0, mm=False):
+def select_long_lived(tau=0, mm=False):
     """
-    Returns decaying particles stable for tau sec,
-    (or mm if mm=True). By default returns all
-    unstable particles excluding nuclei.
+    Returns unstable particles that are stable
+    for `tau` sec (or mm if mm=True).
+    By default returns all unstable particles excluding nuclei.
     """
     if not mm:
         tau = tau * sec2cm * 1e1  # in mm

@@ -17,7 +17,7 @@ sophia_interaction_types = [
 ]
 
 
-sophia_decaying_pids = set(
+sophia_unstable_pids = set(
     [
         -13,
         13,
@@ -110,7 +110,7 @@ class Sophia20(MCRun):
     _frame = EventFrame.FIXED_TARGET
     _projectiles = {lp.photon.pdgid}
     _targets = {lp.p.pdgid, lp.n.pdgid}
-    _decaying_pids = sophia_decaying_pids
+    _unstable_pids = sophia_unstable_pids
     _ecm_min = 0
 
     def __init__(self, kinematics, *, seed=None, keep_decayed_particles=True):
@@ -149,13 +149,13 @@ class Sophia20(MCRun):
         self._lib.initial(self._nucleon_code)
 
     def _set_stable(self, pdgid, stable):
-        if pdgid not in self._decaying_pids:
+        if pdgid not in self._unstable_pids:
             return
 
         sid = abs(self._lib.icon_pdg_sib(pdgid)) - 1
         idb = self._lib.s_csydec.idb
         if sid < 0 or sid > idb.size:
-            warnings.warn(f"{pdgid} unknown to UrQMD", RuntimeWarning)
+            warnings.warn(f"{pdgid} unknown to Sophia", RuntimeWarning)
             return
 
         if stable:
