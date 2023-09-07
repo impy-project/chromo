@@ -15,6 +15,10 @@ long_lived_hadrons = [p for p in long_lived if abs(p) != 13]
 
 def run_model(Model, kin, number=1000):
     gen = Model(kin, seed=1)
+    # Decay of particles produced by QGSJet01d
+    # produce Sigma-, Xi-, Xi+, Xi0
+    if Model.pyname.startswith("QGSJet"):
+        gen._activate_decay_handler(on=False)
     h = bh.Histogram(bh.axis.IntCategory(long_lived_hadrons))
     for event in gen(number):
         ev = event.final_state()
@@ -28,6 +32,12 @@ def run_model(Model, kin, number=1000):
 )
 @pytest.mark.parametrize("Model", get_all_models())
 def test_generator(Model):
+    if Model == im.Sibyll23StarMixed:
+        pytest.skip(
+            reason="Sibyll23* it works differently compared to normal SIBYLL."
+            " We won't get short lived particles out of it."
+        )
+
     if Model is im.Sophia20:
         kin = CenterOfMass(1000 * GeV, "gamma", "p")
     else:
@@ -38,7 +48,7 @@ def test_generator(Model):
 
     # Known issues:
     # SIBYLL-2.1 and UrQMD produce no Omega-
-    # QGSJet family procues no Omega-, Xi0, Xi-, Sigma+, Sigma-
+    # QGSJet family produce no Omega-, Xi0, Xi-, Sigma+, Sigma-
     known_issues = np.zeros_like(counts, dtype=bool)
     if Model == im.Sibyll21:
         for i, pid in enumerate(long_lived_hadrons):
