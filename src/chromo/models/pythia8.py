@@ -76,7 +76,7 @@ class PYTHIA8Event(EventData):
 
 class Pythia8(MCRun):
     _name = "Pythia"
-    _version = "8.308"
+    _version = "8.310"
     _library_name = "_pythia8"
     _event_class = PYTHIA8Event
     _frame = EventFrame.CENTER_OF_MASS
@@ -85,12 +85,12 @@ class Pythia8(MCRun):
     # Support for more nuclei can be added with ParticleData.addParticle.
     _targets = _projectiles | {
         name2pdg(x)
-        for x in ("He4", "Li6", "C12", "O16", "Cu63", "Xe129", "Au197", "Pb208")
+        for x in ("H2", "He4", "Li6", "C12", "O16", "Cu63", "Kr84", "Xe129", "Au197", "Pb208")
     }
     _restartable = True
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/Pythia8_v002.zip"
+        + "/releases/download/zipped_data_v1.0/Pythia8_v002.zip" # TODO to be updated
     )
 
     def __init__(self, evt_kin, *, seed=None, config=None, banner=True):
@@ -160,9 +160,13 @@ class Pythia8(MCRun):
             diffractive_xx=st.sigmaXX,
             diffractive_axb=st.sigmaAXB,
         )
+        
+        # not estimated total cross-section -> 
 
     def _set_kinematics(self, kin):
         config = self._config[:]
+
+        initPrefix = f"{int(kin.p1)}_{int(kin.p2)}_{kin.ecm}"
 
         # TODO use numpy PRNG instead of Pythia's
         config += [
@@ -170,6 +174,8 @@ class Pythia8(MCRun):
             "Beams:frameType = 1",
             # do not print progress
             "Next:numberCount = 0",
+            "MultipartonInteractions:reuseInit = 3",
+            f"MultipartonInteractions:initFile = {initPrefix}.mpi"
         ]
 
         if (kin.p1.A or 0) > 1 or (kin.p2.A or 1) > 1:
@@ -178,18 +184,28 @@ class Pythia8(MCRun):
             warnings.warn(
                 "Support for nuclei is experimental; event generation takes a long time",
                 RuntimeWarning,
+                     
             )
+             
+            config += [
+                "HeavyIon:SasdMpiReuseInit = 3",
+                "HeavyIon:SigFitReuseInit = 3",
+                f"HeavyIon:SasdMpiInitFile = {initPrefix}.sasd.mpi",
+                f"HeavyIon:SigFitInitFile = {initPrefix}.sigfit"
+
+            ]
 
             # speed-up initialization by not fitting nuclear cross-section
-            config.append("HeavyIon:SigFitNGen = 0")
-            config.append("HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0")
+            #config.append("HeavyIon:SigFitNGen = 0")
+            #config.append("HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0")
+          
 
         config += [
             f"Beams:idA = {int(kin.p1)}",
             f"Beams:idB = {int(kin.p2)}",
             f"Beams:eCM = {kin.ecm}",
         ]
-
+        
         self._init_pythia(config)
 
     def _init_pythia(self, config):
