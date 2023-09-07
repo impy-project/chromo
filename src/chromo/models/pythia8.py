@@ -1,5 +1,6 @@
 from chromo.common import MCRun, EventData, CrossSectionData
-from chromo.util import _cached_data_dir, name2pdg
+from chromo.util import _cached_data_dir, _cache_base_dir, name2pdg
+from chromo.constants import MeV
 from os import environ
 import numpy as np
 from chromo.kinematics import EventFrame
@@ -85,7 +86,18 @@ class Pythia8(MCRun):
     # Support for more nuclei can be added with ParticleData.addParticle.
     _targets = _projectiles | {
         name2pdg(x)
-        for x in ("H2", "He4", "Li6", "C12", "O16", "Cu63", "Kr84", "Xe129", "Au197", "Pb208")
+        for x in (
+            "H2",
+            "He4",
+            "Li6",
+            "C12",
+            "O16",
+            "Cu63",
+            "Kr84",
+            "Xe129",
+            "Au197",
+            "Pb208",
+        )
     }
     _restartable = True
     _data_url = (
@@ -160,13 +172,19 @@ class Pythia8(MCRun):
             diffractive_xx=st.sigmaXX,
             diffractive_axb=st.sigmaAXB,
         )
-        
-        # not estimated total cross-section -> 
+
+        # not estimated total cross-section ->
 
     def _set_kinematics(self, kin):
         config = self._config[:]
 
-        initPrefix = f"{int(kin.p1)}_{int(kin.p2)}_{kin.ecm}"
+        # Path prefix for some cache files that Pythia8 generates
+        # to speed up subsequent runs
+        cache_prefix = str(
+            _cache_base_dir()
+            / "Pythia8"
+            / f"cache_{int(kin.p1)}_{int(kin.p2)}_{kin.ecm / MeV:.0f}".replace("-", "m")
+        )
 
         # TODO use numpy PRNG instead of Pythia's
         config += [
@@ -175,37 +193,33 @@ class Pythia8(MCRun):
             # do not print progress
             "Next:numberCount = 0",
             "MultipartonInteractions:reuseInit = 3",
-            f"MultipartonInteractions:initFile = {initPrefix}.mpi"
+            f"MultipartonInteractions:initFile = {cache_prefix}.mpi",
         ]
 
-        if (kin.p1.A or 0) > 1 or (kin.p2.A or 1) > 1:
-            import warnings
+        # TODO Pythia8 likes to say this:
+        #  To avoid refitting, add the following lines to your configuration file:
+        #     HeavyIon:SigFitNGen = 0
+        #     HeavyIon:SigFitDefPar = 18.39,1.91,0.36
+        # but these numbers of collision-specific, so we cannot just set this globally.
+        # We could generate collision-specific cache files like we do for the
+        #  MPI stuff and set the numbers via those. To get the numbers, call
+        # SubCollisionModel::getParm(), which is complicated to call from the Pythia
+        # object, this is work in progress.
 
-            warnings.warn(
-                "Support for nuclei is experimental; event generation takes a long time",
-                RuntimeWarning,
-                     
-            )
-             
+        if (kin.p1.A or 0) > 1 or (kin.p2.A or 1) > 1:
             config += [
                 "HeavyIon:SasdMpiReuseInit = 3",
                 "HeavyIon:SigFitReuseInit = 3",
-                f"HeavyIon:SasdMpiInitFile = {initPrefix}.sasd.mpi",
-                f"HeavyIon:SigFitInitFile = {initPrefix}.sigfit"
-
+                f"HeavyIon:SasdMpiInitFile = {cache_prefix}.sasd.mpi",
+                f"HeavyIon:SigFitInitFile = {cache_prefix}.sigfit",
             ]
-
-            # speed-up initialization by not fitting nuclear cross-section
-            #config.append("HeavyIon:SigFitNGen = 0")
-            #config.append("HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0")
-          
 
         config += [
             f"Beams:idA = {int(kin.p1)}",
             f"Beams:idB = {int(kin.p2)}",
             f"Beams:eCM = {kin.ecm}",
         ]
-        
+
         self._init_pythia(config)
 
     def _init_pythia(self, config):

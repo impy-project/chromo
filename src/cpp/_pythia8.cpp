@@ -246,6 +246,13 @@ PYBIND11_MODULE(_pythia8, m)
 
         ;
 
+    py::class_<SubCollisionModel, std::shared_ptr<SubCollisionModel>>(m, "SubCollisionModel")
+        // TODO add getParm
+        ;
+
+    py::class_<HIUserHooks, HIUserHooksPtr>(m, "HIUserHooks")
+        .def_property_readonly("subCollisionModel", &HIUserHooks::subCollisionModel);
+
     py::class_<Pythia>(m, "Pythia")
         .def(py::init<string, bool>(), py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
         .def("init", &Pythia::init, py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
@@ -267,7 +274,9 @@ PYBIND11_MODULE(_pythia8, m)
                  for (auto pit = self.event.begin() + 1; pit != self.event.end(); ++pit)
                      *ptr++ = charge_from_pid(self.particleData, pit->id());
                  return result;
-             });
+             })
+        .def_property_readonly("hiHooks", [](Pythia &self) -> py::object
+                               { return self.hiHooksPtr ? py::cast(self.hiHooksPtr) : py::none(); });
 
     py::class_<Event>(m, "Event")
         .def_property_readonly("size", [](Event &self)

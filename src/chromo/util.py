@@ -474,6 +474,13 @@ def _download_file(outfile, url):
         raise ConnectionError(f"{fname} has not been downloaded")
 
 
+# Path to directory to store precomputed data tables
+def _cache_base_dir():
+    base_dir = Path(__file__).parent.absolute() / "iamdata"
+    base_dir.mkdir(parents=True, exist_ok=True)
+    return base_dir
+
+
 # Function to check and download dababase files on github
 def _cached_data_dir(url):
     """Checks for existence of version file
@@ -483,10 +490,7 @@ def _cached_data_dir(url):
     Args:
         url (str): url for zip file
     """
-
-    base_dir = Path(__file__).parent.absolute() / "iamdata"
-    base_dir.mkdir(parents=True, exist_ok=True)
-
+    base_dir = _cache_base_dir()
     vname = Path(url).stem
     model_dir = base_dir / vname.split("_v")[0]
     version_file = model_dir / vname

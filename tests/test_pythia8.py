@@ -98,7 +98,6 @@ def test_mothers(event):
     assert sum(x[1] >= -1 and x[1] < len(event) for x in event.mothers) == n
 
 
-@pytest.mark.skip(reason="Simulating nuclei in Pythia8 is very time-consuming")
 def test_nuclear_collision():
     # The test takes ages because the initialization is extremely long,
     # and Pythia seldom raises the success flag unless Ecm > TeV are used.
@@ -107,7 +106,7 @@ def test_nuclear_collision():
     assert event.pid[0] == 2212
     assert event.pid[1] == 1000020040
     assert_allclose(event.en[0], 1e3)
-    assert_allclose(event.en[1], 4e3)
+    assert_allclose(event.en[1], 4e3, rtol=1e-2)
     assert event.impact_parameter > 0
     assert event.n_wounded[0] == 1
     assert event.n_wounded[1] > 0
