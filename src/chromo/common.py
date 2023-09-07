@@ -29,7 +29,7 @@ from typing import Tuple, Optional
 from contextlib import contextmanager
 import warnings
 from particle import Particle
-import packaging
+from packaging.version import parse as parse_version
 
 
 # Do we need EventData.n_spectators in addition to EventData.n_wounded?
@@ -404,6 +404,13 @@ class EventData:
     #     """I don't remember what this was for..."""
     #     return self.en / self.kin.pcm
 
+    def _repair_for_hepmc(self):
+        """
+        Override this method in classes that need to modify event
+        history for compatibility with HepMC.
+        """
+        return self
+
     def to_hepmc3(self, genevent=None):
         """
         Convert event to HepMC3 GenEvent.
@@ -419,9 +426,7 @@ class EventData:
         """
         import pyhepmc  # delay import
 
-        if packaging.version.parse(pyhepmc.__version__) < packaging.version.parse(
-            "2.13.2"
-        ):
+        if parse_version(pyhepmc.__version__) < parse_version("2.13.2"):
             raise RuntimeError(
                 f"current pyhepmc version is {pyhepmc.__version__} < 2.13.2"
                 f"\nPlease `pip install pyhepmc==2.13.2` or later version",
@@ -434,35 +439,7 @@ class EventData:
             genevent.run_info = pyhepmc.GenRunInfo()
             genevent.run_info.tools = [(model, version, "")]
 
-        # We must apply some workarounds so that HepMC3 conversion and IO works
-        # for all models. This should be revisited once the fundamental issues
-        # with particle histories have been fixed.
-        if model == "Pythia" and version.startswith("8"):
-            # to get a valid GenEvent we must
-            # 1) select only particles produced after the parton shower
-            # 2) connect particles attached to a single beam particle
-            # (diffractive events) to the common interaction vertex (1, 2)
-            # TODO check if this costs significant amount of time and speed it up if so
-            mask = (self.status == 1) | (self.status == 2) | (self.status == 4)
-            ev = self[mask]
-            mask = (ev.mothers[:, 0] == 0) | (ev.mothers[:, 0] == 1)
-            ev.mothers[mask] = (0, 1)
-        elif model == "PhoJet":
-            # Decayed particles are not saved by PhoJet
-            # It should be fixed
-            mask = (self.status == 1) | (self.status == 4)
-            ev = self[mask]
-        elif model == "DPMJET-III":
-            mask = (
-                (self.status == 1)
-                | (self.status == 2)
-                | (self.status == 4)
-                | (self.pid == 99999)
-            )
-            ev = self[mask]
-        else:
-            ev = self
-
+        ev = self._repair_for_hepmc()
         genevent.from_hepevt(
             event_number=ev.nevent,
             px=ev.px,

@@ -263,6 +263,9 @@ class EventKinematics(EventKinematicsBase):
             "py": np.zeros((2,), dtype=np.float64),
             "pz": event_like.pz,
             "en": event_like.en,
+            # Note that the masses are from `particle` module:
+            # It may introduce some E/p conservation issues if the internal mass
+            # in the model is too different to that from particle/PDG/Pythia
             "m": np.array([self.m1, self.m2]),
             "vx": np.zeros((2,), dtype=np.float64),
             "vy": np.zeros((2,), dtype=np.float64),

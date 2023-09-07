@@ -57,6 +57,12 @@ class PhojetEvent(MCEvent):
     def _repair_initial_beam(self):
         self.status[0:2] = 4
 
+    def _repair_for_hepmc(self):
+        # Decayed particles are not saved by PhoJet
+        # It should be fixed
+        mask = (self.status == 1) | (self.status == 4)
+        return self[mask]
+
     # def elastic_t(self):
     #     """Squared momentum transfer t for elastic interaction.
 
@@ -208,8 +214,10 @@ class PHOJETRun(MCRun):
 
     def print_original_event(self, mode=2):
         if hasattr(self._lib, "poinou"):
+            saved_lpri = self._lib.poinou.lpri
             self._lib.poinou.lpri = 5
         self._lib.pho_prevnt(mode)
+        self._lib.poinou.lpri = saved_lpri
 
 
 class Phojet112(PHOJETRun):

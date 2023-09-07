@@ -37,6 +37,15 @@ class DpmjetIIIEvent(MCEvent):
             event_field = getattr(self, field)
             event_field[0:2] = beam[field]
 
+    def _repair_for_hepmc(self):
+        mask = (
+            (self.status == 1)
+            | (self.status == 2)
+            | (self.status == 4)
+            | (self.pid == 99999)
+        )
+        return self[mask]
+
     # Unfortunately not that simple since this is bounced through
     # entire code as argument not in COMMON
     # @property
@@ -238,8 +247,10 @@ class DpmjetIIIRun(MCRun):
 
     def print_original_event(self, mode=1):
         if hasattr(self._lib, "dtflka"):
+            saved_lpri = self._lib.dtflka.lpri
             self._lib.dtflka.lpri = 5
         self._lib.dt_evtout(mode)
+        self._lib.dtflka.lpri = saved_lpri
 
 
 class DpmjetIII191(DpmjetIIIRun):
