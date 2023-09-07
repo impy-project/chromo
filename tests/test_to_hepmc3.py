@@ -22,33 +22,12 @@ def run(Model):
     for event in m(100):
         if len(event) > 10:  # to skip small events
             break
-    return event  # MCEvent is pickeable, but restored as EventData
+    return event._repair_for_hepmc()  # MCEvent is pickeable, but restored as EventData
 
 
 @pytest.mark.parametrize("Model", models)
 def test_to_hepmc3(Model):
-    if Model.name in ("PhoJet", "DPMJET-III"):
-        # hepmc history is different from the history
-        # contained in mothers and daughters
-        # see `util.phojet_dpmjet_hepmc` function
-        pytest.xfail(
-            "PhoJet and DPMJET-III has complex history, "
-            "so for now their hepmc history contains "
-            "only final particles, should be FIXED!!!"
-        )
-
     event = run_in_separate_process(run, Model)
-    # special case for Pythia8, which does not contain the parton shower
-    if Model is im.Pythia8:
-        # parton shower is skipped
-        from chromo.constants import quarks_and_diquarks_and_gluons
-
-        ma = True
-        apid = np.abs(event.pid)
-        for p in quarks_and_diquarks_and_gluons:
-            ma &= apid != p
-        event = event[ma]
-
     unique_vertices = {}
     for i, pa in enumerate(event.mothers):
         assert pa.shape == (2,)
