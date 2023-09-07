@@ -29,6 +29,7 @@ from typing import Tuple, Optional
 from contextlib import contextmanager
 import warnings
 from particle import Particle
+import packaging
 
 
 # Do we need EventData.n_spectators in addition to EventData.n_wounded?
@@ -418,9 +419,11 @@ class EventData:
         """
         import pyhepmc  # delay import
 
-        if not pyhepmc.__version__ >= "2.13.2":
+        if packaging.version.parse(pyhepmc.__version__) < packaging.version.parse(
+            "2.13.2"
+        ):
             raise RuntimeError(
-                f"current pyhepm version is {pyhepmc.__version__} < 2.13.2"
+                f"current pyhepmc version is {pyhepmc.__version__} < 2.13.2"
                 f"\nPlease `pip install pyhepmc==2.13.2` or later version",
             )
 
