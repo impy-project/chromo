@@ -151,7 +151,7 @@ def test_models_beam(Model):
     evt_kin = CenterOfMass(100, "proton", "proton")
     if Model.pyname in "Sophia20":
         evt_kin = CenterOfMass(100, "photon", "proton")
-    elif Model.name in "DPMJET-III":
+    elif Model.name in ["DPMJET-III", "EPOS"]:
         evt_kin = CenterOfMass(100, "N", "O")
     elif Model.name in ["SIBYLL"]:
         evt_kin = CenterOfMass(100, "p", "O")

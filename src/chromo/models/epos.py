@@ -63,7 +63,6 @@ class EPOSEvent(MCEvent):
         Attach spectators/wounded nucleons to corresponding nucleus
         if projectile/target is nucleus
         """
-
         beam = self.kin._get_beam_data(self._generator_frame)
         is_nucleus = np.abs(beam["pid"]) > 1000000000
 
