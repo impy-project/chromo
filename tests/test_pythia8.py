@@ -1,6 +1,7 @@
 from chromo.kinematics import CenterOfMass
 from chromo.models import Pythia8
 from chromo.constants import GeV, long_lived
+from chromo.util import name2pdg
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from .util import reference_charge
@@ -98,17 +99,25 @@ def test_mothers(event):
     assert sum(x[1] >= -1 and x[1] < len(event) for x in event.mothers) == n
 
 
-def test_nuclear_collision():
-    # The test takes ages because the initialization is extremely long,
-    # and Pythia seldom raises the success flag unless Ecm > TeV are used.
-
-    event = run_collision(2000 * GeV, "p", (4, 2))
-    assert event.pid[0] == 2212
+@pytest.mark.parametrize("projectile", ("pi-", "K+", "p", "He"))
+def test_nuclear_collision(projectile):
+    # This test is very slow the first time when Pythia is computing
+    # some cached results. Afterwards it runs super fast.
+    ecm = 2000 * GeV
+    event = run_collision(ecm, projectile, "He")
+    assert event.pid[0] == name2pdg(projectile)
     assert event.pid[1] == 1000020040
-    assert_allclose(event.en[0], 1e3)
-    assert_allclose(event.en[1], 4e3, rtol=1e-2)
+    if projectile == "p":
+        assert_allclose(event.en[0], ecm / 2)
+        assert_allclose(event.en[1], ecm * 2, rtol=1e-2)
+    elif projectile == "He":
+        assert_allclose(event.en[0], ecm * 2, rtol=1e-2)
+        assert_allclose(event.en[1], ecm * 2, rtol=1e-2)
     assert event.impact_parameter > 0
-    assert event.n_wounded[0] == 1
+    if projectile == "He":
+        assert event.n_wounded[0] >= 1
+    else:
+        assert event.n_wounded[0] == 1
     assert event.n_wounded[1] > 0
     apid = np.abs(event.final_state_charged().pid)
     assert np.sum(apid == 211) > 10

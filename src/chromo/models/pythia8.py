@@ -81,10 +81,8 @@ class Pythia8(MCRun):
     _library_name = "_pythia8"
     _event_class = PYTHIA8Event
     _frame = EventFrame.CENTER_OF_MASS
-    _projectiles = standard_projectiles | {lp.photon.pdgid}
-    # Nuclei are supported in principle, but generation is very slow.
     # Support for more nuclei can be added with ParticleData.addParticle.
-    _targets = _projectiles | {
+    _targets = standard_projectiles | {
         name2pdg(x)
         for x in (
             "H2",
@@ -99,6 +97,7 @@ class Pythia8(MCRun):
             "Pb208",
         )
     }
+    _projectiles = _targets | {lp.photon.pdgid}
     _restartable = True
     _data_url = (
         "https://github.com/impy-project/chromo"
