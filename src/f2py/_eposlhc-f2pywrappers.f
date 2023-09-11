@@ -2349,6 +2349,20 @@ C     It contains Fortran 77 wrappers to fortran functions.
       call setupfunc(eppass,etpass)
       end
 
+      subroutine f2pyinitcxyzt(setupfunc)
+      external setupfunc
+      real xptl(200000)
+      real yptl(200000)
+      real zptl(200000)
+      real tptl(200000)
+      real optl(200000)
+      real uptl(200000)
+      real sptl(200000)
+      real rptl(200000,3)
+      common /cxyzt/ xptl,yptl,zptl,tptl,optl,uptl,sptl,rptl
+      call setupfunc(xptl,yptl,zptl,tptl,optl,uptl,sptl,rptl)
+      end
+
       subroutine f2pyinitighnx(setupfunc)
       external setupfunc
       integer ighenex(35)
