@@ -51,7 +51,7 @@ class PYTHIA8Event(EventData):
             return (0, 0)
         return hi.nPartProj, hi.nPartTarg
 
-    def _repair_for_hepmc(self):
+    def _prepare_for_hepmc(self):
         # We must apply some workarounds so that HepMC3 conversion and IO works
         # for all models. This should be revisited once the fundamental issues
         # with particle histories have been fixed.

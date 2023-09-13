@@ -22,7 +22,7 @@ def run(Model):
     for event in m(100):
         if len(event) > 10:  # to skip small events
             break
-    return event._repair_for_hepmc()  # MCEvent is pickeable, but restored as EventData
+    return event._prepare_for_hepmc()  # MCEvent is pickeable, but restored as EventData
 
 
 @pytest.mark.parametrize("Model", models)

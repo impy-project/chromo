@@ -404,7 +404,7 @@ class EventData:
     #     """I don't remember what this was for..."""
     #     return self.en / self.kin.pcm
 
-    def _repair_for_hepmc(self):
+    def _prepare_for_hepmc(self):
         """
         Override this method in classes that need to modify event
         history for compatibility with HepMC.
@@ -439,7 +439,7 @@ class EventData:
             genevent.run_info = pyhepmc.GenRunInfo()
             genevent.run_info.tools = [(model, version, "")]
 
-        ev = self._repair_for_hepmc()
+        ev = self._prepare_for_hepmc()
         genevent.from_hepevt(
             event_number=ev.nevent,
             px=ev.px,

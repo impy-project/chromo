@@ -205,5 +205,5 @@ class EposLHC(MCRun):
         self._lib.hepmcstore()
         return True
 
-    def print_original_event(self, nparticles=100):
+    def print_native_event(self, nparticles=100):
         self._lib.alist("EposLHC listing&", 1, nparticles)

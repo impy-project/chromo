@@ -37,7 +37,7 @@ class DpmjetIIIEvent(MCEvent):
             event_field = getattr(self, field)
             event_field[0:2] = beam[field]
 
-    def _repair_for_hepmc(self):
+    def _prepare_for_hepmc(self):
         mask = (
             (self.status == 1)
             | (self.status == 2)
@@ -245,7 +245,7 @@ class DpmjetIIIRun(MCRun):
         self._lib.dtevno.nevent += 1
         return not reject
 
-    def print_original_event(self, mode=1):
+    def print_native_event(self, mode=1):
         if hasattr(self._lib, "dtflka"):
             saved_lpri = self._lib.dtflka.lpri
             self._lib.dtflka.lpri = 5
