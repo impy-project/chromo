@@ -30,6 +30,7 @@ from typing import Tuple, Optional
 from contextlib import contextmanager
 import warnings
 from particle import Particle
+from packaging.version import parse as parse_version
 from chromo.decay_handler import Pythia8DecayHandler
 
 all_unstable_pids = select_long_lived()
@@ -407,6 +408,13 @@ class EventData:
     #     """I don't remember what this was for..."""
     #     return self.en / self.kin.pcm
 
+    def _prepare_for_hepmc(self):
+        """
+        Override this method in classes that need to modify event
+        history for compatibility with HepMC.
+        """
+        return self
+
     def to_hepmc3(self, genevent=None):
         """
         Convert event to HepMC3 GenEvent.
@@ -422,6 +430,12 @@ class EventData:
         """
         import pyhepmc  # delay import
 
+        if parse_version(pyhepmc.__version__) < parse_version("2.13.2"):
+            raise RuntimeError(
+                f"current pyhepmc version is {pyhepmc.__version__} < 2.13.2"
+                f"\nPlease `pip install pyhepmc==2.13.2` or later version",
+            )
+
         model, version = self.generator
 
         if genevent is None:
@@ -429,30 +443,7 @@ class EventData:
             genevent.run_info = pyhepmc.GenRunInfo()
             genevent.run_info.tools = [(model, version, "")]
 
-        # We must apply some workarounds so that HepMC3 conversion and IO works
-        # for all models. This should be revisited once the fundamental issues
-        # with particle histories have been fixed.
-        if model == "Pythia" and version.startswith("8"):
-            # to get a valid GenEvent we must
-            # 1) select only particles produced after the parton shower
-            # 2) connect particles attached to a single beam particle
-            # (diffractive events) to the common interaction vertex (1, 2)
-            # TODO check if this costs significant amount of time and speed it up if so
-            mask = (self.status == 1) | (self.status == 2) | (self.status == 4)
-            ev = self[mask]
-            mask = (ev.mothers[:, 0] == 0) | (ev.mothers[:, 0] == 1)
-            ev.mothers[mask] = (0, 1)
-        elif model in ("UrQMD", "PhoJet", "DPMJET-III"):
-            # can only save final state until history is fixed
-            warnings.warn(
-                f"{model}-{version}: only final state particles "
-                "available in HepMC3 event",
-                RuntimeWarning,
-            )
-            ev = self.final_state()
-        else:
-            ev = self
-
+        ev = self._prepare_for_hepmc()
         genevent.from_hepevt(
             event_number=ev.nevent,
             px=ev.px,
@@ -462,12 +453,13 @@ class EventData:
             m=ev.m,
             pid=ev.pid,
             status=ev.status,
-            parents=(ev.mothers + 1) if ev.mothers is not None else None,
-            children=(ev.daughters + 1) if ev.daughters is not None else None,
+            parents=ev.mothers if ev.mothers is not None else None,
+            children=ev.daughters if ev.daughters is not None else None,
             vx=ev.vx,
             vy=ev.vy,
             vz=ev.vz,
             vt=ev.vt,
+            fortran=False,
         )
 
         return genevent
@@ -526,17 +518,7 @@ class MCEvent(EventData, ABC):
         phep = getattr(evt, self._phep)[:, sel]
         vhep = getattr(evt, self._vhep)[:, sel]
 
-        mothers = (
-            np.maximum(getattr(evt, self._jmohep).T[sel] - 1, -1)
-            if self._jmohep
-            else None
-        )
-        daughters = (
-            np.maximum(getattr(evt, self._jdahep).T[sel] - 1, -1)
-            if self._jdahep
-            else None
-        )
-
+        self._generator_frame = generator._frame
         EventData.__init__(
             self,
             (generator.name, generator.version),
@@ -549,9 +531,12 @@ class MCEvent(EventData, ABC):
             self._charge_init(npart),
             *phep,
             *vhep,
-            mothers,
-            daughters,
+            mothers=getattr(evt, self._jmohep).T[sel] if self._jmohep else None,
+            daughters=getattr(evt, self._jdahep).T[sel] if self._jdahep else None,
         )
+
+        self._history_zero_indexing()
+        self._repair_initial_beam()
 
     @abstractmethod
     def _charge_init(self, npart):
@@ -575,6 +560,25 @@ class MCEvent(EventData, ABC):
     def __getnewargs__(self):
         # upon unpickling, create EventData object instead of MCEvent object
         return (EventData,)
+
+    def _repair_initial_beam(self):
+        pass
+
+    def _history_zero_indexing(self):
+        self.mothers = self.mothers - 1
+        self.daughters = self.daughters - 1
+
+    def _prepend_initial_beam(self):
+        beam = self.kin._get_beam_data(self._generator_frame)
+        for field, beam_field in beam.items():
+            event_field = getattr(self, field)
+            if event_field is None:
+                continue
+            if field in ["mothers", "daughters"]:
+                res = np.concatenate((beam_field, event_field + 2))
+            else:
+                res = np.concatenate((beam_field, event_field))
+            setattr(self, field, res)
 
 
 # =========================================================================

@@ -13,6 +13,9 @@ class PYTHIA6Event(MCEvent):
         # TODO accelerate by implementing this loop in Fortran
         return np.fromiter((self._lib.pychge(ki) / 3 for ki in k), np.double)
 
+    def _repair_initial_beam(self):
+        self.status[0:2] = 4
+
 
 class Pythia6(MCRun):
     """Implements all abstract attributes of MCRun for the

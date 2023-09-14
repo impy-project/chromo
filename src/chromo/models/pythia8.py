@@ -51,6 +51,22 @@ class PYTHIA8Event(EventData):
             return (0, 0)
         return hi.nPartProj, hi.nPartTarg
 
+    def _prepare_for_hepmc(self):
+        # We must apply some workarounds so that HepMC3 conversion and IO works
+        # for all models. This should be revisited once the fundamental issues
+        # with particle histories have been fixed.
+
+        # to get a valid GenEvent we must
+        # 1) select only particles produced after the parton shower
+        # 2) connect particles attached to a single beam particle
+        # (diffractive events) to the common interaction vertex (1, 2)
+        # TODO check if this costs significant amount of time and speed it up if so
+        mask = (self.status == 1) | (self.status == 2) | (self.status == 4)
+        ev = self[mask]
+        mask = (ev.mothers[:, 0] == 0) | (ev.mothers[:, 0] == 1)
+        ev.mothers[mask] = (0, 1)
+        return ev
+
 
 class Pythia8(MCRun):
     _name = "Pythia"

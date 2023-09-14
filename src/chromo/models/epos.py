@@ -74,6 +74,97 @@ class EPOSEvent(MCEvent):
     def _get_n_wounded(self):
         return int(self._lib.cevt.npjevt), int(self._lib.cevt.ntgevt)
 
+    def _history_zero_indexing(self):
+        # Beam particles are [-1, -1], but indexing starts from 1
+        # adjust to [0, 0]
+        condition = (self.mothers == [-1, -1]).all(axis=1)
+        self.mothers[condition] = [0, 0]
+
+        # Adjust to zero-base indexing
+        self.mothers = self.mothers - 1
+
+        # Set [i, i] to [i, -1]
+        condition = self.mothers[:, 0] == self.mothers[:, 1]
+        self.mothers[condition, 1] = -1
+
+        self.daughters = self.daughters - 1
+        condition = self.daughters[:, 0] == self.daughters[:, 1]
+        self.daughters[condition, 1] = -1
+
+    @staticmethod
+    def _beam_mother_daughters_fix(event, ind):
+        """
+        Set correct mothers and daughters of Epos's beam particles
+        after prepending projectile/target
+
+        ind = 0 for projectile
+        ind = 1 for target
+        """
+        # Search among epos's beam particles the particles with the
+        # same energy as projectile/target
+        is_parent = np.isclose(event.en, event.en[ind], rtol=1e-2) & (event.status == 4)
+        # Attach them to the parent
+        event.mothers[is_parent] = [ind, -1]
+        # Assign daughters for projectile/target
+        daughters = np.where(is_parent)[0]
+        event.daughters[ind] = [np.min(daughters), np.max(daughters)]
+
+    def _repair_initial_beam(self):
+        """
+        Attach spectators/wounded nucleons to corresponding nucleus
+        if projectile/target is nucleus
+        """
+        beam = self.kin._get_beam_data(self._generator_frame)
+        is_nucleus = np.abs(beam["pid"]) > 1000000000
+
+        # Don't do anything if it's not a nucleus
+        if not (np.any(is_nucleus)):
+            return
+
+        bstatus = 555  # status of prepended particles
+        beam["status"][:] = bstatus
+        for field, beam_field in beam.items():
+            event_field = getattr(self, field)
+            if np.all(is_nucleus):
+                res = np.concatenate((beam_field, event_field))
+            # projectile
+            elif is_nucleus[0]:
+                res = np.concatenate((beam_field[0:1], event_field))
+            # target
+            elif is_nucleus[1]:
+                res = np.concatenate(
+                    (event_field[0:1], beam_field[1:], event_field[1:])
+                )
+            setattr(self, field, res)
+
+        shift = 0
+        # if projectile is nucleus
+        if is_nucleus[0]:
+            self._beam_mother_daughters_fix(self, 0)
+            shift += 1
+
+        # if target is nucleus
+        if is_nucleus[1]:
+            self._beam_mother_daughters_fix(self, 1)
+            shift += 1
+
+        # Shift all daughters to a number of prepended particles excluding
+        # prepended particles
+        self.daughters[
+            (self.status[:, np.newaxis] != bstatus) & (self.daughters > -1)
+        ] += shift
+        # Reset statuses of prepended particles
+        self.status[self.status == bstatus] = 4
+        # Shift all mothers of all particles excluding beam particles
+        if is_nucleus[1]:
+            # Attach to the projectile only.
+            # We cannot attacht to, for example, [0, 2] (it occurs sometimes),
+            # because we insert nucleus between 0 and 1
+            # If we try we would get an error from hepmc
+            self.mothers[(self.status != 4) & (self.mothers[:, 0] == 0)] = [0, -1]
+
+        self.mothers[(self.status[:, np.newaxis] != 4) & (self.mothers > 0)] += shift
+
 
 class EposLHC(MCRun):
     """Implements all abstract attributes of MCRun for the
@@ -168,3 +259,6 @@ class EposLHC(MCRun):
         self._lib.afinal()
         self._lib.hepmcstore()
         return True
+
+    def print_native_event(self, nparticles=100):
+        self._lib.alist("EposLHC listing&", 1, nparticles)
