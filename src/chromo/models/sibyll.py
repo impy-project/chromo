@@ -4,6 +4,111 @@ from chromo.kinematics import EventFrame
 from chromo.constants import standard_projectiles
 from particle import literals as lp
 import warnings
+import numpy as np
+
+
+_sibyll_unstable_pids = [
+    -13,
+    13,
+    111,
+    113,
+    -211,
+    211,
+    -213,
+    213,
+    221,
+    223,
+    130,
+    310,
+    -321,
+    321,
+    331,
+    333,
+    -411,
+    411,
+    -413,
+    413,
+    -421,
+    421,
+    -423,
+    423,
+    -431,
+    431,
+    441,
+    443,
+    -1114,
+    1114,
+    -2112,
+    2112,
+    -2114,
+    2114,
+    -2214,
+    2214,
+    -2224,
+    2224,
+    -3112,
+    3112,
+    -3114,
+    3114,
+    -3122,
+    3122,
+    -3212,
+    3212,
+    -3214,
+    3214,
+    -3222,
+    3222,
+    -3224,
+    3224,
+    -3312,
+    3312,
+    -3314,
+    3314,
+    -3322,
+    3322,
+    -3324,
+    3324,
+    -3334,
+    3334,
+    -4112,
+    4112,
+    -4114,
+    4114,
+    -4122,
+    4122,
+    -4132,
+    4132,
+    -4212,
+    4212,
+    -4214,
+    4214,
+    -4222,
+    4222,
+    -4224,
+    4224,
+    -4232,
+    4232,
+    -4314,
+    4314,
+    -4324,
+    4324,
+    -4332,
+    4332,
+]
+
+_sibyll21_unstable_pids = set(_sibyll_unstable_pids + [-10311, 10311, -10321, 10321])
+
+_sibyll23_unstable_pids = set(
+    _sibyll_unstable_pids
+    + [
+        -15,
+        15,
+        -313,
+        313,
+        -323,
+        323,
+    ]
+)
 
 
 class SibyllEvent(MCEvent):
@@ -94,7 +199,7 @@ class SIBYLLRun(MCRun):
         # which works only after an initialization call to self._lib.pdg_ini()
         self.kinematics = evt_kin
 
-        self._set_final_state_particles()
+        super()._set_final_state_particles()
 
     def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
@@ -158,6 +263,9 @@ class SIBYLLRun(MCRun):
         assert self._production_id != 0
 
     def _set_stable(self, pdgid, stable):
+        if pdgid not in self._unstable_pids:
+            return
+
         sid = abs(self._lib.isib_pdg2pid(pdgid))
         if abs(pdgid) == 311:
             info(1, "Ignores K0. Using K0L/S instead")
@@ -184,45 +292,56 @@ class Sibyll21(SIBYLLRun):
     _version = "2.1"
     _projectiles = standard_projectiles
     _library_name = "_sib21"
+    _unstable_pids = _sibyll21_unstable_pids
+
+    def _set_final_state_particles(self, pdgid):
+        if not np.all(np.isin([-13, 13, -2112, 2112], pdgid)):
+            raise ValueError(
+                "Sibyll21 hangs when pdgs [-13, 13, -2112, 2112] are set as unstable.\n"
+                "final_state_particles should contain [-13, 13, -2112, 2112]"
+            )
+
+        super()._set_final_state_particles(pdgid)
 
 
 class Sibyll23(SIBYLLRun):
     _version = "2.3"
     _projectiles = standard_projectiles
     _library_name = "_sib23"
+    _unstable_pids = _sibyll23_unstable_pids
 
 
-class Sibyll23c(SIBYLLRun):
+class Sibyll23c(Sibyll23):
     _version = "2.3c"
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c00(SIBYLLRun):
+class Sibyll23c00(Sibyll23):
     _version = "2.3c00"
     _library_name = "_sib23c00"
 
 
 # identical to 2.3c
-class Sibyll23c01(SIBYLLRun):
+class Sibyll23c01(Sibyll23):
     _version = "2.3c01"
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c02(SIBYLLRun):
+class Sibyll23c02(Sibyll23):
     _version = "2.3c02"
     _library_name = "_sib23c02"
 
 
 # The c03 version was also in CORSIKA until 2020
-class Sibyll23c03(SIBYLLRun):
+class Sibyll23c03(Sibyll23):
     _version = "2.3c03"
     _library_name = "_sib23c03"
 
 
 # The latest patch c04 was renamed to d, to generate less confusion
-class Sibyll23d(SIBYLLRun):
+class Sibyll23d(Sibyll23):
     _version = "2.3d"
     _library_name = "_sib23d"
 

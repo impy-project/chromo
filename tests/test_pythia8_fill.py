@@ -47,7 +47,7 @@ def get_pythia_event(pythia, evt_kin):
     return res.copy()
 
 
-def append_result(pythia, event):
+def append_event(pythia, event):
     pythia.event.reset()
     for i in range(len(event)):
         pythia.event.append(
@@ -64,7 +64,7 @@ def append_result(pythia, event):
     return get_pythia_event(pythia, event.kin)
 
 
-def fill_result(pythia, event):
+def fill_event(pythia, event):
     pythia.event.fill(
         event.pid, event.status + 90, event.px, event.py, event.pz, event.en, event.m
     )
@@ -89,9 +89,9 @@ def run_event_fill():
     pythia = pythia8._pythia
 
     for event in init_events(10):
-        fill_res = fill_result(pythia, event)
-        append_res = append_result(pythia, event)
-        assert fill_res == append_res
+        fill_evt = fill_event(pythia, event)
+        append_evt = append_event(pythia, event)
+        assert fill_evt == append_evt
 
 
 def test_event_fill():

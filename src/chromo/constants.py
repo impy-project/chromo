@@ -1,11 +1,8 @@
-# This dependency might be overkill for just reading a few
-# variables. Should be changed at some point.
-from scipy.constants import speed_of_light as _c_SI
 from particle import literals as lp
 
-c = 1e2 * _c_SI
-cm2sec = 1e-2 / _c_SI
-sec2cm = _c_SI * 1e2
+speed_of_light = 299792458e2  # cm/s
+cm2sec = 1 / speed_of_light
+sec2cm = speed_of_light
 eV = 1e-9
 keV = 1e-6
 MeV = 1e-3
@@ -53,32 +50,6 @@ quarks_and_diquarks_and_gluons = (
     5503,
 )
 
-# standard long-lived particles with life-time > 30 ps
-long_lived = (
-    13,
-    2112,
-    130,
-    211,
-    310,
-    321,
-    -3334,
-    -3322,
-    -3312,
-    -3222,
-    -3122,
-    -3112,
-    3112,
-    3122,
-    3222,
-    3312,
-    3322,
-    3334,
-    -321,
-    -211,
-    -2112,
-    -13,
-)
-
 # only positive PDGIDs!
 standard_projectiles = {
     p.pdgid for p in (lp.p, lp.n, lp.pi_plus, lp.K_plus, lp.K_S_0, lp.K_L_0)
@@ -94,11 +65,6 @@ em_particles = {p.pdgid for p in (lp.photon, lp.e_minus)}
 # # unflavored particles
 # standard_particles = tuple(standard_particles + [111, 130, 310, 221, 223, 333])
 
-# Default definition of final state particle
-# All particles with proper lifetime shorter than this
-# will decay
-tau_stable = 30e-12  # 30 ps, typical value at LHC
-
 
 # Air composition for special cross section functions
 # (source https://en.wikipedia.org/wiki/Atmosphere_of_Earth)
@@ -107,3 +73,33 @@ air_composition = {
     1000080160: 0.20946,  # oxygen
     1000180400: 0.00934,  # argon
 }
+
+# Default definition of final state particle
+# All particles with proper lifetime shorter than this
+# will decay
+tau_stable = 30e-12  # 30 ps, typical value at LHC
+# standard long-lived particles with life-time > 30 ps
+long_lived = (
+    13,
+    -13,
+    130,
+    211,
+    -211,
+    310,
+    321,
+    -321,
+    2112,
+    -2112,
+    3112,
+    -3112,
+    3122,
+    -3122,
+    3222,
+    -3222,
+    3312,
+    -3312,
+    3322,
+    -3322,
+    3334,
+    -3334,
+)

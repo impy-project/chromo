@@ -23,6 +23,7 @@ from chromo.constants import (
     GeV,
 )
 from chromo.kinematics import EventKinematics, CompositeTarget
+from chromo.util import unique_sorted_pids, select_long_lived
 import dataclasses
 import copy
 from typing import Tuple, Optional
@@ -30,6 +31,9 @@ from contextlib import contextmanager
 import warnings
 from particle import Particle
 from packaging.version import parse as parse_version
+from chromo.decay_handler import Pythia8DecayHandler
+
+all_unstable_pids = select_long_lived()
 
 
 # Do we need EventData.n_spectators in addition to EventData.n_wounded?
@@ -587,6 +591,7 @@ class MCRun(ABC):
     _set_final_state_particles_called = False
     _projectiles = standard_projectiles
     _targets = Nuclei()
+    _unstable_pids = set(all_unstable_pids)
     _ecm_min = 10 * GeV  # default for many models
     nevents = 0  # number of generated events so far
 
@@ -602,6 +607,7 @@ class MCRun(ABC):
         assert hasattr(self, "_event_class")
         assert hasattr(self, "_frame")
         self._lib = importlib.import_module(f"chromo.models.{self._library_name}")
+        self._apply_decay_handler = False
 
         self._rng = np.random.default_rng(seed)
         if hasattr(self._lib, "npy"):
@@ -623,6 +629,7 @@ class MCRun(ABC):
                     event = self._event_class(self)
                     # boost into frame requested by user
                     self.kinematics.apply_boost(event, self._frame)
+                    self._validate_decay(event)
                     yield event
                     continue
                 nretries += 1
@@ -741,6 +748,64 @@ class MCRun(ABC):
         self._kinematics = kin
         self._set_kinematics(kin)
 
+    def _validate_decay(self, event):
+        """Checks whether all unstable particles are final state particles.
+        If any unstable particles are not yet decayed, it attempts to decay them
+        using the decay_handler.
+        """
+        final_pids = event.pid[event.status == 1]
+        may_decay = np.isin(final_pids, all_unstable_pids)
+
+        if not np.all(np.isin(final_pids[may_decay], self._final_state_particles)):
+            if self._apply_decay_handler:
+                self._decay_handler(event)
+            else:
+                final_pids_dec = final_pids[may_decay]
+                not_decayed = np.logical_not(
+                    np.isin(final_pids_dec, self._final_state_particles)
+                )
+                not_decayed_pids = set(final_pids_dec[not_decayed])
+                warnings.warn(
+                    f"{self.pyname}: {not_decayed_pids} haven't been decayed. "
+                    "Consider to use generator._activate_decay_handler(on=True)",
+                    RuntimeWarning,
+                )
+
+    @property
+    def final_state_particles(self):
+        """Returns a sorted list of particles that can decay
+        but are considered stable by the event generator."""
+        return tuple(unique_sorted_pids(self._final_state_particles))
+
+    @final_state_particles.setter
+    def final_state_particles(self, pdgid):
+        """
+        Sets particles with PDG IDs provided in `pdgid` list as stable particles.
+        All other unstable particles will decay.
+
+        Stable particles in `pdgid` with tau0 = inf are ignored.
+        If self._apply_decay_handler == True, antiparticles are also set stable
+
+        Args:
+            pdgid (list): A list of PDG IDs for particles that should be considered
+                        stable (present in the final state).
+
+        Example:
+            To configure an `QGSJetII04` event generator to treat charged pions
+            (PDG ID 211 and -211) and muons (PDG ID 13 and -13) as stable
+            particles in the final state:
+
+            >>> evt_kin = chromo.kinematics.FixedTarget(100, "p", "p")
+            >>> generator = chromo.models.QGSJetII04(evt_kin)
+            >>> generator.final_state_particles = [211, -211, 13, -13]
+
+            If you need to set particles as stable for those with a lifetime
+            greater than `tau_stable`:
+            >>> generator.final_state_particles = (chromo.util
+                                                  .select_long_lived(tau_stable))
+        """
+        self._set_final_state_particles(pdgid)
+
     def set_stable(self, pdgid, stable=True):
         """Prevent decay of unstable particles
 
@@ -754,8 +819,26 @@ class MCRun(ABC):
         if abs(pdgid) == 311:
             self._set_stable(130, stable)
             self._set_stable(310, stable)
+            pdgid_list = [130, 310]
         else:
             self._set_stable(pdgid, stable)
+            pdgid_list = [pdgid]
+
+            if self._apply_decay_handler:
+                if -pdgid in self._unstable_pids:
+                    pdgid_list.append(-pdgid)
+                    self._set_stable(-pdgid, stable)
+
+        if stable:
+            self._final_state_particles = np.append(
+                self._final_state_particles, pdgid_list
+            ).astype(np.int64)
+        else:
+            is_stable = np.logical_not(np.isin(self._final_state_particles, pdgid_list))
+            self._final_state_particles = self._final_state_particles[is_stable]
+
+        if self._apply_decay_handler:
+            self._set_antiparticles_as_stable()
 
     def set_unstable(self, pdgid):
         """Convenience funtion for `self.set_stable(..., stable=False)`
@@ -807,16 +890,58 @@ class MCRun(ABC):
         assert self._library_name not in self._is_initialized, message
         self._is_initialized.append(self._library_name)
 
-    def _set_final_state_particles(self):
-        """
-        Defines particles as stable.
+    def _set_final_state_particles(self, pdgid=long_lived):
+        """By default defines particles as stable
+        for the default 'tau_stable' value in the config."""
 
-        All long-lived particles (tau > 30 ps) are considered stable.
-        """
-        for pdgid in long_lived:
-            self._set_stable(pdgid, True)
+        self._final_state_particles = np.unique(pdgid)
+        is_unstable = np.isin(self._final_state_particles, list(self._unstable_pids))
+        self._final_state_particles = self._final_state_particles[is_unstable]
+
+        if self._apply_decay_handler:
+            self._set_antiparticles_as_stable()
+
+        for pid in self._unstable_pids:
+            self._set_stable(pid, False)
+
+        for pid in self._final_state_particles:
+            self._set_stable(pid, True)
 
         self._set_final_state_particles_called = True
+
+    def _set_antiparticles_as_stable(self):
+        # Pythia8DecayHandler can decay only pairs particle-antiparticle
+        # Therefore we should exclude antiparticles from unstable
+        anti_particles = -self._final_state_particles
+        has_anti_particles = np.isin(anti_particles, list(self._unstable_pids))
+        anti_particles = anti_particles[has_anti_particles]
+
+        self._final_state_particles = np.unique(
+            np.append(self._final_state_particles, anti_particles).astype(np.int64)
+        )
+
+        self._decay_handler.set_stable(self._final_state_particles)
+
+    def _activate_decay_handler(self, on=True, *, seed=None):
+        if (not on) or (self.pyname == "Pythia8"):
+            self._apply_decay_handler = False
+            return
+
+        if not hasattr(self, "_decay_handler"):
+            try:
+                self._decay_handler = Pythia8DecayHandler([], seed=seed)
+            except ModuleNotFoundError as ex:
+                import warnings
+
+                warnings.warn(
+                    f"Pythia8DecayHandler not available:\n{ex}\n"
+                    "Some particles may not decay",
+                    RuntimeWarning,
+                )
+                self._apply_decay_handler = False
+                return
+
+        self._apply_decay_handler = True
 
     @contextmanager
     def _temporary_kinematics(self, kin):

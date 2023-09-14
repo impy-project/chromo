@@ -6,6 +6,7 @@ from chromo.util import get_all_models
 import pytest
 from collections import Counter
 from particle import literals as lp
+import platform
 
 
 decay_list = [
@@ -30,7 +31,6 @@ def run_model(Model, stable):
     c = Counter()
     for event in model(100):
         ev = event.final_state()
-
         c.update(ev.pid)
     return c
 
@@ -41,7 +41,7 @@ def test_setstable(Model, stable):
     if "UrQMD" in Model.name:
         pytest.xfail(f"{Model.pyname} does not support changing decays")
     if not stable:
-        if "QGSJet" in Model.name:
+        if ("QGSJet" in Model.name) and (platform.system() == "Windows"):
             pytest.xfail(f"{Model.pyname} does not support changing decays")
 
     c = run_in_separate_process(run_model, Model, stable)

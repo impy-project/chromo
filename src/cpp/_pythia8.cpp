@@ -9,6 +9,7 @@
 #include <Pythia8/HIUserHooks.h>
 #include <array>
 #include <cassert>
+#include <limits>
 
 namespace py = pybind11;
 using namespace Pythia8;
@@ -17,7 +18,11 @@ using namespace pybind11::literals;
 float charge_from_pid(const ParticleData &pd, int pid)
 {
     auto pptr = pd.findParticle(pid);
-    assert(pptr); // never nullptr if charge_from_pid is used on particles produced by Pythia
+    
+    // return NaN if unknown pid is met
+    if (pptr == nullptr) 
+        return std::numeric_limits<float>::quiet_NaN();
+    
     // ParticleData returns partice even if anti-particle pid is used
     return pid == pptr->id() ? pptr->charge() : -pptr->charge();
 }

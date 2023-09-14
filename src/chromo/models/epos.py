@@ -6,8 +6,59 @@ from chromo.util import (
     fortran_array_insert,
     fortran_array_remove,
     Nuclei,
+    select_long_lived,
 )
 from chromo.constants import standard_projectiles
+
+
+def _epos_unstable_pids():
+    unknown_pids_epos = [
+        117,
+        119,
+        217,
+        219,
+        227,
+        229,
+        317,
+        319,
+        327,
+        329,
+        337,
+        1218,
+        2128,
+        3118,
+        3128,
+        3218,
+        3228,
+        10115,
+        10215,
+        10225,
+        10315,
+        10325,
+        10335,
+        13314,
+        13324,
+        14122,
+        20315,
+        20325,
+        23126,
+        30113,
+        30213,
+        30223,
+        30313,
+        30323,
+        30443,
+        100111,
+    ]
+
+    unstable_pids = []
+    # From all unstable particles take that
+    # are known to epos
+    for pid in select_long_lived():
+        if (abs(pid) not in unknown_pids_epos) and (abs(pid) < unknown_pids_epos[-1]):
+            unstable_pids.append(pid)
+
+    return unstable_pids
 
 
 class EPOSEvent(MCEvent):
@@ -125,6 +176,7 @@ class EposLHC(MCRun):
     _event_class = EPOSEvent
     _frame = None
     _projectiles = standard_projectiles | Nuclei()
+    _unstable_pids = set(_epos_unstable_pids())
     _data_url = (
         "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/epos_v001.zip"
@@ -182,6 +234,9 @@ class EposLHC(MCRun):
         # to prevent decay of particles. The common block contains the array
         # nody and the length nrnody. The array holds EPOS particle ids of
         # particles that should not be decayed.
+
+        if pdgid not in self._unstable_pids:
+            return
 
         idx = self._lib.idtrafo("pdg", "nxs", pdgid)
 
