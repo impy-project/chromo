@@ -161,6 +161,7 @@ f2py_add_module(_eposlhc
   ${fortran_dir}/epos/sources/epos-bas-lhc.f
   ${fortran_dir}/epos/sources/epos-ids-lhc.f
   ${fortran_dir}/epos/sources/epos_interface.f
+  ${fortran_dir}/epos/epos-random-dummy.f
   ${rangen_source}
   ${logging_source}
   INCLUDE_DIRS
