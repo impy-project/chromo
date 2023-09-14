@@ -144,7 +144,7 @@ list(APPEND eposlhc_sources ${fortran_dir}/epos/epos-random-dummy.f)
 
 f2py_add_module(_eposlhc
   FUNCTIONS
-  aaset ainit aepos afinal hepmcstore
+  aaset ainit aepos alist afinal hepmcstore
   getcharge idtrafo initepos initeposevt
   xsection rmmard ${chromo_functions}
   SOURCES
@@ -155,7 +155,6 @@ f2py_add_module(_eposlhc
   ${fortran_dir}/epos/sources/epos-bas-lhc.f
   ${fortran_dir}/epos/sources/epos-ids-lhc.f
   ${fortran_dir}/epos/sources/epos_interface.f
-  ${fortran_dir}/epos/sources/epos-random.f
   ${rangen_source}
   ${logging_source}
   INCLUDE_DIRS

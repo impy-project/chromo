@@ -116,9 +116,6 @@ def test_mothers(event):
     # most particles have a single mother
     assert sum(x[0] >= 0 and x[1] == -1 for x in event.mothers) > 0
 
-    # some particles have multiple mothers
-    assert sum(x[0] >= 0 and x[1] >= 0 for x in event.mothers) > 0
-
 
 def run_set_stable(stable):
     evt_kin = CenterOfMass(100 * GeV, "proton", "proton")

@@ -26,15 +26,15 @@ class SophiaEvent(MCEvent):
     def _charge_init(self, npart):
         return self._lib.schg.ichg[:npart]
 
-    @property
-    def decayed_parent(self):
-        """Returns the array of zero-based indices
-        of the decayed parent particles.
-        Index -1 means that there is no parent particle.
-        It throw an exception (via MCEvent.mothers)
-        if selection is applied
-        """
-        return self._lib.schg.iparnt[: self.npart]
+    def _repair_initial_beam(self):
+        self._prepend_initial_beam()
+        # Repair history
+        # Make second mother = -1
+        self.mothers[:, 1] = -1
+        # Attach to initial beam particles
+        self.mothers[(self.mothers == [1, -1]).all(axis=1)] = [0, 1]
+        # Daughters are not defined
+        self.daughters[:] = [-1, -1]
 
 
 class Sophia20(MCRun):

@@ -17,6 +17,16 @@ class QGSJET1Event(MCEvent):
         """Type of diffration"""
         return self._lib.jdiff.jdiff
 
+    def _repair_initial_beam(self):
+        self._prepend_initial_beam()
+        # Repair history
+        self.mothers[(self.mothers == [1, 1]).all(axis=1)] = [0, 1]
+        # Set [i, i] to [i, -1]
+        condition = self.mothers[:, 0] == self.mothers[:, 1]
+        self.mothers[condition, 1] = -1
+        # No daughters
+        self.daughters[:] = [-1, -1]
+
 
 class QGSJET2Event(QGSJET1Event):
     def _get_impact_parameter(self):
