@@ -17,6 +17,16 @@ class QGSJET1Event(MCEvent):
         """Type of diffration"""
         return self._lib.jdiff.jdiff
 
+    def _repair_initial_beam(self):
+        self._prepend_initial_beam()
+        # Repair history
+        self.mothers[(self.mothers == [1, 1]).all(axis=1)] = [0, 1]
+        # Set [i, i] to [i, -1]
+        condition = self.mothers[:, 0] == self.mothers[:, 1]
+        self.mothers[condition, 1] = -1
+        # No daughters
+        self.daughters[:] = [-1, -1]
+
 
 class QGSJET2Event(QGSJET1Event):
     def _get_impact_parameter(self):
@@ -49,15 +59,12 @@ class QGSJetRun(MCRun):
         self._lib.cqgsini(datdir, lun, chromo.debug_level)
 
         self.kinematics = evt_kin
+        self._activate_decay_handler(on=True)
+        self._set_final_state_particles()
 
     def _set_stable(self, pdgid, stable):
-        import warnings
-
-        # TODO use Pythia8 instance to decay particles which QGSJet does not decay
-
-        warnings.warn(
-            f"stable particles cannot be changed in {self.pyname}", RuntimeWarning
-        )
+        # use Pythia8 instance to decay particles which QGSJet does not decay
+        pass
 
 
 class QGSJet1Run(QGSJetRun):

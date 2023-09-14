@@ -16,7 +16,7 @@ src/dpmjet3.0-6/dpm3usr
 src/urqmd-3.4/terms.mod
 dev
 .cache
-build/**
+build*/**
 dist/*
 *.egg-info
 test_hepmc_writer_*.dat
@@ -41,3 +41,4 @@ numpy*.zip
 impy-?.?.?
 src/chromo/iamdata
 fig/*
+bench/timing.pkl

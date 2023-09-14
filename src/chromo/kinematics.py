@@ -17,6 +17,7 @@ from chromo.util import CompositeTarget, EventFrame
 from particle import PDGID
 import dataclasses
 from typing import Union, Tuple
+from types import SimpleNamespace
 
 
 __all__ = (
@@ -82,7 +83,7 @@ class EventKinematicsBase:
     _gamma_cm: float
     _betagamma_cm: float
 
-    def apply_boost(self, event, generator_frame):
+    def apply_boost(self, event, generator_frame, inverse=False):
         if generator_frame == self.frame:
             return
         CMS = EventFrame.CENTER_OF_MASS
@@ -95,6 +96,11 @@ class EventKinematicsBase:
             raise NotImplementedError(
                 f"Boosts from {generator_frame} to {self.frame} are not yet supported"
             )
+
+        # Inverse transformation
+        if inverse:
+            bg = -bg
+
         g = self._gamma_cm
         en = g * event.en + bg * event.pz
         pz = bg * event.en + g * event.pz
@@ -230,10 +236,46 @@ class EventKinematics(EventKinematicsBase):
 
         _gamma_cm = (elab + m2) / ecm
         _betagamma_cm = plab / ecm
+        self.m1 = m1
+        self.m2 = m2
 
         super().__init__(
             frame, part1, part2, ecm, plab, elab, ekin, beams, _gamma_cm, _betagamma_cm
         )
+
+        self._beam_data = None
+
+    def _get_beam_data(self, generator_frame):
+        if self._beam_data is not None:
+            return self._beam_data
+
+        event_like = SimpleNamespace(
+            pz=np.array([self.beams[0][2], self.beams[1][2]]),
+            en=np.array([self.beams[0][3], self.beams[1][3]]),
+        )
+        self.apply_boost(event_like, generator_frame, inverse=True)
+
+        self._beam_data = {
+            "pid": np.array([int(self.p1), int(self.p2)]),
+            "status": np.array([4, 4]),
+            "charge": np.array([self.p1.charge, self.p2.charge]),
+            "px": np.zeros((2,), dtype=np.float64),
+            "py": np.zeros((2,), dtype=np.float64),
+            "pz": event_like.pz,
+            "en": event_like.en,
+            # Note that the masses are from `particle` module:
+            # It may introduce some E/p conservation issues if the internal mass
+            # in the model is too different to that from particle/PDG/Pythia
+            "m": np.array([self.m1, self.m2]),
+            "vx": np.zeros((2,), dtype=np.float64),
+            "vy": np.zeros((2,), dtype=np.float64),
+            "vz": np.zeros((2,), dtype=np.float64),
+            "vt": np.zeros((2,), dtype=np.float64),
+            "mothers": np.array([[-1, -1], [-1, -1]], dtype=np.int32),
+            "daughters": np.array([[-1, -1], [-1, -1]], dtype=np.int32),
+        }
+
+        return self._beam_data
 
 
 class CenterOfMass(EventKinematics):

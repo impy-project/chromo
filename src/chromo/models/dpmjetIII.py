@@ -1,6 +1,11 @@
 from chromo.common import MCRun, MCEvent, CrossSectionData
 from chromo.kinematics import EventFrame
-from chromo.util import info, _cached_data_dir, fortran_chars, Nuclei
+from chromo.util import (
+    info,
+    _cached_data_dir,
+    fortran_chars,
+    Nuclei,
+)
 from chromo.constants import standard_projectiles, GeV
 
 
@@ -26,6 +31,21 @@ class DpmjetIIIEvent(MCEvent):
     def _get_n_wounded(self):
         return self._lib.dtglcp.nwasam, self._lib.dtglcp.nwbsam
 
+    def _repair_initial_beam(self):
+        beam = self.kin._get_beam_data(self._generator_frame)
+        for field in ["pid", "status", "charge", "px", "py", "pz", "en", "m"]:
+            event_field = getattr(self, field)
+            event_field[0:2] = beam[field]
+
+    def _prepare_for_hepmc(self):
+        mask = (
+            (self.status == 1)
+            | (self.status == 2)
+            | (self.status == 4)
+            | (self.pid == 99999)
+        )
+        return self[mask]
+
     # Unfortunately not that simple since this is bounced through
     # entire code as argument not in COMMON
     # @property
@@ -42,15 +62,15 @@ class DpmjetIIIRun(MCRun):
     DPMJET-III series of event generators.
 
     It should work identically for the new 'dpmjet3' module and the legacy
-    dpmjet306. No special constructor is necessary and everything is
+    dpmjet307. No special constructor is necessary and everything is
     handled by the default constructor of the base class.
     """
 
     _name = "DPMJET-III"
     _event_class = DpmjetIIIEvent
     _frame = None
-    # DPMJet is supposed to support photons as projectiles, but fails
-    _projectiles = standard_projectiles | Nuclei()
+    # TODO: DPMJet supports photons as projectiles
+    _projectiles = standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311}
     _targets = _projectiles
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
@@ -107,10 +127,13 @@ class DpmjetIIIRun(MCRun):
             self._lib.pomdls.parmdl[75] = 0.05
 
         # Prevent DPMJET from overwriting decay settings
-        # self._lib.dtfrpa.ovwtdc = False
-        # Set PYTHIA decay flags to follow all changes to MDCY
+        self._lib.dtfrpa.ovwtdc = False
+        # Tell PHOJET to not overwrite decay settings
+        self._lib.pomdls.iswmdl[6 - 1] = 4
+        # Recover the decay settings due to how DPMJET works
         self._lib.pydat1.mstj[21 - 1] = 1
-        self._lib.pydat1.mstj[22 - 1] = 2
+        self._lib.pydat1.mstj[22 - 1] = 1
+
         self._set_final_state_particles()
 
     def _cross_section(self, kin=None):
@@ -118,6 +141,8 @@ class DpmjetIIIRun(MCRun):
         # we override to set precision
         if (kin.p1.A and kin.p1.A > 1) or kin.p2.A > 1:
             assert kin.p2.A >= 1, "DPMJET requires nucleons or nuclei on side 2."
+            # Enable total and elastic cross section calculation
+            self._lib.dtglgp.lprod = False
             self._lib.dt_xsglau(
                 kin.p1.A or 1,
                 kin.p2.A or 1,
@@ -131,7 +156,17 @@ class DpmjetIIIRun(MCRun):
                 1,
                 1,
             )
-            return CrossSectionData(inelastic=self._lib.dtglxs.xspro[0, 0, 0])
+            glxs = self._lib.dtglxs
+            return CrossSectionData(
+                total=glxs.xstot[0, 0, 0],
+                elastic=glxs.xsela[0, 0, 0],
+                inelastic=glxs.xstot[0, 0, 0] - glxs.xsela[0, 0, 0],
+                prod=glxs.xspro[0, 0, 0],
+                quasielastic=glxs.xsqep[0, 0, 0]
+                + glxs.xsqet[0, 0, 0]
+                + glxs.xsqe2[0, 0, 0]
+                + glxs.xsela[0, 0, 0],
+            )
         else:
             stot, sela = self._lib.dt_xshn(
                 self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
@@ -210,6 +245,13 @@ class DpmjetIIIRun(MCRun):
         self._lib.dtevno.nevent += 1
         return not reject
 
+    def print_native_event(self, mode=1):
+        if hasattr(self._lib, "dtflka"):
+            saved_lpri = self._lib.dtflka.lpri
+            self._lib.dtflka.lpri = 5
+        self._lib.dt_evtout(mode)
+        self._lib.dtflka.lpri = saved_lpri
+
 
 class DpmjetIII191(DpmjetIIIRun):
     _version = "19.1"
@@ -221,9 +263,10 @@ class DpmjetIII193(DpmjetIIIRun):
     _library_name = "_dpmjetIII193"
 
 
-class DpmjetIII306(DpmjetIIIRun):
-    _version = "3.0-6"
-    _library_name = "_dpmjet306"
+class DpmjetIII307(DpmjetIIIRun):
+    _version = "3.0-7"
+    _library_name = "_dpmjet307"
+    _projectiles = standard_projectiles | Nuclei()
     _param_file_name = "fitpar.dat"
     _data_url = (
         "https://github.com/impy-project/chromo"

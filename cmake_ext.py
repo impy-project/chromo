@@ -53,6 +53,7 @@ def get_models():
     # sib23c02
     # sib23c03
     # dev_dpmjetIII193=/full/path/to/dir/dpmjetIII-19.3
+    # dev_sib23d=/full/path/to/dir/sibyll
     # ----
     models = {}
 

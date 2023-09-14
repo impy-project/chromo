@@ -169,7 +169,7 @@ def test_generator(projectile, target, frame, Model):
         assert False  # we should never arrive here
 
     if Model is im.UrQMD34 and frame == "cms2ft" and p2 == "p":
-        pytest.skip(reason="location of proton delta peak depends on machine")
+        pytest.skip("location of proton delta peak depends on machine")
 
     h = run_in_separate_process(run_model, Model, kin)
     if h is None:

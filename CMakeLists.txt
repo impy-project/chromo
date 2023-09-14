@@ -22,6 +22,7 @@ enable_language(C CXX)
 set(BUILD_dev_dpmjetIII193 CACHE
   PATH "source directory for dev_dpmjetIII193")
 
+
 add_subdirectory(${CMAKE_SOURCE_DIR}/src/cpp/pybind11)
 
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -87,6 +88,11 @@ if (UNIX)
     $<$<COMPILE_LANGUAGE:Fortran>:-std=legacy>
     $<$<COMPILE_LANGUAGE:Fortran>:-fno-second-underscore>
   )
+  if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
+    add_compile_options(
+      $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
+    )
+  endif()
   if (APPLE)
     set(is_fortran "$<COMPILE_LANGUAGE:Fortran>")
     set(is_greater_v10 "$<VERSION_GREATER:$<Fortran_COMPILER_VERSION>,10.0.0>")
@@ -106,6 +112,11 @@ else() # Windows MinGW!
     $<$<COMPILE_LANGUAGE:Fortran>:-fallow-argument-mismatch>
     $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
   )
+  if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
+    add_compile_options(
+      $<$<COMPILE_LANGUAGE:Fortran>:-cpp>
+    )
+  endif()
   # TODO
   # set(FLAGS -fast -fpe0)
   # set(FLAGSF90 ${FLAGS} -ffree-form -Wobsolescent -fno-second-underscore)
@@ -139,7 +150,7 @@ list(APPEND eposlhc_sources ${fortran_dir}/epos/epos-random-dummy.f)
 
 f2py_add_module(_eposlhc
   FUNCTIONS
-  aaset ainit aepos afinal hepmcstore
+  aaset ainit aepos alist afinal hepmcstore
   getcharge idtrafo initepos initeposevt
   xsection rmmard ${chromo_functions}
   SOURCES
@@ -150,7 +161,6 @@ f2py_add_module(_eposlhc
   ${fortran_dir}/epos/sources/epos-bas-lhc.f
   ${fortran_dir}/epos/sources/epos-ids-lhc.f
   ${fortran_dir}/epos/sources/epos_interface.f
-  ${fortran_dir}/epos/epos-random-dummy.f
   ${rangen_source}
   ${logging_source}
   INCLUDE_DIRS
@@ -168,7 +178,7 @@ set(SIBYLL_COMMON_FUNCTIONS
 
 f2py_add_module(_sib21
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} spgasdev
+  ${SIBYLL_COMMON_FUNCTIONS} spgasdev glauber
   SOURCES
   ${fortran_dir}/sibyll/sibyll_21.f
   ${fortran_dir}/sibyll/sib21aux.f
@@ -186,7 +196,7 @@ f2py_add_module(_sib21
 ### sib23
 f2py_add_module(_sib23
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -202,7 +212,7 @@ f2py_add_module(_sib23
 ### sib23c01
 f2py_add_module(_sib23c01
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c01.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -218,9 +228,24 @@ f2py_add_module(_sib23c01
 ### sib23d
 f2py_add_module(_sib23d
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3d.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions}
+)
+
+
+f2py_add_module(_sib23d_star
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3d-star-p02.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}
@@ -430,14 +455,14 @@ f2py_add_module(_sophia
 
 
 ### dpmjet306
-set(dpmjet306_sources
-  ${fortran_dir}/dpmjet3.0-6/sources/dpmjet3.0-6.f
-  ${fortran_dir}/dpmjet3.0-6/sources/phojet1.12-35c4.f
-  ${fortran_dir}/dpmjet3.0-6/sources/pythia6115dpm3v1.f
-  ${fortran_dir}/dpmjet3.0-6/sources/user3.0-6.f
+set(dpmjet307_sources
+  ${fortran_dir}/dpmjet3.0/sources/dpmjet3.0-7.f
+  ${fortran_dir}/dpmjet3.0/sources/phojet1.12-36c4.f
+  ${fortran_dir}/dpmjet3.0/sources/pythia6115dpm3v1.f
+  ${fortran_dir}/dpmjet3.0/sources/user3.0-7.f
 )
 
-f2py_add_module(_dpmjet306
+f2py_add_module(_dpmjet307
   FUNCTIONS
   pho_event dt_init dt_kkinc idt_icihad dt_xsglau
   pycomp dt_initjs dt_inucas dt_evtout idt_ipdgha
@@ -448,7 +473,7 @@ f2py_add_module(_dpmjet306
   pho_setpcomb dt_phoxs dt_xshn dt_flahad
   ${chromo_functions}
   SOURCES
-  ${dpmjet306_sources}
+  ${dpmjet307_sources}
   ${rangen_source}
   ${logging_source}
   INCLUDE_DIRS
@@ -467,7 +492,7 @@ f2py_add_module(_phojet112
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
   pho_setpcomb ${chromo_functions}
   SOURCES
-  ${dpmjet306_sources}
+  ${dpmjet307_sources}
   ${logging_source}
   ${rangen_source}
   INCLUDE_DIRS
@@ -622,10 +647,10 @@ f2py_add_module(_phojet193
 )
 
 
-##### extra optional models follow below ######
+##### optional models follow below ######
 f2py_add_module(_sib23c00
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c00.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -639,7 +664,7 @@ f2py_add_module(_sib23c00
 
 f2py_add_module(_sib23c02
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c02.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
@@ -653,7 +678,7 @@ f2py_add_module(_sib23c02
 
 f2py_add_module(_sib23c03
   FUNCTIONS
-  ${SIBYLL_COMMON_FUNCTIONS} gasdev
+  ${SIBYLL_COMMON_FUNCTIONS} gasdev sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3c03.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
