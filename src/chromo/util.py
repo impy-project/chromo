@@ -269,7 +269,7 @@ def fortran_chars(array_ref, char_seq):
     info(10, "Setting fortran array with", char_seq)
     len_arr = int(str(array_ref.dtype)[2:])
     len_seq = len(char_seq)
-    return str.encode(char_seq + (len_arr - len_seq) * " ")
+    return char_seq + (len_arr - len_seq) * " "
 
 
 def caller_name(skip=2):
