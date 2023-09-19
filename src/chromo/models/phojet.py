@@ -3,6 +3,7 @@ from chromo.util import fortran_chars, _cached_data_dir
 from chromo.kinematics import EventFrame
 from chromo.constants import standard_projectiles
 from particle import literals as lp
+import warnings
 
 
 class PhojetEvent(MCEvent):
@@ -60,6 +61,13 @@ class PhojetEvent(MCEvent):
     def _prepare_for_hepmc(self):
         # Decayed particles are not saved by PhoJet
         # It should be fixed
+
+        model, version = self.generator
+        warnings.warn(
+            f"{model}-{version}: only part of the history " "available in HepMC3 event",
+            RuntimeWarning,
+        )
+
         mask = (self.status == 1) | (self.status == 4)
         return self[mask]
 

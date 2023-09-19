@@ -5,6 +5,7 @@ import dataclasses
 import pickle
 from types import SimpleNamespace
 import pytest
+from contextlib import nullcontext
 from numpy.testing import assert_equal
 from chromo.util import get_all_models
 
@@ -156,15 +157,19 @@ def test_models_beam(Model):
     elif Model.name in ["SIBYLL"]:
         evt_kin = CenterOfMass(100, "p", "O")
 
-    generator = Model(evt_kin, seed=1)
-    for event in generator(100):
-        event.kin._beam_data = None
-        beam = event.kin._get_beam_data(event.kin.frame)
-        event.kin._beam_data = None
-        for field, beam_field in beam.items():
-            event_field = getattr(event, field)
-            if event_field is None or field == "daughters":
-                continue
-            assert np.allclose(
-                event_field[0:2], beam_field
-            ), f"{field}: {np.allclose(event_field[0:2], beam_field)}, {event_field[0:2]}, {beam_field}"
+    with pytest.warns(RuntimeWarning) if Model.name in [
+        "DPMJET-III",
+        "UrQMD",
+    ] else nullcontext():
+        generator = Model(evt_kin, seed=1)
+        for event in generator(100):
+            event.kin._beam_data = None
+            beam = event.kin._get_beam_data(event.kin.frame)
+            event.kin._beam_data = None
+            for field, beam_field in beam.items():
+                event_field = getattr(event, field)
+                if event_field is None or field == "daughters":
+                    continue
+                assert np.allclose(
+                    event_field[0:2], beam_field
+                ), f"{field}: {np.allclose(event_field[0:2], beam_field)}, {event_field[0:2]}, {beam_field}"
