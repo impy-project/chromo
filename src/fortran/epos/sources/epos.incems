@@ -2,7 +2,7 @@
       parameter (mmrye=4,mmryk=1)   !memory saving factor
 
       parameter (kollmx=INT(45000/mmrye),npommx=150)
-      parameter (mamx=210,ngrmx=1,ntymi=0,ntymx=2)
+      parameter (mamx=INT(210/mmryk),ngrmx=1,ntymi=0,ntymx=2)
       parameter (nflavems=4)
 
 !----------------------------------------------------------------------

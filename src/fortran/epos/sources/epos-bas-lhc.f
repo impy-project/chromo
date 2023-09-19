@@ -5246,9 +5246,8 @@ c-----------------------------------------------------------------------
 
       include 'epos.inc'
       include 'epos.incems'
-c**ANFE is unused!
-c      double precision eppass,etpass
-c      common/emnpass/eppass(mamx,4),etpass(mamx,4)
+      double precision eppass,etpass
+      common/emnpass/eppass(mamx,4),etpass(mamx,4)
       common/photrans/phoele(4),ebeam
 c      integer iutime(5)
       call utpri('aepos',ish,ishini,4)
