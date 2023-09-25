@@ -3,6 +3,7 @@ requires = [
     "setuptools",
     "wheel",
     "cmake",
+    "scipy-openblas64",
     "numpy @ git+https://github.com/HaoZeke/numpy.git@fixDATAf2py",
     "charset_normalizer"
 ]
