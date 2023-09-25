@@ -3,7 +3,7 @@ requires = [
     "setuptools",
     "wheel",
     "cmake",
-    "numpy>=1.26.0rc1",
+    "numpy @ git+https://github.com/HaoZeke/numpy.git@fixDATAf2py",
     "charset_normalizer"
 ]
 #build-backend = "setuptools.build_meta"
