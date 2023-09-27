@@ -1,6 +1,7 @@
 [build-system]
 requires = [
     "packaging",
+    "particle",
     "setuptools",
     "wheel",
     "cmake",
