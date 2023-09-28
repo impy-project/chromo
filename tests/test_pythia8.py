@@ -166,3 +166,14 @@ def test_get_stable():
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
     m = Pythia8(evt_kin, seed=1)
     assert m._get_stable() == set(long_lived)
+
+
+def test_gp():
+    evt = run_collision(100 * GeV, "gamma", "p")
+    assert len(evt) > 2
+
+
+@pytest.mark.xfail(reason="no rest frame for gamma-gamma")
+def test_gg():
+    evt = run_collision(100 * GeV, "gamma", "gamma")
+    assert len(evt) > 2

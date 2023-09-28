@@ -67,6 +67,7 @@ cmake_print_variables(PYTHON_LIBRARIES)
 cmake_print_variables(F2PY_INCLUDE_DIR)
 cmake_print_variables(NUMPY_INCLUDE_DIRS)
 cmake_print_variables(BUILD_dev_dpmjetIII193)
+cmake_print_variables(BUILD_dev_sib23d)
 
 include_directories(
   ${PYTHON_INCLUDE_DIRS}

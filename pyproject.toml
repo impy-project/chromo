@@ -4,7 +4,7 @@ requires = [
     "setuptools",
     "wheel",
     "cmake",
-    "numpy==1.23.0",
+    "numpy==1.23.5",
     "charset_normalizer"
 ]
 #build-backend = "setuptools.build_meta"

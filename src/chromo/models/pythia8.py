@@ -82,8 +82,8 @@ class Pythia8(MCRun):
     _frame = EventFrame.CENTER_OF_MASS
     _projectiles = standard_projectiles | {lp.photon.pdgid}
     # Nuclei are supported in principle, but generation is very slow.
-    # Support for nuclei can be added with ParticleData.addParticle.
-    _targets = standard_projectiles | {
+    # Support for more nuclei can be added with ParticleData.addParticle.
+    _targets = _projectiles | {
         name2pdg(x)
         for x in ("He4", "Li6", "C12", "O16", "Cu63", "Xe129", "Au197", "Pb208")
     }
@@ -120,7 +120,11 @@ class Pythia8(MCRun):
         self._pythia = self._lib.Pythia(datdir, banner)
 
         if config is None:
-            self._config = ["SoftQCD:inelastic = on"]
+            if evt_kin.p1 == lp.photon.pdgid and evt_kin.p2 == lp.photon.pdgid:
+                self._config = ["PhotonCollision:all = on"]
+            else:
+                # includes gamma p processes
+                self._config = ["SoftQCD:inelastic = on"]
         else:
             self._config = self._parse_config(config)
 

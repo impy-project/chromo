@@ -30,6 +30,14 @@ def test_CompositeTarget_repr():
     assert repr(t) == "CompositeTarget([('N14', 0.75), ('O16', 0.25)], label='air')"
 
 
+def test_CompositeTarget_copy():
+    target = CompositeTarget([("N", 0.78), ("O", 0.21), ("Ar", 0.01)], label="air")
+    target1 = target.copy()
+    assert target1 is not target
+    assert target1 == target
+    assert target != "p"
+
+
 def test_fixed_target():
     x = 2 * GeV
 
@@ -85,6 +93,7 @@ def test_fixed_target_bad_input():
 
 
 def test_copy():
-    a = CenterOfMass(10, "p", "p")
+    target = CompositeTarget([("N", 0.78), ("O", 0.21), ("Ar", 0.01)], label="air")
+    a = CenterOfMass(10, "p", target)
     b = a.copy()
     assert a == b

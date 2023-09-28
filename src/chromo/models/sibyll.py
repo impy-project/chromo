@@ -313,6 +313,22 @@ class Sibyll23(SIBYLLRun):
 
 class Sibyll23c(Sibyll23):
     _version = "2.3c"
+    _projectiles = standard_projectiles | {
+        3112,
+        3122,
+        3312,
+        3322,
+        3222,
+        411,
+        421,
+        4232,
+        431,
+        4122,
+        4132,
+        4232,
+        431,
+        4332,
+    }
     _library_name = "_sib23c01"
 
 

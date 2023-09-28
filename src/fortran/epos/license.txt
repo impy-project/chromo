@@ -1,0 +1,4 @@
+EPOS-LHC - Redistribution Notice
+
+This software is distributed as part of "Chromo" with the permission of the original authors. 
+Please refer to the original license for terms and conditions. No warranty provided.
