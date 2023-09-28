@@ -160,6 +160,7 @@ def test_number_2():
         ("sib23d", im.Sibyll23d),
         ("sib21", im.Sibyll21),
         ("sibyll-2.3", im.Sibyll23),
+        ("sibyll-2.3Star-Mix", im.Sibyll23StarMixed),
     ),
 )
 def test_model_1(spec, Model):
@@ -195,7 +196,7 @@ def test_model_3():
         returncode=1,
         stderr=(
             "Error: model=sib is ambiguous, matches (SIBYLL-2.1, SIBYLL-2.3, "
-            "SIBYLL-2.3c, SIBYLL-2.3d)"
+            "SIBYLL-2.3Star-mix, SIBYLL-2.3c, SIBYLL-2.3d)"
         ),
     )
 
@@ -347,8 +348,10 @@ def test_config(make_pi_0_stable):
 
         with pyhepmc.open(p) as f:
             event = f.read()
-            is_final = event.numpy.particles.status == 1
-            is_pi_0 = event.numpy.particles.pid == lp.pi_0.pdgid
+            status = np.array([gen_ptcl.status for gen_ptcl in event.particles])
+            is_final = status == 1
+            pid = np.array([gen_ptcl.pid for gen_ptcl in event.particles])
+            is_pi_0 = pid == lp.pi_0.pdgid
             if make_pi_0_stable:
                 assert np.sum(is_final & is_pi_0) > 0
             else:

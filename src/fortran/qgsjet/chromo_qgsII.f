@@ -9,7 +9,7 @@ C  INITIALIZES QGSJET-II MODEL quitely and fully.
 C  THIS SUBROUTINE IS CALLED FROM START.
 C-----------------------------------------------------------------------
       IMPLICIT NONE
-      CHARACTER DATDIR*(256)
+      CHARACTER*256 DATDIR
       COMMON /AREA40/  JDIFR
       INTEGER          JDIFR
       INTEGER        VERSION

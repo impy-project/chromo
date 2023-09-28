@@ -10,10 +10,11 @@ import shutil
 import numpy as np
 from typing import Sequence, Set, Tuple, Collection, Union
 from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
-from chromo.constants import MeV, nucleon_mass
+from chromo.constants import MeV, nucleon_mass, sec2cm
 from enum import Enum
 import dataclasses
 import copy
+import math
 
 EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
 
@@ -282,14 +283,9 @@ def process_particle(x):
 def fortran_chars(array_ref, char_seq):
     """Helper to set fortran character arrays with python strings"""
     info(10, "Setting fortran array with", char_seq)
-    # Reset
-    import numpy as np
-
     len_arr = int(str(array_ref.dtype)[2:])
     len_seq = len(char_seq)
-    return np.array(
-        [c for c in char_seq + (len_arr - len_seq) * " "], dtype="S" + str(len_arr)
-    )
+    return char_seq + (len_arr - len_seq) * " "
 
 
 def caller_name(skip=2):
@@ -515,25 +511,25 @@ class classproperty:
         return self.f(owner)
 
 
-def _select_parents(mask, parents):
+def _select_mothers(mask, mothers):
     # This algorithm is slow in pure Python and should be
     # speed up by compiling the logic.
 
     # attach parentless particles to beam particles,
     # unless those are also removed
-    fallback = (0, 0)
+    fallback = (-1, -1)
     if mask[0] and mask[1]:
-        fallback = (1, 2)
+        fallback = (0, 1)
 
-    n = len(parents)
-    indices = np.arange(n)[mask] + 1
-    result = parents[mask]
-    mapping = {old: i + 1 for i, old in enumerate(indices)}
+    n = len(mothers)
+    indices = np.arange(n)[mask]
+    result = mothers[mask]
+    mapping = {old: i for i, old in enumerate(indices)}
 
     n = len(result)
     for i in range(n):
         a = result[i, 0]
-        if a == 0:
+        if a == -1:
             continue
         p = mapping.get(a, -1)
         if p == -1:
@@ -541,20 +537,20 @@ def _select_parents(mask, parents):
             result[i, 0] = a
             result[i, 1] = b
         elif p != a:
-            q = 0
+            q = -1
             b = result[i, 1]
-            if b > 0:
-                q = mapping.get(b, 0)
+            if b > -1:
+                q = mapping.get(b, -1)
             result[i, 0] = p
             result[i, 1] = q
     return result
 
 
-def select_parents(arg, parents):
-    if parents is None:
+def select_mothers(arg, mothers):
+    if mothers is None:
         return None
 
-    n = len(parents)
+    n = len(mothers)
 
     if isinstance(arg, np.ndarray) and arg.dtype is bool:
         mask = arg
@@ -565,14 +561,14 @@ def select_parents(arg, parents):
     with warnings.catch_warnings():
         # suppress numba safety warning that we can ignore
         warnings.simplefilter("ignore")
-        return _select_parents(mask, parents)
+        return _select_mothers(mask, mothers)
 
 
 try:
     # accelerate with numba if numba is available
     import numba as nb
 
-    _select_parents = nb.njit(_select_parents)
+    _select_mothers = nb.njit(_select_mothers)
 
 except ModuleNotFoundError:
     pass
@@ -703,3 +699,37 @@ class Nuclei:
 
     def __ror__(self, other: Set[PDGID]):
         return self.__or__(other)
+
+
+def unique_sorted_pids(ids):
+    """np.arrays of unique ids sorted by abs value
+    with negative value first, e.g.
+    -11, 11, -12, 12, ...
+    """
+    uids = np.unique(np.fromiter(ids, dtype=np.int64))
+    return uids[np.argsort(2 * np.abs(uids) - (uids < 0))]
+
+
+def select_long_lived(tau=0, mm=False):
+    """
+    Returns unstable particles that are stable
+    for `tau` sec (or mm if mm=True).
+    By default returns all unstable particles excluding nuclei.
+    """
+    if not mm:
+        tau = tau * sec2cm * 1e1  # in mm
+
+    long_lived = []
+    for p in Particle.findall():
+        pid = int(p.pdgid)
+        ctau = p.ctau
+        if (
+            (ctau is not None)
+            and (not math.isinf(ctau))
+            and (not math.isnan(ctau))
+            and (abs(pid) < 1000000000)  # exclude nuclei
+            and (ctau > tau)
+        ):
+            long_lived.append(pid)
+
+    return long_lived

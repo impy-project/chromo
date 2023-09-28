@@ -4,6 +4,7 @@ from chromo.kinematics import CenterOfMass, FixedTarget
 import chromo.models as im
 import pytest
 import pyhepmc
+from contextlib import nullcontext
 from .util import run_in_separate_process
 from chromo.util import get_all_models
 
@@ -35,9 +36,13 @@ def test_hepmc_io(Model):
     events = run_in_separate_process(run, Model)
     expected = []
     genevent = None
-    for ev in events:
-        genevent = ev.to_hepmc3(genevent)
-        expected.append(genevent)
+
+    with pytest.warns(RuntimeWarning) if (
+        Model.name in ["DPMJET-III", "PhoJet"] or Model.pyname == "Pythia8"
+    ) else nullcontext():
+        for ev in events:
+            genevent = ev.to_hepmc3(genevent)
+            expected.append(genevent)
 
     # Uncomment this to get debugging output. Higher number shows more.
     # This only works if you compile pyhepmc in debug mode.

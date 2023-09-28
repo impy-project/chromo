@@ -17,7 +17,6 @@
 #   PYTHON_EXECUTABLE
 #   F2PY_INCLUDE_DIR
 #   f2py_source
-#   f2py_dir
 #
 # The following arguments are accepted:
 #
@@ -59,100 +58,74 @@ function (f2py_add_module target_name)
     "FUNCTIONS;INCLUDE_DIRS;INTERFACE_SOURCES;SOURCES;COMPILE_DEFS"
     ${ARGN})
 
-
-  # f2py files that exist in f2py source directory
-  # In case of absence the files are regenerated
-  set(pyf_file ${f2py_dir}/${target_name}.pyf)
-  set(modulec_file ${f2py_dir}/${target_name}module.c)
-  set(f2pywrap_file ${f2py_dir}/${target_name}-f2pywrappers.f)
+  set(pyf_file ${target_name}.pyf)
+  set(modulec_file ${target_name}module.c)
+  set(f2pywrap_file ${target_name}-f2pywrappers.f)
+  set(log_file ${target_name}.log)
 
   if (NOT F2PY_ADD_MODULE_INTERFACE_SOURCES)
     set(F2PY_ADD_MODULE_INTERFACE_SOURCES ${F2PY_ADD_MODULE_SOURCES})
   endif()
 
-  set(log_file ${CMAKE_CURRENT_BINARY_DIR}/${target_name}.log)
-
   if (F2PY_ADD_MODULE_INCLUDE_DIRS)
-    STRING(JOIN ":" _joined_dirs ${F2PY_ADD_MODULE_INCLUDE_DIRS})
-    set(f2py_include_paths --include-paths ${_joined_dirs})
+    if (WIN32)
+      STRING(JOIN $<SEMICOLON> _joined_dirs ${F2PY_ADD_MODULE_INCLUDE_DIRS})
+      set(f2py_include_paths --include-paths \"${_joined_dirs}\")
+    else()
+      STRING(JOIN ":" _joined_dirs ${F2PY_ADD_MODULE_INCLUDE_DIRS})
+      set(f2py_include_paths --include-paths ${_joined_dirs})
+    endif()
   endif()
 
-  if (EXISTS ${pyf_file})
-    file(WRITE ${log_file} "f2py_add_module: Use existing ${pyf_file}\n")
-    message(STATUS "f2py_add_module: Use existing ${pyf_file}")
-  else()
-    file(WRITE ${log_file} "f2py_add_module: Generating ${pyf_file}\n")
-    message(STATUS "f2py_add_module: Generating ${pyf_file}")
-    # Definitions for source files processing
-    set(fortran_defs)
-    foreach(_def ${F2PY_ADD_MODULE_COMPILE_DEFS})
-      list(APPEND fortran_defs "-D${_def}")
-    endforeach()
-    
-    # Source files processing for *.pyf
-    set(processed_files)
-    foreach(src_file ${F2PY_ADD_MODULE_INTERFACE_SOURCES})
-      get_filename_component(src_filename ${src_file} NAME)
-      set(proc_file CMakeFiles/${target_name}.dir/${src_filename})
-
-      if (src_file MATCHES ".*\.c$")
-        # no preprocessing for C files
-        configure_file(${src_file} ${proc_file} COPYONLY)
-      else()
-        add_custom_command(
-          OUTPUT ${proc_file}
-          COMMAND ${CMAKE_Fortran_COMPILER}
-          -E -cpp ${src_file} ${fortran_defs} -o ${proc_file}
-          DEPENDS ${src_file}
-        )
-      endif()
-
-      list(APPEND processed_files ${proc_file})
-    endforeach()
-
-    get_filename_component(pyf_file_new ${pyf_file} NAME)
-    
-    # Generate in binary directory and copy to source directory.
-    add_custom_command(
-      OUTPUT ${pyf_file}
-      COMMAND ${PYTHON_EXECUTABLE} -m numpy.f2py
-        -m ${target_name}
-        -h ${pyf_file_new}
-        --overwrite-signature only: ${F2PY_ADD_MODULE_FUNCTIONS} :
-        ${f2py_include_paths}
-        ${processed_files}
-        >> ${log_file} 2>&1
-      COMMAND ${CMAKE_COMMAND} -E copy
-        ${pyf_file_new} ${f2py_dir}
-      DEPENDS ${processed_files}
-    )
-
-  endif()
+  # Definitions for source files processing
+  set(fortran_defs)
+  foreach(_def ${F2PY_ADD_MODULE_COMPILE_DEFS})
+    list(APPEND fortran_defs "-D${_def}")
+  endforeach()
   
-  if ((EXISTS ${modulec_file}) AND (EXISTS ${f2pywrap_file}))
-    file(APPEND ${log_file} "f2py_add_module: Use existing ${modulec_file} ${f2pywrap_file}\n")
-    message(STATUS "f2py_add_module: Use existing ${modulec_file}")
-    message(STATUS "f2py_add_module: Use existing ${f2pywrap_file}")
-  else()
-    message(STATUS "f2py_add_module: Generating ${modulec_file}")
-    message(STATUS "f2py_add_module: Generating ${f2pywrap_file}")
+  # Source files processing for *.pyf
+  set(processed_files)
+  foreach(src_file ${F2PY_ADD_MODULE_INTERFACE_SOURCES})
+    get_filename_component(src_filename ${src_file} NAME)
+    set(proc_file CMakeFiles/${target_name}.dir/${src_filename})
 
-    get_filename_component(modulec_file_new ${modulec_file} NAME)
-    get_filename_component(f2pywrap_file_new ${f2pywrap_file} NAME)
+    if (src_file MATCHES ".*\.c$")
+      # no preprocessing for C files
+      configure_file(${src_file} ${proc_file} COPYONLY)
+    else()
+      add_custom_command(
+        OUTPUT ${proc_file}
+        COMMAND ${CMAKE_Fortran_COMPILER}
+        -E -cpp ${src_file} ${fortran_defs} -o ${proc_file}
+        DEPENDS ${src_file}
+      )
+    endif()
 
-    # Generate in binary directory and copy to source directory.
-    add_custom_command(
-      OUTPUT ${modulec_file} ${f2pywrap_file}
-      COMMAND ${PYTHON_EXECUTABLE} -m numpy.f2py
-        ${pyf_file}
-        ${f2py_include_paths}
-        >> ${log_file} 2>&1 
-      COMMAND ${CMAKE_COMMAND} -E copy
-        ${modulec_file_new} ${f2pywrap_file_new} ${f2py_dir}
-      DEPENDS ${F2PY_ADD_MODULE_SOURCES} ${pyf_file}
-    )
-
-  endif()
+    list(APPEND processed_files ${proc_file})
+  endforeach()
+  
+  # Generate in binary directory and copy to source directory.
+  add_custom_command(
+    OUTPUT ${pyf_file}
+    COMMAND ${PYTHON_EXECUTABLE} -m numpy.f2py
+      -m ${target_name}
+      -h ${pyf_file}
+      --overwrite-signature only: ${F2PY_ADD_MODULE_FUNCTIONS} :
+      ${f2py_include_paths}
+      ${processed_files}
+      >> ${log_file} 2>&1
+    DEPENDS ${processed_files}
+  )
+  
+  # Generate in binary directory and copy to source directory.
+  add_custom_command(
+    OUTPUT ${modulec_file} ${f2pywrap_file}
+    COMMAND ${PYTHON_EXECUTABLE} -m numpy.f2py
+      ${pyf_file}
+      ${f2py_include_paths}
+      >> ${log_file} 2>&1 
+    DEPENDS ${F2PY_ADD_MODULE_SOURCES} ${pyf_file}
+  )
 
   Python_add_library(${target_name} MODULE WITH_SOABI
     ${f2py_source}

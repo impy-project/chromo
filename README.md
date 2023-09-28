@@ -60,7 +60,7 @@ Please note that `chromo` only provides a user interface for the following model
 
 | Interaction model                                         | Supported proj/targ       | Comment                         | 
 |------------------------------------------------------------|---------------------------|--------------------------------|
-| [DPMJET-III 3.0.6](https://inspirehep.net/literature/538940) & [PHOJET 1.12-35](https://inspirehep.net/literature/373339)      | *hN, γγ, γN, hA, γA, AA*  | |
+| [DPMJET-III 3.0.7](https://inspirehep.net/literature/538940) & [PHOJET 1.12-36](https://inspirehep.net/literature/373339)      | *hN, γγ, γN, hA, γA, AA*  | |
 | [DPMJET-III & PHOJET 19.1 and 19.3](https://inspirehep.net/literature/1503512) [(repo on GitHub)](https://github.com/DPMJET/DPMJET) |  *hN, γγ, γN, hA, γA, AA* | |
 | [EPOS-LHC](https://inspirehep.net/literature/1236629)     | *hN, hA, AA*              | |
 | [PYTHIA 6.4](https://inspirehep.net/literature/712925)    | *hN, ee, γγ, γN*          | |
