@@ -348,8 +348,10 @@ def test_config(make_pi_0_stable):
 
         with pyhepmc.open(p) as f:
             event = f.read()
-            is_final = event.numpy.particles.status == 1
-            is_pi_0 = event.numpy.particles.pid == lp.pi_0.pdgid
+            status = np.array([gen_ptcl.status for gen_ptcl in event.particles])
+            is_final = status == 1
+            pid = np.array([gen_ptcl.pid for gen_ptcl in event.particles])
+            is_pi_0 = pid == lp.pi_0.pdgid
             if make_pi_0_stable:
                 assert np.sum(is_final & is_pi_0) > 0
             else:

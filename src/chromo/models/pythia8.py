@@ -52,6 +52,12 @@ class PYTHIA8Event(EventData):
         return hi.nPartProj, hi.nPartTarg
 
     def _prepare_for_hepmc(self):
+        model, version = self.generator
+        warnings.warn(
+            f"{model}-{version}: only part of the history " "available in HepMC3 event",
+            RuntimeWarning,
+        )
+
         # We must apply some workarounds so that HepMC3 conversion and IO works
         # for all models. This should be revisited once the fundamental issues
         # with particle histories have been fixed.

@@ -4,7 +4,6 @@ include pyproject.toml
 include CMakeLists.txt
 include default_models.cfg
 recursive-exclude src/chromo/iamdata *
-recursive-include src/f2py *
 recursive-include src/fortran *
 recursive-include src/cpp/pybind11/include *
 include src/cpp/pybind11/CMakeLists.txt

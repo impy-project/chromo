@@ -7,6 +7,7 @@ from chromo.util import (
     Nuclei,
 )
 from chromo.constants import standard_projectiles, GeV
+import warnings
 
 
 class DpmjetIIIEvent(MCEvent):
@@ -38,6 +39,11 @@ class DpmjetIIIEvent(MCEvent):
             event_field[0:2] = beam[field]
 
     def _prepare_for_hepmc(self):
+        model, version = self.generator
+        warnings.warn(
+            f"{model}-{version}: only part of the history " "available in HepMC3 event",
+            RuntimeWarning,
+        )
         mask = (
             (self.status == 1)
             | (self.status == 2)

@@ -37,6 +37,8 @@ __pycache__
 *.gz
 models.cfg
 pythia*.tgz
+numpy*.zip
+impy-?.?.?
 src/chromo/iamdata
 fig/*
 bench/timing.pkl

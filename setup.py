@@ -3,6 +3,7 @@ from setuptools import setup
 import sys
 import subprocess as subp
 import os
+import patch_local_numpy_f2py  # noqa: E402
 
 cwd = Path(__file__).parent
 
