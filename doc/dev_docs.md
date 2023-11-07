@@ -16,7 +16,8 @@ Then, navigate to the cloned `chromo` directory:
 
 To install the package in editable mode (for developing the Python layer) and with verbose output, run the following command:
 
-    pip install --prefer-binary --no-use-pep517 --no-build-isolation -v -e .[test,examples]
+    pip install setuptools wheel 'numpy<1.24' packaging
+    pip install --prefer-binary --no-use-pep517 --no-build-isolation -v -e .'[test,examples]'
 
 This command may take some time to complete. While it is running, you can watch the compilation process. Any warnings from the Fortran codes can be ignored.
 

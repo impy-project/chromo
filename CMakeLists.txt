@@ -400,11 +400,20 @@ target_include_directories(libpythia8 PUBLIC ${cpp_dir}/pythia83/include)
 target_compile_definitions(libpythia8 PRIVATE XMLDIR="")
 
 pybind11_add_module(_pythia8 ${cpp_dir}/_pythia8.cpp)
-target_include_directories(_pythia8 PUBLIC 
+target_include_directories(_pythia8 PUBLIC
   ${cpp_dir}/pybind11/include
   ${cpp_dir}
 )
 target_link_libraries(_pythia8 PRIVATE libpythia8)
+
+# original Pythia8 API
+file(GLOB pythia8_python_sources ${cpp_dir}/pythia83/plugins/python/src/*.cpp)
+pybind11_add_module(pythia8 ${pythia8_python_sources})
+target_include_directories(pythia8 PUBLIC
+  ${cpp_dir}/pybind11/include
+  ${cpp_dir}
+)
+target_link_libraries(pythia8 PRIVATE libpythia8)
 
 # Add . directory to rpath for MacOS and Linux
 # It enables _pythia8 to search for dependencies (libpythia8)
@@ -420,6 +429,9 @@ set_target_properties(_pythia8 PROPERTIES
         BUILD_WITH_INSTALL_RPATH FALSE
         LINK_FLAGS "-Wl,-rpath,\'${pythia8_rpath_fix}\'")
 
+set_target_properties(pythia8 PROPERTIES
+        BUILD_WITH_INSTALL_RPATH FALSE
+        LINK_FLAGS "-Wl,-rpath,\'${pythia8_rpath_fix}\'")
 
 install(TARGETS libpythia8 DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
