@@ -733,3 +733,9 @@ if(BUILD_dev_dpmjetIII193)
   )
 
 endif()
+
+### compiled utilities to speed up slow algorithms in Python
+pybind11_add_module(_util ${cpp_dir}/_util.cpp)
+target_include_directories(_util PUBLIC 
+  ${cpp_dir}/pybind11/include
+)

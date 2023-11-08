@@ -564,16 +564,6 @@ def select_mothers(arg, mothers):
         return _select_mothers(mask, mothers)
 
 
-try:
-    # accelerate with numba if numba is available
-    import numba as nb
-
-    _select_mothers = nb.njit(_select_mothers)
-
-except ModuleNotFoundError:
-    pass
-
-
 def tolerant_string_match(a, b):
     """
     Return True if all characters in appear also in b in same order.
