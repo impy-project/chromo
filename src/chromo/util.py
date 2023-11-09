@@ -865,7 +865,7 @@ class redirect_std_streams:
                 self.stdout_file_descr = os.open(os.devnull, os.O_RDWR)
             else:
                 # Create directory for the file
-                self.stdout_file = _file(self.stdout_file)
+                self.stdout_file = self._file(self.stdout_file)
                 # Open file descriptor
                 self.stdout_file_descr = os.open(
                     self.stdout_file, os.O_RDWR | os.O_CREAT | os.O_APPEND
@@ -879,7 +879,7 @@ class redirect_std_streams:
             if self.stderr_file == "null":
                 self.stderr_file_descr = os.open(os.devnull, os.O_RDWR)
             else:
-                self.stderr_file = _file(self.stderr_file)
+                self.stderr_file = self._file(self.stderr_file)
                 self.stderr_file_descr = os.open(
                     self.stderr_file, os.O_RDWR | os.O_CREAT | os.O_APPEND
                 )
