@@ -1,20 +1,21 @@
 """Utility module for auxiliary methods and classes."""
 
+import os
 import warnings
 import inspect
 import platform
-from pathlib import Path
-import urllib.request
-import zipfile
-import shutil
-import numpy as np
-from typing import Sequence, Set, Tuple, Collection, Union
-from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
-from chromo.constants import MeV, nucleon_mass, sec2cm
-from enum import Enum
 import dataclasses
 import copy
 import math
+import zipfile
+import shutil
+from pathlib import Path
+from enum import Enum
+from typing import Sequence, Set, Tuple, Collection, Union
+import urllib.request
+import numpy as np
+from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
+from chromo.constants import MeV, nucleon_mass, sec2cm
 
 EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
 
@@ -137,7 +138,18 @@ def is_real_nucleus(pdgid: Union[int, PDGID, CompositeTarget]) -> bool:
 
 
 def energy2momentum(E, m):
-    # numerically more stable way to compute E^2 - m^2
+    """
+    Compute the momentum of a particle given its energy and mass.
+
+    Numerically more stable way to compute E^2 - m^2.
+
+    Args:
+        E (float): The energy of the particle.
+        m (float): The mass of the particle.
+
+    Returns:
+        float: The momentum of the particle.
+    """
     return np.sqrt((E + m) * (E - m))
 
 
@@ -160,10 +172,34 @@ def elab2ecm(elab, m1, m2):
 
 
 def ecm2elab(ecm, m1, m2):
+    """
+    Calculates the center-of-mass energy (ECM) in the lab frame given
+    the masses of two particles (m1, m2).
+
+    Args:
+        ecm (float): The center-of-mass energy.
+        m1 (float): The mass of particle 1.
+        m2 (float): The mass of particle 2.
+
+    Returns:
+        float: The center-of-mass energy in the lab frame.
+    """
     return 0.5 * (ecm**2 - m1**2 - m2**2) / m2
 
 
 def mass(pdgid):
+    """
+    Returns the mass of a particle with the given PDG ID in MeV/c^2.
+
+    Args:
+        pdgid (int): The PDG ID of the particle.
+
+    Returns:
+        float: The mass of the particle in MeV/c^2.
+
+    Raises:
+        ValueError: If the mass cannot be determined for the given PDG ID.
+    """
     m = Particle.from_pdgid(pdgid).mass
     if m is None:
         a = pdg2AZ(pdgid)[0]
@@ -209,10 +245,29 @@ _name2pdg_db = _make_name2pdg_db()
 
 
 def name2pdg(name: str):
+    """
+    Given a particle name, returns the corresponding PDG code.
+
+    Args:
+        name (str): The name of the particle.
+
+    Returns:
+        int: The PDG code of the particle.
+    """
     return _name2pdg_db[name]
 
 
 def pdg2name(pdgid):
+    """
+    Given a particle's PDG ID, returns its name.
+
+    Args:
+        pdgid (int): The particle's PDG ID.
+
+    Returns:
+        str: The particle's name, or "Unknown" or "Invalid" if the
+        PDG ID is not recognized.
+    """
     try:
         return Particle.from_pdgid(pdgid).name
     except ParticleNotFound:
@@ -222,6 +277,15 @@ def pdg2name(pdgid):
 
 
 def is_AZ(arg):
+    """
+    Check if the input is a tuple of mass and charge number.
+
+    Args:
+        arg : The input to check.
+
+    Returns:
+        bool: True if the input is a sequence of two integers, False otherwise.
+    """
     if not isinstance(arg, Sequence):
         return False
     if len(arg) != 2:
@@ -266,6 +330,19 @@ def AZ2pdg(A, Z):
 
 
 def process_particle(x):
+    """
+    Process a particle specification and return a PDGID object.
+
+    Args:
+        x: A particle specification. Can be an integer, string,
+        PDGID object, or CompositeTarget object.
+
+    Returns:
+        A PDGID object representing the particle.
+
+    Raises:
+        ValueError: If the particle specification is not recognized.
+    """
     if isinstance(x, (PDGID, CompositeTarget)):
         return x
     if isinstance(x, int):
@@ -380,8 +457,8 @@ def _download_file(outfile, url):
         DownloadColumn(),
         TimeRemainingColumn(),
         transient=True,
-    ) as bar:
-        task_id = bar.add_task(f"Downloading {fname}", total=total_size)
+    ) as probar:
+        task_id = probar.add_task(f"Downloading {fname}", total=total_size)
 
         with open(outfile, "wb") as f:
             chunk = True
@@ -390,7 +467,7 @@ def _download_file(outfile, url):
                 f.write(chunk)
                 nchunk = len(chunk)
                 wrote += nchunk
-                bar.advance(task_id, nchunk)
+                probar.advance(task_id, nchunk)
 
     if total_size and wrote != total_size:
         raise ConnectionError(f"{fname} has not been downloaded")
@@ -427,8 +504,8 @@ def _cached_data_dir(url):
 
         version_glob = vname.split("_v")[0]
         for vfile in model_dir.glob(f"{version_glob}_v*"):
-            vfile.unlink
-        with open(version_file, "w") as vf:
+            vfile.unlink()
+        with open(version_file, "w", encoding="utf-8") as vf:
             vf.write(url)
     return str(model_dir) + "/"
 
@@ -733,3 +810,94 @@ def select_long_lived(tau=0, mm=False):
             long_lived.append(pid)
 
     return long_lived
+
+
+class redirect_std_streams:
+    """
+    A context manager for redirecting standard output (stdout)
+    and standard error (stderr) streams to files or /dev/null.
+
+    If file exists, the redirected content is appended, otherwise
+    the file is created with all its parent directories
+
+    Usage:
+    ```
+    with redirect_std_streams(stdout_file="out.txt", stderr_file="err.txt"):
+        ...
+    ```
+
+    Taken from https://stackoverflow.com/a/978264 and
+    https://stackoverflow.com/a/50691621
+    """
+
+    def __init__(self, *, stdout_file=None, stderr_file=None):
+        """
+        Initialize the redirect_std_streams context manager.
+
+        Args:
+            stdout_file (Path or str): The file to redirect stdout to.
+            If 'null', stdout will be redirected to /dev/null.
+
+            stderr_file (Path or str): The file to redirect stderr to.
+            If 'null', stderr will be redirected to /dev/null.
+        """
+        self.stdout_file = stdout_file
+        self.stderr_file = stderr_file
+        # Descriptors for stdout and stderr
+        self.stdout = 1
+        self.stderr = 2
+
+    def _file(self, file_name):
+        """
+        Create a file with the specified name and return its Path object.
+        """
+        file = Path(file_name)
+        file.parent.mkdir(parents=True, exist_ok=True)
+        return file
+
+    def __enter__(self):
+        """
+        Enter the context and redirect stdout and stderr
+        to the specified files or /dev/null.
+        """
+        if self.stdout_file:
+            if self.stdout_file == "null":
+                self.stdout_file_descr = os.open(os.devnull, os.O_RDWR)
+            else:
+                # Create directory for the file
+                self.stdout_file = _file(self.stdout_file)
+                # Open file descriptor
+                self.stdout_file_descr = os.open(
+                    self.stdout_file, os.O_RDWR | os.O_CREAT | os.O_APPEND
+                )
+            # Save stdout
+            self.saved_stdout = os.dup(self.stdout)
+            # Redirect stdout
+            os.dup2(self.stdout_file_descr, self.stdout)
+
+        if self.stderr_file:
+            if self.stderr_file == "null":
+                self.stderr_file_descr = os.open(os.devnull, os.O_RDWR)
+            else:
+                self.stderr_file = _file(self.stderr_file)
+                self.stderr_file_descr = os.open(
+                    self.stderr_file, os.O_RDWR | os.O_CREAT | os.O_APPEND
+                )
+            # Save stderr
+            self.saved_stderr = os.dup(self.stderr)
+            # Redirect stderr
+            os.dup2(self.stderr_file_descr, self.stderr)
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        """
+        Exit the context and restore the original stdout and stderr.
+        """
+        # Restore file descriptors
+        if self.stdout_file:
+            os.dup2(self.saved_stdout, self.stdout)
+            os.close(self.stdout_file_descr)
+
+        if self.stderr_file:
+            os.dup2(self.saved_stderr, self.stderr)
+            os.close(self.stderr_file_descr)
