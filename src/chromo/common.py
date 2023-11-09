@@ -7,31 +7,35 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 """
+import copy
+import dataclasses
+import warnings
+import importlib
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from typing import Optional, Tuple
+
 import numpy as np
+from packaging.version import parse as parse_version
+from particle import Particle
+
+from chromo.constants import (
+    GeV,
+    long_lived,
+    quarks_and_diquarks_and_gluons,
+    standard_projectiles,
+)
+from chromo.decay_handler import Pythia8DecayHandler
+from chromo.kinematics import CompositeTarget, EventKinematics
 from chromo.util import (
+    Nuclei,
     classproperty,
-    select_mothers,
     naneq,
     pdg2name,
-    Nuclei,
+    select_long_lived,
+    select_mothers,
+    unique_sorted_pids,
 )
-from chromo.constants import (
-    quarks_and_diquarks_and_gluons,
-    long_lived,
-    standard_projectiles,
-    GeV,
-)
-from chromo.kinematics import EventKinematics, CompositeTarget
-from chromo.util import unique_sorted_pids, select_long_lived
-import dataclasses
-import copy
-from typing import Tuple, Optional
-from contextlib import contextmanager
-import warnings
-from particle import Particle
-from packaging.version import parse as parse_version
-from chromo.decay_handler import Pythia8DecayHandler
 
 all_unstable_pids = select_long_lived()
 
@@ -596,8 +600,6 @@ class MCRun(ABC):
     nevents = 0  # number of generated events so far
 
     def __init__(self, seed):
-        import importlib
-
         if not self._restartable:
             self._abort_if_already_initialized()
 
@@ -606,7 +608,10 @@ class MCRun(ABC):
         assert hasattr(self, "_library_name")
         assert hasattr(self, "_event_class")
         assert hasattr(self, "_frame")
-        self._lib = importlib.import_module(f"chromo.models.{self._library_name}")
+        try:
+            self._lib = importlib.import_module(f"chromo.models.{self._library_name}")
+        except ModuleNotFoundError:
+            self._lib = importlib.import_module(f"{self._library_name}")
         self._apply_decay_handler = False
 
         self._rng = np.random.default_rng(seed)
@@ -875,7 +880,7 @@ class MCRun(ABC):
         pass
 
     @abstractmethod
-    def _set_stable(self, pidid, stable):
+    def _set_stable(self, pdgid, stable):
         pass
 
     def _abort_if_already_initialized(self):
