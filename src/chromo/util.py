@@ -1,6 +1,5 @@
 """Utility module for auxiliary methods and classes."""
 
-import os
 import warnings
 import inspect
 import platform
@@ -810,4 +809,3 @@ def select_long_lived(tau=0, mm=False):
             long_lived.append(pid)
 
     return long_lived
-
