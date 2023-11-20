@@ -78,6 +78,8 @@ class QGSJet1Run(QGSJetRun):
         from scipy.interpolate import UnivariateSpline
 
         kin = self.kinematics if kin is None else kin
+        if kin.p1.A is not None and kin.p1.A > 1:
+            return CrossSectionData(prod=self._lib.sectnu(kin.elab, kin.p1.A, kin.p2.A))
 
         A_target = kin.p2.A
         # Projectile ID-1 to access fortran indices directly
@@ -134,11 +136,11 @@ class QGSJet2Run(QGSJetRun):
 
     def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
-
+        p1_A = kin.p1.A or 1
         inel = self._lib.qgsect(
             kin.elab,
             self._projectile_id,
-            kin.p1.A,
+            p1_A,
             kin.p2.A,
         )
         return CrossSectionData(inelastic=inel)
