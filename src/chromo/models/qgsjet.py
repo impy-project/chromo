@@ -148,17 +148,11 @@ class QGSJet2Run(QGSJetRun):
     def _set_kinematics(self, kin):
         self._projectile_id = {
             lp.pi_plus.pdgid: 1,
-            lp.pi_minus.pdgid: -1,
-            lp.proton.pdgid: 2,
-            lp.antiproton.pdgid: -2,
-            lp.neutron.pdgid: 3,
-            lp.antineutron.pdgid: -3,
-            lp.K_plus.pdgid: 4,
-            lp.K_minus.pdgid: -4,
-            lp.K_S_0.pdgid: -5,
-            lp.K_L_0.pdgid: 5,
+            lp.K_plus.pdgid: 3,
+            lp.K_S_0.pdgid: 3,
+            lp.K_L_0.pdgid: 3,
         }.get(
-            kin.p1, 2
+            abs(kin.p1), 2
         )  # 2 is correct for nuclei
         self._lib.qgini(kin.elab, self._projectile_id, kin.p1.A or 1, kin.p2.A)
 
