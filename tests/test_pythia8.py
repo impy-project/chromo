@@ -185,3 +185,20 @@ def test_gp():
 def test_gg():
     evt = run_collision(100 * GeV, "gamma", "gamma")
     assert len(evt) > 2
+
+def test_cache_file():
+    evt_kin = CenterOfMass(10 * GeV, "p", "p")
+    m = Pythia8(evt_kin, seed=1, cache=True) # False
+    config_lines = "\n".join(m._config)
+    assert "MultipartonInteractions:reuseInit = 3" in config_lines # 0
+    # TODO Test for the cache file production for pp@10GeV when we have agreed on the
+    # filename for the cache files.
+    
+def test_cache_file_heavy_ion():
+    evt_kin = CenterOfMass(2000 * GeV, "p", "He")
+    m = Pythia8(evt_kin, seed=1, cache=True) # False
+    config_lines = "\n".join(m._config)
+    assert "HeavyIon:SasdMpiReuseInit = 3" in config_lines # 0
+    assert "HeavyIon:SigFitReuseInit = 3"  in config_lines # 0
+    # TODO Test for the cache file production for pHe@2TeV when we have agreed on the
+    # filename for the cache files.
