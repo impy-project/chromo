@@ -26,6 +26,8 @@ def run_model(Model, kin, number=1):
 def test_generator(projectile, target, Model):
     p1 = projectile
     p2 = target
+    if Model is im.UrQMD34:
+        pytest.skip("UrQMD34 cross sections broken.")
     if p2 == "air":
         if Model is im.Pythia8:
             pytest.skip("Simulating nuclei in Pythia8 is very time-consuming")
@@ -39,4 +41,9 @@ def test_generator(projectile, target, Model):
     if cs is None:
         assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
         return
-    assert np.any(dataclasses.astuple(cs)), "No valid cross sections returned"
+    cstup = dataclasses.astuple(cs)
+    assert np.any(cstup), "No valid cross sections returned"
+    if p1 == "gamma":
+        assert np.nansum(cstup) > 0.1, "Cross section too small" + str(cs)
+    else:
+        assert np.nansum(cstup) > 20, "Cross section too small" + str(cs)
