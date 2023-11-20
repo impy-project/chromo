@@ -407,10 +407,10 @@ class EventData:
         """Return energy fraction of beam in laboratory frame."""
         return self.elab / self.kin.elab
 
-    # @property
-    # def fw(self):
-    #     """I don't remember what this was for..."""
-    #     return self.en / self.kin.pcm
+    @property
+    def fw(self):
+        """Quantity needed for invariant cross section histograms."""
+        return self.en / self.kin.pcm
 
     def _prepare_for_hepmc(self):
         """
@@ -539,8 +539,9 @@ class MCEvent(EventData, ABC):
             daughters=getattr(evt, self._jdahep).T[sel] if self._jdahep else None,
         )
 
-        self._history_zero_indexing()
-        self._repair_initial_beam()
+        if generator._restore_beam_and_history:
+            self._history_zero_indexing()
+            self._repair_initial_beam()
 
     @abstractmethod
     def _charge_init(self, npart):
@@ -566,7 +567,7 @@ class MCEvent(EventData, ABC):
         return (EventData,)
 
     def _repair_initial_beam(self):
-        pass
+        raise NotImplementedError("The method must be implemented in derived class")
 
     def _history_zero_indexing(self):
         self.mothers = self.mothers - 1
@@ -597,6 +598,7 @@ class MCRun(ABC):
     _targets = Nuclei()
     _unstable_pids = set(all_unstable_pids)
     _ecm_min = 10 * GeV  # default for many models
+    _restore_beam_and_history = True
     nevents = 0  # number of generated events so far
 
     def __init__(self, seed):
