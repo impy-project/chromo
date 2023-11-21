@@ -119,6 +119,7 @@ class DummyEvent(MCEvent):
             version="bar",
             kinematics=CenterOfMass(10, "p", "p"),
             _frame=EventFrame.CENTER_OF_MASS,
+            _restore_beam_and_history=False,
         )
 
         super().__init__(generator)

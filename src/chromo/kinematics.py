@@ -140,6 +140,7 @@ class EventKinematicsBase:
             self.p1,
             self.p2.copy() if isinstance(self.p2, CompositeTarget) else self.p2,
             self.ecm,
+            self.pcm,
             self.plab,
             self.elab,
             self.ekin,
