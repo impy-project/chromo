@@ -148,12 +148,28 @@ class Pythia8(MCRun):
             f"Random:seed = {self.seed % 900_000_000}",
         ]
 
-        # enable production of cache files by Pythia8
+        # production of cache files by Pythia8 to speed up subsequent runs
+        cache_prefix = str(_cache_base_dir() / "Pythia8"
+                / f"cache_{int(evt_kin.p1)}_{int(evt_kin.p2)}_{evt_kin.ecm/MeV:.0f}"
+                .replace("-", "m")
+        )
         if cache:
             self._config += [
                 "MultipartonInteractions:reuseInit = 3",
+                f"MultipartonInteractions:initFile = {cache_prefix}.mpi"
+            ]
+            if (evt_kin.p1.A or 0) > 1 or (evt_kin.p2.A or 1) > 1:
+                self._config += [
                 "HeavyIon:SasdMpiReuseInit = 3",
+                f"HeavyIon:SasdMpiInitFile = {cache_prefix}.sasd.mpi",
                 "HeavyIon:SigFitReuseInit = 3",
+                f"HeavyIon:SigFitInitFile = {cache_prefix}.sigfit"
+                ]
+        else: 
+            self._config += [
+                "MultipartonInteractions:reuseInit = 0",
+                "HeavyIon:SasdMpiReuseInit = 0",
+                "HeavyIon:SigFitReuseInit = 0"
             ]
 
         # Add "Print:quiet = on" if no "Print:quiet" is in config
@@ -197,23 +213,13 @@ class Pythia8(MCRun):
 
     def _set_kinematics(self, kin):
         config = self._config[:]
-
-        # Path prefix for some cache files that Pythia8 generates
-        # to speed up subsequent runs
-        cache_prefix = str(
-            _cache_base_dir()
-            / "Pythia8"
-            / f"cache_{int(kin.p1)}_{int(kin.p2)}_{kin.ecm / MeV:.0f}".replace("-", "m")
-        )
-
+       
         # TODO use numpy PRNG instead of Pythia's
         config += [
             # use center-of-mass frame
             "Beams:frameType = 1",
             # do not print progress
             "Next:numberCount = 0",
-            "MultipartonInteractions:reuseInit = 0",
-            f"MultipartonInteractions:initFile = {cache_prefix}.mpi",
         ]
 
         # TODO Pythia8 likes to say this:
@@ -225,15 +231,6 @@ class Pythia8(MCRun):
         #  MPI stuff and set the numbers via those. To get the numbers, call
         # SubCollisionModel::getParm(), which is complicated to call from the Pythia
         # object, this is work in progress.
-
-        if (kin.p1.A or 0) > 1 or (kin.p2.A or 1) > 1:
-            config += [
-                # similar to MultipartonInteractions:reuseInit
-                "HeavyIon:SasdMpiReuseInit = 0",
-                "HeavyIon:SigFitReuseInit = 0",
-                f"HeavyIon:SasdMpiInitFile = {cache_prefix}.sasd.mpi",
-                f"HeavyIon:SigFitInitFile = {cache_prefix}.sigfit",
-            ]
 
         config += [
             f"Beams:idA = {int(kin.p1)}",
