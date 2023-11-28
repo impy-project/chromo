@@ -149,27 +149,30 @@ class Pythia8(MCRun):
         ]
 
         # production of cache files by Pythia8 to speed up subsequent runs
-        cache_prefix = str(_cache_base_dir() / "Pythia8"
-                / f"cache_{int(evt_kin.p1)}_{int(evt_kin.p2)}_{evt_kin.ecm/MeV:.0f}"
-                .replace("-", "m")
+        cache_prefix = str(
+            _cache_base_dir()
+            / "Pythia8"
+            / f"cache_{int(evt_kin.p1)}_{int(evt_kin.p2)}_{evt_kin.ecm/MeV:.0f}".replace(
+                "-", "m"
+            )
         )
         if cache:
             self._config += [
                 "MultipartonInteractions:reuseInit = 3",
-                f"MultipartonInteractions:initFile = {cache_prefix}.mpi"
+                f"MultipartonInteractions:initFile = {cache_prefix}.mpi",
             ]
             if (evt_kin.p1.A or 0) > 1 or (evt_kin.p2.A or 1) > 1:
                 self._config += [
-                "HeavyIon:SasdMpiReuseInit = 3",
-                f"HeavyIon:SasdMpiInitFile = {cache_prefix}.sasd.mpi",
-                "HeavyIon:SigFitReuseInit = 3",
-                f"HeavyIon:SigFitInitFile = {cache_prefix}.sigfit"
+                    "HeavyIon:SasdMpiReuseInit = 3",
+                    f"HeavyIon:SasdMpiInitFile = {cache_prefix}.sasd.mpi",
+                    "HeavyIon:SigFitReuseInit = 3",
+                    f"HeavyIon:SigFitInitFile = {cache_prefix}.sigfit",
                 ]
-        else: 
+        else:
             self._config += [
                 "MultipartonInteractions:reuseInit = 0",
                 "HeavyIon:SasdMpiReuseInit = 0",
-                "HeavyIon:SigFitReuseInit = 0"
+                "HeavyIon:SigFitReuseInit = 0",
             ]
 
         # Add "Print:quiet = on" if no "Print:quiet" is in config
@@ -213,7 +216,7 @@ class Pythia8(MCRun):
 
     def _set_kinematics(self, kin):
         config = self._config[:]
-       
+
         # TODO use numpy PRNG instead of Pythia's
         config += [
             # use center-of-mass frame

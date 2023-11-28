@@ -190,13 +190,14 @@ def test_gg():
 def test_cache_file():
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
     m = Pythia8(evt_kin, seed=1, cache=True)
-    
+
     config_lines = "\n".join(m._config)
     assert "MultipartonInteractions:reuseInit = 3" in config_lines
-    
+
     m.generate()
-    cache_file_path = os.path.join(_cache_base_dir(), "Pythia8",
-                                   "cache_2212_2212_10000.mpi")
+    cache_file_path = os.path.join(
+        _cache_base_dir(), "Pythia8", "cache_2212_2212_10000.mpi"
+    )
     assert os.path.exists(cache_file_path)
     assert os.path.getsize(cache_file_path) > 0
 
@@ -204,13 +205,14 @@ def test_cache_file():
 def test_cache_file_heavy_ion():
     evt_kin = CenterOfMass(2000 * GeV, "p", "He")
     m = Pythia8(evt_kin, seed=1, cache=True)
-    
+
     config_lines = "\n".join(m._config)
     assert "HeavyIon:SasdMpiReuseInit = 3" in config_lines
     assert "HeavyIon:SigFitReuseInit = 3" in config_lines
-    
+
     m.generate()
-    cache_file_path = os.path.join(_cache_base_dir(), "Pythia8",
-                                   "cache_2212_1000020040_2000000.mpi")
+    cache_file_path = os.path.join(
+        _cache_base_dir(), "Pythia8", "cache_2212_1000020040_2000000.mpi"
+    )
     assert os.path.exists(cache_file_path)
     assert os.path.getsize(cache_file_path) > 0
