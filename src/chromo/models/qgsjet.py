@@ -136,11 +136,18 @@ class QGSJet2Run(QGSJetRun):
 
     def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
-        p1_A = kin.p1.A or 1
+        _projectile_id = {
+            lp.pi_plus.pdgid: 1,
+            lp.K_plus.pdgid: 3,
+            lp.K_S_0.pdgid: 3,
+            lp.K_L_0.pdgid: 3,
+        }.get(
+            abs(kin.p1), 2
+        )  # 2 is correct for nuclei
         inel = self._lib.qgsect(
             kin.elab,
-            self._projectile_id,
-            p1_A,
+            _projectile_id,
+            kin.p1.A or 1,
             kin.p2.A,
         )
         return CrossSectionData(inelastic=inel)
@@ -148,11 +155,17 @@ class QGSJet2Run(QGSJetRun):
     def _set_kinematics(self, kin):
         self._projectile_id = {
             lp.pi_plus.pdgid: 1,
-            lp.K_plus.pdgid: 3,
-            lp.K_S_0.pdgid: 3,
-            lp.K_L_0.pdgid: 3,
+            lp.pi_minus.pdgid: -1,
+            lp.proton.pdgid: 2,
+            lp.antiproton.pdgid: -2,
+            lp.neutron.pdgid: 3,
+            lp.antineutron.pdgid: -3,
+            lp.K_plus.pdgid: 4,
+            lp.K_minus.pdgid: -4,
+            lp.K_S_0.pdgid: -5,
+            lp.K_L_0.pdgid: 5,
         }.get(
-            abs(kin.p1), 2
+            kin.p1, 2
         )  # 2 is correct for nuclei
         self._lib.qgini(kin.elab, self._projectile_id, kin.p1.A or 1, kin.p2.A)
 
