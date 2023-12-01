@@ -8,6 +8,7 @@ from .util import reference_charge
 import pytest
 from functools import lru_cache
 import sys
+import os
 
 
 pytestmark = pytest.mark.skipif(
