@@ -198,7 +198,7 @@ class Pythia8(MCRun):
             diffractive_xx=st.sigmaXX,
             diffractive_axb=st.sigmaAXB,
         )
-        
+
         # pythia.info.sigmaTot(), used in _cross_section(), are estimated cross-section
         # values for the pp collision for each sub-processes.
         # TODO Implement the correct cross-sections when running simulations including
