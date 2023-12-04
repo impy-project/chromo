@@ -822,7 +822,7 @@ class MCRun(ABC):
         return tuple(unique_sorted_pids(self._final_state_particles))
 
     @final_state_particles.setter
-    def final_state_particles(self, pdgid):
+    def final_state_particles(self, list_of_pdgids):
         """
         Sets particles with PDG IDs provided in `pdgid` list as stable particles.
         All other unstable particles will decay. Anti-particles are synchronized.
@@ -847,24 +847,25 @@ class MCRun(ABC):
             >>> generator.final_state_particles = (chromo.util
                                                   .select_long_lived(tau_stable))
         """
-        self._set_final_state_particles(pdgid)
+        self._set_final_state_particles(list_of_pdgids)
 
     def _set_final_state_particles(self, list_of_pdgids=long_lived):
         """By default defines particles as stable
         for the default 'tau_stable' value in the config."""
 
-        self._final_state_particles = np.unique(list_of_pdgids)
-        is_unstable = np.isin(self._final_state_particles, list(self._unstable_pids))
-        self._final_state_particles = self._final_state_particles[is_unstable]
-
+        fsparticles = np.unique(list_of_pdgids)
+        is_unstable = np.isin(fsparticles, list(self._unstable_pids))
+        fsparticles = fsparticles[is_unstable]
         # Clean up by setting all unstable particles as unstable
         for pid in self._unstable_pids:
-            self._set_stable(pid, False)
+            self.set_stable(pid, False, update_decay_handler=False)
 
-        for pid in self._final_state_particles:
-            self._set_stable(pid, True)
+        for pid in fsparticles:
+            self.set_stable(pid, True, update_decay_handler=False)
 
-    def set_stable(self, pdgid, stable=True):
+        self._sync_decay_handler()
+
+    def set_stable(self, pdgid, stable=True, update_decay_handler=True):
         """Prevent decay of unstable particles.
 
         Anti-particles are synchronized.
@@ -874,9 +875,7 @@ class MCRun(ABC):
             stable (bool)      : If `False`, particle is allowed to decay
         """
         p = Particle.from_pdgid(pdgid)
-        assert pdgid in self._unstable_pids, (
-            Particle.from_pdgid(pdgid) + " unknown or stable"
-        )
+        assert pdgid in self._unstable_pids, f"{pdg2name(pdgid)} unknown or stable"
         ap = p.invert() if p.invert() != p else False
         if p.ctau is None or p.ctau == np.inf:
             raise ValueError(f"{pdg2name(pdgid)} cannot decay")
@@ -896,9 +895,14 @@ class MCRun(ABC):
                 np.append(self._final_state_particles, pdgid_list).astype(np.int64)
             )
         else:
-            remove = np.isin(self._final_state_particles, pdgid_list)
-            self._final_state_particles = self._final_state_particles[~remove]
+            if len(self._final_state_particles) > 0:
+                remove = np.isin(self._final_state_particles, pdgid_list)
+                self._final_state_particles = self._final_state_particles[~remove]
 
+        if update_decay_handler:
+            self._sync_decay_handler()
+
+    def _sync_decay_handler(self):
         # Synchronize decay handler
         if self._decay_handler:
             self._decay_handler.set_stable(self._final_state_particles)
