@@ -1,7 +1,7 @@
 from chromo.kinematics import CenterOfMass
 from chromo.models import Pythia8
 from chromo.constants import GeV, long_lived
-from chromo.util import name2pdg
+from chromo.util import _cache_base_dir, name2pdg
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from .util import reference_charge
@@ -195,7 +195,6 @@ def test_cache_file():
     config_lines = "\n".join(m._config)
     assert "MultipartonInteractions:reuseInit = 3" in config_lines
 
-    m.generate()
     cache_file_path = os.path.join(
         _cache_base_dir(), "Pythia8", "cache_2212_2212_10000.mpi"
     )
@@ -211,7 +210,6 @@ def test_cache_file_heavy_ion():
     assert "HeavyIon:SasdMpiReuseInit = 3" in config_lines
     assert "HeavyIon:SigFitReuseInit = 3" in config_lines
 
-    m.generate()
     cache_file_path = os.path.join(
         _cache_base_dir(), "Pythia8", "cache_2212_1000020040_2000000.mpi"
     )
