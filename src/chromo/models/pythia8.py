@@ -153,8 +153,9 @@ class Pythia8(MCRun):
             cache_prefix = str(
                 _cache_base_dir()
                 / "Pythia8"
-                / f"cache_{int(evt_kin.p1)}_{int(evt_kin.p2)}_{evt_kin.ecm/MeV:.0f}"
-                .replace("-", "m")
+                / f"cache_{int(evt_kin.p1)}_{int(evt_kin.p2)}_{evt_kin.ecm/MeV:.0f}".replace(
+                    "-", "m"
+                )
             )
         if cache:
             self._config += [
