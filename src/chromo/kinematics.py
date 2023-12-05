@@ -76,6 +76,7 @@ class EventKinematicsBase:
     p1: Union[PDGID, Tuple[int, int]]
     p2: Union[PDGID, Tuple[int, int], CompositeTarget]
     ecm: float  # for ions this is nucleon-nucleon collision system
+    pcm: float
     plab: float
     elab: float
     ekin: float
@@ -120,12 +121,26 @@ class EventKinematicsBase:
 
         return all(eq(a, b) for (a, b) in zip(at, bt))
 
+    def __hash__(self):
+        li = []
+        for k in dataclasses.astuple(self):
+            if (
+                isinstance(k, tuple)
+                and isinstance(k[0], np.ndarray)
+                and isinstance(k[1], np.ndarray)
+            ):
+                li.append((tuple(k[0]), tuple(k[1])))
+            else:
+                li.append(k)
+        return hash(tuple(li))
+
     def copy(self):
         return EventKinematicsBase(
             self.frame,
             self.p1,
             self.p2.copy() if isinstance(self.p2, CompositeTarget) else self.p2,
             self.ecm,
+            self.pcm,
             self.plab,
             self.elab,
             self.ekin,
@@ -234,13 +249,26 @@ class EventKinematics(EventKinematicsBase):
             for b, m in zip(beams, (m1, m2)):
                 b[3] = np.sqrt(m**2 + b[2] ** 2)
 
-        _gamma_cm = (elab + m2) / ecm
-        _betagamma_cm = plab / ecm
+        gamma_cm = (elab + m2) / ecm
+        betagamma_cm = plab / ecm
+        pcm = np.sqrt((ecm**2 - (m1 + m2) ** 2) * (ecm**2 - (m1 - m2) ** 2)) / (
+            2 * ecm
+        )
         self.m1 = m1
         self.m2 = m2
 
         super().__init__(
-            frame, part1, part2, ecm, plab, elab, ekin, beams, _gamma_cm, _betagamma_cm
+            frame,
+            part1,
+            part2,
+            ecm,
+            pcm,
+            plab,
+            elab,
+            ekin,
+            beams,
+            gamma_cm,
+            betagamma_cm,
         )
 
         self._beam_data = None

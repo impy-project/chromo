@@ -203,7 +203,7 @@ class SIBYLLRun(MCRun):
 
     def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
-        if kin.p1.A > 1:
+        if kin.p1.A is not None and kin.p1.A > 1:
             warnings.warn(
                 f"Cross section for nuclear projectiles not supported in {self.label}",
                 RuntimeWarning,
@@ -217,8 +217,13 @@ class SIBYLLRun(MCRun):
                 f"{self.label} does not support nuclear targets heavier than 19"
             )
         if kin.p2.A > 1 and self.version == "2.1":
-            raise ValueError(
-                f"{self.label} 2.1 does not (yet) support nuclear targets."
+            totpp, _, _, _, slopepp, rhopp = self._lib.sib_sigma_hp(sib_id, kin.ecm)
+            sigt, sigel, sigqe = self._lib.glauber(kin.p2.A, totpp, slopepp, rhopp)
+            return CrossSectionData(
+                total=float(sigt),
+                prod=float(sigt - sigqe),
+                quasielastic=float(sigqe),
+                elastic=float(sigel),
             )
 
         if kin.p2.A > 1:
@@ -236,7 +241,6 @@ class SIBYLLRun(MCRun):
                 diffractive_xb=float(nsig.sigsd),
                 elastic=float(nsig.sigel),
             )
-
         tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sib_id, kin.ecm)
         return CrossSectionData(
             total=tot,
