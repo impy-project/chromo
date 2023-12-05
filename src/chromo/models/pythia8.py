@@ -148,14 +148,14 @@ class Pythia8(MCRun):
             f"Random:seed = {self.seed % 900_000_000}",
         ]
 
-        # production of cache files by Pythia8 to speed up subsequent runs
-        cache_prefix = str(
-            _cache_base_dir()
-            / "Pythia8"
-            / f"cache_{int(evt_kin.p1)}_{int(evt_kin.p2)}_{evt_kin.ecm/MeV:.0f}".replace(
-                "-", "m"
+        if evt_kin is not None:
+            # production of cache files by Pythia8 to speed up subsequent runs
+            cache_prefix = str(
+                _cache_base_dir()
+                / "Pythia8"
+                / f"cache_{int(evt_kin.p1)}_{int(evt_kin.p2)}_{evt_kin.ecm/MeV:.0f}"
+                .replace("-", "m")
             )
-        )
         if cache:
             self._config += [
                 "MultipartonInteractions:reuseInit = 3",
