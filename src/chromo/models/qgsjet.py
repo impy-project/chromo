@@ -133,7 +133,7 @@ class QGSJet2Run(QGSJetRun):
 
     def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
-        _projectile_id = {
+        projectile_id = {
             lp.pi_plus.pdgid: 1,
             lp.K_plus.pdgid: 3,
             lp.K_S_0.pdgid: 3,
@@ -143,7 +143,7 @@ class QGSJet2Run(QGSJetRun):
         )  # 2 is correct for nuclei
         inel = self._lib.qgsect(
             kin.elab,
-            _projectile_id,
+            projectile_id,
             kin.p1.A or 1,
             kin.p2.A,
         )

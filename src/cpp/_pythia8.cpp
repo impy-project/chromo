@@ -1,15 +1,15 @@
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-#include <private_access.hpp>
-#include <pybind11/iostream.h>
 #include <Pythia8/Event.h>
-#include <Pythia8/Pythia.h>
-#include <Pythia8/ParticleData.h>
-#include <Pythia8/Info.h>
 #include <Pythia8/HIUserHooks.h>
+#include <Pythia8/Info.h>
+#include <Pythia8/ParticleData.h>
+#include <Pythia8/Pythia.h>
 #include <array>
 #include <cassert>
 #include <limits>
+#include <private_access.hpp>
+#include <pybind11/iostream.h>
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 
 namespace py = pybind11;
 using namespace Pythia8;
@@ -18,11 +18,11 @@ using namespace pybind11::literals;
 float charge_from_pid(const ParticleData &pd, int pid)
 {
     auto pptr = pd.findParticle(pid);
-    
+
     // return NaN if unknown pid is met
-    if (pptr == nullptr) 
+    if (pptr == nullptr)
         return std::numeric_limits<float>::quiet_NaN();
-    
+
     // ParticleData returns partice even if anti-particle pid is used
     return pid == pptr->id() ? pptr->charge() : -pptr->charge();
 }
@@ -116,7 +116,7 @@ void fill(Event &event,
           py::array_t<double> &py,
           py::array_t<double> &pz,
           py::array_t<double> &energy,
-          py::array_t<double> &mass) 
+          py::array_t<double> &mass)
 {
     // Get a raw reference to numpy array
     auto pid_ = pid.unchecked<1>();
@@ -128,10 +128,11 @@ void fill(Event &event,
     auto mass_ = mass.unchecked<1>();
 
     event.reset();
-    for (int i = 0; i != pid.size(); ++i) {
+    for (int i = 0; i != pid.size(); ++i)
+    {
         event.append(pid_[i], status_[i], 0, 0,
                      px_[i], py_[i], pz_[i], energy_[i], mass_[i]);
-    }    
+    }
 }
 
 PYBIND11_MODULE(_pythia8, m)
@@ -150,8 +151,7 @@ PYBIND11_MODULE(_pythia8, m)
                  for (auto p : self)
                      pl.append(p.second);
                  return pl;
-             })
-        ;
+             });
 
     py::class_<ParticleDataEntry, ParticleDataEntryPtr>(m, "ParticleDataEntry")
         .def_property_readonly("id", &ParticleDataEntry::id)
@@ -265,8 +265,7 @@ PYBIND11_MODULE(_pythia8, m)
                  for (auto pit = self.event.begin() + 1; pit != self.event.end(); ++pit)
                      *ptr++ = charge_from_pid(self.particleData, pit->id());
                  return result;
-             })
-        ;
+             });
 
     py::class_<Event>(m, "Event")
         .def_property_readonly("size", [](Event &self)
@@ -285,7 +284,7 @@ PYBIND11_MODULE(_pythia8, m)
         .def("mothers", event_array_mothers)
         .def("daughters", event_array_daughters)
         .def("reset", &Event::reset)
+        .def("list", py::overload_cast<bool, bool, int>(&Event::list, py::const_), "showScaleAndVertex"_a = false, "showMothersAndDaughters"_a = false, "precision"_a = 3)
         .def("append", py::overload_cast<int, int, int, int, double, double, double, double, double, double, double>(&Event::append), "pdgid"_a, "status"_a, "col"_a, "acol"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a = 0, "scale"_a = 0, "pol"_a = 9.)
-        .def("fill", &fill)
-        ;
+        .def("fill", &fill);
 }
