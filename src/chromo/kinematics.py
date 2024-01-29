@@ -306,11 +306,6 @@ class EventKinematics(EventKinematicsBase):
         return self._beam_data
 
 
-class CenterOfMass(EventKinematics):
-    def __init__(self, ecm, particle1, particle2):
-        super().__init__(ecm=ecm, particle1=particle1, particle2=particle2)
-
-
 class TotalEnergy(TaggedFloat):
     pass
 
@@ -323,22 +318,30 @@ class Momentum(TaggedFloat):
     pass
 
 
-class FixedTarget(EventKinematics):
-    def __init__(self, energy, particle1, particle2):
-        if isinstance(energy, (TotalEnergy, int, float)):
-            super().__init__(
-                elab=float(energy), particle1=particle1, particle2=particle2
-            )
-        elif isinstance(energy, KinEnergy):
-            super().__init__(
-                ekin=float(energy), particle1=particle1, particle2=particle2
-            )
-        elif isinstance(energy, Momentum):
-            super().__init__(
-                plab=float(energy), particle1=particle1, particle2=particle2
-            )
-        else:
-            raise ValueError(
-                f"{energy!r} is neither a number nor one of "
-                "TotalEnergy, KinEnergy, Momentum"
-            )
+def CenterOfMass(ecm, particle1, particle2):
+    """EventKinematics generator for center-of-mass kinematics."""
+    return EventKinematics(ecm=ecm, particle1=particle1, particle2=particle2)
+
+
+def FixedTarget(energy, particle1, particle2):
+    """EventKinematics generator for fixed-target kinematics.
+
+    Energy can be specified as TotalEnergy, KinEnergy, or Momentum.
+    """
+    if isinstance(energy, (TotalEnergy, int, float)):
+        return EventKinematics(
+            elab=float(energy), particle1=particle1, particle2=particle2
+        )
+    elif isinstance(energy, KinEnergy):
+        return EventKinematics(
+            ekin=float(energy), particle1=particle1, particle2=particle2
+        )
+    elif isinstance(energy, Momentum):
+        return EventKinematics(
+            plab=float(energy), particle1=particle1, particle2=particle2
+        )
+    else:
+        raise ValueError(
+            f"{energy!r} is neither a number nor one of "
+            "TotalEnergy, KinEnergy, Momentum"
+        )
