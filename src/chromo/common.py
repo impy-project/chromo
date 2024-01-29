@@ -7,6 +7,7 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 """
+
 import copy
 import dataclasses
 import warnings

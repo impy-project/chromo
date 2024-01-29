@@ -37,9 +37,11 @@ def test_hepmc_io(Model):
     expected = []
     genevent = None
 
-    with pytest.warns(RuntimeWarning) if (
-        Model.name in ["DPMJET-III", "PhoJet"] or Model.pyname == "Pythia8"
-    ) else nullcontext():
+    with (
+        pytest.warns(RuntimeWarning)
+        if (Model.name in ["DPMJET-III", "PhoJet"] or Model.pyname == "Pythia8")
+        else nullcontext()
+    ):
         for ev in events:
             genevent = ev.to_hepmc3(genevent)
             expected.append(genevent)

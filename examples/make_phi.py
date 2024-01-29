@@ -20,7 +20,6 @@ The script generates a ROOT file with three trees.
         Contains the distributed of charged particles for all generated events.
 """
 
-
 from chromo.kinematics import CenterOfMass
 from chromo.constants import MeV, TeV, long_lived
 from chromo.util import get_all_models
