@@ -3,6 +3,7 @@ from chromo.constants import quarks_and_diquarks_and_gluons, millibarn, GeV
 from chromo.kinematics import CompositeTarget
 import dataclasses
 from pathlib import Path
+from abc import ABC, abstractmethod
 
 INT_TYPE = np.int32
 FLOAT_TYPE = np.float32
@@ -14,7 +15,39 @@ def _raise_import_error(name, task):
     )
 
 
-# Differences to CRMC
+class Writer(ABC):
+    @abstractmethod
+    def __init__(self, file, model, **kwargs):
+        ...
+
+    @abstractmethod
+    def write(self, event):
+        ...
+
+    # override as needed
+    def __enter__(self):
+        return self
+
+    # override as needed
+    def __exit__(self, *args):
+        return
+
+
+class Null(Writer):
+    """
+    Null writer.
+
+    It does not do anything. Useful for benchmarks.
+    """
+
+    def __init__(self, file, model):
+        pass
+
+    def write(self, event):
+        pass
+
+
+# Root writer: Differences to CRMC
 #
 # - Names of trees and branches are in snake_case instead of CamelCase
 #
@@ -36,7 +69,7 @@ def _raise_import_error(name, task):
 # For chromo in default configuration, the vertex locations are not interesting,
 # so we don't write them. Long-lived particles are final state, and there is no
 # interesting information in the vertices of very short-lived particles.
-class Root:
+class Root(Writer):
     def __init__(self, file, model, write_vertices=False, buffer_size=100000):
         try:
             import uproot
@@ -100,9 +133,6 @@ class Root:
         self._tree = None
         self._lengths = []
         self._iparticle = 0
-
-    def __enter__(self):
-        return self
 
     def __exit__(self, *args):
         if self._iparticle > 0:
@@ -173,23 +203,17 @@ class Root:
         self._lengths.append(b - a)
         for key, val in self._particle_buffers.items():
             if key == "parent":
-                val[a:b] = event.parents[:, 0] - 1
+                val[a:b] = event.mothers[:, 0]
             elif key == "pdgid":
                 val[a:b] = event.pid
             else:
                 val[a:b] = getattr(event, key)
 
 
-class Svg:
+class Svg(Writer):
     def __init__(self, file, model):
         self._idx = 0
         self._template = (file.parent, file.stem, file.suffix)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        return
 
     def write(self, event):
         try:
@@ -207,7 +231,7 @@ class Svg:
             f.write(svg)
 
 
-class Hepmc:
+class Hepmc(Writer):
     def __init__(self, file, model):
         try:
             from pyhepmc._core import pyiostream
@@ -241,23 +265,3 @@ class Hepmc:
 
 def lhe(file):
     raise SystemExit("LHE not yet supported")
-
-
-class Null:
-    """
-    Null writer.
-
-    It does not do anything. Useful for benchmarks.
-    """
-
-    def __init__(self, file, model):
-        pass
-
-    def __enter__(self):
-        pass
-
-    def __exit__(self, *args):
-        pass
-
-    def write(self, event):
-        pass

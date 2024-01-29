@@ -39,11 +39,9 @@ C     Initialization of HEVEVT variables
       DATA PHEP/ NMXHP5 * 0.0/, VHEP / NMXHP4 * 0.0 /
 
 C     Common block SCHG with additional information:
-C     ICHG - charge, 
-C     IPARNT - position in the arrays (ISTHEP, PHEP, ...) 
-C     of parent (decayed) particle     
-      INTEGER ICHG, IPARNT
-      COMMON /SCHG/ ICHG(NMXHEP), IPARNT(NMXHEP)
+C     ICHG - charge
+      INTEGER ICHG
+      COMMON /SCHG/ ICHG(NMXHEP)
 
 C     IDS is sophia ID of the current particle
       INTEGER IDS
@@ -85,15 +83,8 @@ C       Convert sophia ID to pdg ID of the particle
         IDHEP(I) = ISIGN(1, IDS) * IPDG(ABS(IDS))
 C       Record charge of the particle        
         ICHG(I) = ICHP(ABS(IDS))
-C       Record entry index of decayed parent for the particle
-C       if decayed particles are kept
-C       Zero-based indexing is used, therefore
-C       -1 indicates that there is no meaningful
-C       parent and LLIST1(I) - 1 is the index
-        IF ((KEEPDC) .AND. (LLIST1(I) .GT. 0)) THEN
-            IPARNT(I) = LLIST1(I) - 1
-        ELSE
-            IPARNT(I) = -1
+        IF (KEEPDC) THEN
+            JMOHEP(1, I) = LLIST1(I)
         END IF
       ENDDO
 

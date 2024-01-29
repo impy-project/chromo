@@ -7,28 +7,37 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 """
+import copy
+import dataclasses
+import warnings
+import importlib
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from typing import Optional, Tuple
+
 import numpy as np
+from packaging.version import parse as parse_version
+from particle import Particle
+
+from chromo.constants import (
+    GeV,
+    long_lived,
+    quarks_and_diquarks_and_gluons,
+    standard_projectiles,
+)
+from chromo.decay_handler import Pythia8DecayHandler
+from chromo.kinematics import CompositeTarget, EventKinematics
 from chromo.util import (
+    Nuclei,
     classproperty,
-    select_parents,
     naneq,
     pdg2name,
-    Nuclei,
+    select_long_lived,
+    select_mothers,
+    unique_sorted_pids,
 )
-from chromo.constants import (
-    quarks_and_diquarks_and_gluons,
-    long_lived,
-    standard_projectiles,
-    GeV,
-)
-from chromo.kinematics import EventKinematics, CompositeTarget
-import dataclasses
-import copy
-from typing import Tuple, Optional
-from contextlib import contextmanager
-import warnings
-from particle import Particle
+
+all_unstable_pids = select_long_lived()
 
 
 # Do we need EventData.n_spectators in addition to EventData.n_wounded?
@@ -36,55 +45,71 @@ from particle import Particle
 # If we want this, it should be computed dynamically via a property.
 @dataclasses.dataclass
 class CrossSectionData:
-    """Information of cross-sections returned by the generator.
+    """Information of cross sections returned by the generator.
 
     The class is driven by the amount of detail that Pythia-8 provides.
     Most other generators do not fill all attributes. When information is missing,
     the attributes contain NaN. The fields are intentionally redundant, since
-    some generators may provide only the total cross-section or only the inelastic
-    cross-section.
+    some generators may provide only the total cross section or only the inelastic
+    cross section.
 
-    All cross-sections are in millibarn.
+    All cross sections are in millibarn.
 
     Attributes
     ----------
     total : float
-        Total cross-section (elastic + inelastic).
+        Total cross section (elastic + inelastic).
     inelastic : float
-        Inelastic cross-section. Includes diffractive cross-sections.
+        Inelastic cross section. Includes diffractive cross sections.
     elastic : float
-        Cross-section for pure elastic scattering of incoming particle
+        Cross section for pure elastic scattering of incoming particle
         without any new particle generation.
+    prod : float
+        Particle production cross section, defined as total minus elastic.
+    quasielastic : float
+        Total quasielastic cross section (includes elastic).
     diffractive_xb : float
-        Single diffractive cross-section. Particle 2 remains intact,
+        Single diffractive cross section. Particle 2 remains intact,
         particles are produced around Particle 1.
     diffractive_ax : float
-        Single diffractive cross-section. Particle 1 remains intact,
+        Single diffractive cross section. Particle 1 remains intact,
         particles are produced around Particle 2.
     diffractive_xx : float
-        Double diffractive cross-section. Central rapidity gap, but
+        Double diffractive cross section. Central rapidity gap, but
         paricles are producted around both beam particles.
     diffractive_axb : float
-        Central diffractive cross-section (e.g.
+        Central diffractive cross section (e.g.
         pomeron-pomeron interaction.)
+    diffractive_sum : float
+        Sum of diffractive cross sections.
     """
 
     total: float = np.nan
     inelastic: float = np.nan
     elastic: float = np.nan
+    prod: float = np.nan
+    quasielastic: float = np.nan
     diffractive_xb: float = np.nan
     diffractive_ax: float = np.nan
     diffractive_xx: float = np.nan
     diffractive_axb: float = np.nan
+    diffractive_sum: float = np.nan
 
     @property
     def non_diffractive(self):
-        return (
-            self.inelastic
-            - self.diffractive_xb
-            - self.diffractive_ax
-            - self.diffractive_xx
-            - self.diffractive_axb
+        return self.inelastic - self.diffractive
+
+    @property
+    def diffractive(self):
+        if float(self.diffractive_sum) > 0.0:
+            return self.diffractive_sum
+        return np.nansum(
+            (
+                self.diffractive_xb,
+                self.diffractive_ax,
+                self.diffractive_xx,
+                self.diffractive_axb,
+            )
         )
 
     def __eq__(self, other):
@@ -150,13 +175,13 @@ class EventData:
         Z coordinate of particle in mm.
     vt: 1D array of double
         Time of particle in s.
-    parents: 2D array of int or None
+    mothers: 2D array of int or None
         This array has shape (N, 2) for N particles. The two numbers
         are a range of indices pointing to parent particle(s). This
         array is not available for all generators and it is not
-        available for filtered events. In those cases, parents is None.
-    children: 2D array of int or None
-        Same as parents.
+        available for filtered events. In those cases, mothers is None.
+    daughters: 2D array of int or None
+        Same as mothers.
     """
 
     generator: Tuple[str, str]
@@ -176,8 +201,8 @@ class EventData:
     vy: np.ndarray
     vz: np.ndarray
     vt: np.ndarray
-    parents: Optional[np.ndarray]
-    children: Optional[np.ndarray]
+    mothers: Optional[np.ndarray]
+    daughters: Optional[np.ndarray]
 
     def __getitem__(self, arg):
         """
@@ -230,8 +255,8 @@ class EventData:
             self.vy.copy(),
             self.vz.copy(),
             self.vt.copy(),
-            self.parents.copy(),
-            self.children.copy() if self.children is not None else None,
+            self.mothers.copy() if self.mothers is not None else None,
+            self.daughters.copy() if self.daughters is not None else None,
         ]
         return t
 
@@ -250,8 +275,21 @@ class EventData:
         """
         Return filtered event with only final state particles.
 
-        The final state is generator-specific, but usually contains only
-        long-lived particles.
+        The final state contains all particles which do not have children.
+
+        Unless the generator configuration is modified (see exceptions below),
+        this means that the final state consists of prompt long-lived particles.
+
+        Long-lived particles have live-times > 30 ps. Prompt particles either
+        originate directly from primary interaction or have only parents with
+        life-times < 30 ps. This is the ALICE definition of "promptness",
+        see ALICE-PUBLIC-2017-005, which is identical to the definition by the
+        "LHC Physics Center at CERN Minimum Bias and Underlying Event working group".
+
+        Exceptions: Some generators deviate from this scheme. SIBYLL-2.1 does not
+        produce Omega- and its antiparticle, so the final state never contains them.
+        The QGSJet family does not produce Omega-, Xi-, Xi0, Sigma-, Sigma+ and their
+        antiparticles.
         """
         return self._select(self.status == 1, False)
 
@@ -280,7 +318,7 @@ class EventData:
             mask &= apid != pid
         return self[mask]
 
-    def _select(self, arg, update_parents):
+    def _select(self, arg, update_mothers):
         # This selection is faster than __getitem__, because we skip
         # parent selection, which is just wasting time if we select only
         # final state particles.
@@ -303,7 +341,7 @@ class EventData:
             self.vy[arg],
             self.vz[arg],
             self.vt[arg],
-            select_parents(arg, self.parents) if update_parents else None,
+            select_mothers(arg, self.mothers) if update_mothers else None,
             None,
         )
 
@@ -369,10 +407,17 @@ class EventData:
         """Return energy fraction of beam in laboratory frame."""
         return self.elab / self.kin.elab
 
-    # @property
-    # def fw(self):
-    #     """I don't remember what this was for..."""
-    #     return self.en / self.kin.pcm
+    @property
+    def fw(self):
+        """Quantity needed for invariant cross section histograms."""
+        return self.en / self.kin.pcm
+
+    def _prepare_for_hepmc(self):
+        """
+        Override this method in classes that need to modify event
+        history for compatibility with HepMC.
+        """
+        return self
 
     def to_hepmc3(self, genevent=None):
         """
@@ -389,6 +434,12 @@ class EventData:
         """
         import pyhepmc  # delay import
 
+        if parse_version(pyhepmc.__version__) < parse_version("2.13.2"):
+            raise RuntimeError(
+                f"current pyhepmc version is {pyhepmc.__version__} < 2.13.2"
+                f"\nPlease `pip install pyhepmc==2.13.2` or later version",
+            )
+
         model, version = self.generator
 
         if genevent is None:
@@ -396,30 +447,7 @@ class EventData:
             genevent.run_info = pyhepmc.GenRunInfo()
             genevent.run_info.tools = [(model, version, "")]
 
-        # We must apply some workarounds so that HepMC3 conversion and IO works
-        # for all models. This should be revisited once the fundamental issues
-        # with particle histories have been fixed.
-        if model == "Pythia" and version.startswith("8"):
-            # to get a valid GenEvent we must
-            # 1) select only particles produced after the parton shower
-            # 2) connect particles attached to a single beam particle (diffractive events)
-            #    to the common interaction vertex (1, 2)
-            # TODO check if this costs significant amount of time and speed it up if so
-            mask = (self.status == 1) | (self.status == 2) | (self.status == 4)
-            ev = self[mask]
-            mask = (ev.parents[:, 0] == 1) | (ev.parents[:, 0] == 2)
-            ev.parents[mask] = (1, 2)
-        elif model in ("UrQMD", "PhoJet", "DPMJET-III"):
-            # can only save final state until history is fixed
-            warnings.warn(
-                f"{model}-{version}: only final state particles "
-                "available in HepMC3 event",
-                RuntimeWarning,
-            )
-            ev = self.final_state()
-        else:
-            ev = self
-
+        ev = self._prepare_for_hepmc()
         genevent.from_hepevt(
             event_number=ev.nevent,
             px=ev.px,
@@ -429,12 +457,13 @@ class EventData:
             m=ev.m,
             pid=ev.pid,
             status=ev.status,
-            parents=ev.parents,
-            children=ev.children,
+            parents=ev.mothers if ev.mothers is not None else None,
+            children=ev.daughters if ev.daughters is not None else None,
             vx=ev.vx,
             vy=ev.vy,
             vz=ev.vz,
             vt=ev.vt,
+            fortran=False,
         )
 
         return genevent
@@ -493,9 +522,7 @@ class MCEvent(EventData, ABC):
         phep = getattr(evt, self._phep)[:, sel]
         vhep = getattr(evt, self._vhep)[:, sel]
 
-        parents = getattr(evt, self._jmohep).T[sel] if self._jmohep else None
-        children = getattr(evt, self._jdahep).T[sel] if self._jdahep else None
-
+        self._generator_frame = generator._frame
         EventData.__init__(
             self,
             (generator.name, generator.version),
@@ -508,9 +535,13 @@ class MCEvent(EventData, ABC):
             self._charge_init(npart),
             *phep,
             *vhep,
-            parents,
-            children,
+            mothers=getattr(evt, self._jmohep).T[sel] if self._jmohep else None,
+            daughters=getattr(evt, self._jdahep).T[sel] if self._jdahep else None,
         )
+
+        if generator._restore_beam_and_history:
+            self._history_zero_indexing()
+            self._repair_initial_beam()
 
     @abstractmethod
     def _charge_init(self, npart):
@@ -535,6 +566,25 @@ class MCEvent(EventData, ABC):
         # upon unpickling, create EventData object instead of MCEvent object
         return (EventData,)
 
+    def _repair_initial_beam(self):
+        raise NotImplementedError("The method must be implemented in derived class")
+
+    def _history_zero_indexing(self):
+        self.mothers = self.mothers - 1
+        self.daughters = self.daughters - 1
+
+    def _prepend_initial_beam(self):
+        beam = self.kin._get_beam_data(self._generator_frame)
+        for field, beam_field in beam.items():
+            event_field = getattr(self, field)
+            if event_field is None:
+                continue
+            if field in ["mothers", "daughters"]:
+                res = np.concatenate((beam_field, event_field + 2))
+            else:
+                res = np.concatenate((beam_field, event_field))
+            setattr(self, field, res)
+
 
 # =========================================================================
 # MCRun
@@ -543,15 +593,16 @@ class MCRun(ABC):
     #: Prevent creating multiple classes within same python scope
     _is_initialized = []
     _restartable = False
-    _set_final_state_particles_called = False
     _projectiles = standard_projectiles
     _targets = Nuclei()
     _ecm_min = 10 * GeV  # default for many models
+    _restore_beam_and_history = True
     nevents = 0  # number of generated events so far
+    _unstable_pids = set(all_unstable_pids)
+    _final_state_particles = []
+    _decay_handler = None  # Pythia8DecayHandler instance if activated
 
     def __init__(self, seed):
-        import importlib
-
         if not self._restartable:
             self._abort_if_already_initialized()
 
@@ -560,7 +611,10 @@ class MCRun(ABC):
         assert hasattr(self, "_library_name")
         assert hasattr(self, "_event_class")
         assert hasattr(self, "_frame")
-        self._lib = importlib.import_module(f"chromo.models.{self._library_name}")
+        try:
+            self._lib = importlib.import_module(f"chromo.models.{self._library_name}")
+        except ModuleNotFoundError:
+            self._lib = importlib.import_module(f"{self._library_name}")
 
         self._rng = np.random.default_rng(seed)
         if hasattr(self._lib, "npy"):
@@ -569,9 +623,8 @@ class MCRun(ABC):
     def __call__(self, nevents):
         """Generator function (in python sence)
         which launches the underlying event generator
-        and returns its the result (event) as MCEvent object
+        and returns the event as MCEvent object
         """
-        assert self._set_final_state_particles_called
         nretries = 0
         for nev in self._composite_plan(nevents):
             while nev > 0:
@@ -582,6 +635,7 @@ class MCRun(ABC):
                     event = self._event_class(self)
                     # boost into frame requested by user
                     self.kinematics.apply_boost(event, self._frame)
+                    self._validate_decay(event)
                     yield event
                     continue
                 nretries += 1
@@ -700,30 +754,6 @@ class MCRun(ABC):
         self._kinematics = kin
         self._set_kinematics(kin)
 
-    def set_stable(self, pdgid, stable=True):
-        """Prevent decay of unstable particles
-
-        Args:
-            pdgid (int)        : PDG ID of the particle
-            stable (bool)      : If `False`, particle is allowed to decay
-        """
-        p = Particle.from_pdgid(pdgid)
-        if p.ctau is None or p.ctau == np.inf:
-            raise ValueError(f"{pdg2name(pdgid)} cannot decay")
-        if abs(pdgid) == 311:
-            self._set_stable(130, stable)
-            self._set_stable(310, stable)
-        else:
-            self._set_stable(pdgid, stable)
-
-    def set_unstable(self, pdgid):
-        """Convenience funtion for `self.set_stable(..., stable=False)`
-
-        Args:
-            pdgid(int)         : PDG ID of the particle
-        """
-        self.set_stable(pdgid, False)
-
     def cross_section(self, kin=None):
         """Cross sections according to current setup.
 
@@ -750,10 +780,6 @@ class MCRun(ABC):
     def _cross_section(self, kin):
         pass
 
-    @abstractmethod
-    def _set_stable(self, pidid, stable):
-        pass
-
     def _abort_if_already_initialized(self):
         # The first initialization should not be run more than
         # once.
@@ -766,14 +792,178 @@ class MCRun(ABC):
         assert self._library_name not in self._is_initialized, message
         self._is_initialized.append(self._library_name)
 
-    def _set_final_state_particles(self):
-        """Defines particles as stable for the default 'tau_stable'
-        value in the config."""
+    def _validate_decay(self, event):
+        """Checks whether all unstable particles are final state particles.
+        If any unstable particles are not yet decayed, it attempts to decay them
+        using the decay_handler.
+        """
+        final_pids = event.pid[event.status == 1]
+        may_decay = np.isin(final_pids, all_unstable_pids)
 
-        for pdgid in long_lived:
-            self._set_stable(pdgid, True)
+        if not np.all(np.isin(final_pids[may_decay], self._final_state_particles)):
+            if self._decay_handler:
+                self._decay_handler(event)
+            else:
+                final_pids_dec = final_pids[may_decay]
+                not_decayed = np.logical_not(
+                    np.isin(final_pids_dec, self._final_state_particles)
+                )
+                not_decayed_pids = set(final_pids_dec[not_decayed])
+                warnings.warn(
+                    f"{self.pyname}: {not_decayed_pids} haven't been decayed. "
+                    "Consider to use generator._activate_decay_handler(on=True)",
+                    RuntimeWarning,
+                )
 
-        self._set_final_state_particles_called = True
+    @property
+    def final_state_particles(self):
+        """Returns a sorted list of particles that can decay
+        but are considered stable by the event generator."""
+        return tuple(unique_sorted_pids(self._final_state_particles))
+
+    @final_state_particles.setter
+    def final_state_particles(self, list_of_pdgids):
+        """
+        Sets particles with PDG IDs provided in `pdgid` list as stable particles.
+        All other unstable particles will decay. Anti-particles are synchronized.
+
+        Stable particles in `pdgid` with tau0 = inf are ignored.
+
+        Args:
+            pdgid (list): A list of PDG IDs for particles that should be considered
+                        stable (present in the final state).
+
+        Example:
+            To configure an `QGSJetII04` event generator to treat charged pions
+            (PDG ID 211 and -211) and muons (PDG ID 13 and -13) as stable
+            particles in the final state:
+
+            >>> evt_kin = chromo.kinematics.FixedTarget(100, "p", "p")
+            >>> generator = chromo.models.QGSJetII04(evt_kin)
+            >>> generator.final_state_particles = [211, -211, 13, -13]
+
+            If you need to set particles as stable for those with a lifetime
+            greater than `tau_stable`:
+            >>> generator.final_state_particles = (chromo.util
+                                                  .select_long_lived(tau_stable))
+        """
+        self._set_final_state_particles(list_of_pdgids)
+
+    def _set_final_state_particles(self, list_of_pdgids=long_lived):
+        """By default defines particles as stable
+        for the default 'tau_stable' value in the config."""
+
+        fsparticles = np.unique(list_of_pdgids)
+        is_unstable = np.isin(fsparticles, list(self._unstable_pids))
+        fsparticles = fsparticles[is_unstable]
+        # Clean up by setting all unstable particles as unstable
+        for pid in self._unstable_pids:
+            self.set_stable(pid, False, update_decay_handler=False)
+
+        for pid in fsparticles:
+            self.set_stable(pid, True, update_decay_handler=False)
+
+        self._sync_decay_handler()
+
+    def set_stable(self, pdgid, stable=True, update_decay_handler=True):
+        """Prevent decay of unstable particles.
+
+        Anti-particles are synchronized.
+
+        Args:
+            pdgid (int)        : PDG ID of the particle
+            stable (bool)      : If `False`, particle is allowed to decay
+        """
+        p = Particle.from_pdgid(pdgid)
+        assert pdgid in self._unstable_pids, f"{pdg2name(pdgid)} unknown or stable"
+        ap = p.invert() if p.invert() != p else False
+        if p.ctau is None or p.ctau == np.inf:
+            raise ValueError(f"{pdg2name(pdgid)} cannot decay")
+
+        if abs(pdgid) == 311:
+            pdgid_list = [130, 310]
+        elif ap:
+            pdgid_list = [pdgid, ap.pdgid]
+        else:
+            pdgid_list = [pdgid]
+
+        for pdgid in pdgid_list:
+            self._set_stable(pdgid, stable)
+
+        if stable:
+            self._final_state_particles = np.unique(
+                np.append(self._final_state_particles, pdgid_list).astype(np.int64)
+            )
+        else:
+            if len(self._final_state_particles) > 0:
+                remove = np.isin(self._final_state_particles, pdgid_list)
+                self._final_state_particles = self._final_state_particles[~remove]
+
+        if update_decay_handler:
+            self._sync_decay_handler()
+
+    def _sync_decay_handler(self):
+        # Synchronize decay handler
+        if self._decay_handler:
+            self._decay_handler.set_stable(self._final_state_particles)
+            assert np.isin(
+                self._final_state_particles, self._decay_handler.all_stable_pids
+            ).all(), "Decay handler and generator are out of sync"
+
+    def set_unstable(self, pdgid):
+        """Convenience funtion for `self.set_stable(..., stable=False)`
+
+        Args:
+            pdgid(int)         : PDG ID of the particle
+        """
+        self.set_stable(pdgid, False)
+
+    @abstractmethod
+    def _set_stable(self, pdgid, stable):
+        pass
+
+    def _activate_decay_handler(self, on=True, *, seed=None):
+        """
+        Activates the Pythia8 decay handler for any of the generators
+        except Pythia8 itself.
+
+        This function is responsible for activating the decay handler which
+        ensures that particles, which are set to be unstable actually decay
+        consistently. This feature mainly fixes lacking decay functions in
+        models like QGSJet. There is some notable but not dramatic performance
+        impact.
+
+        The function is private since the stability and the interface is not
+        guaranteed to last, and it doesn't work on Windows due to compilation
+        issues of Pythia8 on that OS.
+
+        Args:
+            on (bool)       : If `True`, the decay handler is activated or destroyed
+
+        Returns:
+            None
+        """
+        if (not on) or (self.pyname == "Pythia8"):
+            if self._decay_handler:
+                del self._decay_handler
+            self._decay_handler = None
+            return
+
+        if not self._decay_handler:
+            try:
+                self._decay_handler = Pythia8DecayHandler(
+                    self._final_state_particles, seed=seed
+                )
+            except ModuleNotFoundError as ex:
+                import warnings
+
+                warnings.warn(
+                    f"Pythia8DecayHandler not available:\n{ex}\n"
+                    "Some particles may not decay",
+                    RuntimeWarning,
+                )
+                self._decay_handler = None
+                return
 
     @contextmanager
     def _temporary_kinematics(self, kin):

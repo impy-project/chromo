@@ -7,7 +7,12 @@
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
 from chromo.common import MCRun, MCEvent, CrossSectionData
-from chromo.util import info, fortran_array_insert, fortran_array_remove, Nuclei
+from chromo.util import (
+    info,
+    fortran_array_insert,
+    fortran_array_remove,
+    Nuclei,
+)
 from chromo.kinematics import EventFrame
 from chromo.constants import standard_projectiles, GeV
 import warnings
@@ -21,6 +26,88 @@ class UrQMDEvent(MCEvent):
 
     def _get_impact_parameter(self):
         return self._lib.rsys.bimp
+
+    def _history_zero_indexing(self):
+        # Urqmd produces wrong history
+        self.mothers[:] = [-1, -1]
+        self.daughters[:] = [-1, -1]
+
+    def _repair_initial_beam(self):
+        self._prepend_initial_beam()
+        # Repair history
+        self.mothers[(self.mothers == [1, 1]).all(axis=1)] = [0, 1]
+        # Set [i, i] to [i, -1]
+        condition = self.mothers[:, 0] == self.mothers[:, 1]
+        self.mothers[condition, 1] = -1
+        # No daughters
+        self.daughters[:] = [-1, -1]
+
+
+_urqmd_unstable_pids = set(
+    [
+        111,
+        113,
+        211,
+        -211,
+        213,
+        -213,
+        221,
+        223,
+        313,
+        -313,
+        321,
+        -321,
+        323,
+        -323,
+        333,
+        411,
+        -411,
+        413,
+        -413,
+        421,
+        -421,
+        431,
+        -431,
+        441,
+        443,
+        1114,
+        -1114,
+        2112,
+        -2112,
+        2114,
+        -2114,
+        2214,
+        -2214,
+        2224,
+        -2224,
+        3112,
+        -3112,
+        3114,
+        -3114,
+        3122,
+        -3122,
+        3212,
+        -3212,
+        3214,
+        -3214,
+        3222,
+        -3222,
+        3224,
+        -3224,
+        3312,
+        -3312,
+        3314,
+        -3314,
+        3322,
+        -3322,
+        3324,
+        -3324,
+        3334,
+        -3334,
+        10421,
+        -10421,
+    ]
+)
 
 
 class UrQMD34(MCRun):
@@ -36,6 +123,7 @@ class UrQMD34(MCRun):
     _library_name = "_urqmd34"
     _event_class = UrQMDEvent
     _frame = EventFrame.FIXED_TARGET
+    _unstable_pids = _urqmd_unstable_pids
     _projectiles = standard_projectiles | Nuclei()
     _ecm_min = 2 * GeV
 
@@ -197,6 +285,9 @@ class UrQMD34(MCRun):
             self._lib.options.ctoption[24 - 1] = 0
 
     def _set_stable(self, pdgid, stable):
+        if pdgid not in self._unstable_pids:
+            return
+
         try:
             uid = self._pdg2modid[pdgid][0]
         except KeyError:

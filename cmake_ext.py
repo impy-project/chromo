@@ -71,8 +71,10 @@ def get_models():
 
     # urqmd34 doesn't build correctly on Windows
     if platform.system() == "Windows":
-        del models["urqmd34"]
-        del models["pythia8"]
+        if "urqmd34" in models:
+            del models["urqmd34"]
+        if "pythia8" in models:
+            del models["pythia8"]
 
     return models
 

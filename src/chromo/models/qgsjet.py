@@ -17,6 +17,16 @@ class QGSJET1Event(MCEvent):
         """Type of diffration"""
         return self._lib.jdiff.jdiff
 
+    def _repair_initial_beam(self):
+        self._prepend_initial_beam()
+        # Repair history
+        self.mothers[(self.mothers == [1, 1]).all(axis=1)] = [0, 1]
+        # Set [i, i] to [i, -1]
+        condition = self.mothers[:, 0] == self.mothers[:, 1]
+        self.mothers[condition, 1] = -1
+        # No daughters
+        self.daughters[:] = [-1, -1]
+
 
 class QGSJET2Event(QGSJET1Event):
     def _get_impact_parameter(self):
@@ -35,9 +45,6 @@ class QGSJetRun(MCRun):
         + "/releases/download/zipped_data_v1.0/qgsjet_v001.zip"
     )
 
-    # needed to skip set_final_state_particles() in MCRun
-    _set_final_state_particles_called = True
-
     def __init__(self, evt_kin, *, seed=None):
         import chromo
 
@@ -49,15 +56,12 @@ class QGSJetRun(MCRun):
         self._lib.cqgsini(datdir, lun, chromo.debug_level)
 
         self.kinematics = evt_kin
+        self._set_final_state_particles()
+        self._activate_decay_handler(on=True)
 
     def _set_stable(self, pdgid, stable):
-        import warnings
-
-        # TODO use Pythia8 instance to decay particles which QGSJet does not decay
-
-        warnings.warn(
-            f"stable particles cannot be changed in {self.pyname}", RuntimeWarning
-        )
+        # use Pythia8 instance to decay particles which QGSJet does not decay
+        pass
 
 
 class QGSJet1Run(QGSJetRun):
@@ -71,6 +75,8 @@ class QGSJet1Run(QGSJetRun):
         from scipy.interpolate import UnivariateSpline
 
         kin = self.kinematics if kin is None else kin
+        if kin.p1.A is not None and kin.p1.A > 1:
+            return CrossSectionData(prod=self._lib.sectnu(kin.elab, kin.p1.A, kin.p2.A))
 
         A_target = kin.p2.A
         # Projectile ID-1 to access fortran indices directly
@@ -127,11 +133,18 @@ class QGSJet2Run(QGSJetRun):
 
     def _cross_section(self, kin=None):
         kin = self.kinematics if kin is None else kin
-
+        projectile_id = {
+            lp.pi_plus.pdgid: 1,
+            lp.K_plus.pdgid: 3,
+            lp.K_S_0.pdgid: 3,
+            lp.K_L_0.pdgid: 3,
+        }.get(
+            abs(kin.p1), 2
+        )  # 2 is correct for nuclei
         inel = self._lib.qgsect(
             kin.elab,
-            self._projectile_id,
-            kin.p1.A,
+            projectile_id,
+            kin.p1.A or 1,
             kin.p2.A,
         )
         return CrossSectionData(inelastic=inel)

@@ -1,14 +1,15 @@
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-#include <private_access.hpp>
-#include <pybind11/iostream.h>
 #include <Pythia8/Event.h>
-#include <Pythia8/Pythia.h>
-#include <Pythia8/ParticleData.h>
-#include <Pythia8/Info.h>
 #include <Pythia8/HIUserHooks.h>
+#include <Pythia8/Info.h>
+#include <Pythia8/ParticleData.h>
+#include <Pythia8/Pythia.h>
 #include <array>
 #include <cassert>
+#include <limits>
+#include <private_access.hpp>
+#include <pybind11/iostream.h>
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 
 namespace py = pybind11;
 using namespace Pythia8;
@@ -17,7 +18,11 @@ using namespace pybind11::literals;
 float charge_from_pid(const ParticleData &pd, int pid)
 {
     auto pptr = pd.findParticle(pid);
-    assert(pptr); // never nullptr if charge_from_pid is used on particles produced by Pythia
+
+    // return NaN if unknown pid is met
+    if (pptr == nullptr)
+        return std::numeric_limits<float>::quiet_NaN();
+
     // ParticleData returns partice even if anti-particle pid is used
     return pid == pptr->id() ? pptr->charge() : -pptr->charge();
 }
@@ -81,7 +86,7 @@ py::array_t<double> event_array_v(Event &event)
     return py::array_t<double>(shape, strides, ptr);
 }
 
-py::array_t<int> event_array_parents(Event &event)
+py::array_t<int> event_array_mothers(Event &event)
 {
     // skip first pseudoparticle
     auto ptr1 = &private_access::member<Particle_mother1Save>(event[1]);
@@ -92,7 +97,7 @@ py::array_t<int> event_array_parents(Event &event)
     return py::array_t<int>(shape, strides, ptr1);
 }
 
-py::array_t<int> event_array_children(Event &event)
+py::array_t<int> event_array_daughters(Event &event)
 {
     // skip first pseudoparticle
     auto ptr1 = &private_access::member<Particle_daughter1Save>(event[1]);
@@ -101,6 +106,33 @@ py::array_t<int> event_array_children(Event &event)
     int shape[2] = {number, 2};
     int strides[2] = {sizeof(Particle), sizeof(int)};
     return py::array_t<int>(shape, strides, ptr1);
+}
+
+// refills "event" stack with particles
+void fill(Event &event,
+          py::array_t<int> &pid,
+          py::array_t<int> &status,
+          py::array_t<double> &px,
+          py::array_t<double> &py,
+          py::array_t<double> &pz,
+          py::array_t<double> &energy,
+          py::array_t<double> &mass)
+{
+    // Get a raw reference to numpy array
+    auto pid_ = pid.unchecked<1>();
+    auto status_ = status.unchecked<1>();
+    auto px_ = px.unchecked<1>();
+    auto py_ = py.unchecked<1>();
+    auto pz_ = pz.unchecked<1>();
+    auto energy_ = energy.unchecked<1>();
+    auto mass_ = mass.unchecked<1>();
+
+    event.reset();
+    for (int i = 0; i != pid.size(); ++i)
+    {
+        event.append(pid_[i], status_[i], 0, 0,
+                     px_[i], py_[i], pz_[i], energy_[i], mass_[i]);
+    }
 }
 
 PYBIND11_MODULE(_pythia8, m)
@@ -119,9 +151,7 @@ PYBIND11_MODULE(_pythia8, m)
                  for (auto p : self)
                      pl.append(p.second);
                  return pl;
-             })
-
-        ;
+             });
 
     py::class_<ParticleDataEntry, ParticleDataEntryPtr>(m, "ParticleDataEntry")
         .def_property_readonly("id", &ParticleDataEntry::id)
@@ -235,9 +265,7 @@ PYBIND11_MODULE(_pythia8, m)
                  for (auto pit = self.event.begin() + 1; pit != self.event.end(); ++pit)
                      *ptr++ = charge_from_pid(self.particleData, pit->id());
                  return result;
-             })
-
-        ;
+             });
 
     py::class_<Event>(m, "Event")
         .def_property_readonly("size", [](Event &self)
@@ -253,10 +281,10 @@ PYBIND11_MODULE(_pythia8, m)
         .def("vy", event_array_v<Vec4_yy>)
         .def("vz", event_array_v<Vec4_zz>)
         .def("vt", event_array_v<Vec4_tt>)
-        .def("parents", event_array_parents)
-        .def("children", event_array_children)
+        .def("mothers", event_array_mothers)
+        .def("daughters", event_array_daughters)
         .def("reset", &Event::reset)
+        .def("list", py::overload_cast<bool, bool, int>(&Event::list, py::const_), "showScaleAndVertex"_a = false, "showMothersAndDaughters"_a = false, "precision"_a = 3)
         .def("append", py::overload_cast<int, int, int, int, double, double, double, double, double, double, double>(&Event::append), "pdgid"_a, "status"_a, "col"_a, "acol"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a = 0, "scale"_a = 0, "pol"_a = 9.)
-
-        ;
+        .def("fill", &fill);
 }
