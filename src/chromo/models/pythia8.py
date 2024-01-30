@@ -111,7 +111,7 @@ class Pythia8(MCRun):
         seed=None,
         config=None,
         banner=True,
-        cache=_cached_data_dir(_data_url) + "/cache",
+        cache=_cached_data_dir(_data_url),
     ):
         """
 
@@ -171,16 +171,16 @@ class Pythia8(MCRun):
             cf = Path(cache) / dump_to_url(self._config)
             self._config += [
                 "MultipartonInteractions:reuseInit = 3",
-                f"MultipartonInteractions:initFile = {cf.with_ext('.mpi')}",
+                f"MultipartonInteractions:initFile = {cf.with_suffix('.mpi')}",
             ]
             if (evt_kin.p1.A or 0) > 1 or (evt_kin.p2.A or 1) > 1:
                 self._config += [
                     "HeavyIon:SasdMpiReuseInit = 3",
-                    f"HeavyIon:SasdMpiInitFile = {cf.with_ext('.sasd-mpi')}",
+                    f"HeavyIon:SasdMpiInitFile = {cf.with_suffix('.sasd-mpi')}",
                 ]
                 self._config += [
                     "HeavyIon:SigFitReuseInit = 3",
-                    f"HeavyIon:SigFitInitFile = {cf.with_ext('.sigfit')}",
+                    f"HeavyIon:SigFitInitFile = {cf.with_suffix('.sigfit')}",
                 ]
 
         # Add "Print:quiet = on" if no "Print:quiet" is in config
