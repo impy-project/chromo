@@ -822,11 +822,5 @@ def select_long_lived(tau=0, mm=False):
 
 def dump_to_url(obj):
     b = pickle.dumps(obj)
-    b = gzip.compress(b)
+    b = gzip.compress(b, mtime=0)
     return base64.urlsafe_b64encode(b).decode("ascii")
-
-
-def load_from_url(url):
-    b = base64.urlsafe_b64decode(url.encode("ascii"))
-    b = gzip.decompress(b)
-    return pickle.loads(b)

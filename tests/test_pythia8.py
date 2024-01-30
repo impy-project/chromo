@@ -1,24 +1,27 @@
 from chromo.kinematics import CenterOfMass
 from chromo.models import Pythia8
 from chromo.constants import GeV, long_lived
-from chromo.util import _cache_base_dir, name2pdg
+from chromo.util import name2pdg
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from .util import reference_charge
 import pytest
 from functools import lru_cache
 import sys
-import os
-
+from pathlib import Path
+import tempfile
 
 pytestmark = pytest.mark.skipif(
     sys.platform == "win32", reason="Pythia8 does not run on windows"
 )
 
+THIS_TEST = Path(__file__).stem
+CACHE_PATH = Path(__file__).parent / "data" / THIS_TEST
+
 
 def run_collision(energy, p1, p2):
     evt_kin = CenterOfMass(energy, p1, p2)
-    m = Pythia8(evt_kin, seed=4)
+    m = Pythia8(evt_kin, seed=4, cache=CACHE_PATH)
     for event in m(1):
         pass
     return event
@@ -26,7 +29,7 @@ def run_collision(energy, p1, p2):
 
 def run_cross_section(energy, p1, p2):
     evt_kin = CenterOfMass(energy, p1, p2)
-    m = Pythia8(evt_kin, seed=1)
+    m = Pythia8(evt_kin, seed=1, cache=CACHE_PATH)
     return m.cross_section()
 
 
@@ -134,7 +137,7 @@ def test_photo_hadron_collision():
 
 def test_changing_beams_proton():
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
-    m = Pythia8(evt_kin, seed=1)
+    m = Pythia8(evt_kin, seed=1, cache=CACHE_PATH)
     for event in m(1):
         assert_allclose(event.en[:2], 5 * GeV)
     m.kinematics = CenterOfMass(100 * GeV, "p", "p")
@@ -148,7 +151,7 @@ def test_event(event):
 
 def test_elastic():
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
-    m = Pythia8(evt_kin, seed=1, config=["SoftQCD:elastic=on"])
+    m = Pythia8(evt_kin, seed=1, config=["SoftQCD:elastic=on"], cache=CACHE_PATH)
     for event in m(10):
         assert len(event) == 4
         assert_equal(event.pid, [2212] * 4)
@@ -156,7 +159,7 @@ def test_elastic():
 
 def test_gamma_p():
     evt_kin = CenterOfMass(10 * GeV, "gamma", "p")
-    m = Pythia8(evt_kin, seed=1)
+    m = Pythia8(evt_kin, seed=1, cache=CACHE_PATH)
     for event in m(10):
         assert len(event) > 2
 
@@ -164,7 +167,7 @@ def test_gamma_p():
 @pytest.mark.parametrize("seed", (None, 0, 1, int(1e10)))
 def test_seed(seed):
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
-    m = Pythia8(evt_kin, seed=seed)
+    m = Pythia8(evt_kin, seed=seed, cache=CACHE_PATH)
     if seed is None:
         assert m.seed >= 0
     else:
@@ -173,7 +176,7 @@ def test_seed(seed):
 
 def test_get_stable():
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
-    m = Pythia8(evt_kin, seed=1)
+    m = Pythia8(evt_kin, seed=1, cache=CACHE_PATH)
     assert m._get_stable() == set(long_lived)
 
 
@@ -188,30 +191,49 @@ def test_gg():
     assert len(evt) > 2
 
 
-def test_cache_file():
+def test_cache_file(capsys):
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
-    m = Pythia8(evt_kin, seed=1, cache=True)
+    config = ["Print:quiet = off", "SoftQCD:inelastic = on"]
+    with tempfile.TemporaryDirectory() as cache_dir:
+        Pythia8(evt_kin, seed=1, config=config, cache=cache_dir)
+        out, _ = capsys.readouterr()
+        assert (
+            "MultipartonInteractions::init: wrote initialization data to file"
+        ) in out
 
-    config_lines = "\n".join(m._config)
-    assert "MultipartonInteractions:reuseInit = 3" in config_lines
-
-    cache_file_path = os.path.join(
-        _cache_base_dir(), "Pythia8", "cache_2212_2212_10000.mpi"
-    )
-    assert os.path.exists(cache_file_path)
-    assert os.path.getsize(cache_file_path) > 0
+        # we initialize again, now the cache should be used
+        Pythia8(evt_kin, seed=1, config=config, cache=cache_dir)
+        out, _ = capsys.readouterr()
+        assert (
+            "MultipartonInteractions::init: wrote initialization data to file"
+        ) not in out
 
 
-def test_cache_file_heavy_ion():
-    evt_kin = CenterOfMass(2000 * GeV, "p", "He")
-    m = Pythia8(evt_kin, seed=1, cache=True)
+def test_cache_file_heavy_ion(capsys):
+    evt_kin = CenterOfMass(1000 * GeV, "p", "He")
+    config = ["Print:quiet = off", "SoftQCD:inelastic = on"]
+    with tempfile.TemporaryDirectory() as cache_dir:
+        Pythia8(evt_kin, seed=1, config=config, cache=cache_dir)
+        out, _ = capsys.readouterr()
+        assert (
+            "SubCollisionModel::init: wrote initialization configuration to file"
+        ) in out
+        assert (
+            "MultipartonInteractions::init: wrote initialization data to file"
+        ) in out
+        # we initialize again, now the cache should be used
+        Pythia8(evt_kin, seed=1, config=config, cache=cache_dir)
+        out, _ = capsys.readouterr()
+        assert (
+            "SubCollisionModel::init: wrote initialization configuration to file"
+        ) not in out
+        assert (
+            "MultipartonInteractions::init: wrote initialization data to file"
+        ) not in out
 
-    config_lines = "\n".join(m._config)
-    assert "HeavyIon:SasdMpiReuseInit = 3" in config_lines
-    assert "HeavyIon:SigFitReuseInit = 3" in config_lines
 
-    cache_file_path = os.path.join(
-        _cache_base_dir(), "Pythia8", "cache_2212_1000020040_2000000.mpi"
-    )
-    assert os.path.exists(cache_file_path)
-    assert os.path.getsize(cache_file_path) > 0
+def test_no_cache_file():
+    evt_kin = CenterOfMass(100 * GeV, "p", "p")
+    m = Pythia8(evt_kin, seed=1, cache=None)
+    config = "\n".join(m._config)
+    assert "MultipartonInteractions:reuseInit = 3" not in config

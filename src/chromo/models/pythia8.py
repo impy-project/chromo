@@ -168,19 +168,20 @@ class Pythia8(MCRun):
         ]
 
         if evt_kin is not None and cache:
-            cf = Path(cache) / dump_to_url(self._config)
+            cf = str(Path(cache) / dump_to_url(self._config))
+            # beware: exact suffix seems to matter!
             self._config += [
                 "MultipartonInteractions:reuseInit = 3",
-                f"MultipartonInteractions:initFile = {cf.with_suffix('.mpi')}",
+                f"MultipartonInteractions:initFile = {cf}.mpi",
             ]
             if (evt_kin.p1.A or 0) > 1 or (evt_kin.p2.A or 1) > 1:
                 self._config += [
                     "HeavyIon:SasdMpiReuseInit = 3",
-                    f"HeavyIon:SasdMpiInitFile = {cf.with_suffix('.sasd-mpi')}",
+                    f"HeavyIon:SasdMpiInitFile = {cf}.sasd.mpi",
                 ]
                 self._config += [
                     "HeavyIon:SigFitReuseInit = 3",
-                    f"HeavyIon:SigFitInitFile = {cf.with_suffix('.sigfit')}",
+                    f"HeavyIon:SigFitInitFile = {cf}.sigfit",
                 ]
 
         # Add "Print:quiet = on" if no "Print:quiet" is in config
