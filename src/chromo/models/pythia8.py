@@ -1,6 +1,5 @@
 from chromo.common import MCRun, EventData, CrossSectionData
-from chromo.util import _cached_data_dir, _cache_base_dir, name2pdg
-from chromo.constants import MeV
+from chromo.util import _cached_data_dir, name2pdg, dump_to_url
 from os import environ
 import numpy as np
 from chromo.kinematics import EventFrame
@@ -8,6 +7,7 @@ from chromo.constants import standard_projectiles
 from particle import literals as lp
 import warnings
 from typing import Collection, List
+from pathlib import Path
 
 
 class PYTHIA8Event(EventData):
@@ -104,18 +104,37 @@ class Pythia8(MCRun):
         + "/releases/download/zipped_data_v1.0/Pythia8_v003.zip"
     )
 
-    def __init__(self, evt_kin, *, seed=None, config=None, banner=True, cache=False):
+    def __init__(
+        self,
+        evt_kin,
+        *,
+        seed=None,
+        config=None,
+        banner=True,
+        cache=_cached_data_dir(_data_url) + "/cache",
+    ):
         """
 
         Parameters
         ----------
-        config: str or list of str, optional
+        evt_kin: EventKinematics or None
+            Setup of initial state. You can set this to None if you want to use
+            Pythia to decay particles on the particle stack.
+        seed: int or None, optional
+            Seed for the random number generator.
+        config: str or list of str or None, optional
             Pass standard Pythia configuration here. You can use this to change
             the physics processes which are enabled in Pythia. You can pass a
             single string that is read from a configuration file or a list of
             strings, where each string is a single configuration command.
-            If config is not set, 'SoftQCD:inelastic = on' is used to get the
+            If config is None, 'SoftQCD:inelastic = on' is used to get the
             equivalent of other generators in chromo.
+        banner: bool, optional
+            Whether to show the Pythia banner. Default is True.
+        cache: str or None, optional
+            Path to the cache directory that we generate to speed up sub-sequent
+            runs of Pythia with same inputs. If None, cache is deactivated.
+            Default is to use the Pythia8 data directory.
         """
 
         super().__init__(seed)
@@ -148,33 +167,21 @@ class Pythia8(MCRun):
             f"Random:seed = {self.seed % 900_000_000}",
         ]
 
-        if evt_kin is not None:
-            # production of cache files by Pythia8 to speed up subsequent runs
-            cache_prefix = str(
-                _cache_base_dir()
-                / "Pythia8"
-                / f"cache_{int(evt_kin.p1)}_{int(evt_kin.p2)}_{evt_kin.ecm/MeV:.0f}".replace(
-                    "-", "m"
-                )
-            )
-        if cache:
+        if evt_kin is not None and cache:
+            cf = Path(cache) / dump_to_url(self._config)
             self._config += [
                 "MultipartonInteractions:reuseInit = 3",
-                f"MultipartonInteractions:initFile = {cache_prefix}.mpi",
+                f"MultipartonInteractions:initFile = {cf.with_ext('.mpi')}",
             ]
             if (evt_kin.p1.A or 0) > 1 or (evt_kin.p2.A or 1) > 1:
                 self._config += [
                     "HeavyIon:SasdMpiReuseInit = 3",
-                    f"HeavyIon:SasdMpiInitFile = {cache_prefix}.sasd.mpi",
-                    "HeavyIon:SigFitReuseInit = 3",
-                    f"HeavyIon:SigFitInitFile = {cache_prefix}.sigfit",
+                    f"HeavyIon:SasdMpiInitFile = {cf.with_ext('.sasd-mpi')}",
                 ]
-        else:
-            self._config += [
-                "MultipartonInteractions:reuseInit = 0",
-                "HeavyIon:SasdMpiReuseInit = 0",
-                "HeavyIon:SigFitReuseInit = 0",
-            ]
+                self._config += [
+                    "HeavyIon:SigFitReuseInit = 3",
+                    f"HeavyIon:SigFitInitFile = {cf.with_ext('.sigfit')}",
+                ]
 
         # Add "Print:quiet = on" if no "Print:quiet" is in config
         if not any("Print:quiet" in s for s in self._config):

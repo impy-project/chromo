@@ -15,6 +15,9 @@ import urllib.request
 import numpy as np
 from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
 from chromo.constants import MeV, nucleon_mass, sec2cm
+import gzip
+import pickle
+import base64
 
 EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
 
@@ -815,3 +818,15 @@ def select_long_lived(tau=0, mm=False):
             long_lived.append(pid)
 
     return long_lived
+
+
+def dump_to_url(obj):
+    b = pickle.dumps(obj)
+    b = gzip.compress(b)
+    return base64.urlsafe_b64encode(b)
+
+
+def load_from_url(url):
+    b = base64.urlsafe_b64decode(url)
+    b = gzip.uncompress(b)
+    return pickle.loads(b)
