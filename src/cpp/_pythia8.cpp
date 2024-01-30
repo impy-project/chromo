@@ -1,5 +1,4 @@
 #include <Pythia8/Event.h>
-#include <Pythia8/HIUserHooks.h>
 #include <Pythia8/Info.h>
 #include <Pythia8/ParticleData.h>
 #include <Pythia8/Info.h>
