@@ -101,8 +101,8 @@ def test_is_real_nucleus():
 
 
 def test_dump_to_url():
-    config = ["foo", "barian", "bazzer"]
-    s = util.dump_to_url(config)
+    d = ["foo", "barian", "bazzer"]
+    s = util.dump_to_url(d)
     assert type(s) is str
     assert (
         s == "H4sIAAAAAAAC_2tgmSrLAAGxUzR6mNPy86f0sCUlFmUm5oEZVVWpRVNS9QCPoG78KAAAAA=="
