@@ -152,9 +152,11 @@ class DpmjetIIIRun(MCRun):
             self._lib.dt_xsglau(
                 kin.p1.A or 1,
                 kin.p2.A or 1,
-                self._lib.idt_icihad(2212)
-                if (kin.p1.A and kin.p1.A > 1)
-                else self._lib.idt_icihad(kin.p1),
+                (
+                    self._lib.idt_icihad(2212)
+                    if (kin.p1.A and kin.p1.A > 1)
+                    else self._lib.idt_icihad(kin.p1)
+                ),
                 0,
                 0,
                 kin.ecm,
@@ -242,9 +244,11 @@ class DpmjetIIIRun(MCRun):
             k.p1.Z or 0,
             k.p2.A or 1,
             k.p2.Z or 0,
-            self._lib.idt_icihad(2212)
-            if (k.p1.A and k.p1.A > 1)
-            else self._lib.idt_icihad(k.p1),
+            (
+                self._lib.idt_icihad(2212)
+                if (k.p1.A and k.p1.A > 1)
+                else self._lib.idt_icihad(k.p1)
+            ),
             k.elab,
             kkmat=-1,
         )

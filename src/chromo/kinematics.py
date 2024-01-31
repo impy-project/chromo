@@ -1,6 +1,7 @@
 """ This module handles transformations between Lorentz frames and
 different inputs required by the low-level event generator interfaces.
 """
+
 import numpy as np
 from chromo.util import (
     TaggedFloat,
@@ -251,9 +252,7 @@ class EventKinematics(EventKinematicsBase):
 
         gamma_cm = (elab + m2) / ecm
         betagamma_cm = plab / ecm
-        pcm = np.sqrt((ecm**2 - (m1 + m2) ** 2) * (ecm**2 - (m1 - m2) ** 2)) / (
-            2 * ecm
-        )
+        pcm = np.sqrt((ecm**2 - (m1 + m2) ** 2) * (ecm**2 - (m1 - m2) ** 2)) / (2 * ecm)
         self.m1 = m1
         self.m2 = m2
 

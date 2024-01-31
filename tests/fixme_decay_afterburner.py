@@ -89,7 +89,7 @@ def test_decay_afterburner():
     event_kinematics = EventKinematics(
         ecm=200 * GeV,
         particle1=2212,
-        particle2=2212
+        particle2=2212,
         # particle2=(14,7)
     )
 

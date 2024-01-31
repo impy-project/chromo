@@ -17,12 +17,10 @@ def _raise_import_error(name, task):
 
 class Writer(ABC):
     @abstractmethod
-    def __init__(self, file, model, **kwargs):
-        ...
+    def __init__(self, file, model, **kwargs): ...
 
     @abstractmethod
-    def write(self, event):
-        ...
+    def write(self, event): ...
 
     # override as needed
     def __enter__(self):

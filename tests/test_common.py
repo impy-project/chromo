@@ -158,10 +158,15 @@ def test_models_beam(Model):
     elif Model.name in ["SIBYLL"]:
         evt_kin = CenterOfMass(100, "p", "O")
 
-    with pytest.warns(RuntimeWarning) if Model.name in [
-        "DPMJET-III",
-        "UrQMD",
-    ] else nullcontext():
+    with (
+        pytest.warns(RuntimeWarning)
+        if Model.name
+        in [
+            "DPMJET-III",
+            "UrQMD",
+        ]
+        else nullcontext()
+    ):
         generator = Model(evt_kin, seed=1)
         for event in generator(100):
             event.kin._beam_data = None
