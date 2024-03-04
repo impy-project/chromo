@@ -57,8 +57,7 @@ if (parse_version(numpy.__version__) >= parse_version("1.23.0")) and (
     files_to_patch = ["f2py/crackfortran.py", "f2py/auxfuncs.py"]
     numpy_dir = Path(numpy.__file__).parent
     # Commit of numpy to copy from
-    # Change the url to the url of official release when it will be ready!!!
-    base_url = "https://raw.githubusercontent.com/numpy/numpy/1e6a322a9514c0050f4cc656aead1aeffba0b1b5/numpy"
+    base_url = "https://raw.githubusercontent.com/numpy/numpy/maintenance/1.26.x/numpy"
 
     warnings.warn(f"Files in numpy: {files_to_patch} are substituted")
     for fp in files_to_patch:
