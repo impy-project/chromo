@@ -12,7 +12,7 @@ on:
       - closed
 
 env:
-  CIBUILDWHEEL_ACTION: "pypa/cibuildwheel@v2.16.5"
+  CIBUILDWHEEL_ACTION: pypa/cibuildwheel@v2.16.5
 
 
 jobs:
