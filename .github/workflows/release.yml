@@ -11,6 +11,10 @@ on:
     types:
       - closed
 
+env:
+  CIBUILDWHEEL_ACTION: "pypa/cibuildwheel@v2.16.5"
+
+
 jobs:
 
   wheels_on_PR:
@@ -36,7 +40,7 @@ jobs:
           version: 11
 
       - name: cibuildwheel on Linux
-        uses: pypa/cibuildwheel@v2.11.2
+        uses: ${{ env.CIBUILDWHEEL_ACTION }}
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
@@ -102,7 +106,7 @@ jobs:
 
       - if: ${{ matrix.os == 'windows-latest' }}
         name: cibuildwheel on Windows
-        uses: pypa/cibuildwheel@v2.11.2
+        uses: ${{ env.CIBUILDWHEEL_ACTION }}
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
@@ -111,7 +115,7 @@ jobs:
 
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         name: cibuildwheel on Linux
-        uses: pypa/cibuildwheel@v2.11.2
+        uses: ${{ env.CIBUILDWHEEL_ACTION }}
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
@@ -120,7 +124,7 @@ jobs:
 
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native' }}
         name: cibuildwheel on MacOS native
-        uses: pypa/cibuildwheel@v2.11.2
+        uses: ${{ env.CIBUILDWHEEL_ACTION }}
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
@@ -129,7 +133,7 @@ jobs:
       - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'arm64' }}
         name: cibuildwheel on MacOS arm64
         id: cibw_step
-        uses: pypa/cibuildwheel@v2.11.2
+        uses: ${{ env.CIBUILDWHEEL_ACTION }}
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
