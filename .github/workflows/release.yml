@@ -73,6 +73,9 @@ jobs:
         with:
           submodules: true
 
+      - name: Get latest CMake and Ninja
+        uses: lukka/get-cmake@latest
+
       - if: ${{ matrix.arch == 'aarch64' }}
         uses: docker/setup-qemu-action@v2
 
