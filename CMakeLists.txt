@@ -261,8 +261,8 @@ f2py_add_module(_sib23d_star
 ### qgs01
 f2py_add_module(_qgs01
   FUNCTIONS
-  cqgsini sectnu xxaini psconf xxreg psaini chepevt
-  ${chromo_functions}
+  cqgsini sectnu xxaini psconf xxreg psaini chepevt xxfz
+  cqgshh_ha_cs crossc ${chromo_functions}
   SOURCES
   ${fortran_dir}/qgsjet/qgsjet01d.f
   ${fortran_dir}/qgsjet/chromo_qgs1.f
@@ -274,10 +274,9 @@ f2py_add_module(_qgs01
   ${chromo_definitions}
 )
 
-
-### qgsII03
+# ## qgsII03
 set(QGSJETII_COMMON_FUNCTIONS
-  cqgsini qgsect qgini qgconf qgreg chepevt ${chromo_functions})
+  cqgsini qgsect qgini qgconf qgreg chepevt qgcrossc cqgshh_ha_cs ${chromo_functions})
 
 f2py_add_module(_qgsII03
   FUNCTIONS
