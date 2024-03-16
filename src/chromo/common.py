@@ -119,10 +119,10 @@ class CrossSectionData:
             )
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other, rtol=1e-3):
         at = dataclasses.astuple(self)
         bt = dataclasses.astuple(other)
-        return all(naneq(a, b) for (a, b) in zip(at, bt))
+        return all(naneq(a, b, rtol) for (a, b) in zip(at, bt))
 
     def __ne__(self, other):
         return not self == other
