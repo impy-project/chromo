@@ -22,10 +22,10 @@ jobs:
             python-version: "3.10"
 
           - os: macos-latest
-            python-version: "3.9"
+            python-version: "3.10"
 
           - os: ubuntu-latest
-            python-version: "3.9"
+            python-version: "3.10"
       fail-fast: false
     steps:
     - uses: actions/checkout@v3
@@ -42,13 +42,9 @@ jobs:
         version: 11
 
     - run: python -m pip install --upgrade pip
-    # Remove after January 16th 2023 when GA switches to 14.2 by default
-    - if: ${{ matrix.os == 'macos-latest' }}
-      run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
 
     - if: ${{ matrix.os != 'windows-latest' }}
       run: python -m pip install --prefer-binary -v .[test]
-
 
     - if: ${{ matrix.os == 'windows-latest' }}
       run: python -m pip install --prefer-binary -v .[test]

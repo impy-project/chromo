@@ -27,7 +27,7 @@ from chromo.constants import (
     standard_projectiles,
 )
 from chromo.decay_handler import Pythia8DecayHandler
-from chromo.kinematics import CompositeTarget, EventKinematics
+from chromo.kinematics import CompositeTarget, EventKinematicsBase
 from chromo.util import (
     Nuclei,
     classproperty,
@@ -144,7 +144,7 @@ class EventData:
 
     generator: (str, str)
         Info about the generator, its name and version.
-    kin: EventKinematics
+    kin: EventKinematicsBase
         Info about initial state.
     nevent: int
         Which event in the sequence.
@@ -186,7 +186,7 @@ class EventData:
     """
 
     generator: Tuple[str, str]
-    kin: EventKinematics
+    kin: EventKinematicsBase
     nevent: int
     impact_parameter: float
     n_wounded: Tuple[int, int]
