@@ -760,8 +760,8 @@ class MCRun(ABC):
 
         Parameters
         ----------
-        kin : EventKinematicsBase, optional
-            If provided, calculate cross-section for EventKinematicsBase.
+        kin : EventKinematics, optional
+            If provided, calculate cross-section for EventKinematics.
             Otherwise return values for current setup.
         """
         with self._temporary_kinematics(kin):

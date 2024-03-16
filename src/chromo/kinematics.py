@@ -70,7 +70,7 @@ class EventKinematicsBase:
             Projectile kinetic energy in lab frame. If the projectile is a nucleus,
             it is the kinetic energy per nucleon.
         beam : tuple of two floats
-            Specification as tuple of two momenta. If the projectile or target are
+            Specification as tuple of two pz momenta. If the projectile or target are
             nuclei, it is the momentum per nucleon.
     """
 
@@ -321,9 +321,7 @@ class EventKinematicsMassless(EventKinematicsBase):
         # Catch input errors
 
         if sum(x is not None for x in [ecm, beam]) != 1:
-            raise ValueError(
-                "Please provide only one of ecm/plab/elab/ekin/beam arguments"
-            )
+            raise ValueError("Please provide only one of ecm/beam arguments")
 
         if particle1 is None or particle2 is None:
             raise ValueError("particle1 and particle2 must be set")
@@ -361,11 +359,11 @@ class EventKinematicsMassless(EventKinematicsBase):
         # Input specification as 4-vectors
         elif beam is not None:
             frame = frame or EventFrame.GENERIC
-            p1, p2 = beam
-            beams[0][2] = p1
-            beams[1][2] = p2
-            beams[0][3] = np.abs(p1)
-            beams[1][3] = np.abs(p2)
+            pz1, pz2 = beam
+            beams[0][2] = pz1
+            beams[1][2] = pz2
+            beams[0][3] = np.abs(pz1)
+            beams[1][3] = np.abs(pz2)
             s = np.sum(beams, axis=0)
             # See note above
             ecm = energy2momentum(s[3], s[2])
