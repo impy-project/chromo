@@ -139,7 +139,7 @@ class QGSJet1Run(QGSJetRun):
         """
         kin = self.kinematics if kin is None else kin
 
-        if full_AA and (kin.p1.is_nucleus):
+        if full_AA and (kin.p1.is_nucleus and kin.p1.A > 1):
             gtot, gprod, _, gdd, gqel, gcoh = self._lib.crossc(self.glauber_trials)
             return CrossSectionData(
                 total=gtot,
@@ -148,7 +148,9 @@ class QGSJet1Run(QGSJetRun):
                 quasielastic=gqel,
                 coherent=gcoh,
             )
-        elif kin.p1.is_nucleus or kin.p2.is_nucleus:
+        elif (kin.p1.is_nucleus and kin.p1.A > 1) or (
+            kin.p2.is_nucleus and kin.p2.A > 1
+        ):
             # Note: this is a workaround until the calculated h-A
             # cross sections work correctly
             return self._tabulated_cross_section(kin)
@@ -260,7 +262,7 @@ class QGSJet2Run(QGSJetRun):
         """
         kin = self.kinematics if kin is None else kin
 
-        if full_AA and (kin.p1.is_nucleus):
+        if full_AA and (kin.p1.is_nucleus and kin.p1.A > 1):
             gtot, gprod, _, gdd, gqel, gcoh = self._lib.qgcrossc(self.glauber_trials)
             return CrossSectionData(
                 total=gtot,
@@ -269,7 +271,9 @@ class QGSJet2Run(QGSJetRun):
                 quasielastic=gqel,
                 coherent=gcoh,
             )
-        elif kin.p1.is_nucleus or kin.p2.is_nucleus:
+        elif (kin.p1.is_nucleus and kin.p1.A > 1) or (
+            kin.p2.is_nucleus and kin.p2.A > 1
+        ):
             # Note: this is a workaround until the calculated h-A cross
             # sections work correctly
             return self._tabulated_cross_section(kin)
