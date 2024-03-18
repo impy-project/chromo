@@ -284,7 +284,7 @@ class DpmjetIII193(DpmjetIII191):
     _projectiles = (
         standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311, 22}
     )
-    _library_name = "_dev_dpmjetIII193"
+    _library_name = "_dpmjetIII191"
 
 
 class DpmjetIII307(DpmjetIIIRun):
