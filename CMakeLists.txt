@@ -602,7 +602,7 @@ list(FILTER dpmjetIII193_sources EXCLUDE REGEX PYR\.f)
 f2py_add_module(_dpmjetIII193
   FUNCTIONS
   pho_event dt_init dt_kkinc idt_icihad dt_xsglau pycomp dt_initjs
-  dt_inucas idt_ipdgha dt_evtout pho_init pho_setpar poevt1 poevt2
+  dt_inucas dt_sigga dt_siggp dt_siggat idt_ipdgha dt_evtout pho_init pho_setpar
   pho_pname pho_pmass pho_setmdl pho_setpdf pycomp pho_xsect pho_borncs
   pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
@@ -626,7 +626,7 @@ f2py_add_module(_dpmjetIII193
 
 f2py_add_module(_phojet193
   FUNCTIONS
-  pho_event pycomp pho_init pho_setpar poevt1 poevt2
+  pho_event pycomp pho_init pho_setpar 
   pho_pname pho_pmass pho_setmdl pho_setpdf pycomp pho_xsect pho_borncs
   pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
   pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
@@ -710,7 +710,7 @@ if(BUILD_dev_dpmjetIII193)
   f2py_add_module(_dev_dpmjetIII193
     FUNCTIONS
     pho_event dt_init dt_kkinc idt_icihad dt_xsglau pycomp dt_initjs
-    dt_inucas idt_ipdgha dt_evtout pho_init pho_setpar poevt1 poevt2
+    dt_inucas dt_sigga dt_siggp dt_siggat idt_ipdgha dt_evtout pho_init pho_setpar
     pho_pname pho_pmass pho_setmdl pho_setpdf pycomp pho_xsect pho_borncs
     pho_harmci pho_fitout pho_mcini pho_ptcut pytune pho_rregpar pho_sregpar
     pho_prevnt ipho_pdg2id ipho_id2pdg pho_harint pho_harxto pho_harxpt
