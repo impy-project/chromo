@@ -381,7 +381,8 @@ class EventKinematicsMassless(EventKinematicsBase):
                 self.virt_p2 = float(virtuality[1])
             else:
                 raise ValueError(
-                    "Virtuality (Q2) must be a tuple of two floats for photon-photon colllisions."
+                    "Virtuality (Q2) must be a tuple of "
+                    "two floats for photon-photon colllisions."
                 )
         else:
             self.virt_p1 = 0.0
