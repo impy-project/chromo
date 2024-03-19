@@ -113,8 +113,7 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
-          CMAKE_GENERATOR: "Ninja Win64"
-          CMAKE_ARGS: "-DCMAKE_CXX_COMPILER=g++ -GNinja"
+          CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
 
       - if: ${{ matrix.os == 'ubuntu-latest' }}
