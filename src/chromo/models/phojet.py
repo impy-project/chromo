@@ -94,7 +94,7 @@ class PHOJETRun(MCRun):
     _name = "PhoJet"
     _event_class = PhojetEvent
     _frame = None
-    _projectiles = standard_projectiles  # FIXME: should allow photons and hadrons
+    _projectiles = standard_projectiles
     _targets = {lp.proton.pdgid, lp.neutron.pdgid}
     _param_file_name = "dpmjpar.dat"
     _data_url = (
@@ -200,6 +200,7 @@ class PHOJETRun(MCRun):
             ),
             diffractive_xx=float(self._lib.pocsec.sigldd + self._lib.pocsec.sighdd),
             diffractive_axb=float(self._lib.pocsec.sigcdf[0]),
+            b_elastic=float(self._lib.pocsec.sloel),
         )
 
     def _set_stable(self, pdgid, stable):
@@ -213,8 +214,8 @@ class PHOJETRun(MCRun):
         else:
             self._lib.dtflg1.iframe = 2
             self._frame = EventFrame.CENTER_OF_MASS
-        self._lib.pho_setpar(1, k.p1, 0, 0.0)
-        self._lib.pho_setpar(2, k.p2, 0, 0.0)
+        self._lib.pho_setpar(1, k.p1, 0, k.virt_p1)
+        self._lib.pho_setpar(2, k.p2, 0, k.virt_p2)
         self.p1, self.p2 = k.beams
 
     def _generate(self):
@@ -234,7 +235,8 @@ class Phojet112(PHOJETRun):
     _param_file_name = "fitpar.dat"
     _projectiles = {
         lp.photon.pdgid,
-        lp.proton.pdgid,
+        lp.p.pdgid,
+        lp.n.pdgid,
     }  # FIXME: should allow photons and hadrons
     _data_url = (
         "https://github.com/impy-project/chromo"
@@ -250,3 +252,5 @@ class Phojet191(PHOJETRun):
 class Phojet193(PHOJETRun):
     _version = "19.3"
     _library_name = "_phojet193"
+    _projectiles = standard_projectiles | {lp.photon.pdgid}
+    _targets = {lp.proton.pdgid, lp.neutron.pdgid, lp.photon.pdgid}

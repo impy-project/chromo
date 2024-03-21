@@ -77,7 +77,7 @@ class DpmjetIIIRun(MCRun):
     _frame = None
     # TODO: DPMJet supports photons as projectiles
     _projectiles = standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311}
-    _targets = _projectiles
+    _targets = Nuclei()
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
     _data_url = (
@@ -142,11 +142,12 @@ class DpmjetIIIRun(MCRun):
 
         self._set_final_state_particles()
 
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin=None, photon_x=0):
         kin = self.kinematics if kin is None else kin
         # we override to set precision
-        if (kin.p1.A and kin.p1.A > 1) or kin.p2.A > 1:
+        if (kin.p1.is_nucleus and kin.p1.A > 1) or kin.p2.A > 1:
             assert kin.p2.A >= 1, "DPMJET requires nucleons or nuclei on side 2."
+            print("case 1")
             # Enable total and elastic cross section calculation
             self._lib.dtglgp.lprod = False
             self._lib.dt_xsglau(
@@ -157,14 +158,22 @@ class DpmjetIIIRun(MCRun):
                     if (kin.p1.A and kin.p1.A > 1)
                     else self._lib.idt_icihad(kin.p1)
                 ),
-                0,
-                0,
+                photon_x,
+                kin.virt_p1,
                 kin.ecm,
                 1,
                 1,
                 1,
             )
             glxs = self._lib.dtglxs
+
+            def _generate():
+                raise RuntimeError(
+                    "Do not generate events with DPMJET after calculations "
+                    + "of nuclear cross sections."
+                )
+
+            self._generate = _generate
             return CrossSectionData(
                 total=glxs.xstot[0, 0, 0],
                 elastic=glxs.xsela[0, 0, 0],
@@ -175,13 +184,14 @@ class DpmjetIIIRun(MCRun):
                 + glxs.xsqe2[0, 0, 0]
                 + glxs.xsela[0, 0, 0],
             )
+        elif kin.p1 == 22 and kin.p2.A == 1:
+            stot, sine, _ = self._lib.dt_siggp(photon_x, kin.virt_p1, kin.ecm, 0)
+            return CrossSectionData(total=stot, inelastic=sine, elastic=stot - sine)
         else:
             stot, sela = self._lib.dt_xshn(
                 self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
             )
             return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
-
-        # TODO set more cross-sections
 
     @property
     def glauber_trials(self):
@@ -271,6 +281,9 @@ class DpmjetIII191(DpmjetIIIRun):
 
 class DpmjetIII193(DpmjetIII191):
     _version = "19.3"
+    _projectiles = (
+        standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311, 22}
+    )
     _library_name = "_dpmjetIII193"
 
 
@@ -287,4 +300,7 @@ class DpmjetIII307(DpmjetIIIRun):
 
 class DpmjetIII193_DEV(DpmjetIIIRun):
     _version = "19.3-dev"
+    _projectiles = (
+        standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311, 22}
+    )
     _library_name = "_dev_dpmjetIII193"

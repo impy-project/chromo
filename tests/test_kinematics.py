@@ -1,6 +1,8 @@
 from chromo.kinematics import (
     CenterOfMass,
     FixedTarget,
+    EventKinematicsWithRestframe,
+    EventKinematicsMassless,
     TotalEnergy,
     KinEnergy,
     Momentum,
@@ -10,7 +12,14 @@ from chromo.kinematics import (
     MeV,
 )
 from chromo.constants import nucleon_mass
-from chromo.util import AZ2pdg, energy2momentum
+from chromo.util import (
+    AZ2pdg,
+    energy2momentum,
+    elab2ecm,
+    momentum2energy,
+    is_real_nucleus,
+    mass,
+)
 from particle import literals as lp
 from pytest import approx
 import pytest
@@ -97,3 +106,123 @@ def test_copy():
     a = CenterOfMass(10, "p", target)
     b = a.copy()
     assert a == b
+
+
+def test_kinematics_init_ecm():
+    # Test initialization with ecm argument
+    k = EventKinematicsWithRestframe("proton", "neutron", ecm=10)
+    assert k.frame == EventFrame.CENTER_OF_MASS
+    assert k.ecm == 10
+    assert k.elab == approx(52.2778, rel=1e-3)
+    assert k.ekin == approx(k.elab - k.m1, rel=1e-3)
+    assert k.plab == approx(energy2momentum(k.elab, k.m1), rel=1e-3)
+
+
+def test_kinematics_init_beam():
+    # Test initialization with beam argument
+    k = EventKinematicsWithRestframe(
+        "proton", "neutron", beam=(10.0, -4.0), frame=EventFrame.CENTER_OF_MASS
+    )
+    assert k.ecm == approx(12.818, rel=1e-3)
+    k_ref = EventKinematicsWithRestframe("proton", "neutron", ecm=k.ecm)
+    assert k == k_ref
+
+
+def test_kinematics_init_elab():
+    # Test initialization with elab argument
+    k = EventKinematicsWithRestframe("proton", "neutron", elab=15)
+    assert k.frame == EventFrame.FIXED_TARGET
+    k_ref = EventKinematicsWithRestframe(
+        "proton", "neutron", ecm=k.ecm, frame=EventFrame.FIXED_TARGET
+    )
+    assert k == k_ref
+
+
+def test_kinematics_init_ekin():
+    # Test initialization with ekin argument
+    k = EventKinematicsWithRestframe("proton", "neutron", ekin=8)
+    assert k.frame == EventFrame.FIXED_TARGET
+    assert k.ecm == approx(
+        elab2ecm(8 + nucleon_mass, nucleon_mass, nucleon_mass), rel=1e-3
+    )
+    assert k.elab == approx(8 + nucleon_mass, rel=1e-3)
+    assert k.ekin == 8
+    assert k.plab == approx(energy2momentum(8 + nucleon_mass, nucleon_mass), rel=1e-3)
+
+
+def test_kinematics_init_invalid_input():
+    # Test initialization with invalid input
+    with pytest.raises(ValueError):
+        EventKinematicsWithRestframe("proton", None, ecm=10, plab=5)
+
+    with pytest.raises(ValueError):
+        EventKinematicsWithRestframe(None, "neutron", ecm=10, plab=5)
+
+    with pytest.raises(ValueError):
+        EventKinematicsWithRestframe("proton", "neutron", ecm=10, plab=5, elab=15)
+
+    with pytest.raises(ValueError):
+        EventKinematicsWithRestframe("proton", "neutron", ecm=10, plab=5, ekin=8)
+
+    with pytest.raises(ValueError):
+        EventKinematicsWithRestframe("proton", "neutron", ecm=10, plab=5, beam=(5, 3))
+
+    with pytest.raises(ValueError):
+        k = EventKinematicsWithRestframe("photon", "photon", ecm=10.0)
+
+    with pytest.raises(ValueError):
+        EventKinematicsWithRestframe("photon", "e+", virtuality=(0.7, 0.8))
+
+
+def test_kinematics_virtuality():
+    # Test initialization with virtuality argument
+    k = EventKinematicsMassless("photon", "photon", ecm=10.0, virtuality=(0.5, 0.3))
+    assert k.virt_p1 == 0.5
+    assert k.virt_p2 == 0.3
+
+    k = EventKinematicsWithRestframe("photon", "e+", ecm=10.0, virtuality=0.7)
+    assert k.virt_p1 == 0.7
+    assert k.virt_p2 == 0.0
+
+
+def test_kinematics_composite_target():
+    # Test initialization with CompositeTarget
+    target = CompositeTarget([("N", 3), ("O", 1)])
+    with pytest.raises(ValueError):
+        EventKinematicsWithRestframe(target, "neutron", ecm=10)
+
+    k = EventKinematicsWithRestframe(
+        "proton", target, ecm=10, frame=EventFrame.CENTER_OF_MASS
+    )
+    assert k.frame == EventFrame.CENTER_OF_MASS
+    assert k.ecm == 10
+    k_ref = EventKinematicsWithRestframe("proton", target, ecm=10)
+    assert k == k_ref
+
+
+def test_kinematics_beam_data():
+    # Test beam data
+    k = EventKinematicsWithRestframe("proton", "neutron", beam=(5, 3))
+    assert k.beams[0][2] == 5
+    assert k.beams[1][2] == 3
+    assert k.beams[0][3] == approx(momentum2energy(5, nucleon_mass), rel=1e-3)
+    assert k.beams[1][3] == approx(momentum2energy(3, nucleon_mass), rel=1e-3)
+
+
+def test_kinematics_gamma_cm():
+    # Test gamma_cm calculation
+    k = EventKinematicsWithRestframe("proton", "neutron", ecm=10)
+    assert k._gamma_cm == (k.elab + k.m2) / k.ecm
+
+
+def test_kinematics_betagamma_cm():
+    # Test betagamma_cm calculation
+    k = EventKinematicsWithRestframe("proton", "neutron", ecm=10)
+    assert k._betagamma_cm == approx(k.plab / k.ecm, rel=1e-3)
+
+
+def test_kinematics_m1_m2():
+    # Test m1 and m2 values
+    k = EventKinematicsWithRestframe("proton", "neutron", ecm=10)
+    assert np.allclose(k.m1, mass(2212))
+    assert np.allclose(k.m2, mass(2112))

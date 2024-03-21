@@ -1379,7 +1379,7 @@ c Nuclear cross sections
         if(debug.ge.1)write (moniou,229)e0n,iap,iat
 	
         call qgini(e0n,2,iap,iat)
-        call crossc(niter,gtot,gprod,gabs,gdd,gqel,gcoh)
+        call qgcrossc(niter,gtot,gprod,gabs,gdd,gqel,gcoh)
         if(debug.ge.1)write (moniou,230)gtot,gprod,gabs,gdd,gqel,gcoh
         asect(ie,iia1,iia2)=log(gprod)
        enddo
@@ -2460,6 +2460,8 @@ c----------------------------------------------------------------------------
       common /qgarr43/ moniou
       common /qgarr50/ x1(7),a1(7)
       common /debug/   debug
+Cf2py intent(in) b,iddp1,iddp2
+Cf2py intent(out) gz
 
       if(debug.ge.3)write (moniou,201)b,iddp1,iddp2
       do l=1,5
@@ -11426,9 +11428,10 @@ c---------------------------------------------------------------------------
       end
       
 c-------------------------------------------------------------------------------
-      subroutine crossc(niter,gtot,gprod,gabs,gdd,gqel,gcoh)
+**anfe: renamed to qgcrossc to comply with qgsII-04
+      subroutine qgcrossc(niter,gtot,gprod,gabs,gdd,gqel,gcoh)
 c-------------------------------------------------------------------------------
-c crossc - nucleus-nucleus (nucleus-hydrogen) interaction cross sections
+c qgcrossc - nucleus-nucleus (nucleus-hydrogen) interaction cross sections
 c gtot  - total cross section
 c gprod - production cross section (projectile diffraction included)
 c gabs  - cut Pomerons cross section
@@ -11454,6 +11457,8 @@ cdh   dimension wabs(28),wdd(28),wqel(28),wcoh(28),wtot(28)
       common /qgarr50/ x1(7),a1(7)
       common /debug/   debug
       external psran
+cf2py intent(in) :: niter
+cf2py intent(out) :: gtot,gprod,gabs,gdd,gqel,gcoh
 
       if(debug.ge.3)write (moniou,201)niter
       do i=1,7

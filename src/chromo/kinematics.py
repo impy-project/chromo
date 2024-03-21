@@ -196,6 +196,7 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
         ekin=None,
         beam=None,
         frame=None,
+        virtuality=None,
     ):
         # Catch input errors
 
@@ -210,6 +211,32 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
         part1 = process_particle(particle1)
         part2 = process_particle(particle2)
 
+        if part1 == 22 and part2 == 22:
+            raise ValueError(
+                "Photon-photon systems have to use EventKinematicsMassless."
+            )
+
+        if virtuality is not None:
+            if not (part1 == 22 or part2 == 22):
+                raise ValueError("Virtuality (Q2) is only supported for photon beams")
+            elif isinstance(virtuality, tuple) and len(virtuality) == 2:
+                self.virt_p1 = float(virtuality[0])
+                self.virt_p2 = float(virtuality[1])
+            elif isinstance(virtuality, float):
+                if part1 == 22:
+                    self.virt_p1 = float(virtuality)
+                    self.virt_p2 = 0.0
+                else:
+                    self.virt_p1 = 0.0
+                    self.virt_p2 = float(virtuality)
+            else:
+                raise ValueError(
+                    "Virtuality (Q2) must be a tuple of two floats or a single float."
+                )
+        else:
+            self.virt_p1 = 0.0
+            self.virt_p2 = 0.0
+
         if isinstance(part1, CompositeTarget):
             raise ValueError("Only 2nd particle can be CompositeTarget")
 
@@ -217,6 +244,9 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
 
         m1 = nucleon_mass if is_real_nucleus(part1) else mass(part1)
         m2 = nucleon_mass if is_real_nucleus(part2) else mass(part2)
+
+        if (self.virt_p1 > 0.0 and m1 > 0) or (self.virt_p2 > 0.0 and m2 > 0):
+            raise ValueError("Virtuality not supported for massive particle")
 
         beams = (np.zeros(4), np.zeros(4))
 
@@ -317,6 +347,7 @@ class EventKinematicsMassless(EventKinematicsBase):
         ecm=None,
         beam=None,
         frame=None,
+        virtuality=None,
     ):
         # Catch input errors
 
@@ -336,6 +367,26 @@ class EventKinematicsMassless(EventKinematicsBase):
             or is_real_nucleus(part2)
         ):
             raise ValueError("Massless particles required.")
+
+        if virtuality is not None:
+            if not (part1 == 22 or part2 == 22):
+                raise ValueError("Virtuality (Q2) is only supported for photon beams")
+            elif (part1 == 22 and part2 == 22) and len(virtuality) != 2:
+                raise ValueError(
+                    "Virtuality (Q2) must be a tuple of two floats for "
+                    + "photon-photon colllisions."
+                )
+            elif isinstance(virtuality, tuple) and len(virtuality) == 2:
+                self.virt_p1 = float(virtuality[0])
+                self.virt_p2 = float(virtuality[1])
+            else:
+                raise ValueError(
+                    "Virtuality (Q2) must be a tuple of "
+                    "two floats for photon-photon colllisions."
+                )
+        else:
+            self.virt_p1 = 0.0
+            self.virt_p2 = 0.0
 
         if isinstance(part1, CompositeTarget) or isinstance(part2, CompositeTarget):
             raise ValueError("CompositeTarget")

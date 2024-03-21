@@ -69,6 +69,8 @@ class CrossSectionData:
         Particle production cross section, defined as total minus elastic.
     quasielastic : float
         Total quasielastic cross section (includes elastic).
+    coherent: float
+        (elastic with respect to the projectile) cross section
     diffractive_xb : float
         Single diffractive cross section. Particle 2 remains intact,
         particles are produced around Particle 1.
@@ -83,6 +85,8 @@ class CrossSectionData:
         pomeron-pomeron interaction.)
     diffractive_sum : float
         Sum of diffractive cross sections.
+    b_elastic : float
+        Slope of elastic cross section in mb/GeV^2.
     """
 
     total: float = np.nan
@@ -90,11 +94,13 @@ class CrossSectionData:
     elastic: float = np.nan
     prod: float = np.nan
     quasielastic: float = np.nan
+    coherent: float = np.nan
     diffractive_xb: float = np.nan
     diffractive_ax: float = np.nan
     diffractive_xx: float = np.nan
     diffractive_axb: float = np.nan
     diffractive_sum: float = np.nan
+    b_elastic: float = np.nan
 
     @property
     def non_diffractive(self):
@@ -113,10 +119,10 @@ class CrossSectionData:
             )
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other, rtol=1e-3):
         at = dataclasses.astuple(self)
         bt = dataclasses.astuple(other)
-        return all(naneq(a, b) for (a, b) in zip(at, bt))
+        return all(naneq(a, b, rtol) for (a, b) in zip(at, bt))
 
     def __ne__(self, other):
         return not self == other
