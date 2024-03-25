@@ -142,12 +142,11 @@ class DpmjetIIIRun(MCRun):
 
         self._set_final_state_particles()
 
-    def _cross_section(self, kin=None, photon_x=0):
+    def _cross_section(self, kin=None, photon_x=0, max_info=False):
         kin = self.kinematics if kin is None else kin
         # we override to set precision
-        if (kin.p1.is_nucleus and kin.p1.A > 1) or kin.p2.A > 1:
+        if ((kin.p1.is_nucleus and kin.p1.A > 1) or kin.p2.A > 1) and max_info:
             assert kin.p2.A >= 1, "DPMJET requires nucleons or nuclei on side 2."
-            print("case 1")
             # Enable total and elastic cross section calculation
             self._lib.dtglgp.lprod = False
             self._lib.dt_xsglau(
@@ -183,6 +182,12 @@ class DpmjetIIIRun(MCRun):
                 + glxs.xsqet[0, 0, 0]
                 + glxs.xsqe2[0, 0, 0]
                 + glxs.xsela[0, 0, 0],
+            )
+        elif (kin.p1.is_nucleus and kin.p1.A > 1) or kin.p2.A > 1:
+            glxs = self._lib.dtglxs
+
+            return CrossSectionData(
+                prod=glxs.xspro[0, 0, 0],
             )
         elif kin.p1 == 22 and kin.p2.A == 1:
             stot, sine, _ = self._lib.dt_siggp(photon_x, kin.virt_p1, kin.ecm, 0)

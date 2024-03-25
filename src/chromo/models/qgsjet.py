@@ -107,14 +107,14 @@ class QGSJet1Run(QGSJetRun):
         inel = np.exp(spl(np.log(kin.elab)))
         return CrossSectionData(inelastic=inel)
 
-    def _cross_section(self, kin=None, full_AA=False):
+    def _cross_section(self, kin=None, max_info=False):
         """
         Calculate cross section for QGSJET-01c event generator.
 
         Parameters
         ----------
         kin : EventKinematics, optional
-        full_AA : bool, optional
+        max_info : bool, optional
             Flag indicating whether to calculate the cross section for
             AA collisions using MC. Returns the cross sections for
             specific processes. Default is False and only inelastic or
@@ -129,7 +129,7 @@ class QGSJet1Run(QGSJetRun):
         -----
         This method calculates the cross section for the QGSJET-01c
         event generator. The cross section is calculated based on the
-        provided kinematics and collision type. If `full_AA is True`
+        provided kinematics and collision type. If `max_info is True`
         and the projectile particle is a nucleus (A > 1), the cross
         section is calculated using the Glauber model. Otherwise, the
         cross section is calculated using the tabulated cross section.
@@ -139,7 +139,7 @@ class QGSJet1Run(QGSJetRun):
         """
         kin = self.kinematics if kin is None else kin
 
-        if full_AA and (kin.p1.is_nucleus and kin.p1.A > 1):
+        if max_info and (kin.p1.is_nucleus and kin.p1.A > 1):
             gtot, gprod, _, gdd, gqel, gcoh = self._lib.crossc(self.glauber_trials)
             return CrossSectionData(
                 total=gtot,
@@ -230,14 +230,14 @@ class QGSJet2Run(QGSJetRun):
         )
         return CrossSectionData(inelastic=inel)
 
-    def _cross_section(self, kin=None, full_AA=False):
+    def _cross_section(self, kin=None, max_info=False):
         """
         Calculate cross section for QGSJET-II-03/4 event generators.
 
         Parameters
         ----------
         kin : EventKinematics, optional
-        full_AA : bool, optional
+        max_info : bool, optional
             Flag indicating whether to calculate the cross section for
             AA collisions using MC. Returns the cross sections for
             specific processes. Default is False and only inelastic or
@@ -252,7 +252,7 @@ class QGSJet2Run(QGSJetRun):
         -----
         This method calculates the cross section for the QGSJET-II-0X
         event generator. The cross section is calculated based on the
-        provided kinematics and collision type. If `full_AA is True`
+        provided kinematics and collision type. If `max_info is True`
         and the projectile particle is a nucleus (A > 1), the cross
         section is calculated using the Glauber model. Otherwise, the
         cross section is calculated using the tabulated cross section.
@@ -262,7 +262,7 @@ class QGSJet2Run(QGSJetRun):
         """
         kin = self.kinematics if kin is None else kin
 
-        if full_AA and (kin.p1.is_nucleus and kin.p1.A > 1):
+        if max_info and (kin.p1.is_nucleus and kin.p1.A > 1):
             gtot, gprod, _, gdd, gqel, gcoh = self._lib.qgcrossc(self.glauber_trials)
             return CrossSectionData(
                 total=gtot,

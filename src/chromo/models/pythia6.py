@@ -62,7 +62,7 @@ class Pythia6(MCRun):
 
         self._set_final_state_particles()
 
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin=None, max_info=False):
         s = self._lib.pyint7.sigt[0, 0]
         c = CrossSectionData(
             total=s[0],

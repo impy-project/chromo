@@ -243,7 +243,7 @@ class UrQMD34(MCRun):
 
         self._set_final_state_particles()
 
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin=None, max_info=False):
         tot = self._lib.ptsigtot()
         return CrossSectionData(total=tot)
 
