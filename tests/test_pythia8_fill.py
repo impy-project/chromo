@@ -28,6 +28,7 @@ def get_pythia_event(pythia, evt_kin):
         evt_kin,
         0,
         0.0,
+        0.0,
         (0, 0),
         pevent.pid(),
         pevent.status(),

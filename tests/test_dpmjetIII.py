@@ -11,7 +11,7 @@ from .util import run_in_separate_process
 def run_cross_section(p1, p2):
     evt_kin = chromo.kinematics.CenterOfMass(10 * GeV, p1, p2)
     m = chromo.models.DpmjetIII193(evt_kin, seed=1)
-    return m.cross_section()
+    return m.cross_section(max_info=True)
 
 
 def run_cross_section_ntrials():
@@ -36,13 +36,17 @@ def run_cross_section_ntrials():
     event_generator.glauber_trials = 1
     cross_section_run1 = np.empty(trials, dtype=np.float64)
     for i in range(trials):
-        cross_section_run1[i] = event_generator.cross_section(event_kin).inelastic
+        cross_section_run1[i] = event_generator.cross_section(
+            event_kin, max_info=True
+        ).prod
 
     # With default precision
     event_generator.glauber_trials = 1000
     cross_section_run2 = np.empty(trials, dtype=np.float64)
     for i in range(trials):
-        cross_section_run2[i] = event_generator.cross_section(event_kin).inelastic
+        cross_section_run2[i] = event_generator.cross_section(
+            event_kin, max_info=True
+        ).prod
 
     # Standard deviation should be large for small precision
     assert np.std(cross_section_run1) > np.std(cross_section_run2)
