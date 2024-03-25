@@ -234,7 +234,11 @@ class SIBYLLRun(MCRun):
             nsig = self._lib.nucsig
             return CrossSectionData(
                 total=float(nsig.sigt),
-                prod=float(nsig.sigt - nsig.sigqe),
+                prod=(
+                    float(nsig.sigt - nsig.sigqe)
+                    if not np.isnan(nsig.sigqe)
+                    else float(nsig.siginel)
+                ),
                 quasielastic=float(nsig.sigqe),
                 inelastic=float(nsig.siginel),
                 diffractive_sum=float(nsig.sigqsd),

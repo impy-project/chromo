@@ -17,7 +17,7 @@ def run_model(Model, kin, number=1):
     except ValueError:
         return None
 
-    return gen.cross_section()
+    return (gen.cross_section(), gen._inel_or_prod_cross_section)
 
 
 @pytest.mark.parametrize("target", ("p", "air"))
@@ -31,19 +31,21 @@ def test_generator(projectile, target, Model):
     if p2 == "air":
         if Model is im.Pythia8:
             pytest.skip("Simulating nuclei in Pythia8 is very time-consuming")
-
         # cannot use Argon in SIBYLL, so make air from N, O only
         p2 = CompositeTarget((("N", 0.78), ("O", 0.22)))
 
     kin = CenterOfMass(100 * GeV, p1, p2)
 
-    cs = run_in_separate_process(run_model, Model, kin)
-    if cs is None:
+    ret = run_in_separate_process(run_model, Model, kin)
+    if ret is None:
         assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
         return
+    cs, private_prod = ret
     cstup = dataclasses.astuple(cs)
     assert np.any(cstup), "No valid cross sections returned"
     if p1 == "gamma":
         assert np.nansum(cstup) > 0.1, "Cross section too small" + str(cs)
     else:
         assert np.nansum(cstup) > 20, "Cross section too small" + str(cs)
+
+    assert private_prod is not None and private_prod > 0, "No private cross section set"

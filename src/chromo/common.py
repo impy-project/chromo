@@ -158,6 +158,9 @@ class EventData:
         Impact parameter for nuclear collisions in mm.
     n_wounded: (int, int)
         Number of wounded nucleons on sides A and B.
+    production_cross_section: float
+        Production cross section in mb; inelastic for photon-/hadron-hadron
+        and production cross section for hadron-/nucleus-nucleus collisions.
     pid: 1D array of int
         PDG IDs of the particles.
     status: 1D array of int
@@ -747,12 +750,9 @@ class MCRun(ABC):
     def random_state(self, rng_state):
         self._rng.__setstate__(rng_state)
 
-    @property
-    def kinematics(self):
-        return self._kinematics
+    def _check_kinematics(self, kin):
+        """Check if kinematics are allowed for this generator."""
 
-    @kinematics.setter
-    def kinematics(self, kin):
         if abs(kin.p1) not in self._projectiles:
             raise ValueError(
                 f"projectile {pdg2name(kin.p1)}[{int(kin.p1)}] is not allowed, "
@@ -768,6 +768,14 @@ class MCRun(ABC):
                 f"center-of-mass energy {kin.ecm/GeV} GeV < "
                 f"minimum energy {self._ecm_min/GeV} GeV"
             )
+
+    @property
+    def kinematics(self):
+        return self._kinematics
+
+    @kinematics.setter
+    def kinematics(self, kin):
+        self._check_kinematics(kin)
         self._kinematics = kin
         self._set_kinematics(kin)
 

@@ -104,8 +104,8 @@ class QGSJet1Run(QGSJetRun):
             np.log(qgsgrid), np.log(cross_section), ext="extrapolate", s=0, k=1
         )
 
-        inel = np.exp(spl(np.log(kin.elab)))
-        return CrossSectionData(inelastic=inel)
+        prod = np.exp(spl(np.log(kin.elab)))
+        return CrossSectionData(prod=prod)
 
     def _cross_section(self, kin=None, max_info=False):
         """
@@ -216,19 +216,13 @@ class QGSJet2Run(QGSJetRun):
         }.get(
             abs(kin.p1), 2
         )  # 2 is correct for nuclei
-        inel = self._lib.qgsect(
+        prod = self._lib.qgsect(
             kin.elab,
             projectile_id,
             kin.p1.A or 1,
             kin.p2.A,
         )
-        inel = self._lib.qgsect(
-            kin.elab,
-            projectile_id,
-            kin.p1.A or 1,
-            kin.p2.A,
-        )
-        return CrossSectionData(inelastic=inel)
+        return CrossSectionData(prod=prod)
 
     def _cross_section(self, kin=None, max_info=False):
         """

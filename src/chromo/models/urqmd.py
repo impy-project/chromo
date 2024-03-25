@@ -125,6 +125,7 @@ class UrQMD34(MCRun):
     _frame = EventFrame.FIXED_TARGET
     _unstable_pids = _urqmd_unstable_pids
     _projectiles = standard_projectiles | Nuclei()
+    _targets = Nuclei()
     _ecm_min = 2 * GeV
 
     def __init__(
