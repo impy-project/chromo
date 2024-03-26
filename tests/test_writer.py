@@ -25,6 +25,7 @@ def make_event(n):
         1,
         1.0,
         (2, 3),
+        100.0,
         pid,
         status,
         1.1 + status,

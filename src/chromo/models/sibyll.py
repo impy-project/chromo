@@ -201,7 +201,7 @@ class SIBYLLRun(MCRun):
 
         super()._set_final_state_particles()
 
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin=None, max_info=False):
         kin = self.kinematics if kin is None else kin
         if kin.p1.A is not None and kin.p1.A > 1:
             warnings.warn(
@@ -234,7 +234,11 @@ class SIBYLLRun(MCRun):
             nsig = self._lib.nucsig
             return CrossSectionData(
                 total=float(nsig.sigt),
-                prod=float(nsig.sigt - nsig.sigqe),
+                prod=(
+                    float(nsig.sigt - nsig.sigqe)
+                    if not np.isnan(nsig.sigqe)
+                    else float(nsig.siginel)
+                ),
                 quasielastic=float(nsig.sigqe),
                 inelastic=float(nsig.siginel),
                 diffractive_sum=float(nsig.sigqsd),

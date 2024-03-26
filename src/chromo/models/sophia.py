@@ -125,7 +125,7 @@ class Sophia20(MCRun):
         self.kinematics = kinematics
         self._set_final_state_particles()
 
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin=None, max_info=False):
         # code=3 for inelastic cross-section
         # TODO fill more cross-sections
         inel = (
