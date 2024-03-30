@@ -22,6 +22,7 @@ class PYTHIA8Event(EventData):
             generator.nevents,
             self._get_impact_parameter(pythia),
             self._get_n_wounded(pythia),
+            generator._inel_or_prod_cross_section,
             event.pid(),
             event.status(),
             pythia.charge(),
@@ -196,7 +197,7 @@ class Pythia8(MCRun):
             self.kinematics = evt_kin
         self._set_final_state_particles()
 
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin=None, max_info=False):
         st = self._pythia.info.sigmaTot
         return CrossSectionData(
             total=st.sigmaTot,

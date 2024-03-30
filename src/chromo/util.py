@@ -700,7 +700,7 @@ def get_all_models(skip=None):
     return result
 
 
-def naneq(a, b):
+def naneq(a, b, rtol=None):
     """
     Return True if a == b or if a and b are both NaN.
 
@@ -711,6 +711,8 @@ def naneq(a, b):
     b : float
         Second float.
     """
+    if rtol is not None:
+        return np.isclose(a, b, rtol=rtol) or (np.isnan(a) and np.isnan(b))
     return a == b or (np.isnan(a) and np.isnan(b))
 
 

@@ -1,12 +1,13 @@
-from chromo.writer import Root
-from chromo.common import CrossSectionData, EventData
-from chromo.kinematics import EventKinematics, CompositeTarget
 import numpy as np
 import uproot
 from numpy.testing import assert_equal, assert_allclose
 import yaml
 from pathlib import Path
 import pytest
+
+from chromo.writer import Root
+from chromo.common import CrossSectionData, EventData
+from chromo.kinematics import EventKinematicsWithRestframe, CompositeTarget
 
 
 def make_event(n):
@@ -20,10 +21,11 @@ def make_event(n):
     mothers[:, 1] = 0
     return EventData(
         ("foo", "1.0"),
-        EventKinematics("p", "He", beam=(-3, 4)),
+        EventKinematicsWithRestframe("p", "He", beam=(-3, 4)),
         1,
         1.0,
         (2, 3),
+        100.0,
         pid,
         status,
         1.1 + status,
@@ -47,9 +49,9 @@ def make_event(n):
 def test_Root(write_vertices, overflow, target):
     if target == "air":
         air = CompositeTarget([("N", 0.75), ("O", 0.25)])
-        kin = EventKinematics("p", air, plab=5)
+        kin = EventKinematicsWithRestframe("p", air, plab=5)
     else:
-        kin = EventKinematics("p", target, beam=(-3, 4))
+        kin = EventKinematicsWithRestframe("p", target, beam=(-3, 4))
 
     class Model:
         label: str = "foo"

@@ -125,6 +125,7 @@ class UrQMD34(MCRun):
     _frame = EventFrame.FIXED_TARGET
     _unstable_pids = _urqmd_unstable_pids
     _projectiles = standard_projectiles | Nuclei()
+    _targets = Nuclei()
     _ecm_min = 2 * GeV
 
     def __init__(
@@ -243,7 +244,7 @@ class UrQMD34(MCRun):
 
         self._set_final_state_particles()
 
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin=None, max_info=False):
         tot = self._lib.ptsigtot()
         return CrossSectionData(total=tot)
 

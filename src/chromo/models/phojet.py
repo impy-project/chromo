@@ -1,6 +1,5 @@
 from chromo.common import MCRun, MCEvent, CrossSectionData
 from chromo.util import fortran_chars, _cached_data_dir
-from chromo.kinematics import EventFrame
 from chromo.constants import standard_projectiles
 from particle import literals as lp
 import warnings
@@ -94,9 +93,10 @@ class PHOJETRun(MCRun):
     _name = "PhoJet"
     _event_class = PhojetEvent
     _frame = None
-    _projectiles = standard_projectiles  # FIXME: should allow photons and hadrons
+    _projectiles = standard_projectiles
     _targets = {lp.proton.pdgid, lp.neutron.pdgid}
     _param_file_name = "dpmjpar.dat"
+    _pho_event_init_ran = False
     _data_url = (
         "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
@@ -170,15 +170,10 @@ class PHOJETRun(MCRun):
 
         self._set_final_state_particles()
 
+        # Initialize kinematics and tables (only once needed)
         self.kinematics = evt_kin
 
-        # Initialize kinematics and tables (only once needed)
-        if self._lib.pho_event(-1, self.p1, self.p2)[1]:
-            raise RuntimeError(
-                "initialization failed with the current event kinematics"
-            )
-
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin=None, max_info=False):
         kin = self.kinematics if kin is None else kin
         self._lib.pho_setpar(1, kin.p1, 0, 0.0)
         self._lib.pho_setpar(2, kin.p2, 0, 0.0)
@@ -200,6 +195,7 @@ class PHOJETRun(MCRun):
             ),
             diffractive_xx=float(self._lib.pocsec.sigldd + self._lib.pocsec.sighdd),
             diffractive_axb=float(self._lib.pocsec.sigcdf[0]),
+            b_elastic=float(self._lib.pocsec.sloel),
         )
 
     def _set_stable(self, pdgid, stable):
@@ -207,15 +203,16 @@ class PHOJETRun(MCRun):
         self._lib.pydat3.mdcy[kc - 1, 0] = not stable
 
     def _set_kinematics(self, k):
-        if k.frame == EventFrame.FIXED_TARGET:
-            self._lib.dtflg1.iframe = 1
-            self._frame = EventFrame.FIXED_TARGET
-        else:
-            self._lib.dtflg1.iframe = 2
-            self._frame = EventFrame.CENTER_OF_MASS
-        self._lib.pho_setpar(1, k.p1, 0, 0.0)
-        self._lib.pho_setpar(2, k.p2, 0, 0.0)
+        self._frame = k.frame
+        self._lib.pho_setpar(1, k.p1, 0, k.virt_p1)
+        self._lib.pho_setpar(2, k.p2, 0, k.virt_p2)
         self.p1, self.p2 = k.beams
+        if not self._pho_event_init_ran:
+            if self._lib.pho_event(-1, self.p1, self.p2)[1]:
+                raise RuntimeError(
+                    "initialization failed with the current event kinematics"
+                )
+            self._pho_event_init_ran = True
 
     def _generate(self):
         return not self._lib.pho_event(1, self.p1, self.p2)[1]
@@ -234,7 +231,8 @@ class Phojet112(PHOJETRun):
     _param_file_name = "fitpar.dat"
     _projectiles = {
         lp.photon.pdgid,
-        lp.proton.pdgid,
+        lp.p.pdgid,
+        lp.n.pdgid,
     }  # FIXME: should allow photons and hadrons
     _data_url = (
         "https://github.com/impy-project/chromo"
@@ -250,3 +248,5 @@ class Phojet191(PHOJETRun):
 class Phojet193(PHOJETRun):
     _version = "19.3"
     _library_name = "_phojet193"
+    _projectiles = standard_projectiles | {lp.photon.pdgid}
+    _targets = {lp.proton.pdgid, lp.neutron.pdgid, lp.photon.pdgid}

@@ -203,7 +203,7 @@ class EposLHC(MCRun):
         self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.float32])
         self.kinematics = evt_kin
 
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin=None, max_info=False):
         total, inel, el, dd, sd, _ = self._lib.xsection()
         return CrossSectionData(
             total=total,

@@ -7,6 +7,7 @@ import pyhepmc
 from contextlib import nullcontext
 from .util import run_in_separate_process
 from chromo.util import get_all_models
+from pytest import approx
 
 # generate list of all models in chromo.models
 models = get_all_models()
@@ -18,7 +19,8 @@ def run(Model):
     if Model == im.Sophia20:
         evt_kin = FixedTarget(100 * GeV, "photon", "proton")
     gen = Model(evt_kin, seed=1)
-    return list(gen(3))
+    inel_cs = gen.cross_section().inelastic
+    return list(gen(3)), inel_cs
 
 
 @pytest.mark.parametrize(
@@ -33,13 +35,15 @@ def test_hepmc_io(Model):
 
     test_file = Path(f"{Path(__file__).stem}_{Model.pyname}.dat")
 
-    events = run_in_separate_process(run, Model)
+    events, inel_cs = run_in_separate_process(run, Model)
     expected = []
     genevent = None
 
-    with pytest.warns(RuntimeWarning) if (
-        Model.name in ["DPMJET-III", "PhoJet"] or Model.pyname == "Pythia8"
-    ) else nullcontext():
+    with (
+        pytest.warns(RuntimeWarning)
+        if (Model.name in ["DPMJET-III", "PhoJet"] or Model.pyname == "Pythia8")
+        else nullcontext()
+    ):
         for ev in events:
             genevent = ev.to_hepmc3(genevent)
             expected.append(genevent)
@@ -61,6 +65,10 @@ def test_hepmc_io(Model):
 
     for ev1, ev2 in zip(expected, restored):
         assert ev1 == ev2
+        if Model.name.startswith("UrQMD"):
+            continue
+        assert ev1.cross_section.xsec() / 1e9 == approx(inel_cs)
+        assert ev2.cross_section.xsec() / 1e9 == approx(inel_cs)
 
     # delete test_file if test is successful
     test_file.unlink()

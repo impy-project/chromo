@@ -185,7 +185,6 @@ def test_gp():
     assert len(evt) > 2
 
 
-@pytest.mark.xfail(reason="no rest frame for gamma-gamma")
 def test_gg():
     evt = run_collision(100 * GeV, "gamma", "gamma")
     assert len(evt) > 2

@@ -20,6 +20,7 @@ def evt():
         CenterOfMass(10, "p", "p"),
         1,
         0.5,
+        1.0,
         (1, 1),
         i,
         i,
@@ -117,6 +118,7 @@ class DummyEvent(MCEvent):
             _lib=lib,
             name="foo",
             version="bar",
+            _inel_or_prod_cross_section=1.0,
             kinematics=CenterOfMass(10, "p", "p"),
             _frame=EventFrame.CENTER_OF_MASS,
             _restore_beam_and_history=False,
@@ -158,10 +160,15 @@ def test_models_beam(Model):
     elif Model.name in ["SIBYLL"]:
         evt_kin = CenterOfMass(100, "p", "O")
 
-    with pytest.warns(RuntimeWarning) if Model.name in [
-        "DPMJET-III",
-        "UrQMD",
-    ] else nullcontext():
+    with (
+        pytest.warns(RuntimeWarning)
+        if Model.name
+        in [
+            "DPMJET-III",
+            "UrQMD",
+        ]
+        else nullcontext()
+    ):
         generator = Model(evt_kin, seed=1)
         for event in generator(100):
             event.kin._beam_data = None

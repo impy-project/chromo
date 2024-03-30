@@ -7,10 +7,11 @@ The basic variables are sufficient to compute all derived attributes,
 such as the rapidity :func:`MCEvent.y` or the laboratory momentum fraction
 :func:`MCEvent.xlab`.
 """
+
 import copy
 import dataclasses
-import warnings
 import importlib
+import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import Optional, Tuple
@@ -26,7 +27,7 @@ from chromo.constants import (
     standard_projectiles,
 )
 from chromo.decay_handler import Pythia8DecayHandler
-from chromo.kinematics import CompositeTarget, EventKinematics
+from chromo.kinematics import CompositeTarget, EventKinematicsBase
 from chromo.util import (
     Nuclei,
     classproperty,
@@ -68,6 +69,8 @@ class CrossSectionData:
         Particle production cross section, defined as total minus elastic.
     quasielastic : float
         Total quasielastic cross section (includes elastic).
+    coherent: float
+        (elastic with respect to the projectile) cross section
     diffractive_xb : float
         Single diffractive cross section. Particle 2 remains intact,
         particles are produced around Particle 1.
@@ -82,6 +85,8 @@ class CrossSectionData:
         pomeron-pomeron interaction.)
     diffractive_sum : float
         Sum of diffractive cross sections.
+    b_elastic : float
+        Slope of elastic cross section in mb/GeV^2.
     """
 
     total: float = np.nan
@@ -89,11 +94,13 @@ class CrossSectionData:
     elastic: float = np.nan
     prod: float = np.nan
     quasielastic: float = np.nan
+    coherent: float = np.nan
     diffractive_xb: float = np.nan
     diffractive_ax: float = np.nan
     diffractive_xx: float = np.nan
     diffractive_axb: float = np.nan
     diffractive_sum: float = np.nan
+    b_elastic: float = np.nan
 
     @property
     def non_diffractive(self):
@@ -112,10 +119,10 @@ class CrossSectionData:
             )
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other, rtol=1e-3):
         at = dataclasses.astuple(self)
         bt = dataclasses.astuple(other)
-        return all(naneq(a, b) for (a, b) in zip(at, bt))
+        return all(naneq(a, b, rtol) for (a, b) in zip(at, bt))
 
     def __ne__(self, other):
         return not self == other
@@ -143,7 +150,7 @@ class EventData:
 
     generator: (str, str)
         Info about the generator, its name and version.
-    kin: EventKinematics
+    kin: EventKinematicsBase
         Info about initial state.
     nevent: int
         Which event in the sequence.
@@ -151,6 +158,9 @@ class EventData:
         Impact parameter for nuclear collisions in mm.
     n_wounded: (int, int)
         Number of wounded nucleons on sides A and B.
+    production_cross_section: float
+        Production cross section in mb; inelastic for photon-/hadron-hadron
+        and production cross section for hadron-/nucleus-nucleus collisions.
     pid: 1D array of int
         PDG IDs of the particles.
     status: 1D array of int
@@ -185,10 +195,11 @@ class EventData:
     """
 
     generator: Tuple[str, str]
-    kin: EventKinematics
+    kin: EventKinematicsBase
     nevent: int
     impact_parameter: float
     n_wounded: Tuple[int, int]
+    production_cross_section: float
     pid: np.ndarray
     status: np.ndarray
     charge: np.ndarray
@@ -243,6 +254,7 @@ class EventData:
             self.nevent,
             self.impact_parameter,
             self.n_wounded,
+            self.production_cross_section,
             self.pid.copy(),
             self.status.copy(),
             self.charge.copy(),
@@ -322,14 +334,14 @@ class EventData:
         # This selection is faster than __getitem__, because we skip
         # parent selection, which is just wasting time if we select only
         # final state particles.
-        pid = self.pid[arg]
         return EventData(
             self.generator,
             self.kin,
             self.nevent,
             self.impact_parameter,
             self.n_wounded,
-            pid,
+            self.production_cross_section,
+            self.pid[arg],
             self.status[arg],
             self.charge[arg],
             self.px[arg],
@@ -465,6 +477,11 @@ class EventData:
             vt=ev.vt,
             fortran=False,
         )
+        # Convert cross section from mb to pb
+        genevent.cross_section = pyhepmc.GenCrossSection()
+        genevent.cross_section.set_cross_section(
+            self.production_cross_section * 1e9, 0, -1, -1
+        )
 
         return genevent
 
@@ -530,6 +547,7 @@ class MCEvent(EventData, ABC):
             int(getattr(evt, self._nevhep)),
             self._get_impact_parameter(),
             self._get_n_wounded(),
+            generator._inel_or_prod_cross_section,
             getattr(evt, self._idhep)[sel],
             getattr(evt, self._isthep)[sel],
             self._charge_init(npart),
@@ -596,6 +614,8 @@ class MCRun(ABC):
     _projectiles = standard_projectiles
     _targets = Nuclei()
     _ecm_min = 10 * GeV  # default for many models
+    # Corresponds to current cross section in mb, updated when kinematics is set
+    _inel_or_prod_cross_section = None
     _restore_beam_and_history = True
     nevents = 0  # number of generated events so far
     _unstable_pids = set(all_unstable_pids)
@@ -730,12 +750,9 @@ class MCRun(ABC):
     def random_state(self, rng_state):
         self._rng.__setstate__(rng_state)
 
-    @property
-    def kinematics(self):
-        return self._kinematics
+    def _check_kinematics(self, kin):
+        """Check if kinematics are allowed for this generator."""
 
-    @kinematics.setter
-    def kinematics(self, kin):
         if abs(kin.p1) not in self._projectiles:
             raise ValueError(
                 f"projectile {pdg2name(kin.p1)}[{int(kin.p1)}] is not allowed, "
@@ -751,10 +768,23 @@ class MCRun(ABC):
                 f"center-of-mass energy {kin.ecm/GeV} GeV < "
                 f"minimum energy {self._ecm_min/GeV} GeV"
             )
+
+    @property
+    def kinematics(self):
+        return self._kinematics
+
+    @kinematics.setter
+    def kinematics(self, kin):
+        self._check_kinematics(kin)
         self._kinematics = kin
         self._set_kinematics(kin)
 
-    def cross_section(self, kin=None):
+        if (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1):
+            self._inel_or_prod_cross_section = self.cross_section().prod
+        else:
+            self._inel_or_prod_cross_section = self.cross_section().inelastic
+
+    def cross_section(self, kin=None, max_info=False):
         """Cross sections according to current setup.
 
         Parameters
@@ -762,6 +792,10 @@ class MCRun(ABC):
         kin : EventKinematics, optional
             If provided, calculate cross-section for EventKinematics.
             Otherwise return values for current setup.
+        max_info : bool, optional
+            Return full maximal information about interaction cross sections for
+            nucleus-nucleus case. Slow - uses Monte Carlo integration. Number of
+            trials is controled separately with `generator.n_trials` attribute.
         """
         with self._temporary_kinematics(kin):
             kin2 = self.kinematics
@@ -771,10 +805,12 @@ class MCRun(ABC):
                 for component, fraction in zip(kin2.p2.components, kin2.p2.fractions):
                     kin3.p2 = component
                     # this calls cross_section recursively, which is fine
-                    cross_section._mul_radd(fraction, self.cross_section(kin3))
+                    cross_section._mul_radd(
+                        fraction, self._cross_section(kin3, max_info=max_info)
+                    )
                 return cross_section
             else:
-                return self._cross_section(kin)
+                return self._cross_section(kin, max_info=max_info)
 
     @abstractmethod
     def _cross_section(self, kin):
