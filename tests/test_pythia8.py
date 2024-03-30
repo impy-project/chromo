@@ -236,3 +236,10 @@ def test_no_cache_file():
     m = Pythia8(evt_kin, seed=1, cache=None)
     config = "\n".join(m._config)
     assert "MultipartonInteractions:reuseInit = 3" not in config
+
+
+def test_cache_input_type():
+    evt_kin = CenterOfMass(100 * GeV, "p", "p")
+    # Expect to raise exception if cache is not a string
+    with pytest.raises(ValueError):
+        m = Pythia8(evt_kin, seed=1, cache=5)

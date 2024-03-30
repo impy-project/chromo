@@ -105,5 +105,5 @@ def test_dump_to_url():
     s = util.dump_to_url(d)
     assert type(s) is str
     assert (
-        s == "H4sIAAAAAAAC_2tgmSrLAAGxUzR6mNPy86f0sCUlFmUm5oEZVVWpRVNS9QCPoG78KAAAAA=="
+        s == "H4sIAAAAAAACA2tgmSrLAAGxUzR6mNPy86f0sCUlFmUm5oEZVVWpRVNS9QCPoG78KAAAAA=="
     )

@@ -169,7 +169,9 @@ class Pythia8(MCRun):
         ]
 
         if evt_kin is not None and cache:
-            cf = str(Path(cache) / dump_to_url([self.version] + self._config))
+            if not isinstance(cache, str) or isinstance(cache, Path):
+                raise ValueError("cache must be a string or a Path object.")
+            cf = str(Path(cache) / str(dump_to_url([self.version] + self._config)))
             # beware: exact suffix seems to matter!
             self._config += [
                 "MultipartonInteractions:reuseInit = 3",
