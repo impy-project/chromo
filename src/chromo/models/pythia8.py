@@ -7,7 +7,7 @@ from chromo.constants import standard_projectiles
 from particle import literals as lp
 import warnings
 from typing import Collection, List
-from pathlib import Path
+from pathlib import Path, PurePath
 
 
 class PYTHIA8Event(EventData):
@@ -83,21 +83,25 @@ class Pythia8(MCRun):
     _event_class = PYTHIA8Event
     _frame = EventFrame.CENTER_OF_MASS
     # Support for more nuclei can be added with ParticleData.addParticle.
-    _targets = standard_projectiles | {
-        name2pdg(x)
-        for x in (
-            "H2",
-            "He4",
-            "Li6",
-            "C12",
-            "O16",
-            "Cu63",
-            "Kr84",
-            "Xe129",
-            "Au197",
-            "Pb208",
-        )
-    }
+    _targets = (
+        standard_projectiles
+        | {
+            name2pdg(x)
+            for x in (
+                "H2",
+                "He4",
+                "Li6",
+                "C12",
+                "O16",
+                "Cu63",
+                "Kr84",
+                "Xe129",
+                "Au197",
+                "Pb208",
+            )
+        }
+        | {lp.photon.pdgid}
+    )
     _projectiles = _targets | {lp.photon.pdgid}
     _restartable = True
     _data_url = (
@@ -169,8 +173,10 @@ class Pythia8(MCRun):
         ]
 
         if evt_kin is not None and cache:
-            if not isinstance(cache, str) or isinstance(cache, Path):
-                raise ValueError("cache must be a string or a Path object.")
+            if not isinstance(cache, (str, PurePath)):
+                raise ValueError(
+                    f"cache must be a string or a Path object not {type(cache)}."
+                )
             cf = str(Path(cache) / str(dump_to_url([self.version] + self._config)))
             # beware: exact suffix seems to matter!
             self._config += [
