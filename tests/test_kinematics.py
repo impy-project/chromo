@@ -130,7 +130,7 @@ def test_kinematics_init_beam():
 
 def test_kinematics_init_elab():
     # Test initialization with elab argument
-    k = EventKinematicsWithRestframe("proton", "neutron", elab=15)
+    k = EventKinematicsWithRestframe("proton", "neutron", elab=15.0)
     assert k.frame == EventFrame.FIXED_TARGET
     k_ref = EventKinematicsWithRestframe(
         "proton", "neutron", ecm=k.ecm, frame=EventFrame.FIXED_TARGET
