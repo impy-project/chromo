@@ -69,6 +69,10 @@ def test_generator(Model):
                 lp.Sigma_minus.pdgid,
             ):
                 known_issues[i] = True
+    elif Model == im.EposLHC:
+        for i, pid in enumerate(long_lived_hadrons):
+            if pid == lp.Omega_plus_bar.pdgid:
+                known_issues[i] = True
 
     msg = f"{Model.pyname} zero counts for "
     msg += ", ".join(
