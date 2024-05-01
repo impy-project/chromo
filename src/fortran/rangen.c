@@ -1,6 +1,5 @@
 #include <numpy/random/bitgen.h>
 #include <stdint.h>
-#include <stdio.h>
 
 typedef struct {
     // The structure is defined the same as in 
