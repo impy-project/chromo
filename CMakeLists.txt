@@ -153,7 +153,7 @@ f2py_add_module(_eposlhc
   FUNCTIONS
   aaset ainit aepos alist afinal hepmcstore
   getcharge idtrafo initepos initeposevt
-  xsection rmmard ${chromo_functions}
+  xsection rmmard ranfgt ranfst ${chromo_functions}
   SOURCES
   ${eposlhc_sources}
   ${logging_source}
