@@ -10,7 +10,9 @@ import platform
 import os
 from particle import literals as lp
 
-long_lived_hadrons = [p for p in long_lived if abs(p) != 13]
+# remove omega- from the list of long-lived hadrons
+# because the probability is less than 1e3
+long_lived_hadrons = [p for p in long_lived if abs(p) not in [13, lp.Omega_minus.pdgid]]
 
 
 def run_model(Model, kin, number=1000):
@@ -50,19 +52,15 @@ def test_generator(Model):
     # Known issues:
     # SIBYLL-2.1 and UrQMD produce no Omega-
     # QGSJet family produce no Omega-, Xi0, Xi-, Sigma+, Sigma-
+
     known_issues = np.zeros_like(counts, dtype=bool)
     if Model == im.Sibyll21:
         for i, pid in enumerate(long_lived_hadrons):
             if abs(pid) == lp.Omega_minus.pdgid:
                 known_issues[i] = True
-    elif Model == im.UrQMD34:
-        for i, pid in enumerate(long_lived_hadrons):
-            if pid == lp.Omega_minus.pdgid:
-                known_issues[i] = True
     elif Model.pyname.startswith("QGSJet"):
         for i, pid in enumerate(long_lived_hadrons):
             if abs(pid) in (
-                lp.Omega_minus.pdgid,
                 lp.Xi_0.pdgid,
                 lp.Xi_minus.pdgid,
                 lp.Sigma_plus.pdgid,
@@ -76,7 +74,7 @@ def test_generator(Model):
 
     msg = f"{Model.pyname} zero counts for "
     msg += ", ".join(
-        pdg2name(pid)
+        f"{pdg2name(pid)}({pid})"
         for pid, n, ki in zip(long_lived_hadrons, counts, known_issues)
         if n == 0 and not ki
     )
