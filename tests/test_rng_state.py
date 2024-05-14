@@ -19,10 +19,12 @@ def run_rng_state(Model):
     generator = Model(evt_kin, seed=1)
 
     nevents = 10
+    # EposLHC needs more events to fail
+    if Model is im.EposLHC:
+        nevents = 50
 
     # Save a initial state to a variable:
     state_0 = deepcopy(generator.random_state)
-
     # Generate nevents events
     states = []
     for _ in generator(nevents):
@@ -42,7 +44,6 @@ def run_rng_state(Model):
 
     state_1a = generator.random_state
     state_1 = pickle.loads(pickled_state_1)
-
     # check that pickled state_1 and reproduced state_1a are equal
     assert state_1a == state_1
 
@@ -52,7 +53,7 @@ def test_rng_state(Model):
     if Model is im.Pythia8:
         pytest.skip("Pythia8 currently does not support rng_state serialization")
 
-    if Model in (im.UrQMD34, im.EposLHC):
+    if Model in (im.UrQMD34,):
         pytest.xfail(f"{Model.pyname} fails this test, needs investigation")
 
     run_in_separate_process(run_rng_state, Model)
