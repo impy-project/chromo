@@ -1,5 +1,5 @@
 import numpy as np
-from chromo.kinematics import EventFrame
+from chromo.kinematics import EventFrame, GeV
 from chromo.common import MCEvent, MCRun, CrossSectionData
 from chromo.util import (
     _cached_data_dir,
@@ -181,6 +181,7 @@ class EposLHC(MCRun):
         "https://github.com/impy-project/chromo"
         + "/releases/download/zipped_data_v1.0/epos_v001.zip"
     )
+    _ecm_min = 6 * GeV
 
     def __init__(self, evt_kin, *, seed=None):
         import chromo

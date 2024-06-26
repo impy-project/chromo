@@ -5,7 +5,7 @@ requires = [
     "wheel",
     "cmake",
     "numpy==1.26.2",
-    "charset_normalizer"
+    "charset_normalizer",
 ]
 #build-backend = "setuptools.build_meta"
 
@@ -19,10 +19,7 @@ ignore_missing_imports = true
 minversion = "6.0"
 addopts = "-q -ra --ff -n auto"
 testpaths = ["tests"]
-filterwarnings = [
-    "error::numpy.VisibleDeprecationWarning",
-    "error::DeprecationWarning",
-]
+filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
 
 [tool.cibuildwheel]
 # update skip when numpy wheels become available
