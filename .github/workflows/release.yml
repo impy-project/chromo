@@ -158,9 +158,8 @@ jobs:
 
       - uses: tlylt/install-graphviz@v1
 
-      - run: python -m pip install --upgrade pip wheel
-      - run: python -m pip install numpy packaging
-      - run: python setup.py sdist
+      - run: python -m pip install --upgrade pip wheel setuptools
+      - run: pipx run build --sdist
       - run: python -m pip install --prefer-binary -v `echo dist/chromo-*`[test]
       - run: python -m pytest -v
 
