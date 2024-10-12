@@ -1,5 +1,5 @@
 from chromo.kinematics import CenterOfMass
-from chromo.models import DpmjetIII191, DpmjetIII193
+from chromo.models import DpmjetIII191, DpmjetIII193, EposLHC
 from chromo.constants import GeV
 import numpy as np
 from numpy.testing import assert_allclose
@@ -12,7 +12,7 @@ from particle import literals as lp
 from functools import lru_cache
 
 
-def run_pp_collision():
+def run_pp_collision(model):
     evt_kin = CenterOfMass(10 * GeV, "proton", "proton")
     m = model(evt_kin, seed=4)
     m.set_stable(lp.pi_0.pdgid, True)
