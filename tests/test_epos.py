@@ -143,12 +143,12 @@ def test_rmmard():
     from chromo.models import _eposlhc
 
     rng = np.random.default_rng(1)
-    state = rng.__getstate__()
+    state = rng.bit_generator.state
     _eposlhc.npy.bitgen = rng.bit_generator.ctypes.bit_generator.value
     a = np.zeros(3)
     _eposlhc.rmmard(a, 3, 0)
     assert np.all(a != 0)
-    rng.__setstate__(state)
+    rng.bit_generator.state = state
     b = np.zeros(3)
     _eposlhc.rmmard(b, 3, 0)
     assert_equal(a, b)

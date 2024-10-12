@@ -73,6 +73,10 @@ def get_models():
     if platform.system() == "Windows":
         if "urqmd34" in models:
             del models["urqmd34"]
+        if "eposlhc" in models:
+            # This seems to be due to a new bug in numpy 2 on windows
+            # resulting in erroneous signature files
+            del models["eposlhc"]
         if "pythia8" in models:
             del models["pythia8"]
 
