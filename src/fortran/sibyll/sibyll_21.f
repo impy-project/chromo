@@ -2919,6 +2919,9 @@ C                  SIGDIF     diffraction dissociation CS (mb)
 C                  SLOPE      elastic slope parameter (GeV^-2)
 C                  RHO        real/imaginary part of forward amplitude
 C-----------------------------------------------------------------------
+Cf2py intent(in) :: L
+Cf2py intent(in) :: SQS
+Cf2py intent(out) :: SIGT,SIGEL,SIGINEL,SIGDIF, SLOPE,RHO
 
       DIMENSION SIGDIF(3)
 
@@ -2927,7 +2930,6 @@ C-----------------------------------------------------------------------
      &    SSIGN(61,3), ALINT(61,3), ASQSMIN, ASQSMAX, DASQS, NSQS
       COMMON /S_CCSIG2/ SSIG_TOT(61,3),SSIG_SD1(61,3),SSIG_SD2(61,3),
      &    SSIG_DD(61,3),SSIG_B(61,3),SSIG_RHO(61,3)
-Cf2py intent(out) SIGT,SIGEL,SIGINEL,SIGDIF,SLOPE,RHO
       SAVE
 
       IF(NSQS.LE.0) THEN
@@ -7235,7 +7237,7 @@ C.           SIGQEL  = Elastic + Quasi elastic cross section
 C.
 C. Internally  everything is computed in GeV (length = GeV**-1)
 C......................................................................
-
+Cf2py intent(out) SIGT,SIGEL,SIGQEL
       COMMON /CA0SH/ R0, R02
       COMPLEX  ZZ, ZS, ZP, ZC
       DIMENSION RR(18) 

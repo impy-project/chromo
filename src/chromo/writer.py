@@ -17,12 +17,10 @@ def _raise_import_error(name, task):
 
 class Writer(ABC):
     @abstractmethod
-    def __init__(self, file, model, **kwargs):
-        ...
+    def __init__(self, file, model, **kwargs): ...
 
     @abstractmethod
-    def write(self, event):
-        ...
+    def write(self, event): ...
 
     # override as needed
     def __enter__(self):
@@ -203,7 +201,7 @@ class Root(Writer):
         self._lengths.append(b - a)
         for key, val in self._particle_buffers.items():
             if key == "parent":
-                val[a:b] = event.parents[:, 0] - 1
+                val[a:b] = event.mothers[:, 0]
             elif key == "pdgid":
                 val[a:b] = event.pid
             else:

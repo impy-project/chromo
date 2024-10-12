@@ -3,16 +3,18 @@
 import warnings
 import inspect
 import platform
-from pathlib import Path
-import urllib.request
+import dataclasses
+import copy
+import math
 import zipfile
 import shutil
-import numpy as np
-from typing import Sequence, Set, Tuple, Collection, Union
-from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
-from chromo.constants import MeV, nucleon_mass
+from pathlib import Path
 from enum import Enum
-import dataclasses
+from typing import Sequence, Set, Tuple, Collection, Union
+import urllib.request
+import numpy as np
+from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
+from chromo.constants import MeV, nucleon_mass, sec2cm
 
 EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
 
@@ -57,6 +59,21 @@ class CompositeTarget:
         self.fractions = fractions / np.sum(fractions)
         self.fractions.flags["WRITEABLE"] = False
 
+    def copy(self):
+        new_target = CompositeTarget([("N", 1)])
+        for field in dataclasses.fields(CompositeTarget):
+            setattr(new_target, field.name, copy.copy(getattr(self, field.name)))
+        return new_target
+
+    def __eq__(self, other):
+        if not isinstance(other, CompositeTarget):
+            return False
+        return (
+            (self.label == other.label)
+            & (self.components == other.components)
+            & (np.allclose(self.fractions, other.fractions))
+        )
+
     @property
     def Z(self):
         """Return maximum charge number."""
@@ -95,7 +112,7 @@ class CompositeTarget:
 
     def __repr__(self):
         components = [
-            (pdg2name(c), amount)
+            (pdg2name(c), float(amount))
             for (c, amount) in zip(self.components, self.fractions)
         ]
         args = f"{components}"
@@ -120,7 +137,18 @@ def is_real_nucleus(pdgid: Union[int, PDGID, CompositeTarget]) -> bool:
 
 
 def energy2momentum(E, m):
-    # numerically more stable way to compute E^2 - m^2
+    """
+    Compute the momentum of a particle given its energy and mass.
+
+    Numerically more stable way to compute E^2 - m^2.
+
+    Args:
+        E (float): The energy of the particle.
+        m (float): The mass of the particle.
+
+    Returns:
+        float: The momentum of the particle.
+    """
     return np.sqrt((E + m) * (E - m))
 
 
@@ -143,10 +171,34 @@ def elab2ecm(elab, m1, m2):
 
 
 def ecm2elab(ecm, m1, m2):
+    """
+    Calculates the center-of-mass energy (ECM) in the lab frame given
+    the masses of two particles (m1, m2).
+
+    Args:
+        ecm (float): The center-of-mass energy.
+        m1 (float): The mass of particle 1.
+        m2 (float): The mass of particle 2.
+
+    Returns:
+        float: The center-of-mass energy in the lab frame.
+    """
     return 0.5 * (ecm**2 - m1**2 - m2**2) / m2
 
 
 def mass(pdgid):
+    """
+    Returns the mass of a particle with the given PDG ID in MeV/c^2.
+
+    Args:
+        pdgid (int): The PDG ID of the particle.
+
+    Returns:
+        float: The mass of the particle in MeV/c^2.
+
+    Raises:
+        ValueError: If the mass cannot be determined for the given PDG ID.
+    """
     m = Particle.from_pdgid(pdgid).mass
     if m is None:
         a = pdg2AZ(pdgid)[0]
@@ -192,10 +244,29 @@ _name2pdg_db = _make_name2pdg_db()
 
 
 def name2pdg(name: str):
+    """
+    Given a particle name, returns the corresponding PDG code.
+
+    Args:
+        name (str): The name of the particle.
+
+    Returns:
+        int: The PDG code of the particle.
+    """
     return _name2pdg_db[name]
 
 
 def pdg2name(pdgid):
+    """
+    Given a particle's PDG ID, returns its name.
+
+    Args:
+        pdgid (int): The particle's PDG ID.
+
+    Returns:
+        str: The particle's name, or "Unknown" or "Invalid" if the
+        PDG ID is not recognized.
+    """
     try:
         return Particle.from_pdgid(pdgid).name
     except ParticleNotFound:
@@ -205,6 +276,15 @@ def pdg2name(pdgid):
 
 
 def is_AZ(arg):
+    """
+    Check if the input is a tuple of mass and charge number.
+
+    Args:
+        arg : The input to check.
+
+    Returns:
+        bool: True if the input is a sequence of two integers, False otherwise.
+    """
     if not isinstance(arg, Sequence):
         return False
     if len(arg) != 2:
@@ -249,6 +329,19 @@ def AZ2pdg(A, Z):
 
 
 def process_particle(x):
+    """
+    Process a particle specification and return a PDGID object.
+
+    Args:
+        x: A particle specification. Can be an integer, string,
+        PDGID object, or CompositeTarget object.
+
+    Returns:
+        A PDGID object representing the particle.
+
+    Raises:
+        ValueError: If the particle specification is not recognized.
+    """
     if isinstance(x, (PDGID, CompositeTarget)):
         return x
     if isinstance(x, int):
@@ -266,14 +359,9 @@ def process_particle(x):
 def fortran_chars(array_ref, char_seq):
     """Helper to set fortran character arrays with python strings"""
     info(10, "Setting fortran array with", char_seq)
-    # Reset
-    import numpy as np
-
     len_arr = int(str(array_ref.dtype)[2:])
     len_seq = len(char_seq)
-    return np.array(
-        [c for c in char_seq + (len_arr - len_seq) * " "], dtype="S" + str(len_arr)
-    )
+    return char_seq + (len_arr - len_seq) * " "
 
 
 def caller_name(skip=2):
@@ -368,8 +456,8 @@ def _download_file(outfile, url):
         DownloadColumn(),
         TimeRemainingColumn(),
         transient=True,
-    ) as bar:
-        task_id = bar.add_task(f"Downloading {fname}", total=total_size)
+    ) as probar:
+        task_id = probar.add_task(f"Downloading {fname}", total=total_size)
 
         with open(outfile, "wb") as f:
             chunk = True
@@ -378,7 +466,7 @@ def _download_file(outfile, url):
                 f.write(chunk)
                 nchunk = len(chunk)
                 wrote += nchunk
-                bar.advance(task_id, nchunk)
+                probar.advance(task_id, nchunk)
 
     if total_size and wrote != total_size:
         raise ConnectionError(f"{fname} has not been downloaded")
@@ -415,8 +503,8 @@ def _cached_data_dir(url):
 
         version_glob = vname.split("_v")[0]
         for vfile in model_dir.glob(f"{version_glob}_v*"):
-            vfile.unlink
-        with open(version_file, "w") as vf:
+            vfile.unlink()
+        with open(version_file, "w", encoding="utf-8") as vf:
             vf.write(url)
     return str(model_dir) + "/"
 
@@ -499,25 +587,25 @@ class classproperty:
         return self.f(owner)
 
 
-def _select_parents(mask, parents):
+def _select_mothers(mask, mothers):
     # This algorithm is slow in pure Python and should be
     # speed up by compiling the logic.
 
     # attach parentless particles to beam particles,
     # unless those are also removed
-    fallback = (0, 0)
+    fallback = (-1, -1)
     if mask[0] and mask[1]:
-        fallback = (1, 2)
+        fallback = (0, 1)
 
-    n = len(parents)
-    indices = np.arange(n)[mask] + 1
-    result = parents[mask]
-    mapping = {old: i + 1 for i, old in enumerate(indices)}
+    n = len(mothers)
+    indices = np.arange(n)[mask]
+    result = mothers[mask]
+    mapping = {old: i for i, old in enumerate(indices)}
 
     n = len(result)
     for i in range(n):
         a = result[i, 0]
-        if a == 0:
+        if a == -1:
             continue
         p = mapping.get(a, -1)
         if p == -1:
@@ -525,20 +613,20 @@ def _select_parents(mask, parents):
             result[i, 0] = a
             result[i, 1] = b
         elif p != a:
-            q = 0
+            q = -1
             b = result[i, 1]
-            if b > 0:
-                q = mapping.get(b, 0)
+            if b > -1:
+                q = mapping.get(b, -1)
             result[i, 0] = p
             result[i, 1] = q
     return result
 
 
-def select_parents(arg, parents):
-    if parents is None:
+def select_mothers(arg, mothers):
+    if mothers is None:
         return None
 
-    n = len(parents)
+    n = len(mothers)
 
     if isinstance(arg, np.ndarray) and arg.dtype is bool:
         mask = arg
@@ -549,14 +637,14 @@ def select_parents(arg, parents):
     with warnings.catch_warnings():
         # suppress numba safety warning that we can ignore
         warnings.simplefilter("ignore")
-        return _select_parents(mask, parents)
+        return _select_mothers(mask, mothers)
 
 
 try:
     # accelerate with numba if numba is available
     import numba as nb
 
-    _select_parents = nb.njit(_select_parents)
+    _select_mothers = nb.njit(_select_mothers)
 
 except ModuleNotFoundError:
     pass
@@ -603,7 +691,7 @@ def get_all_models(skip=None):
     return result
 
 
-def naneq(a, b):
+def naneq(a, b, rtol=None):
     """
     Return True if a == b or if a and b are both NaN.
 
@@ -614,6 +702,8 @@ def naneq(a, b):
     b : float
         Second float.
     """
+    if rtol is not None:
+        return np.isclose(a, b, rtol=rtol) or (np.isnan(a) and np.isnan(b))
     return a == b or (np.isnan(a) and np.isnan(b))
 
 
@@ -687,3 +777,37 @@ class Nuclei:
 
     def __ror__(self, other: Set[PDGID]):
         return self.__or__(other)
+
+
+def unique_sorted_pids(ids):
+    """np.arrays of unique ids sorted by abs value
+    with negative value first, e.g.
+    -11, 11, -12, 12, ...
+    """
+    uids = np.unique(np.fromiter(ids, dtype=np.int64))
+    return uids[np.argsort(2 * np.abs(uids) - (uids < 0))]
+
+
+def select_long_lived(tau=0, mm=False):
+    """
+    Returns unstable particles that are stable
+    for `tau` sec (or mm if mm=True).
+    By default returns all unstable particles excluding nuclei.
+    """
+    if not mm:
+        tau = tau * sec2cm * 1e1  # in mm
+
+    long_lived = []
+    for p in Particle.findall():
+        pid = int(p.pdgid)
+        ctau = p.ctau
+        if (
+            (ctau is not None)
+            and (not math.isinf(ctau))
+            and (not math.isnan(ctau))
+            and (abs(pid) < 1000000000)  # exclude nuclei
+            and (ctau > tau)
+        ):
+            long_lived.append(pid)
+
+    return long_lived

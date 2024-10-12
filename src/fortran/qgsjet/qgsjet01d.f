@@ -1105,7 +1105,7 @@ c Target proton
             WPI=WP0  !so00
             WMI=WM0  !so00
             LQ=0  !so00
-            CALL XXDPR(WPI,WMI,ICP0,ICT,LQ)  !so00
+            CALL XXDPR(WPI,WMI,ICP0,ICT,LQ)
             goto 21   !so00
           ENDIF
 **************************************************
@@ -1151,7 +1151,7 @@ c-------------------------------------------------
 c The beginning
 5       CONTINUE
 **************************************************
-        IF(IA(2).NE.1)THEN  !changed!!!!!!!!! dh 8/10/98
+        IF(IA(2).NE.1)THEN  
 c For target nucleus number of target nucleons being in their active
 c diffractive state is simulated (for each nucleon probability equals
 c 1./C_n,  - shower enhancenment coefficient)
@@ -1164,16 +1164,16 @@ c In case of no active target nucleon the event is rejected
 203     FORMAT(2X,'PSCONF: NUMBER OF ACTIVE TARGET NUCLEONS NT=',
      *  I2)
 c PSGEA(NT,XB,2) - target nucleons positions simulation:
-cdh       CALL PSGEA(NT,XB,2)  !changed!!!!!!!!!
-          CALL PSGEA(IA(2),XB,2)  !changed!!!!!!!!! 25.03.99
+cdh       CALL PSGEA(NT,XB,2)  
+          CALL PSGEA(IA(2),XB,2) 
 c NT - number of target nucleons being in their active diffractive state;
 c XB(i,n) - n-th nucleon coordinates (i=1,2,3 corresponds to x,y,z);
 c parameter 2 means target
-        ELSE                   !changed!!!!!!!!! dh 8/10/98
-          NT=1                 !changed!!!!!!!!! dh 8/10/98
-          XB(1,1)=0.D0         !changed!!!!!!!!! dh 8/10/98
-          XB(1,2)=0.D0         !changed!!!!!!!!! dh 8/10/98
-        ENDIF                  !changed!!!!!!!!! dh 8/10/98
+        ELSE                   
+          NT=1                 
+          XB(1,1)=0.D0         
+          XB(1,2)=0.D0         
+        ENDIF                  
 **************************************************
 
 c-------------------------------------------------
@@ -6465,6 +6465,8 @@ c-----------------------------------------------------------------------
         COMMON /AREA43/ MONIOU
         COMMON /DEBUG/  DEBUG
         SAVE
+Cf2py   intent(in) :: B
+Cf2py   intent(out) :: GZ
 
         IF(DEBUG.GE.2)WRITE (MONIOU,201)
 201     FORMAT(2X,'XXFZ - HADRONIC CROSS-SECTIONS CALCULATION')
@@ -7372,7 +7374,8 @@ cdh  *WPROD(8),B0(8),XA(64,3),XB(64,3),AI(8)
       COMMON /AR9/    X9(3),A9(3)
       SAVE
       EXTERNAL PSRAN
-
+Cf2py intent(in) NITER
+Cf2py intent(out) GTOT,GPROD,GABS,GDD,GQEL,GCOH
       E1=EXP(-1.D0)
 
 cdh   DO I=1,3

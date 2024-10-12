@@ -1,12 +1,16 @@
 [build-system]
 requires = [
+    "packaging",
     "setuptools",
     "wheel",
     "cmake",
-    "ninja",
-    "numpy<1.24",
+    "numpy",
+    "charset_normalizer",
 ]
 #build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 88
 
 [tool.mypy]
 ignore_missing_imports = true
@@ -15,10 +19,7 @@ ignore_missing_imports = true
 minversion = "6.0"
 addopts = "-q -ra --ff -n auto"
 testpaths = ["tests"]
-filterwarnings = [
-    "error::numpy.VisibleDeprecationWarning",
-    "error::DeprecationWarning",
-]
+filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
 
 [tool.cibuildwheel]
 # update skip when numpy wheels become available
@@ -34,7 +35,7 @@ build-verbosity = 3
 
 [tool.cibuildwheel.environment]
 # this makes sure that we build only on platforms that have a corresponding numpy wheel
-PIP_ONLY_BINARY = ":all:"
+PIP_ONLY_BINARY = "numpy"
 
 [[tool.cibuildwheel.overrides]]
 # to match numpy, we use manylinux2010 for cp36 to cp39

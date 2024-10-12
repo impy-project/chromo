@@ -1,7 +1,8 @@
 from chromo.constants import GeV
 from chromo.kinematics import (
     CenterOfMass,
-    EventKinematics,
+    EventKinematicsMassless,
+    EventKinematicsWithRestframe,
     FixedTarget,
     TotalEnergy,
     EventFrame,
@@ -162,14 +163,18 @@ def test_generator(projectile, target, frame, Model):
     elif frame == "ft":
         kin = FixedTarget(TotalEnergy(100 * GeV), p1, p2)
     elif frame == "cms2ft":
-        kin = EventKinematics(p1, p2, ecm=100 * GeV, frame=EventFrame.FIXED_TARGET)
+        kin = EventKinematicsWithRestframe(
+            p1, p2, ecm=100 * GeV, frame=EventFrame.FIXED_TARGET
+        )
     elif frame == "ft2cms":
-        kin = EventKinematics(p1, p2, elab=100 * GeV, frame=EventFrame.CENTER_OF_MASS)
+        kin = EventKinematicsWithRestframe(
+            p1, p2, elab=100 * GeV, frame=EventFrame.CENTER_OF_MASS
+        )
     else:
         assert False  # we should never arrive here
 
     if Model is im.UrQMD34 and frame == "cms2ft" and p2 == "p":
-        pytest.skip(reason="location of proton delta peak depends on machine")
+        pytest.skip("location of proton delta peak depends on machine")
 
     h = run_in_separate_process(run_model, Model, kin)
     if h is None:
@@ -177,6 +182,69 @@ def test_generator(projectile, target, frame, Model):
         return
 
     fn = Path(f"{Model.pyname}_{projectile}_{target}_{frame}")
+    path_ref = REFERENCE_PATH / fn.with_suffix(".pkl.gz")
+
+    reference_generated = False
+    if not path_ref.exists():
+        reference_generated = True
+        # New reference is generated. Check plots to see whether reference makes
+        # any sense before committing it.
+        ref_values = run_in_separate_process(run_model, Model, kin, 50, timeout=10000)
+        val_ref = np.reshape(np.mean(ref_values, axis=0), -1)
+        cov_ref = np.cov(np.transpose([np.reshape(x, -1) for x in ref_values]))
+        with gzip.open(path_ref, "wb") as f:
+            pickle.dump((val_ref, cov_ref), f)
+
+    with gzip.open(path_ref) as f:
+        val_ref, cov_ref = pickle.load(f)
+
+    # histogram sometimes contains extreme spikes
+    # not reflected in cov, this murky formula
+    # protects against these false negatives
+    values = np.reshape(h.values(), -1)
+    for i, v in enumerate(values):
+        cov_ref[i, i] = 0.5 * (cov_ref[i, i] + v)
+
+    p_value = compute_p_value(values, val_ref, cov_ref)
+
+    threshold = 1e-6
+
+    if reference_generated or not (p_value >= threshold) or chromo.debug_level > 0:
+        draw_comparison(fn, p_value, h.axes, values, val_ref, cov_ref)
+
+    if reference_generated:
+        pytest.xfail(reason="generated new reference, please check it")
+
+    assert p_value >= threshold
+
+
+@pytest.mark.skipif(
+    "CI" in os.environ and platform.system() == "Windows",
+    reason="skip to speed up CI on Windows",
+)
+@pytest.mark.parametrize("frame", ("cms", "generic"))
+@pytest.mark.parametrize(
+    "Model", (im.Pythia8, im.Phojet112, im.Phojet191, im.Phojet193)
+)
+def test_generator_gg(frame, Model):
+    p1 = "gamma"
+    p2 = "gamma"
+
+    if frame == "cms":
+        kin = CenterOfMass(100 * GeV, p1, p2)
+    elif frame == "generic":
+        kin = EventKinematicsMassless(
+            p1, p2, beam=(80, -20), frame=EventFrame.CENTER_OF_MASS
+        )
+    else:
+        assert False  # we should never arrive here
+
+    h = run_in_separate_process(run_model, Model, kin)
+    if h is None:
+        assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
+        return
+
+    fn = Path(f"{Model.pyname}_{p1}_{p2}_{frame}")
     path_ref = REFERENCE_PATH / fn.with_suffix(".pkl.gz")
 
     reference_generated = False

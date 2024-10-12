@@ -12,6 +12,45 @@ c-----------------------------------------------------------------------
       end
 
 c=======================================================================
+      subroutine ranfgt(seed)
+c-----------------------------------------------------------------------
+c     used by EPOS
+c     Stash the state of the random number generator
+c     interface to C code
+c-----------------------------------------------------------------------           
+      implicit none
+      external npynxt_get_state
+      integer*8 bitgen
+      integer*8 state_arr(4)
+      double precision seed
+      common /npy/ bitgen
+      common /npystash/ state_arr
+c     seed is dummy for compiler
+      seed = 0       
+      call npynxt_get_state(state_arr, bitgen)   
+      end
+
+
+c=======================================================================
+      subroutine ranfst(seed)
+c-----------------------------------------------------------------------
+c     used by EPOS
+c     Restore the state of the random number generator from stash
+c     interface to C code
+c-----------------------------------------------------------------------           
+      implicit none
+      external npynxt_set_state
+      integer*8 bitgen
+      integer*8 state_arr(4)
+      double precision seed
+      common /npy/ bitgen
+      common /npystash/ state_arr
+c     seed is dummy for compiler     
+      seed = 0     
+      call npynxt_set_state(state_arr, bitgen)  
+      end         
+
+c=======================================================================
       function rangen()
 c-----------------------------------------------------------------------
 c  used by EPOS

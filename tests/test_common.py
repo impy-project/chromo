@@ -1,11 +1,13 @@
 from chromo.common import CrossSectionData, EventData, MCEvent
-from chromo.kinematics import CenterOfMass
+from chromo.kinematics import CenterOfMass, EventFrame
 import numpy as np
 import dataclasses
 import pickle
 from types import SimpleNamespace
 import pytest
+from contextlib import nullcontext
 from numpy.testing import assert_equal
+from chromo.util import get_all_models
 
 
 @pytest.fixture
@@ -18,6 +20,7 @@ def evt():
         CenterOfMass(10, "p", "p"),
         1,
         0.5,
+        1.0,
         (1, 1),
         i,
         i,
@@ -61,6 +64,31 @@ def test_cross_section_eq():
     assert cx1 != cx2
 
 
+def test_non_diffractive():
+    csd = CrossSectionData(inelastic=10.0, diffractive_xb=3.0, diffractive_sum=8.0)
+    assert csd.non_diffractive == 2.0
+
+
+def test_diffractive():
+    csd = CrossSectionData(
+        diffractive_xb=3.0, diffractive_ax=2.0, diffractive_xx=1.0, diffractive_axb=4.0
+    )
+    assert csd.diffractive == 10.0
+
+    csd.diffractive_sum = 5.0
+    assert csd.diffractive == 5.0
+
+
+def test_mul_radd():
+    csd1 = CrossSectionData(total=5.0, inelastic=10.0)
+    csd2 = CrossSectionData(total=10.0, inelastic=5.0)
+
+    csd1._mul_radd(2, csd2)
+
+    assert_equal(csd1.total, 25.0)
+    assert_equal(csd1.inelastic, 20.0)
+
+
 def test_EventData_copy_and_pickle(evt):
     evt2 = evt.copy()
     assert evt2 == evt
@@ -90,7 +118,10 @@ class DummyEvent(MCEvent):
             _lib=lib,
             name="foo",
             version="bar",
+            _inel_or_prod_cross_section=1.0,
             kinematics=CenterOfMass(10, "p", "p"),
+            _frame=EventFrame.CENTER_OF_MASS,
+            _restore_beam_and_history=False,
         )
 
         super().__init__(generator)
@@ -116,3 +147,37 @@ def test_EventData_select(evt):
 
     x = evt[[True, False, True]]
     assert_equal(x.pid, [1, 3])
+
+
+@pytest.mark.parametrize("Model", get_all_models())
+def test_models_beam(Model):
+    """Tests whether all models have correct beam particles"""
+    evt_kin = CenterOfMass(100, "proton", "proton")
+    if Model.pyname in "Sophia20":
+        evt_kin = CenterOfMass(100, "photon", "proton")
+    elif Model.name in ["DPMJET-III", "EPOS"]:
+        evt_kin = CenterOfMass(100, "N", "O")
+    elif Model.name in ["SIBYLL"]:
+        evt_kin = CenterOfMass(100, "p", "O")
+
+    with (
+        pytest.warns(RuntimeWarning)
+        if Model.name
+        in [
+            "DPMJET-III",
+            "UrQMD",
+        ]
+        else nullcontext()
+    ):
+        generator = Model(evt_kin, seed=1)
+        for event in generator(100):
+            event.kin._beam_data = None
+            beam = event.kin._get_beam_data(event.kin.frame)
+            event.kin._beam_data = None
+            for field, beam_field in beam.items():
+                event_field = getattr(event, field)
+                if event_field is None or field == "daughters":
+                    continue
+                assert np.allclose(
+                    event_field[0:2], beam_field
+                ), f"{field}: {np.allclose(event_field[0:2], beam_field)}, {event_field[0:2]}, {beam_field}"

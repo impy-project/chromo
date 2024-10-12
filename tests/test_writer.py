@@ -1,12 +1,13 @@
-from chromo.writer import Root
-from chromo.common import CrossSectionData, EventData
-from chromo.kinematics import EventKinematics, CompositeTarget
 import numpy as np
 import uproot
 from numpy.testing import assert_equal, assert_allclose
 import yaml
 from pathlib import Path
 import pytest
+
+from chromo.writer import Root
+from chromo.common import CrossSectionData, EventData
+from chromo.kinematics import EventKinematicsWithRestframe, CompositeTarget
 
 
 def make_event(n):
@@ -15,15 +16,16 @@ def make_event(n):
     pid = rng.choice([211, 130, 2212], size=n)
     pid[:2] = 2212
     status = np.arange(n)
-    parents = rng.choice(n, size=(n, 2))
-    parents[:2] = 0
-    parents[:, 1] = 0
+    mothers = rng.choice(n, size=(n, 2))
+    mothers[:2] = 0
+    mothers[:, 1] = 0
     return EventData(
         ("foo", "1.0"),
-        EventKinematics("p", "He", beam=(-3, 4)),
+        EventKinematicsWithRestframe("p", "He", beam=(-3, 4)),
         1,
         1.0,
         (2, 3),
+        100.0,
         pid,
         status,
         1.1 + status,
@@ -36,7 +38,7 @@ def make_event(n):
         8.8 + status,
         9.9 + status,
         10.01 + status,
-        parents,
+        mothers,
         None,
     )
 
@@ -47,9 +49,9 @@ def make_event(n):
 def test_Root(write_vertices, overflow, target):
     if target == "air":
         air = CompositeTarget([("N", 0.75), ("O", 0.25)])
-        kin = EventKinematics("p", air, plab=5)
+        kin = EventKinematicsWithRestframe("p", air, plab=5)
     else:
-        kin = EventKinematics("p", target, beam=(-3, 4))
+        kin = EventKinematicsWithRestframe("p", target, beam=(-3, 4))
 
     class Model:
         label: str = "foo"
@@ -105,7 +107,7 @@ def test_Root(write_vertices, overflow, target):
         for i, event in enumerate(events):
             assert_equal(d["pdgid"][i], event.pid[2:])
             assert_allclose(d["px"][i], event.px[2:])
-            assert_equal(d["parent"][i], np.maximum(event.parents[2:, 0] - 3, -1))
+            assert_equal(d["parent"][i], np.maximum(event.mothers[2:, 0] - 2, -1))
             if write_vertices:
                 assert_allclose(d["vx"][i], event.vx[2:])
 

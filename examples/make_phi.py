@@ -20,7 +20,6 @@ The script generates a ROOT file with three trees.
         Contains the distributed of charged particles for all generated events.
 """
 
-
 from chromo.kinematics import CenterOfMass
 from chromo.constants import MeV, TeV, long_lived
 from chromo.util import get_all_models
@@ -126,11 +125,11 @@ def run(Model, requested):
                 all_charged.append(nch)
                 if n_phi > 0:
                     if np.all(event.pid[:2] == 2212) and np.all(
-                        event.parents[:2, 0] == 0
+                        event.mothers[:2, 0] == -1
                     ):
                         event = event[2:]  # cut beam particles
                     ma = event.pid == phi_pid
-                    imot = event.parents[:, 0] - 1
+                    imot = event.mothers[:, 0]
                     eta += list(event.eta[ma])
                     pt += list(event.pt[ma] / MeV)
                     prompt += [

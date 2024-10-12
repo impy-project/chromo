@@ -5007,6 +5007,8 @@ c----------------------------------------------------------------------------
       common /qgarr43/ moniou
       common /arr3/   x1(7),a1(7)
       common /qgdebug/  debug
+Cf2py intent(in) b,iddp1,iddp2
+Cf2py intent(out) gz
 
       if(debug.ge.2)write (moniou,201)b,iddp1,iddp2
       do l=1,5
@@ -16412,6 +16414,8 @@ c-------------------------------------------------------------------------------
       common /qgarr16/ cc(2,3),iddp(iapmax),iddt(iapmax)
       common /arr3/   x1(7),a1(7)
       EXTERNAL psran
+cf2py intent(in) :: niter
+cf2py intent(out) :: gtot,gprod,gabs,gdd,gqel,gcoh
 
       e1=exp(-1.d0)
 

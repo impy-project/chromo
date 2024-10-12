@@ -14108,7 +14108,7 @@ C                  SIGela     elastic cross section
 C-----------------------------------------------------------------------
 Cf2py integer, intent(in) :: L,IAT
 Cf2py double precision, intent(in) :: SQS
-Cf2py double precision, intent(out) :: SIGprod,SIGbdif
+Cf2py double precision, intent(out) :: SIGprod,SIGbdif, SIGela
       IMPLICIT NONE
 
       INTEGER NS_max, NH_max

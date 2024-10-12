@@ -1,0 +1,57 @@
+
+                        DPMJET version 3.0 (Mar. 2010) 
+                       ________________________________
+
+
+ This directory contains the following files:
+
+   dpmjet3.0-7.f      DPMJET code version 3.0 without interface to FLUKA
+   phojet1.12-36c4.f  PHOJET code version 1.12
+   pythia6115dpm3v1.f PYTHIA code version 6.1
+   user3.0-7.f        user code to be used with dpmjet3.0-7.f
+                    
+   fpe.o              auxiliary routine to trap floating point exceptions
+                      (only used under Linux)
+                    
+   Makefile           makefile to install DPMJET
+                    
+   dpmjet.dat,      
+   fitpar.dat         data-files read by the program during initialization
+                    
+   dpmjet3.manual     user manual explaining the input options
+
+   License2.txt       license conditions
+
+   various input and output examples
+
+
+ Installation
+ ------------
+
+ In order to install DPMJET on your local workstation first modify the 
+ compiler/linker options in the makefile according to your operating system. 
+ Standard options for some common platforms are given in the makefile. 
+
+ Then, install by using the 'make' utility.
+
+
+ Event generation
+ ----------------
+
+ 1. Modify the histogram routine (user3.0-6.f: DT_USRHIS) according to your 
+    requirements. See the routine for further details and information.
+ 2. Compile/link using 'make'
+ 3. Start the event generation, for example
+        dpmjet3.0-7 < {input file name}  > {output file name}  &
+
+
+ Please note:
+
+ All parts of the program code should be used only in the framework of
+ DPMJET. Any separate use of parts requires the agreement of the authors.
+
+ Please send suggestions / bug reports /questions to
+
+               Stefan.Roesler@cern.ch
+
+ The use of the software is subject to the enclosed license.

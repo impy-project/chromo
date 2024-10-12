@@ -4,6 +4,7 @@ from chromo.constants import nucleon_mass
 from chromo.constants import microbarn
 from chromo.kinematics import EventFrame
 from particle import literals as lp
+import warnings
 
 sophia_interaction_types = [
     "multipion production (fragmentation)",
@@ -16,6 +17,66 @@ sophia_interaction_types = [
 ]
 
 
+_sophia_unstable_pids = set(
+    [
+        -13,
+        13,
+        111,
+        113,
+        130,
+        -211,
+        211,
+        -213,
+        213,
+        221,
+        223,
+        310,
+        -313,
+        313,
+        -321,
+        321,
+        -323,
+        323,
+        331,
+        333,
+        -1114,
+        1114,
+        -2112,
+        2112,
+        -2114,
+        2114,
+        -2214,
+        2214,
+        -2224,
+        2224,
+        -3112,
+        3112,
+        -3114,
+        3114,
+        -3122,
+        3122,
+        -3212,
+        3212,
+        -3214,
+        3214,
+        -3222,
+        3222,
+        -3224,
+        3224,
+        -3312,
+        3312,
+        -3314,
+        3314,
+        -3322,
+        3322,
+        -3324,
+        3324,
+        -3334,
+        3334,
+    ]
+)
+
+
 class SophiaEvent(MCEvent):
     """Wrapper class around Sophia code"""
 
@@ -26,15 +87,15 @@ class SophiaEvent(MCEvent):
     def _charge_init(self, npart):
         return self._lib.schg.ichg[:npart]
 
-    @property
-    def decayed_parent(self):
-        """Returns the array of zero-based indices
-        of the decayed parent particles.
-        Index -1 means that there is no parent particle.
-        It throw an exception (via MCEvent.parents)
-        if selection is applied
-        """
-        return self._lib.schg.iparnt[: self.npart]
+    def _repair_initial_beam(self):
+        self._prepend_initial_beam()
+        # Repair history
+        # Make second mother = -1
+        self.mothers[:, 1] = -1
+        # Attach to initial beam particles
+        self.mothers[(self.mothers == [1, -1]).all(axis=1)] = [0, 1]
+        # Daughters are not defined
+        self.daughters[:] = [-1, -1]
 
 
 class Sophia20(MCRun):
@@ -49,6 +110,7 @@ class Sophia20(MCRun):
     _frame = EventFrame.FIXED_TARGET
     _projectiles = {lp.photon.pdgid}
     _targets = {lp.p.pdgid, lp.n.pdgid}
+    _unstable_pids = _sophia_unstable_pids
     _ecm_min = 0
 
     def __init__(self, kinematics, *, seed=None, keep_decayed_particles=True):
@@ -63,7 +125,7 @@ class Sophia20(MCRun):
         self.kinematics = kinematics
         self._set_final_state_particles()
 
-    def _cross_section(self, kin=None):
+    def _cross_section(self, kin=None, max_info=False):
         # code=3 for inelastic cross-section
         # TODO fill more cross-sections
         inel = (
@@ -87,10 +149,15 @@ class Sophia20(MCRun):
         self._lib.initial(self._nucleon_code)
 
     def _set_stable(self, pdgid, stable):
+        if pdgid not in self._unstable_pids:
+            return
+
         sid = abs(self._lib.icon_pdg_sib(pdgid)) - 1
         idb = self._lib.s_csydec.idb
         if sid < 0 or sid > idb.size:
-            raise ValueError(f"{pdgid} is unknown")
+            warnings.warn(f"{pdgid} unknown to Sophia", RuntimeWarning)
+            return
+
         if stable:
             idb[sid] = -abs(idb[sid])
         else:
