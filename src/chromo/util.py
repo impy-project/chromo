@@ -112,7 +112,7 @@ class CompositeTarget:
 
     def __repr__(self):
         components = [
-            (pdg2name(c), amount)
+            (pdg2name(c), float(amount))
             for (c, amount) in zip(self.components, self.fractions)
         ]
         args = f"{components}"

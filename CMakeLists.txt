@@ -131,8 +131,8 @@ set(rangen_source ${fortran_dir}/rangen.fpp ${fortran_dir}/rangen.c
 
 # eposlhc
 file(GLOB eposlhc_sources ${fortran_dir}/epos/sources/*.f)
-list(FILTER eposlhc_sources EXCLUDE REGEX epos_example \.f)
-list(FILTER eposlhc_sources EXCLUDE REGEX epos-random \.f)
+list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
+list(FILTER eposlhc_sources EXCLUDE REGEX epos-random\.f)
 list(APPEND eposlhc_sources ${fortran_dir}/epos/epos-random-dummy.f)
 
 f2py_add_module(
@@ -387,9 +387,9 @@ list(TRANSFORM urqmd34_sources PREPEND ${fortran_dir}/urqmd-3.4/sources/)
 list(APPEND urqmd34_sources ${fortran_dir}/urqmd-3.4/chromo_urqmd.f
      ${logging_source} ${rangen_source})
 set(urqmd34_interface_sources ${urqmd34_sources})
-list(FILTER urqmd34_interface_sources EXCLUDE REGEX newpart \.f)
-list(FILTER urqmd34_interface_sources EXCLUDE REGEX uhmerge \.f)
-list(FILTER urqmd34_interface_sources EXCLUDE REGEX iso \.f)
+list(FILTER urqmd34_interface_sources EXCLUDE REGEX newpart\.f)
+list(FILTER urqmd34_interface_sources EXCLUDE REGEX uhmerge\.f)
+list(FILTER urqmd34_interface_sources EXCLUDE REGEX iso\.f)
 f2py_add_module(
   _urqmd34
   FUNCTIONS
@@ -629,10 +629,10 @@ file(GLOB dpmjetIII191_sources ${fortran_dir}/dpmjetIII-19.1/src/phojet/*.f
      ${fortran_dir}/dpmjetIII-19.1/src/pythia/*.f
      ${fortran_dir}/dpmjetIII-19.1/src/dpmjet/*.f)
 
-list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDM \.f)
-list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMST \.f)
-list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMTE \.f)
-list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR \.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDM\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMST\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX DT_RNDMTE\.f)
+list(FILTER dpmjetIII191_sources EXCLUDE REGEX PYR\.f)
 # cmake does not like filenames with parantheses, but some Fortran files include
 # those. As a workaround, we generate modified source files and renamed copies
 # of the headers. Not elegant, but works. 🤷‍♂️
@@ -766,10 +766,10 @@ file(
   ${fortran_dir}/dpmjetIII-19.3/src/dpmjet/*.f
   ${fortran_dir}/dpmjetIII-19.3/common/*.f)
 
-list(FILTER dpmjetIII193_sources EXCLUDE REGEX DT_RNDM \.f)
-list(FILTER dpmjetIII193_sources EXCLUDE REGEX DT_RNDMST \.f)
-list(FILTER dpmjetIII193_sources EXCLUDE REGEX DT_RNDMTE \.f)
-list(FILTER dpmjetIII193_sources EXCLUDE REGEX PYR \.f)
+list(FILTER dpmjetIII193_sources EXCLUDE REGEX DT_RNDM\.f)
+list(FILTER dpmjetIII193_sources EXCLUDE REGEX DT_RNDMST\.f)
+list(FILTER dpmjetIII193_sources EXCLUDE REGEX DT_RNDMTE\.f)
+list(FILTER dpmjetIII193_sources EXCLUDE REGEX PYR\.f)
 
 f2py_add_module(
   _dpmjetIII193
@@ -931,10 +931,10 @@ if(BUILD_dev_dpmjetIII193)
        ${dev_source}/src/pythia/*.f ${dev_source}/src/dpmjet/*.f
        ${dev_source}/common/*.f)
 
-  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX DT_RNDM \.f)
-  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX DT_RNDMST \.f)
-  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX DT_RNDMTE \.f)
-  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX PYR \.f)
+  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX DT_RNDM\.f)
+  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX DT_RNDMST\.f)
+  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX DT_RNDMTE\.f)
+  list(FILTER dev_dpmjetIII193_sources EXCLUDE REGEX PYR\.f)
 
   f2py_add_module(
     _dev_dpmjetIII193

@@ -43,14 +43,14 @@ repos:
     - id: ruff
       args: [--fix, --show-fixes]
 
-# CMake formatting
-- repo: https://github.com/cheshirekow/cmake-format-precommit
-  rev: v0.6.13
-  hooks:
-  - id: cmake-format
-    additional_dependencies: [pyyaml]
-    types: [file]
-    files: (\.cmake|CMakeLists.txt)(.in)?$
+# # CMake formatting
+# - repo: https://github.com/cheshirekow/cmake-format-precommit
+#   rev: v0.6.13
+#   hooks:
+#   - id: cmake-format
+#     additional_dependencies: [pyyaml]
+#     types: [file]
+#     files: (\.cmake|CMakeLists.txt)(.in)?$
     
 # # Enable the following later
 # # Python docstring formatting
