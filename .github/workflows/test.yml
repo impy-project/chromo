@@ -20,7 +20,7 @@ jobs:
           # Python version number must be string, otherwise 3.10 becomes 3.1
           - os: windows-latest
             python-version: "3.12"
-            installs: "numpy<2"
+            installs: "numpy==1.26.4"
 
           - os: macos-14
             python-version: "3.12"
@@ -39,6 +39,7 @@ jobs:
     - uses: hendrikmuhs/ccache-action@v1.2
       with:
         key: ${{ github.job }}-${{ matrix.os }}-${{ matrix.python-version }}
+    - uses: astral-sh/setup-uv@v3
     - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
@@ -52,10 +53,10 @@ jobs:
     - run: python -m pip install --upgrade pip
 
     - if: ${{ matrix.os != 'windows-latest' }}
-      run: python -m pip install --prefer-binary -v .[test]
+      run: uv pip install --system .[test] ${{ matrix.installs }}
 
     - if: ${{ matrix.os == 'windows-latest' }}
-      run: python -m pip install --prefer-binary -v .[test]
+      run: python -m pip install --prefer-binary -v .[test] ${{ matrix.installs }}
       env:
         CMAKE_GENERATOR: "MinGW Makefiles"
         FC: ${{ steps.setup-fortran.outputs.fc }}
