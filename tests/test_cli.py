@@ -1,6 +1,7 @@
 import subprocess as subp
 from chromo import __version__ as version
 from chromo import models as im
+from chromo.util import get_all_models
 import re
 from pathlib import Path
 import pytest
@@ -107,8 +108,10 @@ def test_minimum():
     run(
         "-S",
         "100",
+        "-m",
+        "6",
         stdout="Seed[ \t]*([0-9]+)",
-        file="chromo_eposlhc_{0}_2212_2212_100.hepmc",
+        file="chromo_sibyll23d_{0}_2212_2212_100.hepmc",
     )
 
 
@@ -119,8 +122,10 @@ def test_seed_1(seed):
         "100",
         "-s",
         f"{seed}",
+        "-m",
+        "6",
         stdout="Seed[ \t]*([0-9]+)",
-        file="chromo_eposlhc_{0}_2212_2212_100.hepmc",
+        file="chromo_sibyll23d_{0}_2212_2212_100.hepmc",
     )
 
 
@@ -130,8 +135,10 @@ def test_seed_2():
         "100",
         "-s",
         "123",
+        "-m",
+        "6",
         stdout="Seed[ \t]*123",
-        file="chromo_eposlhc_123_2212_2212_100.hepmc",
+        file="chromo_sibyll23d_123_2212_2212_100.hepmc",
     )
 
 
@@ -143,20 +150,22 @@ def test_number_1():
         "1",
         "-n",
         "123",
+        "-m",
+        "6",
         stdout="Collisions[ \t]*123",
-        file="chromo_eposlhc_1_2212_2212_100.hepmc",
+        file="chromo_sibyll23d_1_2212_2212_100.hepmc",
     )
 
 
 def test_number_2():
-    run("-S", "100", "-s", "1", "-n", "0", returncode=1)
+    run("-S", "100", "-s", "1", "-n", "0", "-m", "6", returncode=1)
 
 
 @pytest.mark.parametrize(
     "spec,Model",
     tuple((str(k), v) for (k, v) in MODELS.items())
     + (
-        ("eposlhc", im.EposLHC),
+        ("qgsjetII04", im.QGSJetII04),
         ("sib23d", im.Sibyll23d),
         ("sib21", im.Sibyll21),
         ("sibyll-2.3", im.Sibyll23),
@@ -164,6 +173,8 @@ def test_number_2():
     ),
 )
 def test_model_1(spec, Model):
+    if Model not in get_all_models() and platform.system() == "Windows":
+        pytest.skip(f"{Model.pyname} not available in this test")
     run(
         "-S",
         "100",
@@ -220,10 +231,12 @@ def test_projectile(spec, expected):
         "100",
         "-s",
         "3",
+        "-m",
+        "7",
         "-i",
         spec,
         stdout=f"Projectile[ \t]*{name} \\({expected}\\)",
-        file=f"chromo_eposlhc_3_{expected}_2212_100.hepmc",
+        file=f"chromo_qgsjetII04_3_{expected}_2212_100.hepmc",
     )
 
 
@@ -243,10 +256,12 @@ def test_target(spec, expected):
         "100",
         "-s",
         "4",
+        "-m",
+        "6",
         "-I",
         spec,
         stdout=f"Target[ \t]*{p.name} \\({expected}\\)",
-        file=f"chromo_eposlhc_4_2212_{expected}_100.hepmc",
+        file=f"chromo_sibyll23d_4_2212_{expected}_100.hepmc",
     )
 
 
@@ -256,8 +271,9 @@ def test_momentum_1():
         "5",
         "-p 1000",
         "-P -1000",
+        "-m 6",
         stdout="sqrt\\(s\\)[ \t]*2000 GeV",
-        file="chromo_eposlhc_5_2212_2212_2000.hepmc",
+        file="chromo_sibyll23d_5_2212_2212_2000.hepmc",
     )
 
 
@@ -267,12 +283,13 @@ def test_momentum_2():
         "6",
         "-p 1000",
         "-P 0",
+        "-m 6",
         stdout="""\
 [ |]*Projectile momentum[ \t]*1000 GeV/c *|
 [ |]*Target momentum[ \t]*0 GeV/c *|
 [ |]*sqrt\\(s\\)[ \t]*43.3394 GeV\
 """,
-        file="chromo_eposlhc_6_2212_2212_43.hepmc",
+        file="chromo_sibyll23d_6_2212_2212_43.hepmc",
     )
 
 
@@ -282,21 +299,25 @@ def test_format_1():
         "7",
         "-S",
         "100",
+        "-m",
+        "6",
         stdout="Format[ \t]*hepmc",
-        file="chromo_eposlhc_7_2212_2212_100.hepmc",
+        file="chromo_sibyll23d_7_2212_2212_100.hepmc",
     )
 
 
 @pytest.mark.parametrize("format", ("hepmc", "hepmc:gz", "root", "root:vertex"))
-@pytest.mark.parametrize("model", ("EPOS-LHC", "SIBYLL-2.1", "Pythia-6.4"))
+@pytest.mark.parametrize("model", ("QGSJET-II-04", "SIBYLL-2.1", "Pythia-6.4"))
 def test_format_2(format, model):
     ext, *options = format.split(":")
     if "gz" in options:
         ext += ".gz"
 
-    pyname = {"EPOS-LHC": "eposlhc", "SIBYLL-2.1": "sibyll21", "Pythia-6.4": "pythia6"}[
-        model
-    ]
+    pyname = {
+        "QGSJET-II-04": "qgsjetII04",
+        "SIBYLL-2.1": "sibyll21",
+        "Pythia-6.4": "pythia6",
+    }[model]
 
     # seeds must be unique to not have clashing file names
     seed = "888" if "vertex" in options else "8"
@@ -339,7 +360,9 @@ def test_format_3():
         file="chromo_eposlhc_9_2212_2212_100_000.svg",
     )
 
-
+@pytest.mark.skipif(
+    platform.system() == "Windows", reason="Model selection to narrow on Windows"
+)
 @pytest.mark.parametrize("make_pi_0_stable", (False, True))
 def test_config(make_pi_0_stable):
     def check(p):
@@ -384,6 +407,8 @@ def test_filename_option():
         "10",
         "-S",
         "100",
+        "-m",
+        "6",
         "-f",
         "foobar",
         file="foobar",

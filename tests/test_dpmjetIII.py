@@ -1,11 +1,16 @@
 import numpy as np
 from numpy.testing import assert_allclose
-
+import pytest
+import sys
 import chromo
 from chromo.constants import GeV
 from chromo.util import naneq
 
 from .util import run_in_separate_process
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="DPMJETIII19x not build on windows"
+)
 
 
 def run_cross_section(p1, p2):

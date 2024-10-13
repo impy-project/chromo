@@ -72,7 +72,18 @@ def get_models():
     # urqmd34, epos and pythia8 don't build correctly on Windows
     if platform.system() == "Windows":
         for model in list(models.keys()):
-            if model in ["urqmd34", "eposlhc", "pythia8"]:
+            if any(
+                [
+                    model.lower().strip().startswith(mstr)
+                    for mstr in [
+                        "urqmd34",
+                        "eposlhc",
+                        "pythia8",
+                        "dpmjetIII19",
+                        "phojet19",
+                    ]
+                ]
+            ):
                 del models[model]
 
     return models
