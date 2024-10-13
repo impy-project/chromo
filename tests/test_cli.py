@@ -360,6 +360,7 @@ def test_format_3():
         file="chromo_eposlhc_9_2212_2212_100_000.svg",
     )
 
+
 @pytest.mark.skipif(
     platform.system() == "Windows", reason="Model selection to narrow on Windows"
 )

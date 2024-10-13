@@ -219,7 +219,7 @@ def test_generator(projectile, target, frame, Model):
 
 
 @pytest.mark.skipif(
- platform.system() == "Windows",
+    platform.system() == "Windows",
     reason="skip since none of the models currently works on Windows",
 )
 @pytest.mark.parametrize("frame", ("cms", "generic"))
