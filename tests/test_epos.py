@@ -8,8 +8,13 @@ from .util import (
     run_in_separate_process,
 )
 import pytest
+import sys
 from particle import literals as lp
 from functools import lru_cache
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="EPOS-LHC not build on windows"
+)
 
 
 def run_pp_collision():

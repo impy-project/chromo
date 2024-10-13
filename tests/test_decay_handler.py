@@ -78,14 +78,14 @@ def run_decay_handler(model, evt_kin, stable_particles):
 def test_decay_handler(Model):
     stable_particles = long_lived
 
-    if (
-        (os.environ.get("CI", False))
-        and (platform.system() == "Darwin")
-        and (Model.name == "UrQMD")
-    ):
-        pytest.xfail(
-            f"For {Model.pyname} DecayHandler fails to decay all unstable particles on MacOS CI"
-        )
+    # if (
+    #     (os.environ.get("CI", False))
+    #     and (platform.system() == "Darwin")
+    #     and (Model.name == "UrQMD")
+    # ):
+    #     pytest.xfail(
+    #         f"For {Model.pyname} DecayHandler fails to decay all unstable particles on MacOS CI"
+    #     )
 
     if Model.name in ["PhoJet", "Pythia"]:
         evt_kin = chromo.kinematics.FixedTarget(100, "p", "p")
