@@ -2,8 +2,6 @@ import chromo
 import numpy as np
 import pytest
 import sys
-import os
-import platform
 
 from chromo.constants import long_lived
 from chromo.decay_handler import Pythia8DecayHandler
