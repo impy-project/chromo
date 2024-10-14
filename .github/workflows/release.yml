@@ -75,22 +75,22 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0
-        
+
       - if: ${{ matrix.arch == 'aarch64' }}
         uses: docker/setup-qemu-action@v3
 
       - name: Get latest CMake and Ninja
         uses: lukka/get-cmake@latest
-      
+
       - name: Setup gfortran
         uses: awvwgk/setup-fortran@v1.6.1
         id: setup-fortran
         with:
           compiler: gcc
           version: 13
-      
+
       - uses: ts-graphviz/setup-graphviz@v1
-        
+
 
       - if: ${{ matrix.os == 'windows-latest' }}
         name: cibuildwheel on Windows
@@ -112,7 +112,7 @@ jobs:
           # Will avoid testing on emulated architectures
           CIBW_TEST_SKIP: "*-*linux_{aarch64,ppc64le,s390x,armv7l}"
 
-          
+
       - if: ${{ matrix.os == 'macos-13'}}
         name: cibuildwheel on MacOS-13
         uses: pypa/cibuildwheel@v2.21.3
@@ -129,7 +129,7 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           no_proxy: '*'
           MACOSX_DEPLOYMENT_TARGET: 14.0
-      
+
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
