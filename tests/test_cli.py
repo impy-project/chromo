@@ -315,19 +315,16 @@ def test_format_2(format, model):
     )
 
 
+# Error in Windows: "UnicodeEncodeError: 'charmap' codec can't encode character '\u0394'"
+#            " in  position 20049: character maps to <undefined>"
 @pytest.mark.skipif(
-    (platform.system() == "Linux") and ("CIBUILDWHEEL" in os.environ),
+    ((platform.system() == "Linux") and ("CIBUILDWHEEL" in os.environ))
+    or ("CHROMO_SKIP_GRAPHVIZ" in os.environ)
+    or (platform.system() == "Windows"),
     reason="Skip it because of the problems with graphviz installation "
-    "in manylinux container in cibuildwheel",
+    "in manylinux container in cibuildwheel, MacOS-13 and Windows",
 )
 def test_format_3():
-    if platform.system() == "Windows":
-        pytest.xfail(
-            "Test aborts on Windows with this message: "
-            "UnicodeEncodeError: 'charmap' codec can't encode character '\u0394'"
-            " in  position 20049: character maps to <undefined>"
-        )
-
     run(
         "-s",
         "9",
