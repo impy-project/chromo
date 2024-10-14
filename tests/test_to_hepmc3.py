@@ -1,5 +1,4 @@
 from chromo.kinematics import CenterOfMass
-from chromo import models as im
 from chromo.constants import GeV
 from chromo.models.sophia import Sophia20
 from .util import run_in_separate_process

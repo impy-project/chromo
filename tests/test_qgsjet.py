@@ -4,7 +4,7 @@ from chromo.constants import GeV
 from chromo.common import CrossSectionData
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 from .util import (
     reference_charge,
     run_in_separate_process,

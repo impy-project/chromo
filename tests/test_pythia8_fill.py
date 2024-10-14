@@ -5,8 +5,9 @@ import pytest
 import sys
 import numpy as np
 
-if sys.platform == "win32":
-    pytest.skip("Pythia8 does not run on windows", allow_module_level=True)
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="EPOS-LHC not build on windows"
+)
 
 
 def init_events(nevents):

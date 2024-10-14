@@ -17,7 +17,6 @@ from chromo.util import (
     energy2momentum,
     elab2ecm,
     momentum2energy,
-    is_real_nucleus,
     mass,
 )
 from particle import literals as lp
@@ -168,7 +167,7 @@ def test_kinematics_init_invalid_input():
         EventKinematicsWithRestframe("proton", "neutron", ecm=10, plab=5, beam=(5, 3))
 
     with pytest.raises(ValueError):
-        k = EventKinematicsWithRestframe("photon", "photon", ecm=10.0)
+        EventKinematicsWithRestframe("photon", "photon", ecm=10.0)
 
     with pytest.raises(ValueError):
         EventKinematicsWithRestframe("photon", "e+", virtuality=(0.7, 0.8))

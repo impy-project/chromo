@@ -4,7 +4,7 @@ requires = [
     "setuptools",
     "wheel",
     "cmake",
-    "numpy==1.26.2",
+    "numpy",
     "charset_normalizer",
 ]
 #build-backend = "setuptools.build_meta"
@@ -23,19 +23,20 @@ filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
 
 [tool.cibuildwheel]
 # update skip when numpy wheels become available
-skip = ["*-musllinux_*", "cp310-win32", "cp310-manylinux_i686"]
+skip = ["*-musllinux_*", "cp31?-win32", "*-manylinux_i686"]
 test-extras = ["test"]
 test-command = "python {package}/download_data.py && python -m pytest -vv {package}/tests"
-test-skip = ["*_arm64"]
+test-skip = ["*universal2:arm64"]
 # to match numpy, we use manylinux2014 for cp310+
 manylinux-x86_64-image = "manylinux2014"
 manylinux-i686-image = "manylinux2014"
 # Increase the output of pip wheel to -vvv
-build-verbosity = 3
+build-verbosity = 1
 
 [tool.cibuildwheel.environment]
 # this makes sure that we build only on platforms that have a corresponding numpy wheel
-PIP_ONLY_BINARY = "numpy"
+PIP_ONLY_BINARY = ":all:"
+CIBW = "1"
 
 [[tool.cibuildwheel.overrides]]
 # to match numpy, we use manylinux2010 for cp36 to cp39
