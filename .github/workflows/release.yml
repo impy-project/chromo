@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        arch: [native]
+        arch: [auto]
         py: [cp313]
     steps:
       - uses: actions/checkout@v4
@@ -60,8 +60,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
-        arch: [auto64, aarch64]
+        os: [ubuntu-latest, macos-13, macos-14] # windows-latest: Disable windows for now
+        arch: [auto, aarch64]
         py: [cp39, cp310, cp311, cp312, cp313]
         exclude:
           - os: windows-latest
@@ -74,41 +74,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          fetch-depth: 0
+        
+      - if: ${{ matrix.arch == 'aarch64' }}
+        uses: docker/setup-qemu-action@v3
 
       - name: Get latest CMake and Ninja
         uses: lukka/get-cmake@latest
-
-      - if: ${{ matrix.arch == 'aarch64' }}
-        uses: docker/setup-qemu-action@v2
-
-      # # Remove after January 16th 2023 when GA switches to 14.2 by default
-      # # Remove someday when migration for all nodes will be finished
-      # - if: ${{ matrix.os == 'macos-latest' }}
-      #   run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
-
-      # - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native'}}
-      #   name: Install graphviz for tests on MacOS native
-      #   uses: tlylt/install-graphviz@v1
-
-      - uses: ts-graphviz/setup-graphviz@v1
-
-      # - if: ${{ matrix.os == 'macos-latest' &&  matrix.arch == 'native'}}
-      #   name: Setup gfortran for MacOS native
-      #   run: |
-      #     # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
-      #     set -xe
-      #     chmod +x .github/workflows/gfortran_utils.sh
-      #     source .github/workflows/gfortran_utils.sh
-      #     install_gfortran
-      #     gfortran --version
-      #     which gfortran
-
+      
       - name: Setup gfortran
         uses: awvwgk/setup-fortran@v1.6.1
         id: setup-fortran
         with:
           compiler: gcc
           version: 13
+      
+      - uses: ts-graphviz/setup-graphviz@v1
+        
 
       - if: ${{ matrix.os == 'windows-latest' }}
         name: cibuildwheel on Windows
@@ -128,6 +110,7 @@ jobs:
           CIBW_ENVIRONMENT_PASS_LINUX: CI
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
 
+          
       - if: ${{ matrix.os == 'macos-13' ||  matrix.os == 'macos-14' }}
         name: cibuildwheel on MacOS
         uses: pypa/cibuildwheel@v2.21.3
@@ -136,8 +119,18 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           no_proxy: '*'
 
+      - if: ${{ matrix.os == 'macos-14' }}
+        name: cibuildwheel on MacOS
+        uses: pypa/cibuildwheel@v2.21.3
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          no_proxy: '*'
+          MACOSX_DEPLOYMENT_TARGET: 14.0
+      
       - uses: actions/upload-artifact@v4
         with:
+          name: wheel-${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
           path: ./wheelhouse/*.whl
 
   sdist:
