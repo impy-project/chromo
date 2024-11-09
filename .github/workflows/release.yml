@@ -155,7 +155,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - uses: tlylt/install-graphviz@v2
+      - uses: tlylt/install-graphviz@v1
         name: Install Graphviz
 
       - run: python -m pip install --upgrade pip wheel setuptools

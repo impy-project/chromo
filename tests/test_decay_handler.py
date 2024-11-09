@@ -82,7 +82,8 @@ def test_decay_handler(Model):
     #     and (Model.name == "UrQMD")
     # ):
     #     pytest.xfail(
-    #         f"For {Model.pyname} DecayHandler fails to decay all unstable particles on MacOS CI"
+    #         f"For {Model.pyname} DecayHandler fails to decay all
+    #  unstable particles on MacOS CI"
     #     )
 
     if Model.name in ["PhoJet", "Pythia"]:
