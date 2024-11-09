@@ -118,7 +118,7 @@ jobs:
       - if: ${{ matrix.os == 'macos-13'}}
         name: Use a more legacy version of Xcode tools on MacOS-13
         run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
-        
+
       - if: ${{ matrix.os == 'macos-13'}}
         name: cibuildwheel on MacOS-13
         uses: pypa/cibuildwheel@v2.21.3
