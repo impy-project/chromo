@@ -36,6 +36,8 @@ jobs:
       with:
         submodules: true
         fetch-depth: 3
+    - name: Get latest CMake and Ninja
+      uses: lukka/get-cmake@latest
     # must come after checkout
     - uses: hendrikmuhs/ccache-action@v1.2
       with:
