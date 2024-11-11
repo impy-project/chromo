@@ -15,7 +15,7 @@
 repos:
 # Standard hooks
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.6.0
+  rev: v5.0.0
   hooks:
   - id: check-case-conflict
   - id: check-docstring-first
@@ -32,18 +32,26 @@ repos:
 
 # Python formatting
 - repo: https://github.com/psf/black
-  rev: 24.8.0
+  rev: 24.10.0
   hooks:
   - id: black
 
-# Python linter (Flake8)
-- repo: https://github.com/pycqa/flake8
-  rev: 7.1.1
+# Ruff linter, replacement for flake8, pydocstyle, isort
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: 'v0.6.9'
   hooks:
-  - id: flake8
-    files: chromo/[^_].*\.py
-    args: [--config, setup.cfg]
+    - id: ruff
+      args: [--fix, --show-fixes]
 
+# # CMake formatting
+# - repo: https://github.com/cheshirekow/cmake-format-precommit
+#   rev: v0.6.13
+#   hooks:
+#   - id: cmake-format
+#     additional_dependencies: [pyyaml]
+#     types: [file]
+#     files: (\.cmake|CMakeLists.txt)(.in)?$
+    
 # # Enable the following later
 # # Python docstring formatting
 # - repo: https://github.com/pycqa/pydocstyle
