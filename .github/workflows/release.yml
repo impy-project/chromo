@@ -157,7 +157,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: wheel-${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
+          # name: wheel-${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
           path: ./wheelhouse/*.whl
 
   sdist:
@@ -200,10 +200,16 @@ jobs:
           name: artifact
           path: dist
 
-      - name: Publish package to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1.8
+      # - name: Publish package to PyPI
+      #   uses: pypa/gh-action-pypi-publish@release/v1.8
+      #   with:
+      #     user: __token__
+      #     password: ${{ secrets.PYPI_API_TOKEN }}
+      # Test if upload works for TestPyPI
+      - name: Publish package to TestPyPI
+        uses: pypa/gh-action-pypi-publish@v1.12.3
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
 
 
