@@ -157,7 +157,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          # name: wheel-${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
+          name: wheel-${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
           path: ./wheelhouse/*.whl
 
   sdist:
@@ -197,7 +197,7 @@ jobs:
       - name: Download files in artifact to "dist/" directory
         uses: actions/download-artifact@v4.1.7
         with:
-          name: artifact
+          merge-multiple: true
           path: dist
 
       # - name: Publish package to PyPI
