@@ -200,16 +200,10 @@ jobs:
           merge-multiple: true
           path: dist
 
-      # - name: Publish package to PyPI
-      #   uses: pypa/gh-action-pypi-publish@release/v1.8
-      #   with:
-      #     user: __token__
-      #     password: ${{ secrets.PYPI_API_TOKEN }}
-      # Test if upload works for TestPyPI
-      - name: Publish package to TestPyPI
-        uses: pypa/gh-action-pypi-publish@v1.12.3
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1.8
         with:
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository-url: https://test.pypi.org/legacy/
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
 
 
