@@ -267,12 +267,7 @@ Cf2py    intent(out) :: gtot,gin,gel,gdp,gdt,bel
             ! bm=rnuc(2)+dlog(29.d0)*wsnuc(2)          !impact parameter for integr.
             ! bm=rnuc(2)+5.d0*wsnuc(2)
             anorm=qganrm(rnuc(2),wsnuc(2),wbnuc(2))*rp    !density normalization
-            call qggau(gz1)                          !integration over b< bm
-            
-            ! The only change so far for QGSJetIII-04:
-            ! The code of "call qggau1(gz1)" is moved to "call qggau(gz1)"
-            ! in  QGSJetIII-04
-            ! call qggau1(gz1)                      
+            call qggau(gz1)                          !integration over b< bm               
             
             !integration over b> bm
             gin=10.d0*(gz1(1)+gz1(2)+gz1(3) )        !inelastic cross section
