@@ -339,6 +339,22 @@ f2py_add_module(
   COMPILE_DEFS
   ${chromo_definitions})
 
+
+# qgsIII
+f2py_add_module(
+  _qgsIII04
+  FUNCTIONS
+  ${QGSJETII_COMMON_FUNCTIONS} qgran
+  SOURCES
+  ${fortran_dir}/qgsjet/qgsjet-III.f
+  ${fortran_dir}/qgsjet/chromo_qgsIII.f
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions})  
+
 # urqmd34
 set(urqmd34_sources
     1fluid

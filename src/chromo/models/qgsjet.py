@@ -36,6 +36,11 @@ class QGSJET2Event(QGSJET1Event):
         return self._lib.qgarr55.nwp, self._lib.qgarr55.nwt
 
 
+class QGSJET3Event(QGSJET2Event):
+    def _get_impact_parameter(self):
+        return self._lib.qgarr7.bcoll
+
+
 class QGSJetRun(MCRun):
     _name = "QGSJet"
     _frame = EventFrame.FIXED_TARGET
@@ -334,3 +339,16 @@ class QGSJetII03(QGSJet2Run):
 class QGSJetII04(QGSJet2Run):
     _version = "II-04"
     _library_name = "_qgsII04"
+
+
+class QGSJetIII04(QGSJet2Run):
+    _version = "III-04"
+    _library_name = "_qgsIII04"
+    _event_class = QGSJET3Event
+
+
+# Note for integration stage:
+#   Following data files (tables) are needed for initialization and working of QGSJetIII04
+#    .../chromo/src/chromo/iamdata/qgsjet/qgsjetIII.dat
+#    Pay attention that it is exactly "qgsjetIII.dat"
+#    .../chromo/src/chromo/iamdata/qgsjet/sectnu-III

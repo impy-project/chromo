@@ -221,3 +221,17 @@ c-----------------------------------------------------------------------
       double precision vdummy
       call npyrng(dt_rndm)
       end
+
+
+
+c=======================================================================
+      double precision function qgran(vdummy)
+c-----------------------------------------------------------------------
+c  random generator for qgsjetIII-04
+c  vdummy in qgsjetIII is initial value of the pseudorandom sequence 
+c (see source code)
+c-----------------------------------------------------------------------
+      implicit none
+      double precision vdummy
+      call npyrng(qgran)
+      end
