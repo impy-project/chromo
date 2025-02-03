@@ -8,10 +8,10 @@ import warnings
 
 sophia_interaction_types = [
     "multipion production (fragmentation)",
-    "diffractive scattering: N \u03B3 \u2192 N \u03C1",
-    "direct pion production: N \u03B3 \u2192 \u0394 \u03C0",
-    "direct pion production: N \u03B3 \u2192 \u0394 \u03C0",
-    "diffractive scattering: N \u03B3 \u2192 N \u03C9",
+    "diffractive scattering: N \u03b3 \u2192 N \u03c1",
+    "direct pion production: N \u03b3 \u2192 \u0394 \u03c0",
+    "direct pion production: N \u03b3 \u2192 \u0394 \u03c0",
+    "diffractive scattering: N \u03b3 \u2192 N \u03c9",
     "fragmentation in resonance region",
     "excitation/decay of resonance",
 ]
