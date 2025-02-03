@@ -1,4 +1,4 @@
-""" This module handles transformations between Lorentz frames and
+"""This module handles transformations between Lorentz frames and
 different inputs required by the low-level event generator interfaces.
 """
 
