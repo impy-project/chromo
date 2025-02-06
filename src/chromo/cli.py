@@ -53,6 +53,7 @@ MODELS = {
     # 12 refers to different DPMJet versions in CRMC
     12: models.DpmjetIII307,
 }
+
 VALID_MODELS = []
 for M in get_all_models():
     for k, v in MODELS.items():

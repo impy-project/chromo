@@ -8,8 +8,13 @@ from .util import (
     run_in_separate_process,
 )
 import pytest
+import sys
 from particle import literals as lp
 from functools import lru_cache
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="EPOS-LHC not build on windows"
+)
 
 
 def run_pp_collision():
@@ -143,12 +148,12 @@ def test_rmmard():
     from chromo.models import _eposlhc
 
     rng = np.random.default_rng(1)
-    state = rng.__getstate__()
+    state = rng.bit_generator.state
     _eposlhc.npy.bitgen = rng.bit_generator.ctypes.bit_generator.value
     a = np.zeros(3)
     _eposlhc.rmmard(a, 3, 0)
     assert np.all(a != 0)
-    rng.__setstate__(state)
+    rng.bit_generator.state = state
     b = np.zeros(3)
     _eposlhc.rmmard(b, 3, 0)
     assert_equal(a, b)

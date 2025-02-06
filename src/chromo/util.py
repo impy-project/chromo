@@ -675,7 +675,15 @@ def get_all_models(skip=None):
     if skip is None:
         skip = []
     if platform.system() == "Windows":
-        skip = list(skip) + [models.UrQMD34, models.Pythia8]
+        skip = list(skip) + [
+            models.UrQMD34,
+            models.EposLHC,
+            models.Pythia8,
+            models.DpmjetIII191,
+            models.DpmjetIII193,
+            models.Phojet191,
+            models.Phojet193,
+        ]
 
     result = []
     for key in dir(models):

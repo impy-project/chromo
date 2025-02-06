@@ -19,7 +19,8 @@ if not os.environ.get("CI", False):
         subp.check_call(["git", "submodule", "update"])
 
 
-# "Refer to the comments for 'cmake_ext.py:get_models()' on instructions for adding additional models."
+# "Refer to the comments for 'cmake_ext.py:get_models()' on instructions
+# for adding additional models."
 
 # Set environment variable VIRTUAL_ENV to venv directory
 # It is required in FindPython to find a correct version of python
