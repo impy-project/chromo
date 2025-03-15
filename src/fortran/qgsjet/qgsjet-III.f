@@ -25,7 +25,7 @@ C                 e-mail: sergey.ostapchenko@desy.de                   C
 C=======================================================================
 
 c Publications to cite: PRD 109 (2024) 034002; PRD 109 (2024) 094019
-c Last modified: 04.10.2024
+c Last modified: 27.01.2025
 c Regarding secondary particle types, see the procedure qgreg
 c NB: because of a final model tuning, certain parameter values differ
 c from what was specified in PRD 109 (2024) 094019
@@ -67,7 +67,7 @@ c-----------------------------------------------------------------------------
       common /qgarr51/ epsxmn
       common /opt/     jopt
       common /qgdebug/ debug
-      common /qgsIIInex1/xan(iapmax,3),xbn(iapmax,3)  !used to link with nexus
+      common /qgsIIInex1/xan(iapmax,3),xbn(iapmax,3)
      *,bqgs,bmaxqgs,bmaxnex,bminnex
 
       moniou=6             !output channel for debugging
@@ -77,10 +77,10 @@ c-----------------------------------------------------------------------------
                            !4 - all returned values, 5 - technical)
       if(debug.ge.1)write (moniou,210)
       
-      bqgs=0.d0            !used to link with nexus
-      bmaxqgs=0.d0         !used to link with nexus
-      bmaxnex=-1.d0        !used to link with nexus
-      bminnex=0.d0         !used to link with nexus
+      bqgs=0.d0          
+      bmaxqgs=0.d0       
+      bmaxnex=-1.d0      
+      bminnex=0.d0       
 
       jopt=1               !parameter option
 
@@ -394,18 +394,18 @@ c     reading cross sections from the file
 c      print *,ifIIIdat,DATDIR(1:INDEX(DATDIR,' ')-1)
 c     *       ,fnIIIdat(1:nfnIIIdat)
       if(ifIIIdat.ne.1)then
-       inquire(file=DATDIR(1:INDEX(DATDIR,' ')-1)//'qgsjetIII.dat'
+       inquire(file=DATDIR(1:INDEX(DATDIR,' ')-1)//'qgsdat-III'
      *        ,exist=lcalc)
       else
-       inquire(file=fnIIIdat(1:nfnIIIdat),exist=lcalc) !used to link with nexus
+       inquire(file=fnIIIdat(1:nfnIIIdat),exist=lcalc) 
       endif
       lzmaUse=0
       if(lcalc)then
         if(debug.ge.2)write (moniou,205)
          if(ifIIIdat.ne.1)then
-            open(1,file=DATDIR(1:INDEX(DATDIR,' ')-1)//'qgsjetIII.dat'
+            open(1,file=DATDIR(1:INDEX(DATDIR,' ')-1)//'qgsdat-III'
      *           ,status='old')
-         else                   !used to link with nexus
+         else                 
             if (LEN(fnIIIdat).gt.6.and.
      *           fnIIIdat(nfnIIIdat-4:nfnIIIdat) .eq. ".lzma") then
                lzmaUse=1
@@ -417,7 +417,7 @@ c     *       ,fnIIIdat(1:nfnIIIdat)
 
          if (lzmaUse.ne.0) then
 
-          if(debug.ge.0)write (moniou,214) 'qgsjetIII.dat.lzma'
+          if(debug.ge.0)write (moniou,214) 'qgsdat-III.lzma'
 
           call LzmaFillArray(csborn,size(csborn))
           call LzmaFillArray(cs0,size(cs0))
@@ -440,7 +440,7 @@ c     *       ,fnIIIdat(1:nfnIIIdat)
           call LzmaFillArray(qrt,size(qrt))
           call LzmaCloseFile()
         else
-          if(debug.ge.0)write (moniou,214) 'qgsjetIII.dat'
+          if(debug.ge.0)write (moniou,214) 'qgsdat-III'
           read (1,*)csborn,cs0,cstot,evk,qpomi,qpomis,qloopr,qlegi,qfanu
      * ,qfanc,pdfr,qpomr,dhteik,feikht,ffhtm,flhtm,gsect,fsud,qrt
           close(1)
@@ -478,7 +478,7 @@ c fix gluon PDF by momentum conservation
        goto 15
 
       elseif(.not.producetables)then
-        write(moniou,*) "Missing qgsjetIII.dat file !"
+        write(moniou,*) "Missing qgdat-III file !"
         write(moniou,*) "Please correct the defined path ",
      &"or force production ..."
         stop
@@ -1693,9 +1693,9 @@ c-----------------------------------------------------------------------------
 c writing cross sections to the file
       if(debug.ge.1)write (moniou,220)
       if(ifIIIdat.ne.1)then
-       open(1,file=DATDIR(1:INDEX(DATDIR,' ')-1)//'qgsjetIII.dat'
+       open(1,file=DATDIR(1:INDEX(DATDIR,' ')-1)//'qgsdat-III'
      * ,status='unknown')
-      else                                              !used to link with nexus
+      else                                            
        open(ifIIIdat,file=fnIIIdat(1:nfnIIIdat),status='unknown')
       endif
       write (1,*)csborn,cs0,cstot,evk,qpomi,qpomis,qloopr,qlegi,qfanu
@@ -1779,12 +1779,12 @@ c nuclear cross sections
 212   format(2x,'qgaini: integrated Pomeron leg eikonals')
 213   format(2x,'qgaini: integrated fan contributions')
 214   format(2x,'qgaini: cross sections readout from the file: ', A,2x)
-c     *,' qgsjetIII.dat')
+c     *,' qgsdat-III')
 215   format(2x,'qgaini: integrated cut fan contributions')
 c216   format(2x,'qgaini: integrated cut Pomeron eikonals')
 218   format(2x,'qgaini - end')
 220   format(2x,'qgaini: cross sections are written to the file'
-     *,' qgsjetIII.dat')
+     *,' qgsdat-III')
 221   format(2x,'qgaini: timelike Sudakov formfactor')
 222   format(2x,'qgaini: effective virtuality for inversion')
 224   format(2x,'qgaini: hadron-nucleus cross sections:'
@@ -1823,7 +1823,7 @@ c-----------------------------------------------------------------------------
       common /qgarr43/ moniou
       common /arr1/    trnuc(56),twsnuc(56),twbnuc(56)
       common /qgdebug/ debug
-      common /qgsIIInex1/xan(iapmax,3),xbn(iapmax,3)  !used to link with nexus
+      common /qgsIIInex1/xan(iapmax,3),xbn(iapmax,3)
      *,bqgs,bmaxqgs,bmaxnex,bminnex
 
       if(debug.ge.1)write (moniou,201)icp0,iap,iat,e0n
@@ -1872,7 +1872,7 @@ c nuclear radii and weights for nuclear configurations - procedure qggea
        bm=dsqrt(rq(1,icz)+rq(1,2)+alfp*log(scm))               !b-cutoff
       endif
 
-      bmaxqgs=bm                                      !used to link with nexus
+      bmaxqgs=bm                                    
 
       if(debug.ge.3)write (moniou,202)
 201   format(2x,'qgini - miniinitialization: particle type icp0=',
@@ -3735,6 +3735,7 @@ c-----------------------------------------------------------------------
       
       if(iqq.lt.0.or.iqq.gt.1)stop'qgppdi:iqq out of range!!!'   
       if(debug.ge.3)write (moniou,201)xp,iqq
+      qgppdi=0.d0
       if(xp.ge..9999999d0)then
        qgppdi=0.d0
       else
@@ -3769,6 +3770,7 @@ c-----------------------------------------------------------------------
       
       if(iqq.lt.0.or.iqq.gt.1)stop'qgppdc:iqq out of range!!!'   
       if(debug.ge.3)write (moniou,201)xp,iqq
+      qgppdc=0.d0
       if(xp.ge..9999999d0)then
        qgppdc=0.d0
       else
@@ -3781,9 +3783,9 @@ c-----------------------------------------------------------------------
       endif
       if(debug.ge.4)write (moniou,202)qgppdc
      
-201   format(2x,'qgppdi - parton distr. in the Pomeron:'
+201   format(2x,'qgppdc - parton distr. in the Pomeron:'
      */4x,'xp=',e10.3,2x,'iqq=',i1)
-202   format(2x,'qgppdi=',e10.3)
+202   format(2x,'qgppdc=',e10.3)
       return 
       end      
 
@@ -4304,6 +4306,8 @@ c----------------------------------------------------------------------------
       common /qgarr43/ moniou
       common /qgdebug/ debug
       common /arr3/    x1(7),a1(7)
+Cf2py intent(in) b,iddp1,iddp2
+Cf2py intent(out) gz
 
       if(debug.ge.2)write (moniou,201)b,iddp1,iddp2
       do l=1,5
@@ -4441,9 +4445,9 @@ c----------------------------------------------------------------------------
         xp=z1**xx
         xm=z1/xp
         ut=qggrv(xm,qt0,2,1)
-        vt=qggrv(xm,qt0,2,2)
+        dt=qggrv(xm,qt0,2,2)                 !tp270125
         up=qggrv(xp,qt0,icz,1)
-        vp=qggrv(xp,qt0,icz,2)
+        dp=qggrv(xp,qt0,icz,2)               !tp270125
         if(icz.eq.1)then
          sigg=sj*(up*dt+dp*ut)+sjqq*up*ut+sjqa*dp*dt
         elseif(icz.eq.2)then
@@ -4902,11 +4906,11 @@ c-----------------------------------------------------------------------------
       common /qgarr43/ moniou
       common /qgarr46/ iconab(iapmax,iapmax),icona(iapmax)
      *,iconb(iapmax)
-      common /qgarr55/ nwt,nwp           !N of wounded targ.(proj.) nucleons
+      common /qgarr55/ nwt,nwp
       common /qgdebug/ debug
-      common /qgsIIInex1/xan(iapmax,3),xbn(iapmax,3) !used to link with nexus
+      common /qgsIIInex1/xan(iapmax,3),xbn(iapmax,3) 
      *,bqgs,bmaxqgs,bmaxnex,bminnex
-      common /jdiff/   jdiff             !diffr. type (external use)
+      common /jdiff/   jdiff             
 ctp from epos
       integer ng1evt,ng2evt,ikoevt
       real    rglevt,sglevt,eglevt,fglevt,typevt
@@ -4945,7 +4949,7 @@ c squared impact parameter is sampled uniformly (b**2<bm**2)
       bcoll=bm*dsqrt(qgran(b10))
       if(debug.ge.1)write (moniou,202)bcoll
 
-c      if(bmaxnex.ge.0.d0)then              !used to link with nexus
+c      if(bmaxnex.ge.0.d0)then            
 c       b1=bminnex
 c       b2=min(bm,bmaxnex)
 c       if(b1.ge.b2)stop'bmin > bmax in qgsjet'
@@ -6600,6 +6604,7 @@ c vv(18): >=1  targ. quark-leg and 1 targ. leg
       nptgh0=0
       wgpr0=0.d0
       wgtg0=0.d0
+      wh=0.d0
       if(jt.eq.1.or.jt.eq.4.or.jt.eq.7.or.jt.eq.14)then         !>=2 proj. fans
        ntry=0
 3      ntry=ntry+1
@@ -9984,7 +9989,7 @@ c energy-momentum sharing for hard processes
            lnp=lnpr(np,npb)                      !index for proj. constituent
            ipnh(lnp,ipp)=nhard                   !hard scatt. index
            wpi=wppr(ipp)                         !LC+ available
-           wmi=xpompr(lnp,ipp)*wm0               !LC- available
+           wmi=min(xpompr(lnp,ipp)*wm0,wmtg(it))           !so270125
            bbp=bpompr(lnp,ipp,1)                 !b^2 to the proj.
            bbt=bpompr(lnp,ipp,2)                 !b^2 to the target
            call qglchard(wpi,wmi,xph,xmh,bbp,bbt,wch,xxp,yyp,bbi,vvxps
@@ -10022,7 +10027,7 @@ c energy-momentum sharing for hard processes
            icdtt=iddt(itt)                       !targ. diffr. eigenstate
            lnt=lntg(np,npb)                      !index for targ. constituent
            itnh(lnt,itt)=nhard                   !hard scatt. index
-           wpi=xpomtg(lnt,itt)*wp0               !LC+ available
+           wpi=min(xpomtg(lnt,itt)*wp0,wppr(ip))           !so270125
            wmi=wmtg(itt)                         !LC- available
            bbt=bpomtg(lnt,itt,1)                 !b^2 to the target
            bbp=bpomtg(lnt,itt,2)                 !b^2 to the proj.
@@ -10616,7 +10621,7 @@ c-----------------------------------------------------------------------------
        qvp1=qggrv(xpmax,qt0,icz,1)*(1.d0-xpmin)**ahv(icz)
        qvp2=qggrv(xpmax,qt0,icz,2)*(1.d0-xpmin)**ahv(icz)
        qvt1=qggrv(xmmax,qt0,2,1)*(1.d0-xmmin)**ahv(2)
-       qvp2=qggrv(xmmax,qt0,2,2)*(1.d0-xmmin)**ahv(2)
+       qvt2=qggrv(xmmax,qt0,2,2)*(1.d0-xmmin)**ahv(2)      !tp270125
        if(icz.eq.1)then
         if(izp.eq.1.and.izt.eq.2.or.izp.eq.-1.and.izt.eq.3)then
          gb0=qvp1*qvt1*sjqqq+qvp2*qvt2*sjqqa+(qvp1*qvt2+qvp2*qvt1)*sjqq
@@ -10802,6 +10807,10 @@ c-----------------------------------------------------------------------------
        elseif(idp.eq.3.or.idp.eq.8)then
         gb0=gb0*qv2*(glu1*sjqg+sea1*(sjqq/1.5d0+sjqqq/6.d0+sjqqa/6.d0))
        endif 
+       if(gb0.eq.0.d0)then                   !so270125
+        iret=1
+        return
+       endif
        nret=0
        nren=0
        gbmax=0.d0
@@ -11364,7 +11373,7 @@ c-----------------------------------------------------------------------------
       common /qgarr28/ arr(5),alpq
       common /qgarr43/ moniou
       common /qgdebug/ debug
-      common /jdiff/   jdiff             !diffr. type (external use)
+      common /jdiff/   jdiff             
       external qgran
 
       if(debug.ge.2)write (moniou,201)wp1,wp2,wm1,wm2
@@ -11406,7 +11415,7 @@ c-----------------------------------------------------------------------------
        endif
        xp=qgslc(arr(1),-arr(1))
        am12=am(1)
-       if(icps(1).lt.0.d0)then
+       if(icps(1).lt.0)then                    !so270125
         xp=1.d0-xp
         icd=icps(1)
         icps(1)=icps(2)
@@ -11999,7 +12008,7 @@ c---------------------------------------------------------------------------
      *,iconb(iapmax)
       common /qgarr51/ epsxmn
       common /qgdebug/ debug
-      common /jdiff/   jdiff             !diffr. type (external use)
+      common /jdiff/   jdiff             
       common /ebal/    ebal0(4),ebal1(4)
       external qgran
 
@@ -12094,7 +12103,7 @@ c color connections to constituent partons
            call qgrex(xnp,ptp,am2hp,izp,icpr,icp1,icp2,icz,jex)
           endif
           xp=qgslc(arr(1),-arr(1))
-          if(icp1.lt.0.d0)then
+          if(icp1.lt.0)then                   !so270125
            xp=1.d0-xp
            icd=icp1
            icp1=icp2
@@ -12705,8 +12714,8 @@ c define color flow for the emitted jet; perform final state emission
         endif
         nqc(1)=ncc(1,jj)                        !color connection for the jet
        else                                     !g -> qq~
-        jq=int(1.5d0+qgran(b10))                !orientation of color flow
-66      iq1=int(3.d0*qgran(b10)+1.d0)*(3-2*jq)  !jet flavor (type)
+ 66     jq=int(1.5d0+qgran(b10))          !orientation of color flow      !so270125
+        iq1=int(3.d0*qgran(b10)+1.d0)*(3-2*jq)  !jet flavor (type)
         if(iqp(3-jj).ne.1)then
          if(jini.eq.1)then
           sjq=qgjit(qq,qmin(3-jj),s2,2,2)
@@ -12717,9 +12726,9 @@ c define color flow for the emitted jet; perform final state emission
           sjqq=qgjit1(qq,qmin(3-jj),s2,3,2)
           sjqa=qgjit1(qq,qmin(3-jj),s2,4,2)
          endif
-         if(iq1.eq.iqc(2))then
+         if(iq1.eq.iqc(3-jj))then                         !so270125
           gbf=sjqa/(sjq/1.5d0+sjqq/6.d0+sjqa/6.d0)
-         elseif(iq1+iqc(2).eq.0)then
+         elseif(iq1+iqc(3-jj).eq.0)then                     !so270125
           gbf=sjqq/(sjq/1.5d0+sjqq/6.d0+sjqa/6.d0)
          else
           gbf=sjq/(sjq/1.5d0+sjqq/6.d0+sjqa/6.d0)
@@ -13349,15 +13358,16 @@ c---------------------------------------------------------------------------
 
       if(debug.ge.2)write (moniou,201)s,t,iq1,iq2
 
+      qgfbor=0.d0
       u=s-t
       if(n.eq.1)then
        if(iq1.eq.0.and.iq2.eq.0)then        !gluon-gluon
-        qgfbor=(3.d0-t*u/s**2+s*u/t**2+s*t/u**2)*4.5d0
+        qgfbor=(3.d0-t*u/s**2+s*u/t**2+s*t/u**2)*4.5d0/2.d0   !so270125
        elseif(iq1*iq2.eq.0)then             !gluon-quark
         qgfbor=(s**2+u**2)/t**2+(s/u+u/s)/2.25d0
        elseif(iq1.eq.iq2)then               !quark-quark (same flavor)
-        qgfbor=((s**2+u**2)/t**2+(s**2+t**2)/u**2)/2.25d0
-     *  -s**2/t/u/3.375d0
+        qgfbor=(((s**2+u**2)/t**2+(s**2+t**2)/u**2)/2.25d0
+     *  -s**2/t/u/3.375d0)/2.d0                                  !so270125
        elseif(iq1+iq2.eq.0)then             !quark-antiquark (same flavor)
         qgfbor=((s**2+u**2)/t**2+(u**2+t**2)/s**2)/2.25d0
      *  +u**2/t/s/3.375d0
@@ -13374,7 +13384,7 @@ c---------------------------------------------------------------------------
        endif
       elseif(n.eq.3)then
        if(iq1.ne.0.and.iq1+iq2.eq.0)then    !quark-antiquark->gluon-gluon
-        qgfbor=32.d0/27.d0*(t/u+u/t)-(t*t+u*u)/s**2/.375d0
+        qgfbor=(32.d0/27.d0*(t/u+u/t)-(t*t+u*u)/s**2/.375d0)/2.d0  !so270125
        else
         qgfbor=0.d0
        endif
@@ -13442,7 +13452,7 @@ c-----------------------------------------------------------------------------
       qgborn=qgborn*2.d0*pi**3/s**2
       qgborn=qgborn/qgsudx(qi,min(2,iabs(iq1)+1))
      */qgsudx(qj,min(2,iabs(iq2)+1))
-      if(mm.eq.ll)qgborn=qgborn*.5d0
+!!!!!!!!!!!!!      if(mm.eq.ll)qgborn=qgborn*.5d0                      !so270125
 
       if(debug.ge.3)write (moniou,202)qgborn
 201   format(2x,'qgborn: qi=',e10.3,2x,'qj=',e10.3,2x,
@@ -14942,7 +14952,8 @@ c-----------------------------------------------------------------------------
       if(jexpr.ne.-1)then
        if(jexip.eq.0)then
         call qgreg(ep1,izp)
-       else
+      else
+        is=1
         if(izp.ne.0)is=iabs(izp)/izp     
         if(icz.eq.1)then
          if(iabs(izp).ge.4)then
@@ -15968,7 +15979,7 @@ c       if(qgran(b10).gt.(z/zmax)**blf)goto 2
      *,2x,'s0=',e10.3,2x,'c0=',e10.3)
 202   format(2x,'qggene - end')
 203   format(2x,'qggene: current parton flavor at the end '
-     *,i1,' of the string: ',a2/4x,' string mass: ',e10.3)
+     *,i1,' of the string: ',2a2/4x,' string mass: ',e10.3)
       end
 
 c=============================================================================
@@ -16416,6 +16427,8 @@ c-------------------------------------------------------------------------------
       common /qgarr16/ cc(nfock,3),iddp(iapmax),iddt(iapmax)
       common /arr3/    x1(7),a1(7)
       external qgran
+cf2py intent(in) :: niter
+cf2py intent(out) :: gtot,gprod,gabs,gdd,gqel,gcoh
 
       e1=exp(-1.d0)
       bm=rnuc(1)+rnuc(2)+2.d0*max(wsnuc(1),wsnuc(2))
@@ -16516,7 +16529,7 @@ c-------------------------------------------------------------------------------
       end
 
 c-------------------------------------------------------------------------------
-      double precision function qgsect(e0n,icz,iap0,iat0)    !so18032013
+      double precision function qgsect(e0n,icz,iap0,iat0)
 c-------------------------------------------------------------------------------
 c qgsect - hadron-nucleus (hadron-nucleus) particle production cross section
 c e0n - lab. energy per projectile nucleon (hadron),
@@ -16535,7 +16548,7 @@ c-------------------------------------------------------------------------------
       if(debug.ge.3)write (moniou,201)e0n,icz,iap0,iat0
       qgsect=0.d0
 
-      iap=iap0                                              !so18032013-beg
+      iap=iap0                                         !so18032013-beg
       iat=iat0
       if(iat.eq.1.and.iap.ne.1)then
        iap=iat0
@@ -17345,7 +17358,7 @@ c=============================================================================
           sigs=sigs+qgfbor(si,t,iq,min(1,iabs(iq2)),n)
      *    +qgfbor(si,si-t,iq,min(1,iabs(iq2)),n)
          enddo
-         if(iq.eq.iq2)sigs=sigs/2.d0
+!!!!!!!!!!!!!!!!         if(iq.eq.iq2)sigs=sigs/2.d0             !so270125
          evs=qgevi(qi,qt/fqscal,z1,min(2,iabs(iq1)+1),iql)
          fb=fb+evs*sigs
         enddo
@@ -17358,15 +17371,15 @@ c=============================================================================
      *     +qgfbor(si,si-t,iq,1,n)
           enddo
          enddo
-         fb=fb+evs*(sigsi(1)/12.d0+sigsi(2)/6.d0-sigs/3.d0)
+         fb=fb+evs*(sigsi(1)/6.d0+sigsi(2)/6.d0-sigs/3.d0)      !so270125
          if(iq1.ne.0)then
           evns=qgevi(qi,qt/fqscal,z1,3,2)
           if(max(iq1,iq2).lt.2)then
-           fb=fb+evns*(sigs/3.d0-sigsi(1)/12.d0-sigsi(2)/6.d0)
+           fb=fb+evns*(sigs/3.d0-sigsi(1)/6.d0-sigsi(2)/6.d0)   !so270125
           elseif(max(iq1,iq2).eq.2)then
-           fb=fb+evns*(sigsi(1)/2.4d0-sigsi(2)/6.d0-sigs/1.5d0)
+           fb=fb+evns*(sigsi(1)/1.2d0-sigsi(2)/6.d0-sigs/1.5d0) !so270125
           elseif(max(iq1,iq2).eq.3)then
-           fb=fb+evns*(sigsi(2)/1.2d0-sigsi(1)/12.d0-sigs/1.5d0)
+           fb=fb+evns*(sigsi(2)/1.2d0-sigsi(1)/6.d0-sigs/1.5d0) !so270125
           else
            stop'problem with parton types in qgjeti'
           endif
@@ -17384,7 +17397,7 @@ c=============================================================================
          do n=1,3
           sigs=sigs+qgfbor(si,t,iq,iqr-1,n)+qgfbor(si,si-t,iq,iqr-1,n)
          enddo
-         if(iq.eq.iqr-1)sigs=sigs/2.d0
+!!!!!!!!!!!!!!!!!         if(iq.eq.iqr-1)sigs=sigs/2.d0                                        !so270125
          fb=fb+evsl*evsr*sigs
         enddo
         enddo
@@ -17396,16 +17409,16 @@ c=============================================================================
      *    +qgfbor(si,si-t,iq,1,n)
          enddo
         enddo
-        fb=fb+evsl*evsr*(sigsi(1)/12.d0+sigsi(2)/6.d0-sigs/3.d0)
+        fb=fb+evsl*evsr*(sigsi(1)/6.d0+sigsi(2)/6.d0-sigs/3.d0) !so270125
         if(iq1.ne.0.and.iq2.ne.0)then
          evnsl=qgevi(qi,qt/fqscal,z1,3,2)
          evnsr=qgevi(qj,qt/fqscal,z2,3,2)
          if(max(iq1,iq2).lt.2)then
-          fb=fb+evnsl*evnsr*(sigs/3.d0-sigsi(1)/12.d0-sigsi(2)/6.d0)
+          fb=fb+evnsl*evnsr*(sigs/3.d0-sigsi(1)/6.d0-sigsi(2)/6.d0)   !so270125
          elseif(max(iq1,iq2).eq.2)then
-          fb=fb+evnsl*evnsr*(sigsi(1)/2.4d0-sigsi(2)/6.d0-sigs/1.5d0)
+          fb=fb+evnsl*evnsr*(sigsi(1)/1.2d0-sigsi(2)/6.d0-sigs/1.5d0) !so270125
          elseif(max(iq1,iq2).eq.3)then
-          fb=fb+evns*(sigsi(2)/1.2d0-sigsi(1)/12.d0-sigs/1.5d0)
+          fb=fb+evnsl*evnsr*(sigsi(2)/1.2d0-sigsi(1)/6.d0-sigs/1.5d0)     !so270125
          else
           stop'problem with parton types in qgjeti'
          endif
@@ -17916,8 +17929,7 @@ c=============================================================================
          pdfp=qgpdfbi(xpm,bbp,vvx,0.d0,icdp,icz,iq1,jj)*xp/xpm
          iq=2*iq1-2
          do n=1,3
-          fb=fb+qgfbor(sim,t,iq,iq2-1,n)
-          if(iq.ne.iq2-1)fb=fb+qgfbor(sim,sim-t,iq,iq2-1,n)
+          fb=fb+qgfbor(sim,t,iq,iq2-1,n)+qgfbor(sim,sim-t,iq,iq2-1,n) !so270125
          enddo
          fb=fb*qgsudx(qt/fqscal,iq1)*qgsudx(qt/fqscal,iq2)
      &   /qgsudx(qt0,iq1)/qgsudx(qt0,iq2)*pdfp/sim**2
@@ -17932,8 +17944,7 @@ c=============================================================================
          if(xpm.lt.1.d0)then
           pdfp=qgpdfbi(xpm,bbp,vvx,0.d0,icdp,icz,iq1,jj)*xp/xpm
           do n=1,3
-           dfb=dfb+qgfbor(sim,t,iq,iq2-1,n)
-           if(iq.ne.iq2-1)dfb=dfb+qgfbor(sim,sim-t,iq,iq2-1,n)
+           dfb=dfb+qgfbor(sim,t,iq,iq2-1,n)+qgfbor(sim,sim-t,iq,iq2-1,n) !so270125
           enddo
           fb=fb+dfb*qgevi(qt0,qt/fqscal,zp,iq1,iql)*pdfp/sim**2
          endif
@@ -17950,7 +17961,7 @@ c=============================================================================
           dfb=0.d0
           do n=1,3
            dfb=dfb+qgfbor(sim,t,iq1-1,iq,n)
-           if(iq.ne.iq1-1)dfb=dfb+qgfbor(sim,sim-t,iq1-1,iq,n)
+     *     +qgfbor(sim,sim-t,iq1-1,iq,n)                  !so270125
           enddo
           fb=fb+dfb*qgevi(qt0,qt/fqscal,zm,iq2,iqr)
          enddo
@@ -17968,7 +17979,7 @@ c=============================================================================
            dfb=0.d0
            do n=1,3
             dfb=dfb+qgfbor(sim,t,iq,iqr-1,n)
-            if(iq.ne.iqr-1)dfb=dfb+qgfbor(sim,sim-t,iq,iqr-1,n)
+     *      +qgfbor(sim,sim-t,iq,iqr-1,n)                  !so270125
            enddo
            fb=fb+dfb*qgevi(qt0,qt/fqscal,zp,iq1,iql)
      *     *qgevi(qt0,qt/fqscal,zm,iq2,iqr)*pdfp/sim**2
@@ -18612,8 +18623,7 @@ c=============================================================================
      *  *qgalf(qt/fqscal/alm))
         if(xpm.lt.1.d0)then
          do n=1,3
-          fb=fb+qgfbor(si,t,iq,iq2-1,n)
-          if(iq.ne.iq2-1)fb=fb+qgfbor(si,si-t,iq,iq2-1,n)
+          fb=fb+qgfbor(si,t,iq,iq2-1,n)+qgfbor(si,si-t,iq,iq2-1,n)  !so270125
          enddo
          fb=fb*qgsudx(qt/fqscal,iq1)*qgsudx(qt/fqscal,iq2)
      &   /qgsudx(qt0,iq1)/qgsudx(qt0,iq2)/si**2
@@ -18628,8 +18638,7 @@ c=============================================================================
          if(xpm.lt.1.d0)then
           dfb=0.d0
           do n=1,3
-           dfb=dfb+qgfbor(si,t,iq,iq2-1,n)
-           if(iq.ne.iq2-1)dfb=dfb+qgfbor(si,si-t,iq,iq2-1,n)
+           dfb=dfb+qgfbor(si,t,iq,iq2-1,n)+qgfbor(si,si-t,iq,iq2-1,n) !so270125
           enddo
           fb=fb+dfb*qgevi(qt0,qt/fqscal,zp,iq1,iql)/si**2
      *    *qgloopi(1.d0/xpm,vvxi,iq1,jj)*xp/xpm
@@ -18645,8 +18654,7 @@ c=============================================================================
           iq=2*iqr-2
           dfb=0.d0
           do n=1,3
-           dfb=dfb+qgfbor(si,t,iq1-1,iq,n)
-           if(iq.ne.iq1-1)dfb=dfb+qgfbor(si,si-t,iq1-1,iq,n)
+           dfb=dfb+qgfbor(si,t,iq1-1,iq,n)+qgfbor(si,si-t,iq1-1,iq,n) !so270125
           enddo
           fb=fb+dfb*qgevi(qt0,qt/fqscal,zm,iq2,iqr)
          enddo
@@ -18663,8 +18671,7 @@ c=============================================================================
           do iqr=1,2
            dfb=0.d0
            do n=1,3
-            dfb=dfb+qgfbor(si,t,iq,iqr-1,n)
-            if(iq.ne.iqr-1)dfb=dfb+qgfbor(si,si-t,iq,iqr-1,n)
+            dfb=dfb+qgfbor(si,t,iq,iqr-1,n)+qgfbor(si,si-t,iq,iqr-1,n) !so270125
            enddo
            fb=fb+dfb*qgevi(qt0,qt/fqscal,zp,iq1,iql)
      *     *qgevi(qt0,qt/fqscal,zm,iq2,iqr)/si**2

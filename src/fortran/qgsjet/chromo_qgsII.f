@@ -35,6 +35,28 @@ C      CALL QGSSIGINI
 C-----------------------------------------------------------------------
 C  Convert to HEPEVT common block
 C
+C  FOLLOWING NOTATIONS FOR PARTICLES TYPES ARE USED WITHIN QGSJET:
+C             0 - PI0,
+C             1 - PI+,
+C            -1 - PI-,
+C             2 - P,
+C            -2 - P-BAR,
+C             3 - N,
+C            -3 - N-BAR,
+C             4 - K+,
+C            -4 - K-,
+C             5 - K0S,
+C            -5 - K0L
+C             6 - LAMBDA
+C            -6 - LAMBDA-BAR
+C             7 - D+
+C            -7 - D-
+C             8 - D0
+C            -8 - D0-BAR
+C             9 - LAMBDA_C
+C            -9 - LAMBDA_C-BAR
+C            10 - ETA
+C           -10 - RHO0
 C-----------------------------------------------------------------------
          IMPLICIT NONE
 
@@ -98,75 +120,6 @@ C         WRITE(6,*) I, ich(I), esp(:,I)
             ICHG(I) = ICHRG(ich(I))
          END DO
 
-
-      END
-
-*-- Author :    D. HECK IK FZK KARLSRUHE       12/01/1996
-C=======================================================================
-
-      BLOCK DATA QGSDAT
-
-C-----------------------------------------------------------------------
-C  Q(UARK) G(LUON) S(TRING JET MODEL) DAT(A INITIALIZATION)
-C
-C  INITIALIZES DATA FOR QGSJET LINK.
-C-----------------------------------------------------------------------
-
-         IMPLICIT NONE
-         COMMON /CRQGSLIN/ICTABL,IQTABL
-         INTEGER          ICTABL(200),IQTABL(-10:10)
-         SAVE
-C  FOLLOWING NOTATIONS FOR PARTICLES TYPES ARE USED WITHIN QGSJET:
-C             0 - PI0,
-C             1 - PI+,
-C            -1 - PI-,
-C             2 - P,
-C            -2 - P-BAR,
-C             3 - N,
-C            -3 - N-BAR,
-C             4 - K+,
-C            -4 - K-,
-C             5 - K0S,
-C            -5 - K0L
-C             6 - LAMBDA
-C            -6 - LAMBDA-BAR
-C             7 - D+
-C            -7 - D-
-C             8 - D0
-C            -8 - D0-BAR
-C             9 - LAMBDA_C
-C            -9 - LAMBDA_C-BAR
-C            10 - ETA
-C           -10 - RHO0
-
-C  ICTABL CONVERTS CORSIKA PARTICLES INTO QGSJET PARTICLES
-C  NO CHARMED PARTICLES POSSIBLE AS PROJECTILES
-         DATA ICTABL/
-     *      0,   0,   0,   0,   0,   0,   1,   1,  -1,  -5,   ! 10
-     *      4,  -4,   3,   2,  -2,   5,  10,   6,   0,   0,   ! 20
-     *      0,   0,   0,   0,  -3,  -6,   0,   0,   0,   0,   ! 30
-     *      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   ! 40
-     *      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   ! 50
-     *      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   ! 60
-     *      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   ! 70
-     *     10,  10,  10,  10,   26*0,
-C  CHARMED MESONS
-C  CONVERT UNKNOWN CHARMED MESONS TO KNOWN D-MESONS
-     *     10*0,                                              !110
-     *      0,   0,   0,   0,   0,   8,   7,  -7,  -8,   7,   !120
-     *     -7,   0,   8,   7,  -7,  -8,   7,  -7,   0,   0,   !130
-C  CHARMED BARYONS
-     *      0,   0,   0,   0,   0,   0,   9,   0,   0,   0 ,  !140
-     *      0,   0,   0,   0,   0,   0,   0,   0,  -9,   0 ,  !150
-     *      50*0 /
-
-C  IQTABL CONVERTS QGSJET PARTICLES INTO CORSIKA PARTICLES
-C  INCLUDES CHARMED PARTICLES
-C  IQTABL RUNS FROM -10:10
-         DATA IQTABL/
-     *      51, 149, 119, 118,  26,  10,  12,  25,  15,   9,  ! -10 .... -1
-     *      7,                                               !   0
-     *      8,  14,  13,  11,  16,  18, 117, 116, 137,  17/  !   1 .... 10
 
       END
 

@@ -341,14 +341,14 @@ class QGSJetII04(QGSJet2Run):
     _library_name = "_qgsII04"
 
 
-class QGSJetIII04(QGSJet2Run):
-    _version = "III-04"
-    _library_name = "_qgsIII04"
+class QGSJetIII(QGSJet2Run):
+    _version = "III"
+    _library_name = "_qgsIII"
     _event_class = QGSJET3Event
 
 
 # Note for integration stage:
-#   Following data files (tables) are needed for initialization and working of QGSJetIII04
-#    .../chromo/src/chromo/iamdata/qgsjet/qgsjetIII.dat
-#    Pay attention that it is exactly "qgsjetIII.dat"
+#   Following data files (tables) are needed for initialization and working of QGSJetIII
+#    .../chromo/src/chromo/iamdata/qgsjet/qgsjetIII
+#    Pay attention that it is exactly "qgsjetIII"
 #    .../chromo/src/chromo/iamdata/qgsjet/sectnu-III

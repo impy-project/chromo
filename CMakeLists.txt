@@ -342,7 +342,7 @@ f2py_add_module(
 
 # qgsIII
 f2py_add_module(
-  _qgsIII04
+  _qgsIII
   FUNCTIONS
   ${QGSJETII_COMMON_FUNCTIONS} qgran
   SOURCES

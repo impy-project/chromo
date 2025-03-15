@@ -227,7 +227,7 @@ c-----------------------------------------------------------------------
 c=======================================================================
       double precision function qgran(vdummy)
 c-----------------------------------------------------------------------
-c  random generator for qgsjetIII-04
+c  random generator for qgsjetIII
 c  vdummy in qgsjetIII is initial value of the pseudorandom sequence 
 c (see source code)
 c-----------------------------------------------------------------------
