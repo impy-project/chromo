@@ -35,6 +35,39 @@ C      CALL QGSSIGINI
 C-----------------------------------------------------------------------
 C  Convert to HEPEVT common block
 C
+C
+C  FOLLOWING NOTATIONS FOR PARTICLES TYPES ARE USED WITHIN QGSJET:
+C             0 - PI0,
+C             1 - PI+,
+C            -1 - PI-,
+C             2 - P,
+C            -2 - P-BAR,
+C             3 - N,
+C            -3 - N-BAR,
+C             4 - K+,
+C            -4 - K-,
+C             5 - K0S,
+C            -5 - K0L
+C             6 - LAMBDA
+C            -6 - LAMBDA-BAR
+C             7 - DELTA++
+C            -7 - DELTA++-BAR
+C             8 - DELTA-
+C            -8 - DELTA--BAR
+C             9 - nothing
+C            -9 - nothing
+C            10 - ETA
+C            16 - RHO+
+C           -16 - RHO-
+C            17 - RHO0
+C            18 - K*+
+C           -18 - K*-
+C            19 - K*0
+C           -19 - K*0-BAR
+C            20 - sigma+
+C           -20 - sigma+bar
+C            21 - sigma-
+C           -21 - sigma-bar
 C-----------------------------------------------------------------------
          IMPLICIT NONE
 
@@ -54,32 +87,44 @@ C-----------------------------------------------------------------------
          INTEGER ICHG
          COMMON /QGCHG/  ICHG(NMXHEP)
 C     Particle tables start with the ID -10(rho0) going through 0 (pi0).
-         character*12 NAME(-10:10)
+         CHARACTER*12 NAME(-21:21)
          DATA NAME /
-     &   'rho0        ','Lambda_cbar-','Dbar0       ','D-          ',
-     &   'Lambdabar0  ','K_L0        ','K-          ','nbar0       ',
-     &   'pbar-       ','pi-         ','pi0         ','pi+         ',
-     &   'p+          ','n0          ','K+          ','K_S0        ',
-     &   'Lambda0     ','D+          ','D0          ','Lambda_c+   ',
-     &   'eta         '/
+     &   'Sigmabar+   ', 'Sigmabar-   ', 'K*bar0      ', 'K*-         ',
+     &   '            ', 'rho-        ', '            ', '            ',
+     &   '            ', '            ', '            ', '            ',
+     &   '            ', 'Deltabar--  ', 'Deltabar0   ', 'Lambdabar0  ',
+     &   'K_L0        ', 'K-          ', 'nbar0       ', 'pbar-       ',
+     &   'pi-         ', 'pi0         ', 'pi+         ', 'p+          ',
+     &   'n0          ', 'K+          ', 'K_S0        ', 'Lambda0     ',
+     &   'Delta++     ', 'Delta-      ', '            ', 'eta         ',
+     &   '            ', '            ', '            ', '            ',
+     &   '            ', 'rho+        ', 'rho0        ', 'K*+         ',
+     &   'K*0         ', 'Sigma+      ', 'Sigma-      ' /
 
-         INTEGER IPDGID(-10:10)
+         INTEGER IPDGID(-21:21)
          DATA IPDGID /
-     &      113, -4122,  -421,  -411, -3122,   130,  -321, -2112, -2212,
-     &     -211,   111,   211,  2212,  2112,   321,   310,  3122,   411,
-     &      421,  4122,   221/
+     &   -3112, -3222, -313, -323, 0, -213, 0, 0, 0, 0,
+     &   0, 0, 0, -2224, -2114, -3122, 130, -321, -2112, -2212,
+     &   -211, 111, 211, 2212, 2112, 321, 310, 3122, 2224, 1114,
+     &   0, 221, 0, 0, 0, 0, 0, 213, 113, 323, 313, 3222, 3112 /
 
-         DOUBLE PRECISION QMASS(-10:10)
+         DOUBLE PRECISION QMASS(-21:21)
          DATA QMASS /
-     &    .548d0,2.27d0,1.868d0,1.868d0,1.116d0,.496d0,.496d0,
-     &    0.93827999,0.93827999,.14d0,.14d0,.14d0,0.93827999,0.93827999
-     &    ,.496d0,.496d0, 1.116d0,1.868d0,1.868d0,2.27d0,.548d0/
+     &   1.19d0, 1.19d0, 0.496d0, 0.496d0, 0.0d0, 0.76d0,
+     &   0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 1.19d0,
+     &   1.19d0, 1.116d0, 0.496d0, 0.496d0, 0.93827999d0,
+     &   0.93827999d0, 0.14d0,0.14d0, 0.14d0, 0.93827999d0,
+     &   0.93827999d0, 0.496d0, 0.496d0,1.116d0, 1.23d0, 1.19d0, 0.0d0,
+     &   0.548d0, 0.0d0, 0.0d0, 0.0d0,0.0d0, 0.0d0, 0.76d0, 0.76d0,
+     &   0.496d0, 0.496d0, 1.19d0, 1.19d0 /
 
-         INTEGER ICHRG(-10:10)
+         INTEGER ICHRG(-21:21)
          DATA ICHRG /
-     &        0,    -1,     0,    -1,     0,     0,    -1,     0,
-     &       -1,    -1,     0,     1,     1,     0,     1,     0,
-     &        0,     1,     0,     1,     0/
+     &   1, -1, 0, -1, 0, -1, 0, 0, 0, 0,
+     &   0, 0, 0, -2, 0, 0, 0, -1, 0, -1,
+     &   -1, 0, 1, 1, 0, 1, 0, 0, 2, -1,
+     &   0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+     &   0, 1, -1 /
 
          INTEGER I
 
@@ -98,75 +143,6 @@ C         WRITE(6,*) I, ich(I), esp(:,I)
             ICHG(I) = ICHRG(ich(I))
          END DO
 
-
-      END
-
-*-- Author :    D. HECK IK FZK KARLSRUHE       12/01/1996
-C=======================================================================
-
-      BLOCK DATA QGSDAT
-
-C-----------------------------------------------------------------------
-C  Q(UARK) G(LUON) S(TRING JET MODEL) DAT(A INITIALIZATION)
-C
-C  INITIALIZES DATA FOR QGSJET LINK.
-C-----------------------------------------------------------------------
-
-         IMPLICIT NONE
-         COMMON /CRQGSLIN/ICTABL,IQTABL
-         INTEGER          ICTABL(200),IQTABL(-10:10)
-         SAVE
-C  FOLLOWING NOTATIONS FOR PARTICLES TYPES ARE USED WITHIN QGSJET:
-C             0 - PI0,
-C             1 - PI+,
-C            -1 - PI-,
-C             2 - P,
-C            -2 - P-BAR,
-C             3 - N,
-C            -3 - N-BAR,
-C             4 - K+,
-C            -4 - K-,
-C             5 - K0S,
-C            -5 - K0L
-C             6 - LAMBDA
-C            -6 - LAMBDA-BAR
-C             7 - D+
-C            -7 - D-
-C             8 - D0
-C            -8 - D0-BAR
-C             9 - LAMBDA_C
-C            -9 - LAMBDA_C-BAR
-C            10 - ETA
-C           -10 - RHO0
-
-C  ICTABL CONVERTS CORSIKA PARTICLES INTO QGSJET PARTICLES
-C  NO CHARMED PARTICLES POSSIBLE AS PROJECTILES
-         DATA ICTABL/
-     *      0,   0,   0,   0,   0,   0,   1,   1,  -1,  -5,   ! 10
-     *      4,  -4,   3,   2,  -2,   5,  10,   6,   0,   0,   ! 20
-     *      0,   0,   0,   0,  -3,  -6,   0,   0,   0,   0,   ! 30
-     *      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   ! 40
-     *      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   ! 50
-     *      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   ! 60
-     *      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   ! 70
-     *     10,  10,  10,  10,   26*0,
-C  CHARMED MESONS
-C  CONVERT UNKNOWN CHARMED MESONS TO KNOWN D-MESONS
-     *     10*0,                                              !110
-     *      0,   0,   0,   0,   0,   8,   7,  -7,  -8,   7,   !120
-     *     -7,   0,   8,   7,  -7,  -8,   7,  -7,   0,   0,   !130
-C  CHARMED BARYONS
-     *      0,   0,   0,   0,   0,   0,   9,   0,   0,   0 ,  !140
-     *      0,   0,   0,   0,   0,   0,   0,   0,  -9,   0 ,  !150
-     *      50*0 /
-
-C  IQTABL CONVERTS QGSJET PARTICLES INTO CORSIKA PARTICLES
-C  INCLUDES CHARMED PARTICLES
-C  IQTABL RUNS FROM -10:10
-         DATA IQTABL/
-     *      51, 149, 119, 118,  26,  10,  12,  25,  15,   9,  ! -10 .... -1
-     *      7,                                               !   0
-     *      8,  14,  13,  11,  16,  18, 117, 116, 137,  17/  !   1 .... 10
 
       END
 
@@ -267,8 +243,8 @@ Cf2py    intent(out) :: gtot,gin,gel,gdp,gdt,bel
             ! bm=rnuc(2)+dlog(29.d0)*wsnuc(2)          !impact parameter for integr.
             ! bm=rnuc(2)+5.d0*wsnuc(2)
             anorm=qganrm(rnuc(2),wsnuc(2),wbnuc(2))*rp    !density normalization
-            call qggau(gz1)                          !integration over b< bm               
-            
+            call qggau(gz1)                          !integration over b< bm
+
             !integration over b> bm
             gin=10.d0*(gz1(1)+gz1(2)+gz1(3) )        !inelastic cross section
             gdp=10.d0*gz1(2)                               !proj. diffr. cross section

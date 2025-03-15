@@ -9,7 +9,7 @@ from chromo.models.sibyll import (
 
 from chromo.models.dpmjetIII import DpmjetIII307
 from chromo.models.epos import EposLHC
-from chromo.models.qgsjet import QGSJet01d, QGSJetII03, QGSJetII04, QGSJetIII04
+from chromo.models.qgsjet import QGSJet01d, QGSJetII03, QGSJetII04, QGSJetIII
 from chromo.models.dpmjetIII import DpmjetIII191, DpmjetIII193
 from chromo.models.phojet import Phojet112, Phojet191, Phojet193
 from chromo.models.urqmd import UrQMD34
@@ -28,7 +28,7 @@ __all__ = (
     "QGSJet01d",
     "QGSJetII03",
     "QGSJetII04",
-    "QGSJetIII04",
+    "QGSJetIII",
     "DpmjetIII191",
     "DpmjetIII193",
     "Phojet112",
