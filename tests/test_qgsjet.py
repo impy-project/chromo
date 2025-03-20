@@ -1,5 +1,5 @@
 from chromo.kinematics import CenterOfMass
-from chromo.models import QGSJet01d, QGSJetII03, QGSJetII04
+from chromo.models import QGSJet01d, QGSJetII03, QGSJetII04, QGSJetIII
 from chromo.constants import GeV
 from chromo.common import CrossSectionData
 
@@ -40,6 +40,20 @@ qgsII03_pp_cs_100 = CrossSectionData(
     diffractive_axb=np.nan,
     diffractive_sum=np.nan,
     b_elastic=15.989022431287488,
+)
+qgsIII_pp_cs_100 = CrossSectionData(
+    total=65.71870426215214,
+    inelastic=52.532563800267894,
+    elastic=13.18614046188425,
+    prod=np.nan,
+    quasielastic=np.nan,
+    coherent=np.nan,
+    diffractive_xb=2.31753487999351,
+    diffractive_ax=1.9929141639968437,
+    diffractive_xx=np.nan,
+    diffractive_axb=np.nan,
+    diffractive_sum=np.nan,
+    b_elastic=16.253385724158488,
 )
 qgs01d_pp_cs_100 = CrossSectionData(
     total=68.03887906922947,
@@ -111,6 +125,7 @@ def run_cross_section(Model, p1, p2):
         (QGSJet01d, qgs01d_pp_cs_100),
         (QGSJetII03, qgsII03_pp_cs_100),
         (QGSJetII04, qgsII04_pp_cs_100),
+        (QGSJetIII, qgsIII_pp_cs_100),
     ],
 )
 def test_cross_section(Model, reference_cross_section):

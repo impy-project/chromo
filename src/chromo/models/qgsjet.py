@@ -47,7 +47,7 @@ class QGSJetRun(MCRun):
     _projectiles = standard_projectiles | Nuclei()
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/qgsjet_v001.zip"
+        + "/releases/download/zipped_data_v1.0/qgsjet_v002.zip"
     )
 
     def __init__(self, evt_kin, *, seed=None):
