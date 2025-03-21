@@ -1,8 +1,9 @@
 #include <Pythia8/Event.h>
-#include <Pythia8/HIUserHooks.h>
+#include <Pythia8/HIInfo.h>
 #include <Pythia8/Info.h>
 #include <Pythia8/ParticleData.h>
 #include <Pythia8/Pythia.h>
+#include <Pythia8/PythiaStdlib.h>
 #include <array>
 #include <cassert>
 #include <limits>
@@ -248,7 +249,7 @@ PYBIND11_MODULE(_pythia8, m)
         .def(py::init<string, bool>(), py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
         .def("init", &Pythia::init, py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
         .def("next", py::overload_cast<>(&Pythia::next))
-        .def("readString", &Pythia::readString, "setting"_a, "warn"_a = true)
+        .def("readString", &Pythia::readString, "line"_a, "warn"_a = true, "subrun"_a = SUBRUNDEFAULT)
         .def("forceHadronLevel", &Pythia::forceHadronLevel, "find_junctions"_a = true)
         .def_readwrite("particleData", &Pythia::particleData)
         .def_readwrite("settings", &Pythia::settings)
@@ -286,5 +287,6 @@ PYBIND11_MODULE(_pythia8, m)
         .def("reset", &Event::reset)
         .def("list", py::overload_cast<bool, bool, int>(&Event::list, py::const_), "showScaleAndVertex"_a = false, "showMothersAndDaughters"_a = false, "precision"_a = 3)
         .def("append", py::overload_cast<int, int, int, int, double, double, double, double, double, double, double>(&Event::append), "pdgid"_a, "status"_a, "col"_a, "acol"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a = 0, "scale"_a = 0, "pol"_a = 9.)
-        .def("fill", &fill);
+        .def("fill", [](Event &self, py::array_t<int> pid, py::array_t<int> status, py::array_t<double> px, py::array_t<double> py, py::array_t<double> pz, py::array_t<double> energy, py::array_t<double> mass)
+             { fill(self, pid, status, px, py, pz, energy, mass); }, "pid"_a, "status"_a, "px"_a, "py"_a, "pz"_a, "energy"_a, "mass"_a);
 }

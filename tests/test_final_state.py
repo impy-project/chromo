@@ -51,20 +51,27 @@ def test_generator(Model):
 
     # Known issues:
     # SIBYLL-2.1 and UrQMD produce no Omega-
-    # QGSJet family produce no Omega-, Xi0, Xi-, Sigma+, Sigma-
+    # QGSJet family produce no Omega-, Xi0, Xi-, (Sigma+, Sigma- only for QGSJetIII)
 
     known_issues = np.zeros_like(counts, dtype=bool)
     if Model == im.Sibyll21:
         for i, pid in enumerate(long_lived_hadrons):
             if abs(pid) == lp.Omega_minus.pdgid:
                 known_issues[i] = True
-    elif Model.pyname.startswith("QGSJet"):
+    elif Model in [im.QGSJet01d, im.QGSJetII03, im.QGSJetII04]:
         for i, pid in enumerate(long_lived_hadrons):
             if abs(pid) in (
                 lp.Xi_0.pdgid,
                 lp.Xi_minus.pdgid,
                 lp.Sigma_plus.pdgid,
                 lp.Sigma_minus.pdgid,
+            ):
+                known_issues[i] = True
+    elif Model is im.QGSJetIII:
+        for i, pid in enumerate(long_lived_hadrons):
+            if abs(pid) in (
+                lp.Xi_0.pdgid,
+                lp.Xi_minus.pdgid,
             ):
                 known_issues[i] = True
     elif Model == im.EposLHC:

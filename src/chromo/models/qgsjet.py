@@ -36,13 +36,18 @@ class QGSJET2Event(QGSJET1Event):
         return self._lib.qgarr55.nwp, self._lib.qgarr55.nwt
 
 
+class QGSJET3Event(QGSJET2Event):
+    def _get_impact_parameter(self):
+        return self._lib.qgarr7.bcoll
+
+
 class QGSJetRun(MCRun):
     _name = "QGSJet"
     _frame = EventFrame.FIXED_TARGET
     _projectiles = standard_projectiles | Nuclei()
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/qgsjet_v001.zip"
+        + "/releases/download/zipped_data_v1.0/qgsjet_v002.zip"
     )
 
     def __init__(self, evt_kin, *, seed=None):
@@ -334,3 +339,9 @@ class QGSJetII03(QGSJet2Run):
 class QGSJetII04(QGSJet2Run):
     _version = "II-04"
     _library_name = "_qgsII04"
+
+
+class QGSJetIII(QGSJet2Run):
+    _version = "III"
+    _library_name = "_qgsIII"
+    _event_class = QGSJET3Event
