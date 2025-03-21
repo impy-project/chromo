@@ -1,8 +1,9 @@
 #include <Pythia8/Event.h>
-#include <Pythia8/HIUserHooks.h>
 #include <Pythia8/Info.h>
 #include <Pythia8/ParticleData.h>
-#include <Pythia8/Pythia.h>
+#include <Pythia8/Info.h>
+#include <Pythia8/HIInfo.h>
+// #include <Pythia8/UserHooks.h>
 #include <array>
 #include <cassert>
 #include <limits>
@@ -244,11 +245,18 @@ PYBIND11_MODULE(_pythia8, m)
 
         ;
 
+    py::class_<SubCollisionModel, std::shared_ptr<SubCollisionModel>>(m, "SubCollisionModel")
+        // TODO add getParm
+        ;
+
+    py::class_<HIUserHooks, HIUserHooksPtr>(m, "HIUserHooks")
+        .def_property_readonly("subCollisionModel", &HIUserHooks::subCollisionModel);
+
     py::class_<Pythia>(m, "Pythia")
         .def(py::init<string, bool>(), py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
         .def("init", &Pythia::init, py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
         .def("next", py::overload_cast<>(&Pythia::next))
-        .def("readString", &Pythia::readString, "setting"_a, "warn"_a = true)
+        .def("readString", &Pythia::readString, "setting"_a, "warn"_a = true, "subrun"_a = SUBRUNDEFAULT)
         .def("forceHadronLevel", &Pythia::forceHadronLevel, "find_junctions"_a = true)
         .def_readwrite("particleData", &Pythia::particleData)
         .def_readwrite("settings", &Pythia::settings)
@@ -265,7 +273,9 @@ PYBIND11_MODULE(_pythia8, m)
                  for (auto pit = self.event.begin() + 1; pit != self.event.end(); ++pit)
                      *ptr++ = charge_from_pid(self.particleData, pit->id());
                  return result;
-             });
+             })
+        .def_property_readonly("hiHooks", [](Pythia &self) -> py::object
+                               { return self.hiHooksPtr ? py::cast(self.hiHooksPtr) : py::none(); });
 
     py::class_<Event>(m, "Event")
         .def_property_readonly("size", [](Event &self)

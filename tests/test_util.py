@@ -98,3 +98,12 @@ def test_is_real_nucleus():
     mix = util.CompositeTarget([("p", 0.5), ("He", 0.5)])
 
     assert util.is_real_nucleus(mix)
+
+
+def test_dump_to_url():
+    d = ["foo", "barian", "bazzer"]
+    s = util.dump_to_url(d)
+    assert type(s) is str
+    assert (
+        s == "H4sIAAAAAAACA2tgmSrLAAGxUzR6mNPy86f0sCUlFmUm5oEZVVWpRVNS9QCPoG78KAAAAA=="
+    )

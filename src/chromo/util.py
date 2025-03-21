@@ -15,6 +15,9 @@ import urllib.request
 import numpy as np
 from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
 from chromo.constants import MeV, nucleon_mass, sec2cm
+import gzip
+import pickle
+import base64
 
 EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
 
@@ -219,12 +222,14 @@ def _make_name2pdg_db():
     db.update(
         H=db["p"],
         H1=db["p"],
+        H2=db["D2"],
         He=db["He4"],
         C=db["C12"],
         N=db["N14"],
         O=db["O16"],
         Ne=db["Ne20"],
         Ar=db["Ar40"],
+        Kr=db["Kr84"],
         Xe=db["Xe131"],
         Pb=db["Pb206"],
         photon=db["gamma"],
@@ -472,6 +477,13 @@ def _download_file(outfile, url):
         raise ConnectionError(f"{fname} has not been downloaded")
 
 
+# Path to directory to store precomputed data tables
+def _cache_base_dir():
+    base_dir = Path(__file__).parent.absolute() / "iamdata"
+    base_dir.mkdir(parents=True, exist_ok=True)
+    return base_dir
+
+
 # Function to check and download dababase files on github
 def _cached_data_dir(url):
     """Checks for existence of version file
@@ -481,10 +493,7 @@ def _cached_data_dir(url):
     Args:
         url (str): url for zip file
     """
-
-    base_dir = Path(__file__).parent.absolute() / "iamdata"
-    base_dir.mkdir(parents=True, exist_ok=True)
-
+    base_dir = _cache_base_dir()
     vname = Path(url).stem
     model_dir = base_dir / vname.split("_v")[0]
     version_file = model_dir / vname
@@ -819,3 +828,9 @@ def select_long_lived(tau=0, mm=False):
             long_lived.append(pid)
 
     return long_lived
+
+
+def dump_to_url(obj):
+    b = pickle.dumps(obj)
+    b = gzip.compress(b, mtime=0)
+    return base64.urlsafe_b64encode(b).decode("ascii")

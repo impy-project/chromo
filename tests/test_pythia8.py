@@ -1,22 +1,27 @@
 from chromo.kinematics import CenterOfMass
 from chromo.models import Pythia8
 from chromo.constants import GeV, long_lived
+from chromo.util import name2pdg
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from .util import reference_charge
 import pytest
 from functools import lru_cache
 import sys
-
+from pathlib import Path
+import tempfile
 
 pytestmark = pytest.mark.skipif(
     sys.platform == "win32", reason="Pythia8 does not run on windows"
 )
 
+THIS_TEST = Path(__file__).stem
+CACHE_PATH = Path(__file__).parent / "data" / THIS_TEST
+
 
 def run_collision(energy, p1, p2):
     evt_kin = CenterOfMass(energy, p1, p2)
-    m = Pythia8(evt_kin, seed=4)
+    m = Pythia8(evt_kin, seed=4, cache=CACHE_PATH)
     for event in m(1):
         pass
     return event
@@ -24,7 +29,7 @@ def run_collision(energy, p1, p2):
 
 def run_cross_section(energy, p1, p2):
     evt_kin = CenterOfMass(energy, p1, p2)
-    m = Pythia8(evt_kin, seed=1)
+    m = Pythia8(evt_kin, seed=1, cache=CACHE_PATH)
     return m.cross_section()
 
 
@@ -98,18 +103,25 @@ def test_mothers(event):
     assert sum(x[1] >= -1 and x[1] < len(event) for x in event.mothers) == n
 
 
-@pytest.mark.skip(reason="Simulating nuclei in Pythia8 is very time-consuming")
-def test_nuclear_collision():
-    # The test takes ages because the initialization is extremely long,
-    # and Pythia seldom raises the success flag unless Ecm > TeV are used.
-
-    event = run_collision(2000 * GeV, "p", (4, 2))
-    assert event.pid[0] == 2212
+@pytest.mark.parametrize("projectile", ("pi-", "K+", "p", "He"))
+def test_nuclear_collision(projectile):
+    # This test is very slow the first time when Pythia is computing
+    # some cached results. Afterwards it runs super fast.
+    ecm = 2000 * GeV
+    event = run_collision(ecm, projectile, "He")
+    assert event.pid[0] == name2pdg(projectile)
     assert event.pid[1] == 1000020040
-    assert_allclose(event.en[0], 1e3)
-    assert_allclose(event.en[1], 4e3)
+    if projectile == "p":
+        assert_allclose(event.en[0], ecm / 2)
+        assert_allclose(event.en[1], ecm * 2, rtol=1e-2)
+    elif projectile == "He":
+        assert_allclose(event.en[0], ecm * 2, rtol=1e-2)
+        assert_allclose(event.en[1], ecm * 2, rtol=1e-2)
     assert event.impact_parameter > 0
-    assert event.n_wounded[0] == 1
+    if projectile == "He":
+        assert event.n_wounded[0] >= 1
+    else:
+        assert event.n_wounded[0] == 1
     assert event.n_wounded[1] > 0
     apid = np.abs(event.final_state_charged().pid)
     assert np.sum(apid == 211) > 10
@@ -125,7 +137,7 @@ def test_photo_hadron_collision():
 
 def test_changing_beams_proton():
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
-    m = Pythia8(evt_kin, seed=1)
+    m = Pythia8(evt_kin, seed=1, cache=CACHE_PATH)
     for event in m(1):
         assert_allclose(event.en[:2], 5 * GeV)
     m.kinematics = CenterOfMass(100 * GeV, "p", "p")
@@ -139,7 +151,7 @@ def test_event(event):
 
 def test_elastic():
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
-    m = Pythia8(evt_kin, seed=1, config=["SoftQCD:elastic=on"])
+    m = Pythia8(evt_kin, seed=1, config=["SoftQCD:elastic=on"], cache=CACHE_PATH)
     for event in m(10):
         assert len(event) == 4
         assert_equal(event.pid, [2212] * 4)
@@ -147,7 +159,7 @@ def test_elastic():
 
 def test_gamma_p():
     evt_kin = CenterOfMass(10 * GeV, "gamma", "p")
-    m = Pythia8(evt_kin, seed=1)
+    m = Pythia8(evt_kin, seed=1, cache=CACHE_PATH)
     for event in m(10):
         assert len(event) > 2
 
@@ -155,7 +167,7 @@ def test_gamma_p():
 @pytest.mark.parametrize("seed", (None, 0, 1, int(1e10)))
 def test_seed(seed):
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
-    m = Pythia8(evt_kin, seed=seed)
+    m = Pythia8(evt_kin, seed=seed, cache=CACHE_PATH)
     if seed is None:
         assert m.seed >= 0
     else:
@@ -164,7 +176,7 @@ def test_seed(seed):
 
 def test_get_stable():
     evt_kin = CenterOfMass(10 * GeV, "p", "p")
-    m = Pythia8(evt_kin, seed=1)
+    m = Pythia8(evt_kin, seed=1, cache=CACHE_PATH)
     assert m._get_stable() == set(long_lived)
 
 
@@ -176,3 +188,58 @@ def test_gp():
 def test_gg():
     evt = run_collision(100 * GeV, "gamma", "gamma")
     assert len(evt) > 2
+
+
+def test_cache_file(capsys):
+    evt_kin = CenterOfMass(10 * GeV, "p", "p")
+    config = ["Print:quiet = off", "SoftQCD:inelastic = on"]
+    with tempfile.TemporaryDirectory() as cache_dir:
+        Pythia8(evt_kin, seed=1, config=config, cache=cache_dir)
+        out, _ = capsys.readouterr()
+        assert (
+            "MultipartonInteractions::init: wrote initialization data to file"
+        ) in out
+
+        # we initialize again, now the cache should be used
+        Pythia8(evt_kin, seed=1, config=config, cache=cache_dir)
+        out, _ = capsys.readouterr()
+        assert (
+            "MultipartonInteractions::init: wrote initialization data to file"
+        ) not in out
+
+
+def test_cache_file_heavy_ion(capsys):
+    evt_kin = CenterOfMass(1000 * GeV, "p", "He")
+    config = ["Print:quiet = off", "SoftQCD:inelastic = on"]
+    with tempfile.TemporaryDirectory() as cache_dir:
+        Pythia8(evt_kin, seed=1, config=config, cache=cache_dir)
+        out, _ = capsys.readouterr()
+        assert (
+            "SubCollisionModel::init: wrote initialization configuration to file"
+        ) in out
+        assert (
+            "MultipartonInteractions::init: wrote initialization data to file"
+        ) in out
+        # we initialize again, now the cache should be used
+        Pythia8(evt_kin, seed=1, config=config, cache=cache_dir)
+        out, _ = capsys.readouterr()
+        assert (
+            "SubCollisionModel::init: wrote initialization configuration to file"
+        ) not in out
+        assert (
+            "MultipartonInteractions::init: wrote initialization data to file"
+        ) not in out
+
+
+def test_no_cache_file():
+    evt_kin = CenterOfMass(100 * GeV, "p", "p")
+    m = Pythia8(evt_kin, seed=1, cache=None)
+    config = "\n".join(m._config)
+    assert "MultipartonInteractions:reuseInit = 3" not in config
+
+
+def test_cache_input_type():
+    evt_kin = CenterOfMass(100 * GeV, "p", "p")
+    # Expect to raise exception if cache is not a string
+    with pytest.raises(ValueError):
+        m = Pythia8(evt_kin, seed=1, cache=5)
