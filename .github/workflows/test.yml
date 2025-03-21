@@ -76,7 +76,7 @@ jobs:
 
     # always() ensures upload even if pytest ends with failures
     - if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.os }}-${{ matrix.python-version }}
         path: "fig/**"
