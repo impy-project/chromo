@@ -264,7 +264,7 @@ f2py_add_module(
   gasdev
   sig_had_nuc
   SOURCES
-  ${fortran_dir}/sibyll/sibyll2.3d-star-p02.f
+  ${fortran_dir}/sibyll/sibyll2.3d-star-p04.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}
