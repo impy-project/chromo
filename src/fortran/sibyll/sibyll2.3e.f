@@ -7,7 +7,7 @@ C         SSSSSS    IIIIIII  BBBBB       YY       LLLLLLL  LLLLLLL
 C=======================================================================
 C  Code for SIBYLL:  hadronic interaction Monte Carlo event generator
 C=======================================================================
-C   Version 2.3d03(Jun-01-2017, modified Feb-10-2025)
+C   Version 2.3e01(Jun-01-2017, modified Apr-2-2025)
 C
 C     with CHARM production
 C
@@ -35,7 +35,7 @@ C                stanev@bartol.udel.edu
 C     
 C     last changes relative to Sibyll 2.3c:
 C
-C     * resample azimuth in final state
+C     * resample azimuth in final state (full final state, 2.3e00 was per particle)
 C     * correct energy of nuclear fragments in SIBNUC
 C     * fix off-shell particles in remnant
 C     * added sigma_nuc_nuc routine to calculate cross section tables
@@ -238,7 +238,7 @@ c         stop
          goto 100
       ENDIF
 c     remove azimuthal asymmetry
-      IF(IPAR(94).eq.1)THEN
+      IF(IPAR(94).ne.0)THEN
          CALL RESAMPLE_FPHI(1,NP)
       ENDIF
       IF (ABS(PZsum+0.5D0*Ecm*DBLE(NW-1)) .GT. 0.1D0)  THEN
@@ -484,7 +484,7 @@ C-----------------------------------------------------------------------
      *     /,' ','| Publication to be cited when using this program: |',
      *     /,' ','| Eun-Joo AHN et al., Phys.Rev. D80 (2009) 094003  |',
      *     /,' ','| F. RIEHN et al., Phys.Rev. D102 (2020) 063002    |',
-     *     /,' ','| last modifications: F. Riehn (10/02/2025)        |',
+     *     /,' ','| last modifications: F. Riehn (02/04/2025)        |',
      *     /,' ','====================================================',
      *     /)
 
@@ -863,7 +863,7 @@ c     23rc5.4frgB1 aka retune5 aka Sibyll 2.3.5
       IPAR(91) = 0
       IPAR(92) = 1
       IPAR(93) = 1
-      IPAR(94) = 1
+      IPAR(94) = 2
       IPAR(95) = 1
       IPAR(96) = 0
       IPAR(97) = 0
@@ -1329,12 +1329,13 @@ C                  3 : double-diff
 
       CHARACTER*7 CTGT(0:20)
       CHARACTER CODE*18
-      CHARACTER*18 NAMDIF(0:3)
+      CHARACTER*18 NAMDIF(0:4)
       CHARACTER*18 NAMRMNT(0:3)
       SAVE
       DATA CTGT /'Air    ','Proton ',19*'Nucleus'/
       DATA NAMDIF /'Non-diff. event   ',
-     &  'Beam diffraction  ','Target diffraction','Double diffraction'/
+     &     'Beam diffraction  ','Target diffraction',
+     &     'Double diffraction','Coherent diffr.' /
       DATA NAMRMNT /'No resolvd remnant',
      &  'Beam remnant     ','Target remnant    ','Double remnant    '/
 
@@ -1723,23 +1724,54 @@ C     LLIST (1:NP) : codes of final particles
       COMMON /SIB_CST/ PI,TWOPI,CMBARN
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
       SAVE
-
+      DIMENSION P2(3)
+      DOUBLE PRECISION P2
+      
       PXT=0.D0
       PYT=0.D0
-      DO J=N1,N2
-         L = LLIST(J)     
-         IF (IABS(L) .LT. 10000)  THEN
-           NF = NF+1
-           PHI = TWOPI*S_RNDM(J)
-           PT = dsqrt(P(J,1)**2 + P(J,2)**2)
+c     rotate final state
+      IF(IPAR(94).eq.2)THEN
+c     rotation factors
+         PHI = TWOPI*S_RNDM(J)
+         COD= 1.D0 !P1(3)/P1TOT
+         SID= 0.D0 !DSQRT(P1(1)**2+P1(2)**2)/P1TOT
+         COF=dCOS(PHI)
+         SIF=dSIN(PHI)
+c     rotate final state
+         DO J=N1,N2
+            CALL SIB_TRANI(P(j,1),P(j,2),P(j,3),cod,sid,cof,sif
+     &           ,P2(1),P2(2),P2(3))
+            IF(abs(P2(3)/P(J,3)-1.D0).gt.EPS5) then
+               WRITE(LUN,*) 'pz shift in z-rotation!'
+            ENDIF
+            do ii=1,3
+               P(j,ii)=P2(ii)
+            enddo
+            PXT = PXT + P(J,1)
+            PYT = PYT + P(J,2)
+         ENDDO
+      ELSE
+c     rotate particles
+         DO J=N1,N2
+            L = LLIST(J)     
+            IF (IABS(L) .LT. 10000)  THEN
+               NF = NF+1
+               PHI = TWOPI*S_RNDM(J)
+               PT = dsqrt(P(J,1)**2 + P(J,2)**2)
 c     new px and py
-           P(J,1) = PT*dCOS(PHI)
-           P(J,2) = PT*dSIN(PHI)
-           PXT = PXT + P(J,1)
-           PYT = PYT + P(J,2)
-         ENDIF
-      ENDDO
+               P(J,1) = PT*dCOS(PHI)
+               P(J,2) = PT*dSIN(PHI)
+               PXT = PXT + P(J,1)
+               PYT = PYT + P(J,2)
+            ENDIF
+         ENDDO
+      ENDIF
       IF(NDEBUG.gt.0)THEN
          WRITE(LUN,*) 'resampled azimuthal angle'
          WRITE(LUN,*) 'total shift in px, py:', PXT, PYT

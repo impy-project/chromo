@@ -7,12 +7,12 @@ C         SSSSSS    IIIIIII  BBBBB       YY       LLLLLLL  LLLLLLL
 C=======================================================================
 C  Code for SIBYLL:  hadronic interaction Monte Carlo event generator
 C=======================================================================
-C     Version 2.3d-star-p05 (Jun-01-2017, modified Feb-13-2025)
+C     Version 2.3e-star-p01 (Jun-01-2017, modified Apr-02-2025)
 C
 C     ===>
-C          Sibyll 2.3d-star
+C          Sibyll 2.3e-star
 C           ==
-C          Sibyll 2.3d with artificially enhanced muon production
+C          Sibyll 2.3e with artificially enhanced muon production
 C     ===>
 C
 C     variants:  ad-hoc increase number of muons achieved by replacing
@@ -58,7 +58,7 @@ C                stanev@bartol.udel.edu
 C     
 C     last changes relative to Sibyll 2.3c:
 C     * correct energy of nuclear fragments
-C     * fix phi asymmetry
+C     * fix phi asymmetry (for final state)
 C     * fix off-shell particles in remnant
 C     * no pi0 suppression in minijets
 C     * added cross section tables for hadron-nitrogen and hadron-oxygen
@@ -293,7 +293,7 @@ c     this routine modifies the final state! in particular all resonance decays 
          call MUON_ENHANCEMENTS
       ENDIF
 c     remove azimuthal asymmetry
-      IF(IPAR(99).eq.1)THEN
+      IF(IPAR(99).eq.2)THEN
          CALL RESAMPLE_FPHI(1,NP)
       ENDIF
       
@@ -520,7 +520,7 @@ C-----------------------------------------------------------------------
      *     /,' ','| Publication to be cited when using this program: |',
      *     /,' ','| Eun-Joo AHN et al., Phys.Rev. D80 (2009) 094003  |',
      *     /,' ','| F. RIEHN et al., Phys.Rev. D102 (2020) 063002    |',
-     *     /,' ','| last modifications: F. Riehn (10/02/2025)        |',
+     *     /,' ','| last modifications: F. Riehn (02/04/2025)        |',
      *     /,' ','====================================================',
      *     /)
 
@@ -1170,7 +1170,7 @@ c     ! force vectors (1) or strangeness (2) or baryons (3) after decays have be
       IPAR(96) = 0              ! energy dependence of enhancements (0: none, 1: logarithmic) threshold in par160
       IPAR(97) = 0              ! enable enhancement for meson projectiles only
       IPAR(98) = 0
-      IPAR(99) = 1
+      IPAR(99) = 2
       IPAR(100) = 0
 
 C...  valence quark distribution function
@@ -2026,28 +2026,59 @@ C     LLIST (1:NP) : codes of final particles
       COMMON /SIB_CST/ PI,TWOPI,CMBARN
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
+      INTEGER NIPAR_max,NPAR_max
+      PARAMETER (NPAR_max=200,NIPAR_max=100)
+      DOUBLE PRECISION PAR
+      INTEGER IPAR
+      COMMON /S_CFLAFR/ PAR(NPAR_max), IPAR(NIPAR_max)
       SAVE
-
+      DIMENSION P2(3)
+      DOUBLE PRECISION P2
+      
       PXT=0.D0
       PYT=0.D0
-      DO J=N1,N2
-         L = LLIST(J)     
-         IF (IABS(L) .LT. 10000)  THEN
-           NF = NF+1
-           PHI = TWOPI*S_RNDM(J)
-           PT = dsqrt(P(J,1)**2 + P(J,2)**2)
+c     rotate final state
+      IF(IPAR(99).eq.2)THEN
+c     rotation factors
+         PHI = TWOPI*S_RNDM(J)
+         COD= 1.D0 !P1(3)/P1TOT
+         SID= 0.D0 !DSQRT(P1(1)**2+P1(2)**2)/P1TOT
+         COF=dCOS(PHI)
+         SIF=dSIN(PHI)
+c     rotate final state
+         DO J=N1,N2
+            CALL SIB_TRANI(P(j,1),P(j,2),P(j,3),cod,sid,cof,sif
+     &           ,P2(1),P2(2),P2(3))
+            IF(abs(P2(3)/P(J,3)-1.D0).gt.EPS5) then
+               WRITE(LUN,*) 'pz shift in z-rotation!'
+            ENDIF
+            do ii=1,3
+               P(j,ii)=P2(ii)
+            enddo
+            PXT = PXT + P(J,1)
+            PYT = PYT + P(J,2)
+         ENDDO
+      ELSE
+c     rotate particles
+         DO J=N1,N2
+            L = LLIST(J)     
+            IF (IABS(L) .LT. 10000)  THEN
+               NF = NF+1
+               PHI = TWOPI*S_RNDM(J)
+               PT = dsqrt(P(J,1)**2 + P(J,2)**2)
 c     new px and py
-           P(J,1) = PT*dCOS(PHI)
-           P(J,2) = PT*dSIN(PHI)
-           PXT = PXT + P(J,1)
-           PYT = PYT + P(J,2)
-         ENDIF
-      ENDDO
+               P(J,1) = PT*dCOS(PHI)
+               P(J,2) = PT*dSIN(PHI)
+               PXT = PXT + P(J,1)
+               PYT = PYT + P(J,2)
+            ENDIF
+         ENDDO
+      ENDIF
       IF(NDEBUG.gt.0)THEN
          WRITE(LUN,*) 'resampled azimuthal angle'
          WRITE(LUN,*) 'total shift in px, py:', PXT, PYT
       ENDIF
-      RETURN
+      RETURN      
       END
 
 C=======================================================================
