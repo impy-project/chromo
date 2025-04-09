@@ -197,8 +197,9 @@ def test_model_3():
         "sib",
         returncode=1,
         stderr=(
-            "Error: model=sib is ambiguous, matches (SIBYLL-2.1, SIBYLL-2.3, "
-            "SIBYLL-2.3dStar-mix, SIBYLL-2.3c, SIBYLL-2.3d)"
+            "Error: model=sib is ambiguous, matches (SIBYLL-2.1, "
+            "SIBYLL-2.3, SIBYLL-2.3c, SIBYLL-2.3d, SIBYLL-2.3dStar-mix, "
+            "SIBYLL-2.3e, SIBYLL-2.3eStar-mix)"
         ),
     )
 
