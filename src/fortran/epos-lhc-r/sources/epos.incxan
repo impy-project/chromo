@@ -1,0 +1,42 @@
+C
+C  This file is part of EPOS4
+C  Copyright (C) 2022 research institutions and authors (See CREDITS file)
+C  This file is distributed under the terms of the GNU General Public License version 3 or later
+C  (See COPYING file for the text of the licence)
+C
+
+      parameter (mxhis=2000,mxcontr=1000,mxidcd=60,mxtri=50,mxbin=505)
+      parameter (mypara=200,mxpara=200)
+      logical ilog,icnx,itrevt,idmod
+      double precision bin,bbin,zcbin,zbbin
+
+      common/bins/bin(mxbin,2,mxhis),zcbin(mxbin,2,mxhis)
+     $     ,bbin(mxbin,2,mxcontr),itrevt(mxhis),zbbin(mxbin,2,mxcontr)
+     $     ,nac(mxhis),ilog(mxhis),icnx(mxhis),xinc(mxhis),ncevt(mxhis)
+     $     ,sval(2,mxhis),valtri(mxtri,mxhis),ntrc(mxtri,mxhis)
+     $     ,xmin(mxhis),xmax(mxhis),nhis,noweak(mxhis),istuse(mxhis)
+     $     ,ivar(2,mxhis),inorm(mxhis),nbin(mxhis),nidcod(mxhis)
+     $     ,idcod(mxidcd,mxhis),idmod(mxidcd,mxhis),ntri(mxhis)
+     $     ,itri(mxtri,mxhis),xmitri(mxtri,mxhis),xmatri(mxtri,mxhis)
+     $     ,xmitrp(mxtri,mxhis),xmatrp(mxtri,mxhis),xpara(mxpara,mxhis)
+     $     ,ypara(mypara,mxhis),lookcontr(mxhis),ishifta(mxhis)
+     $     ,lookcontrx(mxhis),ncontrall,icontrtyp(mxhis),nccevt(mxcontr)
+     $     ,icasv(2,mxhis),icast(mxtri,mxhis)
+      common/binsx/nhisxxx(mxhis)
+
+      parameter(mxxhis=1000,myyarr=100)
+
+      common/varhis/icorrtrig(0:mxxhis),ihardevent(0:mxxhis)
+     &,ijetfind1(0:mxxhis),ijetfind2(0:mxxhis),imux(-mxxhis:mxxhis)
+     &,ifastjet(0:mxxhis),ijetevent(0:mxxhis),icaltrig(0:mxxhis)
+     &,iphoton(0:mxxhis),iCorH(0:mxxhis),yyarr(mxxhis,myyarr)
+     &,ivv(0:mxxhis),idetphi(-mxxhis:mxxhis),iwww,iepx(-mxxhis:mxxhis)
+     &,imupurp(-mxxhis:mxxhis)
+
+      common/stavar/multc05,multy1,multc14,multyi,multc3,istavar,multeb
+     &     ,multc1,multc83,multc24,multc25,rapgap,ipairs1,xsi,rcast(2)
+     &     ,xMdiff,x2aevt,y2aevt,x2cevt,y2cevt
+     &     ,ivnsp,jvnsp(3),qvnsp(3,5,2),xmom(4)
+
+      real epreso(9,20)
+      common /cepreso/epreso

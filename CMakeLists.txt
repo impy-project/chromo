@@ -130,10 +130,10 @@ set(rangen_source ${fortran_dir}/rangen.fpp ${fortran_dir}/rangen.c
                   ${fortran_dir}/normal.c)
 
 # eposlhc
-file(GLOB eposlhc_sources ${fortran_dir}/epos/sources/*.f)
+file(GLOB eposlhc_sources ${fortran_dir}/epos-lhc/sources/*.f)
 list(FILTER eposlhc_sources EXCLUDE REGEX epos_example\.f)
 list(FILTER eposlhc_sources EXCLUDE REGEX epos-random\.f)
-list(APPEND eposlhc_sources ${fortran_dir}/epos/epos-random-dummy.f)
+list(APPEND eposlhc_sources ${fortran_dir}/epos-lhc/epos-random-dummy.f)
 
 f2py_add_module(
   _eposlhc
@@ -158,14 +158,94 @@ f2py_add_module(
   ${logging_source}
   ${rangen_source}
   INTERFACE_SOURCES
-  ${fortran_dir}/epos/sources/epos-bas-lhc.f
-  ${fortran_dir}/epos/sources/epos-ids-lhc.f
-  ${fortran_dir}/epos/sources/epos_interface.f
-  ${fortran_dir}/epos/epos-random-dummy.f
+  ${fortran_dir}/epos-lhc/sources/epos-bas-lhc.f
+  ${fortran_dir}/epos-lhc/sources/epos-ids-lhc.f
+  ${fortran_dir}/epos-lhc/sources/epos_interface.f
+  ${fortran_dir}/epos-lhc/epos-random-dummy.f
   ${rangen_source}
   ${logging_source}
   INCLUDE_DIRS
-  ${fortran_dir}/epos/sources
+  ${fortran_dir}/epos-lhc/sources
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions})
+
+  # eposlhc-R
+FILE(GLOB eposlhcr_sources
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/addpart.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/coload.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/detbal.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/getmass.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/hepnam.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/iso.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/output.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/scatter.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/uaaa.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/angdis.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/boxprg.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/dwidth.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/getspin.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/init.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/ityp2pdg.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/numrec.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/paulibl.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/siglookup.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/upmerge.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/anndec.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/cascinit.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/dectim.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/error.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/hepchg.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/input.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/jdecay2.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/proppot.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/string.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/upyth.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/blockres.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/delpart.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/hepcmp.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/make22.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/saveinfo.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/tabinit.f
+  ${fortran_dir}/epos-lhc-r/sources/urqmd34/whichres.f
+  ${fortran_dir}/epos-lhc-r/sources/al.cpp
+  ${fortran_dir}/epos-lhc-r/sources/*.f
+  )
+list(FILTER eposlhcr_sources EXCLUDE REGEX epos_example\.f)
+list(FILTER eposlhcr_sources EXCLUDE REGEX epos-random\.f)
+list(APPEND eposlhcr_sources ${fortran_dir}/epos-lhc-r/epos-random-dummy.f)
+
+f2py_add_module(
+  _eposlhcr
+  FUNCTIONS
+  aaset
+  ainit
+  aepos
+  alist
+  afinal
+  hepmcstore
+  getcharge
+  idtrafo
+  initepos
+  initeposevt
+  xsection
+  rmmard
+  ranfgt
+  ranfst
+  ${chromo_functions}
+  SOURCES
+  ${eposlhcr_sources}
+  ${logging_source}
+  ${rangen_source}
+  INTERFACE_SOURCES
+  ${fortran_dir}/epos-lhc-r/sources/epos-bas.f
+  ${fortran_dir}/epos-lhc-r/sources/epos-ids.f
+  ${fortran_dir}/epos-lhc-r/sources/epos_interface.f
+  ${fortran_dir}/epos-lhc-r/epos-random-dummy.f
+  ${rangen_source}
+  ${logging_source}
+  INCLUDE_DIRS
+  ${fortran_dir}/epos-lhc-r/sources
   ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions})
