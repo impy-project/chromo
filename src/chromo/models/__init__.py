@@ -4,7 +4,9 @@ from chromo.models.sibyll import (
     Sibyll23,
     Sibyll23c,
     Sibyll23d,
-    Sibyll23StarMixed,
+    Sibyll23e,
+    Sibyll23dStarMixed,
+    Sibyll23eStarMixed,
 )
 
 from chromo.models.dpmjetIII import DpmjetIII307
@@ -22,7 +24,9 @@ __all__ = (
     "Sibyll23",
     "Sibyll23c",
     "Sibyll23d",
-    "Sibyll23StarMixed",
+    "Sibyll23dStarMixed",
+    "Sibyll23e",
+    "Sibyll23eStarMixed",
     "DpmjetIII307",
     "EposLHC",
     "QGSJet01d",

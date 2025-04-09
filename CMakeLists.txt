@@ -264,7 +264,40 @@ f2py_add_module(
   gasdev
   sig_had_nuc
   SOURCES
-  ${fortran_dir}/sibyll/sibyll2.3d-star-p04.f
+  ${fortran_dir}/sibyll/sibyll2.3d-star-p02.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions})
+
+# sib23e
+f2py_add_module(
+  _sib23e
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS}
+  gasdev
+  sig_had_nuc
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3e.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions})
+
+f2py_add_module(
+  _sib23e_star
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS}
+  gasdev
+  sig_had_nuc
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3e-star.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}

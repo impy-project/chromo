@@ -370,31 +370,58 @@ class Sibyll23d(Sibyll23):
     _library_name = "_sib23d"
 
 
-class Sibyll23StarNoEnh(Sibyll23d):
-    _version = "2.3Star-noenh"
+class Sibyll23e(Sibyll23):
+    _version = "2.3e"
+    _library_name = "_sib23e"
+
+
+class Sibyll23dStarNoEnh(Sibyll23d):
+    _version = "2.3dStar-noenh"
     _library_name = "_sib23d_star"
     _sstar_param = 0
 
 
-class Sibyll23StarRho(Sibyll23StarNoEnh):
-    _version = "2.3Star-rho"
-    _library_name = "_sib23d_star"
+class Sibyll23dStarRho(Sibyll23dStarNoEnh):
+    _version = "2.3dStar-rho"
     _sstar_param = 1
 
 
-class Sibyll23StarBar(Sibyll23StarNoEnh):
-    _version = "2.3Star-bar"
-    _library_name = "_sib23d_star"
+class Sibyll23dStarBar(Sibyll23dStarNoEnh):
+    _version = "2.3dStar-bar"
     _sstar_param = 2
 
 
-class Sibyll23StarStrange(Sibyll23StarNoEnh):
-    _version = "2.3Star-strange"
-    _library_name = "_sib23d_star"
+class Sibyll23dStarStrange(Sibyll23dStarNoEnh):
+    _version = "2.3dStar-strange"
     _sstar_param = 3
 
 
-class Sibyll23StarMixed(Sibyll23StarNoEnh):
-    _version = "2.3Star-mix"
-    _library_name = "_sib23d_star"
+class Sibyll23dStarMixed(Sibyll23dStarNoEnh):
+    _version = "2.3dStar-mix"
+    _sstar_param = 4
+
+
+class Sibyll23eStarNoEnh(Sibyll23e):
+    _version = "2.3eStar-noenh"
+    _library_name = "_sib23e_star"
+    _sstar_param = 0
+
+
+class Sibyll23eStarRho(Sibyll23eStarNoEnh):
+    _version = "2.3eStar-rho"
+    _sstar_param = 1
+
+
+class Sibyll23eStarBar(Sibyll23eStarNoEnh):
+    _version = "2.3eStar-bar"
+    _sstar_param = 2
+
+
+class Sibyll23eStarStrange(Sibyll23eStarNoEnh):
+    _version = "2.3eStar-strange"
+    _sstar_param = 3
+
+
+class Sibyll23eStarMixed(Sibyll23eStarNoEnh):
+    _version = "2.3eStar-mix"
     _sstar_param = 4
