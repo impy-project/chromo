@@ -86,3 +86,52 @@ C-----------------------------------------------------------------------
 
       NEVSIB = NEVSIB + 1
       END
+
+
+#ifndef SIBYLL_21
+C=======================================================================
+      SUBROUTINE SIGMA_NUC_NUC(IA,IB,ECM,KINT)
+C-----------------------------------------------------------------------
+C.  wrapping for SIGMA_NUC in NUCLIB
+C...Compute with a montecarlo method the "production"
+C.  and "quasi-elastic" cross section for  
+C.  a nucleus-nucleus interaction
+C.  nucleon - nucleon cross section is taken from 
+C.  the table calculated by SIBYLL_INI
+C.
+C.  INPUT : IA            = mass of projectile nucleus
+C.          IB            = mass of target nucleus
+C.          ECM          = c.m. energy
+C.          KINT            = number  of interactions to generate
+C.  OUTPUT : SIGMA (mbarn) = "production" cross section
+C.           DSIGMA   "    = error
+C.           SIGQE    "    = "quasi-elastic" cross section
+C.           DSIGQE   "    = error
+C.      in COMMON /NUCNUCSIG/ 
+C.           additional output is in the common block  /CPROBAB/
+C.           Prob(n_A), Prob(n_B), Prob(n_int)
+C..........................................................................
+      IMPLICIT DOUBLE PRECISION(A-H,O-Z)
+      IMPLICIT INTEGER(I-N)
+      COMMON /NUCNUCSIG/ SIGPROD,DSIGPROD,SIGQE,DSIGQE,IBE,ITG
+      DIMENSION SIGDIF(3)
+      SAVE
+      DATA NDB /0/
+      
+      DSIGPROD = 0.D0
+      DSIGQE = 0.D0
+
+      CALL SIB_SIGMA_HP(1,ECM,SIGT,SIGEL,SIGINEL,SIGDIF,SLOPE,RHO)
+      CALL SIGMA_MC(IA,IB,SIGINEL,SIGEL,KINT,SIGPROD,DSIGPROD,
+     +     SIGQE,DSIGQE)
+      IBE = IA
+      ITG = IB
+      IF(DSIGPROD/SIGPROD.gt.0.1D0)THEN
+         IF( NDB.EQ.0 ) 
+     +     PRINT*,'SIGMA_NUC_NUC: warning! large error in cross section'
+         NDB = 1
+      ENDIF
+      RETURN
+      END
+
+#endif

@@ -173,10 +173,12 @@ f2py_add_module(
 # sib21
 set(SIBYLL_COMMON_FUNCTIONS
     sibyll
+    sibnuc
     sibyll_ini
     sib_sigma_hp
     sib_sigma_hair
     sib_sigma_hnuc
+    sigma_nuc_nuc
     int_nuc
     decsib
     decpar

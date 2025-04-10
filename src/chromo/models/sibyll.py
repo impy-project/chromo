@@ -167,6 +167,7 @@ class SIBYLLRun(MCRun):
         4332,
     }
     _targets = Nuclei(a_max=20)
+    _glauber_trials = 1000  # default number of trials for Glauber model integration
     _cross_section_projectiles = {
         p.pdgid: sib_id
         for p, sib_id in (
@@ -212,9 +213,9 @@ class SIBYLLRun(MCRun):
 
         sib_id = self._cross_section_projectiles[abs(kin.p1)]
 
-        if kin.p2.A > 19:
+        if kin.p2.A > 20:
             raise ValueError(
-                f"{self.label} does not support nuclear targets heavier than 19"
+                f"{self.label} does not support nuclear targets heavier than 20"
             )
         if kin.p2.A > 1 and self.version == "2.1":
             totpp, _, _, _, slopepp, rhopp = self._lib.sib_sigma_hp(sib_id, kin.ecm)
@@ -226,7 +227,7 @@ class SIBYLLRun(MCRun):
                 elastic=float(sigel),
             )
 
-        if kin.p2.A > 1:
+        if kin.p2.A > 1 and not kin.p1.is_nucleus:
             alam = 1.0  # Not used
             icsmod = 1  # use Sibyll p-p cross section as input
             iparm = 2  # use Goulianos param. for inel. coupling param.
@@ -244,6 +245,15 @@ class SIBYLLRun(MCRun):
                 diffractive_sum=float(nsig.sigqsd),
                 diffractive_xb=float(nsig.sigsd),
                 elastic=float(nsig.sigel),
+            )
+        # nucleus-nucleon collisions
+        if kin.p1.is_nucleus:
+            # Nucleus-nucleus collisions
+            self._lib.sigma_nuc_nuc(kin.p1.A, kin.p2.A, kin.ecm, self._glauber_trials)
+            nsig = self._lib.nucnucsig
+            return CrossSectionData(
+                prod=float(nsig.sigprod),
+                quasielastic=float(nsig.sigqe),
             )
         tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sib_id, kin.ecm)
         return CrossSectionData(
@@ -266,9 +276,25 @@ class SIBYLLRun(MCRun):
             return sigma[0]
         return sigma
 
+    @property
+    def glauber_trials(self):
+        """Number of trials for Glauber model integration
+
+        Default is 1000 (set at model initialisation).
+        Larger number of `ntrials` reduces the fluctuations in the cross section,
+        thus, making it more smooth. Smaller number of `ntrials` makes calculations of
+        cross section faster.
+        """
+        return self._glauber_trials
+
+    @glauber_trials.setter
+    def glauber_trials(self, ntrials):
+        self._glauber_trials = ntrials
+
     def _set_kinematics(self, kin):
-        self._production_id = self._lib.isib_pdg2pid(kin.p1)
-        assert self._production_id != 0
+        if not kin.p1.is_nucleus:
+            self._production_id = self._lib.isib_pdg2pid(kin.p1)
+            assert self._production_id != 0
 
     def _set_stable(self, pdgid, stable):
         if pdgid not in self._unstable_pids:
@@ -290,7 +316,12 @@ class SIBYLLRun(MCRun):
 
     def _generate(self):
         kin = self.kinematics
-        self._lib.sibyll(self._production_id, kin.p2.A, kin.ecm)
+        if kin.p1.is_nucleus:
+            # Nucleus-nucleus collisions
+            self._lib.sibnuc(kin.p1.A, kin.p2.A, kin.ecm)
+        else:
+            # hadron-nucleon collisions
+            self._lib.sibyll(self._production_id, kin.p2.A, kin.ecm)
         self._lib.decsib()
         self._lib.sibhep()
         return True
@@ -321,22 +352,26 @@ class Sibyll23(SIBYLLRun):
 
 class Sibyll23c(Sibyll23):
     _version = "2.3c"
-    _projectiles = standard_projectiles | {
-        3112,
-        3122,
-        3312,
-        3322,
-        3222,
-        411,
-        421,
-        4232,
-        431,
-        4122,
-        4132,
-        4232,
-        431,
-        4332,
-    }
+    _projectiles = (
+        standard_projectiles
+        | {
+            3112,
+            3122,
+            3312,
+            3322,
+            3222,
+            411,
+            421,
+            4232,
+            431,
+            4122,
+            4132,
+            4232,
+            431,
+            4332,
+        }
+        | Nuclei(a_max=56)
+    )
     _library_name = "_sib23c01"
 
 

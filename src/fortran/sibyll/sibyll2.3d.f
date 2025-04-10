@@ -13359,6 +13359,10 @@ C..   initialization
          PX(j2) = 0.D0
          PX(j3) = 0.D0
          PX(j4) = 0.D0
+         PY(j1) = 0.D0
+         PY(j2) = 0.D0
+         PY(j3) = 0.D0
+         PY(j4) = 0.D0   
       ENDDO
 
       KRMNT = MIN(LRMNT,1)
@@ -15558,6 +15562,8 @@ C--------------------------------------------------------------------
       DIMENSION FACN(3:10)
       COMMON /SIB_FAC/ FACN
       SAVE
+Cf2py integer,intent(in) :: IFL
+Cf2py double precision,intent(out) :: px,py
 
       IF(IFL.eq.0)THEN
 c     quark confinement pt
