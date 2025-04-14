@@ -88,7 +88,6 @@ C-----------------------------------------------------------------------
       END
 
 
-#ifndef SIBYLL_21
 C=======================================================================
       SUBROUTINE SIGMA_NUC_NUC(IA,IB,ECM,KINT)
 C-----------------------------------------------------------------------
@@ -111,8 +110,10 @@ C.      in COMMON /NUCNUCSIG/
 C.           additional output is in the common block  /CPROBAB/
 C.           Prob(n_A), Prob(n_B), Prob(n_int)
 C..........................................................................
+#ifndef SIBYLL_21
       IMPLICIT DOUBLE PRECISION(A-H,O-Z)
       IMPLICIT INTEGER(I-N)
+#endif
       COMMON /NUCNUCSIG/ SIGPROD,DSIGPROD,SIGQE,DSIGQE,IBE,ITG
       DIMENSION SIGDIF(3)
       SAVE
@@ -133,5 +134,3 @@ C..........................................................................
       ENDIF
       RETURN
       END
-
-#endif
