@@ -1058,6 +1058,9 @@ c      write(ifch,*)'res:',id,idr,ami,am,wi,iadj
         if(idr.eq.111)then
           if(rangen().le.0.5)idr=221
           call idmass(idr,am)
+        elseif(idr.eq.330)then
+          if(rangen().le.0.5)idr=702
+          call idmass(idr,am)
         endif
       endif
       if(.not.(ish.ge.8))return
@@ -1776,6 +1779,8 @@ c      double precision drangen,dummy !gs unused after correction with mutbl
           id1=-iadtr+12
         elseif(iadtr.ge.171.and.iadtr.le.173)then
           id1=-iadtr+10
+        elseif(iadtr.ge.190.and.iadtr.le.195)then
+          id1=-iadtr+6
         endif
       endif
       iad1=abs(id1)
@@ -1807,6 +1812,8 @@ c         print *,i,j,n,id1,idtbl(i,n),idtbl(j,n)
               idtrafo=iadtr+12
             elseif(iadtr.ge.161.and.iadtr.le.163)then
               idtrafo=iadtr+10
+            elseif(iadtr.ge.184.and.iadtr.le.189)then
+              idtrafo=iadtr+6
             else
               idtrafo=iadtr
             endif
@@ -1841,6 +1848,8 @@ c         print *,i,j,n,id1,idtbl(i,n),idtbl(j,n)
               idtrafo=iadtr+12
             elseif(iadtr.ge.161.and.iadtr.le.163)then
               idtrafo=iadtr+10
+            elseif(iadtr.ge.184.and.iadtr.le.189)then
+              idtrafo=iadtr+6
             else
               idtrafo=iadtr
             endif

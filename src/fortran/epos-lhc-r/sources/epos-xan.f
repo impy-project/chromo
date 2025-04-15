@@ -1713,7 +1713,7 @@ c.................................................................
         if(ntevt.ne.0)
      &     sigma=10.*pi*bmax**2.*ncevt(n)/ntevt
       endif
-c      print *,'---->',sigma,ncevt(n),nevent,ntevt
+c      print *,'---->',sigma,bmax,ncevt(n),nevent,ntevt
       if(norm3.eq.3)then      !kno
         first=0.
         secnd=0.
@@ -2592,6 +2592,7 @@ c----------------------------------------------------------------------
         inom=98
       elseif(cvar.eq.'ekin')then
         inom=99
+c variables from 100 to 200 are calculated checking each particle and calculating if it pass particle level trigger (sum used for event trigger)
       elseif(cvar.eq.'mulevt')then
         inom=101
       elseif(cvar.eq.'etevt')then
@@ -2608,6 +2609,7 @@ c----------------------------------------------------------------------
         inom=107
       elseif(cvar.eq.'pmxevt')then
         inom=108
+c variables above 200 are used directly for event trigger
       elseif(cvar.eq.'numevt')then
         inom=201
       elseif(cvar.eq.'egyevt')then
@@ -5214,6 +5216,7 @@ c----------------------------------------------------------------------
       !   xpara(9,n) ... etamin2 if >< 0.
       !   xpara(10,n) ... etamax2 if >< 0.
       !   xpara(11,n) ... x0 = normal
+      !                   x1 = neutrals 
       !                   x2 = percentile  
       !                   0x = charged multiplicity
       !                   1x = E (all final hadrons)
@@ -5242,8 +5245,8 @@ c----------------------------------------------------------------------
         n6=nint( xpara(ishift+6,n) ) 
         n56=n5*10+n6
         call setIstXY(n56,istuse(n),istxxx,istyyy)
-        if(io1.eq.1.and.istptl(i).eq.istxxx)then
-          go=.true.
+        if(io1.eq.1)then
+          if(istptl(i).eq.istxxx)go=.true.
         elseif(io1.eq.3.and.
      .   istptl(i).eq.istxxx.or.istptl(i).eq.istyyy)then
           go=.true.
@@ -5297,6 +5300,7 @@ c----------------------------------------------------------------------
      .      .and.(ida.eq.240.or.ida.eq.140.or.ida.eq.241))igo=1
             if(io1.eq.4)igo=1
             if(io1.eq.1.and.i.gt.maproj+matarg+1)igo=1
+            if(io2.eq.1.and.abs(ch).gt.0.1)igo=0
             if(igo.eq.1)then
               val=1
               if(io1.eq.1)then !E 
@@ -5316,7 +5320,7 @@ c----------------------------------------------------------------------
      *           .and.pt .gt.xpara(ishift+3,n)
      *             .and.pt .lt.xpara(ishift+4,n)   )then
                 sum=sum+val
-c      if(ishift.ne.0)print *,io,i,idptl(i),istptl(i),eta,val,sum,istuse(n)
+c      if(io1.eq.1)print *,io,i,idptl(i),istptl(i),eta,val,sum,istuse(n)
               endif
             endif
           endif

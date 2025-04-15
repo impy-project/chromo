@@ -4180,7 +4180,7 @@ c         check rapidity difference. If too large, don't fuse cluster
             sg=pptl(3,n+is)/abs(pptl(3,n+is))
             tm=sqrt(pptl(5,n+is)**2+pptl(1,n+is)**2+pptl(2,n+is)**2)
             y2=sg*alog((pptl(4,n+is)+sg*pptl(3,n+is))/tm)
-            if(abs(y1-y2).gt.2.)ntmp=0
+            if(abs(y1-y2).gt.2.5)ntmp=0
           else
             ntmp=0
           endif
@@ -4244,7 +4244,7 @@ c check rapidity difference. If too large, don't fuse cluster
           sg=pptl(3,n+is)/abs(pptl(3,n+is))
           tm=sqrt(pptl(5,n+is)**2+pptl(1,n+is)**2+pptl(2,n+is)**2)
           y2=sg*alog((pptl(4,n+is)+sg*pptl(3,n+is))/tm)
-          pass=n.eq.nmx.or.abs(y1-y2).gt.2.
+          pass=n.eq.nmx.or.abs(y1-y2).gt.2.5
 c          pass=n.eq.nmx.or.(sqrt(max(0.,(pptl(4,nptl)
 c     &       +pptl(4,n+is)+pptl(3,nptl)
 c     &       +pptl(3,n+is))*(pptl(4,nptl)+pptl(4,n+is)-pptl(3,nptl)
@@ -4743,7 +4743,7 @@ c          print *,p4mean(5,jj),sqrt(max(0.d0,amc2))
       density=0.
       if(vol.gt.0.d0)density=sngl(amctot/ncelltot/vocell)
 
-      aminclust=sign(min(sngl(amctot)/ncellong,abs(aminclu)),aminclu)
+      aminclust=abs(aminclu)!sign(min(sngl(amctot)/ncellong,abs(aminclu)),aminclu)
       if(ish.ge.4)write(ifch,*)'amctot='
 c      print *,'b,densities,vol,e,kol=',bimevt
      .     ,amctot,ncelltot,vocell,density,koievt,ncellong

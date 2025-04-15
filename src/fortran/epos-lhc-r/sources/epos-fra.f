@@ -32,14 +32,9 @@ c      logical go
       nob=0
       call utpri('gakfra',ish,ishini,4)
       iret=0
-      if(ioquen.eq.0)then
-c sum of etas should be 0.48 to keep exact isospin symmetry before decay (in our case)
-        etap=min(0.5,delpeta)
-        eta=0.5-etap
-      else     ! here focus on data without hacas, less eta's creating more pi0 than charged pi before decay
-        etap=0.
-        eta=delpeta
-      endif
+c sum of etas should be 0.5 to keep exact isospin symmetry for pions before decay  (pi0 for (110+220), should be divided by to match charged pions)
+      etap=min(0.5,delpeta)
+      eta=0.5-etap       !eta from 330 and 1/3 of (110+220), the rest goes to etap, f0 and phi (or nothing with ioquen=1 (test))
 c.....search string in pptl-list...................................
       nkmax=nptl
       nk1=maproj+matarg+1
@@ -661,11 +656,12 @@ cc      y=(xyb(2,n)-y1)/(y2-y1)
       ala2=co(9)+x*co(10)+y*co(11)+x*y*co(12)
 
 c.....determine id of both particles..............................
+c note that u-ub and d-db gives a 110 (pi0-rho0)  and s-sb 220 (eta-etap-f0-phi)
       aml=sqrt(max(0.,aml2))
       idl=idsp( -iflb(n-1) , iflb(n)   )
       amr=sqrt(max(0.,amr2))
       idr=idsp( -iflb(n)   , iflb(n+1) )
-
+      
 c.....if mass to small (because of spacelike pt)  reject..........
 c      amin=0.0
 c      if (aml2.le.amin.or.amr2.le.amin) goto 9
@@ -695,8 +691,9 @@ c      call idress(idl,aml,idrl,iadjl)
           idl=220
           aml=.549
           if(r.lt.etap)then
+            if(ioquen.eq.1)goto 9       !do not produce more than eta
             aml=.958
-            if(r.lt.0.5*etap)aml=0.990    !f(0)
+c            if(r.lt.0.5*etap)aml=0.990    !f(0)  (done in idres)
           endif
           amlxx=aml
           call idress(idl,aml,idrl,iadjl)
@@ -722,8 +719,9 @@ c      call idress(idr,amr,idrr,iadjr)
           idr=220
           amr=.549
           if(r.lt.etap)then
+            if(ioquen.eq.1)goto 9       !do not produce more than eta
             amr=.958
-            if(r.lt.0.5*etap)amr=0.990    !f(0)
+c            if(r.lt.0.5*etap)amr=0.990    !f(0)    (done in idres)
           endif
           amrxx=amr
           call idress(idr,amr,idrr,iadjr)
@@ -948,7 +946,6 @@ c update origin
      $        ,pptl(1,nptl),pptl(2,nptl),pptl(3,nptl),pptl(4,nptl))
 c         call utlob4(-1,p1(1),p1(2),p1(3),p1(4),p1(5)
 c     $        ,pptr(1,nptl),pptr(2,nptl),pptr(3,nptl),pptr(4,nptl))
-
 
 c........Origin..................................................
         istptl(nptl)=0
@@ -2591,12 +2588,16 @@ c---------------------------------------------------------------------
       idi=id
       ami=am
       id0=id/10
-      if(id0.eq.11.or.id0.eq.22.or.id0.eq.33)then
+c      if(id0.eq.11.or.id0.eq.22.or.id0.eq.33)then
+      if(id0.eq.11.or.id0.eq.22)then      !eta' (330) should not be converted into rho
         call idres(110,ami,idr,iadj,imix)
         if(idr.ne.0.and.iadj.eq.0)return
         call idres(220,ami,idr,iadj,imix)
         if(idr.ne.0.and.iadj.eq.0)return
         call idres(330,ami,idr,iadj,imix)
+        if(idr.ne.0.and.iadj.eq.0)return
+      elseif(id0.eq.33)then !mix eta' and f0
+        call idres(330,ami,idr,iadj,1)
         if(idr.ne.0.and.iadj.eq.0)return
       endif
       idr=idi

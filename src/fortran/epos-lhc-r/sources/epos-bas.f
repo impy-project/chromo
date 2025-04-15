@@ -468,7 +468,7 @@ c following parameters recalculated in xsigma ...
       rexndii(3)=0.   !remnant excitation probability nondiffractive kaon
       rexndii(4)=1.    !remnant excitation probability nondiffractive charmed
 c ... up to here.
-      xmxrem=3.e-3      !maximum relative mass for droplet remnant
+      xmxrem=1.e-3      !maximum relative mass for droplet remnant
       xmindiff=0.  !minimum mass to start Pom exchange
       xminremn=1.15  !factor for minimum energy in prorem (change multiplicity of all remnants)
       rexres(1)=0.5 !pion remnant excitation probability in nucleus
@@ -512,9 +512,9 @@ c nuclear part of Z
       zbrads=1.15   !mass dependence of shadowing (larger means more screening and less mult)
       zbcut=0.6    !smaller means more shadowing and lower max value for Z
 ! this parameters are very important for CR and not constrained by data for pi and K. Minimum multiplicity (zbrmax=0.05) is given by proton value fixed by pPb@LHC data (gives low Nmu but large Xmax and XMumax), average can be fixed by 90% of pAir multiplicity (zbrmax~-0.25) (gives average Nmu and less large Xmax and Xmumax) and maximum is limited to avoid a change in the cross-secton (zbrmax=-0.55). Use the central value (zbrmax=-0.25) to define error band using min and max. Not that the correlation Nmu-Xmax do not really change.
-      zbrmax(1)=-0.3     !color transparency (the lower the more transparent, but 0 do not switch off the effect (1. means no effect))
+      zbrmax(1)=-0.4    !color transparency (the lower the more transparent, but 0 do not switch off the effect (1. means no effect))
       zbrmax(2)=0.05
-      zbrmax(3)=-0.3
+      zbrmax(3)=-0.4
       zbrmax(4)=0.
 c Z dependent parameters
       zrminc=0.  !increase probability for remnant excitation in nuclei (without connexion)
@@ -717,10 +717,10 @@ c  cluster decay
 
       ioclude=3     !cluster decay option
       amuseg=500.    !normalization for density used in long flow evolution with mult (should not be too small not to reduce too much SPS PbPb)
-      aminclu=10.    !minimum mass for a cluser (max(aminclu,amctot/ncellong) for cluster fusion). If negative, flow is not added to the minimum. This should be handle with care because it may change multiplicity distribution even at low rapidity and multiplicity
+      aminclu=5.    !minimum mass for a cluser (max(aminclu,amctot/ncellong) for cluster fusion). If negative, flow is not added to the minimum. This should be handle with care because it may change multiplicity distribution even at low rapidity and multiplicity
       ptq=1.      !weight of particles to form core in case of democratic absorption if > 0
       yradmx= 0.3    !factor for radial flow for low mass (pc920)
-      yradmi= 0.145  !factor for long flow evolution with mult (the larger the lower)
+      yradmi= 0.141  !factor for long flow evolution with mult (the larger the lower)
       yradpp=1.45   !minimum radial collective boost factor (should not be large but on many particles. Id particles spectra indicates a moderate flow but to get <pt> right enough particles should bechanged)
       yradpi=0.25   !reduce flow in AA and increase multiplicity 
       yradpx=25.    !maximum fluctuations of yrmax with energy density -> can increase large pt without changing the mean too much In particular in AA. Effect is mandatory but should be limited in particular at low energy
@@ -1228,8 +1228,8 @@ c slope and diffraction
 c remnant excitation
 
       xmxrem=3.e-4      !maximum relative mass for droplet remnant
-      alpndi(1)=1.       !alpha mass nondiffractive
-      alpndi(2)=1.       !alpha mass nondiffractive
+      alpndi(1)=1.25       !alpha mass nondiffractive
+      alpndi(2)=1.25       !alpha mass nondiffractive
       amdrmin=2.                !fix minimum mass for droplet in remnant or droplet with flow
       if(iorsdf.eq.0)then
         ylongmx=1.              !fix mass for remnant droplet to have narrower pseudorapidity distribution
@@ -1252,25 +1252,19 @@ c string fragmentation
 
       ptsend=    0.6     !string end pt
       ptsems=    0.3    !mass of string end (minimum pt)
-      rstras(1)=0.8        !effective ratio of s sea over u sea basis (kaons in pipp250)
-      rstras(2)=0.33        !effective ratio of s sea over u sea basis (lambdas in pp158)
-      rstras(3)=0.8        !effective ratio of s sea over u sea basis (kaons in kpp250)
-      wgtdiq=0.05      !weight for seadiq - antidiq as string end 
+      rstras(1)=0.9        !effective ratio of s sea over u sea basis (kaons in pipp250)
+      rstras(2)=0.45        !effective ratio of s sea over u sea basis (lambdas in pp158)
+      rstras(3)=0.9        !effective ratio of s sea over u sea basis (kaons in kpp250)
+      wgtdiq=0.055      !weight for seadiq - antidiq as string end 
       wgtqqq(1)=0.1   !weight for val diq (as soft string ends for one pomeron) for pion
       wgtqqq(3)=0.1   !weight for val diq for kaon
-      pmqq=0.103
-      pmqs=0.072
-      puds=0.48
-      pbreakg=0.13     !fix energy evolution of mult in e+e-
-      pbreak=-0.33      !fix position of 1st peak in pp mult distri at LHC
-      delmrho=0.125
-      delpeta=0.19    !reproduce eta
-c alternative to have reasonable Air shower description
-      !correct eta yield (more muons)
-c      delpeta=0.5    !reproduce eta
-c      delmrho=0.155
-c      pbreakg=0.22
-c      pbreak=-0.39
+      pmqq=0.105
+      pmqs=0.076
+      puds=0.4
+      pbreakg=0.16     !fix energy evolution of mult in e+e-
+      pbreak=-0.35      !fix position of 1st peak in pp mult distri at LHC
+      delmrho=0.225    !fix rho and eta from pp400
+      delpeta=0.39
 
       end
 

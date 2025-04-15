@@ -650,9 +650,10 @@ c-----------------------------------------------------------------------
       end
 
 c-----------------------------------------------------------------------
-      subroutine rescaleRap1(scal , nptl2,ist_0 , asym,p4) 
+      subroutine rescaleRap1(scal , nptl2,ist_0 , asym,p4,iret) 
 c-----------------------------------------------------------------------
       include "epos.inc"
+      iret=0
       ii=0
       fab=1
       scalmax=0
@@ -668,7 +669,8 @@ c-----------------------------------------------------------------------
         fb=p3 
         fab=fa*fb
       enddo
-      if(fb*fa.ge.0)then !should be < 0
+      if(fb*fa.ge.0)then        !should be < 0
+        iF(ish.ge.1)then
         write(ifmt,*)'++++++++++++++++++++++++++++++++++++++++++++++++'
         write(ifmt,*)'ERROR 08042021a in rescaleRap1'
         write(ifmt,*)' fa fb = ',fa,fb,'  (should have diff sign)' 
@@ -678,8 +680,11 @@ c-----------------------------------------------------------------------
          call rescaleRap2(scal,asym , nptl2,ist_0,ii , p3,p4)
          write(ifmt,*)'CHECK rescaleRap1',scal,asym,p3
         enddo
-        write(ifmt,*)'++++++++++++++++++++++++++++++++++++++++++++++++' 
-        stop
+        write(ifmt,*)'++++++++++++++++++++++++++++++++++++++++++++++++'
+        endif
+        iret=1
+        return
+c       stop
       endif
       fc=1e20
       ipass=0
@@ -710,6 +715,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       include "epos.inc"
       double precision esoll,fab
+      iret=0
       fab=1
       fa=1.
       fb=1.
@@ -718,25 +724,30 @@ c-----------------------------------------------------------------------
         scalmax=scalmax+0.10
         a=-1 
         scal=1+a*scalmax
-        call rescaleRap1(scal , nptl2,ist_0 , asym,p4) 
+        call rescaleRap1(scal , nptl2,ist_0 , asym,p4,iret)
+        if(iret.ne.0)return
         fa=p4-esoll
         b=1
         scal=1+b*scalmax
-        call rescaleRap1(scal , nptl2,ist_0 , asym,p4) 
+        call rescaleRap1(scal , nptl2,ist_0 , asym,p4,iret) 
+        if(iret.ne.0)return
         fb=p4-esoll
         fab=fa*fb
         call checkFaFb(a,b,fa,fb,scalmax,nptl2,ist_0  
-     .    , c,fc,scal,asym,iretab)
+     .    , c,fc,scal,asym,iretab,iret)
+        if(iret.ne.0)return
         if(iretab.eq.1)goto 888
       enddo
       do while(b.lt.3.and.fab.gt.0)
         b=b+0.1
         scal=1+b*scalmax
-        call rescaleRap1(scal , nptl2,ist_0 , asym,p4) 
+        call rescaleRap1(scal , nptl2,ist_0 , asym,p4,iret) 
+        if(iret.ne.0)return
         fb=p4-esoll
         fab=fa*fb
         call checkFaFb(a,b,fa,fb,scalmax,nptl2,ist_0  
-     .    , c,fc,scal,asym,iretab)
+     .    , c,fc,scal,asym,iretab,iret)
+        if(iret.ne.0)return
         if(iretab.eq.1)goto 888
       enddo
       kk=0 
@@ -754,11 +765,13 @@ c-----------------------------------------------------------------------
           write(ifmt,*)'++++++++++++++++++++++++'
           stop
         endif
-        call rescaleRap1(scal , nptl2,ist_0 , asym,p4) 
+        call rescaleRap1(scal , nptl2,ist_0 , asym,p4,iret) 
+        if(iret.ne.0)return
         fa=p4-esoll
         fab=fa*fb
         call checkFaFb(a,b,fa,fb,scalmax,nptl2,ist_0  
-     .    , c,fc,scal,asym,iretab)
+     .    , c,fc,scal,asym,iretab,iret)
+        if(iret.ne.0)return
         if(iretab.eq.1)goto 888
       enddo
       if(fa*fb.ge.0)then !should be < 0
@@ -773,7 +786,7 @@ c-----------------------------------------------------------------------
         !do kk=-9,9 
         ! scal=1+kk/5.*scalmax
         ! if(scal.gt.0.)then
-        !   call rescaleRap1(scal, nptl2,ist_0 , asym,p4)
+        !   call rescaleRap1(scal, nptl2,ist_0 , asym,p4,iret)
         !   write(ifmt,*)'CHECK rescaleRap',scal,asym,p4-esoll
         ! endif
         !enddo
@@ -786,7 +799,8 @@ c-----------------------------------------------------------------------
         ipass=ipass+1
         c=(a+b)/2 
         scal=1+c*scalmax
-        call rescaleRap1(scal , nptl2,ist_0 , asym,p4) 
+        call rescaleRap1(scal , nptl2,ist_0 , asym,p4,iret) 
+        if(iret.ne.0)return
         fc=p4-esoll
         if(ish.ge.4)write(ifch,'(a,i3,2f12.2,4x,f9.4,f9.5)')
      .  'rescaleRap: it p4 Esoll =',ipass,p4,esoll,scal,asym
@@ -811,7 +825,7 @@ c-----------------------------------------------------------------------
       end
 c---------------------------
       subroutine checkFaFb(a,b,fa,fb,scalmax,nptl2,ist_0
-     .    ,c,fc,scal,asym,iretab)
+     .    ,c,fc,scal,asym,iretab,iret)
       iretab=0
       if(fa.eq.0..or.fb.eq.0.)then
         if(fa.eq.0.)then
@@ -823,7 +837,7 @@ c---------------------------
         endif
         fc=0 
         scal=1+c*scalmax
-        call rescaleRap1(scal , nptl2,ist_0 , asym,p4) 
+        call rescaleRap1(scal , nptl2,ist_0 , asym,p4,iret) 
       endif
       end
 
@@ -1532,8 +1546,8 @@ c     -----------
             call idmass(idptl(j),amass)
             call idwidth(idptl(j),wi)
             del=max(1.e-3,2.*wi)
-            if(abs(idptl(j)).gt.100.and.abs(idptl(j)).ne.221.and.
-     &       abs(pptl(5,j)-amass).gt.del)then
+            if(abs(idptl(j)).gt.100.and.idptl(j).ne.221.and.
+     &       idptl(j).ne.702.and.abs(pptl(5,j)-amass).gt.del)then
               if(ish.ge.5)write(ifch,*)'wrong particle mass',j,idptl(j)
      &                                           ,pptl(5,j),amass,del
               amass=pptl(5,j)
@@ -1547,8 +1561,8 @@ c     -----------
               endif
               call idtau(idptl(j),pptl(4,j),pptl(5,j),taugm)
               tivptl(2,j)=tivptl(1,j)+taugm*(-alog(rangen()))
-c            else
-c              pptl(5,j)=amass
+            elseif(idptl(j).eq.221.or.idptl(j).eq.702)then    !particles coming from mix with rho0 or eta'   (omega and f0 width smaller than rho0 or eta' width, so fix the mass tothe average one)
+              pptl(5,j)=amass
             endif
           endif
           if(abs((pptl(4,j)+pptl(3,j))*(pptl(4,j)-pptl(3,j))
@@ -1561,7 +1575,7 @@ c              pptl(5,j)=amass
               call alistc("&",j,j)
             endif
             ityptl(j)=100+ityptl(j)/10
-          elseif(irescl.ge.1)then
+          else
 c ensure that all particles are really on-shell
             pptl(4,j)=sqrt(pptl(1,j)**2+pptl(2,j)**2
      *                    +pptl(3,j)**2+pptl(5,j)**2)
