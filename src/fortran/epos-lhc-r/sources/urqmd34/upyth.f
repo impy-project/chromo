@@ -68486,7 +68486,7 @@ C*********************************************************************
 C...PYR
 C...Generates random numbers uniformly distributed between
 C...0 and 1, excluding the endpoints.
- 
+#ifndef CHROMO
       FUNCTION PYR(IDUMMY)
  
 C...Double precision and integer declarations.
@@ -68560,7 +68560,7 @@ C...Update counters. Random number to output.
  
       RETURN
       END
- 
+#endif
 C*********************************************************************
  
 C...PYRGET

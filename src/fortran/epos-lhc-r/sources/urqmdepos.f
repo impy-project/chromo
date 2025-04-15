@@ -286,7 +286,7 @@ c spectator arrays
      +     frp0(nmax), frpx(nmax), frpy(nmax), frpz(nmax)
       common /frcoor/ frr0, frrx, frry, frrz, frp0, frpx, frpy, frpz
 
-      include 'comres.f'
+      include 'urqmd34/comres.f'
 
       !----------------------------------------------------------------------------
       !epos common blocks for particle list
@@ -1052,7 +1052,7 @@ c spectator arrays
      +     frp0(nmax), frpx(nmax), frpy(nmax), frpz(nmax)
       common /frcoor/ frr0, frrx, frry, frrz, frp0, frpx, frpy, frpz
 
-      include 'comres.f'
+      include 'urqmd34/comres.f'
 
       real taugm,rangen
       integer nptl
@@ -1260,13 +1260,13 @@ cc---------------------------------------------------------------------
       implicit none
       integer idpdgg,idepos,pdgid,idtrafo
       real amepos
-      include 'coms.f'
-      include 'comres.f'
-      include 'options.f'
-      include 'colltab.f'
-      include 'inputs.f'
-      include 'newpart.f'
-      include 'boxinc.f'
+      include 'urqmd34/coms.f'
+      include 'urqmd34/comres.f'
+      include 'urqmd34/options.f'
+      include 'urqmd34/colltab.f'
+      include 'urqmd34/inputs.f'
+      include 'urqmd34/newpart.f'
+      include 'urqmd34/boxinc.f'
       integer i,j,k,steps,ii,ocharge,ncharge, mc, mp, noc, it1,it2
       real*8 sqrts,otime,xdummy,st
       logical isstable
@@ -1641,9 +1641,9 @@ c     &write(ifch,'(a,50a1)')' (info)',('u',i=1,50)
 
       subroutine traceori(ii,io)
       implicit none
-      include 'coms.f'
-      include 'newpart.f'
-      include 'freezeout.f'
+      include 'urqmd34/coms.f'
+      include 'urqmd34/newpart.f'
+      include 'urqmd34/freezeout.f'
       integer itrace(2,nmax)  , ii, io, i
       common /ctrace/itrace
       integer      ifop,ifmt,ifch,ifcx,ifhi,ifdt,ifcp,ifdr,ifio
@@ -1655,9 +1655,9 @@ c     &write(ifch,'(a,50a1)')' (info)',('u',i=1,50)
 
       subroutine traceity(ii)
       implicit none
-      include 'coms.f'
-      include 'newpart.f'
-      include 'freezeout.f'
+      include 'urqmd34/coms.f'
+      include 'urqmd34/newpart.f'
+      include 'urqmd34/freezeout.f'
       integer itrace(2,nmax)  , ii, io, i
       common /ctrace/itrace
       integer      ifop,ifmt,ifch,ifcx,ifhi,ifdt,ifcp,ifdr,ifio
@@ -1717,11 +1717,11 @@ c-----------------------------------------------------------------------
 
       implicit none
 
-      include 'coms.f'
-      include 'options.f'
-      include 'comres.f'
-      include 'inputs.f'
-      include 'boxinc.f'
+      include 'urqmd34/coms.f'
+      include 'urqmd34/options.f'
+      include 'urqmd34/comres.f'
+      include 'urqmd34/inputs.f'
+      include 'urqmd34/boxinc.f'
 
       integer laproj,maproj,latarg,matarg
       real core,fctrmx
@@ -2638,13 +2638,13 @@ c-------------------------------------------------------------------------------
                   subroutine file14outx(itime)
 c--------------------------------------------------------------------------------
       implicit none
-      include 'comres.f'
-      include 'coms.f'
-      include 'options.f'
-      include 'inputs.f'
-      include 'newpart.f'
-      include 'freezeout.f'
-      include 'boxinc.f'
+      include 'urqmd34/comres.f'
+      include 'urqmd34/coms.f'
+      include 'urqmd34/options.f'
+      include 'urqmd34/inputs.f'
+      include 'urqmd34/newpart.f'
+      include 'urqmd34/freezeout.f'
+      include 'urqmd34/boxinc.f'
       integer i,itotcoll,iinelcoll,ii,ix,iy,itime,ncnt
       integer nexpart,idpdgg,idepos,idtrafo,pdgid,neta,ij,nrap,nrapid
       integer zeta(2,-10:10,-10:10,40),zetasum(-10:10,40)
@@ -2653,7 +2653,7 @@ c-------------------------------------------------------------------------------
       real*8 sigmatot,t,tf,z,x,y,p1,p2,p3,p4
       logical go
       common /outco2/sigmatot
-      include 'outcom.f'
+      include 'urqmd34/outcom.f'
       data ncnt /0/
       save
 
@@ -2748,7 +2748,7 @@ c----------------------------------------------------------------------
             subroutine uplot
 c----------------------------------------------------------------------
 
-      include 'coms.f'
+      include 'urqmd34/coms.f'
       !if(nsteps.gt.1)call uplot3
       end
 
@@ -2865,8 +2865,8 @@ cinput iiz1  : $2\cdot I_3$ of particle
       implicit none
       integer i1,iz1,ii1,iiz1,is,iret
       real*8 m1,mm1
-      include 'comres.f'
-      include 'options.f'
+      include 'urqmd34/comres.f'
+      include 'urqmd34/options.f'
       integer strit
 
       integer      ifop,ifmt,ifch,ifcx,ifhi,ifdt,ifcp,ifdr,ifio
@@ -2903,10 +2903,10 @@ cinput iiz1  : $2\cdot I_3$ of particle
 
       implicit none
 
-      include 'comres.f'
-      include 'comwid.f'
-      include 'newpart.f'
-      include 'options.f'
+      include 'urqmd34/comres.f'
+      include 'urqmd34/comwid.f'
+      include 'urqmd34/newpart.f'
+      include 'urqmd34/options.f'
 
       real*8 pi,cc
       parameter(pi=3.1415927,cc=0.38937966)
@@ -2951,14 +2951,14 @@ c-------------------------------------------------------------------------------
 c----------------------------------------------------------------------------------
 
       implicit none
-      include 'comres.f'
-      include 'coms.f'
-      include 'options.f'
-      include 'inputs.f'
-      include 'newpart.f'
-      include 'freezeout.f'
-      include 'boxinc.f'
-      include 'outcom.f'
+      include 'urqmd34/comres.f'
+      include 'urqmd34/coms.f'
+      include 'urqmd34/options.f'
+      include 'urqmd34/inputs.f'
+      include 'urqmd34/newpart.f'
+      include 'urqmd34/freezeout.f'
+      include 'urqmd34/boxinc.f'
+      include 'urqmd34/outcom.f'
       integer      ifop,ifmt,ifch,ifcx,ifhi,ifdt,ifcp,ifdr,ifio
       common/files/ifop,ifmt,ifch,ifcx,ifhi,ifdt,ifcp,ifdr,ifio
       integer ninit,id,nupa(0:10)
@@ -3293,10 +3293,10 @@ c------------------------------------------------------------------------
       !branch i from call getbran(prob,0,100,sum,0,maxbr,i)
       !prob contains the branching ratios
       !-------------------------------------------------------
-      include 'newpart.f'
-      include 'outcom.f'
-      include 'coms.f'
-      include 'comres.f'
+      include 'urqmd34/newpart.f'
+      include 'urqmd34/outcom.f'
+      include 'urqmd34/coms.f'
+      include 'urqmd34/comres.f'
       integer ninit,idpdgg,pdgid,idtrafo,id,ii,kk
       common /cninit/ninit
       !logical lstrange
@@ -3523,7 +3523,7 @@ c            endif
 c----------------------------------------------------------------
       logical function lstrange(id)
 c----------------------------------------------------------------
-      include 'coms.f'
+      include 'urqmd34/coms.f'
       integer id,ia
       logical lstr
       lstr=.false.
@@ -3695,8 +3695,8 @@ c----------------------------------------------------------
 
       implicit none
 
-      include 'comres.f'
-      include 'comwid.f'
+      include 'urqmd34/comres.f'
+      include 'urqmd34/comwid.f'
 
       integer mxho
       integer       nfnch,nfnhi,nfndt,nfnii,nfnid,nfnie,nfnrj,nfnmt
@@ -3936,8 +3936,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
       implicit none
 
-      include 'comres.f'
-      include 'comwid.f'
+      include 'urqmd34/comres.f'
+      include 'urqmd34/comwid.f'
 
       integer ios
 
@@ -3998,8 +3998,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
       implicit none
 
-      include 'comres.f'
-      include 'comwid.f'
+      include 'urqmd34/comres.f'
+      include 'urqmd34/comwid.f'
 
 
       real*8 fwidth,m,first,last,delta,abl0,abln,mir,mminit,fbrancx
@@ -4246,8 +4246,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccc
 
       implicit none
 
-      include 'comres.f'
-      include 'comwid.f'
+      include 'urqmd34/comres.f'
+      include 'urqmd34/comwid.f'
 
       integer n
       integer k,khi,klo
@@ -4294,8 +4294,8 @@ c
 
       implicit none
 
-      include 'comres.f'
-      include 'comwid.f'
+      include 'urqmd34/comres.f'
+      include 'urqmd34/comwid.f'
 
       integer n
       integer k,khi,klo
