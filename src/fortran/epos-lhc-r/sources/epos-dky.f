@@ -1130,9 +1130,8 @@ c-----------------------------------------------------------------------
       parameter (ndectbmax=4000)
       real dectab(7,ndectbmax)
 
-      write(ifmt,'(2a)')'load ',fnnx(1:nfnnx)//'idky5.dt'
-      open(95,file= fnnx(1:nfnnx)//'idky5.dt'
-     .,STATUS='UNKNOWN')
+      write(ifmt,'(2a)')'load ',fnnx(1:nfnnx)//'/idky5.dt'
+      open(95,file= fnnx(1:nfnnx)//'/idky5.dt',STATUS='UNKNOWN')
 
       j=1
       idlast=0
