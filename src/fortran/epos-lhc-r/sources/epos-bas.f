@@ -8169,7 +8169,7 @@ c do not use the same rexdif in MC than in xs calculation because the measured x
  111    rexdif(iii)=abs(rexdifi(iii))
 
 c        write(ifmt,*)'Rexdif',rexdif(iclpro),rexdif(icltar)
-
+#ifndef CHROMO
       elseif(model.eq.2)then
 
         g0=real(PIQGS*RP1/CD(ICZ)*AM**2*10.D0)
@@ -8295,7 +8295,7 @@ c  GDD - double diffractive cross section
         sigdif=sigine-sigcut
         sigsd=sigdif
         sigineaa=qgsIIIincs
-
+#endif
        endif
 
 

@@ -177,9 +177,10 @@ class EposLHC(MCRun):
     _frame = None
     _projectiles = standard_projectiles | Nuclei()
     _unstable_pids = set(_epos_unstable_pids())
+    _hadronic_rescattering = False
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/epos_v001.zip"
+        + "/releases/download/zipped_data_v1.0/eposlhc_v001.zip"
     )
     _ecm_min = 6 * GeV
 
@@ -194,6 +195,7 @@ class EposLHC(MCRun):
         lun = 6  # stdout
         self._lib.initepos(
             evt_kin.ecm,
+            self._hadronic_rescattering,  # No effect on EPOS-LHC
             datdir,
             len(datdir),
             chromo.debug_level,
@@ -203,6 +205,7 @@ class EposLHC(MCRun):
         self._set_final_state_particles()
         self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.float32])
         self.kinematics = evt_kin
+        print("Finished initializing EPOS-LHC")
 
     def _cross_section(self, kin=None, max_info=False):
         total, inel, el, dd, sd, _ = self._lib.xsection()
@@ -263,3 +266,31 @@ class EposLHC(MCRun):
 
     def print_native_event(self, nparticles=100):
         self._lib.alist("EposLHC listing&", 1, nparticles)
+
+
+class EposLHCR(EposLHC):
+    """CRMC 2.2.0 version of EPOS LHC-R."""
+
+    _name = "EPOS"
+    _version = "LHC-R"
+    _library_name = "_eposlhcr"
+    _event_class = EPOSEvent
+    _data_url = (
+        "https://github.com/impy-project/chromo"
+        + "/releases/download/zipped_data_v1.0/eposlhcr_v001.zip"
+    )
+    _hadronic_rescattering = True
+    _restore_beam_and_history = False
+
+    def _generate(self):
+        self._lib.aepos(-1)
+        self._lib.afinal()
+        self._lib.hepmcstore(-1)
+        return True
+
+
+class EposLHCRNoHadrRescattering(EposLHCR):
+    """CRMC 2.2.0 version of EPOS LHC-R."""
+
+    _version = "LHC-R (no hadr. rescattering)"
+    _hadronic_rescattering = False

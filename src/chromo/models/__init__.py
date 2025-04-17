@@ -8,7 +8,7 @@ from chromo.models.sibyll import (
 )
 
 from chromo.models.dpmjetIII import DpmjetIII307
-from chromo.models.epos import EposLHC
+from chromo.models.epos import EposLHC, EposLHCR, EposLHCRNoHadrRescattering
 from chromo.models.qgsjet import QGSJet01d, QGSJetII03, QGSJetII04, QGSJetIII
 from chromo.models.dpmjetIII import DpmjetIII191, DpmjetIII193
 from chromo.models.phojet import Phojet112, Phojet191, Phojet193
@@ -25,6 +25,8 @@ __all__ = (
     "Sibyll23StarMixed",
     "DpmjetIII307",
     "EposLHC",
+    "EposLHCR",
+    "EposLHCRNoHadrRescattering",
     "QGSJet01d",
     "QGSJetII03",
     "QGSJetII04",

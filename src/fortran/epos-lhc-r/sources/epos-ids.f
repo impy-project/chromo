@@ -1984,7 +1984,7 @@ c        print*,id
       if(id.ge.-9900.and.id.le.9900)then
         nl=nlidtbl(abs(id))
         amass=amtbl(nl)  !nl=0 -> should crash with backtrace
-c         print*,'Check mass',id,nl,amass
+        ! print*,'Check mass',id,nl,amass
         if(nl.eq.0)stop'ERROR 07072016' 
         return
       endif       
@@ -2249,9 +2249,10 @@ c     ichrg must be dimensioned nqlep+12
 c-----------------------------------------------------------------------
 
       include 'epos.inc'
-
+#ifdef CHROMO
+Cf2py intent(out) chrg
+#endif
       ida=abs(id)
-
       if(ida.le.9900)then
         nl=nlidtbl(ida)
         if(nl.eq.0)then
@@ -2264,7 +2265,7 @@ c-----------------------------------------------------------------------
           endif
         endif
         chrg=chrgtbl(nl)
-        !print*,'idchrg using table ',id,chrg
+        ! print*,'idchrg using table ',id,chrg
         if(id.eq.-ida)chrg=-chrg 
         return
       endif

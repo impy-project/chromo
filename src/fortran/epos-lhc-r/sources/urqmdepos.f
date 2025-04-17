@@ -3732,9 +3732,12 @@ c      logical b
       b=io.eq.1
 
 c set the name of the table
-
+#ifndef CHROMO
       tabname=edir(1:index(edir,' ')-1)
      .     //deftab(1:index(deftab,' '))
+#else
+      tabname = fnhpf(1:nfnhpf)
+#endif
 
       inquire(file=tabname(1:index(tabname,' ')-1),exist=fex)
       if(.not.fex)then
