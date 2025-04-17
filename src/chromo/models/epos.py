@@ -100,6 +100,7 @@ class EPOSEvent(MCEvent):
         ind = 0 for projectile
         ind = 1 for target
         """
+        return
         # Search among epos's beam particles the particles with the
         # same energy as projectile/target
         is_parent = np.isclose(event.en, event.en[ind], rtol=1e-2) & (event.status == 4)
@@ -114,6 +115,7 @@ class EPOSEvent(MCEvent):
         Attach spectators/wounded nucleons to corresponding nucleus
         if projectile/target is nucleus
         """
+        return
         beam = self.kin._get_beam_data(self._generator_frame)
         is_nucleus = np.abs(beam["pid"]) > 1000000000
 
@@ -280,12 +282,11 @@ class EposLHCR(EposLHC):
         + "/releases/download/zipped_data_v1.0/eposlhcr_v001.zip"
     )
     _hadronic_rescattering = True
-    _restore_beam_and_history = False
 
     def _generate(self):
         self._lib.aepos(-1)
         self._lib.afinal()
-        self._lib.hepmcstore(-1)
+        self._lib.hepmcstore(0)
         return True
 
 

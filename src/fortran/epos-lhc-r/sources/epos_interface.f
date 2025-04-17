@@ -47,8 +47,6 @@ c     Model is EPOS
 
 c Initialize decay of particles (all unstable decay)
          nrnody=0
-         ndecay=0
-         idecay=0
 
          if(lrescat.eq.0) then
             ihacas=0                !Do not use hadronic rescattering (faster)
