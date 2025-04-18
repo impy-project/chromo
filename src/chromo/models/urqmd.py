@@ -21,7 +21,7 @@ import warnings
 class UrQMDEvent(MCEvent):
     """Wrapper class around EPOS particle stack."""
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.uqchg.ichg[:npart]
 
     def _get_impact_parameter(self):

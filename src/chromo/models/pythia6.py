@@ -8,7 +8,7 @@ from chromo.constants import standard_projectiles
 class PYTHIA6Event(MCEvent):
     """Wrapper class around HEPEVT particle stack."""
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         k = self._lib.pyjets.k[:npart, 1]
         # TODO accelerate by implementing this loop in Fortran
         return np.fromiter((self._lib.pychge(ki) / 3 for ki in k), np.double)

@@ -116,7 +116,7 @@ class SibyllEvent(MCEvent):
 
     _jdahep = None  # no child info
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.schg.ichg[:npart]
 
     def _get_impact_parameter(self):

@@ -550,7 +550,7 @@ class MCEvent(EventData, ABC):
             generator._inel_or_prod_cross_section,
             getattr(evt, self._idhep)[sel],
             getattr(evt, self._isthep)[sel],
-            self._charge_init(npart),
+            self._get_charge(npart),
             *phep,
             *vhep,
             mothers=getattr(evt, self._jmohep).T[sel] if self._jmohep else None,
@@ -562,7 +562,7 @@ class MCEvent(EventData, ABC):
             self._repair_initial_beam()
 
     @abstractmethod
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         # override this in derived to get charge info
         ...
 

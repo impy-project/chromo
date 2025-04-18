@@ -10,7 +10,7 @@ class PhojetEvent(MCEvent):
 
     _hepevt = "poevt1"
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.poevt2.icolor[0, :npart] / 3
 
     def _gen_cut_info(self):

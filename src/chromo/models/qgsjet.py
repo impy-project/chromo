@@ -9,7 +9,7 @@ from particle import literals as lp
 class QGSJET1Event(MCEvent):
     """Wrapper class around QGSJet HEPEVT converter."""
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.qgchg.ichg[:npart]
 
     @property
