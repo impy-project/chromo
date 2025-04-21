@@ -66,7 +66,7 @@ C-----------------------------------------------------------------------
             ISTHEP(I) = 2
          END IF
          ICHG(I) = ICHP(ABS(MOD(LLIST(I),10000)))
-         IDHEP(I) = ISIB_PID2PDG(abs(MOD(LLIST(I),10000)))
+         IDHEP(I) = ISIB_PID2PDG(MOD(LLIST(I),10000))
          JMOHEP(1,I) = LLIST1(I)
          JMOHEP(2,I) = LLIST1(I)
 #ifdef SIBYLL_21

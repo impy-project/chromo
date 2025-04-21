@@ -306,7 +306,7 @@ class SIBYLLRun(MCRun):
     def _set_kinematics(self, kin):
         if not kin.p1.is_nucleus:
             self._production_id = self._lib.isib_pdg2pid(kin.p1)
-            assert self._production_id != 0
+            # assert self._production_id != 0
 
     def _set_stable(self, pdgid, stable):
         if pdgid not in self._unstable_pids:

@@ -6,19 +6,16 @@ C----------------------------------------------------------------
 C     prints the particles known to SIBYLL with their internal
 C     and PDG labels \FR'13
 C----------------------------------------------------------------
-         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-         IMPLICIT INTEGER(I-N)
-         DOUBLE PRECISION AM,AM2
-         COMMON /S_MASS1/ AM(99), AM2(99)
+         COMMON /S_MASS1/ AM(49), AM2(49)
 
          INTEGER ICHP,ISTR,IBAR
          COMMON /S_CHP/ ICHP(49), ISTR(49), IBAR(49)
 
          INTEGER ICHM
-         COMMON /S_CHM/ ICHM(99)
+         COMMON /S_CHM/ ICHM(49)
 
          CHARACTER*6 NAMP
-         COMMON /S_CNAM/ NAMP (0:99)
+         COMMON /S_CNAM/ NAMP (0:49)
          SAVE
 
          WRITE(LUN,50)
@@ -75,17 +72,12 @@ C     output:    sib_pdg2pid internal particle id
 C
 C     based on similar phojet function \FR'13
 C----------------------------------------------------------------
-         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-         IMPLICIT INTEGER(I-N)
          COMMON /S_PDG2PID/ IPID_PDG_LIST(99),ID_LIST(577)
 
          INTEGER NCALL, NDEBUG, LUN
          COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
 
-         DOUBLE PRECISION CBR
-         INTEGER KDEC,LBARP,IDB
-         COMMON /S_CSYDEC/ CBR(223+16+12+8), KDEC(1338+6*(16+12+8)),
-     &     LBARP(99), IDB(99)
+         COMMON /S_CSYDEC/ CBR(102), KDEC(612), LBARP(49), IDB(49)
          SAVE
 
          Nin = abs(Npdg)
@@ -113,7 +105,11 @@ C  particle not in table
             return
          endif
          ID_out = ID_list(Nout)
+! #ifdef SIBYLL21
+         ! IF(abs(ID_out).gt.49)then
+! #else
          IF(abs(ID_out).gt.99)then
+! #endif
             ISIB_PDG2PID = 0
             return
          else
