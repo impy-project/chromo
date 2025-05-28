@@ -3,9 +3,12 @@ from chromo import kinematics
 from chromo import constants
 
 import os
-from importlib.metadata import version
+from importlib.metadata import version, PackageNotFoundError
 
-__version__ = version("chromo")
+try:
+    __version__ = version("chromo")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
 
 debug_level = int(os.environ.get("DEBUG", "0"))
 
