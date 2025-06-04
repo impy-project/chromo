@@ -1,13 +1,13 @@
 [build-system]
 requires = [
-    "packaging",
-    "setuptools",
-    "wheel",
-    "cmake",
+    "meson-python>=0.13.0",
+    "meson>=1.0.0",
+    "ninja",
     "numpy",
+    "pybind11",
     "charset_normalizer",
 ]
-#build-backend = "setuptools.build_meta"
+build-backend = "mesonpy"
 
 [tool.black]
 line-length = 88
