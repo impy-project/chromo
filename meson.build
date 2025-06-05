@@ -13,7 +13,12 @@ project('chromo', 'c', 'cpp', 'fortran',
 add_project_arguments('-Wno-uninitialized', '-fPIC',
                       '-fno-second-underscore', '-Wno-unused', '-Wno-conversion',
                       '-Wno-unused-dummy-argument', '-Wno-character-truncation', 
-                      '-Wno-integer-division','-Wno-surprising', '-cpp', language: 'fortran')
+                      '-Wno-integer-division','-Wno-surprising', '-Wno-tabs',
+                      '-cpp', '-UNDEBUG',
+                      language: 'fortran')
+add_project_arguments('-fPIC',
+                      '-Wno-unused-const-variable',
+                      language: 'C')
 
 
 # Find Python and its development headers
@@ -52,7 +57,7 @@ chromo_common_flags = ['-DCHROMO']
 
 # Test building just sib21 first to verify f2py integration
 sibyll_sources_base = [
-  ['src/fortran/sibyll/sibyll_init.fpp'],
+  'src/fortran/sibyll/sibyll_init.fpp',
   logging_source,
   rangen_source,
 ]
@@ -71,7 +76,18 @@ sibyll_common_functions = [
     'isib_pid2pdg',
     'isib_pdg2pid',
     'pdg_ini'
-]
+] + chromo_common_functions
+
+qgsjetII_common_functions = [
+    'cqgsini',
+    'qgsect',
+    'qgini',
+    'qgconf',
+    'qgreg',
+    'chepevt',
+    'qgcrossc',
+    'cqgshh_ha_cs'
+] + chromo_common_functions
 
 models = {
   '_sib21': {
@@ -106,12 +122,51 @@ models = {
   '_sib23d_star': {
     'sources': sibyll_sources_base + ['src/fortran/sibyll/sibyll2.3d-star-p02.f'],
     'functions': ','.join(sibyll_common_functions + ['gasdev', 'sig_had_nuc']),
-  }
+  },
+  '_qgs01': {
+    'sources': [
+      'src/fortran/qgsjet/qgsjet01d.f',
+      'src/fortran/qgsjet/chromo_qgs1.f',
+      logging_source,
+      rangen_source
+    ],
+    'functions': ','.join([
+      'cqgsini','sectnu','xxaini','psconf','xxreg','psaini','chepevt','xxfz',
+      'cqgshh_ha_cs','crossc'] + chromo_common_functions),
+  },
+  '_qgsII03': {
+    'sources': [
+      'src/fortran/qgsjet/qgsjet-II-03.f',
+      'src/fortran/qgsjet/chromo_qgsII.f',
+      logging_source,
+      rangen_source
+    ],
+    'functions': ','.join(qgsjetII_common_functions)
+  },
+  '_qgsII04': {
+    'sources': [
+      'src/fortran/qgsjet/qgsjet-II-04.f',
+      'src/fortran/qgsjet/chromo_qgsII.f',
+      logging_source,
+      rangen_source
+    ],
+    'functions': ','.join(qgsjetII_common_functions)
+  },
+  '_qgsIII': {
+    'sources': [
+      'src/fortran/qgsjet/qgsjet-III.f',
+      'src/fortran/qgsjet/chromo_qgsIII.f',
+      logging_source,
+      rangen_source
+    ],
+    'functions': ','.join(qgsjetII_common_functions + ['qgran'])
+  },
+
 
 }
 
 foreach f2py_name, model_info : models
-  
+  message('Building model: ' + f2py_name)
   output = [f2py_name + 'module.c', f2py_name + '-f2pywrappers.f', f2py_name + '.pyf']
   includes = chromo_inc_dirs + model_info.get('include_directories', [])
   include_args = []
@@ -123,42 +178,22 @@ foreach f2py_name, model_info : models
     message(f.full_path())
   endforeach
   flags = chromo_common_flags + model_info.get('flags', [])
-  foreach f : flags
-    message('Flag: ' + f)
-  endforeach
+  message('Flags: ' + ' '.join(flags))
 
   interface_sources = files(model_info.get('interface_sources', model_info['sources']))
-  pp_interface_sources = []
-  foreach src : interface_sources
-    if src.full_path()[-1] == 'c'
-      pp_interface_sources += [src]
-      continue
-    endif
-    src_basename = src.full_path().split('/')[-1].split('.')[0]
-    output_file = f2py_name + '_' + src_basename + '.pp.f'
-
-    preprocessed = custom_target(
-      'pp_' + f2py_name + '_' + src_basename,
-      input: src,
-      output: output_file,
-      command: ['gfortran', '-E', '-cpp', flags, '@INPUT@', '-o', '@OUTPUT@'] + include_args,
-      build_by_default: true
-    )
-
-    pp_interface_sources += [preprocessed]
-  endforeach
-  # preprocessed_interface_sources = preprocessor.process(interface_sources, extra_args : flags)
+  sources = files(model_info['sources'])
 
   # Custom target to generate f2py wrapper
   f2py_target = custom_target(f2py_name,
     output: output,
-    input: pp_interface_sources,
+    input: interface_sources,
     command: [
       py, files('generate_f2py.py'),
       f2py_name,
       model_info['functions'],
       meson.global_build_root() / 'meson-logs',
       ' '.join(include_args),
+      ' '.join(flags),
       '@OUTDIR@',
       '@INPUT@'
     ],
@@ -168,12 +203,9 @@ foreach f2py_name, model_info : models
   foreach f : output
     message('F2PY output: ' + f)
   endforeach
-  foreach f : pp_interface_sources
-    message('F2PY input: ' + f.full_path())
-  endforeach
   # Create the sib21 extension module
   py.extension_module(f2py_name,
-    sources: pp_interface_sources + f2py_target + [f2py_fortranobject_c] + [normal_source],
+    sources: sources + f2py_target + [f2py_fortranobject_c] + [normal_source],
     include_directories: include_directories(includes),
     dependencies: [py_dep, numpy_dep],
     c_args: ['-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION'] + flags,

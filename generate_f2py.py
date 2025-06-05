@@ -39,8 +39,9 @@ def generate_f2py_module(
     module_name: str,
     functions: list,
     sources: list,
-    include: str = None,
-    output_dir: str = ".",
+    include: str,
+    flags: str,
+    output_dir: str,
     logger: logging.Logger = None,
 ):
     """
@@ -59,6 +60,7 @@ def generate_f2py_module(
 
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
+    include = include.split(" ") if include else []
 
     logger.info(f"Generating f2py wrapper for module: {module_name}")
     logger.info(f"Functions: {functions}")
@@ -68,6 +70,46 @@ def generate_f2py_module(
     # Generate signature file
     pyf_file = output_path / f"{module_name}.pyf"
 
+    # Add interface sources
+    source_list = []
+    for src in sources:
+        if src and not src.endswith(".c"):  # Skip empty and C sources
+            source_list.append(str(src))
+    logger.info(f"Source files: {source_list}")
+    logger.info(f"Include directories: {include}")
+
+    # Run gfortran preprocessor to evaluate all includes and flags
+    # Concatenate output into a single temporary file to be processed by f2py
+    preprocessed_sources = output_path / f"{module_name}pp.f"
+
+    cmd = (
+        [
+            "gfortran",
+            "-cpp",
+            "-E",
+            flags,
+        ]
+        + include
+        + source_list
+        # + [">", str(preprocessed_sources)]
+    )
+
+    try:
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=True, cwd=output_path
+        )
+        if result.stdout:
+            with open(preprocessed_sources, "w") as f:
+                f.write(result.stdout)
+            logger.info(f"Preprocessed sources written to: {preprocessed_sources}")
+        if result.stderr:
+            logger.info(f"Preprocessing stderr: {result.stderr}")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error preprocessing file: {e}")
+        # logger.error(f"stdout: {e.stdout}")
+        logger.error(f"stderr: {e.stderr}")
+        return False
+
     cmd = [
         sys.executable,
         "-m",
@@ -76,23 +118,11 @@ def generate_f2py_module(
         str(pyf_file),
         "-m",
         module_name,
+        f"only: {' '.join(functions)} :",
         "--overwrite-signature",
+        str(preprocessed_sources.absolute()),
     ]
-
-    if functions:
-        cmd.extend(["only:"] + functions + [":"])
-
-    # Add include directories
-    logger.info(f"Include directories: {include}")
-    cmd.append(include)
-
-    # Add interface sources
-    for src in sources:
-        if src:  # Skip empty sources
-            cmd.append(str(src))
-
     logger.info(f"Running f2py signature generation: {' '.join(cmd)}")
-
     # Run f2py to generate signature from the parent directory
     try:
         result = subprocess.run(
@@ -179,12 +209,13 @@ if __name__ == "__main__":
     logging_dir = sys.argv[3]
     logger = setup_logging(module_name, logging_dir)
     includes = sys.argv[4]
-    output_dir = sys.argv[5] if len(sys.argv) > 5 else "."
+    flags = sys.argv[5]
+    output_dir = sys.argv[6]
     # Ther remaining arguments are the source files
-    if len(sys.argv) < 6:
+    if len(sys.argv) < 7:
         logger.error("At least one source file must be provided.")
         sys.exit(1)
-    sources = sys.argv[6:]
+    sources = sys.argv[7:]
     # Check that all files in sources exist
     for src in sources:
         if not Path(src).exists():
@@ -204,6 +235,7 @@ if __name__ == "__main__":
     logger.info(f"  sources: {sources}")
     logger.info(f"  include_dirs: {includes}")
     logger.info(f"  output_dir: {output_dir}")
+    logger.info(f"  flags: {flags}")
 
     success = generate_f2py_module(
         module_name=module_name,
@@ -211,6 +243,7 @@ if __name__ == "__main__":
         sources=sources,
         include=includes,
         output_dir=output_dir,
+        flags=flags,
         logger=logger,
     )
 
