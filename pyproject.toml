@@ -3,11 +3,65 @@ requires = [
     "meson-python>=0.13.0",
     "meson>=1.0.0",
     "ninja",
-    "numpy",
-    "pybind11",
+    "numpy==2.2.3",
     "charset_normalizer",
 ]
 build-backend = "mesonpy"
+
+[project]
+name = "chromo"
+version = "0.8.0"
+description = "Hadronic Interaction Model interface in Python"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.9"
+license = {text = "BSD 3-Clause License"}
+authors = [
+    {name = "Anatoli Fedynitch", email = "afedynitch@gmail.com"}
+]
+maintainers = [
+    {name = "Anatoli Fedynitch", email = "afedynitch@gmail.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "particle",
+    "rich",
+]
+
+[project.urls]
+Homepage = "https://github.com/impy-project/chromo"
+Download = "https://pypi.python.org/pypi/chromo"
+
+[project.scripts]
+chromo = "chromo.cli:main"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-benchmark",
+    "pytest-xdist",
+    "pyhepmc>=2.13.2",
+    "uproot",
+    "awkward",
+    "pyyaml",
+    "boost_histogram",
+    "matplotlib",
+]
+examples = [
+    "boost-histogram",
+    "matplotlib",
+    "tqdm",
+    "joblib",
+]
 
 [tool.black]
 line-length = 88
@@ -20,6 +74,13 @@ minversion = "6.0"
 addopts = "-q -ra --ff -n auto"
 testpaths = ["tests"]
 filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
+
+[tool.flake8]
+max-line-length = 90
+extend-ignore = "E203"
+
+[tool.pydocstyle]
+convention = "numpy"
 
 [tool.cibuildwheel]
 # update skip when numpy wheels become available

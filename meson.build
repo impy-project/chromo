@@ -1,6 +1,6 @@
 project('chromo', 'c', 'cpp', 'fortran',
-  version: '2.7.0',
-  license: 'MIT',
+  license: 'BSD-3-Clause',
+  version: run_command('python3', 'get_version.py', check: true).stdout().strip(),
   meson_version: '>=1.4.0',
   default_options: [
     'buildtype=release',
@@ -20,6 +20,10 @@ add_project_arguments('-fPIC',
                       '-Wno-unused-const-variable',
                       language: 'C')
 
+
+# Update submodules if needed
+run_command('git', 'submodule', 'update', '--init', '--recursive',
+  check: true, capture: true)
 
 # Find Python and its development headers
 py = import('python').find_installation()
