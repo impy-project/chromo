@@ -1,9 +1,10 @@
 import pathlib
-import importlib
 
-tomllib = importlib.import_module(
-    "tomllib" if importlib.util.find_spec("tomllib") else "tomli"
-)
+
+try:
+    import tomllib  # Python 3.11+
+except ImportError:
+    import tomli as tomllib  # For older Python with 'tomli' installed
 
 pyproject = pathlib.Path(__file__).resolve().parents[0] / "pyproject.toml"
 
