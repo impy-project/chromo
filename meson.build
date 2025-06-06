@@ -1,6 +1,9 @@
+
 project('chromo', 'c', 'cpp', 'fortran',
   license: 'BSD-3-Clause',
-  version: run_command('python3', 'get_version.py', check: true).stdout().strip(),
+  version: run_command([
+    'python3', meson.project_source_root() + '/scripts/get_version.py'
+    ], check: true).stdout().strip(),
   meson_version: '>=1.4.0',
   default_options: [
     'buildtype=release',
@@ -20,6 +23,8 @@ add_project_arguments('-fPIC',
                       '-Wno-unused-const-variable',
                       language: 'C')
 
+# Directory for utilities
+scripts_dir = meson.project_source_root() + '/scripts/'
 
 # Update submodules if needed
 run_command('git', 'submodule', 'update', '--init', '--recursive',
@@ -59,7 +64,7 @@ normal_source = ['src/fortran/normal.c']
 chromo_common_functions = 'chromo_openlogfile,chromo_closelogfile,npyrng'
 chromo_common_flags = ['-DCHROMO']
 
-# Test building just sib21 first to verify f2py integration
+# SIBYLL-specific definitions
 sibyll_sources_base = [
   'src/fortran/sibyll/sibyll_init.fpp',
   logging_source,
@@ -82,6 +87,8 @@ sibyll_common_functions = [
     'pdg_ini'
 ] + chromo_common_functions
 
+# QGSJET-specific definitions
+
 qgsjetII_common_functions = [
     'cqgsini',
     'qgsect',
@@ -93,6 +100,11 @@ qgsjetII_common_functions = [
     'cqgshh_ha_cs'
 ] + chromo_common_functions
 
+# DPMJET and PHOJET-specific definitions
+
+
+# Paramterize all targets. The models must have an _ underline prefix
+# to avoid conflicts with the Python module names.
 models = {
   '_sib21': {
     'sources': sibyll_sources_base + ['src/fortran/sibyll/sibyll_21.f', 'src/fortran/sibyll/sib21aux.f'],
@@ -165,11 +177,22 @@ models = {
     ],
     'functions': ','.join(qgsjetII_common_functions + ['qgran'])
   },
-
-
 }
 
+# Read from pyproject.toml which models to build
+enabled_models = run_command([
+  py, scripts_dir + 'get_models.py', '--enabled'], 
+  check: true).stdout().strip().split('\n')
+disabled_models = run_command([
+  py, scripts_dir + 'get_models.py', '--disabled'], 
+  check: true).stdout().strip().split('\n')
+
 foreach f2py_name, model_info : models
+  if f2py_name.substring(1) not in enabled_models
+    message('Skipping model: ' + f2py_name + ' (disabled)')
+    continue
+  endif
+
   message('Building model: ' + f2py_name)
   output = [f2py_name + 'module.c', f2py_name + '-f2pywrappers.f', f2py_name + '.pyf']
   includes = chromo_inc_dirs + model_info.get('include_directories', [])
@@ -192,7 +215,7 @@ foreach f2py_name, model_info : models
     output: output,
     input: interface_sources,
     command: [
-      py, files('generate_f2py.py'),
+      py, scripts_dir + 'generate_f2py.py',
       f2py_name,
       model_info['functions'],
       meson.global_build_root() / 'meson-logs',

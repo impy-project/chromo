@@ -6,7 +6,7 @@ try:
 except ImportError:
     import tomli as tomllib  # For older Python with 'tomli' installed
 
-pyproject = pathlib.Path(__file__).resolve().parents[0] / "pyproject.toml"
+pyproject = pathlib.Path(__file__).resolve().parents[1] / "pyproject.toml"
 
 with pyproject.open("rb") as f:
     data = tomllib.load(f)

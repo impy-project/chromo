@@ -76,6 +76,34 @@ addopts = "-q -ra --ff -n auto"
 testpaths = ["tests"]
 filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
 
+[tool.chromo]
+# Enabled models
+enabled-models = [
+    "eposlhc",
+    "sib21",
+    "sib23",
+    "sib23d",
+    "sib23d_star",
+    "sib23e",
+    "sib23e_star",
+    "sib23c01",
+    "qgsII03",
+    "qgsII04",
+    "qgsIII",
+    "pythia6",
+    "sophia",
+    "dpmjet307",
+    "phojet112",
+    "phojet191",
+    "phojet193",
+    "dpmjetIII191",
+    "dpmjetIII193",
+    "urqmd34",
+]
+disabled-models = [
+    "qgs01",
+    "pythia8",
+]
 [tool.flake8]
 max-line-length = 90
 extend-ignore = "E203"
