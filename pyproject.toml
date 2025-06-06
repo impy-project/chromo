@@ -79,12 +79,14 @@ filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
 [tool.chromo]
 # Enabled models
 enabled-models = [
+    "sib21",
+]
+disabled-models = [
     "dpmjet_phojet191",
     "dpmjet_phojet193",
     "dpmjet_phojet307",
     "eposlhc",
     "urqmd34",
-    "sib21",
     "sib23",
     "sib23d",
     "sib23d_star",
@@ -97,8 +99,6 @@ enabled-models = [
     "qgsIII",
     "sophia",
     "pythia6",
-]
-disabled-models = [
     "pythia8",
 ]
 [tool.flake8]

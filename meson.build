@@ -30,7 +30,7 @@ run_command('git', 'submodule', 'update', '--init', '--recursive',
   check: true, capture: true)
 
 # Find Python and its development headers
-py = import('python').find_installation()
+py = import('python').find_installation(pure: false)
 py_dep = py.dependency()
 
 # Find numpy and its headers
@@ -457,50 +457,51 @@ endforeach
 
 # Pythia8 build configuration (C++ with pybind11)
 # This is separate from the f2py loop since it uses pybind11 instead of f2py
+if '_pythia8' in enabled_models
+  cpp_dir = 'src/cpp'
+  pybind11_inc = include_directories(cpp_dir / 'pybind11/include')
 
-cpp_dir = 'src/cpp'
-pybind11_inc = include_directories(cpp_dir / 'pybind11/include')
+  if host_machine.system() == 'darwin'
+    pythia8_rpath = '@loader_path'
+  elif host_machine.system() == 'linux'
+    pythia8_rpath = '$ORIGIN'
+  else
+    pythia8_rpath = ''
+  endif
 
-if host_machine.system() == 'darwin'
-  pythia8_rpath = '@loader_path'
-elif host_machine.system() == 'linux'
-  pythia8_rpath = '$ORIGIN'
-else
-  pythia8_rpath = ''
+  # Find all Pythia8 source files
+  pythia8_source_list = run_command([
+    'find', meson.project_source_root() / cpp_dir / 'pythia83/src', 
+    '-name', '*.cc', '-type', 'f'
+  ], check: true).stdout().strip().split('\n')
+
+  pythia8_sources = files(pythia8_source_list)
+
+  # Create Pythia8 shared library
+  libpythia8 = shared_library('pythia8',
+    pythia8_sources,
+    include_directories: include_directories(cpp_dir / 'pythia83/include'),
+    cpp_args: ['-DXMLDIR=""'],  # We don't use this, must set xmldir at runtime
+    install: true,
+    install_dir: py.get_install_dir() / 'chromo/models'
+  )
+
+  # Create the _pythia8 Python extension module
+  pythia8_module = py.extension_module('_pythia8',
+    cpp_dir / '_pythia8.cpp',
+    include_directories: [
+      pybind11_inc,
+      include_directories(cpp_dir),
+      include_directories(cpp_dir / 'pythia83/include')
+    ],
+    dependencies: [py_dep],
+    link_with: libpythia8,
+    install: true,
+    subdir: 'chromo/models',
+    install_rpath: pythia8_rpath,
+    build_rpath: pythia8_rpath
+  )
 endif
-
-# Find all Pythia8 source files
-pythia8_source_list = run_command([
-  'find', meson.project_source_root() / cpp_dir / 'pythia83/src', 
-  '-name', '*.cc', '-type', 'f'
-], check: true).stdout().strip().split('\n')
-
-pythia8_sources = files(pythia8_source_list)
-
-# Create Pythia8 shared library
-libpythia8 = shared_library('pythia8',
-  pythia8_sources,
-  include_directories: include_directories(cpp_dir / 'pythia83/include'),
-  cpp_args: ['-DXMLDIR=""'],  # We don't use this, must set xmldir at runtime
-  install: true,
-  install_dir: py.get_install_dir() / 'chromo/models'
-)
-
-# Create the _pythia8 Python extension module
-pythia8_module = py.extension_module('_pythia8',
-  cpp_dir / '_pythia8.cpp',
-  include_directories: [
-    pybind11_inc,
-    include_directories(cpp_dir),
-    include_directories(cpp_dir / 'pythia83/include')
-  ],
-  dependencies: [py_dep],
-  link_with: libpythia8,
-  install: true,
-  subdir: 'chromo/models',
-  install_rpath: pythia8_rpath,
-  build_rpath: pythia8_rpath
-)
 
 message('Pythia8 configuration complete')
 
