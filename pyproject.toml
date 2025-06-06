@@ -115,7 +115,7 @@ convention = "numpy"
 # update skip when numpy wheels become available
 skip = ["*-musllinux_*", "cp31?-win32", "*-manylinux_i686"]
 test-extras = ["test"]
-test-command = "python {package}/download_data.py && python -m pytest -vv {package}/tests"
+test-command = "python {package}/scripts/download_data.py && python -m pytest -vv {package}/tests"
 test-skip = ["*universal2:arm64"]
 # to match numpy, we use manylinux2014 for cp310+
 manylinux-x86_64-image = "manylinux2014"

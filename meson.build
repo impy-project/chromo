@@ -1,4 +1,3 @@
-
 project('chromo', 'c', 'cpp', 'fortran',
   license: 'BSD-3-Clause',
   version: run_command([
@@ -17,6 +16,7 @@ add_project_arguments('-Wno-uninitialized', '-fPIC',
                       '-fno-second-underscore', '-Wno-unused', '-Wno-conversion',
                       '-Wno-unused-dummy-argument', '-Wno-character-truncation', 
                       '-Wno-integer-division','-Wno-surprising', '-Wno-tabs',
+                      '-Wno-backslash-newline-escape',
                       '-cpp', '-UNDEBUG',
                       language: 'fortran')
 add_project_arguments('-fPIC',
@@ -50,23 +50,23 @@ f2py_fortranobject_c = f2py_inc / 'fortranobject.c'
 chromo_inc_dirs = [
   numpy_inc,
   f2py_inc,
-  'src/fortran',
+  'src/fortran'
 ]
 
 # Add compile definitions
 add_project_arguments('-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION', language: ['c', 'cpp'])
 
 # Common source files
-fortran_dir = 'src/fortran'
-logging_source = ['src/fortran/logging.f']
-rangen_source = ['src/fortran/rangen.c', 'src/fortran/rangen.fpp']
-normal_source = ['src/fortran/normal.c']
+fdir = 'src/fortran/'
+logging_source = [fdir + 'logging.f']
+rangen_source = [fdir + 'rangen.c', fdir + 'rangen.fpp']
+normal_source = [fdir + 'normal.c']
 chromo_common_functions = 'chromo_openlogfile,chromo_closelogfile,npyrng'
 chromo_common_flags = ['-DCHROMO']
 
 # SIBYLL-specific definitions
 sibyll_sources_base = [
-  'src/fortran/sibyll/sibyll_init.fpp',
+  fdir + 'sibyll/sibyll_init.fpp',
   logging_source,
   rangen_source,
 ]
@@ -89,6 +89,12 @@ sibyll_common_functions = [
 
 # QGSJET-specific definitions
 
+qgsjetII_common_sources = [
+  fdir + 'qgsjet/chromo_qgsII.f',
+  logging_source,
+  rangen_source
+]
+
 qgsjetII_common_functions = [
     'cqgsini',
     'qgsect',
@@ -100,49 +106,97 @@ qgsjetII_common_functions = [
     'cqgshh_ha_cs'
 ] + chromo_common_functions
 
-# DPMJET and PHOJET-specific definitions
+#UrQMD-specific definitions
+urqmd_fdir = fdir / 'urqmd-3.4/sources'
+urqmd_sources_f = [
+  '1fluid.f', 'bessel.f', 'delpart.f', 'getmass.f', 'hepcmp.f', 'iso.f',
+  'numrec.f', 'pythia6409.f', 'siglookup.f', 'upmerge.f', 'addpart.f',
+  'blockres.f', 'coload.f', 'detbal.f', 'getspin.f', 'hepnam.f', 'ityp2pdg.f',
+  'output.f', 'string.f', 'urqmd.f', 'angdis.f', 'boxprg.f', 'dwidth.f',
+  'init.f', 'jdecay2.f', 'paulibl.f', 'saveinfo.f', 'tabinit.f', 'whichres.f',
+  'anndec.f', 'cascinit.f', 'dectim.f', 'error.f', 'hepchg.f', 'input.f',
+  'make22.f', 'proppot.f', 'scatter.f', 'uhmerge.f', 'urqinit.f'
+]
+urqmd_sources_f90 = ['CFmax.f90', 'quadri.f90', 'cornelius.f90']
+urqmd_chromo_sources = [fdir / 'urqmd-3.4/chromo_urqmd.f']
+urqmd_ignore_in_interface_sources = [
+  'newpart.f', 'uhmerge.f', 'iso.f'
+]
+urqmd_all_sources = []
+urqmd_interface_sources = []
 
+foreach s : urqmd_sources_f
+  urqmd_all_sources += urqmd_fdir / s
+  if s not in urqmd_ignore_in_interface_sources
+    urqmd_interface_sources += urqmd_fdir / s
+  endif
+endforeach
+foreach s : urqmd_sources_f90
+  urqmd_all_sources += urqmd_fdir / s
+endforeach
+
+urqmd_all_sources += logging_source + rangen_source
+urqmd_interface_sources += logging_source + rangen_source
+
+urqmd_functions = [
+  'urqmd', 'init', 'uinit', 'set0', 'params', 'uounit', 'strini', 'loginit',
+  'loadwtab', 'norm_init', 'output', 'cascinit', 'nucrad', 'urqini',
+  'partname', 'chepevt', 'ptsigtot'
+] + chromo_common_functions
+
+# Pythia6-specific definitions
+pythia6_sources = [
+  fdir / 'pythia6/pythia-6.4.28.f',
+  logging_source,
+  rangen_source
+]
+pythia6_functions = [
+  'pyinit', 'pyexec', 'pytune', 'pylist', 'pyevnt', 'pyevnw', 'pystat',
+  'pyedit', 'pyhepc', 'pychge', 'pycomp', 'pyk'
+] + chromo_common_functions
+
+# DPMJET and PHOJET-specific definitions
 
 # Paramterize all targets. The models must have an _ underline prefix
 # to avoid conflicts with the Python module names.
 models = {
   '_sib21': {
-    'sources': sibyll_sources_base + ['src/fortran/sibyll/sibyll_21.f', 'src/fortran/sibyll/sib21aux.f'],
+    'sources': sibyll_sources_base + [fdir + 'sibyll/sibyll_21.f', fdir + 'sibyll/sib21aux.f'],
     'functions': ','.join(sibyll_common_functions + ['spgasdev', 'glauber']),
     'flags' : ['-DSIBYLL_21'],
   },
   '_sib23': {
-    'sources': sibyll_sources_base + ['src/fortran/sibyll/sibyll2.3.f'],
+    'sources': sibyll_sources_base + [fdir + 'sibyll/sibyll2.3.f'],
     'functions': ','.join(sibyll_common_functions + ['gasdev', 'sig_had_nuc']),
   },
   '_sib23c00': {
-    'sources': sibyll_sources_base + ['src/fortran/sibyll/sibyll2.3c00.f'],
+    'sources': sibyll_sources_base + [fdir + 'sibyll/sibyll2.3c00.f'],
     'functions': ','.join(sibyll_common_functions + ['gasdev', 'sig_had_nuc']),
   },
   '_sib23c01': {
-    'sources': sibyll_sources_base + ['src/fortran/sibyll/sibyll2.3c01.f'],
+    'sources': sibyll_sources_base + [fdir + 'sibyll/sibyll2.3c01.f'],
     'functions': ','.join(sibyll_common_functions + ['gasdev', 'sig_had_nuc']),
   },
   '_sib23c02': {
-    'sources': sibyll_sources_base + ['src/fortran/sibyll/sibyll2.3c02.f'],
+    'sources': sibyll_sources_base + [fdir + 'sibyll/sibyll2.3c02.f'],
     'functions': ','.join(sibyll_common_functions + ['gasdev', 'sig_had_nuc']),
   },
   '_sib23c03': {
-    'sources': sibyll_sources_base + ['src/fortran/sibyll/sibyll2.3c03.f'],
+    'sources': sibyll_sources_base + [fdir + 'sibyll/sibyll2.3c03.f'],
     'functions': ','.join(sibyll_common_functions + ['gasdev', 'sig_had_nuc']),
   },
   '_sib23d': {
-    'sources': sibyll_sources_base + ['src/fortran/sibyll/sibyll2.3d.f'],
+    'sources': sibyll_sources_base + [fdir + 'sibyll/sibyll2.3d.f'],
     'functions': ','.join(sibyll_common_functions + ['gasdev', 'sig_had_nuc']),
   },
   '_sib23d_star': {
-    'sources': sibyll_sources_base + ['src/fortran/sibyll/sibyll2.3d-star-p02.f'],
+    'sources': sibyll_sources_base + [fdir + 'sibyll/sibyll2.3d-star-p02.f'],
     'functions': ','.join(sibyll_common_functions + ['gasdev', 'sig_had_nuc']),
   },
   '_qgs01': {
     'sources': [
-      'src/fortran/qgsjet/qgsjet01d.f',
-      'src/fortran/qgsjet/chromo_qgs1.f',
+      fdir + 'qgsjet/qgsjet01d.f',
+      fdir + 'qgsjet/chromo_qgs1.f',
       logging_source,
       rangen_source
     ],
@@ -152,30 +206,34 @@ models = {
   },
   '_qgsII03': {
     'sources': [
-      'src/fortran/qgsjet/qgsjet-II-03.f',
-      'src/fortran/qgsjet/chromo_qgsII.f',
-      logging_source,
-      rangen_source
-    ],
+      fdir + 'qgsjet/qgsjet-II-03.f'] + qgsjetII_common_sources,
     'functions': ','.join(qgsjetII_common_functions)
   },
   '_qgsII04': {
     'sources': [
-      'src/fortran/qgsjet/qgsjet-II-04.f',
-      'src/fortran/qgsjet/chromo_qgsII.f',
-      logging_source,
-      rangen_source
-    ],
+      fdir + 'qgsjet/qgsjet-II-04.f'] + qgsjetII_common_sources,
     'functions': ','.join(qgsjetII_common_functions)
   },
   '_qgsIII': {
     'sources': [
-      'src/fortran/qgsjet/qgsjet-III.f',
-      'src/fortran/qgsjet/chromo_qgsIII.f',
+      fdir + 'qgsjet/qgsjet-III.f',
+      fdir + 'qgsjet/chromo_qgsIII.f',
       logging_source,
       rangen_source
     ],
     'functions': ','.join(qgsjetII_common_functions + ['qgran'])
+  },
+  '_urqmd34': {
+    'sources': urqmd_all_sources,
+    'interface_sources': urqmd_interface_sources, # Adjust if filtering is done elsewhere
+    'functions': ','.join(urqmd_functions),
+    'include_directories': [fdir / 'urqmd-3.4/sources'],
+    'flags': chromo_common_flags,
+  },
+  '_pythia6': {
+    'sources': pythia6_sources,
+    'functions': ','.join(pythia6_functions),
+    'flags': chromo_common_flags,
   },
 }
 
@@ -241,126 +299,5 @@ foreach f2py_name, model_info : models
     subdir: 'chromo/models',
   )
 endforeach
-
-
-
-
-# EPOS-LHC sources
-# epos_sources = [
-#   files('src/fortran/epos/sources/epos-bas-lhc.f'),
-#   files('src/fortran/epos/sources/epos-hnb-lhc.f'),
-#   files('src/fortran/epos/sources/epos-dro-lhc.f'),
-#   files('src/fortran/epos/sources/epos-con-lhc.f'),
-#   files('src/fortran/epos/sources/epos-dky-lhc.f'),
-#   files('src/fortran/epos/sources/epos-int-lhc.f'),
-#   files('src/fortran/epos/sources/epos-jps-lhc.f'),
-#   files('src/fortran/epos/sources/epos-omg-lhc.f'),
-#   files('src/fortran/epos/sources/epos-qsh-lhc.f'),
-#   files('src/fortran/epos/sources/epos-rsh-lhc.f'),
-#   files('src/fortran/epos/sources/epos-sem-lhc.f'),
-#   files('src/fortran/epos/sources/epos-uti-lhc.f'),
-#   files('src/fortran/epos/sources/epos-xan-lhc.f'),
-#   files('src/fortran/epos/sources/epos-ids-lhc.f'),
-#   files('src/fortran/epos/sources/epos_interface.f'),
-#   files('src/fortran/epos/epos-random-dummy.f'),
-#   logging_source,
-#   rangen_source,
-# ]
-
-# Custom target to generate f2py wrapper for EPOS
-# epos_f2py_target = custom_target('epos_f2py',
-#   output: ['_eposlhcmodule.c', '_eposlhc-f2pywrappers.f', '_eposlhc.pyf'],
-#   input: epos_sources[0],  # Use first source as input for dependency tracking
-#   command: [
-#     py, files('generate_f2py.py'),
-#     '_eposlhc',
-#     'aaset,ainit,aepos,alist,afinal,hepmcstore,getcharge,idtrafo,initepos,initeposevt,xsection,rmmard,ranfgt,ranfst',
-#     '@INPUT@',
-#     '',
-#     'src/fortran',
-#     '@OUTDIR@'
-#   ],
-#   build_by_default: true
-# )
-
-# # Create the EPOS-LHC extension module
-# py.extension_module('_eposlhc',
-#   sources: epos_sources + epos_f2py_target + [f2py_fortranobject_c] + [normal_source],
-#   include_directories: [inc_dirs],
-#   dependencies: [py_dep, numpy_dep],
-#   c_args: ['-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION', ],
-#   fortran_args: ['-DCHROMO'],
-#   install: true,
-#   subdir: 'chromo/models',
-# )
-
-# DPMJET III-19.1 sources - DPMJET-specific include directories
-# dpmjet_inc_dirs = [
-#   numpy_inc,
-#   f2py_inc,
-#   'src/fortran',
-#   'src/fortran/dpmjetIII-19.1/include/dpmjet',
-#   'src/fortran/dpmjetIII-19.1/include/phojet',
-#   'src/fortran/dpmjetIII-19.1/include/flinclude',
-#   'src/fortran/dpmjetIII-19.1/include/pythia',
-# ]
-
-# # Get all DPMJET source files
-# dpmjet191_sources = [
-#   files('src/fortran/dpmjetIII-19.1/common/dummies.f'),
-#   logging_source, 
-#   rangen_source
-# ]
-# # Files to exclude from the build
-# dpmjet_exclude_files = [
-#   'src/fortran/dpmjetIII-19.1/src/dpmjet/DT_RNDM.f',
-#   'src/fortran/dpmjetIII-19.1/src/dpmjet/DT_RNDMST.f',
-#   'src/fortran/dpmjetIII-19.1/src/dpmjet/DT_RNDMTE.f',
-#   'src/fortran/dpmjetIII-19.1/src/dpmjet/PYR.f',
-#   'src/fortran/dpmjetIII-19.1/src/exe/DPMJET.f',
-#   'src/fortran/dpmjetIII-19.1/src/exe/PHOJET.f',
-#   'src/fortran/dpmjetIII-19.1/src/exe/pho_aux.f'
-# ]
-
-# # Add all .f files from the dpmjetIII-19.1/src subdirectories, excluding specific files
-# foreach f : run_command('sh', '-c', 'ls src/fortran/dpmjetIII-19.1/src/**/*.f', check:true, capture:true).stdout().split()
-#   if f != '' and f not in dpmjet_exclude_files
-#     dpmjet191_sources += files(f)
-#   endif
-# endforeach
-
-# dpmjetIII191_srcs_arg = ','.join(dpmjet191_source_paths)
-# dpmjetIII191_include_args = []
-# foreach p : dpmjet_inc_dirs
-#   dpmjetIII191_include_args += '-I' + (meson.project_source_root() / p)
-# endforeach
-
-# # Custom target to generate f2py wrapper for DPMJET
-# dpmjet191_f2py_target = custom_target('dpmjet191_f2py',
-#   output: ['_dpmjetIII191module.c', '_dpmjetIII191-f2pywrappers.f', '_dpmjetIII191.pyf'],
-#   input: dpmjet191_sources,
-#   command: [
-#     py, files('generate_f2py.py'),
-#     '_dpmjetIII191',
-#     'pho_event,dt_init,dt_kkinc,dt_xsglau,pycomp,dt_initjs,dt_inucas,dt_evtout,pho_init,pho_setpar,pho_pname,pho_pmass,pho_setmdl,pho_setpdf,pho_xsect',
-#     meson.global_build_root() / 'meson-logs',
-#     ' '.join(dpmjetIII191_include_args),
-#     '@OUTDIR@',
-#     '@INPUT@',
-#   ],
-#   build_by_default: true,
-#   capture: false
-# )
-
-# Create the DPMJET III-19.1 extension module
-# py.extension_module('_dpmjetIII191',
-#   sources: dpmjet191_sources + dpmjet191_f2py_target + [f2py_fortranobject_c] + [normal_source],
-#   include_directories: include_directories(dpmjet_inc_dirs),
-#   dependencies: [py_dep, numpy_dep],
-#   c_args: ['-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION', ],
-#   fortran_args: ['-DCHROMO'],
-#   install: true,
-#   subdir: 'chromo/models',
-# )
 
 message('Multi-model meson build configuration complete with SIBYLL-21, EPOS-LHC, and DPMJET III-19.1')
