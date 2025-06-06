@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "meson-python>=0.13.0",
-    "meson>=1.0.0",
+    "meson>=1.4.0",
     "ninja",
     "numpy==2.2.3",
     "charset_normalizer",
@@ -79,7 +79,11 @@ filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
 [tool.chromo]
 # Enabled models
 enabled-models = [
+    "dpmjet_phojet191",
+    "dpmjet_phojet193",
+    "dpmjet_phojet307",
     "eposlhc",
+    "urqmd34",
     "sib21",
     "sib23",
     "sib23d",
@@ -87,21 +91,14 @@ enabled-models = [
     "sib23e",
     "sib23e_star",
     "sib23c01",
+    "qgs01",
     "qgsII03",
     "qgsII04",
     "qgsIII",
-    "pythia6",
     "sophia",
-    "dpmjet307",
-    "phojet112",
-    "phojet191",
-    "phojet193",
-    "dpmjetIII191",
-    "dpmjetIII193",
-    "urqmd34",
+    "pythia6",
 ]
 disabled-models = [
-    "qgs01",
     "pythia8",
 ]
 [tool.flake8]

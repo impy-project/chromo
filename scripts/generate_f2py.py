@@ -118,8 +118,10 @@ def generate_f2py_module(
         str(pyf_file),
         "-m",
         module_name,
+        " ".join(include),
         f"only: {' '.join(functions)} :",
         "--overwrite-signature",
+        "--lower",
         str(preprocessed_sources.absolute()),
     ]
     logger.info(f"Running f2py signature generation: {' '.join(cmd)}")

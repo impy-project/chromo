@@ -16,7 +16,6 @@ add_project_arguments('-Wno-uninitialized', '-fPIC',
                       '-fno-second-underscore', '-Wno-unused', '-Wno-conversion',
                       '-Wno-unused-dummy-argument', '-Wno-character-truncation', 
                       '-Wno-integer-division','-Wno-surprising', '-Wno-tabs',
-                      '-Wno-backslash-newline-escape',
                       '-cpp', '-UNDEBUG',
                       language: 'fortran')
 add_project_arguments('-fPIC',
@@ -85,7 +84,7 @@ sibyll_common_functions = [
     'isib_pid2pdg',
     'isib_pdg2pid',
     'pdg_ini'
-] + chromo_common_functions
+]
 
 # QGSJET-specific definitions
 
@@ -104,7 +103,7 @@ qgsjetII_common_functions = [
     'chepevt',
     'qgcrossc',
     'cqgshh_ha_cs'
-] + chromo_common_functions
+]
 
 #UrQMD-specific definitions
 urqmd_fdir = fdir / 'urqmd-3.4/sources'
@@ -142,7 +141,7 @@ urqmd_functions = [
   'urqmd', 'init', 'uinit', 'set0', 'params', 'uounit', 'strini', 'loginit',
   'loadwtab', 'norm_init', 'output', 'cascinit', 'nucrad', 'urqini',
   'partname', 'chepevt', 'ptsigtot'
-] + chromo_common_functions
+]
 
 # Pythia6-specific definitions
 pythia6_sources = [
@@ -153,11 +152,129 @@ pythia6_sources = [
 pythia6_functions = [
   'pyinit', 'pyexec', 'pytune', 'pylist', 'pyevnt', 'pyevnw', 'pystat',
   'pyedit', 'pyhepc', 'pychge', 'pycomp', 'pyk'
-] + chromo_common_functions
+]
 
-# DPMJET and PHOJET-specific definitions
+# SOPHIA-specific definitions
+sophia_sources = [
+  fdir / 'sophia/SOPHIA20.f',
+  fdir / 'sophia/eventgen.f',
+  fdir / 'sophia/sampling.f',
+  fdir / 'sophia/inpoutput.f',
+  fdir / 'sophia/jetset74dp.f',
+  fdir / 'sophia/chromo_sophia.f',
+  logging_source,
+  rangen_source
+]
+sophia_functions = [
+  'eventgen',
+  'print_event',
+  'crossection',
+  'initial',
+  'icon_pdg_sib',
+  'toevt'
+]
 
-# Paramterize all targets. The models must have an _ underline prefix
+# DPMJET307-specific definitions
+dpmjet307_sources = [
+  fdir / 'dpmjet3.0/sources/dpmjet3.0-7.f',
+  fdir / 'dpmjet3.0/sources/phojet1.12-36c4.f',
+  fdir / 'dpmjet3.0/sources/pythia6115dpm3v1.f',
+  fdir / 'dpmjet3.0/sources/user3.0-7.f',
+  logging_source,
+  rangen_source
+]
+dpmjet_phojet_functions = [
+  'dt_evtout',
+  'dt_ficonf',
+  'dt_flahad',
+  'dt_init',
+  'dt_initjs',
+  'dt_kkinc',
+  'dt_phoxs',
+  'dt_sigga',
+  'dt_siggat',
+  'dt_siggp',
+  'dt_title',
+  'dt_xsglau',
+  'idp_icihad',
+  'idt_icihad',
+  'idt_ipdgha',
+  'ipho_id2pdg',
+  'ipho_pdg2id',
+  'pho_borncs',
+  'pho_event',
+  'pho_fitout',
+  'pho_ghhias',
+  # 'pho_harint',
+  'pho_harxto',
+  'pho_harxpt',
+  'pho_init',
+  'pho_mcini',
+  'pho_pmass',
+  'pho_pname',
+  'pho_prevnt',
+  'pho_rregpar',
+  'pho_setmdl',
+  'pho_setpar',
+  'pho_setpdf',
+  'pho_setpcomb',
+  'pho_sregpar',
+  'pho_xsect',
+  'poevt1',
+  'poevt2',
+  'pycomp',
+  'pytune',
+]
+
+# DPMJETIII191-specific definitions
+dpmjetIII191_fdir = fdir / 'dpmjetIII-19.1'
+# Use Python script to collect source files and filter excluded patterns
+dpmjetIII191_sources = run_command([
+  py, scripts_dir + 'list_dpmjet_sources.py', '--directory', dpmjetIII191_fdir
+], check: true).stdout().strip().split('\n') + [logging_source, rangen_source]
+
+# DPMJETIII193-specific definitions
+dpmjetIII193_fdir = fdir / 'dpmjetIII-19.3'
+# Use Python script to collect source files and filter excluded patterns
+dpmjetIII193_sources = run_command([
+  py, scripts_dir + 'list_dpmjet_sources.py', '--directory', dpmjetIII193_fdir
+], check: true).stdout().strip().split('\n') + [logging_source, rangen_source]
+
+# EPOS-LHC-specific definitions
+eposlhc_fdir = fdir / 'epos'
+eposlhc_sources = []
+
+# Use Python script to collect EPOS source files and filter excluded patterns
+eposlhc_sources = run_command([
+  py, scripts_dir + 'list_epos_sources.py', '--directory', eposlhc_fdir
+], check: true).stdout().strip().split('\n') + [logging_source, rangen_source]
+
+# EPOS interface sources (specific files used for f2py interface)
+eposlhc_interface_sources = run_command([
+  py, scripts_dir + 'list_epos_sources.py', 
+  '--directory', eposlhc_fdir, '--interface-only'
+], check: true).stdout().strip().split('\n') + [logging_source, rangen_source]
+
+eposlhc_functions = [
+  'aaset',
+  'ainit',
+  'aepos',
+  'alist',
+  'afinal',
+  'hepmcstore',
+  'getcharge',
+  'idtrafo',
+  'initepos',
+  'initeposevt',
+  'xsection',
+  'rmmard',
+  'ranfgt',
+  'ranfst'
+]
+
+
+
+# Parametrize all targets. The models must have an _ underline prefix
 # to avoid conflicts with the Python module names.
 models = {
   '_sib21': {
@@ -202,7 +319,7 @@ models = {
     ],
     'functions': ','.join([
       'cqgsini','sectnu','xxaini','psconf','xxreg','psaini','chepevt','xxfz',
-      'cqgshh_ha_cs','crossc'] + chromo_common_functions),
+      'cqgshh_ha_cs','crossc']),
   },
   '_qgsII03': {
     'sources': [
@@ -228,14 +345,48 @@ models = {
     'interface_sources': urqmd_interface_sources, # Adjust if filtering is done elsewhere
     'functions': ','.join(urqmd_functions),
     'include_directories': [fdir / 'urqmd-3.4/sources'],
-    'flags': chromo_common_flags,
   },
   '_pythia6': {
     'sources': pythia6_sources,
     'functions': ','.join(pythia6_functions),
-    'flags': chromo_common_flags,
+  },
+  '_sophia': {
+    'sources': sophia_sources,
+    'functions': ','.join(sophia_functions),
+  },
+  '_dpmjet_phojet307': {
+    'sources': dpmjet307_sources,
+    'functions': ','.join(dpmjet_phojet_functions),
+  },
+  '_dpmjet_phojet191': {
+    'sources': dpmjetIII191_sources,
+    'functions': ','.join(dpmjet_phojet_functions),
+    'include_directories': [
+      fdir / 'dpmjetIII-19.1/include/phojet',
+      fdir / 'dpmjetIII-19.1/include/dpmjet', 
+      fdir / 'dpmjetIII-19.1/include/pythia',
+      fdir / 'dpmjetIII-19.1/include/flinclude'
+    ],
+  },
+  '_dpmjet_phojet193': {
+    'sources': dpmjetIII193_sources,
+    'functions': ','.join(dpmjet_phojet_functions),
+    'include_directories': [
+      fdir / 'dpmjetIII-19.3/include/phojet',
+      fdir / 'dpmjetIII-19.3/include/dpmjet', 
+      fdir / 'dpmjetIII-19.3/include/pythia',
+      fdir / 'dpmjetIII-19.3/include/flinclude'
+    ],
+  },
+  '_eposlhc': {
+    'sources': eposlhc_sources,
+    'interface_sources': eposlhc_interface_sources,
+    'functions': ','.join(eposlhc_functions),
+    'include_directories': [fdir / 'epos/sources'],
   },
 }
+
+
 
 # Read from pyproject.toml which models to build
 enabled_models = run_command([
@@ -244,6 +395,10 @@ enabled_models = run_command([
 disabled_models = run_command([
   py, scripts_dir + 'get_models.py', '--disabled'], 
   check: true).stdout().strip().split('\n')
+
+
+# TODO: Need to somehow let meson know that _dpmjet191 and _phojet191
+# share 99% of files except the f2py interface files.
 
 foreach f2py_name, model_info : models
   if f2py_name.substring(1) not in enabled_models
@@ -275,7 +430,7 @@ foreach f2py_name, model_info : models
     command: [
       py, scripts_dir + 'generate_f2py.py',
       f2py_name,
-      model_info['functions'],
+      model_info['functions'] + ',' + ','.join(chromo_common_functions),
       meson.global_build_root() / 'meson-logs',
       ' '.join(include_args),
       ' '.join(flags),
@@ -300,4 +455,53 @@ foreach f2py_name, model_info : models
   )
 endforeach
 
-message('Multi-model meson build configuration complete with SIBYLL-21, EPOS-LHC, and DPMJET III-19.1')
+# Pythia8 build configuration (C++ with pybind11)
+# This is separate from the f2py loop since it uses pybind11 instead of f2py
+
+cpp_dir = 'src/cpp'
+pybind11_inc = include_directories(cpp_dir / 'pybind11/include')
+
+if host_machine.system() == 'darwin'
+  pythia8_rpath = '@loader_path'
+elif host_machine.system() == 'linux'
+  pythia8_rpath = '$ORIGIN'
+else
+  pythia8_rpath = ''
+endif
+
+# Find all Pythia8 source files
+pythia8_source_list = run_command([
+  'find', meson.project_source_root() / cpp_dir / 'pythia83/src', 
+  '-name', '*.cc', '-type', 'f'
+], check: true).stdout().strip().split('\n')
+
+pythia8_sources = files(pythia8_source_list)
+
+# Create Pythia8 shared library
+libpythia8 = shared_library('pythia8',
+  pythia8_sources,
+  include_directories: include_directories(cpp_dir / 'pythia83/include'),
+  cpp_args: ['-DXMLDIR=""'],  # We don't use this, must set xmldir at runtime
+  install: true,
+  install_dir: py.get_install_dir() / 'chromo/models'
+)
+
+# Create the _pythia8 Python extension module
+pythia8_module = py.extension_module('_pythia8',
+  cpp_dir / '_pythia8.cpp',
+  include_directories: [
+    pybind11_inc,
+    include_directories(cpp_dir),
+    include_directories(cpp_dir / 'pythia83/include')
+  ],
+  dependencies: [py_dep],
+  link_with: libpythia8,
+  install: true,
+  subdir: 'chromo/models',
+  install_rpath: pythia8_rpath,
+  build_rpath: pythia8_rpath
+)
+
+message('Pythia8 configuration complete')
+
+message('Multi-model meson build configuration complete with SIBYLL-21, EPOS-LHC, DPMJET III-19.1, DPMJET3.0-7, DPMJETIII-19.3, and EPOS-LHC')
