@@ -5,6 +5,7 @@ requires = [
     "ninja",
     "numpy==2.2.3",
     "charset_normalizer",
+    "tomli"
 ]
 build-backend = "mesonpy"
 
