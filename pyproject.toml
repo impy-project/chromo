@@ -83,12 +83,14 @@ filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
 [tool.chromo]
 # Enabled models
 enabled-models = [
-    "urqmd34",
-    "pythia8",
-    "sib21",
     "dpmjet_phojet191",
     "dpmjet_phojet193",
     "dpmjet_phojet307",
+    "pythia8",
+]
+disabled-models = [
+    "urqmd34",
+    "sib21",
     "qgs01",
     "qgs2_03",
     "qgs2_04",
@@ -102,8 +104,6 @@ enabled-models = [
     "sib23c01",
     "sophia",
     "pythia6",
-]
-disabled-models = [
 ]
 [tool.flake8]
 max-line-length = 90
