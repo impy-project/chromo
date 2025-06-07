@@ -134,8 +134,8 @@ foreach s : urqmd_sources_f90
   urqmd_all_sources += urqmd_fdir / s
 endforeach
 
-urqmd_all_sources += logging_source + rangen_source
-urqmd_interface_sources += logging_source + rangen_source
+urqmd_all_sources += logging_source + rangen_source + urqmd_chromo_sources
+urqmd_interface_sources += logging_source + rangen_source + urqmd_chromo_sources
 
 urqmd_functions = [
   'urqmd', 'init', 'uinit', 'set0', 'params', 'uounit', 'strini', 'loginit',
@@ -321,17 +321,17 @@ models = {
       'cqgsini','sectnu','xxaini','psconf','xxreg','psaini','chepevt','xxfz',
       'cqgshh_ha_cs','crossc']),
   },
-  '_qgsII03': {
+  '_qgs2_03': {
     'sources': [
       fdir + 'qgsjet/qgsjet-II-03.f'] + qgsjetII_common_sources,
     'functions': ','.join(qgsjetII_common_functions)
   },
-  '_qgsII04': {
+  '_qgs2_04': {
     'sources': [
       fdir + 'qgsjet/qgsjet-II-04.f'] + qgsjetII_common_sources,
     'functions': ','.join(qgsjetII_common_functions)
   },
-  '_qgsIII': {
+  '_qgs3': {
     'sources': [
       fdir + 'qgsjet/qgsjet-III.f',
       fdir + 'qgsjet/chromo_qgsIII.f',
@@ -457,7 +457,7 @@ endforeach
 
 # Pythia8 build configuration (C++ with pybind11)
 # This is separate from the f2py loop since it uses pybind11 instead of f2py
-if '_pythia8' in enabled_models
+if 'pythia8' in enabled_models
   cpp_dir = 'src/cpp'
   pybind11_inc = include_directories(cpp_dir / 'pybind11/include')
 
@@ -504,5 +504,8 @@ if '_pythia8' in enabled_models
 endif
 
 message('Pythia8 configuration complete')
+
+# Install the pure Python package files
+install_subdir('src/chromo', install_dir: py.get_install_dir())
 
 message('Multi-model meson build configuration complete with SIBYLL-21, EPOS-LHC, DPMJET III-19.1, DPMJET3.0-7, DPMJETIII-19.3, and EPOS-LHC')

@@ -17,10 +17,14 @@ readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.9"
 license = {text = "BSD 3-Clause License"}
 authors = [
-    {name = "Anatoli Fedynitch", email = "afedynitch@gmail.com"}
+    {name = "Anatoli Fedynitch", email = "afedynitch@gmail.com"},
+    {name = "Hans Dembinski", email = "hans.dembinski@gmail.com"},
+    {name = "Anton Prosekin", email = "ayprosekin@gmail.com"},
 ]
 maintainers = [
-    {name = "Anatoli Fedynitch", email = "afedynitch@gmail.com"}
+    {name = "Anatoli Fedynitch", email = "afedynitch@gmail.com"},
+    {name = "Hans Dembinski", email = "hans.dembinski@gmail.com"},
+    {name = "Anton Prosekin", email = "ayprosekin@gmail.com"},
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -79,27 +83,27 @@ filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
 [tool.chromo]
 # Enabled models
 enabled-models = [
+    "urqmd34",
+    "pythia8",
     "sib21",
-]
-disabled-models = [
     "dpmjet_phojet191",
     "dpmjet_phojet193",
     "dpmjet_phojet307",
+    "qgs01",
+    "qgs2_03",
+    "qgs2_04",
+    "qgs3",
     "eposlhc",
-    "urqmd34",
     "sib23",
     "sib23d",
     "sib23d_star",
     "sib23e",
     "sib23e_star",
     "sib23c01",
-    "qgs01",
-    "qgsII03",
-    "qgsII04",
-    "qgsIII",
     "sophia",
     "pythia6",
-    "pythia8",
+]
+disabled-models = [
 ]
 [tool.flake8]
 max-line-length = 90

@@ -333,15 +333,15 @@ class QGSJet01d(QGSJet1Run):
 
 class QGSJetII03(QGSJet2Run):
     _version = "II-03"
-    _library_name = "_qgsII03"
+    _library_name = "_qgs2_03"
 
 
 class QGSJetII04(QGSJet2Run):
     _version = "II-04"
-    _library_name = "_qgsII04"
+    _library_name = "_qgs2_04"
 
 
 class QGSJetIII(QGSJet2Run):
     _version = "III"
-    _library_name = "_qgsIII"
+    _library_name = "_qgs3"
     _event_class = QGSJET3Event
