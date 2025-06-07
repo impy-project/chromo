@@ -87,8 +87,6 @@ enabled-models = [
     "dpmjet_phojet193",
     "dpmjet_phojet307",
     "pythia8",
-]
-disabled-models = [
     "urqmd34",
     "sib21",
     "qgs01",
@@ -104,6 +102,8 @@ disabled-models = [
     "sib23c01",
     "sophia",
     "pythia6",
+]
+disabled-models = [
 ]
 [tool.flake8]
 max-line-length = 90

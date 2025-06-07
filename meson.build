@@ -66,8 +66,6 @@ chromo_common_flags = ['-DCHROMO']
 # SIBYLL-specific definitions
 sibyll_sources_base = [
   fdir + 'sibyll/sibyll_init.fpp',
-  logging_source,
-  rangen_source,
 ]
 sibyll_common_functions = [
     'sibyll',
@@ -90,8 +88,6 @@ sibyll_common_functions = [
 
 qgsjetII_common_sources = [
   fdir + 'qgsjet/chromo_qgsII.f',
-  logging_source,
-  rangen_source
 ]
 
 qgsjetII_common_functions = [
@@ -134,8 +130,8 @@ foreach s : urqmd_sources_f90
   urqmd_all_sources += urqmd_fdir / s
 endforeach
 
-urqmd_all_sources += logging_source + rangen_source + urqmd_chromo_sources
-urqmd_interface_sources += logging_source + rangen_source + urqmd_chromo_sources
+urqmd_all_sources += urqmd_chromo_sources
+urqmd_interface_sources += urqmd_chromo_sources
 
 urqmd_functions = [
   'urqmd', 'init', 'uinit', 'set0', 'params', 'uounit', 'strini', 'loginit',
@@ -146,8 +142,6 @@ urqmd_functions = [
 # Pythia6-specific definitions
 pythia6_sources = [
   fdir / 'pythia6/pythia-6.4.28.f',
-  logging_source,
-  rangen_source
 ]
 pythia6_functions = [
   'pyinit', 'pyexec', 'pytune', 'pylist', 'pyevnt', 'pyevnw', 'pystat',
@@ -162,8 +156,6 @@ sophia_sources = [
   fdir / 'sophia/inpoutput.f',
   fdir / 'sophia/jetset74dp.f',
   fdir / 'sophia/chromo_sophia.f',
-  logging_source,
-  rangen_source
 ]
 sophia_functions = [
   'eventgen',
@@ -180,8 +172,6 @@ dpmjet307_sources = [
   fdir / 'dpmjet3.0/sources/phojet1.12-36c4.f',
   fdir / 'dpmjet3.0/sources/pythia6115dpm3v1.f',
   fdir / 'dpmjet3.0/sources/user3.0-7.f',
-  logging_source,
-  rangen_source
 ]
 dpmjet_phojet_functions = [
   'dt_evtout',
@@ -232,14 +222,14 @@ dpmjetIII191_fdir = fdir / 'dpmjetIII-19.1'
 # Use Python script to collect source files and filter excluded patterns
 dpmjetIII191_sources = run_command([
   py, scripts_dir + 'list_dpmjet_sources.py', '--directory', dpmjetIII191_fdir
-], check: true).stdout().strip().split('\n') + [logging_source, rangen_source]
+], check: true).stdout().strip().split('\n')
 
 # DPMJETIII193-specific definitions
 dpmjetIII193_fdir = fdir / 'dpmjetIII-19.3'
 # Use Python script to collect source files and filter excluded patterns
 dpmjetIII193_sources = run_command([
   py, scripts_dir + 'list_dpmjet_sources.py', '--directory', dpmjetIII193_fdir
-], check: true).stdout().strip().split('\n') + [logging_source, rangen_source]
+], check: true).stdout().strip().split('\n')
 
 # EPOS-LHC-specific definitions
 eposlhc_fdir = fdir / 'epos'
@@ -248,13 +238,13 @@ eposlhc_sources = []
 # Use Python script to collect EPOS source files and filter excluded patterns
 eposlhc_sources = run_command([
   py, scripts_dir + 'list_epos_sources.py', '--directory', eposlhc_fdir
-], check: true).stdout().strip().split('\n') + [logging_source, rangen_source]
+], check: true).stdout().strip().split('\n')
 
 # EPOS interface sources (specific files used for f2py interface)
 eposlhc_interface_sources = run_command([
   py, scripts_dir + 'list_epos_sources.py', 
   '--directory', eposlhc_fdir, '--interface-only'
-], check: true).stdout().strip().split('\n') + [logging_source, rangen_source]
+], check: true).stdout().strip().split('\n')
 
 eposlhc_functions = [
   'aaset',
@@ -315,8 +305,6 @@ models = {
     'sources': [
       fdir + 'qgsjet/qgsjet01d.f',
       fdir + 'qgsjet/chromo_qgs1.f',
-      logging_source,
-      rangen_source
     ],
     'functions': ','.join([
       'cqgsini','sectnu','xxaini','psconf','xxreg','psaini','chepevt','xxfz',
@@ -336,8 +324,6 @@ models = {
     'sources': [
       fdir + 'qgsjet/qgsjet-III.f',
       fdir + 'qgsjet/chromo_qgsIII.f',
-      logging_source,
-      rangen_source
     ],
     'functions': ','.join(qgsjetII_common_functions + ['qgran'])
   },
@@ -421,8 +407,9 @@ foreach f2py_name, model_info : models
   flags = chromo_common_flags + model_info.get('flags', [])
   message('Flags: ' + ' '.join(flags))
 
-  interface_sources = files(model_info.get('interface_sources', model_info['sources']))
-  sources = files(model_info['sources'])
+  interface_sources = files(model_info.get('interface_sources', model_info['sources']) 
+    + [logging_source, rangen_source])
+  sources = files(model_info['sources'] + [logging_source, rangen_source])
 
   # Custom target to generate f2py wrapper
   f2py_target = custom_target(f2py_name,
