@@ -1,19 +1,20 @@
 """Utility module for auxiliary methods and classes."""
 
-import warnings
-import inspect
-import platform
-import dataclasses
 import copy
+import dataclasses
+import inspect
 import math
-import zipfile
 import shutil
-from pathlib import Path
-from enum import Enum
-from typing import Sequence, Set, Tuple, Collection, Union
 import urllib.request
+import warnings
+import zipfile
+from enum import Enum
+from pathlib import Path
+from typing import Collection, Sequence, Set, Tuple, Union
+
 import numpy as np
-from particle import Particle, PDGID, ParticleNotFound, InvalidParticle
+from particle import PDGID, InvalidParticle, Particle, ParticleNotFound
+
 from chromo.constants import MeV, nucleon_mass, sec2cm
 
 EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
@@ -425,11 +426,11 @@ def info(min_dbg_level, *args):
 def _download_file(outfile, url):
     """Download a file from 'url' to 'outfile'"""
     from rich.progress import (
-        Progress,
-        TextColumn,
         BarColumn,
-        SpinnerColumn,
         DownloadColumn,
+        Progress,
+        SpinnerColumn,
+        TextColumn,
         TimeRemainingColumn,
     )
 
@@ -588,20 +589,27 @@ class classproperty:
 
 
 def _select_mothers(mask, mothers):
-    # This algorithm is slow in pure Python and should be
-    # speed up by compiling the logic.
+    """
+    Select mothers using the best available implementation.
+    Uses numba-accelerated loop if available, otherwise numpythonic version.
+    """
+    try:
+        import numba as nb
 
-    # attach parentless particles to beam particles,
-    # unless those are also removed
+        return nb.njit(_select_mothers_loop)(mask, mothers)
+    except ModuleNotFoundError:
+        return _select_mothers_numpy(mask, mothers)
+
+
+def _select_mothers_loop(mask, mothers):
+    # Original for-loop version (numba-compatible)
     fallback = (-1, -1)
     if mask[0] and mask[1]:
         fallback = (0, 1)
-
     n = len(mothers)
     indices = np.arange(n)[mask]
-    result = mothers[mask]
+    result = mothers[mask].copy()
     mapping = {old: i for i, old in enumerate(indices)}
-
     n = len(result)
     for i in range(n):
         a = result[i, 0]
@@ -622,32 +630,46 @@ def _select_mothers(mask, mothers):
     return result
 
 
+def _select_mothers_numpy(mask, mothers):
+    # Numpythonic version (not numba-compatible)
+    fallback = (-1, -1)
+    if mask[0] and mask[1]:
+        fallback = (0, 1)
+    n = len(mothers)
+    indices = np.arange(n)[mask]
+    result = mothers[mask].copy()
+    mapping = {old: i for i, old in enumerate(indices)}
+    a = result[:, 0]
+    b = result[:, 1]
+    p = np.array([mapping.get(x, -1) for x in a])
+    q = np.array([mapping.get(x, -1) if x > -1 else -1 for x in b])
+    mask_a_valid = a != -1
+    fallback_rows = mask_a_valid & (p == -1)
+    result[fallback_rows, 0] = fallback[0]
+    result[fallback_rows, 1] = fallback[1]
+    update_rows = mask_a_valid & (p != -1) & (p != a)
+    result[update_rows, 0] = p[update_rows]
+    result[update_rows, 1] = q[update_rows]
+    return result
+
+
 def select_mothers(arg, mothers):
+    """
+    Select mothers using the best available implementation.
+    Uses numba-accelerated loop if available, otherwise numpythonic version.
+    Handles boolean mask or index array for selection, and ignores numba warnings.
+    """
     if mothers is None:
         return None
-
     n = len(mothers)
-
     if isinstance(arg, np.ndarray) and arg.dtype is bool:
         mask = arg
     else:
         mask = np.zeros(n, dtype=bool)
         mask[arg] = True
-
     with warnings.catch_warnings():
-        # suppress numba safety warning that we can ignore
-        warnings.simplefilter("ignore")
+        warnings.simplefilter("ignore")  # ignore numba warnings if any
         return _select_mothers(mask, mothers)
-
-
-try:
-    # accelerate with numba if numba is available
-    import numba as nb
-
-    _select_mothers = nb.njit(_select_mothers)
-
-except ModuleNotFoundError:
-    pass
 
 
 def tolerant_string_match(a, b):
@@ -668,35 +690,61 @@ def tolerant_string_match(a, b):
     return True
 
 
-def get_all_models(skip=None):
-    from chromo import models
+def get_available_binary_modules():
+    """
+    Get all available binary modules in chromo.models.
+
+    This function lists all importable binary modules in the chromo.models
+    package and returns a list of their names.
+    """
+    import importlib.util
+    import pkgutil
+
+    import chromo.models
+
+    # List all importable binary modules in chromo.models,
+    # excluding those starting with '_'
+    available_binaries = []
+    for _, name, _ in pkgutil.iter_modules(chromo.models.__path__):
+        if not name.startswith("_"):
+            continue
+        spec = importlib.util.find_spec(f"chromo.models.{name}")
+        if spec and spec.origin and not spec.origin.endswith(".py"):
+            available_binaries.append(name)
+
+    return available_binaries
+
+
+def get_all_models(only_names=False):
+    """
+    Get all available models in chromo.models.
+
+    This function lists all importable binary modules in the chromo.models
+    package. It then checks which model classes can be used and returns
+    a list of classes of class names in `only_names` attribute is set.
+    """
+    import inspect
+
+    import chromo.models
     from chromo.common import MCRun
 
-    if skip is None:
-        skip = []
-    if platform.system() == "Windows":
-        skip = list(skip) + [
-            models.UrQMD34,
-            models.EposLHC,
-            models.Pythia8,
-            models.DpmjetIII191,
-            models.DpmjetIII193,
-            models.Phojet191,
-            models.Phojet193,
-        ]
+    # List all importable binary modules in chromo.models,
+    # excluding those starting with '_'
+    available_binaries = get_available_binary_modules()
 
-    result = []
-    for key in dir(models):
-        obj = getattr(models, key)
-        if skip and obj in skip:
+    active_classes = []
+    active_class_names = []
+    for key in dir(chromo.models):
+        obj = getattr(chromo.models, key)
+        if not inspect.isclass(obj):
             continue
-        try:
-            if issubclass(obj, MCRun):  # fails if obj is not a class
-                result.append(obj)
-        except TypeError:
-            pass
+        if issubclass(obj, MCRun) and hasattr(obj, "_library_name"):
+            library_name = obj._library_name
+            if library_name in available_binaries:
+                active_classes.append(obj)
+                active_class_names.append(obj.__name__)
 
-    return result
+    return active_class_names if only_names else active_classes
 
 
 def naneq(a, b, rtol=None):
