@@ -29,12 +29,15 @@ if mold.found()
   add_project_link_arguments('-fuse-ld=mold', language: ['c', 'cpp', 'fortran'])
 endif
 
+cc = meson.get_compiler('cpp')
+dl_dep = cc.find_library('dl', required: true)
+
 # Directory for utilities
 scripts_dir = meson.project_source_root() + '/scripts/'
 
 # Update submodules if needed
 run_command('git', 'submodule', 'update', '--init', '--recursive',
-  check: true, capture: true)
+  check: false, capture: true)
 
 # Find Python and its development headers
 py = import('python').find_installation(pure: false)
@@ -514,6 +517,7 @@ if 'pythia8' in enabled_models
     include_directories: include_directories(cpp_dir / 'pythia83/include'),
     cpp_args: ['-DXMLDIR=""'],  # We don't use this, must set xmldir at runtime
     install: true,
+    dependencies: [dl_dep],
     install_dir: py.get_install_dir() / 'chromo' / 'models'
   )
 
