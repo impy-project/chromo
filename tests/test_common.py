@@ -11,6 +11,8 @@ from chromo.common import CrossSectionData, EventData, MCEvent
 from chromo.kinematics import CenterOfMass, EventFrame
 from chromo.util import get_all_models
 
+from .util import run_in_separate_process
+
 
 @pytest.fixture
 def evt():
@@ -151,6 +153,22 @@ def test_EventData_select(evt):
     assert_equal(x.pid, [1, 3])
 
 
+def run_model(Model, evt_kin, n_events=10):
+    """Run the model and return the histogram of events"""
+    generator = Model(evt_kin, seed=1)
+    beam_list = []
+    for event in generator(n_events):
+        event.kin._beam_data = None
+        beam = event.kin._get_beam_data(event.kin.frame)
+        event.kin._beam_data = None
+        for field, beam_field in beam.items():
+            event_field = getattr(event, field)
+            if event_field is None or field == "daughters":
+                continue
+            beam_list.append((field, beam_field, event_field[0:2]))
+    return beam_list
+
+
 @pytest.mark.parametrize("Model", get_all_models())
 def test_models_beam(Model):
     """Tests whether all models have correct beam particles"""
@@ -162,24 +180,8 @@ def test_models_beam(Model):
     elif Model.name in ["SIBYLL"]:
         evt_kin = CenterOfMass(100, "p", "O")
 
-    with (
-        pytest.warns(RuntimeWarning)
-        if Model.name
-        in [
-            "DPMJET-III",
-            "UrQMD",
-        ]
-        else nullcontext()
-    ):
-        generator = Model(evt_kin, seed=1)
-        for event in generator(100):
-            event.kin._beam_data = None
-            beam = event.kin._get_beam_data(event.kin.frame)
-            event.kin._beam_data = None
-            for field, beam_field in beam.items():
-                event_field = getattr(event, field)
-                if event_field is None or field == "daughters":
-                    continue
-                assert np.allclose(
-                    event_field[0:2], beam_field
-                ), f"{field}: {np.allclose(event_field[0:2], beam_field)}, {event_field[0:2]}, {beam_field}"
+    beam_list = run_in_separate_process(run_model, Model, evt_kin)
+    for field, beam_field, event_field in beam_list:
+        assert np.allclose(event_field[0:2], beam_field), (
+            f"{field}: {np.allclose(event_field[0:2], beam_field)}, {event_field[0:2]}, {beam_field}"
+        )

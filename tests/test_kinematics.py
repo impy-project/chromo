@@ -97,7 +97,7 @@ def test_fixed_target_bad_input():
 
     t = CompositeTarget([("N", 3), ("O", 1)])
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         FixedTarget(100 * GeV, t, "p")
 
 
@@ -188,7 +188,7 @@ def test_kinematics_virtuality():
 def test_kinematics_composite_target():
     # Test initialization with CompositeTarget
     target = CompositeTarget([("N", 3), ("O", 1)])
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         EventKinematicsWithRestframe(target, "neutron", ecm=10)
 
     k = EventKinematicsWithRestframe(
