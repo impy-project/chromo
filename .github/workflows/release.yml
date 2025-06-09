@@ -61,7 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, macos-14] # windows-latest: Disable windows for now
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-14] # windows-latest: Disable windows for now
         arch: [auto, aarch64]
         py: [cp39, cp310, cp311, cp312, cp313]
         exclude:
@@ -77,20 +77,13 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - if: ${{ matrix.arch == 'aarch64' }}
-        uses: docker/setup-qemu-action@v3
-
       - name: Get latest CMake and Ninja
         uses: lukka/get-cmake@latest
 
-      # Set deployment target env var on macos 13
-      - if: ${{ matrix.os == 'macos-13' }}
-        name: Set deployment target for MacOS-13
-        run: export MACOSX_DEPLOYMENT_TARGET=13.0
-
-      # - if: ${{ matrix.os == 'macos-13'}}
-      #   name: Use a more legacy version of Xcode tools on MacOS-13
-      #   run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
+      # Set deployment target for macOS
+      - name: Set macOS deployment target
+        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-13' && '13.0' || matrix.os == 'macos-14' && '14.0' || '' }}" >> $GITHUB_ENV
 
       - if: ${{ matrix.os == 'macos-13' }}
         name: Install gfortran via Homebrew
@@ -107,6 +100,12 @@ jobs:
           compiler: gcc
           version: 13
 
+      - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
+        if: ${{ matrix.os == 'macos-13'  }}
+        name: Setup Xcode
+        with:
+          xcode-version: '14.3'
+
       - if: ${{ matrix.os != 'macos-13' }}
         uses: ts-graphviz/setup-graphviz@v2
         name: Install Graphviz
@@ -121,7 +120,7 @@ jobs:
           CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
 
-      - if: ${{ matrix.os == 'ubuntu-latest' }}
+      - if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm' }}
         name: cibuildwheel on Linux
         uses: pypa/cibuildwheel@v2.23.3
         env:
@@ -130,26 +129,17 @@ jobs:
           CIBW_ENVIRONMENT_PASS_LINUX: CI
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           # Will avoid testing on emulated architectures
-          CIBW_TEST_SKIP: "*-*linux_{aarch64,ppc64le,s390x,armv7l}"
+          CIBW_TEST_SKIP: "*-*linux_{ppc64le,s390x,armv7l}"
 
-
-      - if: ${{ matrix.os == 'macos-13'}}
-        name: cibuildwheel on MacOS-13
+      - if: ${{ matrix.os == 'macos-14' }}
+        name: cibuildwheel on MacOS
         uses: pypa/cibuildwheel@v2.23.3
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           no_proxy: '*'
           CHROMO_SKIP_GRAPHVIZ: 1
-
-      - if: ${{ matrix.os == 'macos-14' }}
-        name: cibuildwheel on MacOS-14
-        uses: pypa/cibuildwheel@v2.23.3
-        env:
-          CIBW_BUILD: ${{ matrix.py }}-*
-          CIBW_ARCHS: ${{ matrix.arch }}
-          no_proxy: '*'
-          MACOSX_DEPLOYMENT_TARGET: 14.0
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.os == 'macos-13' && '13.0' || matrix.os == 'macos-14' && '14.0' || '' }}
 
       - uses: actions/upload-artifact@v4
         with:
