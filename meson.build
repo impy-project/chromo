@@ -22,6 +22,13 @@ add_project_arguments('-fPIC',
                       '-Wno-unused-const-variable',
                       language: 'C')
 
+# Optionally use mold linker if available
+mold = find_program('mold', required: false)
+if mold.found()
+  message('Using mold linker')
+  add_project_link_arguments('-fuse-ld=mold', language: ['c', 'cpp', 'fortran'])
+endif
+
 # Directory for utilities
 scripts_dir = meson.project_source_root() + '/scripts/'
 
@@ -401,11 +408,11 @@ foreach f2py_name, model_info : models
     include_args += '-I' + (meson.project_source_root() / p)
   endforeach
 
-  foreach f : files(model_info.get('interface_sources', model_info['sources']))
-    message(f.full_path())
-  endforeach
+  # foreach f : files(model_info.get('interface_sources', model_info['sources']))
+  #   message(f.full_path())
+  # endforeach
   flags = chromo_common_flags + model_info.get('flags', [])
-  message('Flags: ' + ' '.join(flags))
+  # message('Flags: ' + ' '.join(flags))
 
   interface_sources = files(model_info.get('interface_sources', model_info['sources']) 
     + [logging_source, rangen_source])
@@ -428,11 +435,12 @@ foreach f2py_name, model_info : models
     build_by_default: true
   )
 
-  foreach f : output
-    message('F2PY output: ' + f)
-  endforeach
+  # foreach f : output
+  #   message('F2PY output: ' + f)
+  # endforeach
+
   # Create the sib21 extension module
-  py.extension_module(f2py_name,
+  ext_module = py.extension_module(f2py_name,
     sources: sources + f2py_target + [f2py_fortranobject_c] + [normal_source],
     include_directories: include_directories(includes),
     dependencies: [py_dep, numpy_dep],
@@ -441,15 +449,51 @@ foreach f2py_name, model_info : models
     install: true,
     subdir: 'chromo/models',
   )
+
+  
+
+  # For editable installs: copy the extension to the source tree
+  # Unfortunately this also copies the extensions to src/chromo/models
+  # for non-editable installs, but this is not a real problem.
+  custom_target(f2py_name + '_copy_for_editable',
+    input: ext_module,
+    output: f2py_name + '.so',
+    command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / '@OUTPUT@'],
+    build_by_default: true,
+    install: false
+  )
 endforeach
 
-# Pythia8 build configuration (C++ with pybind11)
-# This is separate from the f2py loop since it uses pybind11 instead of f2py
+# pythia8 About the license and how it affects chromo. Pythia-8 is licensed
+# under GPL-v2 or higher, which means GPL-v3 applies. An excerpt from GPL-v3:
+
+# > A compilation of a covered work with other separate and independent > works,
+# which are not by their nature extensions of the covered work, > and which are
+# not combined with it such as to form a larger program, > in or on a volume of
+# a storage or distribution medium, is called an > "aggregate" if the
+# compilation and its resulting copyright are not > used to limit the access or
+# legal rights of the compilation's users > beyond what the individual works
+# permit.  Inclusion of a covered work > in an aggregate does not cause this
+# License to apply to the other > parts of the aggregate.
+#
+# Our legal position is that chromo is an "aggregate". It is not adding
+# functionality to Pythia-8 nor is it modifying the original source. The
+# Pythia-8 library is redistributed by us under its original license, which is
+# allowed. chromo is merely a way to steer Pythia-8 and to provide its output in
+# a particular format. The Pythia-8 authors are free to take some of our code
+# and make it GPL code, they can do that anyway, but we are still free to
+# distribute the code that we write under a less restrictive license.
+#
+# To strengthen this position, we compile the original Pythia-8 code into a
+# shared library to which we only link. This makes clear where the boundary
+# between chromo and Pythia-8 is.
+
 if 'pythia8' in enabled_models
+  message('Building model: _pythia8')
   cpp_dir = 'src/cpp'
   pybind11_inc = include_directories(cpp_dir / 'pybind11/include')
 
-  if host_machine.system() == 'darwin'
+   if host_machine.system() == 'darwin'
     pythia8_rpath = '@loader_path'
   elif host_machine.system() == 'linux'
     pythia8_rpath = '$ORIGIN'
@@ -471,7 +515,7 @@ if 'pythia8' in enabled_models
     include_directories: include_directories(cpp_dir / 'pythia83/include'),
     cpp_args: ['-DXMLDIR=""'],  # We don't use this, must set xmldir at runtime
     install: true,
-    install_dir: py.get_install_dir() / 'chromo/models'
+    install_dir: py.get_install_dir() / 'chromo' / 'models'
   )
 
   # Create the _pythia8 Python extension module
@@ -483,17 +527,38 @@ if 'pythia8' in enabled_models
       include_directories(cpp_dir / 'pythia83/include')
     ],
     dependencies: [py_dep],
-    link_with: libpythia8,
+    link_with: libpythia8,python -c "import chromo; print('Import successful!'); print('chromo version:', chromo.__version__)"
     install: true,
     subdir: 'chromo/models',
     install_rpath: pythia8_rpath,
     build_rpath: pythia8_rpath
   )
+
+  # For editable installs: copy both libpythia8.so and _pythia8.so to source tree
+  custom_target('copy_libpythia8_for_editable',
+    input: libpythia8,
+    output: 'libpythia8_editable.so',
+    command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / 'libpythia8.so'],
+    build_by_default: true,
+    install: false
+  )
+
+  custom_target('copy_pythia8_for_editable',
+    input: pythia8_module,
+    output: '_pythia8_editable.so',
+    command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / '_pythia8.so'],
+    build_by_default: true,
+    install: false
+  )
+  message('Pythia8 configuration complete')
+else
+  message('Skipping Pythia8 model (not enabled)')
 endif
 
-message('Pythia8 configuration complete')
 
 # Install the pure Python package files
 install_subdir('src/chromo', install_dir: py.get_install_dir())
 
-message('Multi-model meson build configuration complete with SIBYLL-21, EPOS-LHC, DPMJET III-19.1, DPMJET3.0-7, DPMJETIII-19.3, and EPOS-LHC')
+message('CHROMO\'s meson build configuration is complete.')
+
+

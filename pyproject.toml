@@ -4,7 +4,6 @@ requires = [
     "meson>=1.4.0",
     "ninja",
     "numpy==2.2.3",
-    "charset_normalizer",
     "tomli"
 ]
 build-backend = "mesonpy"
