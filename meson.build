@@ -86,11 +86,11 @@ sibyll_common_functions = [
 
 # QGSJET-specific definitions
 
-qgsjetII_common_sources = [
+qgsjet2_common_sources = [
   fdir + 'qgsjet/chromo_qgsII.f',
 ]
 
-qgsjetII_common_functions = [
+qgsjet2_common_functions = [
     'cqgsini',
     'qgsect',
     'qgini',
@@ -218,17 +218,17 @@ dpmjet_phojet_functions = [
 ]
 
 # DPMJETIII191-specific definitions
-dpmjetIII191_fdir = fdir / 'dpmjetIII-19.1'
+dpmjet191_fdir = fdir / 'dpmjetIII-19.1'
 # Use Python script to collect source files and filter excluded patterns
-dpmjetIII191_sources = run_command([
-  py, scripts_dir + 'list_dpmjet_sources.py', '--directory', dpmjetIII191_fdir
+dpmjet191_sources = run_command([
+  py, scripts_dir + 'list_dpmjet_sources.py', '--directory', dpmjet191_fdir
 ], check: true).stdout().strip().split('\n')
 
-# DPMJETIII193-specific definitions
-dpmjetIII193_fdir = fdir / 'dpmjetIII-19.3'
+# DPMJET193-specific definitions
+dpmjet193_fdir = fdir / 'dpmjetIII-19.3'
 # Use Python script to collect source files and filter excluded patterns
-dpmjetIII193_sources = run_command([
-  py, scripts_dir + 'list_dpmjet_sources.py', '--directory', dpmjetIII193_fdir
+dpmjet193_sources = run_command([
+  py, scripts_dir + 'list_dpmjet_sources.py', '--directory', dpmjet193_fdir
 ], check: true).stdout().strip().split('\n')
 
 # EPOS-LHC-specific definitions
@@ -312,20 +312,20 @@ models = {
   },
   '_qgs2_03': {
     'sources': [
-      fdir + 'qgsjet/qgsjet-II-03.f'] + qgsjetII_common_sources,
-    'functions': ','.join(qgsjetII_common_functions)
+      fdir + 'qgsjet/qgsjet-II-03.f'] + qgsjet2_common_sources,
+    'functions': ','.join(qgsjet2_common_functions)
   },
   '_qgs2_04': {
     'sources': [
-      fdir + 'qgsjet/qgsjet-II-04.f'] + qgsjetII_common_sources,
-    'functions': ','.join(qgsjetII_common_functions)
+      fdir + 'qgsjet/qgsjet-II-04.f'] + qgsjet2_common_sources,
+    'functions': ','.join(qgsjet2_common_functions)
   },
   '_qgs3': {
     'sources': [
       fdir + 'qgsjet/qgsjet-III.f',
       fdir + 'qgsjet/chromo_qgsIII.f',
     ],
-    'functions': ','.join(qgsjetII_common_functions + ['qgran'])
+    'functions': ','.join(qgsjet2_common_functions + ['qgran'])
   },
   '_urqmd34': {
     'sources': urqmd_all_sources,
@@ -346,7 +346,7 @@ models = {
     'functions': ','.join(dpmjet_phojet_functions),
   },
   '_dpmjet_phojet191': {
-    'sources': dpmjetIII191_sources,
+    'sources': dpmjet191_sources,
     'functions': ','.join(dpmjet_phojet_functions),
     'include_directories': [
       fdir / 'dpmjetIII-19.1/include/phojet',
@@ -356,7 +356,7 @@ models = {
     ],
   },
   '_dpmjet_phojet193': {
-    'sources': dpmjetIII193_sources,
+    'sources': dpmjet193_sources,
     'functions': ','.join(dpmjet_phojet_functions),
     'include_directories': [
       fdir / 'dpmjetIII-19.3/include/phojet',
