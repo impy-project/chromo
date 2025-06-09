@@ -31,6 +31,7 @@ endif
 
 cc = meson.get_compiler('cpp')
 dl_dep = cc.find_library('dl', required: true)
+thread_dep = dependency('threads')
 
 # Directory for utilities
 scripts_dir = meson.project_source_root() + '/scripts/'
@@ -517,7 +518,7 @@ if 'pythia8' in enabled_models
     include_directories: include_directories(cpp_dir / 'pythia83/include'),
     cpp_args: ['-DXMLDIR=""'],  # We don't use this, must set xmldir at runtime
     install: true,
-    dependencies: [dl_dep],
+    dependencies: [dl_dep, thread_dep],
     install_dir: py.get_install_dir() / 'chromo' / 'models'
   )
 
