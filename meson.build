@@ -449,7 +449,6 @@ foreach f2py_name, model_info : models
     install: true,
     subdir: 'chromo/models',
   )
-
   
 
   # For editable installs: copy the extension to the source tree
@@ -527,7 +526,7 @@ if 'pythia8' in enabled_models
       include_directories(cpp_dir / 'pythia83/include')
     ],
     dependencies: [py_dep],
-    link_with: libpythia8,python -c "import chromo; print('Import successful!'); print('chromo version:', chromo.__version__)"
+    link_with: libpythia8,
     install: true,
     subdir: 'chromo/models',
     install_rpath: pythia8_rpath,
