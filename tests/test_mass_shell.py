@@ -1,19 +1,21 @@
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose
+
+import chromo.models as im
 from chromo.constants import GeV
 from chromo.kinematics import (
     CenterOfMass,
+    CompositeTarget,
+    EventFrame,
     EventKinematicsMassless,
     EventKinematicsWithRestframe,
     FixedTarget,
     TotalEnergy,
-    EventFrame,
-    CompositeTarget,
 )
-from .util import run_in_separate_process
 from chromo.util import get_all_models
-import pytest
-import chromo.models as im
+
+from .util import run_in_separate_process
 
 
 def run_model(Model, kin):
@@ -21,8 +23,7 @@ def run_model(Model, kin):
         gen = Model(kin, seed=1)
     except ValueError:
         return None
-    event = next(gen(1)).final_state()
-    return event
+    return next(gen(1)).final_state()
 
 
 @pytest.mark.parametrize("frame", ("cms", "ft", "cms2ft", "ft2cms"))
@@ -72,7 +73,6 @@ def test_final_state_mass_shell(Model, frame, target, projectile):
         atol = 0.01
     elif Model in [im.QGSJetIII] and p1 == "He" and target == "air":
         atol = 0.05
-    print(p1, p2)
     assert_allclose(inv_mass, event.m, atol=atol)
 
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Script to list EPOS-LHC source files for the chromo build system."""
 
+import argparse
 import glob
 import re
 from pathlib import Path
-import argparse
 
 
 def list_files(directory):
@@ -41,7 +41,7 @@ def list_files(directory):
     filtered_sources.sort()
 
     for src in filtered_sources:
-        print(src)
+        print(src)  # noqa: T201
 
 
 def list_interface_files(directory):
@@ -64,7 +64,7 @@ def list_interface_files(directory):
     existing_files.sort()
 
     for src in existing_files:
-        print(src)
+        print(src)  # noqa: T201
 
 
 if __name__ == "__main__":

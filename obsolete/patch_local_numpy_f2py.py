@@ -1,7 +1,8 @@
-from pathlib import Path
-import warnings
-import numpy
 import urllib.request
+import warnings
+from pathlib import Path
+
+import numpy
 from packaging.version import parse as parse_version
 
 

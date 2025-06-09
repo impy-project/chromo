@@ -1,11 +1,12 @@
-from chromo.common import MCRun, MCEvent, CrossSectionData
-from chromo.util import info, Nuclei
-from chromo.kinematics import EventFrame
-from chromo.constants import standard_projectiles
-from particle import literals as lp
 import warnings
-import numpy as np
 
+import numpy as np
+from particle import literals as lp
+
+from chromo.common import CrossSectionData, MCEvent, MCRun
+from chromo.constants import standard_projectiles
+from chromo.kinematics import EventFrame
+from chromo.util import Nuclei, info
 
 _sibyll_unstable_pids = [
     -13,
@@ -96,19 +97,9 @@ _sibyll_unstable_pids = [
     4332,
 ]
 
-_sibyll21_unstable_pids = set(_sibyll_unstable_pids + [-10311, 10311, -10321, 10321])
+_sibyll21_unstable_pids = {*_sibyll_unstable_pids, -10311, 10311, -10321, 10321}
 
-_sibyll23_unstable_pids = set(
-    _sibyll_unstable_pids
-    + [
-        -15,
-        15,
-        -313,
-        313,
-        -323,
-        323,
-    ]
-)
+_sibyll23_unstable_pids = {*_sibyll_unstable_pids, -15, 15, -313, 313, -323, 323}
 
 
 class SibyllEvent(MCEvent):
@@ -162,8 +153,6 @@ class SIBYLLRun(MCRun):
         431,
         4122,
         4132,
-        4232,
-        431,
         4332,
     }
     _targets = Nuclei(a_max=20)
@@ -213,9 +202,8 @@ class SIBYLLRun(MCRun):
         sib_id = self._cross_section_projectiles[abs(kin.p1)]
 
         if kin.p2.A > 19:
-            raise ValueError(
-                f"{self.label} does not support nuclear targets heavier than 19"
-            )
+            msg = f"{self.label} does not support nuclear targets heavier than 19"
+            raise ValueError(msg)
         if kin.p2.A > 1 and self.version == "2.1":
             totpp, _, _, _, slopepp, rhopp = self._lib.sib_sigma_hp(sib_id, kin.ecm)
             sigt, sigel, sigqe = self._lib.glauber(kin.p2.A, totpp, slopepp, rhopp)
@@ -333,8 +321,6 @@ class Sibyll23c(Sibyll23):
         431,
         4122,
         4132,
-        4232,
-        431,
         4332,
     }
     _library_name = "_sib23c01"

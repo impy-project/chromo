@@ -1,7 +1,7 @@
+import argparse
 import glob
 import re
 from pathlib import Path
-import argparse
 
 
 def list_files(directory):
@@ -37,7 +37,7 @@ def list_files(directory):
     filtered_sources.append(str(fdir / "common/dummies.f"))
 
     for src in filtered_sources:
-        print(src)
+        print(src)  # noqa: T201
 
 
 if __name__ == "__main__":

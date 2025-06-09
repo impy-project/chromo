@@ -8,9 +8,10 @@ import shutil
 import urllib.request
 import warnings
 import zipfile
+from collections.abc import Collection, Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Collection, Sequence, Set, Tuple, Union
+from typing import Union
 
 import numpy as np
 from particle import PDGID, InvalidParticle, Particle, ParticleNotFound
@@ -28,11 +29,11 @@ class CompositeTarget:
     """
 
     label: str
-    components: Tuple[PDGID]
+    components: tuple[PDGID]
     fractions: np.ndarray
 
     def __init__(
-        self, components: Collection[Tuple[Union[str, int], float]], label: str = ""
+        self, components: Collection[tuple[Union[str, int], float]], label: str = ""
     ):
         """
         Parameters
@@ -53,7 +54,8 @@ class CompositeTarget:
             fractions[i] = amount
             p = process_particle(particle)
             if not p.is_nucleus:
-                raise ValueError(f"component {particle} is not a nucleus")
+                msg = f"component {particle} is not a nucleus"
+                raise ValueError(msg)
             c.append(p)
         self.label = label
         self.components = tuple(c)
@@ -204,7 +206,8 @@ def mass(pdgid):
     if m is None:
         a = pdg2AZ(pdgid)[0]
         if a == 0:
-            raise ValueError(f"cannot get mass for {pdgid}")
+            msg = f"cannot get mass for {pdgid}"
+            raise ValueError(msg)
         return a * nucleon_mass
     return m * MeV
 
@@ -312,9 +315,9 @@ def pdg2AZ(pdgid):
     p = PDGID(pdgid)
     if p.is_nucleus:
         return p.A, p.Z
-    elif pdgid == 2112:
+    if pdgid == 2112:
         return 1, 0
-    elif pdgid == 2212:
+    if pdgid == 2212:
         return 1, 1
     return 0, 0
 
@@ -351,10 +354,12 @@ def process_particle(x):
         try:
             return PDGID(name2pdg(x))
         except KeyError:
-            raise ValueError(f"particle with name {x} not recognized")
+            msg = f"particle with name {x} not recognized"
+            raise ValueError(msg)
     if is_AZ(x):
         return PDGID(AZ2pdg(*x))
-    raise ValueError(f"{x} is not a valid particle specification")
+    msg = f"{x} is not a valid particle specification"
+    raise ValueError(msg)
 
 
 def fortran_chars(array_ref, char_seq):
@@ -420,7 +425,7 @@ def info(min_dbg_level, *args):
     import chromo
 
     if min_dbg_level <= chromo.debug_level:
-        print(caller_name(), *args)
+        print(caller_name(), *args)  # noqa: T201
 
 
 def _download_file(outfile, url):
@@ -438,9 +443,8 @@ def _download_file(outfile, url):
     try:
         response = urllib.request.urlopen(url)
     except BaseException:
-        raise ConnectionError(
-            f"_download_file: probably something wrong with url = '{url}'"
-        )
+        msg = f"_download_file: probably something wrong with url = '{url}'"
+        raise ConnectionError(msg)
     total_size = response.getheader("content-length")
 
     min_blocksize = 4096
@@ -470,7 +474,8 @@ def _download_file(outfile, url):
                 probar.advance(task_id, nchunk)
 
     if total_size and wrote != total_size:
-        raise ConnectionError(f"{fname} has not been downloaded")
+        msg = f"{fname} has not been downloaded"
+        raise ConnectionError(msg)
 
 
 # Function to check and download dababase files on github
@@ -543,7 +548,7 @@ class TaggedFloat:
     def _reduce(cls, other):
         if isinstance(other, (int, float)):
             return other
-        elif isinstance(other, cls):
+        if isinstance(other, cls):
             return other._value
         raise ValueError("{other!r} is not a number or {cls.__name__}")
 
@@ -820,18 +825,18 @@ class Nuclei:
             s += f" | {self._other}"
         return s
 
-    def __ior__(self, other: Set[PDGID]):
+    def __ior__(self, other: set[PDGID]):
         self._other |= other
         return self
 
-    def __or__(self, other: Set[PDGID]):
+    def __or__(self, other: set[PDGID]):
         from copy import deepcopy
 
         result = deepcopy(self)
         result |= other
         return result
 
-    def __ror__(self, other: Set[PDGID]):
+    def __ror__(self, other: set[PDGID]):
         return self.__or__(other)
 
 

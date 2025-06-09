@@ -1,6 +1,5 @@
 import pathlib
 
-
 try:
     import tomllib  # Python 3.11+
 except ImportError:
@@ -12,4 +11,4 @@ with pyproject.open("rb") as f:
     data = tomllib.load(f)
 
 version = data["project"]["version"]
-print(version)
+print(version)  # noqa: T201

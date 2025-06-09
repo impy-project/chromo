@@ -1,12 +1,14 @@
-from chromo.common import CrossSectionData, EventData, MCEvent
-from chromo.kinematics import CenterOfMass, EventFrame
-import numpy as np
 import dataclasses
 import pickle
-from types import SimpleNamespace
-import pytest
 from contextlib import nullcontext
+from types import SimpleNamespace
+
+import numpy as np
+import pytest
 from numpy.testing import assert_equal
+
+from chromo.common import CrossSectionData, EventData, MCEvent
+from chromo.kinematics import CenterOfMass, EventFrame
 from chromo.util import get_all_models
 
 

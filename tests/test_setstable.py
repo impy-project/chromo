@@ -1,13 +1,15 @@
+import platform
+from collections import Counter
+
 import numpy as np
+import pytest
+from particle import literals as lp
+
 from chromo.constants import GeV
 from chromo.kinematics import CenterOfMass
-from .util import run_in_separate_process
 from chromo.util import get_all_models
-import pytest
-from collections import Counter
-from particle import literals as lp
-import platform
 
+from .util import run_in_separate_process
 
 decay_list = [
     lp.pi_plus.pdgid,

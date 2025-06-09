@@ -439,7 +439,7 @@ foreach f2py_name, model_info : models
   #   message('F2PY output: ' + f)
   # endforeach
 
-  # Create the sib21 extension module
+  # Create the extension module
   ext_module = py.extension_module(f2py_name,
     sources: sources + f2py_target + [f2py_fortranobject_c] + [normal_source],
     include_directories: include_directories(includes),

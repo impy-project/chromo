@@ -6,16 +6,17 @@
 # The current settings are taken from CORSIKA and they are optimized for speed aparently.
 # The license of UrQMD is quite restrictive, they won't probably permit distributing it.
 
-from chromo.common import MCRun, MCEvent, CrossSectionData
+import warnings
+
+from chromo.common import CrossSectionData, MCEvent, MCRun
+from chromo.constants import GeV, standard_projectiles
+from chromo.kinematics import EventFrame
 from chromo.util import (
-    info,
+    Nuclei,
     fortran_array_insert,
     fortran_array_remove,
-    Nuclei,
+    info,
 )
-from chromo.kinematics import EventFrame
-from chromo.constants import standard_projectiles, GeV
-import warnings
 
 
 class UrQMDEvent(MCEvent):
@@ -43,71 +44,69 @@ class UrQMDEvent(MCEvent):
         self.daughters[:] = [-1, -1]
 
 
-_urqmd_unstable_pids = set(
-    [
-        111,
-        113,
-        211,
-        -211,
-        213,
-        -213,
-        221,
-        223,
-        313,
-        -313,
-        321,
-        -321,
-        323,
-        -323,
-        333,
-        411,
-        -411,
-        413,
-        -413,
-        421,
-        -421,
-        431,
-        -431,
-        441,
-        443,
-        1114,
-        -1114,
-        2112,
-        -2112,
-        2114,
-        -2114,
-        2214,
-        -2214,
-        2224,
-        -2224,
-        3112,
-        -3112,
-        3114,
-        -3114,
-        3122,
-        -3122,
-        3212,
-        -3212,
-        3214,
-        -3214,
-        3222,
-        -3222,
-        3224,
-        -3224,
-        3312,
-        -3312,
-        3314,
-        -3314,
-        3322,
-        -3322,
-        3324,
-        -3324,
-        3334,
-        -3334,
-        10421,
-        -10421,
-    ]
-)
+_urqmd_unstable_pids = {
+    111,
+    113,
+    211,
+    -211,
+    213,
+    -213,
+    221,
+    223,
+    313,
+    -313,
+    321,
+    -321,
+    323,
+    -323,
+    333,
+    411,
+    -411,
+    413,
+    -413,
+    421,
+    -421,
+    431,
+    -431,
+    441,
+    443,
+    1114,
+    -1114,
+    2112,
+    -2112,
+    2114,
+    -2114,
+    2214,
+    -2214,
+    2224,
+    -2224,
+    3112,
+    -3112,
+    3114,
+    -3114,
+    3122,
+    -3122,
+    3212,
+    -3212,
+    3214,
+    -3214,
+    3222,
+    -3222,
+    3224,
+    -3224,
+    3312,
+    -3312,
+    3314,
+    -3314,
+    3322,
+    -3322,
+    3324,
+    -3324,
+    3334,
+    -3334,
+    10421,
+    -10421,
+}
 
 
 class UrQMD34(MCRun):

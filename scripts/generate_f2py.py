@@ -4,11 +4,12 @@ Helper script to generate f2py wrapper code for meson build system.
 This replaces the f2py_add_module functionality from CMake.
 """
 
+import json
+import logging
 import subprocess
 import sys
-import json
 from pathlib import Path
-import logging
+from typing import Optional
 
 
 def setup_logging(module_name: str, output_dir: str):
@@ -42,7 +43,7 @@ def generate_f2py_module(
     include: str,
     flags: str,
     output_dir: str,
-    logger: logging.Logger = None,
+    logger: Optional[logging.Logger] = None,
 ):
     """
     Generate f2py wrapper code for a Fortran module.
@@ -71,10 +72,9 @@ def generate_f2py_module(
     pyf_file = output_path / f"{module_name}.pyf"
 
     # Add interface sources
-    source_list = []
-    for src in sources:
-        if src and not src.endswith(".c"):  # Skip empty and C sources
-            source_list.append(str(src))
+    source_list = [
+        str(src) for src in sources if src and not src.endswith(".c")
+    ]  # Skip empty and C sources
     logger.info(f"Source files: {source_list}")
     logger.info(f"Include directories: {include}")
 
@@ -82,17 +82,7 @@ def generate_f2py_module(
     # Concatenate output into a single temporary file to be processed by f2py
     preprocessed_sources = output_path / f"{module_name}pp.f"
 
-    cmd = (
-        [
-            "gfortran",
-            "-cpp",
-            "-E",
-            flags,
-        ]
-        + include
-        + source_list
-        # + [">", str(preprocessed_sources)]
-    )
+    cmd = ["gfortran", "-cpp", "-E", flags, *include, *source_list]
 
     try:
         result = subprocess.run(
@@ -105,9 +95,9 @@ def generate_f2py_module(
         if result.stderr:
             logger.info(f"Preprocessing stderr: {result.stderr}")
     except subprocess.CalledProcessError as e:
-        logger.error(f"Error preprocessing file: {e}")
+        logger.error(f"Error preprocessing file: {e}")  # noqa: TRY400
         # logger.error(f"stdout: {e.stdout}")
-        logger.error(f"stderr: {e.stderr}")
+        logger.error(f"stderr: {e.stderr}")  # noqa: TRY400
         return False
 
     cmd = [
@@ -135,9 +125,9 @@ def generate_f2py_module(
             logger.info(f"f2py stdout: {result.stdout}")
 
     except subprocess.CalledProcessError as e:
-        logger.error(f"Error generating signature file: {e}")
-        logger.error(f"stdout: {e.stdout}")
-        logger.error(f"stderr: {e.stderr}")
+        logger.error(f"Error generating signature file: {e}")  # noqa: TRY400
+        logger.error(f"stdout: {e.stdout}")  # noqa: TRY400
+        logger.error(f"stderr: {e.stderr}")  # noqa: TRY400
         return False
 
     # Generate wrapper source files using f2py
@@ -188,9 +178,9 @@ def generate_f2py_module(
         logger.info("GENERATED_FILES: " + json.dumps(generated_files))
 
     except subprocess.CalledProcessError as e:
-        logger.error(f"Error generating wrapper files: {e}")
-        logger.error(f"stdout: {e.stdout}")
-        logger.error(f"stderr: {e.stderr}")
+        logger.error(f"Error generating wrapper files: {e}")  # noqa: TRY400
+        logger.error(f"stdout: {e.stdout}")  # noqa: TRY400
+        logger.error(f"stderr: {e.stderr}")  # noqa: TRY400
         return False
 
     return True
@@ -198,7 +188,7 @@ def generate_f2py_module(
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print(
+        print(  # noqa: T201
             "Usage: generate_f2py.py <module_name> <functions> <logging_dir>"
             " <includes> <output_dir> <sources>"
         )

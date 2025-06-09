@@ -1,28 +1,29 @@
-from chromo.kinematics import (
-    CenterOfMass,
-    FixedTarget,
-    EventKinematicsWithRestframe,
-    EventKinematicsMassless,
-    TotalEnergy,
-    KinEnergy,
-    Momentum,
-    EventFrame,
-    CompositeTarget,
-    GeV,
-    MeV,
-)
-from chromo.constants import nucleon_mass
-from chromo.util import (
-    AZ2pdg,
-    energy2momentum,
-    elab2ecm,
-    momentum2energy,
-    mass,
-)
+import numpy as np
+import pytest
 from particle import literals as lp
 from pytest import approx
-import pytest
-import numpy as np
+
+from chromo.constants import nucleon_mass
+from chromo.kinematics import (
+    CenterOfMass,
+    CompositeTarget,
+    EventFrame,
+    EventKinematicsMassless,
+    EventKinematicsWithRestframe,
+    FixedTarget,
+    GeV,
+    KinEnergy,
+    MeV,
+    Momentum,
+    TotalEnergy,
+)
+from chromo.util import (
+    AZ2pdg,
+    elab2ecm,
+    energy2momentum,
+    mass,
+    momentum2energy,
+)
 
 
 def test_CompositeTarget_repr():

@@ -1,4 +1,4 @@
-from chromo.util import get_all_models, _cached_data_dir
+from chromo.util import _cached_data_dir, get_all_models
 
 urls = set()
 for Model in get_all_models():
@@ -7,5 +7,5 @@ for Model in get_all_models():
         urls.add(url)
 
 for url in urls:
-    print(f"Downloading/installing from {url}")
+    print(f"Downloading/installing from {url}")  # noqa: T201
     _cached_data_dir(url)

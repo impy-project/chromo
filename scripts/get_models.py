@@ -1,5 +1,5 @@
-import pathlib
 import argparse
+import pathlib
 
 try:
     import tomllib  # Python 3.11+
@@ -30,8 +30,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.enabled:
-        print("\n".join(get_models(True)))
+        print("\n".join(get_models(True)))  # noqa: T201
     if args.disabled:
-        print("\n".join(get_models(False)))
+        print("\n".join(get_models(False)))  # noqa: T201
     if not args.enabled and not args.disabled:
-        print("Please specify --enabled or --disabled to see the respective models.")
+        print(  # noqa: T201
+            "Please specify --enabled or --disabled to see the respective models."
+        )
