@@ -1,6 +1,5 @@
 import dataclasses
 import pickle
-from contextlib import nullcontext
 from types import SimpleNamespace
 
 import numpy as np
@@ -182,6 +181,6 @@ def test_models_beam(Model):
 
     beam_list = run_in_separate_process(run_model, Model, evt_kin)
     for field, beam_field, event_field in beam_list:
-        assert np.allclose(event_field[0:2], beam_field), (
-            f"{field}: {np.allclose(event_field[0:2], beam_field)}, {event_field[0:2]}, {beam_field}"
-        )
+        assert np.allclose(
+            event_field[0:2], beam_field
+        ), f"{field}: {np.allclose(event_field[0:2], beam_field)}, {event_field[0:2]}, {beam_field}"
