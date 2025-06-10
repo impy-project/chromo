@@ -589,7 +589,7 @@ def _cached_data_dir(url: str) -> str:
 
         # Extract the zip
         info(1, f"Extracting {temp_zip_path.name} to {model_dir}")
-        _extract_zip(temp_zip_path, model_dir)
+        _extract_zip(temp_zip_path, model_dir.parent)
 
         # Post-extraction: Clean up old version files and create new one
         for old_vfile in model_dir.glob(f"{model_name}_v*"):

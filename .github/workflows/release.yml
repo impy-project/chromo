@@ -13,7 +13,30 @@ on:
 
 
 jobs:
-
+  prepare-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v1
+      - name: Download all cache files if missing
+        run: |
+          mkdir -p ~/.cache/chromo
+          for file in qgsjet_v001 qgsjet_v002 Pythia8_v003 Pythia8_v004 Pythia8_v005 eposlhcr_v001 eposlhc_v001 epos_v001 dpm3191_v001 dpm3_v001 ; do
+            if [ ! -f ~/.cache/chromo/$file.zip ]; then
+              echo "Downloading $file.zip..."
+              curl -L -o ~/.cache/chromo/$file.zip "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip"
+            else
+              echo "$file.zip already exists, skipping."
+            fi
+          done
+      - name: Save chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v1
   wheels_on_PR:
     if: ${{ github.event.pull_request.merged == true }}
     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
@@ -25,12 +48,15 @@ jobs:
         arch: [auto]
         py: [cp313]
     steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v1
+
       - uses: actions/checkout@v4
         with:
           submodules: true
-
-      - name: Get latest CMake and Ninja
-        uses: lukka/get-cmake@latest
 
       - name: Setup gfortran for Linux
         uses: awvwgk/setup-fortran@main
@@ -45,7 +71,8 @@ jobs:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_ENVIRONMENT_PASS_LINUX: CI
-          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+          # Will avoid testing on emulated architectures
+          CIBW_TEST_SKIP: "*-*linux_{ppc64le,s390x,armv7l}"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -70,10 +97,6 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - name: Get latest CMake and Ninja
-        uses: lukka/get-cmake@latest
-
-      # Set deployment target for macOS
       - name: Set macOS deployment target
         if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-13' && '13.0' || matrix.os == 'macos-14' && '14.0' || '' }}" >> $GITHUB_ENV
