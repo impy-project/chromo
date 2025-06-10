@@ -124,6 +124,9 @@ musllinux-aarch64-image = "musllinux_1_2"
 PIP_ONLY_BINARY = ":all:"
 CIBW = "1"
 
+[tool.ruff]
+line-length = 88
+
 [tool.ruff.lint]
 exclude = ["examples/**", "obsolete/**", "bench/**"]
 
@@ -178,7 +181,6 @@ ignore = [
     "TRY003",  # I know my exception handling is bad
     "EM101",
 ]
-
 [tool.ruff.format]
 docstring-code-format = true
 

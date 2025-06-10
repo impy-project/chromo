@@ -2,8 +2,10 @@
 
 import copy
 import dataclasses
+import importlib.util
 import inspect
 import math
+import pkgutil
 import shutil
 import urllib.request
 import warnings
@@ -16,6 +18,7 @@ from typing import Union
 import numpy as np
 from particle import PDGID, InvalidParticle, Particle, ParticleNotFound
 
+import chromo
 from chromo.constants import MeV, nucleon_mass, sec2cm
 
 EventFrame = Enum("EventFrame", ["CENTER_OF_MASS", "FIXED_TARGET", "GENERIC"])
@@ -478,41 +481,166 @@ def _download_file(outfile, url):
         raise ConnectionError(msg)
 
 
-# Function to check and download dababase files on github
-def _cached_data_dir(url):
-    """Checks for existence of version file
-    "model_name_vxxx.zip". Downloads and unpacks
-    zip file from url in case the file is not found
+# Helper function to extract zip files
+def _extract_zip(zip_file_path: Path, destination_dir: Path):
+    """Extracts a zip file to a destination directory."""
+    if not zip_file_path.is_file():
+        msg = f"Zip file not found: {zip_file_path}"
+        raise OSError(msg)
+    if not zipfile.is_zipfile(zip_file_path):
+        msg = f"File {zip_file_path} is not a valid zip file."
+        raise OSError(msg)
+    with zipfile.ZipFile(zip_file_path, "r") as zf:
+        zf.extractall(destination_dir)
+    info(1, f"Successfully extracted {zip_file_path.name} to {destination_dir}")
+
+
+# REFACTORED _cached_data_dir function
+def _cached_data_dir(url: str) -> str:
+    """
+    Ensures model data is available in src/chromo/iamdata/model_name.
+
+    1. Checks for a version file (e.g., model_name_vXXX) in the target directory.
+       If present, assumes data is correct and returns the path.
+    2. If version file not present, prepares the target model directory by clearing
+       any existing content and recreating it.
+    3. Tries to obtain the source ZIP:
+        - If "CI" env var is set, copies from ~/.cache/chromo/zip_filename.
+        - Else, downloads from the given URL.
+       The ZIP is temporarily placed in src/chromo/iamdata/.
+    4. Extracts the ZIP to src/chromo/iamdata/model_name/.
+    5. Cleans up the temporary ZIP and any old version files.
+    6. Creates the new version file.
 
     Args:
-        url (str): url for zip file
+        url: URL for the model data zip file.
+
+    Returns:
+        Path to the model data directory (e.g., src/chromo/iamdata/model_name/).
+
+    Raises:
+        ConnectionError: If the zip file cannot be obtained (download/copy failed).
+        OSError: For file operation issues (e.g., extraction, cleanup).
     """
+    iamdata_dir = Path(__file__).parent.absolute() / "iamdata"
+    iamdata_dir.mkdir(parents=True, exist_ok=True)
 
-    base_dir = Path(__file__).parent.absolute() / "iamdata"
-    base_dir.mkdir(parents=True, exist_ok=True)
+    zip_filename = Path(url).name
+    vname_stem = Path(url).stem  # e.g., qgsjet_v002 (used for version file)
+    model_name = vname_stem.split("_v")[0]  # e.g., qgsjet (used for dir name)
 
-    vname = Path(url).stem
-    model_dir = base_dir / vname.split("_v")[0]
-    version_file = model_dir / vname
-    if not version_file.exists():
-        zip_file = base_dir / Path(url).name
-        temp_dir = Path(model_dir.parent / f".{model_dir.name}")
-        shutil.rmtree(temp_dir, ignore_errors=True)
+    model_dir = iamdata_dir / model_name  # Target directory for extracted data
+    version_file = (
+        model_dir / vname_stem
+    )  # Expected version file, e.g., iamdata/qgsjet/qgsjet_v002
+
+    if version_file.exists():
+        info(
+            2,
+            f"Version file {version_file.name} found for {model_name}. Using existing data.",
+        )
+        return str(model_dir) + "/"
+
+    # Prepare model_dir: remove if exists, then recreate for a clean slate
+    if model_dir.exists():
+        info(1, f"Removing existing model directory: {model_dir}")
+        try:
+            shutil.rmtree(model_dir)
+        except OSError as e:
+            warnings.warn(
+                f"Could not remove existing model directory {model_dir}: {e}. "
+                "Proceeding, but extraction might fail or be incomplete."
+            )
+    try:
+        model_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        msg = f"Could not create model directory {model_dir}: {e}"
+        raise OSError(msg) from e
+
+    # temp_zip_path is where the zip will be before extraction (inside iamdata_dir)
+    temp_zip_path = iamdata_dir / zip_filename
+    zip_obtained = False
+
+    try:
+        # Attempt to get ZIP from CI cache or download
+        ci_cache_file = Path.home() / ".cache" / "chromo" / zip_filename
+        info(1, f"CI: Checking cache: {ci_cache_file}")
+        if ci_cache_file.is_file():
+            try:
+                shutil.copy2(ci_cache_file, temp_zip_path)
+                info(1, f"CI: Copied {zip_filename} from cache to {temp_zip_path}")
+                zip_obtained = True
+            except Exception as e:
+                warnings.warn(
+                    f"CI: Failed to copy {zip_filename} from cache: {e}. Will try download."
+                )
+        else:
+            info(1, f"CI: Cache miss for {zip_filename}. Will try download.")
+
+        if not zip_obtained:
+            info(1, f"Downloading {url} to {temp_zip_path}")
+            _download_file(temp_zip_path, url)  # _download_file is an existing function
+            zip_obtained = True
+
+        if not zip_obtained or not temp_zip_path.is_file():
+            # This case should ideally be caught by _download_file raising an error
+            msg = f"Failed to obtain zip file: {zip_filename}"
+            raise ConnectionError(msg)  # noqa: TRY301
+
+        # Extract the zip
+        info(1, f"Extracting {temp_zip_path.name} to {model_dir}")
+        _extract_zip(temp_zip_path, model_dir)
+
+        # Post-extraction: Clean up old version files and create new one
+        for old_vfile in model_dir.glob(f"{model_name}_v*"):
+            if old_vfile.name != vname_stem:
+                try:
+                    old_vfile.unlink()
+                    info(5, f"Removed old version artifact: {old_vfile.name}")
+                except OSError as e:
+                    warnings.warn(
+                        f"Could not remove old version file {old_vfile.name}: {e}"
+                    )
+
+        try:
+            with open(version_file, "w", encoding="utf-8") as vf:
+                vf.write(url)  # Store the URL as the content of the version file
+            info(1, f"Created version file: {version_file.name} for {model_name}")
+        except OSError as e:
+            # If version file creation fails, the data is there but might be re-processed.
+            # This is a critical step for recognizing the data next time.
+            msg = f"Failed to create version file {version_file.name} for {model_name}: {e}"
+            raise OSError(msg) from e
+
+        return str(model_dir) + "/"
+
+    except (ConnectionError, OSError) as e:
+        # If any crucial step failed, log it and re-raise.
+        # The model_dir might be in an incomplete state.
+        # On next run, version_file check will fail, and it will try to rebuild.
+        warnings.warn(f"Error during data caching for {model_name} from {url}: {e}")
+        # Clean up model_dir to ensure a fresh start next time if it exists
         if model_dir.exists():
-            shutil.move(str(model_dir), str(temp_dir))
-        _download_file(zip_file, url)
-        if zipfile.is_zipfile(zip_file):
-            with zipfile.ZipFile(zip_file, "r") as zf:
-                zf.extractall(base_dir.as_posix())
-            zip_file.unlink()
-            shutil.rmtree(temp_dir, ignore_errors=True)
-
-        version_glob = vname.split("_v")[0]
-        for vfile in model_dir.glob(f"{version_glob}_v*"):
-            vfile.unlink()
-        with open(version_file, "w", encoding="utf-8") as vf:
-            vf.write(url)
-    return str(model_dir) + "/"
+            shutil.rmtree(model_dir, ignore_errors=True)
+        raise  # Re-raise the caught specific exception (ConnectionError or OSError)
+    except Exception as e:
+        # Catch any other unexpected errors
+        warnings.warn(f"Unexpected error during data caching for {model_name}: {e}")
+        if model_dir.exists():
+            shutil.rmtree(model_dir, ignore_errors=True)
+        # Wrap in a RuntimeError for unexpected issues
+        msg = f"Unexpected error processing {model_name}: {e}"
+        raise RuntimeError(msg) from e
+    finally:
+        # Always try to clean up the temporary zip file from iamdata_dir
+        if temp_zip_path.exists():
+            try:
+                temp_zip_path.unlink()
+                info(5, f"Cleaned up temporary zip: {temp_zip_path.name}")
+            except OSError as e:
+                warnings.warn(
+                    f"Could not remove temporary zip {temp_zip_path.name}: {e}"
+                )
 
 
 class TaggedFloat:
@@ -702,10 +830,6 @@ def get_available_binary_modules():
     This function lists all importable binary modules in the chromo.models
     package and returns a list of their names.
     """
-    import importlib.util
-    import pkgutil
-
-    import chromo.models
 
     # List all importable binary modules in chromo.models,
     # excluding those starting with '_'
