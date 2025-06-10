@@ -24,7 +24,8 @@ add_project_arguments('-fPIC',
 
 # Optionally use mold linker if available
 mold = find_program('mold', required: false)
-if mold.found()
+# Check if mold found and compiler is gcc
+if mold.found() and meson.get_compiler('c').get_id() == 'gcc'
   message('Using mold linker')
   add_project_link_arguments('-fuse-ld=mold', language: ['c', 'cpp', 'fortran'])
 endif
@@ -352,30 +353,7 @@ models = {
     'sources': sophia_sources,
     'functions': ','.join(sophia_functions),
   },
-  '_dpmjet_phojet307': {
-    'sources': dpmjet307_sources,
-    'functions': ','.join(dpmjet_phojet_functions),
-  },
-  '_dpmjet_phojet191': {
-    'sources': dpmjet191_sources,
-    'functions': ','.join(dpmjet_phojet_functions),
-    'include_directories': [
-      fdir / 'dpmjetIII-19.1/include/phojet',
-      fdir / 'dpmjetIII-19.1/include/dpmjet', 
-      fdir / 'dpmjetIII-19.1/include/pythia',
-      fdir / 'dpmjetIII-19.1/include/flinclude'
-    ],
-  },
-  '_dpmjet_phojet193': {
-    'sources': dpmjet193_sources,
-    'functions': ','.join(dpmjet_phojet_functions),
-    'include_directories': [
-      fdir / 'dpmjetIII-19.3/include/phojet',
-      fdir / 'dpmjetIII-19.3/include/dpmjet', 
-      fdir / 'dpmjetIII-19.3/include/pythia',
-      fdir / 'dpmjetIII-19.3/include/flinclude'
-    ],
-  },
+  # _dpmjet_phojetXXX entries are removed from here and handled separately
   '_eposlhc': {
     'sources': eposlhc_sources,
     'interface_sources': eposlhc_interface_sources,
@@ -384,6 +362,34 @@ models = {
   },
 }
 
+# DPMJET/PHOJET models that will be split into shared library and separate f2py modules
+dpmjet_phojet_configs = {
+  '307': {
+    'sources': dpmjet307_sources,
+    'base_model_name': '_dpmjet_phojet307', # For checking if group is enabled
+    # No specific include_directories for 307, uses chromo_inc_dirs
+  },
+  '191': {
+    'sources': dpmjet191_sources,
+    'base_model_name': '_dpmjet_phojet191',
+    'include_directories': [
+      fdir / 'dpmjetIII-19.1/include/phojet',
+      fdir / 'dpmjetIII-19.1/include/dpmjet',
+      fdir / 'dpmjetIII-19.1/include/pythia',
+      fdir / 'dpmjetIII-19.1/include/flinclude'
+    ],
+  },
+  '193': {
+    'sources': dpmjet193_sources,
+    'base_model_name': '_dpmjet_phojet193',
+    'include_directories': [
+      fdir / 'dpmjetIII-19.3/include/phojet',
+      fdir / 'dpmjetIII-19.3/include/dpmjet',
+      fdir / 'dpmjetIII-19.3/include/pythia',
+      fdir / 'dpmjetIII-19.3/include/flinclude'
+    ],
+  },
+}
 
 
 # Read from pyproject.toml which models to build
@@ -398,12 +404,15 @@ disabled_models = run_command([
 # TODO: Need to somehow let meson know that _dpmjet191 and _phojet191
 # share 99% of files except the f2py interface files.
 
+# Build all models except DPMJET/PHOJET in a compact loop
 foreach f2py_name, model_info : models
+  if f2py_name.startswith('_dpmjet_phojet')
+    continue
+  endif
   if f2py_name.substring(1) not in enabled_models
     message('Skipping model: ' + f2py_name + ' (disabled)')
     continue
   endif
-
   message('Building model: ' + f2py_name)
   output = [f2py_name + 'module.c', f2py_name + '-f2pywrappers.f', f2py_name + '.pyf']
   includes = chromo_inc_dirs + model_info.get('include_directories', [])
@@ -411,18 +420,9 @@ foreach f2py_name, model_info : models
   foreach p : includes
     include_args += '-I' + (meson.project_source_root() / p)
   endforeach
-
-  # foreach f : files(model_info.get('interface_sources', model_info['sources']))
-  #   message(f.full_path())
-  # endforeach
   flags = chromo_common_flags + model_info.get('flags', [])
-  # message('Flags: ' + ' '.join(flags))
-
-  interface_sources = files(model_info.get('interface_sources', model_info['sources']) 
-    + [logging_source, rangen_source])
+  interface_sources = files(model_info.get('interface_sources', model_info['sources']) + [logging_source, rangen_source])
   sources = files(model_info['sources'] + [logging_source, rangen_source])
-
-  # Custom target to generate f2py wrapper
   f2py_target = custom_target(f2py_name,
     output: output,
     input: interface_sources,
@@ -438,12 +438,6 @@ foreach f2py_name, model_info : models
     ],
     build_by_default: true
   )
-
-  # foreach f : output
-  #   message('F2PY output: ' + f)
-  # endforeach
-
-  # Create the extension module
   ext_module = py.extension_module(f2py_name,
     sources: sources + f2py_target + [f2py_fortranobject_c] + [normal_source],
     include_directories: include_directories(includes),
@@ -453,11 +447,6 @@ foreach f2py_name, model_info : models
     install: true,
     subdir: 'chromo/models',
   )
-  
-
-  # For editable installs: copy the extension to the source tree
-  # Unfortunately this also copies the extensions to src/chromo/models
-  # for non-editable installs, but this is not a real problem.
   custom_target(f2py_name + '_copy_for_editable',
     input: ext_module,
     output: f2py_name + '.so',
@@ -465,6 +454,145 @@ foreach f2py_name, model_info : models
     build_by_default: true,
     install: false
   )
+endforeach
+
+# Compact DPMJET/PHOJET build loop
+foreach version_suffix, model_config : dpmjet_phojet_configs
+  dpmjet_module_name_short = 'dpmjet' + version_suffix
+  phojet_module_name_short = 'phojet' + version_suffix
+  base_model_name_short = model_config['base_model_name'].substring(1)
+  should_build_dpmjet_part = dpmjet_module_name_short in enabled_models
+  should_build_phojet_part = phojet_module_name_short in enabled_models
+  original_group_enabled = base_model_name_short in enabled_models
+  if not (should_build_dpmjet_part or should_build_phojet_part or original_group_enabled)
+    message('Skipping DPMJET/PHOJET model group for version: ' + version_suffix + ' (all parts disabled)')
+    continue
+  endif
+  if original_group_enabled
+    should_build_dpmjet_part = dpmjet_module_name_short in enabled_models or (dpmjet_module_name_short not in disabled_models)
+    should_build_phojet_part = phojet_module_name_short in enabled_models or (phojet_module_name_short not in disabled_models)
+  endif
+  if not (should_build_dpmjet_part or should_build_phojet_part)
+    message('Skipping DPMJET/PHOJET model group for version: ' + version_suffix + ' (resolved to no parts enabled)')
+    continue
+  endif
+  message('Building DPMJET/PHOJET model group for version: ' + version_suffix)
+  model_sources_str = model_config['sources']
+  model_specific_includes = model_config.get('include_directories', [])
+  current_includes = chromo_inc_dirs + model_specific_includes
+  current_include_args = []
+  foreach p : current_includes
+    current_include_args += '-I' + (meson.project_source_root() / p)
+  endforeach
+  current_flags = chromo_common_flags
+  model_rpath = ''
+  if host_machine.system() == 'darwin'
+    model_rpath = '@loader_path'
+  elif host_machine.system() == 'linux'
+    model_rpath = '$ORIGIN'
+  endif
+  lib_name = 'dpmjet_phojet_' + version_suffix
+  all_sources_for_lib = files(model_sources_str + logging_source + rangen_source + normal_source)
+  lib_dpmjet_phojet = shared_library(lib_name,
+    all_sources_for_lib,
+    include_directories: include_directories(current_includes),
+    dependencies: [dl_dep, thread_dep],
+    c_args: ['-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION'] + current_flags,
+    fortran_args: current_flags,
+    install: true,
+    install_dir: py.get_install_dir() / 'chromo' / 'models'
+  )
+  common_ext_args = {
+    'include_directories': include_directories(current_includes),
+    'dependencies': [py_dep, numpy_dep],
+    'link_with': [lib_dpmjet_phojet],
+    'c_args': ['-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION'] + current_flags,
+    'install': true,
+    'subdir': 'chromo/models',
+    'install_rpath': model_rpath,
+    'build_rpath': model_rpath
+  }
+  f2py_interface_sources = files(model_sources_str + logging_source + rangen_source)
+  # DPMJET module
+  dpmjet_f2py_module_name = '_dpmjet' + version_suffix
+  if should_build_dpmjet_part
+    message('Building DPMJET module: ' + dpmjet_f2py_module_name)
+    dpmjet_functions_to_wrap = dpmjet_phojet_functions + chromo_common_functions.split(',')
+    dpmjet_f2py_output_files = [dpmjet_f2py_module_name + 'module.c', dpmjet_f2py_module_name + '-f2pywrappers.f', dpmjet_f2py_module_name + '.pyf']
+    dpmjet_f2py_target = custom_target(dpmjet_f2py_module_name + '_f2py',
+      output: dpmjet_f2py_output_files,
+      input: f2py_interface_sources,
+      command: [
+        py, scripts_dir + 'generate_f2py.py',
+        dpmjet_f2py_module_name,
+        ','.join(dpmjet_functions_to_wrap),
+        meson.global_build_root() / 'meson-logs',
+        ' '.join(current_include_args),
+        ' '.join(current_flags),
+        '@OUTDIR@',
+        '@INPUT@'
+      ],
+      build_by_default: true
+    )
+    dpmjet_ext_module = py.extension_module(dpmjet_f2py_module_name,
+      [dpmjet_f2py_target, f2py_fortranobject_c],
+      kwargs: common_ext_args
+    )
+    custom_target(dpmjet_f2py_module_name + '_copy_for_editable',
+      input: dpmjet_ext_module,
+      output: dpmjet_f2py_module_name + '.so',
+      command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / '@OUTPUT@'],
+      build_by_default: true,
+      install: false
+    )
+  else
+    message('Skipping DPMJET module: ' + dpmjet_f2py_module_name + ' (disabled)')
+  endif
+  # PHOJET module
+  phojet_f2py_module_name = '_phojet' + version_suffix
+  if should_build_phojet_part
+    message('Building PHOJET module: ' + phojet_f2py_module_name)
+    phojet_functions_to_wrap = dpmjet_phojet_functions + chromo_common_functions.split(',')
+    phojet_f2py_output_files = [phojet_f2py_module_name + 'module.c', phojet_f2py_module_name + '-f2pywrappers.f', phojet_f2py_module_name + '.pyf']
+    phojet_f2py_target = custom_target(phojet_f2py_module_name + '_f2py',
+      output: phojet_f2py_output_files,
+      input: f2py_interface_sources,
+      command: [
+        py, scripts_dir + 'generate_f2py.py',
+        phojet_f2py_module_name,
+        ','.join(phojet_functions_to_wrap),
+        meson.global_build_root() / 'meson-logs',
+        ' '.join(current_include_args),
+        ' '.join(current_flags),
+        '@OUTDIR@',
+        '@INPUT@'
+      ],
+      build_by_default: true
+    )
+    phojet_ext_module = py.extension_module(phojet_f2py_module_name,
+      [phojet_f2py_target, f2py_fortranobject_c],
+      kwargs: common_ext_args
+    )
+    custom_target(phojet_f2py_module_name + '_copy_for_editable',
+      input: phojet_ext_module,
+      output: phojet_f2py_module_name + '.so',
+      command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / '@OUTPUT@'],
+      build_by_default: true,
+      install: false
+    )
+  else
+    message('Skipping PHOJET module: ' + phojet_f2py_module_name + ' (disabled)')
+  endif
+  # For editable installs: copy the shared library (only if at least one part was built)
+  if should_build_dpmjet_part or should_build_phojet_part
+    custom_target('copy_lib_' + lib_name + '_for_editable',
+      input: lib_dpmjet_phojet,
+      output: 'lib' + lib_name + '_editable.so',
+      command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / ('lib' + lib_name + '.so')],
+      build_by_default: true,
+      install: false
+    )
+  endif
 endforeach
 
 # pythia8 About the license and how it affects chromo. Pythia-8 is licensed

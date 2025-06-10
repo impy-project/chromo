@@ -284,7 +284,7 @@ class DpmjetIIIRun(MCRun):
 class DpmjetIII191(DpmjetIIIRun):
     _version = "19.1"
     _projectiles = standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311}
-    _library_name = "_dpmjet_phojet191"
+    _library_name = "_dpmjet191"
 
 
 class DpmjetIII193(DpmjetIII191):
@@ -292,12 +292,12 @@ class DpmjetIII193(DpmjetIII191):
     _projectiles = (
         standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311, 22}
     )
-    _library_name = "_dpmjet_phojet193"
+    _library_name = "_dpmjet193"
 
 
 class DpmjetIII307(DpmjetIIIRun):
     _version = "3.0-7"
-    _library_name = "_dpmjet_phojet307"
+    _library_name = "_dpmjet307"
     _projectiles = standard_projectiles | Nuclei()
     _param_file_name = "fitpar.dat"
     _data_url = (
@@ -311,4 +311,4 @@ class DpmjetIII193_DEV(DpmjetIIIRun):
     _projectiles = (
         standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311, 22}
     )
-    _library_name = "_dev_dpmjet_phojet193"
+    _library_name = "_dev_dpmjet193"

@@ -228,7 +228,7 @@ class PHOJETRun(MCRun):
 
 class Phojet112(PHOJETRun):
     _version = "1.12-36"
-    _library_name = "_dpmjet_phojet307"
+    _library_name = "_phojet307"
     _param_file_name = "fitpar.dat"
     _projectiles = {
         lp.photon.pdgid,
@@ -243,11 +243,11 @@ class Phojet112(PHOJETRun):
 
 class Phojet191(PHOJETRun):
     _version = "19.1"
-    _library_name = "_dpmjet_phojet191"
+    _library_name = "_phojet191"
 
 
 class Phojet193(PHOJETRun):
     _version = "19.3"
-    _library_name = "_dpmjet_phojet193"
+    _library_name = "_phojet193"
     _projectiles = standard_projectiles | {lp.photon.pdgid}
     _targets = {lp.proton.pdgid, lp.neutron.pdgid, lp.photon.pdgid}
