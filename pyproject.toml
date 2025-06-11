@@ -89,9 +89,9 @@ enabled-models = [
     "sib23c01",
     "sophia",
     "pythia6",
+    "urqmd34",
 ]
 disabled-models = [
-    "urqmd34",
 ]
 
 [tool.mypy]

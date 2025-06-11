@@ -131,8 +131,11 @@ models = {
   '_urqmd34':{
     'src'   : run_command(py, scripts_dir + 'list_urqmd_sources.py',
                           '--directory', f/'urqmd-3.4/sources', check:true)
-              .stdout().strip().split('\n') + [f/'urqmd-3.4/chromo_urqmd.f'],
+              .stdout().strip().split('\n'),
     'inc'   : [f/'urqmd-3.4/sources'],
+    'iface'   : run_command(py, scripts_dir + 'list_urqmd_sources.py', '--interface-only',
+                          '--directory', f/'urqmd-3.4/sources', check:true)
+              .stdout().strip().split('\n'),
     'funcs' : urqmd_syms + common_syms,
   },
 
