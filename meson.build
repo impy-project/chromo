@@ -506,7 +506,7 @@ foreach version_suffix, model_config : dpmjet_phojet_configs
   common_ext_args = {
     'include_directories': include_directories(current_includes),
     'dependencies': [py_dep, numpy_dep],
-    'link_with': [lib_dpmjet_phojet],
+    'link_whole': [lib_dpmjet_phojet],
     'c_args': ['-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION'] + current_flags,
     'install': true,
     'subdir': 'chromo/models',
