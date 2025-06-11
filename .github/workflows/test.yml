@@ -51,6 +51,8 @@ jobs:
             python-version: "3.12"
           - os: ubuntu-latest
             python-version: "3.13"
+          - os: ubuntu-24.04-arm
+            python-version: "3.13"
       fail-fast: false
     steps:
       - name: Restore chromo data cache
