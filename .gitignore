@@ -44,3 +44,4 @@ fig/*
 bench/timing.pkl
 config
 Untitled*.ipynb
+.venv*

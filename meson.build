@@ -47,15 +47,20 @@ py_dep = py.dependency()
 
 # Find numpy and its headers
 numpy_dep = dependency('numpy')
-numpy_inc = run_command(py, '-c', 'import numpy; print(numpy.get_include())', check: true).stdout().strip()
+numpy_inc = numpy_dep.get_variable('cflags').split()[0].replace('-I', '')
 
-# Find f2py include directory
-f2py_inc = run_command(py, '-c', 
-  'import numpy.f2py; from pathlib import Path; print(Path(numpy.f2py.__file__).parent / "src")',
-  check: true).stdout().strip()
+f2py_inc    = run_command(py, '-c',
+  'import numpy.f2py, pathlib, sys; print((pathlib.Path(numpy.f2py.__file__).parent ))',
+  check : true).stdout().strip() / 'src'
+
+# inc_f2py  = include_directories(f2py_inc)
 
 # F2py source files
-f2py_fortranobject_c = f2py_inc / 'fortranobject.c'
+# f2py_fortranobject_c = f2py_inc / 'fortranobject.c'
+f2py_fortranobject_c = configure_file(
+                 input  : join_paths(f2py_inc, 'fortranobject.c'),
+                 output : 'fortranobject.c',
+                 copy   : true) 
 
 # Add include directories
 chromo_inc_dirs = [
@@ -398,7 +403,7 @@ enabled_models = run_command([
   check: true).stdout().strip().split('\n')
 disabled_models = run_command([
   py, scripts_dir + 'get_models.py', '--disabled'], 
-  check: true).stdout().strip().split('\n')
+  check: true).stdout().strip().split('\n') 
 
 
 # TODO: Need to somehow let meson know that _dpmjet191 and _phojet191
@@ -438,6 +443,9 @@ foreach f2py_name, model_info : models
     ],
     build_by_default: true
   )
+  foreach incdir : includes
+    message('Adding include directory: ' + incdir)
+  endforeach
   ext_module = py.extension_module(f2py_name,
     sources: sources + f2py_target + [f2py_fortranobject_c] + [normal_source],
     include_directories: include_directories(includes),
@@ -446,13 +454,6 @@ foreach f2py_name, model_info : models
     fortran_args: flags,
     install: true,
     subdir: 'chromo/models',
-  )
-  custom_target(f2py_name + '_copy_for_editable',
-    input: ext_module,
-    output: f2py_name + '.so',
-    command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / '@OUTPUT@'],
-    build_by_default: true,
-    install: false
   )
 endforeach
 
@@ -493,14 +494,14 @@ foreach version_suffix, model_config : dpmjet_phojet_configs
   endif
   lib_name = 'dpmjet_phojet_' + version_suffix
   all_sources_for_lib = files(model_sources_str + logging_source + rangen_source + normal_source)
-  lib_dpmjet_phojet = shared_library(lib_name,
+  lib_dpmjet_phojet = static_library(lib_name, # Changed from shared_library
     all_sources_for_lib,
     include_directories: include_directories(current_includes),
-    dependencies: [dl_dep, thread_dep],
+    dependencies: [dl_dep, thread_dep], # These might still be needed if the static lib itself uses them
     c_args: ['-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION'] + current_flags,
-    fortran_args: current_flags,
-    install: true,
-    install_dir: py.get_install_dir() / 'chromo' / 'models'
+    fortran_args: current_flags
+    # install: true, # Not typically needed for static libraries
+    # install_dir: py.get_install_dir() / 'chromo' / 'models' # Not typically needed for static libraries
   )
   common_ext_args = {
     'include_directories': include_directories(current_includes),
@@ -509,9 +510,10 @@ foreach version_suffix, model_config : dpmjet_phojet_configs
     'c_args': ['-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION'] + current_flags,
     'install': true,
     'subdir': 'chromo/models',
-    'install_rpath': model_rpath,
-    'build_rpath': model_rpath
+    'install_rpath': model_rpath, # Restored: rpath for the extension module
+    'build_rpath': model_rpath  # Restored: rpath for the extension module
   }
+
   f2py_interface_sources = files(model_sources_str + logging_source + rangen_source)
   # DPMJET module
   dpmjet_f2py_module_name = '_dpmjet' + version_suffix
@@ -538,13 +540,13 @@ foreach version_suffix, model_config : dpmjet_phojet_configs
       [dpmjet_f2py_target, f2py_fortranobject_c],
       kwargs: common_ext_args
     )
-    custom_target(dpmjet_f2py_module_name + '_copy_for_editable',
-      input: dpmjet_ext_module,
-      output: dpmjet_f2py_module_name + '.so',
-      command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / '@OUTPUT@'],
-      build_by_default: true,
-      install: false
-    )
+    # custom_target(dpmjet_f2py_module_name + '_copy_for_editable',
+    #   input: dpmjet_ext_module,
+    #   output: dpmjet_f2py_module_name + '.so',
+    #   command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / '@OUTPUT@'],
+    #   build_by_default: true,
+    #   install: false
+    # )
   else
     message('Skipping DPMJET module: ' + dpmjet_f2py_module_name + ' (disabled)')
   endif
@@ -573,25 +575,8 @@ foreach version_suffix, model_config : dpmjet_phojet_configs
       [phojet_f2py_target, f2py_fortranobject_c],
       kwargs: common_ext_args
     )
-    custom_target(phojet_f2py_module_name + '_copy_for_editable',
-      input: phojet_ext_module,
-      output: phojet_f2py_module_name + '.so',
-      command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / '@OUTPUT@'],
-      build_by_default: true,
-      install: false
-    )
   else
     message('Skipping PHOJET module: ' + phojet_f2py_module_name + ' (disabled)')
-  endif
-  # For editable installs: copy the shared library (only if at least one part was built)
-  if should_build_dpmjet_part or should_build_phojet_part
-    custom_target('copy_lib_' + lib_name + '_for_editable',
-      input: lib_dpmjet_phojet,
-      output: 'lib' + lib_name + '_editable.so',
-      command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / ('lib' + lib_name + '.so')],
-      build_by_default: true,
-      install: false
-    )
   endif
 endforeach
 
@@ -666,31 +651,23 @@ if 'pythia8' in enabled_models
     build_rpath: pythia8_rpath
   )
 
-  # For editable installs: copy both libpythia8.so and _pythia8.so to source tree
-  custom_target('copy_libpythia8_for_editable',
-    input: libpythia8,
-    output: 'libpythia8_editable.so',
-    command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / 'libpythia8.so'],
-    build_by_default: true,
-    install: false
-  )
-
-  custom_target('copy_pythia8_for_editable',
-    input: pythia8_module,
-    output: '_pythia8_editable.so',
-    command: ['cp', '@INPUT@', meson.project_source_root() / 'src' / 'chromo' / 'models' / '_pythia8.so'],
-    build_by_default: true,
-    install: false
-  )
   message('Pythia8 configuration complete')
 else
   message('Skipping Pythia8 model (not enabled)')
 endif
 
 
-# Install the pure Python package files
-install_subdir('src/chromo', install_dir: py.get_install_dir())
-
-message('CHROMO\'s meson build configuration is complete.')
-
+# Install the pure Python package files, but exclude iamdata
+# Install all .py files in src/chromo
+install_data('src/chromo/__init__.py', install_dir: py.get_install_dir() / 'chromo')
+install_data('src/chromo/__main__.py', install_dir: py.get_install_dir() / 'chromo')
+install_data('src/chromo/cli.py', install_dir: py.get_install_dir() / 'chromo')
+install_data('src/chromo/common.py', install_dir: py.get_install_dir() / 'chromo')
+install_data('src/chromo/constants.py', install_dir: py.get_install_dir() / 'chromo')
+install_data('src/chromo/decay_handler.py', install_dir: py.get_install_dir() / 'chromo')
+install_data('src/chromo/kinematics.py', install_dir: py.get_install_dir() / 'chromo')
+install_data('src/chromo/util.py', install_dir: py.get_install_dir() / 'chromo')
+install_data('src/chromo/writer.py', install_dir: py.get_install_dir() / 'chromo')
+# Install all subdirs except iamdata
+install_subdir('src/chromo/models', install_dir: py.get_install_dir() / 'chromo')
 
