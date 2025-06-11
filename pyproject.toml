@@ -75,7 +75,6 @@ enabled-models = [
     "dpmjet_phojet193",
     "dpmjet_phojet307",
     "pythia8",
-    "urqmd34",
     "sib21",
     "qgs01",
     "qgs2_03",
@@ -92,6 +91,7 @@ enabled-models = [
     "pythia6",
 ]
 disabled-models = [
+    "urqmd34",
 ]
 
 [tool.mypy]

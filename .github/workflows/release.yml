@@ -152,8 +152,6 @@ jobs:
           CIBW_ENVIRONMENT_PASS_LINUX: CI
           # Will avoid testing on emulated architectures
           CIBW_TEST_SKIP: "*-*linux_{ppc64le,s390x,armv7l}"
-          # XFAIL tests on arm64
-          CIBW_TEST_COMMAND_LINUX_ARM64: 'pytest -n auto -vv --runxfail -k "not (test_generator[DpmjetIII191-pi--air-cms] or test_generator[DpmjetIII191-pi--air-cms2ft] or test_generator[DpmjetIII191-p-air-cms] or test_generator[DpmjetIII191-p-air-cms2ft])"'
 
       - if: ${{ matrix.os == 'macos-13'}}
         name: cibuildwheel on MacOS-13
