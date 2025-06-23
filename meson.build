@@ -307,10 +307,12 @@ if 'pythia8' in enabled_models
   p8_inc     = include_directories(cpp_dir / 'pythia83/include')
   pybind_inc = include_directories(cpp_dir / 'pybind11/include')
 
-  p8_srcs =   run_command([
-    'find', meson.project_source_root() / cpp_dir / 'pythia83/src', 
-    '-name', '*.cc', '-type', 'f'
-    ], check: true).stdout().strip().split('\n')
+  p8_src_dir = meson.project_source_root() / cpp_dir / 'pythia83/src'
+  p8_srcs = run_command(
+    'python', 'scripts/list_cc_files.py', p8_src_dir,
+    check: true
+  ).stdout().strip().split('\n')
+
 
   libpy8 = shared_library('pythia8',
             files(p8_srcs),
