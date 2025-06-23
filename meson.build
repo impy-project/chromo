@@ -10,6 +10,7 @@ project(
     'fortran_std=legacy',
     'warning_level=1',
     'optimization=3',
+    'b_staticpic=true',  # static ↔ PIC
   ],
 )
 
@@ -46,11 +47,11 @@ endif
 
 add_project_arguments('-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION', language:['c','cpp'])
 add_project_arguments(
-  '-fPIC','-Wno-uninitialized','-fno-second-underscore','-Wno-unused',
+  '-Wno-uninitialized','-fno-second-underscore','-Wno-unused',
   '-Wno-conversion','-Wno-unused-dummy-argument','-Wno-character-truncation',
   '-Wno-integer-division','-Wno-surprising','-Wno-tabs','-cpp','-UNDEBUG',
   language:'fortran')
-add_project_arguments('-fPIC','-Wno-unused-const-variable', language:'c')
+add_project_arguments('-Wno-unused-const-variable', language:'c')
 
 # ── Helper vars ─────────────────────────────────────────────────────────────────────
 rpath_tok = host_machine.system() == 'darwin' ? '@loader_path' : '$ORIGIN'
@@ -63,7 +64,7 @@ common_inc  = [
   numpy_inc,
   f2py_inc,
 ]
-common_cargs   = ['-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION','-fPIC']
+common_cargs   = []
 common_fargs   = ['-DCHROMO']
 
 logging_src = src_root / 'logging.f'
@@ -339,15 +340,17 @@ endif
 # ── Pure-Python files --------------------------------------------------
 # Install the pure Python package files, but exclude iamdata
 # Install all .py files in src/chromo
-install_data('src/chromo/__init__.py', install_dir: py.get_install_dir() / 'chromo')
-install_data('src/chromo/__main__.py', install_dir: py.get_install_dir() / 'chromo')
-install_data('src/chromo/cli.py', install_dir: py.get_install_dir() / 'chromo')
-install_data('src/chromo/common.py', install_dir: py.get_install_dir() / 'chromo')
-install_data('src/chromo/constants.py', install_dir: py.get_install_dir() / 'chromo')
-install_data('src/chromo/decay_handler.py', install_dir: py.get_install_dir() / 'chromo')
-install_data('src/chromo/kinematics.py', install_dir: py.get_install_dir() / 'chromo')
-install_data('src/chromo/util.py', install_dir: py.get_install_dir() / 'chromo')
-install_data('src/chromo/writer.py', install_dir: py.get_install_dir() / 'chromo')
+py.install_sources([
+  'src/chromo/__init__.py',
+  'src/chromo/__main__.py',
+  'src/chromo/cli.py',
+  'src/chromo/common.py',
+  'src/chromo/constants.py',
+  'src/chromo/decay_handler.py',
+  'src/chromo/kinematics.py',
+  'src/chromo/util.py',
+  'src/chromo/writer.py',
+], subdir: 'chromo')
 # Install all subdirs except iamdata
 install_subdir('src/chromo/models', install_dir: py.get_install_dir() / 'chromo')
 #######################################################################################
