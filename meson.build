@@ -31,7 +31,11 @@ f2py_obj = configure_file(              # copies fortranobject.c into build dir
   copy   : true)
 
 cc          = meson.get_compiler('c')
-dl_dep      = cc.find_library('dl', required:true)
+dl_dep = dependency('', required: false)
+if host_machine.system() != 'windows'
+  dl_dep = cc.find_library('dl', required: true)
+endif
+
 thread_dep  = dependency('threads')
 
 # Optional mold linker
