@@ -1,6 +1,6 @@
 project(
   'chromo', ['c', 'cpp', 'fortran'],
-  version        : run_command(['python3', meson.project_source_root() + '/scripts/get_version.py'],
+  version        : run_command(['python', meson.project_source_root() + '/scripts/get_version.py'],
                                check:true).stdout().strip(),
   license        : 'BSD-3-Clause',
   meson_version  : '>=1.4',
@@ -19,6 +19,11 @@ py_dep      = py.dependency()
 numpy_dep = dependency('numpy')
 numpy_inc = numpy_dep.get_variable('cflags').split()[0].replace('-I', '')
 
+# Update git submodules if in source tree
+run_command(['git', 'submodule', 'update'], check: false)
+
+
+
 # F2PY helpers
 f2py_inc = run_command(
   py, '-c',
@@ -31,11 +36,7 @@ f2py_obj = configure_file(              # copies fortranobject.c into build dir
   copy   : true)
 
 cc          = meson.get_compiler('c')
-dl_dep = dependency('', required: false)
-if host_machine.system() != 'windows'
-  dl_dep = cc.find_library('dl', required: true)
-endif
-
+dl_dep      = cc.find_library('dl', required : host_machine.system() != 'windows')
 thread_dep  = dependency('threads')
 
 # Optional mold linker
