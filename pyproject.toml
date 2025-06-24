@@ -3,7 +3,7 @@ requires = [
     "meson-python>=0.13.0",
     "meson>=1.4.0",
     "ninja",
-    "numpy<=2.2.3",
+    "numpy",
     "tomli"
 ]
 build-backend = "mesonpy"
@@ -71,6 +71,7 @@ examples = [
 [tool.chromo]
 # Enabled models
 enabled-models = [
+    "eposlhc",
     "dpmjet_phojet191",
     "dpmjet_phojet193",
     "dpmjet_phojet307",
@@ -80,7 +81,6 @@ enabled-models = [
     "qgs2_03",
     "qgs2_04",
     "qgs3",
-    "eposlhc",
     "sib23",
     "sib23d",
     "sib23d_star",

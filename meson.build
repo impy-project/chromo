@@ -195,14 +195,14 @@ dpm_cfg = {
 # ── selection lists ----------------------------------------------------
 enabled_models  = run_command(py,scripts_dir + 'get_models.py','--enabled', check:true).stdout().strip().split('\n')
 disabled_models = run_command(py,scripts_dir + 'get_models.py','--disabled',check:true).stdout().strip().split('\n')
-message('Enabled models: \n' + '\n\t'.join(enabled_models))
-message('Disabled models: \n' + '\n\t'.join(disabled_models))
+message('Enabled models: \n\t' + '\n\t'.join(enabled_models))
+message('Disabled models: \n\t' + '\n\t'.join(disabled_models))
 
 
 # ── loop: regular models ----------------------------------------------
 foreach name, cfg : models
   if name.substring(1) not in enabled_models
-    message('Skipping disabled model: ' + name + ', ' + name.substring(1), name.substring(1) not in enabled_models)
+    message('Skipping disabled model: ' + name)
     continue
   endif
 
@@ -252,6 +252,11 @@ endforeach
 
 # ── DPMJET/PHOJET ------------------------------------------------------
 foreach ver, cfg : dpm_cfg
+  model_group = 'dpmjet_phojet'+ver
+  if model_group not in enabled_models
+    message('Skipping disabled model group: ' + model_group)
+    continue
+  endif
   base_src = files(cfg['src'] + [logging_src] + rangen_src + [normal_src])
 
   inc_dirs = common_inc
@@ -277,9 +282,6 @@ foreach ver, cfg : dpm_cfg
           fortran_args        : common_fargs)
 
   foreach front : cfg['split']
-    if front.substring(1) in disabled_models
-      continue
-    endif
     outs = [front+'module.c', front+'-f2pywrappers.f', front+'.pyf']
     wrap = custom_target(front+'_wrap',
       output : outs,
