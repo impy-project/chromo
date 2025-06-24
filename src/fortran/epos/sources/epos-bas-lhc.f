@@ -9,7 +9,9 @@ c-----------------------------------------------------------------------
       include 'epos.incpar'
       include 'epos.incsem'
       common/record/maxrec(2),irecty(30,2)
-      common/cfacmss/facmss /cr3pomi/r3pomi,r4pomi/cifset/ifset
+      common/cfacmss/facmss
+      common/cr3pomi/r3pomi,r4pomi
+      common/cifset/ifset
       common /ems12/iodiba,bidiba  ! defaut iodiba=0. if iodiba=1, study H-Dibaryon
       character*500 fndat,fnncs,fnIIdat,fnIIncs,fnII03dat,fnII03ncs                 !qgs-II????????
       common/qgsfname/  fndat, fnncs, ifdat, ifncs
@@ -2818,7 +2820,8 @@ c-----------------------------------------------------------------------
       common /cptj/xptj(nptj),qptj(nptj),wptj(nptj)
       common/geom/rmproj,rmtarg,bmax,bkmx
       double precision tpro,zpro,ttar,ztar,ttaus,detap,detat!,seedp
-      common/cttaus/tpro,zpro,ttar,ztar,ttaus,detap,detat /ctain/mtain
+      common/cttaus/tpro,zpro,ttar,ztar,ttaus,detap,detat
+      common/ctain/mtain
       double precision rcproj,rctarg
       common/geom1/rcproj,rctarg
       common/photrans/phoele(4),ebeam
