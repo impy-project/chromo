@@ -1193,7 +1193,7 @@ c Given a set of data points x(1:ndata),y(1:ndata) with individual standard
 c deviations sig(1:ndata), fit them to a straight line y = a + bx by
 c minimizing chi2 .
 c Returned are a,b and their respective probable uncertainties siga and sigb,
-c the chi≠square chi2, and the goodness-of-fit probability q (that the fit
+c the chi≈Åsquare chi2, and the goodness-of-fit probability q (that the fit
 c would have chi2 this large or larger). If mwt=0 on input, then the standard
 c deviations are assumed to be unavailable: q is returned as 1.0 and the
 c normalization of chi2 is to unit standard deviation on all points.

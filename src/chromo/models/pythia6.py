@@ -1,8 +1,9 @@
 import numpy as np
-from chromo.common import MCRun, MCEvent, CrossSectionData
 from particle import literals as lp
-from chromo.kinematics import EventFrame
+
+from chromo.common import CrossSectionData, MCEvent, MCRun
 from chromo.constants import standard_projectiles
+from chromo.kinematics import EventFrame
 
 
 class PYTHIA6Event(MCEvent):
@@ -64,7 +65,7 @@ class Pythia6(MCRun):
 
     def _cross_section(self, kin=None, max_info=False):
         s = self._lib.pyint7.sigt[0, 0]
-        c = CrossSectionData(
+        return CrossSectionData(
             total=s[0],
             elastic=s[1],
             inelastic=s[0] - s[1],
@@ -73,7 +74,6 @@ class Pythia6(MCRun):
             diffractive_xx=s[4],
             diffractive_axb=0,
         )
-        return c
 
     def _set_kinematics(self, kin):
         codes = []

@@ -1,16 +1,98 @@
 [build-system]
 requires = [
-    "packaging",
-    "setuptools",
-    "wheel",
-    "cmake",
+    "meson-python>=0.13.0",
+    "meson>=1.4.0",
+    "ninja",
     "numpy",
-    "charset_normalizer",
+    "tomli"
 ]
-#build-backend = "setuptools.build_meta"
+build-backend = "mesonpy"
 
-[tool.black]
-line-length = 88
+[project]
+name = "chromo"
+version = "0.8.0"
+description = "Hadronic Interaction Model interface in Python"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.9"
+license = {text = "BSD 3-Clause License"}
+authors = [
+    {name = "Anatoli Fedynitch", email = "afedynitch@gmail.com"},
+    {name = "Hans Dembinski", email = "hans.dembinski@gmail.com"},
+    {name = "Anton Prosekin", email = "ayprosekin@gmail.com"},
+]
+maintainers = [
+    {name = "Anatoli Fedynitch", email = "afedynitch@gmail.com"},
+    {name = "Hans Dembinski", email = "hans.dembinski@gmail.com"},
+    {name = "Anton Prosekin", email = "ayprosekin@gmail.com"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "particle",
+    "rich",
+]
+
+[project.urls]
+Homepage = "https://github.com/impy-project/chromo"
+Download = "https://pypi.python.org/pypi/chromo"
+
+[project.scripts]
+chromo = "chromo.cli:main"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-benchmark",
+    "pytest-xdist",
+    "pyhepmc>=2.13.2",
+    "uproot",
+    "awkward",
+    "pyyaml",
+    "boost_histogram",
+    "matplotlib",
+]
+examples = [
+    "boost-histogram",
+    "matplotlib",
+    "tqdm",
+    "joblib",
+]
+
+
+[tool.chromo]
+# Enabled models
+enabled-models = [
+    "eposlhc",
+    "dpmjet_phojet191",
+    "dpmjet_phojet193",
+    "dpmjet_phojet307",
+    "pythia8",
+    "sib21",
+    "qgs01",
+    "qgs2_03",
+    "qgs2_04",
+    "qgs3",
+    "sib23",
+    "sib23d",
+    "sib23d_star",
+    "sib23e",
+    "sib23e_star",
+    "sib23c01",
+    "sophia",
+    "pythia6",
+    "urqmd34",
+]
+disabled-models = [
+]
 
 [tool.mypy]
 ignore_missing_imports = true
@@ -21,25 +103,86 @@ addopts = "-q -ra --ff -n auto"
 testpaths = ["tests"]
 filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
 
+[tool.pydocstyle]
+convention = "numpy"
+
 [tool.cibuildwheel]
-# update skip when numpy wheels become available
-skip = ["*-musllinux_*", "cp31?-win32", "*-manylinux_i686"]
+skip = ["*-musllinux_*", "*_i686", "*_ppc64le", "*_s390x", "*_universal2"]
 test-extras = ["test"]
-test-command = "python {package}/download_data.py && python -m pytest -vv {package}/tests"
-test-skip = ["*universal2:arm64"]
-# to match numpy, we use manylinux2014 for cp310+
-manylinux-x86_64-image = "manylinux2014"
-manylinux-i686-image = "manylinux2014"
-# Increase the output of pip wheel to -vvv
+test-command = "python {package}/scripts/download_data.py && python -m pytest -vv {package}/tests"
+# Increase the output of pip wheel to -vv
 build-verbosity = 1
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+musllinux-x86_64-image = "musllinux_1_2"
+musllinux-aarch64-image = "musllinux_1_2"
 
 [tool.cibuildwheel.environment]
 # this makes sure that we build only on platforms that have a corresponding numpy wheel
 PIP_ONLY_BINARY = ":all:"
 CIBW = "1"
 
-[[tool.cibuildwheel.overrides]]
-# to match numpy, we use manylinux2010 for cp36 to cp39
-select = "cp3?-*"
-manylinux-x86_64-image = "manylinux2010"
-manylinux-i686-image = "manylinux2010"
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+exclude = ["examples/**", "obsolete/**", "bench/**"]
+
+extend-select = [
+    # "ANN",    # flake8-annotations
+    # "ARG",    # flake8-unused-arguments
+    # "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "EM",     # flake8-errmsg
+    # "FBT",    # flake8-boolean-trap
+    "FLY",    # flynt
+    "I",      # isort
+    "ICN",    # flake8-import-conventions
+    "ISC",    # flake8-implicit-str-concat
+    # "N",      # flake8-naming
+    "PERF",   # perflint
+    "PGH",    # pygrep-hooks
+    "PIE",    # flake8-pie
+    # "PL",     # pylint
+    # "PT",     # flake8-pytest-style
+    # "PTH",    # flake8-use-pathlib
+    "PYI",    # flake8-pyi
+    "RET",    # flake8-return
+    "RUF",    # Ruff-specific
+    # "S",      # eval -> literal_eval
+    # "SIM",    # flake8-simplify
+    "T20",    # flake8-print
+    "TC",     # flake8-type-checking
+    "TID251", # flake8-tidy-imports.banned-api
+    "TRY",    # tryceratops
+    "UP",     # pyupgrade
+    "YTT",    # flake8-2020
+    "FURB",   # refurb
+]
+ignore = [
+    "PLE1205", # Format check doesn't work with our custom logger
+    "PT013",   # It's correct to import classes for typing!
+    "RUF009",  # Too easy to get a false positive
+    "RUF012",  # ?
+    "PYI025",  # Wants Set to be renamed AbstractSet
+    "ISC001",  # Conflicts with formatter
+    "PLR09",   # Too many ...
+    "PLR2004", # Magic value used in comparison
+    "PLC0415", # Import should be at top of file
+    "ANN401",  # Disallow dynamically typed expressions
+    "S101",    # Use of assert detected
+    "S603",    # subprocess untrusted input
+    "S607",    # subprocess call
+    "S404",    # subprocess module is possibly insecure
+    "B017",    # Complains about plain Exceptions
+    "PT011",   # Also about too plain exceptions
+    "TRY003",  # I know my exception handling is bad
+    "EM101",
+]
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint.isort]
+known-local-folder = ["pathutils"]

@@ -1,13 +1,14 @@
-from chromo.common import MCRun, MCEvent, CrossSectionData
+import warnings
+
+from chromo.common import CrossSectionData, MCEvent, MCRun
+from chromo.constants import GeV, standard_projectiles
 from chromo.kinematics import EventFrame
 from chromo.util import (
-    info,
+    Nuclei,
     _cached_data_dir,
     fortran_chars,
-    Nuclei,
+    info,
 )
-from chromo.constants import standard_projectiles, GeV
-import warnings
 
 
 class DpmjetIIIEvent(MCEvent):
@@ -82,7 +83,7 @@ class DpmjetIIIRun(MCRun):
     _evap_file_name = "dpmjet.dat"
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
+        "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
     _ecm_min = 1 * GeV
     _max_A1 = 0
@@ -171,7 +172,7 @@ class DpmjetIIIRun(MCRun):
             def _generate():
                 raise RuntimeError(
                     "Do not generate events with DPMJET after calculations "
-                    + "of nuclear cross sections."
+                    "of nuclear cross sections."
                 )
 
             self._generate = _generate
@@ -185,22 +186,19 @@ class DpmjetIIIRun(MCRun):
                 + glxs.xsqe2[0, 0, 0]
                 + glxs.xsela[0, 0, 0],
             )
-        elif (kin.p1.is_nucleus and kin.p1.A > 1) or (
-            kin.p2.is_nucleus and kin.p2.A > 1
-        ):
+        if (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1):
             glxs = self._lib.dtglxs
 
             return CrossSectionData(
                 prod=glxs.xspro[0, 0, 0],
             )
-        elif kin.p1 == 22 and kin.p2.A == 1:
+        if kin.p1 == 22 and kin.p2.A == 1:
             stot, sine, _ = self._lib.dt_siggp(photon_x, kin.virt_p1, kin.ecm, 0)
             return CrossSectionData(total=stot, inelastic=sine, elastic=stot - sine)
-        else:
-            stot, sela = self._lib.dt_xshn(
-                self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
-            )
-            return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
+        stot, sela = self._lib.dt_xshn(
+            self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
+        )
+        return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
 
     @property
     def glauber_trials(self):
@@ -242,10 +240,11 @@ class DpmjetIIIRun(MCRun):
             )
 
         if (kin.p1.A or 1) > self._max_A1 or (kin.p2.A or 1) > self._max_A2:
-            raise ValueError(
+            msg = (
                 "Maximal initialization mass exceeded "
                 f"{kin.p1.A}/{self._max_A1}, {kin.p2.A}/{self._max_A2}"
             )
+            raise ValueError(msg)
 
         # AF: No idea yet, but apparently this functionality was around?!
         # if hasattr(k, 'beam') and hasattr(self._lib, 'init'):
@@ -285,7 +284,7 @@ class DpmjetIIIRun(MCRun):
 class DpmjetIII191(DpmjetIIIRun):
     _version = "19.1"
     _projectiles = standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311}
-    _library_name = "_dpmjetIII191"
+    _library_name = "_dpmjet191"
 
 
 class DpmjetIII193(DpmjetIII191):
@@ -293,7 +292,7 @@ class DpmjetIII193(DpmjetIII191):
     _projectiles = (
         standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311, 22}
     )
-    _library_name = "_dpmjetIII193"
+    _library_name = "_dpmjet193"
 
 
 class DpmjetIII307(DpmjetIIIRun):
@@ -303,7 +302,7 @@ class DpmjetIII307(DpmjetIIIRun):
     _param_file_name = "fitpar.dat"
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
+        "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
     )
 
 
@@ -312,4 +311,4 @@ class DpmjetIII193_DEV(DpmjetIIIRun):
     _projectiles = (
         standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311, 22}
     )
-    _library_name = "_dev_dpmjetIII193"
+    _library_name = "_dev_dpmjet193"

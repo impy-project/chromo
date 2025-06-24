@@ -1,15 +1,18 @@
+from functools import lru_cache
+
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose
+from particle import literals as lp
+
+from chromo.constants import GeV
 from chromo.kinematics import CenterOfMass
 from chromo.models import DpmjetIII191, DpmjetIII193, EposLHC
-from chromo.constants import GeV
-import numpy as np
-from numpy.testing import assert_allclose
+
 from .util import (
     reference_charge,
     run_in_separate_process,
 )
-import pytest
-from particle import literals as lp
-from functools import lru_cache
 
 
 def run_pp_collision(model):
@@ -128,7 +131,6 @@ def run_set_stable(stable):
     m = EposLHC(evt_kin, seed=4)
     for pid, s in stable.items():
         m.set_stable(pid, s)
-    print("stable", m._get_stable())
     for event in m(1):
         pass
     return event

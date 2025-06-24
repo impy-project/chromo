@@ -1,11 +1,13 @@
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose, assert_equal
+from particle import Particle
+
+from chromo.constants import GeV, TeV
 from chromo.kinematics import CenterOfMass
 from chromo.models import Sibyll21
-from chromo.constants import TeV, GeV
-from numpy.testing import assert_allclose, assert_equal
-import numpy as np
+
 from .util import reference_charge, run_in_separate_process
-import pytest
-from particle import Particle
 
 
 def event_run():

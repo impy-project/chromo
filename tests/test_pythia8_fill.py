@@ -1,9 +1,12 @@
+import sys
+
+import numpy as np
+import pytest
+
 import chromo
 from chromo.common import EventData
+
 from .util import run_in_separate_process
-import pytest
-import sys
-import numpy as np
 
 pytestmark = pytest.mark.skipif(
     sys.platform == "win32", reason="EPOS-LHC not build on windows"
@@ -16,8 +19,8 @@ def init_events(nevents):
 
     events = []
     for event in evt_gen(nevents):
-        event = event.final_state()
-        events.append(event.copy())
+        final_state = event.final_state()
+        events.append(final_state.copy())
 
     return events
 

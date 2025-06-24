@@ -2,40 +2,42 @@
 different inputs required by the low-level event generator interfaces.
 """
 
+import dataclasses
+from types import SimpleNamespace
+from typing import Union
+
 import numpy as np
+from particle import PDGID
+
+from chromo.constants import EeV, GeV, MeV, PeV, TeV, nucleon_mass
 from chromo.util import (
+    CompositeTarget,
+    EventFrame,
     TaggedFloat,
-    energy2momentum,
-    momentum2energy,
-    elab2ecm,
     ecm2elab,
-    mass,
+    elab2ecm,
+    energy2momentum,
     is_real_nucleus,
+    mass,
+    momentum2energy,
     process_particle,
 )
-from chromo.constants import nucleon_mass, MeV, GeV, TeV, PeV, EeV
-from chromo.util import CompositeTarget, EventFrame
-from particle import PDGID
-import dataclasses
-from typing import Union, Tuple
-from types import SimpleNamespace
-
 
 __all__ = (
-    "EventFrame",
+    "CenterOfMass",
     "CompositeTarget",
-    "MeV",
-    "GeV",
-    "TeV",
-    "PeV",
     "EeV",
+    "EventFrame",
     "EventKinematicsMassless",
     "EventKinematicsWithRestframe",
-    "CenterOfMass",
     "FixedTarget",
-    "TotalEnergy",
+    "GeV",
     "KinEnergy",
+    "MeV",
     "Momentum",
+    "PeV",
+    "TeV",
+    "TotalEnergy",
 )
 
 
@@ -75,14 +77,14 @@ class EventKinematicsBase:
     """
 
     frame: EventFrame
-    p1: Union[PDGID, Tuple[int, int]]
-    p2: Union[PDGID, Tuple[int, int], CompositeTarget]
+    p1: Union[PDGID, tuple[int, int]]
+    p2: Union[PDGID, tuple[int, int], CompositeTarget]
     ecm: float  # for ions this is nucleon-nucleon collision system
     pcm: float
     plab: float
     elab: float
     ekin: float
-    beams: Tuple[np.ndarray, np.ndarray]
+    beams: tuple[np.ndarray, np.ndarray]
     _gamma_cm: float
     _betagamma_cm: float
 
@@ -96,9 +98,8 @@ class EventKinematicsBase:
         elif generator_frame == CMS and self.frame == FT:
             bg = self._betagamma_cm
         else:
-            raise NotImplementedError(
-                f"Boosts from {generator_frame} to {self.frame} are not yet supported"
-            )
+            msg = f"Boosts from {generator_frame} to {self.frame} are not yet supported"
+            raise NotImplementedError(msg)
 
         # Inverse transformation
         if inverse:
@@ -115,7 +116,7 @@ class EventKinematicsBase:
         bt = dataclasses.astuple(other)
 
         def eq(a, b):
-            if isinstance(a, Tuple):
+            if isinstance(a, tuple):
                 return all(eq(ai, bi) for (ai, bi) in zip(a, b))
             if isinstance(a, (np.ndarray, float)):
                 return np.allclose(a, b)
@@ -219,7 +220,7 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
         if virtuality is not None:
             if not (part1 == 22 or part2 == 22):
                 raise ValueError("Virtuality (Q2) is only supported for photon beams")
-            elif isinstance(virtuality, tuple) and len(virtuality) == 2:
+            if isinstance(virtuality, tuple) and len(virtuality) == 2:
                 self.virt_p1 = float(virtuality[0])
                 self.virt_p2 = float(virtuality[1])
             elif isinstance(virtuality, float):
@@ -238,7 +239,7 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
             self.virt_p2 = 0.0
 
         if isinstance(part1, CompositeTarget):
-            raise ValueError("Only 2nd particle can be CompositeTarget")
+            raise TypeError("Only 2nd particle can be CompositeTarget")
 
         p2_is_composite = isinstance(part2, CompositeTarget)
 
@@ -253,7 +254,6 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
         # Input specification in center-of-mass frame
         if ecm is not None:
             frame = frame or EventFrame.CENTER_OF_MASS
-            ecm = ecm
             elab = ecm2elab(ecm, m1, m2)
             ekin = elab - m1
             plab = energy2momentum(elab, m1)
@@ -281,7 +281,6 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
             if not (elab > m1):
                 raise ValueError("projectile energy > projectile mass required")
             frame = frame or EventFrame.FIXED_TARGET
-            elab = elab
             ekin = elab - m1
             plab = energy2momentum(elab, m1)
             ecm = elab2ecm(elab, m1, m2)
@@ -292,7 +291,6 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
             ecm = elab2ecm(elab, m1, m2)
         elif plab is not None:
             frame = frame or EventFrame.FIXED_TARGET
-            plab = plab
             elab = momentum2energy(plab, m1)
             ekin = elab - m1
             ecm = elab2ecm(elab, m1, m2)
@@ -371,12 +369,12 @@ class EventKinematicsMassless(EventKinematicsBase):
         if virtuality is not None:
             if not (part1 == 22 or part2 == 22):
                 raise ValueError("Virtuality (Q2) is only supported for photon beams")
-            elif (part1 == 22 and part2 == 22) and len(virtuality) != 2:
+            if (part1 == 22 and part2 == 22) and len(virtuality) != 2:
                 raise ValueError(
                     "Virtuality (Q2) must be a tuple of two floats for "
-                    + "photon-photon colllisions."
+                    "photon-photon colllisions."
                 )
-            elif isinstance(virtuality, tuple) and len(virtuality) == 2:
+            if isinstance(virtuality, tuple) and len(virtuality) == 2:
                 self.virt_p1 = float(virtuality[0])
                 self.virt_p2 = float(virtuality[1])
             else:
@@ -389,7 +387,7 @@ class EventKinematicsMassless(EventKinematicsBase):
             self.virt_p2 = 0.0
 
         if isinstance(part1, CompositeTarget) or isinstance(part2, CompositeTarget):
-            raise ValueError("CompositeTarget")
+            raise TypeError("CompositeTarget")
 
         m1 = mass(part1)
         m2 = mass(part2)
@@ -485,16 +483,15 @@ def FixedTarget(energy, particle1, particle2):
         return EventKinematicsWithRestframe(
             elab=float(energy), particle1=particle1, particle2=particle2
         )
-    elif isinstance(energy, KinEnergy):
+    if isinstance(energy, KinEnergy):
         return EventKinematicsWithRestframe(
             ekin=float(energy), particle1=particle1, particle2=particle2
         )
-    elif isinstance(energy, Momentum):
+    if isinstance(energy, Momentum):
         return EventKinematicsWithRestframe(
             plab=float(energy), particle1=particle1, particle2=particle2
         )
-    else:
-        raise ValueError(
-            f"{energy!r} is neither a number nor one of "
-            "TotalEnergy, KinEnergy, Momentum"
-        )
+    msg = (
+        f"{energy!r} is neither a number nor one of " "TotalEnergy, KinEnergy, Momentum"
+    )
+    raise ValueError(msg)

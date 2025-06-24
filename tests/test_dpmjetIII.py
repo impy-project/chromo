@@ -1,7 +1,9 @@
-import numpy as np
-from numpy.testing import assert_allclose
-import pytest
 import sys
+
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose
+
 import chromo
 from chromo.constants import GeV
 from chromo.util import naneq

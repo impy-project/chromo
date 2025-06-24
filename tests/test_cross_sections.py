@@ -1,17 +1,20 @@
+import dataclasses
+
+import numpy as np
+import pytest
+
+import chromo.models as im
 from chromo.constants import GeV
 from chromo.kinematics import (
     CenterOfMass,
     CompositeTarget,
 )
-import chromo.models as im
-import pytest
-from .util import run_in_separate_process
 from chromo.util import get_all_models
-import dataclasses
-import numpy as np
+
+from .util import run_in_separate_process
 
 
-def run_model(Model, kin, number=1):
+def run_model(Model, kin):
     try:
         gen = Model(kin, seed=1)
     except ValueError:

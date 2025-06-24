@@ -1,18 +1,19 @@
-import numpy as np
-from chromo.constants import quarks_and_diquarks_and_gluons, millibarn, GeV
-from chromo.kinematics import CompositeTarget
 import dataclasses
-from pathlib import Path
 from abc import ABC, abstractmethod
+from pathlib import Path
+
+import numpy as np
+
+from chromo.constants import GeV, millibarn, quarks_and_diquarks_and_gluons
+from chromo.kinematics import CompositeTarget
 
 INT_TYPE = np.int32
 FLOAT_TYPE = np.float32
 
 
 def _raise_import_error(name, task):
-    raise ModuleNotFoundError(
-        f"{name} not found, please install {name} (`pip install {name}`) to {task}"
-    )
+    msg = f"{name} not found, please install {name} (`pip install {name}`) to {task}"
+    raise ModuleNotFoundError(msg)
 
 
 class Writer(ABC):
@@ -233,7 +234,7 @@ class Hepmc(Writer):
     def __init__(self, file, model):
         try:
             from pyhepmc._core import pyiostream
-            from pyhepmc.io import _WrappedWriter, WriterAscii
+            from pyhepmc.io import WriterAscii, _WrappedWriter
         except ModuleNotFoundError:
             _raise_import_error("pyhepmc", "write HepMC files")
 
