@@ -44,8 +44,8 @@ jobs:
         include:
           # Python version number must be string, otherwise 3.10 becomes 3.1
           # Disable Windows for now, as long as numpy is buggy on Windows
-          - os: windows-latest
-            python-version: "3.12"
+          # - os: windows-latest
+          #   python-version: "3.12"
           - os: macos-14
             python-version: "3.12"
           - os: ubuntu-latest
