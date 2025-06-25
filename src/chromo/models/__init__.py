@@ -1,44 +1,48 @@
-from chromo.models.sophia import Sophia20
+from chromo.models.dpmjetIII import DpmjetIII191, DpmjetIII193, DpmjetIII307
+from chromo.models.epos import EposLHC
+from chromo.models.phojet import Phojet112, Phojet191, Phojet193
+from chromo.models.pythia6 import Pythia6
+from chromo.models.pythia8 import Pythia8
+from chromo.models.qgsjet import QGSJet01d, QGSJetII03, QGSJetII04, QGSJetIII
 from chromo.models.sibyll import (
     Sibyll21,
     Sibyll23,
     Sibyll23c,
     Sibyll23d,
-    Sibyll23e,
     Sibyll23dStarMixed,
+    Sibyll23e,
     Sibyll23eStarMixed,
 )
-
-from chromo.models.dpmjetIII import DpmjetIII307
-from chromo.models.epos import EposLHC
-from chromo.models.qgsjet import QGSJet01d, QGSJetII03, QGSJetII04, QGSJetIII
-from chromo.models.dpmjetIII import DpmjetIII191, DpmjetIII193
-from chromo.models.phojet import Phojet112, Phojet191, Phojet193
+from chromo.models.sophia import Sophia20
 from chromo.models.urqmd import UrQMD34
-from chromo.models.pythia6 import Pythia6
-from chromo.models.pythia8 import Pythia8
 
 __all__ = (
-    "Sophia20",
-    "Sibyll21",
-    "Sibyll23",
-    "Sibyll23c",
-    "Sibyll23d",
-    "Sibyll23dStarMixed",
-    "Sibyll23e",
-    "Sibyll23eStarMixed",
+    "DpmjetIII191",
+    "DpmjetIII193",
     "DpmjetIII307",
     "EposLHC",
+    "Phojet112",
+    "Phojet191",
+    "Phojet193",
+    "Pythia6",
+    "Pythia8",
     "QGSJet01d",
     "QGSJetII03",
     "QGSJetII04",
     "QGSJetIII",
-    "DpmjetIII191",
-    "DpmjetIII193",
-    "Phojet112",
-    "Phojet191",
-    "Phojet193",
+    "Sibyll21",
+    "Sibyll21",
+    "Sibyll23",
+    "Sibyll23",
+    "Sibyll23StarMixed",
+    "Sibyll23c",
+    "Sibyll23c",
+    "Sibyll23d",
+    "Sibyll23d",
+    "Sibyll23dStarMixed",
+    "Sibyll23e",
+    "Sibyll23eStarMixed",
+    "Sophia20",
+    "Sophia20",
     "UrQMD34",
-    "Pythia6",
-    "Pythia8",
 )

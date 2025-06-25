@@ -1,7 +1,7 @@
-from pathlib import Path
 import re
-import sys
 import shutil
+import sys
+from pathlib import Path
 
 this_program = Path(sys.argv[0]).name
 
@@ -46,7 +46,7 @@ for fn in src:
         unchanged.append(fn)
 
 # ensure filenames are not colliding
-assert len(set([x.name for x in needs_mod])) == len(needs_mod)
+assert len({x.name for x in needs_mod}) == len(needs_mod)
 
 modded = []
 for fn in needs_mod:

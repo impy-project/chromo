@@ -16,32 +16,17 @@ Then, navigate to the cloned `chromo` directory:
 
 To install the package in editable mode (for developing the Python layer) and with verbose output, run the following command:
 
-    pip install --prefer-binary --no-use-pep517 --no-build-isolation -v -e .[test,examples]
+    pip install --no-build-isolation -v -e .[test,examples]
 
-This command may take some time to complete. While it is running, you can watch the compilation process. Any warnings from the Fortran codes can be ignored.
-
-Please note that `pip` automatically creates a virtual environment and downloads dependencies for the build, preferring to install binary wheels of older versions of dependencies if the most recent version has no binary wheel. This means that you don't have to compile dependencies yourself.
+Please note that you will need to manually install the build environment in order for this command to succeed. You can check the `[build-system.requires]` key in [pyproject.toml](../pyproject.toml) to see which packages are required. Any warnings from the Fortran codes can be ignored.
 
 Additionally, this command installs additional optional Python packages that are used in the tests and examples, but not required to run `chromo`.
-
-## For developers
-
-If you would like to work on the Fortran sources in `chromo`, it is recommended to install a development version of the package using `setuptools`.
-
-To do this, run the following command:
-
-    python setup.py develop
-
-Please note that you will need to manually install the build environment in order for this command to succeed. You can check the `[build-system.requires]` key in [pyproject.toml](../pyproject.toml) to see which packages are required.
-
-Unlike the `pip` command, this command reuses previously generated build artifacts, so you don't need to recompile everything each time. Additionally, there is an optional file called `models.cfg` that can be useful for developers. If this file exists, only the models listed in it will be built. You can find the full list of models in the `default_models.cfg` file.
 
 ## Known issues
 
 - On OSX
     - You need to install `gcc` and `gfortran` with homebrew.
     - Apple introduced a bug in the Xcode Command Line Tools Version 14 which produces a linker error when compiling C++ code with `gcc`. Until this is fixed, the workaround is to downgrade to 13.4, use this link https://download.developer.apple.com/Developer_Tools/Command_Line_Tools_for_Xcode_13.4/Command_Line_Tools_for_Xcode_13.4.dmg and turn off automatic updates in the System Settings, because otherwise your Mac will upgrade to 14 again.
-- setuptools > 60 does not seem to work. Downgrade with `pip install setuptools<60` if you experience problems.
 
 If you cannot fix the installation with these hints, please look into the subsection below which explains how to install in chromo in a verified docker environment. The docker environment has a properly set up environment verified by us, so that the installation is guaranteed to succeed.
 
@@ -66,10 +51,10 @@ After downloading the image, create a Docker instance and bind the `chromo` dire
 
     docker run --rm -d -it --name chromo -v "$(pwd)":/app quay.io/pypa/manylinux2014_x86_64
 
-This command enters your Docker instance and changes the working directory to /app. From there, select your desired Python version (e.g., 3.9) and enter a virtual environment:
+This command enters your Docker instance and changes the working directory to /app. From there, select your desired Python version (e.g., 3.11) and enter a virtual environment:
 
     cd /app
-    python3.9 -m venv venv
+    python3.11 -m venv venv
     source venv/bin/activate
 
 Finally, install chromo and its dependencies using the following command:

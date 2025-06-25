@@ -1,8 +1,10 @@
-from chromo.common import MCRun, MCEvent, CrossSectionData
-from chromo.util import fortran_chars, _cached_data_dir
-from chromo.constants import standard_projectiles
-from particle import literals as lp
 import warnings
+
+from particle import literals as lp
+
+from chromo.common import CrossSectionData, MCEvent, MCRun
+from chromo.constants import standard_projectiles
+from chromo.util import _cached_data_dir, fortran_chars
 
 
 class PhojetEvent(MCEvent):
@@ -99,7 +101,7 @@ class PHOJETRun(MCRun):
     _pho_event_init_ran = False
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
+        "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
 
     def __init__(self, evt_kin, *, seed=None):
@@ -128,7 +130,6 @@ class PHOJETRun(MCRun):
         verbosity = 5 if chromo.debug_level else 1
         # Standalone phojet IO block
         if hasattr(self._lib, "poinou"):
-            print(1)
             self._lib.poinou.lo = lun
             self._lib.poinou.lpri = verbosity
         if hasattr(self._lib, "dtflka"):
@@ -227,7 +228,7 @@ class PHOJETRun(MCRun):
 
 class Phojet112(PHOJETRun):
     _version = "1.12-36"
-    _library_name = "_phojet112"
+    _library_name = "_phojet307"
     _param_file_name = "fitpar.dat"
     _projectiles = {
         lp.photon.pdgid,
@@ -236,7 +237,7 @@ class Phojet112(PHOJETRun):
     }  # FIXME: should allow photons and hadrons
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
+        "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
     )
 
 

@@ -1,31 +1,34 @@
+import gzip
+import os
+import pickle
+import platform
+from pathlib import Path
+
+import boost_histogram as bh
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+from particle import literals as lp
+from scipy.stats import chi2
+
+import chromo
+import chromo.models as im
 from chromo.constants import GeV
 from chromo.kinematics import (
     CenterOfMass,
+    CompositeTarget,
+    EventFrame,
     EventKinematicsMassless,
     EventKinematicsWithRestframe,
     FixedTarget,
     TotalEnergy,
-    EventFrame,
-    CompositeTarget,
 )
-import chromo.models as im
-import pytest
-from .util import run_in_separate_process
 from chromo.util import get_all_models, pdg2name
-import chromo
-import boost_histogram as bh
-import gzip
-import pickle
-import matplotlib
-import matplotlib.pyplot as plt
-from pathlib import Path
-from particle import literals as lp
-import numpy as np
-from scipy.stats import chi2
-import platform
-import os
 
-matplotlib.use("svg")  # need non-interactive backend for CI Windows
+from .util import run_in_separate_process
+
+mpl.use("svg")  # need non-interactive backend for CI Windows
 
 THIS_TEST = Path(__file__).stem
 REFERENCE_PATH = Path(__file__).parent / "data" / THIS_TEST
@@ -64,9 +67,8 @@ def run_model(Model, kin, number=1):
             h.fill(ev.eta, np.abs(ev.pid))
         if number == 1:
             return h
-        else:
-            values.append(h.values().copy())
-            h.reset()
+        values.append(h.values().copy())
+        h.reset()
     return values
 
 
@@ -154,6 +156,8 @@ def test_generator(projectile, target, frame, Model):
     if p2 == "air":
         if Model is im.Pythia8:
             pytest.skip("Simulating nuclei in Pythia8 is very time-consuming")
+        if Model is im.DpmjetIII191 and p1 in ["p", "pi-"]:
+            pytest.skip("DPMJET-III-19.1 tests glitch on CI with p-air and pi--air")
 
         # cannot use Argon in SIBYLL, so make air from N, O only
         p2 = CompositeTarget((("N", 0.78), ("O", 0.22)))

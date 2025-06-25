@@ -1,12 +1,14 @@
-from chromo.common import MCRun, EventData, CrossSectionData
-from chromo.util import _cached_data_dir, name2pdg
-from os import environ
-import numpy as np
-from chromo.kinematics import EventFrame
-from chromo.constants import standard_projectiles
-from particle import literals as lp
 import warnings
-from typing import Collection, List
+from collections.abc import Collection
+from os import environ
+
+import numpy as np
+from particle import literals as lp
+
+from chromo.common import CrossSectionData, EventData, MCRun
+from chromo.constants import standard_projectiles
+from chromo.kinematics import EventFrame
+from chromo.util import _cached_data_dir, name2pdg
 
 
 class PYTHIA8Event(EventData):
@@ -91,7 +93,7 @@ class Pythia8(MCRun):
     _restartable = True
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/Pythia8_v004.zip"
+        "/releases/download/zipped_data_v1.0/Pythia8_v004.zip"
     )
 
     def __init__(self, evt_kin, *, seed=None, config=None, banner=True):
@@ -199,7 +201,8 @@ class Pythia8(MCRun):
 
         for line in config:
             if not pythia.readString(line):
-                raise RuntimeError(f"readString({line!r}) failed")
+                msg = f"readString({line!r}) failed"
+                raise RuntimeError(msg)
 
         # calling init several times is allowed
         if not pythia.init():
@@ -223,10 +226,10 @@ class Pythia8(MCRun):
         return self._pythia.next()
 
     @staticmethod
-    def _parse_config(config) -> List[str]:
+    def _parse_config(config) -> list[str]:
         # convert config to lines and filter out lines that
         # we override with our settings in _set_kinematics
-        result: List[str] = []
+        result: list[str] = []
         if isinstance(config, str):
             for line in config.split("\n"):
                 line = line.strip()
@@ -234,12 +237,11 @@ class Pythia8(MCRun):
                     continue
                 result.append(line)
         elif isinstance(config, Collection):
-            for item in config:
-                result.append(item.strip())
+            result.extend([item.strip() for item in config])
 
         ignored = ("Random:", "Beams:", "Next:")
 
-        result2: List[str] = []
+        result2: list[str] = []
         for line in result:
             line = line.strip()
             for ig in ignored:

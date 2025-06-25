@@ -1,11 +1,12 @@
-from chromo.common import MCRun, MCEvent, CrossSectionData
-from chromo.util import info, Nuclei, is_real_nucleus
-from chromo.kinematics import EventFrame
-from chromo.constants import standard_projectiles
-from particle import literals as lp
 import warnings
-import numpy as np
 
+import numpy as np
+from particle import literals as lp
+
+from chromo.common import CrossSectionData, MCEvent, MCRun
+from chromo.constants import standard_projectiles
+from chromo.kinematics import EventFrame
+from chromo.util import Nuclei, info, is_real_nucleus
 
 _sibyll_unstable_pids = [
     -13,
@@ -96,19 +97,9 @@ _sibyll_unstable_pids = [
     4332,
 ]
 
-_sibyll21_unstable_pids = set(_sibyll_unstable_pids + [-10311, 10311, -10321, 10321])
+_sibyll21_unstable_pids = {*_sibyll_unstable_pids, -10311, 10311, -10321, 10321}
 
-_sibyll23_unstable_pids = set(
-    _sibyll_unstable_pids
-    + [
-        -15,
-        15,
-        -313,
-        313,
-        -323,
-        323,
-    ]
-)
+_sibyll23_unstable_pids = {*_sibyll_unstable_pids, -15, 15, -313, 313, -323, 323}
 
 
 class SibyllEvent(MCEvent):
@@ -218,9 +209,8 @@ class SIBYLLRun(MCRun):
             return CrossSectionData()
 
         if kin.p2.A > 20:
-            raise ValueError(
-                f"{self.label} does not support nuclear targets heavier than 20"
-            )
+            msg = f"{self.label} does not support nuclear targets heavier than 20"
+            raise ValueError(msg)
         sib_id = self._cross_section_projectiles.get(abs(kin.p1), None)
 
         if kin.p2.A > 1 and not is_real_nucleus(kin.p1):
@@ -234,25 +224,24 @@ class SIBYLLRun(MCRun):
                     quasielastic=float(sigqe),
                     elastic=float(sigel),
                 )
-            else:
-                alam = 1.0  # Not used
-                icsmod = 1  # use Sibyll p-p cross section as input
-                iparm = 2  # use Goulianos param. for inel. coupling param.
-                self._lib.sig_had_nuc(sib_id, kin.p2.A, kin.ecm, alam, icsmod, iparm)
-                nsig = self._lib.nucsig
-                return CrossSectionData(
-                    total=float(nsig.sigt),
-                    prod=(
-                        float(nsig.sigt - nsig.sigqe)
-                        if not np.isnan(nsig.sigqe)
-                        else float(nsig.siginel)
-                    ),
-                    quasielastic=float(nsig.sigqe),
-                    inelastic=float(nsig.siginel),
-                    diffractive_sum=float(nsig.sigqsd),
-                    diffractive_xb=float(nsig.sigsd),
-                    elastic=float(nsig.sigel),
-                )
+            alam = 1.0  # Not used
+            icsmod = 1  # use Sibyll p-p cross section as input
+            iparm = 2  # use Goulianos param. for inel. coupling param.
+            self._lib.sig_had_nuc(sib_id, kin.p2.A, kin.ecm, alam, icsmod, iparm)
+            nsig = self._lib.nucsig
+            return CrossSectionData(
+                total=float(nsig.sigt),
+                prod=(
+                    float(nsig.sigt - nsig.sigqe)
+                    if not np.isnan(nsig.sigqe)
+                    else float(nsig.siginel)
+                ),
+                quasielastic=float(nsig.sigqe),
+                inelastic=float(nsig.siginel),
+                diffractive_sum=float(nsig.sigqsd),
+                diffractive_xb=float(nsig.sigsd),
+                elastic=float(nsig.sigel),
+            )
 
         # nucleus-nucleon collisions
         if is_real_nucleus(kin.p1):
@@ -266,7 +255,8 @@ class SIBYLLRun(MCRun):
 
         # hadron-nucleon collisions
         if sib_id is None:
-            raise ValueError(f"Variable sib_id expected to be set for {kin.p1}.")
+            msg = f"Variable sib_id expected to be set for {kin.p1}."
+            raise ValueError(msg)
         tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sib_id, kin.ecm)
         return CrossSectionData(
             total=tot,
@@ -307,9 +297,8 @@ class SIBYLLRun(MCRun):
         if not kin.p1.is_nucleus:
             self._production_id = self._lib.isib_pdg2pid(kin.p1)
             if self._production_id == 0:
-                raise ValueError(
-                    f"Invalid _production_id: {self._production_id}. Check the input kinematics: {kin.p1}"
-                )
+                msg = f"Invalid _production_id: {self._production_id}. Check the input kinematics: {kin.p1}"
+                raise ValueError(msg)
 
     def _set_stable(self, pdgid, stable):
         if pdgid not in self._unstable_pids:

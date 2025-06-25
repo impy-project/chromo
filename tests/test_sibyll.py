@@ -1,11 +1,13 @@
-from chromo.common import CrossSectionData
-from chromo.kinematics import CenterOfMass
-from chromo.constants import TeV
-from chromo.util import get_all_models
-from numpy.testing import assert_allclose, assert_equal
 import numpy as np
-from .util import reference_charge, run_in_separate_process
 import pytest
+from numpy.testing import assert_allclose, assert_equal
+
+from chromo.common import CrossSectionData
+from chromo.constants import TeV
+from chromo.kinematics import CenterOfMass
+from chromo.util import get_all_models
+
+from .util import reference_charge, run_in_separate_process
 
 cs_sibyll21 = CrossSectionData(
     total=117.90274047851562,
