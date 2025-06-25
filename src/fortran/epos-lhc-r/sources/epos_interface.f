@@ -17,7 +17,8 @@ c for main program
       end
 
 c-----------------------------------------------------------------------
-      subroutine InitEpos(emax, lrescat, datpath, lpath, idbg, iou)
+      subroutine InitEpos(emax, lrescat, datpath, lpath, idbg, iou,
+     &isigma0) 
 c-----------------------------------------------------------------------
 c General initialization of EPOS
 c anfe: accepts nuclear PDG id instead of A, Z combos
@@ -26,7 +27,7 @@ c-----------------------------------------------------------------------
          include "epos.inc"
          real emax
          integer lpath, idbg, iou
-         integer lrescat
+         integer lrescat, isigma0
          character(*) datpath
          ! integer iSeed,itypout,iout,lout,itab,init,iModel,iadd,ipath
          ! double precision degymx
@@ -54,10 +55,20 @@ c Initialize decay of particles (all unstable decay)
             ihacas=-1                !use hadronic rescattering
          endif
 
-         isigma=2                  !use analytic cross section for nuclear xs
-         ionudi=1
 
-c      isigma=0              !do not print out the cross section on screen
+c isigma=1: cross-section is calculated by a numerical method
+c           which is valid only for h-p or h-A (h being pion, kaon or nucleon)
+c           but not A-B (nucleus-nucleus)
+c           (not good for ionudi=2)
+c
+c isigma=0: same as isigma=1 but do not print the cross section on screen
+c
+c isigma=2: all the nuclear cross-sections are calculated by AA pseudo simulations
+c           but it takes several minutes to compute
+
+        isigma=isigma0 
+        ionudi=1
+
 c      ionudi=3              !count diffraction without excitation as elastic
 c Debug
          ish=idbg       !debug level

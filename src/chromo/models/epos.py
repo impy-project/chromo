@@ -186,7 +186,18 @@ class EposLHC(MCRun):
     )
     _ecm_min = 6 * GeV
 
-    def __init__(self, evt_kin, *, seed=None):
+    def __init__(self, evt_kin, *, seed=None, isigma=1):
+        """
+        isigma=1: cross-section is calculated by a numerical method
+                  which is valid only for h-p or h-A (h being pion, kaon or nucleon)
+                  but not A-B (nucleus-nucleus)
+                  (not good for ionudi=2)
+
+        isigma=0: same as isigma=1 but do not print the cross section on screen
+
+        isigma=2: all the nuclear cross-sections are calculated by AA pseudo simulations
+                  but it takes several minutes to compute
+        """
         import chromo
 
         super().__init__(seed)
@@ -202,6 +213,7 @@ class EposLHC(MCRun):
             len(datdir),
             chromo.debug_level,
             lun,
+            isigma,
         )
 
         self._set_final_state_particles()

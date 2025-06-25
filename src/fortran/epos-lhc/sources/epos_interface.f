@@ -17,15 +17,17 @@ c for main program
       end
 
 c-----------------------------------------------------------------------
-      subroutine InitEpos(emax, lreserved, datpath, lpath, idbg, iou)
+      subroutine InitEpos(emax, lrescat, datpath, lpath, idbg, iou,
+     &isigma0)   
 c-----------------------------------------------------------------------
 c General initialization of EPOS
 c anfe: accepts nuclear PDG id instead of A, Z combos
 c-----------------------------------------------------------------------
          include "epos.inc"
          real emax
-         logical lreserved
-         integer lpath, idbg, iou
+c        lrescat dummy parameter to be consistent with Epos-LHC-R       
+         logical lrescat
+         integer lpath, idbg, iou, isigma0
          character(*) datpath
 
          ! dummy values
@@ -36,10 +38,19 @@ c Initialize decay of particles (all unstable decay)
          nrnody=0
 
          call LHCparameters        !LHC tune for EPOS
-         isigma=2                  !use analytic cross section for nuclear xs
+c isigma=1: cross-section is calculated by a numerical method
+c           which is valid only for h-p or h-A (h being pion, kaon or nucleon)
+c           but not A-B (nucleus-nucleus)
+c           (not good for ionudi=2)
+c
+c isigma=0: same as isigma=1 but do not print the cross section on screen
+c
+c isigma=2: all the nuclear cross-sections are calculated by AA pseudo simulations
+c           but it takes several minutes to compute
+
+         isigma=isigma0 
          ionudi=1
 
-c      isigma=0              !do not print out the cross section on screen
 c      ionudi=3              !count diffraction without excitation as elastic
 
          iecho=0                     !"silent" reading mode
