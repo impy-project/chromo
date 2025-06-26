@@ -79,7 +79,7 @@ class PYTHIA8Event(EventData):
 
 class Pythia8(MCRun):
     _name = "Pythia"
-    _version = "8.308"
+    _version = "8.315"
     _library_name = "_pythia8"
     _event_class = PYTHIA8Event
     _frame = EventFrame.CENTER_OF_MASS
