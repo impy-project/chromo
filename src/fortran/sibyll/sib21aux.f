@@ -105,7 +105,7 @@ C  particle not in table
             return
          endif
          ID_out = ID_list(Nout)
-! #ifdef SIBYLL21
+! #ifdef SIBYLLSP
          ! IF(abs(ID_out).gt.49)then
 ! #else
          IF(abs(ID_out).gt.99)then

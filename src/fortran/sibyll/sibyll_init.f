@@ -25,7 +25,7 @@ C  Convert SIBYLL output to HEPEVT common block
 C-----------------------------------------------------------------------
       IMPLICIT NONE
 
-#ifdef SIBYLL_21
+#ifdef SIBYLLSP
       REAL P
 #else
       DOUBLE PRECISION P
@@ -36,7 +36,7 @@ C-----------------------------------------------------------------------
       COMMON /S_PLIST/ P(NP_max,5), LLIST(NP_max), NP
       COMMON /S_PLIST1/ LLIST1(8000)
       INTEGER ICHP,ISTR,IBAR
-#ifdef SIBYLL_21
+#ifdef SIBYLLSP
       COMMON /S_CHP/ ICHP(49), ISTR(49), IBAR(49)
 #else
       COMMON /S_CHP/ ICHP(99), ISTR(99), IBAR(99)
@@ -69,7 +69,7 @@ C-----------------------------------------------------------------------
          IDHEP(I) = ISIB_PID2PDG(MOD(LLIST(I),10000))
          JMOHEP(1,I) = LLIST1(I)
          JMOHEP(2,I) = LLIST1(I)
-#ifdef SIBYLL_21
+#ifdef SIBYLLSP
          PHEP(1,I) = DBLE(P(I,1))
          PHEP(2,I) = DBLE(P(I,2))
          PHEP(3,I) = DBLE(P(I,3))
@@ -110,7 +110,7 @@ C.      in COMMON /NUCNUCSIG/
 C.           additional output is in the common block  /CPROBAB/
 C.           Prob(n_A), Prob(n_B), Prob(n_int)
 C..........................................................................
-#ifndef SIBYLL_21
+#ifndef SIBYLLSP
       IMPLICIT DOUBLE PRECISION(A-H,O-Z)
       IMPLICIT INTEGER(I-N)
 #endif

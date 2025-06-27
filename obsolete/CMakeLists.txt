@@ -206,7 +206,7 @@ f2py_add_module(
   ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
-  SIBYLL_21)
+  SIBYLLSP)
 
 # sib23
 f2py_add_module(

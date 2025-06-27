@@ -155,7 +155,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       implicit none
       integer dummy
-#ifdef SIBYLL_21
+#ifdef SIBYLLSP
       real s_rndm
       double precision rval
 555   call npyrng(rval)

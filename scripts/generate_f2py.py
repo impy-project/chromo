@@ -75,14 +75,17 @@ def generate_f2py_module(
     source_list = [
         str(src) for src in sources if src and not src.endswith(".c")
     ]  # Skip empty and C sources
+    flags = [f.strip() for f in flags.split(" ") if f]  # Split and clean flags
     logger.info(f"Source files: {source_list}")
     logger.info(f"Include directories: {include}")
-
+    logger.info(f"Flags: {flags}")
     # Run gfortran preprocessor to evaluate all includes and flags
     # Concatenate output into a single temporary file to be processed by f2py
     preprocessed_sources = output_path / f"{module_name}pp.f"
-
-    cmd = ["gfortran", "-cpp", "-E", flags, *include, *source_list]
+    logger.info(
+        f"Running gfortran preprocessor: {' '.join(['gfortran', '-cpp', '-E', *flags, *include, *source_list])}"
+    )
+    cmd = ["gfortran", "-cpp", "-E", *flags, *include, *source_list]
 
     try:
         result = subprocess.run(

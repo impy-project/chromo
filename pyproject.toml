@@ -71,12 +71,12 @@ examples = [
 [tool.chromo]
 # Enabled models
 enabled-models = [
+    "sib21",
     "eposlhc",
     "dpmjet_phojet191",
     "dpmjet_phojet193",
     "dpmjet_phojet307",
     "pythia8",
-    "sib21",
     "qgs01",
     "qgs2_03",
     "qgs2_04",
