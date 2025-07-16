@@ -182,7 +182,7 @@ class EposLHC(MCRun):
     _hadronic_rescattering = False
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/eposlhc_v001.zip"
+         "/releases/download/zipped_data_v1.0/eposlhc_v001.zip"
     )
     _ecm_min = 6 * GeV
 
@@ -291,7 +291,7 @@ class EposLHCR(EposLHC):
     _event_class = EPOSEvent
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/eposlhcr_v001.zip"
+         "/releases/download/zipped_data_v1.0/eposlhcr_v001.zip"
     )
     _hadronic_rescattering = True
 

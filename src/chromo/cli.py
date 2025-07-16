@@ -260,39 +260,38 @@ def parse_arguments():
     if args.out == "-":
         args.output = "hepmc"
         raise SystemExit("Error: output to stdout not yet supported")
-    else:
-        if args.out:  # filename was provided
-            args.out = Path(args.out)
-            suffixes = args.out.suffixes
-            if suffixes and suffixes[-1] in [".gz", ".bz2"]:
-                format = ":".join(x[1:] for x in args.out.suffixes[-2:])
-            else:
-                format = suffixes[-1].lstrip(".") if suffixes else ""
-            # check if both format and args.output are defined and are different
-            if format and args.output and format != args.output:
-                raise SystemExit(
-                    f"Error: File extension of {args.out} does not match {args.output}"
-                )
-            if not args.output:
-                args.output = format or "hepmc"
-        else:  # no filename provided
-            if not args.output:
-                args.output = "hepmc"
-            # generate filename like CRMC
-            ext = extension(args.output)
-            pid1 = args.projectile_id
-            pid2 = args.target_id
-            en = f"{args.sqrts / GeV:.0f}"
-            mn = Model.pyname.lower()
-            fn = f"chromo_{mn}_{args.seed}_{int(pid1)}_{int(pid2)}_{en}.{ext}"
-            odir = os.environ.get("CRMC_OUT", ".")
-            args.out = Path(odir) / fn
-            # append extension
-            if not args.out.suffixes[-2:]:
-                ext = "." + args.output
-                if ext.endswith("gz"):
-                    ext = ext[:-2] + ".gz"
-                args.out = Path(args.out).with_suffix(ext)
+    if args.out:  # filename was provided
+        args.out = Path(args.out)
+        suffixes = args.out.suffixes
+        if suffixes and suffixes[-1] in [".gz", ".bz2"]:
+            format = ":".join(x[1:] for x in args.out.suffixes[-2:])
+        else:
+            format = suffixes[-1].lstrip(".") if suffixes else ""
+        # check if both format and args.output are defined and are different
+        if format and args.output and format != args.output:
+            raise SystemExit(
+                f"Error: File extension of {args.out} does not match {args.output}"
+            )
+        if not args.output:
+            args.output = format or "hepmc"
+    else:  # no filename provided
+        if not args.output:
+            args.output = "hepmc"
+        # generate filename like CRMC
+        ext = extension(args.output)
+        pid1 = args.projectile_id
+        pid2 = args.target_id
+        en = f"{args.sqrts / GeV:.0f}"
+        mn = Model.pyname.lower()
+        fn = f"chromo_{mn}_{args.seed}_{int(pid1)}_{int(pid2)}_{en}.{ext}"
+        odir = os.environ.get("CRMC_OUT", ".")
+        args.out = Path(odir) / fn
+        # append extension
+        if not args.out.suffixes[-2:]:
+            ext = "." + args.output
+            if ext.endswith("gz"):
+                ext = ext[:-2] + ".gz"
+            args.out = Path(args.out).with_suffix(ext)
 
     if args.output not in FORMATS:
         msg = f"Error: unknown format {args.output} ({VALID_FORMATS})"
