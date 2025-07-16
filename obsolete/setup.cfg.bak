@@ -1,6 +1,6 @@
 [metadata]
 name = chromo
-version = 0.6.0
+version = 0.7.0
 author = Anatoli Fedynitch
 maintainer_email = afedynitch@gmail.com
 description = Hadronic Interaction Model interface in Python

@@ -3321,7 +3321,8 @@ c---------------------------------------------------------------------
       character*1000 line,linex,cline
       data nappl /0/
       common/record/maxrec(2),irecty(30,2)
-      common/cfacmss/facmss /cr3pomi/r3pomi,r4pomi
+      common/cfacmss/facmss
+      common/cr3pomi/r3pomi,r4pomi
       common /ems12/iodiba,bidiba  ! defaut iodiba=0. if iodiba=1, study H-Dibaryon
       character*500 fndat,fnncs,fnIIdat,fnIIncs,fnII03dat,fnII03ncs !qgs-II
       common/qgsfname/  fndat, fnncs, ifdat, ifncs

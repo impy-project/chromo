@@ -68,7 +68,7 @@ common_cargs   = []
 common_fargs   = ['-DCHROMO']
 
 logging_src = src_root / 'logging.f'
-rangen_src  = [src_root/'rangen.c', src_root/'rangen.fpp']
+rangen_src  = [src_root/'rangen.c', src_root/'rangen.f']
 normal_src  = src_root / 'normal.c'
 common_syms = ['chromo_openlogfile','chromo_closelogfile','npyrng']
 
@@ -76,7 +76,7 @@ common_syms = ['chromo_openlogfile','chromo_closelogfile','npyrng']
 sibyll_syms_base  = [
   'sibyll','sibyll_ini','sib_sigma_hp','sib_sigma_hair','sib_sigma_hnuc',
   'int_nuc','decsib','decpar','sibini','sibhep','sib_list',
-  'isib_pid2pdg','isib_pdg2pid','pdg_ini']
+  'isib_pid2pdg','isib_pdg2pid','pdg_ini', 'sibnuc', 'sigma_nuc_nuc']
 qgs_syms_base     = ['cqgsini','qgsect','qgini','qgconf','qgreg','chepevt','qgcrossc','cqgshh_ha_cs']
 urqmd_syms        = [
   'urqmd','init','uinit','set0','params','uounit','strini','loginit','loadwtab',
@@ -104,23 +104,27 @@ f = src_root  # shorthand in long lists
 
 models = {
   '_sib21' : {
-      'src'   : [f/'sibyll/sibyll_21.f', f/'sibyll/sibyll_init.fpp', f/'sibyll/sib21aux.f'],
+      'src'   : [f/'sibyll/sibyll_21.f', f/'sibyll/sibyll_init.f', f/'sibyll/sib21aux.f'],
       'funcs' : sibyll_syms_base + ['spgasdev','glauber'] + common_syms,
-      'flags' : ['-DSIBYLL_21'],
+      'flags' : ['-DSIBYLLSP'],
   },
-  '_sib23' : { 'src':[f/'sibyll/sibyll2.3.f',f/'sibyll/sibyll_init.fpp'],
+  '_sib23' : { 'src':[f/'sibyll/sibyll2.3.f',f/'sibyll/sibyll_init.f'],
                'funcs':sibyll_syms_base+['gasdev','sig_had_nuc']+common_syms },
-  '_sib23c00' : { 'src':[f/'sibyll/sibyll2.3c00.f',f/'sibyll/sibyll_init.fpp'],
+  '_sib23c00' : { 'src':[f/'sibyll/sibyll2.3c00.f',f/'sibyll/sibyll_init.f'],
                   'funcs':sibyll_syms_base+['gasdev','sig_had_nuc']+common_syms },
-  '_sib23c01' : { 'src':[f/'sibyll/sibyll2.3c01.f',f/'sibyll/sibyll_init.fpp'],
+  '_sib23c01' : { 'src':[f/'sibyll/sibyll2.3c01.f',f/'sibyll/sibyll_init.f'],
                   'funcs':sibyll_syms_base+['gasdev','sig_had_nuc']+common_syms },
-  '_sib23c02' : { 'src':[f/'sibyll/sibyll2.3c02.f',f/'sibyll/sibyll_init.fpp'],
+  '_sib23c02' : { 'src':[f/'sibyll/sibyll2.3c02.f',f/'sibyll/sibyll_init.f'],
                   'funcs':sibyll_syms_base+['gasdev','sig_had_nuc']+common_syms },
-  '_sib23c03' : { 'src':[f/'sibyll/sibyll2.3c03.f',f/'sibyll/sibyll_init.fpp'],
+  '_sib23c03' : { 'src':[f/'sibyll/sibyll2.3c03.f',f/'sibyll/sibyll_init.f'],
                   'funcs':sibyll_syms_base+['gasdev','sig_had_nuc']+common_syms },
-  '_sib23d'   : { 'src':[f/'sibyll/sibyll2.3d.f',f/'sibyll/sibyll_init.fpp'],
+  '_sib23d'   : { 'src':[f/'sibyll/sibyll2.3d.f',f/'sibyll/sibyll_init.f'],
                   'funcs':sibyll_syms_base+['gasdev','sig_had_nuc']+common_syms },
-  '_sib23d_star':{ 'src':[f/'sibyll/sibyll2.3d-star-p02.f',f/'sibyll/sibyll_init.fpp'],
+  '_sib23d_star':{ 'src':[f/'sibyll/sibyll2.3d-star-p02.f',f/'sibyll/sibyll_init.f'],
+                   'funcs':sibyll_syms_base+['gasdev','sig_had_nuc']+common_syms },
+  '_sib23e'   : { 'src':[f/'sibyll/sibyll2.3e.f',f/'sibyll/sibyll_init.f'],
+                  'funcs':sibyll_syms_base+['gasdev','sig_had_nuc']+common_syms },
+  '_sib23e_star':{ 'src':[f/'sibyll/sibyll2.3e-star.f',f/'sibyll/sibyll_init.f'],
                    'funcs':sibyll_syms_base+['gasdev','sig_had_nuc']+common_syms },
 
   '_qgs01' : { 'src':[f/'qgsjet/qgsjet01d.f',f/'qgsjet/chromo_qgs1.f'],

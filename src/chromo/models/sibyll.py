@@ -6,7 +6,7 @@ from particle import literals as lp
 from chromo.common import CrossSectionData, MCEvent, MCRun
 from chromo.constants import standard_projectiles
 from chromo.kinematics import EventFrame
-from chromo.util import Nuclei, info
+from chromo.util import Nuclei, info, is_real_nucleus
 
 _sibyll_unstable_pids = [
     -13,
@@ -107,7 +107,7 @@ class SibyllEvent(MCEvent):
 
     _jdahep = None  # no child info
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.schg.ichg[:npart]
 
     def _get_impact_parameter(self):
@@ -141,21 +141,8 @@ class SIBYLLRun(MCRun):
     _name = "SIBYLL"
     _event_class = SibyllEvent
     _frame = EventFrame.CENTER_OF_MASS
-    _projectiles = standard_projectiles | {
-        3112,
-        3122,
-        3312,
-        3322,
-        3222,
-        411,
-        421,
-        4232,
-        431,
-        4122,
-        4132,
-        4332,
-    }
     _targets = Nuclei(a_max=20)
+    _glauber_trials = 1000  # default number of trials for Glauber model integration
     _cross_section_projectiles = {
         p.pdgid: sib_id
         for p, sib_id in (
@@ -167,6 +154,27 @@ class SIBYLLRun(MCRun):
             (lp.K_L_0, 3),
         )
     }
+    _projectiles = (
+        standard_projectiles
+        | {
+            3112,
+            3122,
+            3312,
+            3322,
+            3222,
+            411,
+            421,
+            4232,
+            431,
+            4122,
+            4132,
+            4232,
+            431,
+            4332,
+        }
+        | Nuclei(a_max=56)
+    )
+    _unstable_pids = _sibyll23_unstable_pids
 
     def __init__(self, evt_kin, *, seed=None):
         super().__init__(seed)
@@ -192,29 +200,30 @@ class SIBYLLRun(MCRun):
 
     def _cross_section(self, kin=None, max_info=False):
         kin = self.kinematics if kin is None else kin
-        if kin.p1.A is not None and kin.p1.A > 1:
+        if abs(kin.p1) not in self._projectiles:
             warnings.warn(
-                f"Cross section for nuclear projectiles not supported in {self.label}",
+                f"Cross section for {kin.p1} projectiles not "
+                f"supported in {self.label}",
                 RuntimeWarning,
             )
             return CrossSectionData()
 
-        sib_id = self._cross_section_projectiles[abs(kin.p1)]
-
-        if kin.p2.A > 19:
-            msg = f"{self.label} does not support nuclear targets heavier than 19"
+        if kin.p2.A > 20:
+            msg = f"{self.label} does not support nuclear targets heavier than 20"
             raise ValueError(msg)
-        if kin.p2.A > 1 and self.version == "2.1":
-            totpp, _, _, _, slopepp, rhopp = self._lib.sib_sigma_hp(sib_id, kin.ecm)
-            sigt, sigel, sigqe = self._lib.glauber(kin.p2.A, totpp, slopepp, rhopp)
-            return CrossSectionData(
-                total=float(sigt),
-                prod=float(sigt - sigqe),
-                quasielastic=float(sigqe),
-                elastic=float(sigel),
-            )
+        sib_id = self._cross_section_projectiles.get(abs(kin.p1), None)
 
-        if kin.p2.A > 1:
+        if kin.p2.A > 1 and not is_real_nucleus(kin.p1):
+            if self.version == "2.1":
+                totpp, _, _, _, slopepp, rhopp = self._lib.sib_sigma_hp(sib_id, kin.ecm)
+                sigt, sigel, sigqe = self._lib.glauber(kin.p2.A, totpp, slopepp, rhopp)
+                return CrossSectionData(
+                    total=float(sigt),
+                    inelastic=float(sigt - sigel),
+                    prod=float(sigt - sigqe),
+                    quasielastic=float(sigqe),
+                    elastic=float(sigel),
+                )
             alam = 1.0  # Not used
             icsmod = 1  # use Sibyll p-p cross section as input
             iparm = 2  # use Goulianos param. for inel. coupling param.
@@ -233,6 +242,21 @@ class SIBYLLRun(MCRun):
                 diffractive_xb=float(nsig.sigsd),
                 elastic=float(nsig.sigel),
             )
+
+        # nucleus-nucleon collisions
+        if is_real_nucleus(kin.p1):
+            # Nucleus-nucleus collisions
+            self._lib.sigma_nuc_nuc(kin.p1.A, kin.p2.A, kin.ecm, self._glauber_trials)
+            nsig = self._lib.nucnucsig
+            return CrossSectionData(
+                prod=float(nsig.sigprod),
+                quasielastic=float(nsig.sigqe),
+            )
+
+        # hadron-nucleon collisions
+        if sib_id is None:
+            msg = f"Variable sib_id expected to be set for {kin.p1}."
+            raise ValueError(msg)
         tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sib_id, kin.ecm)
         return CrossSectionData(
             total=tot,
@@ -254,9 +278,27 @@ class SIBYLLRun(MCRun):
             return sigma[0]
         return sigma
 
+    @property
+    def glauber_trials(self):
+        """Number of trials for Glauber model integration
+
+        Default is 1000 (set at model initialisation).
+        Larger number of `ntrials` reduces the fluctuations in the cross section,
+        thus, making it more smooth. Smaller number of `ntrials` makes calculations of
+        cross section faster.
+        """
+        return self._glauber_trials
+
+    @glauber_trials.setter
+    def glauber_trials(self, ntrials):
+        self._glauber_trials = ntrials
+
     def _set_kinematics(self, kin):
-        self._production_id = self._lib.isib_pdg2pid(kin.p1)
-        assert self._production_id != 0
+        if not kin.p1.is_nucleus:
+            self._production_id = self._lib.isib_pdg2pid(kin.p1)
+            if self._production_id == 0:
+                msg = f"Invalid _production_id: {self._production_id}. Check the input kinematics: {kin.p1}"
+                raise ValueError(msg)
 
     def _set_stable(self, pdgid, stable):
         if pdgid not in self._unstable_pids:
@@ -278,7 +320,12 @@ class SIBYLLRun(MCRun):
 
     def _generate(self):
         kin = self.kinematics
-        self._lib.sibyll(self._production_id, kin.p2.A, kin.ecm)
+        if kin.p1.is_nucleus:
+            # Nucleus-nucleus collisions
+            self._lib.sibnuc(kin.p1.A, kin.p2.A, kin.ecm)
+        else:
+            # hadron-nucleon collisions
+            self._lib.sibyll(self._production_id, kin.p2.A, kin.ecm)
         self._lib.decsib()
         self._lib.sibhep()
         return True
@@ -286,7 +333,7 @@ class SIBYLLRun(MCRun):
 
 class Sibyll21(SIBYLLRun):
     _version = "2.1"
-    _projectiles = standard_projectiles
+    _projectiles = standard_projectiles | Nuclei(a_max=56)
     _library_name = "_sib21"
     _unstable_pids = _sibyll21_unstable_pids
 
@@ -302,85 +349,97 @@ class Sibyll21(SIBYLLRun):
 
 class Sibyll23(SIBYLLRun):
     _version = "2.3"
-    _projectiles = standard_projectiles
+    _projectiles = standard_projectiles | Nuclei(a_max=56)
     _library_name = "_sib23"
-    _unstable_pids = _sibyll23_unstable_pids
 
 
-class Sibyll23c(Sibyll23):
+class Sibyll23c(SIBYLLRun):
     _version = "2.3c"
-    _projectiles = standard_projectiles | {
-        3112,
-        3122,
-        3312,
-        3322,
-        3222,
-        411,
-        421,
-        4232,
-        431,
-        4122,
-        4132,
-        4332,
-    }
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c00(Sibyll23):
+class Sibyll23c00(Sibyll23c):
     _version = "2.3c00"
     _library_name = "_sib23c00"
 
 
 # identical to 2.3c
-class Sibyll23c01(Sibyll23):
+class Sibyll23c01(Sibyll23c):
     _version = "2.3c01"
     _library_name = "_sib23c01"
 
 
 # undocumented patch version
-class Sibyll23c02(Sibyll23):
+class Sibyll23c02(Sibyll23c):
     _version = "2.3c02"
     _library_name = "_sib23c02"
 
 
 # The c03 version was also in CORSIKA until 2020
-class Sibyll23c03(Sibyll23):
+class Sibyll23c03(Sibyll23c):
     _version = "2.3c03"
     _library_name = "_sib23c03"
 
 
 # The latest patch c04 was renamed to d, to generate less confusion
-class Sibyll23d(Sibyll23):
+class Sibyll23d(Sibyll23c):
     _version = "2.3d"
     _library_name = "_sib23d"
 
 
-class Sibyll23StarNoEnh(Sibyll23d):
-    _version = "2.3Star-noenh"
+class Sibyll23e(Sibyll23c):
+    _version = "2.3e"
+    _library_name = "_sib23e"
+
+
+class Sibyll23dStarNoEnh(Sibyll23d):
+    _version = "2.3dStar-noenh"
     _library_name = "_sib23d_star"
     _sstar_param = 0
 
 
-class Sibyll23StarRho(Sibyll23StarNoEnh):
-    _version = "2.3Star-rho"
-    _library_name = "_sib23d_star"
+class Sibyll23dStarRho(Sibyll23dStarNoEnh):
+    _version = "2.3dStar-rho"
     _sstar_param = 1
 
 
-class Sibyll23StarBar(Sibyll23StarNoEnh):
-    _version = "2.3Star-bar"
-    _library_name = "_sib23d_star"
+class Sibyll23dStarBar(Sibyll23dStarNoEnh):
+    _version = "2.3dStar-bar"
     _sstar_param = 2
 
 
-class Sibyll23StarStrange(Sibyll23StarNoEnh):
-    _version = "2.3Star-strange"
-    _library_name = "_sib23d_star"
+class Sibyll23dStarStrange(Sibyll23dStarNoEnh):
+    _version = "2.3dStar-strange"
     _sstar_param = 3
 
 
-class Sibyll23StarMixed(Sibyll23StarNoEnh):
-    _version = "2.3Star-mix"
-    _library_name = "_sib23d_star"
+class Sibyll23dStarMixed(Sibyll23dStarNoEnh):
+    _version = "2.3dStar-mix"
+    _sstar_param = 4
+
+
+class Sibyll23eStarNoEnh(Sibyll23e):
+    _version = "2.3eStar-noenh"
+    _library_name = "_sib23e_star"
+    _sstar_param = 0
+
+
+class Sibyll23eStarRho(Sibyll23eStarNoEnh):
+    _version = "2.3eStar-rho"
+    _sstar_param = 1
+
+
+class Sibyll23eStarBar(Sibyll23eStarNoEnh):
+    _version = "2.3eStar-bar"
+    _sstar_param = 2
+
+
+class Sibyll23eStarStrange(Sibyll23eStarNoEnh):
+    _version = "2.3eStar-strange"
+    _sstar_param = 3
+
+
+class Sibyll23eStarMixed(Sibyll23eStarNoEnh):
+    _version = "2.3eStar-mix"
     _sstar_param = 4

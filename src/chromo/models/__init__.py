@@ -9,7 +9,9 @@ from chromo.models.sibyll import (
     Sibyll23,
     Sibyll23c,
     Sibyll23d,
-    Sibyll23StarMixed,
+    Sibyll23dStarMixed,
+    Sibyll23e,
+    Sibyll23eStarMixed,
 )
 from chromo.models.sophia import Sophia20
 from chromo.models.urqmd import UrQMD34
@@ -29,10 +31,18 @@ __all__ = (
     "QGSJetII04",
     "QGSJetIII",
     "Sibyll21",
+    "Sibyll21",
+    "Sibyll23",
     "Sibyll23",
     "Sibyll23StarMixed",
     "Sibyll23c",
+    "Sibyll23c",
     "Sibyll23d",
+    "Sibyll23d",
+    "Sibyll23dStarMixed",
+    "Sibyll23e",
+    "Sibyll23eStarMixed",
+    "Sophia20",
     "Sophia20",
     "UrQMD34",
 )

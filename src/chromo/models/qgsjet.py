@@ -10,7 +10,7 @@ from chromo.util import Nuclei, _cached_data_dir
 class QGSJET1Event(MCEvent):
     """Wrapper class around QGSJet HEPEVT converter."""
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.qgchg.ichg[:npart]
 
     @property

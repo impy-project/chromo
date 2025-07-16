@@ -129,7 +129,7 @@ class DummyEvent(MCEvent):
 
         super().__init__(generator)
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return np.zeros(npart)
 
 

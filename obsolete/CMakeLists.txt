@@ -173,10 +173,12 @@ f2py_add_module(
 # sib21
 set(SIBYLL_COMMON_FUNCTIONS
     sibyll
+    sibnuc
     sibyll_ini
     sib_sigma_hp
     sib_sigma_hair
     sib_sigma_hnuc
+    sigma_nuc_nuc
     int_nuc
     decsib
     decpar
@@ -204,7 +206,7 @@ f2py_add_module(
   ${NUMPY_INCLUDE_DIRS}
   COMPILE_DEFS
   ${chromo_definitions}
-  SIBYLL_21)
+  SIBYLLSP)
 
 # sib23
 f2py_add_module(
@@ -265,6 +267,39 @@ f2py_add_module(
   sig_had_nuc
   SOURCES
   ${fortran_dir}/sibyll/sibyll2.3d-star-p02.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions})
+
+# sib23e
+f2py_add_module(
+  _sib23e
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS}
+  gasdev
+  sig_had_nuc
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3e.f
+  ${fortran_dir}/sibyll/sibyll_init.fpp
+  ${logging_source}
+  ${rangen_source}
+  INCLUDE_DIRS
+  ${NUMPY_INCLUDE_DIRS}
+  COMPILE_DEFS
+  ${chromo_definitions})
+
+f2py_add_module(
+  _sib23e_star
+  FUNCTIONS
+  ${SIBYLL_COMMON_FUNCTIONS}
+  gasdev
+  sig_had_nuc
+  SOURCES
+  ${fortran_dir}/sibyll/sibyll2.3e-star.f
   ${fortran_dir}/sibyll/sibyll_init.fpp
   ${logging_source}
   ${rangen_source}

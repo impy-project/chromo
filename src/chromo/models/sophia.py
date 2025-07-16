@@ -83,7 +83,7 @@ class SophiaEvent(MCEvent):
     def interaction_type(self):
         return sophia_interaction_types[self._lib.interaction_type_code]
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.schg.ichg[:npart]
 
     def _repair_initial_beam(self):

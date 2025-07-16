@@ -79,7 +79,7 @@ class PYTHIA8Event(EventData):
 
 class Pythia8(MCRun):
     _name = "Pythia"
-    _version = "8.308"
+    _version = "8.315"
     _library_name = "_pythia8"
     _event_class = PYTHIA8Event
     _frame = EventFrame.CENTER_OF_MASS
@@ -93,7 +93,7 @@ class Pythia8(MCRun):
     _restartable = True
     _data_url = (
         "https://github.com/impy-project/chromo"
-        "/releases/download/zipped_data_v1.0/Pythia8_v004.zip"
+        "/releases/download/zipped_data_v1.0/Pythia8_v005.zip"
     )
 
     def __init__(self, evt_kin, *, seed=None, config=None, banner=True):

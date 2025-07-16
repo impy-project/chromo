@@ -64,7 +64,7 @@ def _epos_unstable_pids():
 class EPOSEvent(MCEvent):
     """Wrapper class around EPOS particle stack."""
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.charge_vect(self._lib.hepevt.idhep[:npart])
 
     def _get_impact_parameter(self):

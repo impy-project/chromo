@@ -37,7 +37,7 @@ def run_model(Model, kin, number=1000):
 )
 @pytest.mark.parametrize("Model", get_all_models())
 def test_generator(Model):
-    if Model == im.Sibyll23StarMixed:
+    if Model in [im.Sibyll23dStarMixed, im.Sibyll23eStarMixed]:
         pytest.skip(
             reason="SIBYLL* handles decays internally "
             "and ignores most of the decay settings. "

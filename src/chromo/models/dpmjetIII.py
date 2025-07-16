@@ -24,7 +24,7 @@ class DpmjetIIIEvent(MCEvent):
     _jmohep = "jmohkk"
     _jdahep = "jdahkk"
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.dtpart.iich[self._lib.dtevt2.idbam[:npart] - 1]
 
     def _get_impact_parameter(self):
