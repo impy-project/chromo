@@ -13,8 +13,32 @@ on:
 
 
 jobs:
-
+  prepare-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v1
+      - name: Download all cache files if missing
+        run: |
+          mkdir -p ~/.cache/chromo
+          for file in qgsjet_v001 qgsjet_v002 Pythia8_v003 Pythia8_v004 Pythia8_v005 eposlhcr_v001 eposlhc_v001 epos_v001 dpm3191_v001 dpm3_v001 ; do
+            if [ ! -f ~/.cache/chromo/$file.zip ]; then
+              echo "Downloading $file.zip..."
+              curl -L -o ~/.cache/chromo/$file.zip "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip"
+            else
+              echo "$file.zip already exists, skipping."
+            fi
+          done
+      - name: Save chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v1
   wheels_on_PR:
+    needs: prepare-cache
     if: ${{ github.event.pull_request.merged == true }}
     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
@@ -25,12 +49,15 @@ jobs:
         arch: [auto]
         py: [cp313]
     steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v1
+
       - uses: actions/checkout@v4
         with:
           submodules: true
-
-      - name: Get latest CMake and Ninja
-        uses: lukka/get-cmake@latest
 
       - name: Setup gfortran for Linux
         uses: awvwgk/setup-fortran@main
@@ -40,12 +67,13 @@ jobs:
           version: 13
 
       - name: cibuildwheel on Linux
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v2.23.3
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_ENVIRONMENT_PASS_LINUX: CI
-          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+          # Will avoid testing on emulated architectures
+          CIBW_TEST_SKIP: "*-*linux_{ppc64le,s390x,armv7l}"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -55,51 +83,35 @@ jobs:
 
 
   wheels:
+    needs: prepare-cache
     if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v') }}
     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, macos-14] # windows-latest: Disable windows for now
-        arch: [auto, aarch64]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-14] # windows-latest: Disable windows for now
+        arch: [auto]
         py: [cp39, cp310, cp311, cp312, cp313]
-        exclude:
-          - os: windows-latest
-            arch: aarch64
-          - os: macos-13
-            arch: aarch64
-          - os: macos-14
-            arch: aarch64
     steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v1
       - uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 0
 
-      - if: ${{ matrix.arch == 'aarch64' }}
-        uses: docker/setup-qemu-action@v3
+      - name: Set macOS deployment target
+        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-13' && '13.0' || matrix.os == 'macos-14' && '14.0' || '' }}" >> $GITHUB_ENV
 
-      - name: Get latest CMake and Ninja
-        uses: lukka/get-cmake@latest
-
-      # Set deployment target env var on macos 13
       - if: ${{ matrix.os == 'macos-13' }}
-        name: Set deployment target for MacOS-13
-        run: export MACOSX_DEPLOYMENT_TARGET=13.0
-
-      - if: ${{ matrix.os == 'macos-13'}}
-        name: Use a more legacy version of Xcode tools on MacOS-13
-        run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
-
-      - if: ${{ matrix.os == 'macos-13'}}
-        name: Setup gfortran for MacOS 13
+        name: Install gfortran via Homebrew
         run: |
-          # Taken from https://github.com/numpy/numpy/tree/main/tools/wheels
-          set -xe
-          chmod +x .github/workflows/gfortran_utils.sh
-          source .github/workflows/gfortran_utils.sh
-          install_gfortran
+          brew install gcc
           gfortran --version
           which gfortran
 
@@ -111,6 +123,12 @@ jobs:
           compiler: gcc
           version: 13
 
+      - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
+        if: ${{ matrix.os == 'macos-13'  }}
+        name: Setup Xcode
+        with:
+          xcode-version: '14.3'
+
       - if: ${{ matrix.os != 'macos-13' }}
         uses: ts-graphviz/setup-graphviz@v2
         name: Install Graphviz
@@ -118,92 +136,45 @@ jobs:
 
       - if: ${{ matrix.os == 'windows-latest' }}
         name: cibuildwheel on Windows
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v2.23.3
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
 
-      - if: ${{ matrix.os == 'ubuntu-latest' }}
+      - if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm' }}
         name: cibuildwheel on Linux
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v2.23.3
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_ENVIRONMENT_PASS_LINUX: CI
-          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           # Will avoid testing on emulated architectures
-          CIBW_TEST_SKIP: "*-*linux_{aarch64,ppc64le,s390x,armv7l}"
-
+          CIBW_TEST_SKIP: "*-*linux_{ppc64le,s390x,armv7l}"
 
       - if: ${{ matrix.os == 'macos-13'}}
         name: cibuildwheel on MacOS-13
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v2.23.3
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           no_proxy: '*'
           CHROMO_SKIP_GRAPHVIZ: 1
+          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
 
-      - if: ${{ matrix.os == 'macos-14' }}
+      - if: ${{matrix.os == 'macos-14' }}
         name: cibuildwheel on MacOS-14
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v2.23.3
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
           no_proxy: '*'
-          MACOSX_DEPLOYMENT_TARGET: 14.0
+          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
 
       - uses: actions/upload-artifact@v4
         with:
-          name: wheel-${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
           path: ./wheelhouse/*.whl
-
-  sdist:
-    name: source package
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Dump GitHub context
-        run: echo '${{ toJSON(github) }}'
-
-      - uses: actions/setup-python@v4
-        name: Install Python
-        with:
-          python-version: '3.12'
-
-      - uses: tlylt/install-graphviz@v1
-        name: Install Graphviz
-
-      - run: python -m pip install --upgrade pip wheel setuptools
-      - run: pipx run build --sdist
-      - run: python -m pip install --prefer-binary -v `echo dist/chromo-*`[test]
-      - run: python -m pytest -v
-
-      - uses: actions/upload-artifact@v4
-        with:
-          path: dist/*.tar.gz
-
-  upload_to_PyPI:
-    name: Upload to PyPI
-    needs: [wheels, sdist]
-    runs-on: ubuntu-latest
-    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-    steps:
-      - name: Download files in artifact to "dist/" directory
-        uses: actions/download-artifact@v4.1.7
-        with:
-          merge-multiple: true
-          path: dist
-
-      - name: Publish package to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1.8
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          name: wheel-${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
 
 

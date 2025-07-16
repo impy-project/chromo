@@ -11,9 +11,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
+  prepare-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v1
+      - name: Download all cache files if missing
+        run: |
+          mkdir -p ~/.cache/chromo
+          for file in qgsjet_v001 qgsjet_v002 Pythia8_v003 Pythia8_v004 Pythia8_v005 eposlhcr_v001 eposlhc_v001 epos_v001 dpm3191_v001 dpm3_v001 ; do
+            if [ ! -f ~/.cache/chromo/$file.zip ]; then
+              echo "Downloading $file.zip..."
+              curl -L -o ~/.cache/chromo/$file.zip "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip"
+            else
+              echo "$file.zip already exists, skipping."
+            fi
+          done
+      - name: Save chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v1
 
+  test:
+    needs: prepare-cache
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
@@ -21,62 +46,52 @@ jobs:
           # Disable Windows for now, as long as numpy is buggy on Windows
           # - os: windows-latest
           #   python-version: "3.12"
-          #   installs: "numpy==1.26.4"
-
           - os: macos-14
             python-version: "3.12"
-            installs: "numpy>=2"
-
           - os: ubuntu-latest
             python-version: "3.13"
-            installs: "numpy>=2"
+          - os: ubuntu-24.04-arm
+            python-version: "3.13"
       fail-fast: false
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-        fetch-depth: 3
-    - name: Get latest CMake and Ninja
-      uses: lukka/get-cmake@latest
-    # must come after checkout
-    - uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        key: ${{ github.job }}-${{ matrix.os }}-${{ matrix.python-version }}
-    - uses: astral-sh/setup-uv@v3
-    - uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        allow-prereleases: true
-    - uses: awvwgk/setup-fortran@main
-      id: setup-fortran
-      with:
-        compiler: gcc
-        version: 13
-
-    - run: python -m pip install --upgrade pip
-
-    - if: ${{ matrix.os != 'windows-latest' }}
-      run: uv pip install --system -v .[test] ${{ matrix.installs }}
-
-    - if: ${{ matrix.os == 'windows-latest' }}
-      run: python -m pip install --prefer-binary -v .[test] ${{ matrix.installs }}
-      env:
-        CMAKE_GENERATOR: "MinGW Makefiles"
-        FC: ${{ steps.setup-fortran.outputs.fc }}
-
-    # graphviz is needed for tests, only install it when compilation succeed
-    - uses: tlylt/install-graphviz@v1
-
-    # Tests run in parallel, but data download is currently not thread-safe.
-    # We work around this by downloading all data files upfront.
-    - run: python download_data.py
-    - run: python -m pytest -vv -n 3
-      env:
-        no_proxy: '*'
-
-    # always() ensures upload even if pytest ends with failures
-    - if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.os }}-${{ matrix.python-version }}
-        path: "fig/**"
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v1
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 3
+      - uses: astral-sh/setup-uv@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+      - uses: awvwgk/setup-fortran@main
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 13
+      - run: python -m pip install --upgrade pip
+      - if: ${{ matrix.os != 'windows-latest' }}
+        run: uv pip install --system -v .[test]
+      - if: ${{ matrix.os == 'windows-latest' }}
+        run: python -m pip install --prefer-binary -v .[test]
+        env:
+          CMAKE_GENERATOR: "MinGW Makefiles"
+          FC: ${{ steps.setup-fortran.outputs.fc }}
+      # graphviz is needed for tests, only install it when compilation succeed
+      - uses: tlylt/install-graphviz@v1
+      # Tests run in parallel, but data download is currently not thread-safe.
+      # We work around this by downloading all data files upfront.
+      - run: python scripts/download_data.py
+      - run: python -m pytest -vv -n 3
+        env:
+          no_proxy: '*'
+      # always() ensures upload even if pytest ends with failures
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.python-version }}
+          path: "fig/**"

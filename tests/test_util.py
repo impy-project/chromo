@@ -1,8 +1,9 @@
-from chromo import util
 import numpy as np
 from numpy.testing import assert_equal
 from particle import literals as lp
 from pytest import approx
+
+from chromo import util
 
 
 def test_select_mothers():

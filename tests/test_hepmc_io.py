@@ -1,13 +1,16 @@
+from contextlib import nullcontext
 from pathlib import Path
+
+import pyhepmc
+import pytest
+from pytest import approx
+
+import chromo.models as im
 from chromo.constants import GeV
 from chromo.kinematics import CenterOfMass, FixedTarget
-import chromo.models as im
-import pytest
-import pyhepmc
-from contextlib import nullcontext
-from .util import run_in_separate_process
 from chromo.util import get_all_models
-from pytest import approx
+
+from .util import run_in_separate_process
 
 # generate list of all models in chromo.models
 models = get_all_models()
@@ -59,7 +62,7 @@ def test_hepmc_io(Model):
     restored = []
     with pyhepmc.open(test_file) as f:
         for event in f:
-            restored.append(event)
+            restored.append(event)  # noqa: PERF402
 
     assert len(restored) == len(expected)
 

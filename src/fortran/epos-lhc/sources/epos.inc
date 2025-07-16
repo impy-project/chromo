@@ -317,7 +317,8 @@ c------------------------------------------------------------------------
       integer       nglacc
       common/accum2/nglacc
       integer      nptlu,nrclu
-      common/cptlu/nptlu /cnrclu/nrclu
+      common/cptlu/nptlu 
+      common/cnrclu/nrclu
       real         tecm,volu
       common/drop6/tecm,volu
       integer      iterma,iternc,iterpr,iterpl,iozinc,iozevt
@@ -369,7 +370,8 @@ c------------------------------------------------------------------------
       integer      khisto
       common/khist/khisto
       integer      nctcor,ncttim
-      common/ctcor/nctcor/ccttim/ncttim
+      common/ctcor/nctcor
+      common/ccttim/ncttim
       integer      kdensi
       real         tauv
       common/densi/kdensi(matau,nzeta,mxcoox,mxcooy),tauv(matau)
@@ -382,7 +384,9 @@ c------------------------------------------------------------------------
       integer      iokoll
       common/ckoll/iokoll
       integer      ncnt,inicnt,nemsi
-      common/cncnt/ncnt  /cicnt/inicnt /cnemsi/nemsi
+      common/cncnt/ncnt  
+      common/cicnt/inicnt
+      common/cnemsi/nemsi
       real        gfactor,gwidth
       integer     iemspl,iemsct
       common/ems1/iemspl,iemsct,gfactor,gwidth

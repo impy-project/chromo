@@ -6,24 +6,26 @@ CRMC (Cosmic Ray Monte Carlo package) https://web.ikp.kit.edu/rulrich/crmc.html
 
 import argparse
 import os
-from chromo import models, __version__ as version
-from chromo.kinematics import CenterOfMass, FixedTarget, Momentum
-from chromo.util import AZ2pdg, tolerant_string_match, get_all_models, name2pdg
-from chromo.constants import MeV, GeV
-from chromo import writer
-from pathlib import Path
-from particle import Particle
 from math import sqrt
+from pathlib import Path
+
+from particle import Particle
 from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
     Progress,
     ProgressColumn,
     Task,
-    BarColumn,
-    MofNCompleteColumn,
-    TimeRemainingColumn,
     TaskProgressColumn,
+    TimeRemainingColumn,
 )
 from rich.text import Text
+
+from chromo import __version__ as version
+from chromo import models, writer
+from chromo.constants import GeV, MeV
+from chromo.kinematics import CenterOfMass, FixedTarget, Momentum
+from chromo.util import AZ2pdg, get_all_models, name2pdg, tolerant_string_match
 
 
 class SpeedColumn(ProgressColumn):
@@ -91,7 +93,7 @@ def process_particle(x):
             z = x // 10000
             a = (x % 10000) / 10
             return AZ2pdg(a, z)
-        return x
+        return x  # noqa: TRY300
     except ValueError:
         pass
 
@@ -101,7 +103,8 @@ def process_particle(x):
     try:
         return name2pdg(x)
     except KeyError:
-        raise SystemExit(f"particle name {x} not recognized")
+        msg = f"particle name {x} not recognized"
+        raise SystemExit(msg)
 
 
 def parse_arguments():
@@ -179,7 +182,7 @@ def parse_arguments():
     args = parser.parse_args()
 
     if args.version:
-        print(f"chromo {version}")
+        print(f"chromo {version}")  # noqa: T201
         raise SystemExit
 
     if args.seed <= 0:
@@ -192,7 +195,8 @@ def parse_arguments():
         model_number = int(args.model)
         Model = MODELS[model_number]
     except KeyError:
-        raise SystemExit(f"Error: model={args.model} is invalid ({VALID_MODELS})")
+        msg = f"Error: model={args.model} is invalid ({VALID_MODELS})"
+        raise SystemExit(msg)
     except ValueError:
         # args.model is not a number.
         # Find model that matches string spec.
@@ -212,14 +216,14 @@ def parse_arguments():
             if len(matches) == 1:
                 Model = matches[0]
             elif len(matches) == 0:
-                raise SystemExit(
-                    f"Error: model={args.model} has no match ({VALID_MODELS})"
-                )
+                msg = f"Error: model={args.model} has no match ({VALID_MODELS})"
+                raise SystemExit(msg)
             else:
-                raise SystemExit(
+                msg = (
                     f"Error: model={args.model} is ambiguous, "
                     f"matches ({', '.join(v.label for v in matches)})"
                 )
+                raise SystemExit(msg)
     args.model = Model
 
     args.projectile_id = process_particle(args.projectile_id)
@@ -231,7 +235,8 @@ def parse_arguments():
     pr = args.projectile_momentum
     ta = args.target_momentum
     if args.sqrts < 0:
-        raise SystemExit(f"Error: sqrt(s) is negative {args.sqrts/GeV} GeV")
+        msg = f"Error: sqrt(s) is negative {args.sqrts/GeV} GeV"
+        raise SystemExit(msg)
     if (pr != 0 or ta != 0) and args.sqrts != 0:
         raise SystemExit("Error: either set sqrts or momenta, but not both")
     if pr == 0 and ta == 0 and args.sqrts == 0:
@@ -290,17 +295,19 @@ def parse_arguments():
                 args.out = Path(args.out).with_suffix(ext)
 
     if args.output not in FORMATS:
-        raise SystemExit(f"Error: unknown format {args.output} ({VALID_FORMATS})")
+        msg = f"Error: unknown format {args.output} ({VALID_FORMATS})"
+        raise SystemExit(msg)
 
     configuration = ""
     if args.config:
         fn = Path(args.config)
         if not fn.exists():
-            raise SystemExit(f"Error: configuration file {args.config} does not exist")
+            msg = f"Error: configuration file {args.config} does not exist"
+            raise SystemExit(msg)
 
         lines = ["def configure(model):\n"]
-        for line in open(fn):
-            lines.append(f"    {line}")
+        with open(fn) as f:
+            lines.extend([f"    {line}" for line in f])
         configuration = "".join(lines)
 
     return args, configuration
@@ -356,9 +363,9 @@ def main():
                 d = {}
                 exec(configuration, d)
                 d["configure"](model)
-            except Exception:
-                print(f"Error in configuration code:\n\n{configuration}")
-                raise
+            except Exception as e:
+                msg = f"Error in configuration code:\n\n{configuration}, {e}"
+                raise RuntimeError(msg) from e
         ofile = FORMATS[args.output](args.out, model)
         with ofile:
             # workaround: several models generate extra print when first

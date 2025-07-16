@@ -1,11 +1,14 @@
-from chromo.kinematics import FixedTarget, CenterOfMass
-from chromo.constants import TeV, GeV
-import chromo.models as im
 import pickle
-import pytest
-from .util import run_in_separate_process
-from chromo.util import get_all_models
 from copy import deepcopy
+
+import pytest
+
+import chromo.models as im
+from chromo.constants import GeV, TeV
+from chromo.kinematics import CenterOfMass, FixedTarget
+from chromo.util import get_all_models
+
+from .util import run_in_separate_process
 
 
 def run_rng_state(Model):
@@ -26,9 +29,7 @@ def run_rng_state(Model):
     # Save a initial state to a variable:
     state_0 = deepcopy(generator.random_state)
     # Generate nevents events
-    states = []
-    for _ in generator(nevents):
-        states.append(deepcopy(generator.random_state))
+    states = [deepcopy(generator.random_state) for _ in generator(nevents)]
 
     # Pickle generator state after nevents
     pickled_state_1 = pickle.dumps(generator.random_state)

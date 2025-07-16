@@ -137,7 +137,8 @@ c-----------------------------------------------------------------------
       common/jpsi10/ndrop0(mxbim,ntjpsi)
 
       double precision tpro,zpro,ttar,ztar,ttaus,detap,detat
-      common/cttaus/tpro,zpro,ttar,ztar,ttaus,detap,detat /ctain/mtain
+      common/cttaus/tpro,zpro,ttar,ztar,ttaus,detap,detat
+      common/ctain/mtain
       common/geom/rmproj,rmtarg,bmax,bkmx
       common/nucl3/phi,bimp
       parameter (ndep=129,ndet=129)
@@ -425,7 +426,8 @@ c     cut in zeta-x (or y) plane for tau
 c-----------------------------------------------------------------------
       include 'epos.inc'
       double precision tpro,zpro,ttar,ztar,ttaus,detap,detat
-      common/cttaus/tpro,zpro,ttar,ztar,ttaus,detap,detat /ctain/mtain
+      common/cttaus/tpro,zpro,ttar,ztar,ttaus,detap,detat
+      common/ctain/mtain
       parameter (mxbim=12,ntjpsi=150,mxtauc=16)
       common/jpsi1/bimmax,kolran,delt,taumi,jpsinu,jpsidr,taudmx
       common/jpsi2/jjtot(mxbim),jjnuc(mxbim),jjjtau(mxbim,mxtauc)

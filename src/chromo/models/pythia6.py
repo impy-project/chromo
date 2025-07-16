@@ -1,14 +1,15 @@
 import numpy as np
-from chromo.common import MCRun, MCEvent, CrossSectionData
 from particle import literals as lp
-from chromo.kinematics import EventFrame
+
+from chromo.common import CrossSectionData, MCEvent, MCRun
 from chromo.constants import standard_projectiles
+from chromo.kinematics import EventFrame
 
 
 class PYTHIA6Event(MCEvent):
     """Wrapper class around HEPEVT particle stack."""
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         k = self._lib.pyjets.k[:npart, 1]
         # TODO accelerate by implementing this loop in Fortran
         return np.fromiter((self._lib.pychge(ki) / 3 for ki in k), np.double)
@@ -64,7 +65,7 @@ class Pythia6(MCRun):
 
     def _cross_section(self, kin=None, max_info=False):
         s = self._lib.pyint7.sigt[0, 0]
-        c = CrossSectionData(
+        return CrossSectionData(
             total=s[0],
             elastic=s[1],
             inelastic=s[0] - s[1],
@@ -73,7 +74,6 @@ class Pythia6(MCRun):
             diffractive_xx=s[4],
             diffractive_axb=0,
         )
-        return c
 
     def _set_kinematics(self, kin):
         codes = []

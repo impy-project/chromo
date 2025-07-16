@@ -1,14 +1,17 @@
-from chromo.constants import GeV, long_lived
-from chromo.kinematics import CenterOfMass
-from chromo import models as im
-import pytest
-from .util import run_in_separate_process
-from chromo.util import get_all_models, pdg2name
+import os
+import platform
+
 import boost_histogram as bh
 import numpy as np
-import platform
-import os
+import pytest
 from particle import literals as lp
+
+from chromo import models as im
+from chromo.constants import GeV, long_lived
+from chromo.kinematics import CenterOfMass
+from chromo.util import get_all_models, pdg2name
+
+from .util import run_in_separate_process
 
 # remove omega- from the list of long-lived hadrons
 # because the probability is less than 1e3
@@ -34,7 +37,7 @@ def run_model(Model, kin, number=1000):
 )
 @pytest.mark.parametrize("Model", get_all_models())
 def test_generator(Model):
-    if Model == im.Sibyll23StarMixed:
+    if Model in [im.Sibyll23dStarMixed, im.Sibyll23eStarMixed]:
         pytest.skip(
             reason="SIBYLL* handles decays internally "
             "and ignores most of the decay settings. "

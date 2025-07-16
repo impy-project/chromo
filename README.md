@@ -71,7 +71,9 @@ Please note that `chromo` only provides a user interface for the following model
 | [QGSJet-III](https://inspirehep.net/literature/2771416)   | *hN, hA, AA*              | |
 | [SIBYLL-2.1](https://inspirehep.net/literature/823839)    | *hN, hA (A<=20)*          | |
 | [SIBYLL-2.3d](https://inspirehep.net/literature/1768983)  | *hN, hA (A<=20)*          | incl. legacy versions -2.3/-2.3c |
-| [SIBYLL*](https://inspirehep.net/literature/2774307)      | *hN, hA (A<=20)*          |  |
+| [SIBYLL-2.3e](https://inspirehep.net/literature/1768983)  | *hN, hA (A<=20)*          |  |
+| [SIBYLL* (based on 2.3d)](https://inspirehep.net/literature/2774307)      | *hN, hA (A<=20)*          |  |
+| [SIBYLL* (based on 2.3e)](https://inspirehep.net/literature/2774307)      | *hN, hA (A<=20)*          |  |
 | [SOPHIA 2.0](https://inspirehep.net/literature/497602)    | *γN*                      | |
 | [UrQMD 3.4](https://inspirehep.net/literature/468266) [+ second citation](https://inspirehep.net/literature/507334)    |  hN, hA, AA* | unavailable on Windows |
 

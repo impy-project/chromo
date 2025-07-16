@@ -1,14 +1,15 @@
 import numpy as np
+
+from chromo.common import CrossSectionData, MCEvent, MCRun
+from chromo.constants import standard_projectiles
 from chromo.kinematics import EventFrame, GeV
-from chromo.common import MCEvent, MCRun, CrossSectionData
 from chromo.util import (
+    Nuclei,
     _cached_data_dir,
     fortran_array_insert,
     fortran_array_remove,
-    Nuclei,
     select_long_lived,
 )
-from chromo.constants import standard_projectiles
 
 
 def _epos_unstable_pids():
@@ -51,20 +52,19 @@ def _epos_unstable_pids():
         100111,
     ]
 
-    unstable_pids = []
     # From all unstable particles take that
     # are known to epos
-    for pid in select_long_lived():
-        if (abs(pid) not in unknown_pids_epos) and (abs(pid) < unknown_pids_epos[-1]):
-            unstable_pids.append(pid)
-
-    return unstable_pids
+    return [
+        pid
+        for pid in select_long_lived()
+        if (abs(pid) not in unknown_pids_epos) and (abs(pid) < unknown_pids_epos[-1])
+    ]
 
 
 class EPOSEvent(MCEvent):
     """Wrapper class around EPOS particle stack."""
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.charge_vect(self._lib.hepevt.idhep[:npart])
 
     def _get_impact_parameter(self):
