@@ -73,6 +73,7 @@ c      ionudi=3              !count diffraction without excitation as elastic
 c Debug
          ish=idbg       !debug level
          ifch=iou      !debug output (screen)
+         iwseed=0    !print seed to file
 
          if (idbg.lt.2) then
             iecho=0                    !"silent" reading mode
@@ -128,35 +129,36 @@ c-----------------------------------------------------------------------
 
          ecms=ecm  !center of mass energy in GeV/c2
          elab=ela  ! lab energy
-
+**FR fix PDG conversion for nuclei
          if (ippdg.ge.1000000000) then
-            izpro = mod(ippdg, 1000) / 10
-            iapro = mod(ippdg, 1000000) / 10000
-            ippdg = 2212
+            iapro = mod(ippdg, 10000) / 10
+            izpro = mod(ippdg, 1000000) / 10000            
+            iproton = 2212
+            idprojin = idtrafo('pdg','nxs',iproton)
          else
-            izpro = 1
+            idprojin = idtrafo('pdg','nxs',ippdg)
+            izpro = -1
             iapro = 1
          endif
+         
          if (itpdg.ge.1000000000) then
-            iztar = mod(itpdg, 1000) / 10
-            iatar = mod(itpdg, 1000000) / 10000
-            itpdg = 2212
+            iatar = mod(itpdg, 10000) / 10
+            iztar = mod(itpdg, 1000000) / 10000
+            iproton = 2212
+            idtargin = idtrafo('pdg','nxs',iproton)
          else
-            iztar = 1
+            idtargin = idtrafo('pdg','nxs',itpdg)         
+            iztar = -1
             iatar = 1
          endif
-
-         idprojin = idtrafo('pdg','nxs',ippdg)
-         if (idpro.ne.2212) izpro = -1
+         
          laproj = izpro      !proj Z
-         maproj = iapro      !proj A
-         idtargin = idtrafo('pdg','nxs',itpdg)
+         maproj = iapro      !proj A         
          latarg = iztar      !targ Z
          matarg = iatar      !targ A
 
          iframe=10 + ifram           !nucleon-nucleon frame (12=target)
 
-c anfe why here? istmax = 1      !only final particles (istmax=1 includes mother particles)
          call ainit()
       End
 

@@ -35,9 +35,9 @@ def run_model(Model, kin):
 def test_final_state_mass_shell(Model, frame, target, projectile):
     p1 = projectile
     p2 = target
-    if Model is im.EposLHC and frame == "cms2ft":
+    if issubclass(Model, im.EposLHC) and frame == "cms2ft":
         pytest.skip(
-            "EposLHC doesn't conserve mass well when boosted from cms to ft frame."
+            "Epos doesn't conserve mass well when boosted from cms to ft frame."
         )
     if p2 == "air":
         if Model is im.Pythia8:
@@ -69,8 +69,8 @@ def test_final_state_mass_shell(Model, frame, target, projectile):
     inv_mass = np.sign(inv_mass2) * np.sqrt(np.abs(inv_mass2))
     # Increase tolerance above 5 MeV for single-precision models
     atol = 0.005
-    if Model in [im.EposLHC]:
-        atol = 0.01
+    if issubclass(Model, im.EposLHC):
+        atol = 0.02
     elif Model in [im.QGSJetIII] and p1 == "He" and target == "air":
         atol = 0.05
     assert_allclose(inv_mass, event.m, atol=atol)

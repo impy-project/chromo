@@ -61,7 +61,7 @@ def run_model(Model, kin, number=1):
     )
 
     values = []
-    for _ in range(number):
+    for num in range(number):
         for event in gen(100):
             ev = event.final_state()
             h.fill(ev.eta, np.abs(ev.pid))

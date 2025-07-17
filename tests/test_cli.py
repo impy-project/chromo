@@ -157,12 +157,13 @@ def test_number_2():
     "spec,Model",
     (
         *tuple((str(k), v) for k, v in MODELS.items()),
-        ("eposlhc", im.EposLHC),
+        ("EPOS-LHC", im.EposLHC),
+        ("EPOS-LHC-R hadr. rescattering", im.EposLHCRHadrRescattering),
         ("sibyll-2.3d", im.Sibyll23d),
         ("sibyll-2.3e", im.Sibyll23e),
         ("sibyll-2.3eStar-mix", im.Sibyll23eStarMixed),
         ("sib21", im.Sibyll21),
-        ("sibyll-2.3", im.Sibyll23),
+        ("sibyll-2.3c", im.Sibyll23c),
         ("sibyll-2.3dStar-Mix", im.Sibyll23dStarMixed),
     ),
 )
@@ -199,7 +200,7 @@ def test_model_3():
         returncode=1,
         stderr=(
             "Error: model=sib is ambiguous, matches (SIBYLL-2.1, "
-            "SIBYLL-2.3, SIBYLL-2.3c, SIBYLL-2.3d, SIBYLL-2.3dStar-mix, "
+            "SIBYLL-2.3c, SIBYLL-2.3d, SIBYLL-2.3dStar-mix, "
             "SIBYLL-2.3e, SIBYLL-2.3eStar-mix)"
         ),
     )

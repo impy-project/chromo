@@ -161,12 +161,22 @@ models = {
 
   # EPOS -----------------------------------------------------------------
   '_eposlhc':{
-    'src'   : run_command(py, scripts_dir + 'list_epos_sources.py', '--directory',
-                          f/'epos', check:true).stdout().strip().split('\n'),
-    'inc'   : [f/'epos/sources'],
-    'iface' : run_command(py,'scripts/list_epos_sources.py','--directory', f/'epos',
+    'src'   : run_command(py, scripts_dir + 'list_eposlhc_sources.py', '--directory',
+                          f/'epos-lhc', check:true).stdout().strip().split('\n'),
+    'inc'   : [f/'epos-lhc/sources'],
+    'iface' : run_command(py,'scripts/list_eposlhc_sources.py','--directory', f/'epos-lhc',
                       '--interface-only', check:true).stdout().strip().split('\n'),
     'funcs' : epos_syms + common_syms,
+    'flags' : ['-O0'],
+  },
+  '_eposlhcr':{
+    'src'   : run_command(py, scripts_dir + 'list_eposlhcr_sources.py', '--directory',
+                          f/'epos-lhc-r', check:true).stdout().strip().split('\n'),
+    'inc'   : [f/'epos-lhc-r/sources'],
+    'iface' : run_command(py,'scripts/list_eposlhcr_sources.py','--directory', f/'epos-lhc-r',
+                      '--interface-only', check:true).stdout().strip().split('\n'),
+    'funcs' : epos_syms + common_syms,
+    'flags' : ['-O0'],
   },
 }
 
@@ -242,12 +252,19 @@ foreach name, cfg : models
               '@OUTDIR@','@INPUT@'],
     build_by_default : true)
 
+  # Override optimization for EPOS models
+  override_opts = []
+  if name in ['_eposlhc', '_eposlhcr']
+    override_opts = ['optimization=0']
+  endif
+
   py.extension_module(name,
     sources            : srcs + [wrap, f2py_obj],
     include_directories: include_directories(inc_dirs),
     dependencies       : [py_dep, numpy_dep],
     c_args             : common_cargs + flags,
     fortran_args       : flags,
+    override_options   : override_opts,
     subdir             : 'chromo/models',
     install            : true,
     install_rpath      : rpath_tok,

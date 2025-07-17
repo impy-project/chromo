@@ -10,7 +10,7 @@ build-backend = "mesonpy"
 
 [project]
 name = "chromo"
-version = "0.8.0"
+version = "0.9.0"
 description = "Hadronic Interaction Model interface in Python"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.9"
@@ -71,8 +71,8 @@ examples = [
 [tool.chromo]
 # Enabled models
 enabled-models = [
-    "sib21",
     "eposlhc",
+    "eposlhcr",
     "dpmjet_phojet191",
     "dpmjet_phojet193",
     "dpmjet_phojet307",
@@ -81,7 +81,8 @@ enabled-models = [
     "qgs2_03",
     "qgs2_04",
     "qgs3",
-    "sib23",
+    "sib21",
+    "sib23c01",
     "sib23d",
     "sib23d_star",
     "sib23e",
