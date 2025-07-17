@@ -242,7 +242,8 @@ c-----------------------------------------------------------------------
       common/cspez1/nspez,ispez(mspez),aspez(2,mspez),gspez(mspez)
       common/cspez2/kspez,jspez(mspez)
       common/cspez3/fuga(mspez)
-      common/cspez4/ffstat(2,0:mspez+2) /ctfo/tfo
+      common/cspez4/ffstat(2,0:mspez+2)
+      common/ctfo/tfo
       real u(3)
       io3=ioclude-3
       if(io3.lt.1.or.io3.gt.2)then
@@ -285,7 +286,9 @@ c----------------------------------------------------------------------
       include 'epos.inchy'
       parameter (mspez=54)
       common/cspez1/nspez,ispez(mspez),aspez(2,mspez),gspez(mspez)
-      common/cspez2/kspez,jspez(mspez) /cstep/netastep /crapi/delrapi
+      common/cspez2/kspez,jspez(mspez)
+      common/cstep/netastep
+      common/crapi/delrapi
       common/ctempcrit/tempcrit,epscrit
       character tabname*550
       
@@ -303,7 +306,8 @@ c------------------------------------------------------------------------------
       include 'epos.inc'
       include 'epos.inchy'
       character txtdum*40, tabname*550
-      common/ctempcrit/tempcrit,epscrit/ctfo/tfo
+      common/ctempcrit/tempcrit,epscrit
+      common/ctfo/tfo
       nchar=index(tabname,' ')-1
       write(*,'(a,$)')
      * ' reading table '//tabname(1:nchar)//' ...'
@@ -528,7 +532,8 @@ c-------------------------------------------------------------------------------
       common/cspez1/nspez,ispez(mspez),aspez(2,mspez),gspez(mspez)
       common/cspez2/kspez,jspez(mspez)
       common/cspez3/fuga(mspez)
-      common/cspez4/ffstat(2,0:mspez+2) /ctfo/tfo
+      common/cspez4/ffstat(2,0:mspez+2)
+      common/ctfo/tfo
       parameter (nlag=15)
       real xlag(nlag),wlag(nlag)
 c      parameter (klax=5)
@@ -687,11 +692,14 @@ c-------------------------------------------------------------------------------
       common/copt/istat
       parameter (mspez=54,klax=5)
       common/cspez1/nspez,ispez(mspez),aspez(2,mspez),gspez(mspez)
-      common/cspez2/kspez,jspez(mspez)  /cho/netaho
+      common/cspez2/kspez,jspez(mspez)
+      common/cho/netaho
       common/cpro/probdi(20,100),dprob,mxprob
-      common/crap/nraphi,jfac  /cstep/netastep
+      common/crap/nraphi,jfac
+      common/cstep/netastep
       common/cspez3/fuga(mspez)
-      common/cspez4/ffstat(2,0:mspez+2)  /ctfo/tfo
+      common/cspez4/ffstat(2,0:mspez+2)
+      common/ctfo/tfo
       real u(3),q(4),waii(2),wbii(2),wcii(2)
       real wrii(2),wwii(2),wxii(2),wyii(2),wzii(2)
       parameter(numiv=100,rapmax=5,rapmin=-rapmax,ptvmax=2)
@@ -988,7 +996,10 @@ c-------------------------------------------------------------------------------
       subroutine DefineRapScale ! 13 Aug 08 (same as gyx.f except inc)
 c---------------------------------------------------------------------------------
       include 'epos.inchy'
-      common/crap/nraphi,jfac /cho/netaho /cstep/netastep /crapi/delrapi
+      common/crap/nraphi,jfac
+      common/cho/netaho
+      common/cstep/netastep
+      common/crapi/delrapi
       deta=etahy(2)-etahy(1)
       write(*,'(a,$)')' DefineRapScale  ...'
       jfac=1
@@ -1023,7 +1034,8 @@ c----------------------------------------------------------------------
       parameter(numiv=100)!,rapmax=5,rapmin=-rapmax)
       common/cana1b/rapar(klax,numiv),v2rapar(klax,numiv)
       common/cana1d/sapar(klax,numiv),v2sapar(klax,numiv)
-      common/cstep/netastep /crapi/delrapi
+      common/cstep/netastep
+      common/crapi/delrapi
       double precision seedp
 
       data icntcf /0/
@@ -1267,7 +1279,8 @@ c----------------------------------------------------------------------
       common/xxxspecsy/ndrop(-4:4,-4:4,-4:4)
       common/cdelzet/delzet,delsgr
       common/cen/ncentr !/ctauhu/ntauhu(ncenthx,1-netahx:netahx-1)
-      common/cranphi/ranphi /ctfo/tfo
+      common/cranphi/ranphi
+      common/ctfo/tfo
       double precision seedp
       !data vv2 /0./ nvv2 /0/  vv3 /0./
       !save vv2,nvv2,vv3

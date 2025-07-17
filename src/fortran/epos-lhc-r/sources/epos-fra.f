@@ -15,7 +15,9 @@ c      common /cpptr/ pptr(4,mxptl),ystr(mxptl)
       double precision p1,p12,p2
       dimension co(12),ind(0:mxnbr),p1(5),p2(5)
       dimension ic2(2),ic1(2),ic(2),fkap(3),xori(4)
-      common/pb/pb /cnsbp/nsbp  /cn8ptl/n8ptl
+      common/pb/pb
+      common/cnsbp/nsbp
+      common/cn8ptl/n8ptl
       common/czz/kky,krm,kdrm,kzrm,pui(3),pdi(3),psi(3),pci(3),zzzz,itp
      &,pduui(3),pdudi(3),pdusi(3),pduci(3),pdddi(3),pddsi(3),pddci(3)
      &,pdssi(3),pdsci(3),pdcci(3),kkc
@@ -1012,7 +1014,9 @@ c---------------------------------------------------------------------
       common /gag/nob,pst(4,0:mxnba),ipst(0:mxnba)
      $     ,nbr,ijb(2,0:mxnbr),xyb(2,0:mxnbr)
      &     ,ptb(4,0:mxnbr),iflb(0:mxnbr),ip(0:mxnbr),co,x,y
-      common/pb/pb /cnsbp/nsbp /cn8ptl/n8ptl
+      common/pb/pb
+      common/cnsbp/nsbp
+      common/cn8ptl/n8ptl
       double precision ax,ay,az,ae,am,bx,by,bz,be
       dimension co(12)
       logical weiter

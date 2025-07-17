@@ -6560,7 +6560,8 @@ c----------------------------------------------------------------------
       include "epos.incho"
       include "epos.incems"
       common/cirtfile/irtfile
-      common/ccc20/icc20  /ciext4/iext4
+      common/ccc20/icc20
+      common/ciext4/iext4
       
       if(iext4.eq.0)then 
       
@@ -6598,7 +6599,8 @@ c----------------------------------------------------------------------
       include "epos.incho"
       include "epos.incems"
       common/cen/ncentr
-      common/jcen/jcentr,jmxcentr /kcen/kcentr,kmxcentr
+      common/jcen/jcentr,jmxcentr
+      common/kcen/kcentr,kmxcentr
       kmax=0
       do k=1,100
         if(zclass(3,k).gt.0.)kmax=kmax+1

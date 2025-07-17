@@ -31,7 +31,8 @@ c     origint(2),uidt(2)
       integer ityptdt(2,2),iso3tdt(2,2)
       save
       integer itypart(nmax), itrace(2,nmax),itypartt(2) !### kw ### 
-      common /city/itypart  /ctrace/itrace         !### kw ###
+      common /city/itypart
+      common /ctrace/itrace         !### kw ###
 c
       if(ind.eq.0) return
 c 

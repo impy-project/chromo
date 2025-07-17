@@ -73,6 +73,8 @@ examples = [
 enabled-models = [
     "eposlhc",
     "eposlhcr",
+]
+disabled-models = [
     "dpmjet_phojet191",
     "dpmjet_phojet193",
     "dpmjet_phojet307",
@@ -91,8 +93,6 @@ enabled-models = [
     "sophia",
     "pythia6",
     "urqmd34",
-]
-disabled-models = [
 ]
 
 [tool.mypy]

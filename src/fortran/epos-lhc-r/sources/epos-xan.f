@@ -71,7 +71,8 @@ c---------------------------------------------------------------------
      $     ,emax(mxfra)
       character line*1000,cvar*25
       logical go
-      common/nl/noplin  /cnnnhis/nnnhis
+      common/nl/noplin
+      common/cnnnhis/nnnhis
       character*1000 cline
       common/cjjj/jjj,cline
 
@@ -3237,7 +3238,8 @@ c----------------------------------------------------------------------
       include "epos.incems"
       include "epos.incho"
       include "epos.incxan"
-      common/zeus2/qtl /cgbyjmax/gbyjmax
+      common/zeus2/qtl
+      common/cgbyjmax/gbyjmax
       parameter (ntim=1000)
       common/cprt/pprt(5,ntim),q2prt(ntim),idaprt(2,ntim),idprt(ntim)
      &,iorprt(ntim),jorprt(ntim),nprtj
@@ -3268,7 +3270,8 @@ c----------------------------------------------------------------------
       double precision bofra,bofra1,bofra2,bofra3,bofra4,bofra5
       common/dfra/bofra(5,mxfra)
       dimension p(5,mxfra),aimuni(10,mxhis),xor(5,mxfra)
-      common/cranphi/ranphi  /cicentrality/icentrality
+      common/cranphi/ranphi
+      common/cicentrality/icentrality
       double precision xxx
       logical NoLongLivParent
       save p,aimuni,xor,ishift

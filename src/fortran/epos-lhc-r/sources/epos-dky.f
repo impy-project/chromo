@@ -13,7 +13,8 @@ c-----------------------------------------------------------------------
       include 'epos.inc'
       common/cttaus/tpro,zpro,ttar,ztar,ttaus,detap,detat
       double precision tpro,zpro,ttar,ztar,ttaus,detap,detat
-      common/cnptlbur/nptlbur /cij99/ij99
+      common/cnptlbur/nptlbur
+      common/cij99/ij99
       character*24 txt
       logical go
       !-------------------------------

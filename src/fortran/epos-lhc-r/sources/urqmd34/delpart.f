@@ -17,7 +17,8 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       include 'freezeout.f'
       integer index,i,j,ind
       integer itypart(nmax), itrace(2,nmax)        !### kw ### 
-      common /city/itypart  /ctrace/itrace         !### kw ### 
+      common /city/itypart
+      common /ctrace/itrace         !### kw ### 
 
  
       ind=index

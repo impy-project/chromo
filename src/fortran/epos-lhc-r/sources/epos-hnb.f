@@ -62,7 +62,8 @@ c----------------------------------------------------------------------
       common/cylng/ylng(maxp)
 c      real Y3(maxp)
       common/xxxspecsy/ndrop(-4:4,-4:4,-4:4)
-      common/cdelzet/delzet,delsce /cvocell/vocell,xlongcell
+      common/cdelzet/delzet,delsce
+      common/cvocell/vocell,xlongcell
       real xcell,scell,zcell,delxce
       integer jjj,m1cell,m3cell,nptlb,nptla
       common/jintpoc2/xcell,scell,zcell,delxce

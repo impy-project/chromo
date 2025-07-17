@@ -44,7 +44,8 @@ C
       character*500 edir
       integer kcollmax
       common/ckcollmax/kcollmax
-      common/cdir/edir /cishuuu/ishuuu
+      common/cdir/edir
+      common/cishuuu/ishuuu
       ishuuu=ish
       call utpri('hacas ',ish,ishini,4)
       edir=fnnx(1:nfnnx)//' '
@@ -367,7 +368,9 @@ c spectator arrays
       !parameter (nflav=6)
       !integer jc(nflav,2),ic(2)
       integer itypart(nmax), itrace(2,nmax), iorpart(nmax)
-      common /city/itypart /ctrace/itrace /corpart/iorpart
+      common /city/itypart
+      common /ctrace/itrace
+      common /corpart/iorpart
       integer kjpsi
       real a,b,c,rangen
       external rangen
@@ -1085,7 +1088,9 @@ c spectator arrays
       !integer jc(nflav,2),ic(2),jca(3),i,nflav
       !parameter (nflav=6)
       integer itypart(nmax), itrace(2,nmax), iorpart(nmax)
-      common /city/itypart /ctrace/itrace /corpart/iorpart
+      common /city/itypart
+      common /ctrace/itrace
+      common /corpart/iorpart
       real a,b,c
       integer idyy,iutest,j
 
@@ -3304,7 +3309,8 @@ c------------------------------------------------------------------------
       integer      ifop,ifmt,ifch,ifcx,ifhi,ifdt,ifcp,ifdr,ifio
       common/files/ifop,ifmt,ifch,ifcx,ifhi,ifdt,ifcp,ifdr,ifio
       integer itypart(nmax),iorpart(nmax)
-      common /city/itypart /corpart/iorpart
+      common /city/itypart
+      common /corpart/iorpart
         real*8 frr0(nmax), frrx(nmax), frry(nmax), frrz(nmax),
      +     frp0(nmax), frpx(nmax), frpy(nmax), frpz(nmax)
       common /frcoor/ frr0, frrx, frry, frrz, frp0, frpx, frpy, frpz
@@ -3322,7 +3328,8 @@ c------------------------------------------------------------------------
       integer ityhard, itysoft, ityexot, idxxx(2)
       integer ilinexxx                               !### kw ###
       common /cilinexxx/ilinexxx                     !### kw ###
-      common /ctrace/itrace /cishuuu/ishuuu
+      common /ctrace/itrace
+      common /cishuuu/ishuuu
       real*8 th, ctheta1
       real*8 phi1,phi2
       real*8 rpott(2),rpotx(2),rpoty(2),rpotz(2)

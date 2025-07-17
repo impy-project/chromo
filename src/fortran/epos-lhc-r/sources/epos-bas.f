@@ -11,7 +11,9 @@ c-----------------------------------------------------------------------
       include 'epos.incho'
       common/chnbcreate/ihnbcreate
       common/record/maxrec(2),irecty(30,2)
-      common/cfacmss/facmss /cr3pomi/r3pomi,r4pomi/cifset/ifset
+      common/cfacmss/facmss 
+      common/cr3pomi/r3pomi,r4pomi
+      common/cifset/ifset
       common /ems12/bidiba,amhdibar,iodiba  ! defaut iodiba=0. if iodiba=1, study H-Dibaryon
       character*500 fndat,fnncs,fnIIdat,fnIIncs,fnII03dat,fnII03ncs
      &,fnIIIdat,fnIIIncs
@@ -24,15 +26,20 @@ c      common/dpmjetfname/  fndpmjet,fndpmjetpho,fndpmpath
       common/ghecsquel/anquasiel,iquasiel
       INTEGER IMOD
       COMMON /S_STAR/ IMOD
-      common/cbincond/nozero,ibmin,ibmax  /crapcol/rapcol
+      common/cbincond/nozero,ibmin,ibmax
+      common /crapcol/rapcol
       common/photrans/phoele(4),ebeam
-      common/ciuelast/iuelast /ciuskip/iuskip
-      common/ciuchaskip/iuchaskip/ciunostring/iunostring
-      common/cistat/istateos,istatptl  /cieof/ieof
+      common/ciuelast/iuelast
+      common/ciuskip/iuskip
+      common/ciuchaskip/iuchaskip
+      common/ciunostring/iunostring
+      common/cistat/istateos,istatptl  
+      common/cieof/ieof
       common/cgefac/gefac
       common/camaq/amaq(0:3)
       common/cchkengy2/esollxx,eistxx
-      common/cijetfluid/ijetfluid /ciotype/iotype
+      common/cijetfluid/ijetfluid
+      common/ciotype/iotype
       common/mcen/mcentr,mmxcentr
       common/ccc20/icc20
       common/ciexhd/iexhd
@@ -3042,7 +3049,8 @@ c-----------------------------------------------------------------------
       common/geom/rmproj,rmtarg,bmax,bkmx
       double precision pgampr,rgampr
       common/cgampr/pgampr(5),rgampr(4)
-      common/cgbyjmax/gbyjmax /cicentrality/icentrality
+      common/cgbyjmax/gbyjmax
+      common/cicentrality/icentrality
 
       double precision pp1,pp2,pp3,pp4,pp5,om1intbc
       logical lclean
@@ -3265,7 +3273,8 @@ c-----------------------------------------------------------------------
       common /cptj/xptj(nptj),qptj(nptj),wptj(nptj)
       common/geom/rmproj,rmtarg,bmax,bkmx
       double precision tpro,zpro,ttar,ztar,ttaus,detap,detat!,seedp
-      common/cttaus/tpro,zpro,ttar,ztar,ttaus,detap,detat /ctain/mtain
+      common/cttaus/tpro,zpro,ttar,ztar,ttaus,detap,detat
+      common/ctain/mtain
       double precision rcproj,rctarg
       common/geom1/rcproj,rctarg
       common/photrans/phoele(4),ebeam
@@ -3846,13 +3855,16 @@ c---------------------------------------------------------------------
 
       double precision histoweight
       common/chiswei/histoweight
-      common/cyield/yield/cifset/ifset/caverg/averg
+      common/cyield/yield
+      common/cifset/ifset
+      common/caverg/averg
       common/csigma/sigma
       double precision val,val1,val2!,key
       character*1000 line,linex,cline
       data nappl /0/
       common/record/maxrec(2),irecty(30,2)
-      common/cfacmss/facmss /cr3pomi/r3pomi,r4pomi
+      common/cfacmss/facmss
+      common/cr3pomi/r3pomi,r4pomi
       common /ems12/bidiba,amhdibar,iodiba  ! defaut iodiba=0. if iodiba=1, study H-Dibaryon
       character*500 fndat,fnncs,fnIIdat,fnIIncs,fnII03dat,fnII03ncs
      &,fnIIIdat,fnIIIncs
@@ -3876,22 +3888,28 @@ cdh  datadir for path to the data sets to be read in by dpmjet/phojet
       character cmodel*21
       common/cbincond/nozero,ibmin,ibmax
       common/photrans/phoele(4),ebeam
-      common/cisk/iskmin,isk2min   /crapcol/rapcol
-      common/ciuelast/iuelast /ciuskip/iuskip
-      common/ciuchaskip/iuchaskip /ciunostring/iunostring
+      common/cisk/iskmin,isk2min   
+      common/crapcol/rapcol
+      common/ciuelast/iuelast
+      common/ciuskip/iuskip
+      common/ciuchaskip/iuchaskip
+      common/ciunostring/iunostring
       character*80 twritexx,twritexxx
-      common/cwritexx/nwritexx,twritexx(20) /cieof/ieof
+      common/cwritexx/nwritexx,twritexx(20)
+      common/cieof/ieof
       common/cwritexxx/nwritexxx,twritexxx(50)
       common/cicentrality/icentrality
       common/cihifcount/ihifcount(9),ifhix(9)
       integer ihifcounti(9)
       data itit/1/ ishxxx/1/  ihifcounti/9*0/  iskkey/2/
-      common/cijetfluid/ijetfluid  /ciotype/iotype
+      common/cijetfluid/ijetfluid
+      common/ciotype/iotype
       common /cnnnhis/nnnhis
       character cext1*10
       common/ccext1/cext1
       character cext3*10
-      common/ccext3/iext3,cext3 /ciext4/iext4
+      common/ccext3/iext3,cext3
+      common/ciext4/iext4
       common/cgefac/gefac
       common/ciprotectinirj/iprotectinirj
       common/cigrpac/igrpac
@@ -7364,9 +7382,11 @@ c-----------------------------------------------------------------------
       include 'epos.incems'
       common/nucl3/phi,bimp
       common/col3/ncol,kolpt
-      common/cninx/ninx  /ciotype/iotype
+      common/cninx/ninx
+      common/ciotype/iotype
       logical glauber,only_geom
-      common/cikoevt/ikoevtxx /cnglevt/nglevtxx
+      common/cikoevt/ikoevtxx
+      common/cnglevt/nglevtxx
       common/czptav/zptav
 c      common/cnparticip/jproj(2,mamx),jtarg(2,mamx),efluct(6,mamx)
 

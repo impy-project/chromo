@@ -4700,7 +4700,9 @@ c------------------------------------------------------------------------
       integer icp(2),ict(2),ic(2),icp1(2),icp2(2),icm1(2),icm2(2)
       integer jcp(nflav,2),jct(nflav,2),jcpv(nflav,2),jctv(nflav,2)
       integer jcp1(nflav,2),jcp2(nflav,2),jcm1(nflav,2),jcm2(nflav,2)
-      common/col3/ncol,kolpt /cfacmss/facmss /cts/its
+      common/col3/ncol,kolpt
+      common/cfacmss/facmss
+      common/cts/its
 
 
 c     entry

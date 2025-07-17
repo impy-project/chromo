@@ -5,10 +5,13 @@ c  fin. state interactions and decays
 c-----------------------------------------------------------------------
       include 'epos.inc'
       double precision tpro,zpro,ttar,ztar,ttaus,detap,detat
-      common/cttaus/tpro,zpro,ttar,ztar,ttaus,detap,detat /ctimel/ntc
+      common/cttaus/tpro,zpro,ttar,ztar,ttaus,detap,detat
+      common/ctimel/ntc
       common/col3/ncol,kolpt
       double precision ttaun,ttau0,rcproj,rctarg
-      common/cttaun/ttaun /cttau0/ttau0 /geom1/rcproj,rctarg
+      common/cttaun/ttaun
+      common/cttau0/ttau0
+      common/geom1/rcproj,rctarg
       logical go,lclean
 
       call utpri('bjinta',ish,ishini,4)
@@ -179,7 +182,8 @@ c----------------------------------------------------------------------
       include "epos.inc"
       include "epos.incems"
       include "epos.incico"
-      common/cdelzet/delzet,delsce /cvocell/vocell,xlongcell
+      common/cdelzet/delzet,delsce
+      common/cvocell/vocell,xlongcell
       real aminclust
       common/jintpoc4/aminclust
       iret=0
@@ -2154,8 +2158,10 @@ c      parameter(m3xgrid=11*kgrid*kegrid)
       common/cmean/xmean,ymean
       real aryz(nyjjj,nzjjj)
       common   /cttaus/tpro,zpro,ttar,ztar,ttaus,detap,detat
-      common/cdelzet/delzet,delsce /cvocell/vocell,xlongcell
-      common/cranphi/ranphi  /credonoco/kredonoco
+      common/cdelzet/delzet,delsce
+      common/cvocell/vocell,xlongcell
+      common/cranphi/ranphi
+      common/credonoco/kredonoco
       common/cdelcore/delcore,egycore
       integer leading(500),iormn(nzjjj),iormx(nzjjj)
       logical first,two_remnant_sources,one_remnant_source
@@ -3615,8 +3621,10 @@ c----------------------------------------------------------------------
       common/cmean/xmean,ymean
       integer kredonoco
       real delzet,delsce,vocell,ranphi,xlongcell
-      common/cdelzet/delzet,delsce /cvocell/vocell,xlongcell
-      common/cranphi/ranphi  /credonoco/kredonoco
+      common/cdelzet/delzet,delsce
+      common/cvocell/vocell,xlongcell
+      common/cranphi/ranphi
+      common/credonoco/kredonoco
       double precision ptest(5),ttest,p52,xmxms,am2tmp
      &,am2tmpmx,amcmin,utdble!,amcmi0!,bp
       parameter(xmxms=300d0)      !maximum mass for a subcluster
@@ -4640,7 +4648,8 @@ c     &,xyomean(2,mxcl)!,xwcrmean,ywcrmean,xwcr2mean,ywcr2mean,amweight,wpow
       integer ncelltot,ncellrad,ncellong,ncellk(nzjjj)
       common/jintpoc3/ncelltot,ncellrad,ncellong,ncellk
       real delzet,delsce,vocell,xlongcell
-      common/cdelzet/delzet,delsce /cvocell/vocell,xlongcell
+      common/cdelzet/delzet,delsce
+      common/cvocell/vocell,xlongcell
       integer jj,nsegtot,i,j,k,n,kk,idum,jjs,jjf,jjc,jj0,k1,k2,iofuse
      &,isgn,jjl,ndensmax!,ior
       real density,dens,rangen,voll,volr,fgeo!,yyrmax

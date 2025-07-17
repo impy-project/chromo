@@ -36,7 +36,8 @@ c     *,xprh,xmrh
       integer icp(2),ict(2),nemis(2)
       integer icp1(2),icp2(2),icm1(2),icm2(2)
       integer jcp(nflav,2),jct(nflav,2),jcpr(nflav,2),jctr(nflav,2)
-      common/cprtx/nprtjx,pprtx(5,2)/ciptl/iptl
+      common/cprtx/nprtjx,pprtx(5,2)
+      common/ciptl/iptl
       common/cqqmx/qqmx1,qqmx2
       common/cidpomr/idpomr
 

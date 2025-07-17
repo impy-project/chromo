@@ -72,7 +72,8 @@ c------------------------------------------------------------------------
 
 c------------------------------------------------------------------------
 
-      common/ctfo/tfo /cfzo/ireadfzo,imakefzo
+      common/ctfo/tfo
+      common/cfzo/ireadfzo,imakefzo
 
       common/copt/istat 
       parameter (mspes=500,mchem=21,mtemp=17,temin=0.010,temax=0.170)
