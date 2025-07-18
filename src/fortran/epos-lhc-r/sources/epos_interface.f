@@ -83,8 +83,8 @@ c Debug
 
          nfnnx=lpath - 1
          fnnx=datpath(1:lpath - 1)
-         nfnhpf=lpath + 11
-         fnhpf=datpath(1:lpath)//"tables.dat"
+         nfnhpf=11
+         fnhpf="/tables.dat"
          nfnii=lpath+15            ! epos tab file name length
          fnii=datpath(1:lpath)//"epos.initl"    ! epos tab file name
          nfnid=lpath+15
@@ -161,7 +161,7 @@ c-----------------------------------------------------------------------
 
          call ainit()
       End
-
+      
 c-----------------------------------------------------------------------
       real function GetCharge(idpdg)
 c-----------------------------------------------------------------------

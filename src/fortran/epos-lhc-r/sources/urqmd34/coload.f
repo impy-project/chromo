@@ -638,6 +638,12 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
        include 'coms.f'
        integer i,j
        real*8 p10,p20
+C**anfe With bounds check this function errors because of j=0         
+!        if (j.eq.0) then
+!           sqrts = fmass(i)
+!           return
+!        endif
+       
        p10 = sqrt((px(i)+ffermpx(i))**2
      +           +(py(i)+ffermpy(i))**2
      +           +(pz(i)+ffermpz(i))**2+fmass(i)**2)

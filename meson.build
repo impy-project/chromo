@@ -42,7 +42,11 @@ thread_dep  = dependency('threads')
 
 # Optional mold linker
 if find_program('mold', required:false).found() and cc.get_id() == 'gcc'
-  add_project_link_arguments('-fuse-ld=mold', language:['c','cpp','fortran'])
+ add_project_link_arguments('-fuse-ld=mold', language:['c','cpp','fortran'])
+endif
+
+if get_option('buildtype') == 'debug'
+  add_global_arguments('-fbacktrace', '-fcheck=all', language : ['fortran']) #'-shared-libasan','-fsanitize=address',
 endif
 
 add_project_arguments('-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION', language:['c','cpp'])
