@@ -212,6 +212,7 @@ class Root(Writer):
 class Svg(Writer):
     def __init__(self, file, model):
         self._idx = 0
+        file = Path(file)
         self._template = (file.parent, file.stem, file.suffix)
 
     def write(self, event):
@@ -245,7 +246,7 @@ class Hepmc(Writer):
 
         # TODO fix the following in pyhepmc, we should be able
         # to use the public API and not these secrets
-        op = gzip.open if file.suffix == ".gz" else open
+        op = gzip.open if Path(file).suffix == ".gz" else open
         self._file = op(file, "wb")
         self._ios = pyiostream(self._file)
         self._writer = _WrappedWriter(self._ios, None, WriterAscii)

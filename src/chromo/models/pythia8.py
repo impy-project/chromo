@@ -83,13 +83,21 @@ class Pythia8(MCRun):
     _library_name = "_pythia8"
     _event_class = PYTHIA8Event
     _frame = EventFrame.CENTER_OF_MASS
-    _projectiles = standard_projectiles | {lp.photon.pdgid}
+    _projectiles = standard_projectiles | {
+        lp.photon.pdgid,
+        lp.e_plus.pdgid,
+        lp.e_minus.pdgid,
+    }
     # Nuclei are supported in principle, but generation is very slow.
     # Support for more nuclei can be added with ParticleData.addParticle.
-    _targets = _projectiles | {
-        name2pdg(x)
-        for x in ("He4", "Li6", "C12", "O16", "Cu63", "Xe129", "Au197", "Pb208")
-    }
+    _targets = (
+        _projectiles
+        | {
+            name2pdg(x)
+            for x in ("He4", "Li6", "C12", "O16", "Cu63", "Xe129", "Au197", "Pb208")
+        }
+        | {lp.e_plus.pdgid, lp.e_minus.pdgid}
+    )
     _restartable = True
     _data_url = (
         "https://github.com/impy-project/chromo"
@@ -154,6 +162,13 @@ class Pythia8(MCRun):
 
     def _cross_section(self, kin=None, max_info=False):
         st = self._pythia.info.sigmaTot
+
+        if (self.kinematics.p1.is_lepton) and (self.kinematics.p2.is_lepton):
+            return CrossSectionData(
+                total=st.sigmaTot,
+                inelastic=st.sigmaTot - st.sigmaEl,
+                elastic=st.sigmaEl,
+            )
         return CrossSectionData(
             total=st.sigmaTot,
             inelastic=st.sigmaTot - st.sigmaEl,

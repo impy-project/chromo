@@ -177,13 +177,26 @@ class EposLHC(MCRun):
     _frame = None
     _projectiles = standard_projectiles | Nuclei()
     _unstable_pids = set(_epos_unstable_pids())
+    _hadronic_rescattering = False
+    _init_protection_E_A1_A2 = None
     _data_url = (
         "https://github.com/impy-project/chromo"
-        "/releases/download/zipped_data_v1.0/epos_v001.zip"
+        "/releases/download/zipped_data_v1.0/eposlhc_v001.zip"
     )
     _ecm_min = 6 * GeV
 
-    def __init__(self, evt_kin, *, seed=None):
+    def __init__(self, evt_kin, *, seed=None, isigma=1):
+        """
+        isigma=1: cross-section is calculated by a numerical method
+                  which is valid only for h-p or h-A (h being pion, kaon or nucleon)
+                  but not A-B (nucleus-nucleus)
+                  (not good for ionudi=2)
+
+        isigma=0: same as isigma=1 but do not print the cross section on screen
+
+        isigma=2: all the nuclear cross-sections are calculated by AA pseudo simulations
+                  but it takes several minutes to compute
+        """
         import chromo
 
         super().__init__(seed)
@@ -194,14 +207,17 @@ class EposLHC(MCRun):
         lun = 6  # stdout
         self._lib.initepos(
             evt_kin.ecm,
+            self._hadronic_rescattering,  # No effect on EPOS-LHC
             datdir,
             len(datdir),
             chromo.debug_level,
             lun,
+            isigma,
         )
 
         self._set_final_state_particles()
         self._lib.charge_vect = np.vectorize(self._lib.getcharge, otypes=[np.float32])
+        self._init_protection_E_A1_A2 = (evt_kin.ecm, evt_kin.p1.A, evt_kin.p2.A)
         self.kinematics = evt_kin
 
     def _cross_section(self, kin=None, max_info=False):
@@ -220,6 +236,34 @@ class EposLHC(MCRun):
             diffractive_axb=0,
         )
 
+    def _check_init_protection(self, kin):
+        Ecm_max, A1_max, A2_max = self._init_protection_E_A1_A2
+        explanation = """Initialize Epos models with the highest energy and heaviest
+            masses expected in the simulation, e.g.:
+
+            kinematics = CenterOfMass(maximal_energy, (238, 92), (238, 92))
+            epos = EposLHC(kinematics)
+
+            The energy or mass can be changed during the simulation, e.g.
+            epos.kinematics = CenterOfMass(100, (4, 2), (16, 8))
+            for event in epos(100):
+                ...
+            """
+        if kin.ecm > Ecm_max:
+            message = "Requested energy exceeds the initialization energy: > "
+            message += f"{kin.ecm} GeV > {Ecm_max} GeV.\n" + explanation
+            raise ValueError(message)
+        if kin.p1.A is not None and kin.p1.A > A1_max:
+            message = (
+                "Requested projectile mass number exceeds the initialization mass: > "
+            )
+            message += f"{kin.p1.A} > {A1_max}.\n" + explanation
+            raise ValueError(message)
+        if kin.p2.A is not None and kin.p2.A > A2_max:
+            message = "Requested target mass number exceeds the initialization mass: > "
+            message += f"{kin.p2.A} > {A2_max}.\n" + explanation
+            raise ValueError(message)
+
     def _set_kinematics(self, kin):
         if kin.frame == EventFrame.FIXED_TARGET:
             iframe = 2
@@ -227,8 +271,8 @@ class EposLHC(MCRun):
         else:
             iframe = 1
             self._frame = EventFrame.CENTER_OF_MASS
-
-        self._lib.initeposevt(kin.ecm, -1.0, kin.p1, kin.p2, iframe)
+        self._check_init_protection(kin)
+        self._lib.initeposevt(kin.ecm, -1.0, int(kin.p1), int(kin.p2), iframe)
 
     def _set_stable(self, pdgid, stable):
         # EPOS decays all unstable particles by default. It uses a nodcy common block
@@ -263,3 +307,30 @@ class EposLHC(MCRun):
 
     def print_native_event(self, nparticles=100):
         self._lib.alist("EposLHC listing&", 1, nparticles)
+
+
+class EposLHCR(EposLHC):
+    """CRMC 2.2.0 version of EPOS LHC-R. No explicit hadronic rescattering."""
+
+    _name = "EPOS"
+    _version = "LHC-R"
+    _library_name = "_eposlhcr"
+    _event_class = EPOSEvent
+    _data_url = (
+        "https://github.com/impy-project/chromo"
+        "/releases/download/zipped_data_v1.0/eposlhcr_v001.zip"
+    )
+    _hadronic_rescattering = False
+
+    def _generate(self):
+        self._lib.aepos(-1)
+        self._lib.afinal()
+        self._lib.hepmcstore(-1)
+        return True
+
+
+class EposLHCRHadrRescattering(EposLHCR):
+    """CRMC 2.2.0 version of EPOS LHC-R."""
+
+    _version = "LHC-R hadr. rescattering"
+    _hadronic_rescattering = True

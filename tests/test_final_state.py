@@ -49,7 +49,16 @@ def test_generator(Model):
     else:
         kin = CenterOfMass(1000 * GeV, "p", "p")
     counts = run_in_separate_process(
-        run_model, Model, kin, 1000 if Model in (im.EposLHC, im.UrQMD34) else 20000
+        run_model,
+        Model,
+        kin,
+        (
+            1000
+            if any(
+                issubclass(Model, cls) for cls in (im.EposLHC, im.UrQMD34, im.QGSJetIII)
+            )
+            else 20000
+        ),
     )
 
     # Known issues:
@@ -77,7 +86,7 @@ def test_generator(Model):
                 lp.Xi_minus.pdgid,
             ):
                 known_issues[i] = True
-    elif Model == im.EposLHC:
+    elif issubclass(Model, im.EposLHC):
         for i, pid in enumerate(long_lived_hadrons):
             if pid == lp.Omega_plus_bar.pdgid:
                 known_issues[i] = True

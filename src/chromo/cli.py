@@ -235,7 +235,7 @@ def parse_arguments():
     pr = args.projectile_momentum
     ta = args.target_momentum
     if args.sqrts < 0:
-        msg = f"Error: sqrt(s) is negative {args.sqrts/GeV} GeV"
+        msg = f"Error: sqrt(s) is negative {args.sqrts / GeV} GeV"
         raise SystemExit(msg)
     if (pr != 0 or ta != 0) and args.sqrts != 0:
         raise SystemExit("Error: either set sqrts or momenta, but not both")
@@ -262,8 +262,11 @@ def parse_arguments():
         raise SystemExit("Error: output to stdout not yet supported")
     if args.out:  # filename was provided
         args.out = Path(args.out)
-        # try to get format from filename extension
-        format = "".join(x[1:] for x in args.out.suffixes[-2:])
+        suffixes = args.out.suffixes
+        if suffixes and suffixes[-1] in [".gz", ".bz2"]:
+            format = ":".join(x[1:] for x in args.out.suffixes[-2:])
+        else:
+            format = suffixes[-1].lstrip(".") if suffixes else ""
         # check if both format and args.output are defined and are different
         if format and args.output and format != args.output:
             msg = f"Error: File extension of {args.out} does not match {args.output}"
