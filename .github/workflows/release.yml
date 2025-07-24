@@ -179,15 +179,19 @@ jobs:
 
 
   sdist:
+    needs: prepare-cache
     name: source package
     runs-on: ubuntu-latest
     steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v1
+          
       - uses: actions/checkout@v4
         with:
           submodules: true
-
-      - name: Dump GitHub context
-        run: echo '${{ toJSON(github) }}'
 
       - uses: actions/setup-python@v4
         name: Install Python
