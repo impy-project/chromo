@@ -1,5 +1,7 @@
 # ![](doc/chromo.svg)<br> Cosmic ray and HadROnic interactiOn MOnte-carlo frontend
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16562752.svg)](https://doi.org/10.5281/zenodo.16562752)
+
 This package provides a simple and generic user interface to popular event generators used in cosmic ray and high-energy particle physics. By removing the need for complicated Fortran-style interfaces, ASCII input cards, and C++ dependencies, the package simplifies the simulation of particle interactions, making it easier and faster for a wider audience to access.
 
 ## Usage
@@ -93,6 +95,19 @@ The recommended way to install `chromo` is by using the pre-compiled binary whee
 
 Advanced and developer installation instructions can be found [here](doc/dev_docs.md).
 
+## Citation
+
+If you use `chromo` in your research, please cite it using the following DOI:
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16562752.svg)](https://doi.org/10.5281/zenodo.16562752)
+
+You can also cite it in your bibliography as:
+
+```
+Fedynitch, A., Dembinski, H., Prosekin, A., El Hadri, S., & Watanabe, K. (2025). 
+CHROMO: Cosmic ray and HadROnic interactiOn MOnte-carlo frontend. 
+Zenodo. https://doi.org/10.5281/zenodo.16562752
+```
 
 ## Authors
 
