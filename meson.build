@@ -80,7 +80,7 @@ common_syms = ['chromo_openlogfile','chromo_closelogfile','npyrng']
 sibyll_syms_base  = [
   'sibyll','sibyll_ini','sib_sigma_hp','sib_sigma_hair','sib_sigma_hnuc',
   'int_nuc','decsib','decpar','sibini','sibhep','sib_list',
-  'isib_pid2pdg','isib_pdg2pid','pdg_ini', 'sibnuc', 'sigma_nuc_nuc']
+  'isib_pid2pdg','isib_pdg2pid','pdg_ini', 'sibnuc', 'sigma_nuc_nuc', 'int_h_nuc']
 qgs_syms_base     = ['cqgsini','qgsect','qgini','qgconf','qgreg','chepevt','qgcrossc','cqgshh_ha_cs']
 urqmd_syms        = [
   'urqmd','init','uinit','set0','params','uounit','strini','loginit','loadwtab',

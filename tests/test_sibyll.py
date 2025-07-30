@@ -120,3 +120,84 @@ def test_cross_section(model):
         c.non_diffractive,
         c.inelastic - c.diffractive_xb - c.diffractive_ax - c.diffractive_xx,
     )
+
+
+def check_wounded(model, kin):
+    gen = model(kin)
+    gen.set_stable(111)
+
+
+    wounded_na_list = []
+    wounded_nb_list = []
+    wounded_b_list = []
+    cnucms_na_list = []
+    cnucms_nb_list = []
+    cnucms_b_list = []
+    s_cncm0_na_list = []
+    s_cncm0_b_list = []
+
+    for event in gen(10):
+
+        # Check wounded candidates [Main check]
+        wounded_na, wounded_nb = event.n_wounded[0], event.n_wounded[1]
+        wounded_b = event.impact_parameter
+        wounded_na_list.append(wounded_na !=0)
+        wounded_nb_list.append(wounded_nb !=0)
+        wounded_b_list.append(wounded_b !=0)
+
+        # Check cnucms status [Detail check]
+        cnucms_na, cnucms_nb = event._lib.cnucms.na, event._lib.cnucms.nb
+        cnucms_b = event.impact_parameter
+        cnucms_na_list.append(cnucms_na !=0)
+        cnucms_nb_list.append(cnucms_nb !=0)
+        cnucms_b_list.append(cnucms_b !=0)
+
+        # Check s_cncm0 status [Detail check]
+        s_cncm0_na_list.append(event._lib.s_cncm0.na !=0)
+        s_cncm0_b_list.append(event._lib.s_cncm0.b !=0)
+
+    main_errors = []
+    detail_errors = []
+
+    if not any(wounded_na_list):
+        main_errors.append(f"{gen.label=} | wounded_na_list is empty")
+    if not any(wounded_nb_list):
+        main_errors.append(f"{gen.label=} | wounded_nb_list is empty")
+    if not any(wounded_b_list):
+        main_errors.append(f"{gen.label=} | wounded_b_list is empty")
+
+    if not any(cnucms_na_list):
+        detail_errors.append(f"{gen.label=} | cnucms_na_list is empty")
+    if not any(cnucms_nb_list):
+        detail_errors.append(f"{gen.label=} | cnucms_nb_list is empty")
+    if not any(cnucms_b_list):
+        detail_errors.append(f"{gen.label=} | cnucms_b_list is empty")
+    if not any(s_cncm0_na_list):
+        detail_errors.append(f"{gen.label=} | s_cncm0_na_list is empty")
+    if not any(s_cncm0_b_list):
+        detail_errors.append(f"{gen.label=} | s_cncm0_b_list is empty")
+
+    return main_errors, detail_errors
+
+
+@pytest.mark.parametrize("model", get_sibylls())
+def test_wounded_proton_proton(model):
+    pytest.xfail(reason="No impact parameter in proton-proton collision, neither in " \
+    "event._lib.s_cncm0.b or event._lib.cnucms.b")
+    main_errors, detail_errors = run_in_separate_process(check_wounded, model, CenterOfMass(5 * TeV, "p", "p"))
+    assert not main_errors
+
+@pytest.mark.parametrize("model", get_sibylls())
+def test_wounded_proton_nucleus(model):
+    main_errors, detail_errors = run_in_separate_process(check_wounded, model, CenterOfMass(5 * TeV, "p", (16, 8)))
+    assert not main_errors
+
+@pytest.mark.parametrize("model", get_sibylls())
+def test_wounded_nucleus_proton(model):
+    main_errors, detail_errors = run_in_separate_process(check_wounded, model, CenterOfMass(5 * TeV, (16, 8), "p"))
+    assert not main_errors
+
+@pytest.mark.parametrize("model", get_sibylls())
+def test_wounded_nucleus_nucleus(model):
+    main_errors, detail_errors = run_in_separate_process(check_wounded, model, CenterOfMass(5 * TeV, (16, 8), (16, 8)))
+    assert not main_errors
