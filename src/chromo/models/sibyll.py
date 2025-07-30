@@ -111,10 +111,15 @@ class SibyllEvent(MCEvent):
         return self._lib.schg.ichg[:npart]
 
     def _get_impact_parameter(self):
-        return self._lib.cnucms.b
+        return self._lib.cnucms.b if self._lib.cnucms.na > 0 else self._lib.s_cncm0.b
 
     def _get_n_wounded(self):
-        return self._lib.cnucms.na, self._lib.cnucms.nb
+        na = self._lib.cnucms.na if self._lib.cnucms.na > 0 else 1
+        nb = (
+            self._lib.cnucms.nb if self._lib.cnucms.nb > 0 else self._lib.s_cncm0.na
+        )  # Handle hadron-Nucleus case
+
+        return na, nb
 
     def _history_zero_indexing(self):
         # Sibyll has only mothers
