@@ -126,7 +126,6 @@ def check_wounded(model, kin):
     gen = model(kin)
     gen.set_stable(111)
 
-
     wounded_na_list = []
     wounded_nb_list = []
     wounded_b_list = []
@@ -141,20 +140,20 @@ def check_wounded(model, kin):
         # Check wounded candidates [Main check]
         wounded_na, wounded_nb = event.n_wounded[0], event.n_wounded[1]
         wounded_b = event.impact_parameter
-        wounded_na_list.append(wounded_na !=0)
-        wounded_nb_list.append(wounded_nb !=0)
-        wounded_b_list.append(wounded_b !=0)
+        wounded_na_list.append(wounded_na != 0)
+        wounded_nb_list.append(wounded_nb != 0)
+        wounded_b_list.append(wounded_b != 0)
 
         # Check cnucms status [Detail check]
         cnucms_na, cnucms_nb = event._lib.cnucms.na, event._lib.cnucms.nb
         cnucms_b = event.impact_parameter
-        cnucms_na_list.append(cnucms_na !=0)
-        cnucms_nb_list.append(cnucms_nb !=0)
-        cnucms_b_list.append(cnucms_b !=0)
+        cnucms_na_list.append(cnucms_na != 0)
+        cnucms_nb_list.append(cnucms_nb != 0)
+        cnucms_b_list.append(cnucms_b != 0)
 
         # Check s_cncm0 status [Detail check]
-        s_cncm0_na_list.append(event._lib.s_cncm0.na !=0)
-        s_cncm0_b_list.append(event._lib.s_cncm0.b !=0)
+        s_cncm0_na_list.append(event._lib.s_cncm0.na != 0)
+        s_cncm0_b_list.append(event._lib.s_cncm0.b != 0)
 
     main_errors = []
     detail_errors = []
@@ -182,22 +181,35 @@ def check_wounded(model, kin):
 
 @pytest.mark.parametrize("model", get_sibylls())
 def test_wounded_proton_proton(model):
-    pytest.xfail(reason="No impact parameter in proton-proton collision, neither in " \
-    "event._lib.s_cncm0.b or event._lib.cnucms.b")
-    main_errors, detail_errors = run_in_separate_process(check_wounded, model, CenterOfMass(5 * TeV, "p", "p"))
+    pytest.xfail(
+        reason="No impact parameter in proton-proton collision, neither in "
+        "event._lib.s_cncm0.b or event._lib.cnucms.b"
+    )
+    main_errors, detail_errors = run_in_separate_process(
+        check_wounded, model, CenterOfMass(5 * TeV, "p", "p")
+    )
     assert not main_errors
+
 
 @pytest.mark.parametrize("model", get_sibylls())
 def test_wounded_proton_nucleus(model):
-    main_errors, detail_errors = run_in_separate_process(check_wounded, model, CenterOfMass(5 * TeV, "p", (16, 8)))
+    main_errors, detail_errors = run_in_separate_process(
+        check_wounded, model, CenterOfMass(5 * TeV, "p", (16, 8))
+    )
     assert not main_errors
+
 
 @pytest.mark.parametrize("model", get_sibylls())
 def test_wounded_nucleus_proton(model):
-    main_errors, detail_errors = run_in_separate_process(check_wounded, model, CenterOfMass(5 * TeV, (16, 8), "p"))
+    main_errors, detail_errors = run_in_separate_process(
+        check_wounded, model, CenterOfMass(5 * TeV, (16, 8), "p")
+    )
     assert not main_errors
+
 
 @pytest.mark.parametrize("model", get_sibylls())
 def test_wounded_nucleus_nucleus(model):
-    main_errors, detail_errors = run_in_separate_process(check_wounded, model, CenterOfMass(5 * TeV, (16, 8), (16, 8)))
+    main_errors, detail_errors = run_in_separate_process(
+        check_wounded, model, CenterOfMass(5 * TeV, (16, 8), (16, 8))
+    )
     assert not main_errors
