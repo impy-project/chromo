@@ -200,7 +200,7 @@ class SIBYLLRun(MCRun):
 
     def _cross_section(self, kin=None, max_info=False):
         kin = self.kinematics if kin is None else kin
-        if abs(kin.p1) not in self._projectiles:
+        if abs(kin.p1) not in self._cross_section_projectiles:
             warnings.warn(
                 f"Cross section for {kin.p1} projectiles not "
                 f"supported in {self.label}",
