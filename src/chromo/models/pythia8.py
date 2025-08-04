@@ -303,21 +303,6 @@ class PYTHIA8CascadeEvent(EventData):
             np.maximum(event.daughters() - 1, -1),
         )
 
-    def _prepare_for_hepmc(self):
-        model, version = self.generator
-        warnings.warn(
-            f"{model}-{version}: only part of the history available in HepMC3 event",
-            RuntimeWarning,
-        )
-
-        # Similar workarounds as in PYTHIA8Event
-        mask = (self.status == 1) | (self.status == 2) | (self.status == 4)
-        ev = self[mask]
-        mask = (ev.mothers[:, 0] == 0) | (ev.mothers[:, 0] == 1)
-        ev.mothers[mask] = (0, 1)
-        return ev
-
-
 class Pythia8Cascade(Pythia8):
     """
     Pythia8 wrapper using PythiaCascade for hadron-nucleus interactions.
@@ -395,7 +380,7 @@ class Pythia8Cascade(Pythia8):
             config = ["SoftQCD:inelastic = on"]
 
         # Initialize base class with kinematics
-        super().__init__(evt_kin, seed=seed, config=config, banner=banner)
+        super().__init__(evt_kin, seed=seed, config=config, banner=banner) # TODO: No need to initialize Pythia at all.
 
         # Initialize cascade after base initialization
         self._init_cascade()
@@ -438,31 +423,18 @@ class Pythia8Cascade(Pythia8):
         if not self._cascade.init(
             self._max_energy,
             False,  # listFinal
-            False,  # rapidDecays
-            1e-10,  # smallTau0
+            True,  # rapidDecays
+            0.0,  # smallTau0
             reuse_mpi,
             init_file,
         ):
             raise RuntimeError("PythiaCascade initialization failed")
 
     def _set_kinematics(self, kin):
-        """Set up kinematics for hadron-nucleus collision."""
-        if kin is None:
-            raise ValueError("Kinematics cannot be None")
-
+        """Set up kinematics for Pythia 8 Cascade mode collision."""
         # Ensure we're working in fixed target frame for equivalence with 484 example
         if kin.frame != EventFrame.FIXED_TARGET:
             raise ValueError("Pythia8Cascade requires fixed target frame kinematics")
-
-        # Extract projectile and target information directly from kinematics
-        self._projectile_id = int(kin.p1)
-        self._projectile_mass = kin.m1
-        self._target_z = kin.p2.Z if hasattr(kin.p2, "Z") else 1
-        self._target_a = kin.p2.A if hasattr(kin.p2, "A") else 1
-
-        # Store beam 4-vectors for easy access
-        self._beam1_4vec = kin.beams[0]  # projectile (px, py, pz, E)
-        self._beam2_4vec = kin.beams[1]  # target (px, py, pz, E)
 
     def _cross_section(self, kin=None, max_info=False):
         """Calculate cross sections for hadron-nucleus interaction."""
@@ -476,19 +448,15 @@ class Pythia8Cascade(Pythia8):
             )
             return CrossSectionData(total=0, inelastic=0, elastic=0)
 
-        # Use the projectile 4-momentum directly from kinematics
-        # The beam vectors are already in the correct frame
-        p4 = kin.beams[0]  # [px, py, pz, E]
-
         # Calculate hadron-nucleon cross section using kinematic values
-        if not self._cascade.sigmaSetuphN(int(kin.p1), p4, kin.m1):
+        if not self._cascade.sigmaSetuphN(int(kin.p1), kin.beams[0], kin.m1):
             warnings.warn(
                 "Could not calculate hadron-nucleon cross section", RuntimeWarning
             )
             return CrossSectionData(total=0, inelastic=0, elastic=0)
 
         # Get hadron-nucleus cross section
-        sigma_hA = self._cascade.sigmahA(self._target_a)
+        sigma_hA = self._cascade.sigmahA(self.p2.A)
 
         # For now, assume all cross section is inelastic
         # (could be refined with more detailed cross section info)
@@ -503,21 +471,14 @@ class Pythia8Cascade(Pythia8):
         # Check if cascade is initialized
         if not hasattr(self, "_cascade") or self._cascade is None:
             return False
-
-        # Use the projectile 4-momentum directly from kinematics
-        p4 = self._beam1_4vec  # [px, py, pz, E]
-
+        kin = self.kinematics
         # Set up for collision using kinematic values
-        if not self._cascade.sigmaSetuphN(
-            self._projectile_id, p4, self._projectile_mass
-        ):
+        if not self._cascade.sigmaSetuphN(int(kin.p1), kin.beams[0], kin.m1):
             return False
 
         # Generate collision at origin (vertex can be set later)
         vertex = np.array([0, 0, 0, 0])  # (x, y, z, t)
-        self._current_event = self._cascade.nextColl(
-            self._target_z, self._target_a, vertex
-        )
+        self._current_event = self._cascade.nextColl(kin.p2.Z, kin.p2.A, vertex)
         return self._current_event.size > 0
 
     def stat(self):
