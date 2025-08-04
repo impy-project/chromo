@@ -2,7 +2,7 @@ from chromo.models.dpmjetIII import DpmjetIII191, DpmjetIII193, DpmjetIII307
 from chromo.models.epos import EposLHC, EposLHCR, EposLHCRHadrRescattering
 from chromo.models.phojet import Phojet112, Phojet191, Phojet193
 from chromo.models.pythia6 import Pythia6
-from chromo.models.pythia8 import Pythia8
+from chromo.models.pythia8 import Pythia8, Pythia8Cascade
 from chromo.models.qgsjet import QGSJet01d, QGSJetII03, QGSJetII04, QGSJetIII
 from chromo.models.sibyll import (
     Sibyll21,
@@ -27,6 +27,7 @@ __all__ = (
     "Phojet193",
     "Pythia6",
     "Pythia8",
+    "Pythia8Cascade",
     "QGSJet01d",
     "QGSJetII03",
     "QGSJetII04",

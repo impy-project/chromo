@@ -4,6 +4,7 @@
 #include <Pythia8/ParticleData.h>
 #include <Pythia8/Pythia.h>
 #include <Pythia8/PythiaStdlib.h>
+#include <Pythia8Plugins/PythiaCascade.h>
 #include <array>
 #include <cassert>
 #include <limits>
@@ -289,4 +290,64 @@ PYBIND11_MODULE(_pythia8, m)
         .def("append", py::overload_cast<int, int, int, int, double, double, double, double, double, double, double>(&Event::append), "pdgid"_a, "status"_a, "col"_a, "acol"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a = 0, "scale"_a = 0, "pol"_a = 9.)
         .def("fill", [](Event &self, py::array_t<int> pid, py::array_t<int> status, py::array_t<double> px, py::array_t<double> py, py::array_t<double> pz, py::array_t<double> energy, py::array_t<double> mass)
              { fill(self, pid, status, px, py, pz, energy, mass); }, "pid"_a, "status"_a, "px"_a, "py"_a, "pz"_a, "energy"_a, "mass"_a);
+
+    py::class_<PythiaCascade>(m, "PythiaCascade")
+        .def(py::init<>(), py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+        .def("init", py::overload_cast<double, bool, bool, double, int, string>(&PythiaCascade::init),
+             "eMaxIn"_a = 1e9, "listFinalIn"_a = false, "rapidDecaysIn"_a = false,
+             "smallTau0In"_a = 1e-10, "reuseMPI"_a = 3, "initFile"_a = "pythiaCascade.mpi")
+        .def("sigmaSetuphN", [](PythiaCascade &self, int id, py::array_t<double> p, double m)
+             {
+            auto p_buf = p.request();
+            if (p_buf.size != 4) {
+                throw std::runtime_error("Momentum array must have 4 components (px, py, pz, e)");
+            }
+            double *p_ptr = static_cast<double*>(p_buf.ptr);
+            Vec4 pVec(p_ptr[0], p_ptr[1], p_ptr[2], p_ptr[3]);
+            return self.sigmaSetuphN(id, pVec, m); }, "id"_a, "p"_a, "m"_a)
+        .def("sigmahA", &PythiaCascade::sigmahA, "A"_a)
+        .def("nextColl", [](PythiaCascade &self, int Z, int A, py::array_t<double> v = py::array_t<double>())
+             {
+            Vec4 vVec(0., 0., 0., 0.);
+            if (v.size() > 0) {
+                auto v_buf = v.request();
+                if (v_buf.size != 4) {
+                    throw std::runtime_error("Vertex array must have 4 components (x, y, z, t)");
+                }
+                double *v_ptr = static_cast<double*>(v_buf.ptr);
+                vVec = Vec4(v_ptr[0], v_ptr[1], v_ptr[2], v_ptr[3]);
+            }
+            return &self.nextColl(Z, A, vVec); }, "Z"_a, "A"_a, "v"_a = py::array_t<double>(), py::return_value_policy::reference_internal)
+        .def("nextDecay", [](PythiaCascade &self, int id, py::array_t<double> p, double m, py::array_t<double> v = py::array_t<double>())
+             {
+            auto p_buf = p.request();
+            if (p_buf.size != 4) {
+                throw std::runtime_error("Momentum array must have 4 components (px, py, pz, e)");
+            }
+            double *p_ptr = static_cast<double*>(p_buf.ptr);
+            Vec4 pVec(p_ptr[0], p_ptr[1], p_ptr[2], p_ptr[3]);
+            
+            Vec4 vVec(0., 0., 0., 0.);
+            if (v.size() > 0) {
+                auto v_buf = v.request();
+                if (v_buf.size != 4) {
+                    throw std::runtime_error("Vertex array must have 4 components (x, y, z, t)");
+                }
+                double *v_ptr = static_cast<double*>(v_buf.ptr);
+                vVec = Vec4(v_ptr[0], v_ptr[1], v_ptr[2], v_ptr[3]);
+            }
+            return &self.nextDecay(id, pVec, m, vVec); }, "id"_a, "p"_a, "m"_a, "v"_a = py::array_t<double>(), py::return_value_policy::reference_internal)
+        .def("stat", &PythiaCascade::stat)
+        .def("particleData", &PythiaCascade::particleData, py::return_value_policy::reference_internal)
+        .def("rndm", &PythiaCascade::rndm, py::return_value_policy::reference_internal)
+        .def("charge", [](PythiaCascade &self, Event &event)
+             {
+                 // skip first pseudoparticle
+                 int size = event.size() - 1;
+                 py::array_t<float> result(size);
+                 float *ptr = result.mutable_data();
+                 for (auto pit = event.begin() + 1; pit != event.end(); ++pit)
+                     *ptr++ = charge_from_pid(self.particleData(), pit->id());
+                 return result;
+             });
 }
