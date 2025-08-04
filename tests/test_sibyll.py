@@ -55,7 +55,6 @@ def event_run(model):
 
 @pytest.mark.parametrize("model", get_sibylls())
 def test_charge(model):
-    pytest.xfail(reason="The SIBYLL charge test needs a fix.")
     event = run_in_separate_process(event_run, model)
     expected = reference_charge(event.pid)
     assert_allclose(event.charge, expected)
