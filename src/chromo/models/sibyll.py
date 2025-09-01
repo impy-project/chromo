@@ -204,8 +204,7 @@ class SIBYLLRun(MCRun):
             kin.p1
         ):
             warnings.warn(
-                f"Cross section for {kin.p1} projectiles not "
-                f"supported in {self.label}",
+                f"Cross section for {kin.p1} projectiles not supported in {self.label}",
                 RuntimeWarning,
             )
             return CrossSectionData()
@@ -233,11 +232,7 @@ class SIBYLLRun(MCRun):
             nsig = self._lib.nucsig
             return CrossSectionData(
                 total=float(nsig.sigt),
-                prod=(
-                    float(nsig.sigt - nsig.sigqe)
-                    if not np.isnan(nsig.sigqe)
-                    else float(nsig.siginel)
-                ),
+                prod=float(nsig.sigt - nsig.sigqe),
                 quasielastic=float(nsig.sigqe),
                 inelastic=float(nsig.siginel),
                 diffractive_sum=float(nsig.sigqsd),
