@@ -45,3 +45,5 @@ bench/timing.pkl
 config
 Untitled*.ipynb
 .venv*
+fort.*
+.timer.out
