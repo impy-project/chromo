@@ -1,4 +1,5 @@
 from chromo.models.dpmjetIII import DpmjetIII193_DEV
+from chromo.models.fluka import Fluka
 from chromo.models.sibyll import (
     Sibyll23c00,
     Sibyll23c01,
@@ -17,6 +18,7 @@ from chromo.models.sibyll import (
 __all__ = (
     "DpmjetIII193_DEV",
     "DpmjetIII193_DEV",
+    "Fluka",
     "Sibyll23c00",
     "Sibyll23c01",
     "Sibyll23c02",
@@ -28,5 +30,5 @@ __all__ = (
     "Sibyll23eStarBar",
     "Sibyll23eStarNoEnh",
     "Sibyll23eStarRho",
-    "Sibyll23eStarStrange",
+    "Sibyll23eStarStrange"
 )

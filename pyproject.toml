@@ -71,6 +71,16 @@ examples = [
 [tool.chromo]
 # Enabled models
 enabled-models = [
+    "fluka",
+    "sib21",
+    "sib23c01",
+    "sib23d",
+    "sib23d_star",
+    "sib23e",
+    "sib23e_star",
+    "sib23c01",
+]
+disabled-models = [
     "eposlhc",
     "eposlhcr",
     "dpmjet_phojet191",
@@ -81,18 +91,9 @@ enabled-models = [
     "qgs2_03",
     "qgs2_04",
     "qgs3",
-    "sib21",
-    "sib23c01",
-    "sib23d",
-    "sib23d_star",
-    "sib23e",
-    "sib23e_star",
-    "sib23c01",
     "sophia",
     "pythia6",
     "urqmd34",
-]
-disabled-models = [
 ]
 
 [tool.mypy]
