@@ -103,7 +103,7 @@ ignore_missing_imports = true
 minversion = "6.0"
 addopts = "-q -ra --ff -n auto"
 testpaths = ["tests"]
-filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
+filterwarnings = ["error::FutureWarning", "error::DeprecationWarning", "ignore:Starting in version 5.7.0.*:FutureWarning"]
 
 [tool.pydocstyle]
 convention = "numpy"
