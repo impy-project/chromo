@@ -30,7 +30,7 @@ __all__ = (
     "Sibyll23eStarBar",
     "Sibyll23eStarNoEnh",
     "Sibyll23eStarRho",
-    "Sibyll23eStarStrange"
+    "Sibyll23eStarStrange",
 )
 
 __getattr__ = deprecated_aliases(__name__, {"DpmjetIII193_DEV": "DpmjetIII19_DEV"})
