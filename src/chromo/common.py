@@ -423,6 +423,14 @@ class EventData:
         """Quantity needed for invariant cross section histograms."""
         return self.en / self.kin.pcm
 
+    @property
+    def name(self):
+        """Name of the particle according scikit-hep/pythia naming.
+
+        Note that this is a slow convenience function for developing/debugging.
+        """
+        return [Particle.from_pdgid(pid) for pid in self.pid]
+
     def _prepare_for_hepmc(self):
         """
         Override this method in classes that need to modify event
@@ -781,8 +789,8 @@ class MCRun(ABC):
             raise ValueError(msg)
         if kin.ecm < self._ecm_min:
             msg = (
-                f"center-of-mass energy {kin.ecm/GeV} GeV < "
-                f"minimum energy {self._ecm_min/GeV} GeV"
+                f"center-of-mass energy {kin.ecm / GeV} GeV < "
+                f"minimum energy {self._ecm_min / GeV} GeV"
             )
             raise ValueError(msg)
 

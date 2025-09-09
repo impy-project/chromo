@@ -12,18 +12,21 @@ import pathlib
 from enum import Enum
 
 import numpy as np
+from particle import literals as lp
 
 from chromo.common import CrossSectionData, MCEvent, MCRun
-from chromo.constants import GeV, standard_projectiles
+from chromo.constants import GeV, TeV, standard_projectiles
 from chromo.kinematics import EventFrame
-from chromo.util import CompositeTarget, Nuclei, process_particle
+from chromo.util import CompositeTarget, Nuclei, info, process_particle
 
 # =============================================================================
 # Constants and Enums
 # =============================================================================
 
+
 class InteractionType(Enum):
     """FLUKA interaction types for stpxyz, smgxyz, evtxyx."""
+
     INELASTIC = 1
     ELASTIC = 10
     INELA_ELA = 11
@@ -35,14 +38,18 @@ class InteractionType(Enum):
 
 # Default material components for FLUKA
 _DEFAULT_MATERIALS = [
-    2212,    # proton
-    "N14", "O16", "Ar40", "Fe56"  # common nuclei
+    2212,  # proton
+    "N14",
+    "O16",
+    "Ar40",
+    "Fe56",  # common nuclei
 ]
 
 
 # =============================================================================
 # Event and Run Classes
 # =============================================================================
+
 
 class FlukaEvent(MCEvent):
     """Wrapper class around FLUKA HEPEVT-style particle stack."""
@@ -66,32 +73,37 @@ class Fluka(MCRun):
     _name = "FLUKA"
     _event_class = FlukaEvent
     _frame = EventFrame.FIXED_TARGET
-    _projectiles = standard_projectiles | {
-        3112, 3122, 3222, 3312, 3322,
-        411, 421, 431, 4122, 4132, 4232, 4332,
-    }
+    _projectiles = (
+        standard_projectiles
+        | Nuclei()
+        | {lp.photon.pdgid, lp.e_plus.pdgid, lp.e_minus.pdgid}
+    )
     _targets = Nuclei()
     _ecm_min = 0.1 * GeV
-    _version = "2025.3"
+    _ekin_max = 20 * TeV
+    _version = "2025.1"
     _library_name = "_fluka"
 
     def __init__(
-        self, 
-        evt_kin, 
-        *, 
-        seed=None, 
+        self,
+        evt_kin,
+        *,
+        seed=None,
         interaction_type=InteractionType.INELASTIC,
         max_momentum_p=1e11,
-        fluka_dpmjet_transition=0.0,
-        transition_smearing=0.0,
+        fluka_dpmjet_transition=-1.0,
+        transition_smearing=-1.0,
         material_print=True,
         enable_quasielastic=False,
         rng_state_file=None,
     ):
         super().__init__(seed)
-        
+
         # Validate FLUKA environment
-        if "FLUPRO" not in os.environ or not pathlib.Path(os.environ["FLUPRO"]).exists():
+        if (
+            "FLUPRO" not in os.environ
+            or not pathlib.Path(os.environ["FLUPRO"]).exists()
+        ):
             raise RuntimeError(
                 "FLUPRO environment variable is not set or points to a "
                 "non-existing directory"
@@ -103,34 +115,44 @@ class Fluka(MCRun):
         self._fluka_dpmjet_transition = fluka_dpmjet_transition
         self._transition_smearing = transition_smearing
         self._material_print = material_print
-        
+
         # Setup RNG
         self._init_rng(rng_state_file, seed)
-        
+
         # Configure quasielastic interactions
         self._set_quasielastic(enable_quasielastic)
-        
+
+        if evt_kin.ekin >= self._ekin_max and not (self._fluka_dpmjet_transition > 0.0):
+            msg = (
+                f"The maximal energy kinetic energy {evt_kin.ekin} GeV exceeds "
+                "FLUKA's maximal range without DPMJET"
+            )
+            raise RuntimeError(msg)
+
         # Initialize materials and FLUKA
         self._init_fluka_materials(evt_kin)
-        
+
         self.kinematics = evt_kin
         self._set_final_state_particles()
+        self._activate_decay_handler(on=True)
 
     def _init_rng(self, rng_state_file, seed):
         """Initialize FLUKA random number generator."""
         if rng_state_file is None:
             rng_state_file = pathlib.Path(__file__).parent / "fluka_rng_state.dat"
-        
+
         self._rng_state_file = rng_state_file
         self._logical_unit = 888
-        
+
         # Load existing state or create new one
         pfile = pathlib.Path(self._rng_state_file)
         if pfile.exists() and pfile.stat().st_size > 0:
             self._lib.load_rng_state(self._rng_state_file, self._logical_unit)
         else:
             seed = 0 if seed is None else seed
-            self._lib.init_rng_state(self._rng_state_file, self._logical_unit, seed, 0, 0)
+            self._lib.init_rng_state(
+                self._rng_state_file, self._logical_unit, seed, 0, 0
+            )
             self._lib.save_rng_state(self._rng_state_file, self._logical_unit)
 
     def _set_quasielastic(self, enable):
@@ -147,7 +169,7 @@ class Fluka(MCRun):
             p = process_particle(mat)
             if p not in materials:
                 materials.append(p)
-        
+
         # Add target from kinematics
         target = process_particle(evt_kin.p2)
         if isinstance(target, CompositeTarget):
@@ -156,12 +178,12 @@ class Fluka(MCRun):
                     materials.append(comp)
         elif target not in materials:
             materials.append(target)
-        
+
         # Build arrays for FLUKA initialization
         nelements = np.array([1] * len(materials))
         charges = np.array([p.Z for p in materials])
         weights = np.array([1.0] * len(materials))
-        
+
         # Setup arguments
         setup_args = [
             self._max_momentum_p,
@@ -170,10 +192,12 @@ class Fluka(MCRun):
             self._interaction_type,
             self._material_print,
         ]
-        
+
         # Initialize FLUKA
-        fluka_material_idcs = self._lib.chromo_stpxyz(nelements, charges, weights, *setup_args)
-        
+        fluka_material_idcs = self._lib.chromo_stpxyz(
+            nelements, charges, weights, *setup_args
+        )
+
         # Store material mapping
         self._materials = materials
         self._material_idcs = fluka_material_idcs
@@ -194,14 +218,14 @@ class Fluka(MCRun):
         projectile = self._fluka_pid(kin.p1)
         target = self._get_material_index(kin.p2)
         p_momentum = 0  # not used
-        
+
         inel = self._lib.chromo_sgmxyz(
             projectile, target, kin.ekin, p_momentum, InteractionType.INELASTIC.value
         )
         el = self._lib.chromo_sgmxyz(
             projectile, target, kin.ekin, p_momentum, InteractionType.ELASTIC.value
         )
-        
+
         return CrossSectionData(inelastic=float(inel), elastic=float(el))
 
     def _set_kinematics(self, kin):
@@ -211,24 +235,51 @@ class Fluka(MCRun):
 
     def _set_stable(self, pdgid, stable):
         """Set particle stability (not implemented for FLUKA)."""
+        info(2, f"Set_stable method no effect can't set {pdgid} stable to {stable}.")
 
     def _generate(self):
         """Generate a single event."""
         k = self.kinematics
         projectile = self._fluka_pid(k.p1)
         target = self._get_material_index(k.p2)
-        
+
         self._lib.chromo_evtxyz(
             projectile,
             target,
             k.ekin,
             0,  # p_momentum = 0 means only kinetic energy will be used
-            0, 0,
+            0,
+            0,
             1,  # direction should be by default +z (not random)
             self._interaction_type,
         )
-        
+
         return True
+
+    def _cleanup_fort(self):
+        import pathlib
+
+        # Remove fort.* files created during fluka runs
+        for fort_file in pathlib.Path(".").glob("fort.*"):
+            fort_file.unlink()
+
+        this_parent = pathlib.Path(__file__).parent
+        lib_parent = pathlib.Path(self._lib.__file__).parent
+        other_files = [
+            this_parent / "fluka_rng_state.dat",
+            lib_parent / "fluka_rng_state.dat",
+            pathlib.Path(".") / ".timer.out",
+        ]
+        for f in other_files:
+            f.unlink(missing_ok=True)
+
+    def __del__(self):
+        """Cleanup when the Fluka object is destroyed."""
+        try:
+            self._cleanup_fort()
+        except Exception:
+            # Silently ignore cleanup errors during destruction
+            pass
 
     def _fluka_pid(self, pdg_id):
         """Convert PDG ID to FLUKA particle ID."""
@@ -245,7 +296,9 @@ class Fluka(MCRun):
 
     def particle_short_name(self, pdg_id):
         """Get particle short name from PDG ID."""
-        return str(self._lib.chpart.aname[self._index6(pdg_id)], encoding="utf-8").strip()
+        return str(
+            self._lib.chpart.aname[self._index6(pdg_id)], encoding="utf-8"
+        ).strip()
 
     def particle_mass(self, pdg_id):
         """Get particle mass from PDG ID in GeV/c^2."""
