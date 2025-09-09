@@ -1,3 +1,4 @@
+# Suppress the uproot FutureWarning about RNTuple/TTree changes
 from pathlib import Path
 
 import numpy as np
