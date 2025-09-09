@@ -30,5 +30,5 @@ __all__ = (
     "Sibyll23eStarBar",
     "Sibyll23eStarNoEnh",
     "Sibyll23eStarRho",
-    "Sibyll23eStarStrange"
+    "Sibyll23eStarStrange",
 )

@@ -361,7 +361,7 @@ if 'fluka' in enabled_models
   fluka_lib_dir = fluprod
   
   # Extract all object files from all FLUKA archives and create a combined static library
-  temp_obj_dir = meson.current_build_dir() / 'fluka_temp_objects'
+  # Only rebuild when input libraries change
   
   # Inputs
   tmp_dir   = meson.current_build_dir() / 'fluka_temp_objects'
@@ -387,8 +387,8 @@ if 'fluka' in enabled_models
     input  : [lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx],
     output : ['fluka_all.a'],
     command: ['sh', '-ceu', cmd_script],
-    console: true,
-    build_by_default: true
+    depend_files: [lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx],
+    build_by_default: false
   )
   fluka_all_dep = declare_dependency(link_args: [tmp_dir / 'fluka_all.a'])
   
