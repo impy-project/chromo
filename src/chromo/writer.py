@@ -143,32 +143,35 @@ class Root(Writer):
 
         lengths = self._lengths
         b = self._iparticle
-
-        # event-level chunk
-        event_chunk = {k: v[: len(lengths)] for k, v in self._event_buffers.items()}
-
-        # particle-level chunk (jagged arrays)
-        particle_chunk = {
-            k: ak.unflatten(v[:b], lengths) for k, v in self._particle_buffers.items()
-        }
-
-        chunk = {**event_chunk, **particle_chunk}
-
+        chunk = {key: val[: len(lengths)] for (key, val) in self._event_buffers.items()}
+        chunk[""] = ak.zip(
+            {
+                key: ak.unflatten(val[:b], lengths)
+                for (key, val) in self._particle_buffers.items()
+            }
+        )
         if self._tree is None:
-            branch_types = {}
-            for k, v in self._event_buffers.items():
-                branch_types[k] = v.dtype.name
-            for k, v in self._particle_buffers.items():
-                branch_types[k] = f"var * {v.dtype.name}"
+            # uproot currently does not provide a high-level way
+            # to write jagged arrays and set a title. This is really bad.
+            # Until this is implemented, we force writing of a title
+            # by monkeypatching WritableDirectory.mktree. Obviously, this
+            # is a very bad and brittle solution, but you gotta do what
+            # you gotta do.
 
-            # Explicitly create TTree
-            # instead of "hacky" implicit way self._file["event"] = chunk
-            self._tree = self._file.mktree("event", branch_types, title=self._header)
+            from uproot.writing import WritableDirectory
 
-        # Append the data
-        self._tree.extend(chunk)
+            mktree = WritableDirectory.mktree
+            title = self._header
 
-        # Reset buffers
+            def modded_mktree(self, name, metadata):
+                return mktree(self, name, metadata, title=title)
+
+            WritableDirectory.mktree = modded_mktree
+            self._file["event"] = chunk
+            WritableDirectory.mktree = mktree
+            self._tree = self._file["event"]
+        else:
+            self._tree.extend(chunk)
         self._iparticle = 0
         self._lengths = []
 
