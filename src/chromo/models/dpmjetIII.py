@@ -1,5 +1,7 @@
 import warnings
 
+from particle import Particle
+
 from chromo.common import CrossSectionData, MCEvent, MCRun
 from chromo.constants import GeV, standard_projectiles
 from chromo.kinematics import EventFrame
@@ -9,7 +11,6 @@ from chromo.util import (
     fortran_chars,
     info,
 )
-from particle import Particle
 
 # The list below are all known particles to DPMJET, which can be used as
 # projectiles. To generate this list, run the following script:
