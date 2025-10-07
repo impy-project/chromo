@@ -1,5 +1,3 @@
-# Suppress the uproot FutureWarning about RNTuple/TTree changes
-import warnings
 from pathlib import Path
 
 import numpy as np
@@ -11,13 +9,6 @@ from numpy.testing import assert_allclose, assert_equal
 from chromo.common import CrossSectionData, EventData
 from chromo.kinematics import CompositeTarget, EventKinematicsWithRestframe
 from chromo.writer import Root
-
-warnings.filterwarnings(
-    "ignore",
-    message="Starting in version 5.7.0.*",
-    category=FutureWarning,
-    module="uproot",
-)
 
 
 def make_event(n):
