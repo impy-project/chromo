@@ -131,8 +131,3 @@ def get_model_projectile_combinations():
 @pytest.mark.parametrize("model,p1", get_model_projectile_combinations())
 def test_projectile_list(model, p1):
     run_in_separate_process(run_three_events, p1, model)
-
-
-@pytest.mark.parametrize("model,p1", get_model_projectile_combinations())
-def test_all_projectiles(model, p1):
-    run_in_separate_process(run_three_events, p1, model)

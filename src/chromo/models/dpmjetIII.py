@@ -326,7 +326,7 @@ class DpmjetIII193(DpmjetIII191):
 class DpmjetIII307(DpmjetIIIRun):
     _version = "3.0-7"
     _library_name = "_dpmjet307"
-    _projectiles = standard_projectiles | Nuclei()
+    _projectiles = standard_projectiles | Nuclei(a_max=280)
     _param_file_name = "fitpar.dat"
     _data_url = (
         "https://github.com/impy-project/chromo"
