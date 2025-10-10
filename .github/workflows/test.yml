@@ -11,7 +11,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  wait-for-pre-commit:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Wait for pre-commit.ci to complete
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: 'pre-commit.ci - pr'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+          allowed-conclusions: success,skipped,neutral
+
   prepare-cache:
+    needs: wait-for-pre-commit
     runs-on: ubuntu-latest
     steps:
       - name: Restore chromo data cache
