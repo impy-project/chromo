@@ -37,6 +37,7 @@ jobs:
           key: chromo-cache-v1
 
   test:
+    if: contains(github.event.pull_request.labels.*.name, 'skip CI') == false
     needs: prepare-cache
     runs-on: ${{ matrix.os }}
     strategy:
