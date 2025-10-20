@@ -12,6 +12,7 @@ concurrency:
 
 jobs:
   prepare-cache:
+    if: contains(github.event.pull_request.labels.*.name, 'skip CI') == false
     runs-on: ubuntu-latest
     steps:
       - name: Restore chromo data cache
@@ -37,6 +38,7 @@ jobs:
           key: chromo-cache-v1
 
   test:
+    if: contains(github.event.pull_request.labels.*.name, 'skip CI') == false
     needs: prepare-cache
     runs-on: ${{ matrix.os }}
     strategy:
