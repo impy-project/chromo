@@ -108,15 +108,7 @@ jobs:
         if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-13' && '13.0' || matrix.os == 'macos-14' && '14.0' || '' }}" >> $GITHUB_ENV
 
-      - if: ${{ matrix.os == 'macos-13' }}
-        name: Install gfortran via Homebrew
-        run: |
-          brew install gcc
-          gfortran --version
-          which gfortran
-
-      - if: ${{ matrix.os != 'macos-13'}}
-        name: Setup gfortran
+      - name: Setup gfortran
         uses: awvwgk/setup-fortran@v1.6.1
         id: setup-fortran
         with:
