@@ -810,7 +810,7 @@ class MCRun(ABC):
                     kin3.p2 = component
                     # this calls cross_section recursively, which is fine
                     cross_section._mul_radd(
-                        fraction, self._cross_section(kin3, max_info=max_info)
+                        fraction, self.cross_section(kin3, max_info=max_info)
                     )
                 return cross_section
             return self._cross_section(kin, max_info=max_info)
@@ -1010,6 +1010,11 @@ class MCRun(ABC):
             yield
         else:
             prev = copy.copy(self.kinematics)
-            self.kinematics = kin
+            self._check_kinematics(kin)
+            self._kinematics = kin
+            self._set_kinematics(kin)
             yield
-            self.kinematics = prev
+            # _check_kinematics not necessary because it's the old kinematics
+            self._kinematics = prev
+            self._set_kinematics(prev)
+
