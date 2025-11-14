@@ -1017,4 +1017,3 @@ class MCRun(ABC):
             # _check_kinematics not necessary because it's the old kinematics
             self._kinematics = prev
             self._set_kinematics(prev)
-
