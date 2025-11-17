@@ -18,8 +18,7 @@ project(
 py          = import('python').find_installation(pure:false)
 py_dep      = py.dependency()
 numpy_dep = dependency('numpy')
-numpy_inc = numpy_dep.get_variable('cflags').split()[0].replace('-I', '')
-
+numpy_cflag = [numpy_dep.get_variable('cflags').split()[0]]
 # Update git submodules if in source tree
 run_command(['git', 'submodule', 'update'], check: false)
 
@@ -30,6 +29,8 @@ f2py_inc = run_command(
   py, '-c',
   'import numpy.f2py, pathlib, sys; print((pathlib.Path(numpy.f2py.__file__).parent / "src"))',
   check:true).stdout().strip()
+
+f2py_cflag = ['-I' + f2py_inc]
 
 f2py_obj = configure_file(              # copies fortranobject.c into build dir
   input  : join_paths(f2py_inc, 'fortranobject.c'),
@@ -65,10 +66,8 @@ scripts_dir = meson.project_source_root() + '/scripts/'
 src_root    = 'src/fortran'
 common_inc  = [
   src_root,
-  numpy_inc,
-  f2py_inc,
 ]
-common_cargs   = []
+common_cargs   = numpy_cflag + f2py_cflag
 common_fargs   = ['-DCHROMO']
 
 logging_src = src_root / 'logging.f'
