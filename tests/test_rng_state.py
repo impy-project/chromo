@@ -51,9 +51,6 @@ def run_rng_state(Model):
 
 @pytest.mark.parametrize("Model", get_all_models())
 def test_rng_state(Model):
-    if Model is im.Pythia8:
-        pytest.skip("Pythia8 currently does not support rng_state serialization")
-
     if Model in (im.UrQMD34,):
         pytest.xfail(f"{Model.pyname} fails this test, needs investigation")
 

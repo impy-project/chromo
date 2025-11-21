@@ -219,6 +219,8 @@ class Pythia8(MCRun):
                 msg = f"readString({line!r}) failed"
                 raise RuntimeError(msg)
 
+        self._final_config = config
+
         # calling init several times is allowed
         if not pythia.init():
             raise RuntimeError("Pythia8 initialization failed")
@@ -265,3 +267,13 @@ class Pythia8(MCRun):
                     break
             result2.append(line)
         return result2
+
+    @property
+    def random_state(self):
+        """Get Pythia8's random number generator state."""
+        return self._pythia.getRndmState()
+
+    @random_state.setter
+    def random_state(self, rng_state):
+        """Restore Pythia8's random number generator state."""
+        self._pythia.setRndmState(rng_state)
