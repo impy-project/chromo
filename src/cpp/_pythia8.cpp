@@ -243,6 +243,20 @@ PYBIND11_MODULE(_pythia8, m)
 
     py::class_<Settings>(m, "Settings")
         .def("resetAll", &Settings::resetAll)
+        .def("listChanged", [](Settings &self) {
+            py::scoped_ostream_redirect stream(
+                std::cout,
+                py::module_::import("sys").attr("stdout")
+            );
+            self.listChanged();
+        })
+        .def("listAll", [](Settings &self) {
+            py::scoped_ostream_redirect stream(
+                std::cout,
+                py::module_::import("sys").attr("stdout")
+            );
+            self.listAll();
+        })
 
         ;
 

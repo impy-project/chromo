@@ -23,6 +23,7 @@ from rich.text import Text
 
 from chromo import __version__ as version
 from chromo import models, writer
+from chromo.cli_log import get_log_text, write_log_file
 from chromo.constants import GeV, MeV
 from chromo.kinematics import CenterOfMass, FixedTarget, Momentum
 from chromo.util import AZ2pdg, get_all_models, name2pdg, tolerant_string_match
@@ -178,6 +179,14 @@ def parse_arguments():
         help="configuration file for generator; configuration is Python code which "
         "interacts with the variable `model` that represents the model instance",
     )
+    parser.add_argument("--log-file", help="also write log to this file")
+    parser.add_argument(
+        "--log-level",
+        choices=["brief", "normal", "verbose"],
+        default="normal",
+        help="log detail level: brief (minimal), normal (changed settings), "
+        "verbose (all settings)",
+    )
 
     args = parser.parse_args()
 
@@ -296,6 +305,9 @@ def parse_arguments():
         msg = f"Error: unknown format {args.output} ({VALID_FORMATS})"
         raise SystemExit(msg)
 
+    if not args.log_file:
+        args.log_file = args.out.with_suffix(".log")
+
     configuration = ""
     if args.config:
         fn = Path(args.config)
@@ -348,6 +360,9 @@ def main():
         Panel(msg, title=f"[bold]chromo [green]{version}[/green][/bold]", width=78)
     )
 
+    if args.log_file:
+        console.print(f"Logging to: {args.log_file}")
+
     if pr > 0 and ta == 0:  # fixed target mode
         evt_kin = FixedTarget(Momentum(pr), args.projectile_id, args.target_id)
     else:  # cms mode
@@ -364,6 +379,11 @@ def main():
             except Exception as e:
                 msg = f"Error in configuration code:\n\n{configuration}, {e}"
                 raise RuntimeError(msg) from e
+
+        # Write preliminary log (without final state particles info yet)
+        log_text = get_log_text(args, p1, p2, model, include_final_state=False)
+        write_log_file(args.log_file, log_text)
+
         ofile = FORMATS[args.output](args.out, model)
         with ofile:
             # workaround: several models generate extra print when first
@@ -382,6 +402,10 @@ def main():
                     if task_id is None:
                         task_id = bar.add_task("", total=args.number)
                     bar.advance(task_id, 1)
+
+        # Update log with final state particles info after model has run
+        log_text = get_log_text(args, p1, p2, model, include_final_state=True)
+        write_log_file(args.log_file, log_text)
     except Exception:
         if int(os.environ.get("DEBUG", "0")) > 0:
             raise

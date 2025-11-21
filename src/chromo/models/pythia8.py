@@ -219,6 +219,8 @@ class Pythia8(MCRun):
                 msg = f"readString({line!r}) failed"
                 raise RuntimeError(msg)
 
+        self._final_config = config
+
         # calling init several times is allowed
         if not pythia.init():
             raise RuntimeError("Pythia8 initialization failed")

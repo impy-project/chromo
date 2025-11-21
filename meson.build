@@ -370,6 +370,7 @@ py.install_sources([
   'src/chromo/__init__.py',
   'src/chromo/__main__.py',
   'src/chromo/cli.py',
+  'src/chromo/cli_log.py',
   'src/chromo/common.py',
   'src/chromo/constants.py',
   'src/chromo/decay_handler.py',
