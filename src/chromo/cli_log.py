@@ -7,12 +7,25 @@ def get_final_state_particles_info(model):
     """Get information about final state particles."""
     from particle import Particle
 
+    from chromo.constants import long_lived
+
     particles = model.final_state_particles
     if not particles:
         return ""
 
     output = "\n\n[Final State Particles]"
-    output += "\nParticles considered stable in this run:\n"
+
+    # Check if using default long_lived list
+    is_default = set(particles) == set(long_lived)
+    n_decayable = len(model._unstable_pids)
+
+    if is_default:
+        output += "\nUsing default configuration (particles with lifetime > 30 ps):"
+    else:
+        output += "\nUsing custom configuration:"
+
+    output += f"\n  Generator can decay: {n_decayable} particle types"
+    output += f"\n  Configured as stable: {len(particles)} particle types\n"
 
     # Sort by absolute value of PDG ID, with negative first, then positive
     sorted_particles = sorted(particles, key=lambda x: (abs(x), x))
@@ -49,7 +62,7 @@ def get_final_state_particles_info(model):
     return output
 
 
-def get_pythia_settings(model, log_level="normal"):
+def get_pythia8_settings(model, log_level="normal"):
     """Get Pythia8-specific settings."""
     pythia = model._pythia
     output = "\n\n[Pythia8 Settings]"
@@ -81,6 +94,102 @@ def get_pythia_settings(model, log_level="normal"):
         if settings_output.strip():
             output += "\n\nAll settings (including defaults):"
             output += f"\n{settings_output}"
+
+    return output
+
+
+def get_pythia6_settings(model, log_level="normal"):
+    """Get Pythia6-specific settings."""
+    output = "\n\n[Pythia6 Settings]"
+
+    if log_level in ["normal", "verbose"]:
+        # Process selection (MSEL=0 means manual selection via MSUB)
+        msel = model._lib.pysubs.msel
+        output += f"\nProcess selection (MSEL): {msel}"
+        if msel == 0:
+            output += " (custom - using MSUB flags)"
+
+        # Enabled subprocesses - only show if custom selection
+        if msel == 0:
+            subprocess_names = {
+                11: "f + f' → f + f' (QCD)",
+                12: "f + fbar → f' + fbar' (QCD)",
+                13: "f + fbar → g + g (QCD)",
+                28: "f + g → f + g (QCD)",
+                53: "g + g → f + fbar (QCD)",
+                68: "g + g → g + g (QCD)",
+                92: "Single diffractive (XB)",
+                93: "Single diffractive (AX)",
+                94: "Double diffractive",
+                95: "Low-pT scattering",
+                96: "Semihard QCD 2→2",
+            }
+            enabled_subs = [i + 1 for i in range(500) if model._lib.pysubs.msub[i] == 1]
+
+            if enabled_subs:
+                output += "\n\nEnabled subprocesses:"
+                for isub in enabled_subs:
+                    name = subprocess_names.get(isub, f"subprocess {isub}")
+                    output += f"\n  MSUB({isub}) = 1  ({name})"
+
+        # Multiple interaction model
+        mstp82 = model._lib.pypars.mstp[81]  # MSTP(82): MPI model
+        mpi_models = {
+            1: "old model (default)",
+            2: "intermediate model",
+            3: "new model",
+            4: "newest model (recommended)",
+        }
+        output += f"\n\nMultiple interactions: MSTP(82) = {mstp82}"
+        if mstp82 in mpi_models:
+            output += f" ({mpi_models[mstp82]})"
+
+        # PDF set
+        mstp51 = model._lib.pypars.mstp[50]  # MSTP(51): PDF set
+        output += f"\nPDF set: MSTP(51) = {mstp51}"
+
+        # Fragmentation model
+        mstj11 = model._lib.pydat1.mstj[10]  # MSTJ(11): fragmentation function
+        frag_models = {
+            1: "Lund symmetric",
+            2: "Lund asymmetric",
+            3: "independent fragmentation",
+            4: "Field-Feynman",
+            5: "Lund symmetric + independent",
+        }
+        output += f"\nFragmentation: MSTJ(11) = {mstj11}"
+        if mstj11 in frag_models:
+            output += f" ({frag_models[mstj11]})"
+
+    if log_level == "verbose":
+        # Hadronization parameters
+        parj1 = model._lib.pydat1.parj[0]  # PARJ(1): diquark suppression
+        parj2 = model._lib.pydat1.parj[1]  # PARJ(2): s-quark suppression
+        parj3 = model._lib.pydat1.parj[2]  # PARJ(3): strange diquark suppression
+        parj21 = model._lib.pydat1.parj[20]  # PARJ(21): fragmentation width
+
+        output += "\n\nFragmentation parameters:"
+        output += f"\n  PARJ(1) = {parj1:.3f}  (diquark suppression)"
+        output += f"\n  PARJ(2) = {parj2:.3f}  (s-quark suppression)"
+        output += f"\n  PARJ(3) = {parj3:.3f}  (strange diquark suppression)"
+        output += f"\n  PARJ(21) = {parj21:.3f}  (width of fragmentation pT)"
+
+        # MPI parameters
+        parp82 = model._lib.pypars.parp[81]  # PARP(82): MPI cutoff
+        parp89 = model._lib.pypars.parp[88]  # PARP(89): reference energy
+        parp90 = model._lib.pypars.parp[89]  # PARP(90): energy scaling
+
+        output += "\n\nMultiple interaction parameters:"
+        output += f"\n  PARP(82) = {parp82:.3f}  (cutoff scale)"
+        output += f"\n  PARP(89) = {parp89:.0f}  (reference energy)"
+        output += f"\n  PARP(90) = {parp90:.3f}  (energy dependence)"
+
+        output += "\n\nNote: Settings can be modified via model._lib common blocks:"
+        output += "\n  - model._lib.pypars (MSTP/PARP: process switches & parameters)"
+        output += "\n  - model._lib.pysubs (MSEL/MSUB: subprocess selection)"
+        output += (
+            "\n  - model._lib.pydat1 (MSTJ/PARJ: hadronization switches & parameters)"
+        )
 
     return output
 
@@ -270,9 +379,13 @@ def get_model_settings(model, log_level="normal"):
     # Check model type and dispatch to appropriate function
     model_type = type(model)
 
-    # Pythia models
-    if model_type in (models.Pythia8, models.Pythia6):
-        return get_pythia_settings(model, log_level)
+    # Pythia8
+    if model_type is models.Pythia8:
+        return get_pythia8_settings(model, log_level)
+
+    # Pythia6 (different implementation)
+    if model_type is models.Pythia6:
+        return get_pythia6_settings(model, log_level)
 
     # Sibyll models
     if model_type in (
