@@ -58,14 +58,18 @@ MODELS = {
 }
 
 VALID_MODELS = []
+VALID_MODELS_HELP = []
 for M in get_all_models():
     for k, v in MODELS.items():
         if v is M:
             VALID_MODELS.append(f"{M.label} [{k}]")
+            VALID_MODELS_HELP.append(f"  {M.label:40s} (CRMC #{k})")
             break
     else:
         VALID_MODELS.append(M.label)
+        VALID_MODELS_HELP.append(f"  {M.label}")
 VALID_MODELS = ", ".join(sorted(VALID_MODELS))
+VALID_MODELS_HELP = "Available models:\n" + "\n".join(sorted(VALID_MODELS_HELP))
 
 FORMATS = {
     "hepmc": writer.Hepmc,
@@ -85,6 +89,19 @@ def extension(format):
     if "gz" in options:
         return f"{extension}.gz"
     return extension
+
+
+class NoWrap(argparse.RawDescriptionHelpFormatter):
+    """
+    Help formatter that prevents argparse from re-wrapping text
+    when the help string contains newline characters.
+    """
+
+    def _split_lines(self, text, width):
+        # If manual newlines exist, return them literally.
+        if "\n" in text:
+            return text.splitlines()
+        return super()._split_lines(text, width)
 
 
 def process_particle(x):
@@ -109,7 +126,13 @@ def process_particle(x):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=NoWrap,
+        description=(
+            "A commandline interface that mimics CRMC to ease transition from CRMC.\n\n"
+            "CRMC (Cosmic Ray Monte Carlo package) https://web.ikp.kit.edu/rulrich/crmc.html"
+        ),
+    )
     parser.add_argument("-v", "--version", action="store_true", help="print version")
     parser.add_argument(
         "-s",
@@ -130,8 +153,9 @@ def parse_arguments():
         "--model",
         default=0,
         help=(
-            f"select model via number or via tolerant string match (case-insensitive), "
-            f"allowed values: {VALID_MODELS}"
+            "Select event generator by name or CRMC number.\n"
+            "Names support case-insensitive partial matching (e.g., 'sibyll', 'epos').\n"
+            f"{VALID_MODELS_HELP}"
         ),
     )
     parser.add_argument(
