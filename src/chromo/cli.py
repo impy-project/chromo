@@ -23,6 +23,7 @@ from rich.text import Text
 
 from chromo import __version__ as version
 from chromo import models, writer
+from chromo.cli_log import write_log
 from chromo.constants import GeV, MeV
 from chromo.kinematics import CenterOfMass, FixedTarget, Momentum
 from chromo.util import AZ2pdg, get_all_models, name2pdg, tolerant_string_match
@@ -57,14 +58,18 @@ MODELS = {
 }
 
 VALID_MODELS = []
+VALID_MODELS_HELP = []
 for M in get_all_models():
     for k, v in MODELS.items():
         if v is M:
             VALID_MODELS.append(f"{M.label} [{k}]")
+            VALID_MODELS_HELP.append(f"  {M.label:40s} (CRMC #{k})")
             break
     else:
         VALID_MODELS.append(M.label)
+        VALID_MODELS_HELP.append(f"  {M.label}")
 VALID_MODELS = ", ".join(sorted(VALID_MODELS))
+VALID_MODELS_HELP = "Available models:\n" + "\n".join(sorted(VALID_MODELS_HELP))
 
 FORMATS = {
     "hepmc": writer.Hepmc,
@@ -84,6 +89,19 @@ def extension(format):
     if "gz" in options:
         return f"{extension}.gz"
     return extension
+
+
+class NoWrap(argparse.RawDescriptionHelpFormatter):
+    """
+    Help formatter that prevents argparse from re-wrapping text
+    when the help string contains newline characters.
+    """
+
+    def _split_lines(self, text, width):
+        # If manual newlines exist, return them literally.
+        if "\n" in text:
+            return text.splitlines()
+        return super()._split_lines(text, width)
 
 
 def process_particle(x):
@@ -108,7 +126,13 @@ def process_particle(x):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=NoWrap,
+        description=(
+            "A commandline interface that mimics CRMC to ease transition from CRMC.\n\n"
+            "CRMC (Cosmic Ray Monte Carlo package) https://web.ikp.kit.edu/rulrich/crmc.html"
+        ),
+    )
     parser.add_argument("-v", "--version", action="store_true", help="print version")
     parser.add_argument(
         "-s",
@@ -129,8 +153,9 @@ def parse_arguments():
         "--model",
         default=0,
         help=(
-            f"select model via number or via tolerant string match (case-insensitive), "
-            f"allowed values: {VALID_MODELS}"
+            "Select event generator by name or CRMC number.\n"
+            "Names support case-insensitive partial matching (e.g., 'sibyll', 'epos').\n"
+            f"{VALID_MODELS_HELP}"
         ),
     )
     parser.add_argument(
@@ -177,6 +202,14 @@ def parse_arguments():
         "--config",
         help="configuration file for generator; configuration is Python code which "
         "interacts with the variable `model` that represents the model instance",
+    )
+    parser.add_argument("--log-file", help="also write log to this file")
+    parser.add_argument(
+        "--log-level",
+        choices=["brief", "normal", "verbose"],
+        default="normal",
+        help="log detail level: brief (minimal), normal (changed settings), "
+        "verbose (all settings)",
     )
 
     args = parser.parse_args()
@@ -296,6 +329,9 @@ def parse_arguments():
         msg = f"Error: unknown format {args.output} ({VALID_FORMATS})"
         raise SystemExit(msg)
 
+    if not args.log_file:
+        args.log_file = args.out.with_suffix(".log")
+
     configuration = ""
     if args.config:
         fn = Path(args.config)
@@ -348,6 +384,9 @@ def main():
         Panel(msg, title=f"[bold]chromo [green]{version}[/green][/bold]", width=78)
     )
 
+    if args.log_file:
+        console.print(f"Logging to: {args.log_file}")
+
     if pr > 0 and ta == 0:  # fixed target mode
         evt_kin = FixedTarget(Momentum(pr), args.projectile_id, args.target_id)
     else:  # cms mode
@@ -364,6 +403,7 @@ def main():
             except Exception as e:
                 msg = f"Error in configuration code:\n\n{configuration}, {e}"
                 raise RuntimeError(msg) from e
+
         ofile = FORMATS[args.output](args.out, model)
         with ofile:
             # workaround: several models generate extra print when first
@@ -382,6 +422,9 @@ def main():
                     if task_id is None:
                         task_id = bar.add_task("", total=args.number)
                     bar.advance(task_id, 1)
+
+        # Write log file after model has run
+        write_log(args, p1, p2, model)
     except Exception:
         if int(os.environ.get("DEBUG", "0")) > 0:
             raise
