@@ -329,6 +329,109 @@ foreach ver, cfg : dpm_cfg
   endforeach
 endforeach
 
+# ── FLUKA block --------------------------------------------------------
+if 'fluka' in enabled_models
+  # assign environment variable from $FLUPRO, check that the directory it is pointing to exists
+  fluprod = run_command('sh', '-c', 'echo ${FLUPRO:-}', check: true).stdout().strip()
+  if fluprod == ''
+    error('FLUKA: Environment variable FLUPRO not set.')
+  endif
+  # Check if directory exists using shell command
+  dir_check = run_command('sh', '-c', 'test -d "' + fluprod + '" && echo "exists" || echo "missing"', check: true).stdout().strip()
+  if dir_check != 'exists'
+    error('Directory set by FLUPRO does not exist: ' + fluprod)
+  endif
+  fluprod_inc = fluprod + '/flukapro'
+  fluprod_aamod = fluprod + '/aamodmvax'
+  
+  # Read DPMVERS from the file
+  dpm_version = run_command('sh', '-c', 'grep "DPMVERS=" ' + 
+    meson.project_source_root() + 
+    '/../FLUKA/interface/dpmvers | cut -d= -f2', check: true).stdout().strip()
+  message('FLUKA DPM Version: ' + dpm_version)
+  
+  flka_src = [
+    f/'fluka/chromo_fluka.f',
+    logging_src
+  ]
+  common_inc += [fluprod_inc, fluprod_aamod]
+  
+  # Find FLUKA library directories
+  fluka_lib_dir = fluprod
+  
+  # Extract all object files from all FLUKA archives and create a combined static library
+  # Only rebuild when input libraries change
+  
+  # Inputs
+  tmp_dir   = meson.current_build_dir() / 'fluka_temp_objects'
+  lib_dpm   = fluka_lib_dir / 'interface' / ('libdpmjet' + dpm_version + '.a')
+  lib_rqmd  = fluka_lib_dir / 'latestRQMD' / 'librqmd.a'
+  lib_hp    = fluka_lib_dir / 'libflukahp.a'
+  lib_dpmx  = fluka_lib_dir / 'libdpmmvax.a'
+  lib_rqmx  = fluka_lib_dir / 'librqmdmvax.a'
+
+  cmd_script = '''
+  tmp="@0@"
+  rm -rf "$tmp"; mkdir -p "$tmp"
+  cd "$tmp"
+  ar x "@1@"
+  ar x "@2@"
+  ar x "@3@"
+  ar x "@4@"
+  ar x "@5@"
+  ar crs "@OUTPUT@" $(find . -name '*.o' -print)
+  '''.format(tmp_dir, lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx)
+
+  fluka_all = custom_target('fluka_all',
+    input  : [lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx],
+    output : ['fluka_all.a'],
+    command: ['sh', '-ceu', cmd_script],
+    depend_files: [lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx],
+    build_by_default: false
+  )
+  fluka_all_dep = declare_dependency(link_args: [tmp_dir / 'fluka_all.a'])
+  
+  # Prepare include flags for F2PY wrapper generation
+  inc_flags = []
+  foreach d : common_inc
+    if not d.startswith(meson.project_source_root())
+      d = meson.project_source_root() / d
+    endif
+    inc_flags += '-I' + d
+  endforeach
+  inc_str = ' '.join(inc_flags)
+  
+  # Symbols
+  fluka_syms = [
+    'chromo_evtxyz', 'chromo_stpxyz', 'chromo_sgmxyz', 'chromo_fllhep',
+    'fluka_key', 'random_direction',
+    'icode_from_pdg', 'pdg_from_icode',
+    'init_rng_state', 'load_rng_state', 'save_rng_state',
+    'fluka_rand', 'icode_from_pdg_arr', 'charge_from_pdg_arr',
+    'fluka_particle_scheme'
+  ]
+
+  wrap = custom_target('_fluka'+'_wrap',
+      output : ['_fluka'+'module.c', '_fluka'+'-f2pywrappers.f', '_fluka'+'.pyf'],
+      input  : flka_src,
+      command: [py,scripts_dir + 'generate_f2py.py', '_fluka', ','.join(fluka_syms+common_syms),
+                meson.global_build_root()/'meson-logs', inc_str, ' '.join(common_fargs),
+                '@OUTDIR@','@INPUT@'],
+      build_by_default:true)
+  
+  py.extension_module('_fluka',
+    sources            : [wrap, f2py_obj, files(flka_src + rangen_src + [normal_src])],
+    include_directories: include_directories(common_inc),
+    dependencies       : [py_dep, numpy_dep, fluka_all_dep],
+    c_args             : common_cargs,
+    fortran_args       : common_fargs + ['-DCHROMO', '-DDPMVER=' + dpm_version],
+    subdir             : 'chromo/models',
+    install            : true,
+    install_rpath      : rpath_tok,
+    build_rpath        : rpath_tok,
+  )
+endif
+
 # ── PYTHIA 8 block (unchanged) ----------------------------------------
 cpp_dir    = 'src/cpp'
 if 'pythia8' in enabled_models
