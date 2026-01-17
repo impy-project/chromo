@@ -39,6 +39,7 @@ dependencies = [
     "scipy",
     "particle",
     "rich",
+    "packaging",
 ]
 
 [project.urls]
