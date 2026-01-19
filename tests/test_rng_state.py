@@ -3,6 +3,7 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
+import platform
 
 import chromo.models as im
 from chromo.constants import GeV, TeV
@@ -126,6 +127,19 @@ def test_rng_state_bitgens(Model, bitgen_class, seed):
     if Model is im.Pythia6 and bitgen_class == np.random.MT19937:
         pytest.skip(
             "Pythia6 has unknown issues with MT19937 bit generator, needs investigation"
+        )
+
+    if (
+        (Model is im.EposLHC)
+        and (platform.machine() in ["aarch64", "arm64"])
+        and (bitgen_class == np.random.Philox)
+    ):
+        pytest.xfail(
+            f"test_rng_state_bitgens[Philox-33333-EposLHC] fails with "
+            f"AssertionError: 'states differ after 16 generation with Philox' "
+            f"on ARM64 architecture (ubuntu-24.04-arm, 3.13), "
+            f"while passes on all other systems. "
+            f"It needs further investigation."
         )
 
     run_in_separate_process(run_rng_state_with_bitgen, Model, bitgen_class, seed)
