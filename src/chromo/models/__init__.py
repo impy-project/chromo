@@ -15,6 +15,7 @@ from chromo.models.sibyll import (
 from chromo.models.sophia import Sophia20
 from chromo.models.urqmd import UrQMD34
 from chromo.util import deprecated_aliases
+from chromo.models.fluka import Fluka
 
 __all__ = (
     "DpmjetIII19",
@@ -23,6 +24,7 @@ __all__ = (
     "EposLHCR",
     "EposLHCRHadrRescattering",
     "Phojet19",
+    "Fluka",
     "Phojet112",
     "Pythia6",
     "Pythia8",
