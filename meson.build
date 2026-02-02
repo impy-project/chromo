@@ -373,7 +373,8 @@ if 'fluka' in enabled_models
 
   cmd_script = '''
   tmp="@0@"
-  rm -rf "$tmp"; mkdir -p "$tmp"
+  rm -rf "$tmp"
+  mkdir -p "$tmp"
   cd "$tmp"
   ar x "@1@"
   ar x "@2@"
@@ -388,7 +389,7 @@ if 'fluka' in enabled_models
     output : ['fluka_all.a'],
     command: ['sh', '-ceu', cmd_script],
     depend_files: [lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx],
-    build_by_default: false
+    build_by_default: true
   )
   fluka_all_dep = declare_dependency(link_args: [tmp_dir / 'fluka_all.a'])
   

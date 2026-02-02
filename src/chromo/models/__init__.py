@@ -14,6 +14,7 @@ from chromo.models.sibyll import (
 )
 from chromo.models.sophia import Sophia20
 from chromo.models.urqmd import UrQMD34
+from chromo.models.fluka import Fluka
 
 __all__ = (
     "DpmjetIII191",
@@ -22,6 +23,7 @@ __all__ = (
     "EposLHC",
     "EposLHCR",
     "EposLHCRHadrRescattering",
+    "Fluka",
     "Phojet112",
     "Phojet191",
     "Phojet193",

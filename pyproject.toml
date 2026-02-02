@@ -71,6 +71,7 @@ examples = [
 [tool.chromo]
 # Enabled models
 enabled-models = [
+    "fluka",
     "sib21",
     "sib23c01",
     "sib23d",
@@ -93,7 +94,6 @@ enabled-models = [
     "urqmd34",
 ]
 disabled-models = [
-    "fluka",
 ]
 
 [tool.mypy]
