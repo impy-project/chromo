@@ -1,5 +1,6 @@
 from chromo.models.dpmjetIII import DpmjetIII19, DpmjetIII307
 from chromo.models.epos import EposLHC, EposLHCR, EposLHCRHadrRescattering
+from chromo.models.fluka import Fluka
 from chromo.models.phojet import Phojet19, Phojet112
 from chromo.models.pythia6 import Pythia6
 from chromo.models.pythia8 import Pythia8, Pythia8Angantyr, Pythia8Cascade
@@ -15,7 +16,6 @@ from chromo.models.sibyll import (
 from chromo.models.sophia import Sophia20
 from chromo.models.urqmd import UrQMD34
 from chromo.util import deprecated_aliases
-from chromo.models.fluka import Fluka
 
 __all__ = (
     "DpmjetIII19",
