@@ -1,5 +1,6 @@
 from chromo.models.dpmjetIII import DpmjetIII191, DpmjetIII193, DpmjetIII307
 from chromo.models.epos import EposLHC, EposLHCR, EposLHCRHadrRescattering
+from chromo.models.fluka import Fluka
 from chromo.models.phojet import Phojet112, Phojet191, Phojet193
 from chromo.models.pythia6 import Pythia6
 from chromo.models.pythia8 import Pythia8
@@ -22,6 +23,7 @@ __all__ = (
     "EposLHC",
     "EposLHCR",
     "EposLHCRHadrRescattering",
+    "Fluka",
     "Phojet112",
     "Phojet191",
     "Phojet193",
