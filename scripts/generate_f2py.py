@@ -206,11 +206,30 @@ if __name__ == "__main__":
     includes = sys.argv[4]
     flags = sys.argv[5]
     output_dir = sys.argv[6]
-    # Ther remaining arguments are the source files
-    if len(sys.argv) < 7:
-        logger.error("At least one source file must be provided.")
-        sys.exit(1)
-    sources = sys.argv[7:]
+
+    # Check if --source-file-list is provided (for Windows command line length limits)
+    sources = []
+    if '--source-file-list' in sys.argv:
+        list_idx = sys.argv.index('--source-file-list')
+        if list_idx + 1 >= len(sys.argv):
+            logger.error("--source-file-list requires a file path argument")
+            sys.exit(1)
+        source_list_file = sys.argv[list_idx + 1]
+        logger.info(f"Reading sources from file: {source_list_file}")
+
+        if not Path(source_list_file).exists():
+            logger.error(f"Source list file does not exist: {source_list_file}")
+            sys.exit(1)
+
+        with open(source_list_file, 'r') as f:
+            sources = [line.strip() for line in f if line.strip()]
+    else:
+        # Original behavior: read from command line
+        if len(sys.argv) < 7:
+            logger.error("At least one source file must be provided.")
+            sys.exit(1)
+        sources = sys.argv[7:]
+
     # Check that all files in sources exist
     for src in sources:
         if not Path(src).exists():

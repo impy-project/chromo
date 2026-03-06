@@ -4,6 +4,7 @@
 import argparse
 import glob
 import re
+import sys
 from pathlib import Path
 
 
@@ -67,10 +68,15 @@ def list_files(directory):
     if al_cpp.exists():
         sources.append(str(al_cpp))
 
-    # Add timer.c if it exists
+    # Add timer.c (POSIX) or timer_win.c (Windows) if available
     timer_c = fdir / "sources/timer.c"
     if timer_c.exists():
-        sources.append(str(timer_c))
+        if sys.platform == "win32":
+            # Use Windows-compatible replacement (sys/times.h not available on Windows)
+            timer_win = Path(__file__).parent.parent / "src/fortran/timer_win.c"
+            sources.append(str(timer_win))
+        else:
+            sources.append(str(timer_c))
 
     # Collect all other .f files from the sources subdirectory
     sources.extend(glob.glob(str(fdir / "sources/*.f")))

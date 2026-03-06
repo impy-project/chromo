@@ -6,6 +6,7 @@ CRMC (Cosmic Ray Monte Carlo package) https://web.ikp.kit.edu/rulrich/crmc.html
 
 import argparse
 import os
+import sys
 from math import sqrt
 from pathlib import Path
 
@@ -350,6 +351,12 @@ def parse_arguments():
 def main():
     from rich.console import Console
     from rich.panel import Panel
+
+    # Ensure UTF-8 output on Windows so rich's Unicode panel/progress chars work
+    if sys.platform == "win32":
+        for stream in (sys.stdout, sys.stderr):
+            if hasattr(stream, "reconfigure"):
+                stream.reconfigure(encoding="utf-8")
 
     args, configuration = parse_arguments()
 

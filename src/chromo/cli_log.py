@@ -112,17 +112,17 @@ def get_pythia6_settings(model, log_level="normal"):
         # Enabled subprocesses - only show if custom selection
         if msel == 0:
             subprocess_names = {
-                11: "f + f' → f + f' (QCD)",
-                12: "f + fbar → f' + fbar' (QCD)",
-                13: "f + fbar → g + g (QCD)",
-                28: "f + g → f + g (QCD)",
-                53: "g + g → f + fbar (QCD)",
-                68: "g + g → g + g (QCD)",
+                11: "f + f' -> f + f' (QCD)",
+                12: "f + fbar -> f' + fbar' (QCD)",
+                13: "f + fbar -> g + g (QCD)",
+                28: "f + g -> f + g (QCD)",
+                53: "g + g -> f + fbar (QCD)",
+                68: "g + g -> g + g (QCD)",
                 92: "Single diffractive (XB)",
                 93: "Single diffractive (AX)",
                 94: "Double diffractive",
                 95: "Low-pT scattering",
-                96: "Semihard QCD 2→2",
+                96: "Semihard QCD 2->2",
             }
             enabled_subs = [i + 1 for i in range(500) if model._lib.pysubs.msub[i] == 1]
 
@@ -487,5 +487,5 @@ Format: {args.output}
     msg += get_model_settings(model, args.log_level)
 
     if args.log_file:
-        with open(args.log_file, "w") as f:
+        with open(args.log_file, "w", encoding="utf-8") as f:
             f.write(msg)

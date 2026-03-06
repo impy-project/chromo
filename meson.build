@@ -247,12 +247,21 @@ foreach name, cfg : models
   wrap_inputs = files(cfg.get('iface', cfg['src']) + [logging_src] + rangen_src)
   outs  = [name+'module.c', name+'-f2pywrappers.f', name+'.pyf']
 
+  # Create source list file for Windows command line length limits (for models with many files)
+  source_list_file = custom_target(name + '_source_list',
+    output: name + '_sources.txt',
+    input: wrap_inputs,
+    command: [py, scripts_dir + 'write_source_list.py', '@INPUT@'],
+    capture: true,
+    build_by_default: true)
+
   wrap = custom_target(name+'_wrap',
     output : outs,
-    input  : wrap_inputs,
+    input  : [source_list_file],
+    depend_files: wrap_inputs,
     command: [py,scripts_dir + 'generate_f2py.py', name, ','.join(cfg['funcs']),
               meson.global_build_root()/'meson-logs', inc_str, ' '.join(flags),
-              '@OUTDIR@','@INPUT@'],
+              '@OUTDIR@', '--source-file-list', '@INPUT@'],
     build_by_default : true)
 
   # Override optimization for EPOS models
@@ -261,12 +270,21 @@ foreach name, cfg : models
     override_opts = ['optimization=0']
   endif
 
+  # On Windows, _eposlhcr uses al.cpp (C++) which needs libstdc++.
+  # To avoid DLL conflicts when multiple MinGW installations are in PATH,
+  # statically link the C++ and GCC runtimes into the pyd.
+  extra_link_args = []
+  if name == '_eposlhcr' and host_machine.system() == 'windows'
+    extra_link_args = ['-static-libstdc++', '-static-libgcc']
+  endif
+
   py.extension_module(name,
     sources            : srcs + [wrap, f2py_obj],
     include_directories: include_directories(inc_dirs),
     dependencies       : [py_dep, numpy_dep],
     c_args             : common_cargs + flags,
     fortran_args       : flags,
+    link_args          : extra_link_args,
     override_options   : override_opts,
     subdir             : 'chromo/models',
     install            : true,
@@ -305,14 +323,24 @@ foreach ver, cfg : dpm_cfg
           c_args              : common_cargs,
           fortran_args        : common_fargs)
 
+  # Create source list file for Windows command line length limits
+  # This avoids passing hundreds of file paths as command arguments
+  source_list_file = custom_target('dpmjet_phojet_' + ver + '_source_list',
+    output: 'dpmjet_phojet_' + ver + '_sources.txt',
+    input: base_src,
+    command: [py, scripts_dir + 'write_source_list.py', '@INPUT@'],
+    capture: true,
+    build_by_default: true)
+
   foreach front : cfg['split']
     outs = [front+'module.c', front+'-f2pywrappers.f', front+'.pyf']
     wrap = custom_target(front+'_wrap',
       output : outs,
-      input  : base_src,
+      input  : [source_list_file],
+      depend_files: base_src,
       command: [py,scripts_dir + 'generate_f2py.py', front, ','.join(dpm_syms+common_syms),
                 meson.global_build_root()/'meson-logs', inc_str, ' '.join(common_fargs),
-                '@OUTDIR@','@INPUT@'],
+                '@OUTDIR@', '--source-file-list', '@INPUT@'],
       build_by_default:true)
 
     py.extension_module(front,
@@ -329,9 +357,10 @@ foreach ver, cfg : dpm_cfg
   endforeach
 endforeach
 
-# ── PYTHIA 8 block (unchanged) ----------------------------------------
+# ── PYTHIA 8 block --------------------------------------------------------
+# Note: PYTHIA8 is skipped on Windows (C++ build complexity)
 cpp_dir    = 'src/cpp'
-if 'pythia8' in enabled_models
+if 'pythia8' in enabled_models and host_machine.system() != 'windows'
   p8_inc     = include_directories(cpp_dir / 'pythia83/include')
   pybind_inc = include_directories(cpp_dir / 'pybind11/include')
 

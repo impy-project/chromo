@@ -90,7 +90,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-14] # windows-latest: Disable windows for now
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-14, windows-latest]
         arch: [auto]
         py: [cp39, cp310, cp311, cp312, cp313]
     steps:
@@ -132,7 +132,6 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
-          CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
 
       - if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm' }}

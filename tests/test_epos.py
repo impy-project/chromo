@@ -1,4 +1,3 @@
-import sys
 from functools import lru_cache
 
 import numpy as np
@@ -13,10 +12,6 @@ from chromo.models import EposLHC
 from .util import (
     reference_charge,
     run_in_separate_process,
-)
-
-pytestmark = pytest.mark.skipif(
-    sys.platform == "win32", reason="EPOS-LHC not build on windows"
 )
 
 

@@ -70,30 +70,29 @@ examples = [
 
 
 [tool.chromo]
-# Enabled models
+# Enabled models - Phase 3: All SIBYLL + Phase 4: QGSJet models
 enabled-models = [
-    "eposlhc",
-    "eposlhcr",
-    "dpmjet_phojet191",
-    "dpmjet_phojet193",
-    "dpmjet_phojet307",
-    "pythia8",
-    "qgs01",
-    "qgs2_03",
-    "qgs2_04",
-    "qgs3",
     "sib21",
     "sib23c01",
     "sib23d",
     "sib23d_star",
     "sib23e",
     "sib23e_star",
-    "sib23c01",
+    "qgs01",
+    "qgs2_03",
+    "qgs2_04",
+    "qgs3",
     "sophia",
     "pythia6",
-    "urqmd34",
+    "eposlhc",
+    "eposlhcr",
 ]
 disabled-models = [
+    "dpmjet_phojet191",
+    "dpmjet_phojet193",
+    "dpmjet_phojet307",
+    "pythia8",
+    "urqmd34",
 ]
 
 [tool.mypy]

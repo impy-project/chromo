@@ -45,15 +45,18 @@ jobs:
       matrix:
         include:
           # Python version number must be string, otherwise 3.10 becomes 3.1
-          # Disable Windows for now, as long as numpy is buggy on Windows
-          # - os: windows-latest
-          #   python-version: "3.12"
+          - os: windows-latest
+            python-version: "3.12"
+            pytest-args: "-k 'not (Pythia8 or test_decay_handler)' -n 2"
           - os: macos-14
             python-version: "3.12"
+            pytest-args: "-n 3"
           - os: ubuntu-latest
             python-version: "3.13"
+            pytest-args: "-n 3"
           - os: ubuntu-24.04-arm
             python-version: "3.13"
+            pytest-args: "-n 3"
       fail-fast: false
     steps:
       - name: Restore chromo data cache
@@ -79,16 +82,17 @@ jobs:
       - if: ${{ matrix.os != 'windows-latest' }}
         run: uv pip install --system -v .[test]
       - if: ${{ matrix.os == 'windows-latest' }}
-        run: python -m pip install --prefer-binary -v .[test]
+        run: |
+          python -m pip install meson-python numpy ninja
+          python -m pip install --no-build-isolation -v .[test]
         env:
-          CMAKE_GENERATOR: "MinGW Makefiles"
           FC: ${{ steps.setup-fortran.outputs.fc }}
       # graphviz is needed for tests, only install it when compilation succeed
       - uses: tlylt/install-graphviz@v1
       # Tests run in parallel, but data download is currently not thread-safe.
       # We work around this by downloading all data files upfront.
       - run: python scripts/download_data.py
-      - run: python -m pytest -vv -n 3
+      - run: python -m pytest -vv ${{ matrix.pytest-args }}
         env:
           no_proxy: '*'
       # always() ensures upload even if pytest ends with failures

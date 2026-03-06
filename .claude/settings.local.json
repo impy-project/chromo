@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*python*)",
+      "Bash(*pip*)",
+      "Bash(*meson*)",
+      "Bash(*gfortran*)",
+      "Bash(*find*)",
+      "Bash(*grep*)",
+      "Bash(*ls*)",
+      "Bash(*wc*)",
+      "Bash(*export*)",
+      "Bash(*chromo*)",
+      "WebSearch",
+      "Bash(python:*)"
+    ]
+  }
+}
