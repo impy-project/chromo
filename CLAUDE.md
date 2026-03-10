@@ -26,7 +26,7 @@ Compiled modules go to `build/cp*/`. Model enable/disable is controlled in `pypr
 python scripts/download_data.py
 
 # Run all tests (parallel by default via pytest-xdist)
-python -m pytest -vv -n 16
+python -m pytest -vv -n 16 # in the cloud use 2 or 3 processes.
 
 # Run tests serially
 python -m pytest -n 0
@@ -95,6 +95,26 @@ Windows builds are not yet **experimentally supported**. Key details:
 # Skip PYTHIA8 and problematic tests
 python -m pytest -vv -k "not (Pythia8 or test_decay_handler)" -n 2
 ```
+
+## Data Files (iamdata)
+
+Each model downloads a versioned zip from GitHub releases into `src/chromo/iamdata/<model>/`.
+The mechanism lives in `src/chromo/util.py:_cached_data_dir(url)`:
+
+1. Derives `model_name` and `vname_stem` (e.g. `Pythia8_v006`) from the URL.
+2. If `iamdata/<model>/<vname_stem>` (a version marker file) already exists → returns immediately, no download.
+3. Otherwise clears the model dir, copies the zip from `~/.cache/chromo/` (CI) or downloads it, extracts it, then creates the version marker file.
+
+**To bump a model's data version** (e.g. Pythia8 v005 → v006):
+1. Update `_version` and `_data_url` in the model file (`src/chromo/models/<model>.py`).
+2. Repopulate `iamdata/<model>/` from the submodule (xmldoc, tunes, pdfdata for Pythia8).
+3. Remove the old version marker (`Pythia8_v005`) and create the new one (`Pythia8_v006`) — just a plain file, content doesn't matter.
+4. Create the zip: `cd src/chromo/iamdata && zip -r <Model>_v00N.zip <Model>/xmldoc <Model>/pdfdata <Model>/tunes`
+   The zip must contain `<Model>/subdir/...` paths (NOT the version file — that is created after extraction).
+5. Upload zip to `https://github.com/impy-project/chromo/releases/tag/zipped_data_v1.0`.
+6. Add the new version name to the cache download loop in `.github/workflows/test.yml` and `release.yml`.
+
+Note: `iamdata/` is git-ignored; only the model `.py` and CI workflow files are committed.
 
 ## Important Constraints
 
