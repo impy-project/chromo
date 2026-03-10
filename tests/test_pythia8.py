@@ -1,13 +1,15 @@
+import sys
+from functools import lru_cache
+
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose, assert_equal
+
+from chromo.constants import GeV, long_lived
 from chromo.kinematics import CenterOfMass
 from chromo.models import Pythia8
-from chromo.constants import GeV, long_lived
-import numpy as np
-from numpy.testing import assert_allclose, assert_equal
-from .util import reference_charge
-import pytest
-from functools import lru_cache
-import sys
 
+from .util import reference_charge
 
 pytestmark = pytest.mark.skipif(
     sys.platform == "win32", reason="Pythia8 does not run on windows"

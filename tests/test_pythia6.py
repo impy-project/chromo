@@ -1,15 +1,18 @@
 # These tests check Pythia6 but also the MCEvent in general.
 # It is not necessary to duplicate all tests for every model.
+import pickle
+from functools import lru_cache
+
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose, assert_equal
+from particle import literals as lp
+
+from chromo.constants import GeV, TeV
 from chromo.kinematics import CenterOfMass
 from chromo.models import Pythia6
-from chromo.constants import GeV, TeV
-import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+
 from .util import reference_charge, run_in_separate_process
-import pytest
-import pickle
-from particle import literals as lp
-from functools import lru_cache
 
 
 def test_name():
@@ -146,13 +149,13 @@ def run_pickle():
     assert event == event2
 
 
-def test_pickle(event):
+def test_pickle():
     run_in_separate_process(run_pickle)
 
 
 def run_pp_collision_copy():
-    from chromo.models.pythia6 import PYTHIA6Event
     from chromo.common import EventData
+    from chromo.models.pythia6 import PYTHIA6Event
 
     evt_kin = CenterOfMass(1 * TeV, 2212, 2212)
     m = Pythia6(evt_kin, seed=4)

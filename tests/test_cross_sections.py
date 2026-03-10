@@ -1,17 +1,20 @@
+import dataclasses
+
+import numpy as np
+import pytest
+
+import chromo.models as im
 from chromo.constants import GeV
 from chromo.kinematics import (
     CenterOfMass,
     CompositeTarget,
 )
-import chromo.models as im
-import pytest
-from .util import run_in_separate_process
 from chromo.util import get_all_models
-import dataclasses
-import numpy as np
+
+from .util import run_in_separate_process
 
 
-def run_model(Model, kin, number=1):
+def run_model(Model, kin):
     try:
         gen = Model(kin, seed=1)
     except ValueError:
@@ -34,7 +37,12 @@ def test_generator(projectile, target, Model):
         # cannot use Argon in SIBYLL, so make air from N, O only
         p2 = CompositeTarget((("N", 0.78), ("O", 0.22)))
 
-    kin = CenterOfMass(100 * GeV, p1, p2)
+    # increase energy for K+ and SIBYLL23c to avoid prod cs = nan region
+    # this is specifig to SIBYLL23C
+    if Model == im.Sibyll23c and projectile == "K+" and target == "air":
+        kin = CenterOfMass(1e3 * GeV, p1, p2)
+    else:
+        kin = CenterOfMass(100 * GeV, p1, p2)
 
     ret = run_in_separate_process(run_model, Model, kin)
     if ret is None:

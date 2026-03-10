@@ -1,18 +1,19 @@
-import numpy as np
-from chromo.constants import quarks_and_diquarks_and_gluons, millibarn, GeV
-from chromo.kinematics import CompositeTarget
 import dataclasses
-from pathlib import Path
 from abc import ABC, abstractmethod
+from pathlib import Path
+
+import numpy as np
+
+from chromo.constants import GeV, millibarn, quarks_and_diquarks_and_gluons
+from chromo.kinematics import CompositeTarget
 
 INT_TYPE = np.int32
 FLOAT_TYPE = np.float32
 
 
 def _raise_import_error(name, task):
-    raise ModuleNotFoundError(
-        f"{name} not found, please install {name} (`pip install {name}`) to {task}"
-    )
+    msg = f"{name} not found, please install {name} (`pip install {name}`) to {task}"
+    raise ModuleNotFoundError(msg)
 
 
 class Writer(ABC):
@@ -142,35 +143,32 @@ class Root(Writer):
 
         lengths = self._lengths
         b = self._iparticle
-        chunk = {key: val[: len(lengths)] for (key, val) in self._event_buffers.items()}
-        chunk[""] = ak.zip(
-            {
-                key: ak.unflatten(val[:b], lengths)
-                for (key, val) in self._particle_buffers.items()
-            }
-        )
+
+        # event-level chunk
+        event_chunk = {k: v[: len(lengths)] for k, v in self._event_buffers.items()}
+
+        # particle-level chunk (jagged arrays)
+        particle_chunk = {
+            k: ak.unflatten(v[:b], lengths) for k, v in self._particle_buffers.items()
+        }
+
+        chunk = {**event_chunk, **particle_chunk}
+
         if self._tree is None:
-            # uproot currently does not provide a high-level way
-            # to write jagged arrays and set a title. This is really bad.
-            # Until this is implemented, we force writing of a title
-            # by monkeypatching WritableDirectory.mktree. Obviously, this
-            # is a very bad and brittle solution, but you gotta do what
-            # you gotta do.
+            branch_types = {}
+            for k, v in self._event_buffers.items():
+                branch_types[k] = v.dtype.name
+            for k, v in self._particle_buffers.items():
+                branch_types[k] = f"var * {v.dtype.name}"
 
-            from uproot.writing import WritableDirectory
+            # Explicitly create TTree
+            # instead of "hacky" implicit way self._file["event"] = chunk
+            self._tree = self._file.mktree("event", branch_types, title=self._header)
 
-            mktree = WritableDirectory.mktree
-            title = self._header
+        # Append the data
+        self._tree.extend(chunk)
 
-            def modded_mktree(self, name, metadata):
-                return mktree(self, name, metadata, title=title)
-
-            WritableDirectory.mktree = modded_mktree
-            self._file["event"] = chunk
-            WritableDirectory.mktree = mktree
-            self._tree = self._file["event"]
-        else:
-            self._tree.extend(chunk)
+        # Reset buffers
         self._iparticle = 0
         self._lengths = []
 
@@ -211,6 +209,7 @@ class Root(Writer):
 class Svg(Writer):
     def __init__(self, file, model):
         self._idx = 0
+        file = Path(file)
         self._template = (file.parent, file.stem, file.suffix)
 
     def write(self, event):
@@ -233,7 +232,7 @@ class Hepmc(Writer):
     def __init__(self, file, model):
         try:
             from pyhepmc._core import pyiostream
-            from pyhepmc.io import _WrappedWriter, WriterAscii
+            from pyhepmc.io import WriterAscii, _WrappedWriter
         except ModuleNotFoundError:
             _raise_import_error("pyhepmc", "write HepMC files")
 
@@ -244,7 +243,7 @@ class Hepmc(Writer):
 
         # TODO fix the following in pyhepmc, we should be able
         # to use the public API and not these secrets
-        op = gzip.open if file.suffix == ".gz" else open
+        op = gzip.open if Path(file).suffix == ".gz" else open
         self._file = op(file, "wb")
         self._ios = pyiostream(self._file)
         self._writer = _WrappedWriter(self._ios, None, WriterAscii)

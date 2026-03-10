@@ -1,18 +1,19 @@
+import os
+import platform
+import re
 import subprocess as subp
+import tempfile
+from pathlib import Path
+
+import numpy as np
+import pyhepmc
+import pytest
+import uproot
+from particle import Particle
+
 from chromo import __version__ as version
 from chromo import models as im
-import re
-from pathlib import Path
-import pytest
 from chromo.cli import MODELS
-from particle import Particle
-import pyhepmc
-import uproot
-import platform
-import numpy as np
-import tempfile
-import os
-
 
 # Implementation notes:
 #
@@ -29,7 +30,6 @@ import os
 
 def format_matches_extension(p):
     ext = p.suffixes
-    _, model, seed, pid1, pid2, en, *rest = p.stem.split("_")
     if ext[0] == ".hepmc":
         with pyhepmc.open(p) as f:
             event = f.read()
@@ -56,7 +56,7 @@ def run(
                 f.write(config)
 
             cmd += ("-c", "config.cfg")
-        r = subp.run(("chromo",) + cmd, cwd=cwd, capture_output=True)
+        r = subp.run(("chromo", *cmd), cwd=cwd, capture_output=True, check=False)
         assert r.returncode == returncode, r.stderr.decode()
         match = None
         if stdout is not None:
@@ -154,13 +154,16 @@ def test_number_2():
 
 @pytest.mark.parametrize(
     "spec,Model",
-    tuple((str(k), v) for (k, v) in MODELS.items())
-    + (
-        ("eposlhc", im.EposLHC),
-        ("sib23d", im.Sibyll23d),
+    (
+        *tuple((str(k), v) for k, v in MODELS.items()),
+        ("EPOS-LHC", im.EposLHC),
+        ("EPOS-LHC-R hadr. rescattering", im.EposLHCRHadrRescattering),
+        ("sibyll-2.3d", im.Sibyll23d),
+        ("sibyll-2.3e", im.Sibyll23e),
+        ("sibyll-2.3eStar-mix", im.Sibyll23eStarMixed),
         ("sib21", im.Sibyll21),
-        ("sibyll-2.3", im.Sibyll23),
-        ("sibyll-2.3Star-Mix", im.Sibyll23StarMixed),
+        ("sibyll-2.3c", im.Sibyll23c),
+        ("sibyll-2.3dStar-Mix", im.Sibyll23dStarMixed),
     ),
 )
 def test_model_1(spec, Model):
@@ -195,8 +198,9 @@ def test_model_3():
         "sib",
         returncode=1,
         stderr=(
-            "Error: model=sib is ambiguous, matches (SIBYLL-2.1, SIBYLL-2.3, "
-            "SIBYLL-2.3Star-mix, SIBYLL-2.3c, SIBYLL-2.3d)"
+            "Error: model=sib is ambiguous, matches (SIBYLL-2.1, "
+            "SIBYLL-2.3c, SIBYLL-2.3d, SIBYLL-2.3dStar-mix, "
+            "SIBYLL-2.3e, SIBYLL-2.3eStar-mix)"
         ),
     )
 

@@ -1,11 +1,13 @@
-import chromo
-import numpy as np
-import pytest
 import sys
 
+import numpy as np
+import pytest
+
+import chromo
 from chromo.constants import long_lived
 from chromo.decay_handler import Pythia8DecayHandler
 from chromo.util import get_all_models
+
 from .util import run_in_separate_process
 
 if sys.platform == "win32":

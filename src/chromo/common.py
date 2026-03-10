@@ -14,7 +14,7 @@ import importlib
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -194,11 +194,11 @@ class EventData:
         Same as mothers.
     """
 
-    generator: Tuple[str, str]
+    generator: tuple[str, str]
     kin: EventKinematicsBase
     nevent: int
     impact_parameter: float
-    n_wounded: Tuple[int, int]
+    n_wounded: tuple[int, int]
     production_cross_section: float
     pid: np.ndarray
     status: np.ndarray
@@ -237,9 +237,9 @@ class EventData:
         def eq(a, b):
             if isinstance(a, float):
                 return naneq(a, b)
-            elif isinstance(a, np.ndarray):
+            if isinstance(a, np.ndarray):
                 return np.array_equal(a, b)
-            elif isinstance(a, Tuple):
+            if isinstance(a, tuple):
                 return all(eq(ai, bi) for (ai, bi) in zip(a, b))
             return a == b
 
@@ -248,7 +248,7 @@ class EventData:
         return all(eq(a, b) for (a, b) in zip(at, bt))
 
     def __getstate__(self):
-        t = [
+        return [
             self.generator,
             self.kin.copy(),
             self.nevent,
@@ -270,7 +270,6 @@ class EventData:
             self.mothers.copy() if self.mothers is not None else None,
             self.daughters.copy() if self.daughters is not None else None,
         ]
-        return t
 
     def __setstate__(self, state):
         for f, v in zip(dataclasses.fields(self), state):
@@ -447,9 +446,12 @@ class EventData:
         import pyhepmc  # delay import
 
         if parse_version(pyhepmc.__version__) < parse_version("2.13.2"):
-            raise RuntimeError(
+            msg = (
                 f"current pyhepmc version is {pyhepmc.__version__} < 2.13.2"
-                f"\nPlease `pip install pyhepmc==2.13.2` or later version",
+                f"\nPlease `pip install pyhepmc==2.13.2` or later version"
+            )
+            raise RuntimeError(
+                msg,
             )
 
         model, version = self.generator
@@ -550,7 +552,7 @@ class MCEvent(EventData, ABC):
             generator._inel_or_prod_cross_section,
             getattr(evt, self._idhep)[sel],
             getattr(evt, self._isthep)[sel],
-            self._charge_init(npart),
+            self._get_charge(npart),
             *phep,
             *vhep,
             mothers=getattr(evt, self._jmohep).T[sel] if self._jmohep else None,
@@ -562,7 +564,7 @@ class MCEvent(EventData, ABC):
             self._repair_initial_beam()
 
     @abstractmethod
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         # override this in derived to get charge info
         ...
 
@@ -622,6 +624,18 @@ class MCRun(ABC):
     _final_state_particles = []
     _decay_handler = None  # Pythia8DecayHandler instance if activated
 
+    @staticmethod
+    def _get_bitgen_id(bit_generator):
+        """Return integer ID for NumPy bit generator type (1-5), or 0 if unknown."""
+        gen_id_map = {
+            "PCG64": 1,
+            "PCG64DXSM": 2,
+            "MT19937": 3,
+            "Philox": 4,
+            "SFC64": 5,
+        }
+        return gen_id_map.get(type(bit_generator).__name__, 0)
+
     def __init__(self, seed):
         if not self._restartable:
             self._abort_if_already_initialized()
@@ -639,6 +653,7 @@ class MCRun(ABC):
         self._rng = np.random.default_rng(seed)
         if hasattr(self._lib, "npy"):
             self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
+            self._lib.npy.gen_id = self._get_bitgen_id(self._rng.bit_generator)
 
     def __call__(self, nevents):
         """Generator function (in python sence)
@@ -713,7 +728,6 @@ class MCRun(ABC):
         bool
             True if event was successfully generated and False otherwise.
         """
-        pass
 
     @abstractmethod
     def _set_kinematics(self, kin):
@@ -744,30 +758,33 @@ class MCRun(ABC):
 
     @property
     def random_state(self):
-        return self._rng.__getstate__()
+        return self._rng.bit_generator.state
 
     @random_state.setter
     def random_state(self, rng_state):
-        self._rng.__setstate__(rng_state)
+        self._rng.bit_generator.state = rng_state
 
     def _check_kinematics(self, kin):
         """Check if kinematics are allowed for this generator."""
 
         if abs(kin.p1) not in self._projectiles:
-            raise ValueError(
+            msg = (
                 f"projectile {pdg2name(kin.p1)}[{int(kin.p1)}] is not allowed, "
                 f"see {self.pyname}.projectiles"
             )
+            raise ValueError(msg)
         if abs(kin.p2) not in self._targets:
-            raise ValueError(
+            msg = (
                 f"target {pdg2name(kin.p2)}[{int(kin.p2)}] is not among allowed, "
                 f"see {self.pyname}.targets"
             )
+            raise ValueError(msg)
         if kin.ecm < self._ecm_min:
-            raise ValueError(
+            msg = (
                 f"center-of-mass energy {kin.ecm/GeV} GeV < "
                 f"minimum energy {self._ecm_min/GeV} GeV"
             )
+            raise ValueError(msg)
 
     @property
     def kinematics(self):
@@ -806,11 +823,10 @@ class MCRun(ABC):
                     kin3.p2 = component
                     # this calls cross_section recursively, which is fine
                     cross_section._mul_radd(
-                        fraction, self._cross_section(kin3, max_info=max_info)
+                        fraction, self.cross_section(kin3, max_info=max_info)
                     )
                 return cross_section
-            else:
-                return self._cross_section(kin, max_info=max_info)
+            return self._cross_section(kin, max_info=max_info)
 
     @abstractmethod
     def _cross_section(self, kin):
@@ -914,7 +930,8 @@ class MCRun(ABC):
         assert pdgid in self._unstable_pids, f"{pdg2name(pdgid)} unknown or stable"
         ap = p.invert() if p.invert() != p else False
         if p.ctau is None or p.ctau == np.inf:
-            raise ValueError(f"{pdg2name(pdgid)} cannot decay")
+            msg = f"{pdg2name(pdgid)} cannot decay"
+            raise ValueError(msg)
 
         if abs(pdgid) == 311:
             pdgid_list = [130, 310]
@@ -923,17 +940,16 @@ class MCRun(ABC):
         else:
             pdgid_list = [pdgid]
 
-        for pdgid in pdgid_list:
-            self._set_stable(pdgid, stable)
+        for pdgid_item in pdgid_list:
+            self._set_stable(pdgid_item, stable)
 
         if stable:
             self._final_state_particles = np.unique(
                 np.append(self._final_state_particles, pdgid_list).astype(np.int64)
             )
-        else:
-            if len(self._final_state_particles) > 0:
-                remove = np.isin(self._final_state_particles, pdgid_list)
-                self._final_state_particles = self._final_state_particles[~remove]
+        elif len(self._final_state_particles) > 0:
+            remove = np.isin(self._final_state_particles, pdgid_list)
+            self._final_state_particles = self._final_state_particles[~remove]
 
         if update_decay_handler:
             self._sync_decay_handler()
@@ -1007,6 +1023,10 @@ class MCRun(ABC):
             yield
         else:
             prev = copy.copy(self.kinematics)
-            self.kinematics = kin
+            self._check_kinematics(kin)
+            self._kinematics = kin
+            self._set_kinematics(kin)
             yield
-            self.kinematics = prev
+            # _check_kinematics not necessary because it's the old kinematics
+            self._kinematics = prev
+            self._set_kinematics(prev)

@@ -4,6 +4,7 @@
 #include <Pythia8/ParticleData.h>
 #include <Pythia8/Pythia.h>
 #include <Pythia8/PythiaStdlib.h>
+#include <Pythia8/Basics.h>
 #include <array>
 #include <cassert>
 #include <limits>
@@ -242,6 +243,20 @@ PYBIND11_MODULE(_pythia8, m)
 
     py::class_<Settings>(m, "Settings")
         .def("resetAll", &Settings::resetAll)
+        .def("listChanged", [](Settings &self) {
+            py::scoped_ostream_redirect stream(
+                std::cout,
+                py::module_::import("sys").attr("stdout")
+            );
+            self.listChanged();
+        })
+        .def("listAll", [](Settings &self) {
+            py::scoped_ostream_redirect stream(
+                std::cout,
+                py::module_::import("sys").attr("stdout")
+            );
+            self.listAll();
+        })
 
         ;
 
@@ -256,6 +271,46 @@ PYBIND11_MODULE(_pythia8, m)
         .def_readwrite("event", &Pythia::event)
         .def_property_readonly("info", [](Pythia &self)
                                { return self.info; })
+        .def("getRndmState", [](Pythia &self) -> py::dict {
+            // Get the internal RNG state from Pythia8
+            RndmState state = self.rndm.getState();
+            py::dict result;
+            result["i97"] = state.i97;
+            result["j97"] = state.j97;
+            result["seed"] = state.seed;
+            result["sequence"] = state.sequence;
+            result["c"] = state.c;
+            result["cd"] = state.cd;
+            result["cm"] = state.cm;
+            
+            // Convert the u array to a Python list
+            py::list u_array;
+            for (int i = 0; i < 97; i++) {
+                u_array.append(state.u[i]);
+            }
+            result["u"] = u_array;
+            
+            return result;
+        })
+        .def("setRndmState", [](Pythia &self, py::dict state_dict) {
+            // Set the internal RNG state in Pythia8
+            RndmState state;
+            state.i97 = state_dict["i97"].cast<int>();
+            state.j97 = state_dict["j97"].cast<int>();
+            state.seed = state_dict["seed"].cast<int>();
+            state.sequence = state_dict["sequence"].cast<long>();
+            state.c = state_dict["c"].cast<double>();
+            state.cd = state_dict["cd"].cast<double>();
+            state.cm = state_dict["cm"].cast<double>();
+            
+            // Convert Python list back to array
+            py::list u_list = state_dict["u"].cast<py::list>();
+            for (int i = 0; i < 97; i++) {
+                state.u[i] = u_list[i].cast<double>();
+            }
+            
+            self.rndm.setState(state);
+        })
         .def("charge",
              [](Pythia &self)
              {

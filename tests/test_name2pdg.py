@@ -1,5 +1,7 @@
-from chromo.util import pdg2AZ, name2pdg
-from particle import Particle, literals as lp
+from particle import Particle
+from particle import literals as lp
+
+from chromo.util import name2pdg, pdg2AZ
 
 
 def test_name2pdg():

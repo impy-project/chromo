@@ -1,5 +1,7 @@
 # ![](doc/chromo.svg)<br> Cosmic ray and HadROnic interactiOn MOnte-carlo frontend
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16562752.svg)](https://doi.org/10.5281/zenodo.16562752)
+
 This package provides a simple and generic user interface to popular event generators used in cosmic ray and high-energy particle physics. By removing the need for complicated Fortran-style interfaces, ASCII input cards, and C++ dependencies, the package simplifies the simulation of particle interactions, making it easier and faster for a wider audience to access.
 
 ## Usage
@@ -63,13 +65,17 @@ Please note that `chromo` only provides a user interface for the following model
 | [DPMJET-III 3.0.7](https://inspirehep.net/literature/538940) & [PHOJET 1.12-36](https://inspirehep.net/literature/373339)      | *hN, γγ, γN, hA, γA, AA*  | |
 | [DPMJET-III & PHOJET 19.1 and 19.3](https://inspirehep.net/literature/1503512) [(repo on GitHub)](https://github.com/DPMJET/DPMJET) |  *hN, γγ, γN, hA, γA, AA* | |
 | [EPOS-LHC](https://inspirehep.net/literature/1236629)     | *hN, hA, AA*              | |
+| [EPOS-LHC-R](https://inspirehep.net/literature/2680791)     | *hN, hA, AA*              | |
+| [EPOS-LHC-R (w/ hadr. rescattering)](https://inspirehep.net/literature/2680791)     | *hN, hA, AA*              | | Version with explicit hadronic rescattering in UrQMD (slow!)
 | [PYTHIA 6.4](https://inspirehep.net/literature/712925)    | *hN, ee, γγ, γN*          | |
 | [PYTHIA 8.3](https://inspirehep.net/literature/2056998) (https://pythia.org/) | *hN, ee, γγ, γN* & *hA, AA* (Argantyr) | unavailable on Windows |
 | [QGSJet-01](https://inspirehep.net/literature/460408)     | *hN, hA, AA*              | |
 | [QGSJet-II-03](https://inspirehep.net/literature/667881)  | *hN, hA, AA*              | |
 | [QGSJet-II-04](https://inspirehep.net/literature/872658)  | *hN, hA, AA*              | |
+| [QGSJet-III](https://inspirehep.net/literature/2771416)   | *hN, hA, AA*              | |
 | [SIBYLL-2.1](https://inspirehep.net/literature/823839)    | *hN, hA (A<=20)*          | |
-| [SIBYLL-2.3d](https://inspirehep.net/literature/1768983)  | *hN, hA (A<=20)*          | incl. legacy versions -2.3/-2.3c |
+| [SIBYLL-2.3c/d/e](https://inspirehep.net/literature/1768983)  | *hN, hA (A<=20)*          | incl. legacy versions 2.3 can be build from source |
+| [SIBYLL* (based on 2.3d and 2.3e)](https://inspirehep.net/literature/2774307)      | *hN, hA (A<=20)*          |  |
 | [SOPHIA 2.0](https://inspirehep.net/literature/497602)    | *γN*                      | |
 | [UrQMD 3.4](https://inspirehep.net/literature/468266) [+ second citation](https://inspirehep.net/literature/507334)    |  hN, hA, AA* | unavailable on Windows |
 
@@ -80,7 +86,7 @@ Please note that `chromo` only provides a user interface for the following model
 
 ### Supported platforms
 
-- Python 3.8+
+- Python 3.9+
 - Linux, Mac OS X (x86 and M1/M2), Windows
 
 The recommended way to install `chromo` is by using the pre-compiled binary wheel, which is available for most common architectures and Python versions
@@ -89,6 +95,19 @@ The recommended way to install `chromo` is by using the pre-compiled binary whee
 
 Advanced and developer installation instructions can be found [here](doc/dev_docs.md).
 
+## Citation
+
+If you use `chromo` in your research, please cite it using the following DOI:
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16562752.svg)](https://doi.org/10.5281/zenodo.16562752)
+
+You can also cite it in your bibliography as:
+
+```
+Fedynitch, A., Dembinski, H., Prosekin, A., El Hadri, S., & Watanabe, K. (2025). 
+CHROMO: Cosmic ray and HadROnic interactiOn MOnte-carlo frontend. 
+Zenodo. https://doi.org/10.5281/zenodo.16562752
+```
 
 ## Authors
 

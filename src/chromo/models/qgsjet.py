@@ -1,15 +1,16 @@
 import numpy as np
-from chromo.common import MCRun, MCEvent, CrossSectionData
-from chromo.kinematics import EventFrame
-from chromo.constants import standard_projectiles
-from chromo.util import _cached_data_dir, Nuclei
 from particle import literals as lp
+
+from chromo.common import CrossSectionData, MCEvent, MCRun
+from chromo.constants import standard_projectiles
+from chromo.kinematics import EventFrame
+from chromo.util import Nuclei, _cached_data_dir
 
 
 class QGSJET1Event(MCEvent):
     """Wrapper class around QGSJet HEPEVT converter."""
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.qgchg.ichg[:npart]
 
     @property
@@ -36,13 +37,18 @@ class QGSJET2Event(QGSJET1Event):
         return self._lib.qgarr55.nwp, self._lib.qgarr55.nwt
 
 
+class QGSJET3Event(QGSJET2Event):
+    def _get_impact_parameter(self):
+        return self._lib.qgarr7.bcoll
+
+
 class QGSJetRun(MCRun):
     _name = "QGSJet"
     _frame = EventFrame.FIXED_TARGET
     _projectiles = standard_projectiles | Nuclei()
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/qgsjet_v001.zip"
+        "/releases/download/zipped_data_v1.0/qgsjet_v002.zip"
     )
 
     def __init__(self, evt_kin, *, seed=None):
@@ -148,9 +154,7 @@ class QGSJet1Run(QGSJetRun):
                 quasielastic=gqel,
                 coherent=gcoh,
             )
-        elif (kin.p1.is_nucleus and kin.p1.A > 1) or (
-            kin.p2.is_nucleus and kin.p2.A > 1
-        ):
+        if (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1):
             # Note: this is a workaround until the calculated h-A
             # cross sections work correctly
             return self._tabulated_cross_section(kin)
@@ -265,9 +269,7 @@ class QGSJet2Run(QGSJetRun):
                 quasielastic=gqel,
                 coherent=gcoh,
             )
-        elif (kin.p1.is_nucleus and kin.p1.A > 1) or (
-            kin.p2.is_nucleus and kin.p2.A > 1
-        ):
+        if (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1):
             # Note: this is a workaround until the calculated h-A cross
             # sections work correctly
             return self._tabulated_cross_section(kin)
@@ -328,9 +330,15 @@ class QGSJet01d(QGSJet1Run):
 
 class QGSJetII03(QGSJet2Run):
     _version = "II-03"
-    _library_name = "_qgsII03"
+    _library_name = "_qgs2_03"
 
 
 class QGSJetII04(QGSJet2Run):
     _version = "II-04"
-    _library_name = "_qgsII04"
+    _library_name = "_qgs2_04"
+
+
+class QGSJetIII(QGSJet2Run):
+    _version = "III"
+    _library_name = "_qgs3"
+    _event_class = QGSJET3Event

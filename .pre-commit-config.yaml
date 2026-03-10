@@ -15,11 +15,11 @@
 repos:
 # Standard hooks
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v5.0.0
+  rev: v6.0.0
   hooks:
   - id: check-case-conflict
   - id: check-docstring-first
-  - id: check-executables-have-shebangs
+  # - id: check-executables-have-shebangs
   - id: check-merge-conflict
   - id: check-symlinks
   - id: check-yaml
@@ -31,40 +31,15 @@ repos:
     files: ^\.github/workflows/|.*\.py$
 
 # Python formatting
-- repo: https://github.com/psf/black
-  rev: 24.10.0
+- repo: https://github.com/psf/black-pre-commit-mirror
+  rev: 26.1.0
   hooks:
   - id: black
 
 # Ruff linter, replacement for flake8, pydocstyle, isort
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: 'v0.9.2'
+  rev: 'v0.14.13'
   hooks:
     - id: ruff
       args: [--fix, --show-fixes]
 
-# # CMake formatting
-# - repo: https://github.com/cheshirekow/cmake-format-precommit
-#   rev: v0.6.13
-#   hooks:
-#   - id: cmake-format
-#     additional_dependencies: [pyyaml]
-#     types: [file]
-#     files: (\.cmake|CMakeLists.txt)(.in)?$
-    
-# # Enable the following later
-# # Python docstring formatting
-# - repo: https://github.com/pycqa/pydocstyle
-#   rev: 6.1.1
-#   hooks:
-#   - id: pydocstyle
-#     files: chromo/[^_].*\.py
-
-# # CMake formatting
-# - repo: https://github.com/cheshirekow/cmake-format-precommit
-#   rev: v0.6.13
-#   hooks:
-#   - id: cmake-format
-#     additional_dependencies: [pyyaml]
-#     types: [file]
-#     files: (\.cmake|CMakeLists.txt)(.in)?$

@@ -1,12 +1,10 @@
-from chromo import models
-from chromo import kinematics
-from chromo import constants
-
 import os
 from importlib.metadata import version
+
+from chromo import constants, kinematics, models
 
 __version__ = version("chromo")
 
 debug_level = int(os.environ.get("DEBUG", "0"))
 
-__all__ = ["models", "kinematics", "constants", "debug_level", "__version__"]
+__all__ = ["__version__", "constants", "debug_level", "kinematics", "models"]

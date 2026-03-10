@@ -1,10 +1,11 @@
-import sys
 import os
+import sys
+from collections import Counter
+
+from chromo import chromo_config
 from chromo.constants import GeV
 from chromo.kinematics import EventKinematics
-from chromo import chromo_config
 from chromo.models import DpmjetIII191
-from collections import Counter
 
 # This class will go through the event and decay all particles that should be
 # unstable but did not decay in some other generator
@@ -12,7 +13,7 @@ from collections import Counter
 
 # FIXME this should not be defined in a test
 # if it works, it should be part of the library and tested here
-class Pythia8DecayAfterburner(object):
+class Pythia8DecayAfterburner:
     def __init__(self, stable_list):
         self.stable_list = stable_list
         self._init_pythia()

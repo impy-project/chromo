@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "CHROMO: Cosmic ray and HadROnic interactiOn MOnte-carlo frontend"
+version: "v0.9.0"
+doi: 10.5281/zenodo.16562752
+date-released: 2025-07-29
+authors:
+  - family-names: Fedynitch
+    given-names: Anatoli
+  - family-names: Dembinski
+    given-names: Hans
+  - family-names: Prosekin
+    given-names: Anton
+  - family-names: El Hadri
+    given-names: Sonia
+  - family-names: Watanabe
+    given-names: Keito
+repository-code: https://github.com/impy-project/chromo
+url: https://doi.org/10.5281/zenodo.16562752

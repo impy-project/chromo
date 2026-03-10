@@ -30,7 +30,6 @@ from particle import literals as lp
 import uproot
 import argparse
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "model_spec", help="specify model to run using substring of its pyname"

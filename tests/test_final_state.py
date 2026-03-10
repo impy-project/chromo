@@ -1,14 +1,17 @@
-from chromo.constants import GeV, long_lived
-from chromo.kinematics import CenterOfMass
-from chromo import models as im
-import pytest
-from .util import run_in_separate_process
-from chromo.util import get_all_models, pdg2name
+import os
+import platform
+
 import boost_histogram as bh
 import numpy as np
-import platform
-import os
+import pytest
 from particle import literals as lp
+
+from chromo import models as im
+from chromo.constants import GeV, long_lived
+from chromo.kinematics import CenterOfMass
+from chromo.util import get_all_models, pdg2name
+
+from .util import run_in_separate_process
 
 # remove omega- from the list of long-lived hadrons
 # because the probability is less than 1e3
@@ -34,7 +37,7 @@ def run_model(Model, kin, number=1000):
 )
 @pytest.mark.parametrize("Model", get_all_models())
 def test_generator(Model):
-    if Model == im.Sibyll23StarMixed:
+    if Model in [im.Sibyll23dStarMixed, im.Sibyll23eStarMixed]:
         pytest.skip(
             reason="SIBYLL* handles decays internally "
             "and ignores most of the decay settings. "
@@ -46,19 +49,28 @@ def test_generator(Model):
     else:
         kin = CenterOfMass(1000 * GeV, "p", "p")
     counts = run_in_separate_process(
-        run_model, Model, kin, 1000 if Model in (im.EposLHC, im.UrQMD34) else 20000
+        run_model,
+        Model,
+        kin,
+        (
+            1000
+            if any(
+                issubclass(Model, cls) for cls in (im.EposLHC, im.UrQMD34, im.QGSJetIII)
+            )
+            else 20000
+        ),
     )
 
     # Known issues:
     # SIBYLL-2.1 and UrQMD produce no Omega-
-    # QGSJet family produce no Omega-, Xi0, Xi-, Sigma+, Sigma-
+    # QGSJet family produce no Omega-, Xi0, Xi-, (Sigma+, Sigma- only for QGSJetIII)
 
     known_issues = np.zeros_like(counts, dtype=bool)
     if Model == im.Sibyll21:
         for i, pid in enumerate(long_lived_hadrons):
             if abs(pid) == lp.Omega_minus.pdgid:
                 known_issues[i] = True
-    elif Model.pyname.startswith("QGSJet"):
+    elif Model in [im.QGSJet01d, im.QGSJetII03, im.QGSJetII04]:
         for i, pid in enumerate(long_lived_hadrons):
             if abs(pid) in (
                 lp.Xi_0.pdgid,
@@ -67,7 +79,14 @@ def test_generator(Model):
                 lp.Sigma_minus.pdgid,
             ):
                 known_issues[i] = True
-    elif Model == im.EposLHC:
+    elif Model is im.QGSJetIII:
+        for i, pid in enumerate(long_lived_hadrons):
+            if abs(pid) in (
+                lp.Xi_0.pdgid,
+                lp.Xi_minus.pdgid,
+            ):
+                known_issues[i] = True
+    elif issubclass(Model, im.EposLHC):
         for i, pid in enumerate(long_lived_hadrons):
             if pid == lp.Omega_plus_bar.pdgid:
                 known_issues[i] = True

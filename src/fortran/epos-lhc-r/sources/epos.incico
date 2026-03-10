@@ -1,0 +1,75 @@
+C
+C  This file is part of EPOS4
+C  Copyright (C) 2022 research institutions and authors (See CREDITS file)
+C  This file is distributed under the terms of the GNU General Public License version 3 or later
+C  (See COPYING file for the text of the licence)
+C
+
+c-------------------------------------------------------------------------
+c               initial conditions for hydro
+c-------------------------------------------------------------------------
+
+      real xminico,xmaxico,yminico,ymaxico,zminico,zmaxico
+      integer nxicomax,nyicomax,nzicomax
+      integer nxico,nyico,nzico
+      double precision  IcoT, IcoC
+      real IcoE, IcoV, IcoF
+
+      common/IcoA/xminico,xmaxico,yminico,ymaxico,zminico,zmaxico
+      common/IcoB/nxico,nyico,nzico
+
+      !---------------------------------------------------------------------
+      !  We think in terms of bins:
+      !    nxico,nyico,nzico: number of bins
+      !    xminico, yminico,zminico: lower end of 1st bin
+      !    xmaxico,ymaxico,zmaxico: upper end of last bin
+      !  Concerning the mean value for the bins numbers i,j,k:
+      !   x_i=xminico+(i-0.5)*(xmaxico-xminico)/nxico
+      !   y_j=yminico+(j-0.5)*(ymaxico-yminico)/nyico
+      !   z_k=zminico+(k-0.5)*(zmaxico-zminico)/nzico
+      !
+      !        ATTENTION:        z means eta_s !!!!!!
+      !
+      !---------------------------------------------------------------------
+
+      parameter (nxicomax=1,nyicomax=1,nzicomax=1) !nb of bins (uneven!!!)
+
+      common /Ico1/ IcoT(4,4,nxicomax,nyicomax,nzicomax)
+      common /Ico2/ IcoC(3,4,nxicomax,nyicomax,nzicomax)
+      common /Ico3/ IcoE(nxicomax,nyicomax,nzicomax)
+      common /Ico4/ IcoV(3,nxicomax,nyicomax,nzicomax)
+      common /Ico5/ IcoF(3,nxicomax,nyicomax,nzicomax)
+
+      !---------------------------------------------------------------------
+      !
+      !  Primary tables (from string segments):
+      !  --------------------------------------
+      !
+      !/Ico1/  IcoT(ip1,ip2,ix,iy,iz) energy-momentum Tensor
+      !
+      !/Ico2/  IcoC(if,ip,ix,iy,iz)   flavor current 4-vector
+      !
+      !  Secondary tables (after diadonalizing T):
+      !  -----------------------------------------
+      !
+      !/Ico3/  IcoE(ix,iy,iz)         energy-density
+      !
+      !/Ico4/  IcoV(1,ix,iy,iz)       x-velocity
+      !        IcoV(2,ix,iy,iz)       y-velocity
+      !        IcoV(3,ix,iy,iz)       eta-velocity (z-velocity/tau)
+      !
+      !/Ico5/  IcoF(1,ix,iy,iz)       net flavor density of up
+      !        IcoF(2,ix,iy,iz)       net flavor density of down
+      !        IcoF(3,ix,iy,iz)       net flavor density of strange
+      !--------------------------------------------------------------------
+      !   ip, ip1,ip2 .... dirac indices
+      !   ix,iy,iz ....... transverse coordinates + pseudo-rapidity eta
+      !   if ............. flavor
+      !--------------------------------------------------------------------
+      ! To read in secondary tables, see  subroutine IniCon:
+      !          read(97,*) ...
+      !--------------------------------------------------------------------
+
+      integer nptlbspo
+      common/cnptlbspo/nptlbspo
+

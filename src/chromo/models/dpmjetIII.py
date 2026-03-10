@@ -1,13 +1,46 @@
-from chromo.common import MCRun, MCEvent, CrossSectionData
+import warnings
+
+from particle import Particle
+
+from chromo.common import CrossSectionData, MCEvent, MCRun
+from chromo.constants import GeV, standard_projectiles
 from chromo.kinematics import EventFrame
 from chromo.util import (
-    info,
+    Nuclei,
     _cached_data_dir,
     fortran_chars,
-    Nuclei,
+    info,
 )
-from chromo.constants import standard_projectiles, GeV
-import warnings
+
+# The list below are all known particles to DPMJET, which can be used as
+# projectiles. To generate this list, run the following script:
+# ```python
+# from particle import Particle
+# projectile_list = Particle.findall(
+#     lambda p: not (
+#         abs(p.pdgid) < 11
+#         or abs(p.pdgid) in [21, 22]
+#         or (22 < abs(p.pdgid) < 111)
+#         or abs(p.pdgid) > 5000
+#         or p.pdgid.has_bottom
+#         or (p.mass is None)
+#         or (p.pdgid.is_lepton)
+#         or dpm._lib.idt_icihad(p.pdgid) == 0
+#     ),
+#     particle=True,
+# )
+# print(set([int(p.pdgid) for p in projectile_list]))
+# ```
+# fmt: off
+dpmjet_extended_projectiles = {
+    130, 3334, 4232, 3212, 3214, 3216, 4112, 3218, 3222, 3224,
+    4122, 411, 413, 2212, 421, 2214, 423, 3112, 4132, 3114,
+    431, 2224, 433, 3122, 310, 311, 313, 441, 443, 2112,
+    321, 2114, 323, 331, 333, 211, 213, 1114, 221, 223,
+    111, 3312, 113, 3314, 4212, 3322, 3324, 4222
+}
+dpmjet_extended_projectiles = {Particle.from_pdgid(p).pdgid for p in dpmjet_extended_projectiles}
+# fmt: on
 
 
 class DpmjetIIIEvent(MCEvent):
@@ -23,7 +56,7 @@ class DpmjetIIIEvent(MCEvent):
     _jmohep = "jmohkk"
     _jdahep = "jdahkk"
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.dtpart.iich[self._lib.dtevt2.idbam[:npart] - 1]
 
     def _get_impact_parameter(self):
@@ -41,7 +74,7 @@ class DpmjetIIIEvent(MCEvent):
     def _prepare_for_hepmc(self):
         model, version = self.generator
         warnings.warn(
-            f"{model}-{version}: only part of the history " "available in HepMC3 event",
+            f"{model}-{version}: only part of the history available in HepMC3 event",
             RuntimeWarning,
         )
         mask = (
@@ -76,13 +109,13 @@ class DpmjetIIIRun(MCRun):
     _event_class = DpmjetIIIEvent
     _frame = None
     # TODO: DPMJet supports photons as projectiles
-    _projectiles = standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311}
+    _projectiles = dpmjet_extended_projectiles | Nuclei(a_max=280)
     _targets = Nuclei()
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
+        "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
     _ecm_min = 1 * GeV
     _max_A1 = 0
@@ -171,7 +204,7 @@ class DpmjetIIIRun(MCRun):
             def _generate():
                 raise RuntimeError(
                     "Do not generate events with DPMJET after calculations "
-                    + "of nuclear cross sections."
+                    "of nuclear cross sections."
                 )
 
             self._generate = _generate
@@ -185,22 +218,19 @@ class DpmjetIIIRun(MCRun):
                 + glxs.xsqe2[0, 0, 0]
                 + glxs.xsela[0, 0, 0],
             )
-        elif (kin.p1.is_nucleus and kin.p1.A > 1) or (
-            kin.p2.is_nucleus and kin.p2.A > 1
-        ):
+        if (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1):
             glxs = self._lib.dtglxs
 
             return CrossSectionData(
                 prod=glxs.xspro[0, 0, 0],
             )
-        elif kin.p1 == 22 and kin.p2.A == 1:
+        if kin.p1 == 22 and kin.p2.A == 1:
             stot, sine, _ = self._lib.dt_siggp(photon_x, kin.virt_p1, kin.ecm, 0)
             return CrossSectionData(total=stot, inelastic=sine, elastic=stot - sine)
-        else:
-            stot, sela = self._lib.dt_xshn(
-                self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
-            )
-            return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
+        stot, sela = self._lib.dt_xshn(
+            self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
+        )
+        return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
 
     @property
     def glauber_trials(self):
@@ -242,10 +272,11 @@ class DpmjetIIIRun(MCRun):
             )
 
         if (kin.p1.A or 1) > self._max_A1 or (kin.p2.A or 1) > self._max_A2:
-            raise ValueError(
+            msg = (
                 "Maximal initialization mass exceeded "
                 f"{kin.p1.A}/{self._max_A1}, {kin.p2.A}/{self._max_A2}"
             )
+            raise ValueError(msg)
 
         # AF: No idea yet, but apparently this functionality was around?!
         # if hasattr(k, 'beam') and hasattr(self._lib, 'init'):
@@ -284,32 +315,25 @@ class DpmjetIIIRun(MCRun):
 
 class DpmjetIII191(DpmjetIIIRun):
     _version = "19.1"
-    _projectiles = standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311}
-    _library_name = "_dpmjetIII191"
+    _library_name = "_dpmjet191"
 
 
 class DpmjetIII193(DpmjetIII191):
     _version = "19.3"
-    _projectiles = (
-        standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311, 22}
-    )
-    _library_name = "_dpmjetIII193"
+    _library_name = "_dpmjet193"
 
 
 class DpmjetIII307(DpmjetIIIRun):
     _version = "3.0-7"
     _library_name = "_dpmjet307"
-    _projectiles = standard_projectiles | Nuclei()
+    _projectiles = standard_projectiles | Nuclei(a_max=280)
     _param_file_name = "fitpar.dat"
     _data_url = (
         "https://github.com/impy-project/chromo"
-        + "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
+        "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
     )
 
 
 class DpmjetIII193_DEV(DpmjetIIIRun):
     _version = "19.3-dev"
-    _projectiles = (
-        standard_projectiles | Nuclei() | {3322, 3312, 3222, 3122, 3112, 311, 22}
-    )
-    _library_name = "_dev_dpmjetIII193"
+    _library_name = "_dev_dpmjet193"

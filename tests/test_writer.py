@@ -1,13 +1,14 @@
-import numpy as np
-import uproot
-from numpy.testing import assert_equal, assert_allclose
-import yaml
 from pathlib import Path
-import pytest
 
-from chromo.writer import Root
+import numpy as np
+import pytest
+import uproot
+import yaml
+from numpy.testing import assert_allclose, assert_equal
+
 from chromo.common import CrossSectionData, EventData
-from chromo.kinematics import EventKinematicsWithRestframe, CompositeTarget
+from chromo.kinematics import CompositeTarget, EventKinematicsWithRestframe
+from chromo.writer import Root
 
 
 def make_event(n):
@@ -73,10 +74,10 @@ def test_Root(write_vertices, overflow, target):
 
     writer = Root(p, model, write_vertices=write_vertices, buffer_size=5)
     if overflow:
-        with pytest.raises(RuntimeError):
-            with writer:
-                for event in events:
-                    writer.write(event)
+        with writer:
+            for event in events:
+                writer.write(event)
+            with pytest.raises(RuntimeError):
                 writer.write(make_event(10))
     else:
         with writer:
@@ -103,7 +104,7 @@ def test_Root(write_vertices, overflow, target):
         assert tree.num_entries == len(events)
         d = tree.arrays()
         if not write_vertices:
-            assert "vx" not in tree.keys()
+            assert "vx" not in tree
         for i, event in enumerate(events):
             assert_equal(d["pdgid"][i], event.pid[2:])
             assert_allclose(d["px"][i], event.px[2:])

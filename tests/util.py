@@ -1,8 +1,9 @@
-from particle import Particle, ParticleNotFound, InvalidParticle
-import typing as _tp
-import numpy as np
-from os import environ
 import time
+import typing as _tp
+from os import environ
+
+import numpy as np
+from particle import InvalidParticle, Particle, ParticleNotFound
 
 
 def reference_charge(pid):

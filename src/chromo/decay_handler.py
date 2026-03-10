@@ -1,5 +1,6 @@
-import chromo
 import numpy as np
+
+import chromo
 
 
 class Pythia8DecayHandler:

@@ -6,24 +6,27 @@ CRMC (Cosmic Ray Monte Carlo package) https://web.ikp.kit.edu/rulrich/crmc.html
 
 import argparse
 import os
-from chromo import models, __version__ as version
-from chromo.kinematics import CenterOfMass, FixedTarget, Momentum
-from chromo.util import AZ2pdg, tolerant_string_match, get_all_models, name2pdg
-from chromo.constants import MeV, GeV
-from chromo import writer
-from pathlib import Path
-from particle import Particle
 from math import sqrt
+from pathlib import Path
+
+from particle import Particle
 from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
     Progress,
     ProgressColumn,
     Task,
-    BarColumn,
-    MofNCompleteColumn,
-    TimeRemainingColumn,
     TaskProgressColumn,
+    TimeRemainingColumn,
 )
 from rich.text import Text
+
+from chromo import __version__ as version
+from chromo import models, writer
+from chromo.cli_log import write_log
+from chromo.constants import GeV, MeV
+from chromo.kinematics import CenterOfMass, FixedTarget, Momentum
+from chromo.util import AZ2pdg, get_all_models, name2pdg, tolerant_string_match
 
 
 class SpeedColumn(ProgressColumn):
@@ -55,14 +58,18 @@ MODELS = {
 }
 
 VALID_MODELS = []
+VALID_MODELS_HELP = []
 for M in get_all_models():
     for k, v in MODELS.items():
         if v is M:
             VALID_MODELS.append(f"{M.label} [{k}]")
+            VALID_MODELS_HELP.append(f"  {M.label:40s} (CRMC #{k})")
             break
     else:
         VALID_MODELS.append(M.label)
+        VALID_MODELS_HELP.append(f"  {M.label}")
 VALID_MODELS = ", ".join(sorted(VALID_MODELS))
+VALID_MODELS_HELP = "Available models:\n" + "\n".join(sorted(VALID_MODELS_HELP))
 
 FORMATS = {
     "hepmc": writer.Hepmc,
@@ -84,6 +91,19 @@ def extension(format):
     return extension
 
 
+class NoWrap(argparse.RawDescriptionHelpFormatter):
+    """
+    Help formatter that prevents argparse from re-wrapping text
+    when the help string contains newline characters.
+    """
+
+    def _split_lines(self, text, width):
+        # If manual newlines exist, return them literally.
+        if "\n" in text:
+            return text.splitlines()
+        return super()._split_lines(text, width)
+
+
 def process_particle(x):
     try:
         x = int(x)
@@ -91,7 +111,7 @@ def process_particle(x):
             z = x // 10000
             a = (x % 10000) / 10
             return AZ2pdg(a, z)
-        return x
+        return x  # noqa: TRY300
     except ValueError:
         pass
 
@@ -101,11 +121,18 @@ def process_particle(x):
     try:
         return name2pdg(x)
     except KeyError:
-        raise SystemExit(f"particle name {x} not recognized")
+        msg = f"particle name {x} not recognized"
+        raise SystemExit(msg)
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=NoWrap,
+        description=(
+            "A commandline interface that mimics CRMC to ease transition from CRMC.\n\n"
+            "CRMC (Cosmic Ray Monte Carlo package) https://web.ikp.kit.edu/rulrich/crmc.html"
+        ),
+    )
     parser.add_argument("-v", "--version", action="store_true", help="print version")
     parser.add_argument(
         "-s",
@@ -126,8 +153,9 @@ def parse_arguments():
         "--model",
         default=0,
         help=(
-            f"select model via number or via tolerant string match (case-insensitive), "
-            f"allowed values: {VALID_MODELS}"
+            "Select event generator by name or CRMC number.\n"
+            "Names support case-insensitive partial matching (e.g., 'sibyll', 'epos').\n"
+            f"{VALID_MODELS_HELP}"
         ),
     )
     parser.add_argument(
@@ -175,11 +203,19 @@ def parse_arguments():
         help="configuration file for generator; configuration is Python code which "
         "interacts with the variable `model` that represents the model instance",
     )
+    parser.add_argument("--log-file", help="also write log to this file")
+    parser.add_argument(
+        "--log-level",
+        choices=["brief", "normal", "verbose"],
+        default="normal",
+        help="log detail level: brief (minimal), normal (changed settings), "
+        "verbose (all settings)",
+    )
 
     args = parser.parse_args()
 
     if args.version:
-        print(f"chromo {version}")
+        print(f"chromo {version}")  # noqa: T201
         raise SystemExit
 
     if args.seed <= 0:
@@ -192,7 +228,8 @@ def parse_arguments():
         model_number = int(args.model)
         Model = MODELS[model_number]
     except KeyError:
-        raise SystemExit(f"Error: model={args.model} is invalid ({VALID_MODELS})")
+        msg = f"Error: model={args.model} is invalid ({VALID_MODELS})"
+        raise SystemExit(msg)
     except ValueError:
         # args.model is not a number.
         # Find model that matches string spec.
@@ -212,14 +249,14 @@ def parse_arguments():
             if len(matches) == 1:
                 Model = matches[0]
             elif len(matches) == 0:
-                raise SystemExit(
-                    f"Error: model={args.model} has no match ({VALID_MODELS})"
-                )
+                msg = f"Error: model={args.model} has no match ({VALID_MODELS})"
+                raise SystemExit(msg)
             else:
-                raise SystemExit(
+                msg = (
                     f"Error: model={args.model} is ambiguous, "
                     f"matches ({', '.join(v.label for v in matches)})"
                 )
+                raise SystemExit(msg)
     args.model = Model
 
     args.projectile_id = process_particle(args.projectile_id)
@@ -231,7 +268,8 @@ def parse_arguments():
     pr = args.projectile_momentum
     ta = args.target_momentum
     if args.sqrts < 0:
-        raise SystemExit(f"Error: sqrt(s) is negative {args.sqrts/GeV} GeV")
+        msg = f"Error: sqrt(s) is negative {args.sqrts / GeV} GeV"
+        raise SystemExit(msg)
     if (pr != 0 or ta != 0) and args.sqrts != 0:
         raise SystemExit("Error: either set sqrts or momenta, but not both")
     if pr == 0 and ta == 0 and args.sqrts == 0:
@@ -255,49 +293,55 @@ def parse_arguments():
     if args.out == "-":
         args.output = "hepmc"
         raise SystemExit("Error: output to stdout not yet supported")
-    else:
-        if args.out:  # filename was provided
-            args.out = Path(args.out)
-            # try to get format from filename extension
-            format = "".join(x[1:] for x in args.out.suffixes[-2:])
-            # check if both format and args.output are defined and are different
-            if format and args.output and format != args.output:
-                raise SystemExit(
-                    f"Error: File extension of {args.out} does not match {args.output}"
-                )
-            if not args.output:
-                args.output = format or "hepmc"
-        else:  # no filename provided
-            if not args.output:
-                args.output = "hepmc"
-            # generate filename like CRMC
-            ext = extension(args.output)
-            pid1 = args.projectile_id
-            pid2 = args.target_id
-            en = f"{args.sqrts / GeV:.0f}"
-            mn = Model.pyname.lower()
-            fn = f"chromo_{mn}_{args.seed}_{int(pid1)}_{int(pid2)}_{en}.{ext}"
-            odir = os.environ.get("CRMC_OUT", ".")
-            args.out = Path(odir) / fn
-            # append extension
-            if not args.out.suffixes[-2:]:
-                ext = "." + args.output
-                if ext.endswith("gz"):
-                    ext = ext[:-2] + ".gz"
-                args.out = Path(args.out).with_suffix(ext)
+    if args.out:  # filename was provided
+        args.out = Path(args.out)
+        suffixes = args.out.suffixes
+        if suffixes and suffixes[-1] in [".gz", ".bz2"]:
+            format = ":".join(x[1:] for x in args.out.suffixes[-2:])
+        else:
+            format = suffixes[-1].lstrip(".") if suffixes else ""
+        # check if both format and args.output are defined and are different
+        if format and args.output and format != args.output:
+            msg = f"Error: File extension of {args.out} does not match {args.output}"
+            raise SystemExit(msg)
+        if not args.output:
+            args.output = format or "hepmc"
+    else:  # no filename provided
+        if not args.output:
+            args.output = "hepmc"
+        # generate filename like CRMC
+        ext = extension(args.output)
+        pid1 = args.projectile_id
+        pid2 = args.target_id
+        en = f"{args.sqrts / GeV:.0f}"
+        mn = Model.pyname.lower()
+        fn = f"chromo_{mn}_{args.seed}_{int(pid1)}_{int(pid2)}_{en}.{ext}"
+        odir = os.environ.get("CRMC_OUT", ".")
+        args.out = Path(odir) / fn
+        # append extension
+        if not args.out.suffixes[-2:]:
+            ext = "." + args.output
+            if ext.endswith("gz"):
+                ext = ext[:-2] + ".gz"
+            args.out = Path(args.out).with_suffix(ext)
 
     if args.output not in FORMATS:
-        raise SystemExit(f"Error: unknown format {args.output} ({VALID_FORMATS})")
+        msg = f"Error: unknown format {args.output} ({VALID_FORMATS})"
+        raise SystemExit(msg)
+
+    if not args.log_file:
+        args.log_file = args.out.with_suffix(".log")
 
     configuration = ""
     if args.config:
         fn = Path(args.config)
         if not fn.exists():
-            raise SystemExit(f"Error: configuration file {args.config} does not exist")
+            msg = f"Error: configuration file {args.config} does not exist"
+            raise SystemExit(msg)
 
         lines = ["def configure(model):\n"]
-        for line in open(fn):
-            lines.append(f"    {line}")
+        with open(fn) as f:
+            lines.extend([f"    {line}" for line in f])
         configuration = "".join(lines)
 
     return args, configuration
@@ -340,6 +384,9 @@ def main():
         Panel(msg, title=f"[bold]chromo [green]{version}[/green][/bold]", width=78)
     )
 
+    if args.log_file:
+        console.print(f"Logging to: {args.log_file}")
+
     if pr > 0 and ta == 0:  # fixed target mode
         evt_kin = FixedTarget(Momentum(pr), args.projectile_id, args.target_id)
     else:  # cms mode
@@ -353,9 +400,10 @@ def main():
                 d = {}
                 exec(configuration, d)
                 d["configure"](model)
-            except Exception:
-                print(f"Error in configuration code:\n\n{configuration}")
-                raise
+            except Exception as e:
+                msg = f"Error in configuration code:\n\n{configuration}, {e}"
+                raise RuntimeError(msg) from e
+
         ofile = FORMATS[args.output](args.out, model)
         with ofile:
             # workaround: several models generate extra print when first
@@ -374,6 +422,9 @@ def main():
                     if task_id is None:
                         task_id = bar.add_task("", total=args.number)
                     bar.advance(task_id, 1)
+
+        # Write log file after model has run
+        write_log(args, p1, p2, model)
     except Exception:
         if int(os.environ.get("DEBUG", "0")) > 0:
             raise

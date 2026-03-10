@@ -1,80 +1,79 @@
-import numpy as np
-from chromo.common import MCRun, MCEvent, CrossSectionData
-from chromo.constants import nucleon_mass
-from chromo.constants import microbarn
-from chromo.kinematics import EventFrame
-from particle import literals as lp
 import warnings
+
+import numpy as np
+from particle import literals as lp
+
+from chromo.common import CrossSectionData, MCEvent, MCRun
+from chromo.constants import microbarn, nucleon_mass
+from chromo.kinematics import EventFrame
 
 sophia_interaction_types = [
     "multipion production (fragmentation)",
-    "diffractive scattering: N \u03B3 \u2192 N \u03C1",
-    "direct pion production: N \u03B3 \u2192 \u0394 \u03C0",
-    "direct pion production: N \u03B3 \u2192 \u0394 \u03C0",
-    "diffractive scattering: N \u03B3 \u2192 N \u03C9",
+    "diffractive scattering: N \u03b3 \u2192 N \u03c1",
+    "direct pion production: N \u03b3 \u2192 \u0394 \u03c0",
+    "direct pion production: N \u03b3 \u2192 \u0394 \u03c0",
+    "diffractive scattering: N \u03b3 \u2192 N \u03c9",
     "fragmentation in resonance region",
     "excitation/decay of resonance",
 ]
 
 
-_sophia_unstable_pids = set(
-    [
-        -13,
-        13,
-        111,
-        113,
-        130,
-        -211,
-        211,
-        -213,
-        213,
-        221,
-        223,
-        310,
-        -313,
-        313,
-        -321,
-        321,
-        -323,
-        323,
-        331,
-        333,
-        -1114,
-        1114,
-        -2112,
-        2112,
-        -2114,
-        2114,
-        -2214,
-        2214,
-        -2224,
-        2224,
-        -3112,
-        3112,
-        -3114,
-        3114,
-        -3122,
-        3122,
-        -3212,
-        3212,
-        -3214,
-        3214,
-        -3222,
-        3222,
-        -3224,
-        3224,
-        -3312,
-        3312,
-        -3314,
-        3314,
-        -3322,
-        3322,
-        -3324,
-        3324,
-        -3334,
-        3334,
-    ]
-)
+_sophia_unstable_pids = {
+    -13,
+    13,
+    111,
+    113,
+    130,
+    -211,
+    211,
+    -213,
+    213,
+    221,
+    223,
+    310,
+    -313,
+    313,
+    -321,
+    321,
+    -323,
+    323,
+    331,
+    333,
+    -1114,
+    1114,
+    -2112,
+    2112,
+    -2114,
+    2114,
+    -2214,
+    2214,
+    -2224,
+    2224,
+    -3112,
+    3112,
+    -3114,
+    3114,
+    -3122,
+    3122,
+    -3212,
+    3212,
+    -3214,
+    3214,
+    -3222,
+    3222,
+    -3224,
+    3224,
+    -3312,
+    3312,
+    -3314,
+    3314,
+    -3322,
+    3322,
+    -3324,
+    3324,
+    -3334,
+    3334,
+}
 
 
 class SophiaEvent(MCEvent):
@@ -84,7 +83,7 @@ class SophiaEvent(MCEvent):
     def interaction_type(self):
         return sophia_interaction_types[self._lib.interaction_type_code]
 
-    def _charge_init(self, npart):
+    def _get_charge(self, npart):
         return self._lib.schg.ichg[:npart]
 
     def _repair_initial_beam(self):

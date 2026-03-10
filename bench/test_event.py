@@ -1,7 +1,8 @@
+import pytest
+
 from chromo import models as im
 from chromo.constants import TeV
 from chromo.kinematics import CenterOfMass
-import pytest
 
 N = 1000
 evt_kin = CenterOfMass(10 * TeV, "p", "p")

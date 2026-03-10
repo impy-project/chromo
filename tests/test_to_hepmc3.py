@@ -1,13 +1,16 @@
-from chromo.kinematics import CenterOfMass
-from chromo.constants import GeV
-from chromo.models.sophia import Sophia20
-from .util import run_in_separate_process
-from chromo.util import get_all_models
-import numpy as np
-import pytest
-from chromo.writer import Hepmc
 from pathlib import Path
+
+import numpy as np
 import pyhepmc
+import pytest
+
+from chromo.constants import GeV
+from chromo.kinematics import CenterOfMass
+from chromo.models.sophia import Sophia20
+from chromo.util import get_all_models
+from chromo.writer import Hepmc
+
+from .util import run_in_separate_process
 
 # generate list of all models in chromo.models
 models = get_all_models()
