@@ -80,7 +80,7 @@ def run_rng_state_with_bitgen(Model, bitgen_class, seed):
 
 @pytest.mark.parametrize("Model", get_all_models())
 def test_rng_state(Model):
-    if Model in (im.UrQMD34,):
+    if Model == im.UrQMD34:
         #       UrQMD has internal state that affects event
         #       generation but is not captured by RNG state
         #       There are several places where it can occur:
@@ -115,7 +115,7 @@ def test_rng_state(Model):
 )
 def test_rng_state_bitgens(Model, bitgen_class, seed):
     """Test different NumPy bit generators with all models."""
-    if Model in (im.UrQMD34,):
+    if Model == im.UrQMD34:
         pytest.xfail(f"{Model.pyname} fails this test, needs investigation")
     if Model in (im.EposLHCR, im.EposLHCRHadrRescattering):
         pytest.skip(
