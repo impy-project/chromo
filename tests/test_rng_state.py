@@ -149,10 +149,7 @@ def test_rng_state_bitgens(Model, bitgen_class, seed):
         and os.environ.get("CIBW") == "1"
     ):
         pytest.xfail(
-            f"test_rng_state_bitgens[{bitgen_class.__name__}-EposLHC] crashes "
-            "with 'queue empty, process probably crashed' in the cibuildwheel "
-            "manylinux container environment due to resource exhaustion from "
-            "high parallelism (-n auto). The test passes on native runners."
+            f"EposLHC with {bitgen_class.__name__} does not pass this test on CI"
         )
 
     run_in_separate_process(run_rng_state_with_bitgen, Model, bitgen_class, seed)
