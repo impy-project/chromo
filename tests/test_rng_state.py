@@ -147,6 +147,7 @@ def test_rng_state_bitgens(Model, bitgen_class, seed):
         (Model is im.EposLHC)
         and (bitgen_class in (np.random.MT19937, np.random.Philox))
         and os.environ.get("CIBW") == "1"
+        and platform.system() == "Linux"
     ):
         pytest.xfail(
             f"EposLHC with {bitgen_class.__name__} does not pass this test on CI"
