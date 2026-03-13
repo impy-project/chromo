@@ -1,6 +1,8 @@
+import math
 import warnings
 from collections.abc import Collection
 from os import environ
+from pathlib import Path
 
 import numpy as np
 from particle import literals as lp
@@ -8,7 +10,7 @@ from particle import literals as lp
 from chromo.common import CrossSectionData, EventData, MCRun
 from chromo.constants import standard_projectiles
 from chromo.kinematics import EventFrame
-from chromo.util import _cached_data_dir, name2pdg
+from chromo.util import Nuclei, _cached_data_dir, name2pdg
 
 
 class PYTHIA8Event(EventData):
@@ -277,3 +279,160 @@ class Pythia8(MCRun):
     def random_state(self, rng_state):
         """Restore Pythia8's random number generator state."""
         self._pythia.setRndmState(rng_state)
+
+
+class PYTHIA8CascadeEvent(EventData):
+    """Event from a single hadron+nucleus inelastic collision via PythiaCascade."""
+
+    def __init__(self, generator):
+        cascade = generator._cascade
+        pid, status, px, py, pz, en, m, vx, vy, vz, vt, mothers, daughters = (
+            generator._last_result
+        )
+        super().__init__(
+            (generator.name, generator.version),
+            generator.kinematics,
+            generator.nevents,
+            np.nan,
+            (cascade.n_collisions(), 0),
+            generator._inel_or_prod_cross_section,
+            pid,
+            status,
+            cascade.charge(generator._last_result),
+            px,
+            py,
+            pz,
+            en,
+            m,
+            vx,
+            vy,
+            vz,
+            vt,
+            np.maximum(mothers - 1, -1),
+            np.maximum(daughters - 1, -1),
+        )
+
+
+class Pythia8Cascade(MCRun):
+    """Pythia8 single-collision mode via PythiaCascade.
+
+    Simulates inelastic hadron+nucleus collisions using Pythia8's
+    PythiaCascade plugin.  Each call to the generator yields one
+    h+A inelastic collision event.
+
+    Nuclear projectiles (A > 1) are decomposed into Z protons and
+    (A-Z) neutrons each carrying 1/A of the total lab momentum.
+    Each nucleon is collided independently; the last successful
+    sub-collision is returned as the event.
+
+    Parameters
+    ----------
+    evt_kin : kinematics object
+        Fixed-target kinematics.  p2 specifies the target nucleus.
+    seed : int or None
+        Random seed (not forwarded to Pythia; PythiaCascade uses its
+        own internal RNG seeded from system entropy).
+    eKinMin : float
+        Minimum kinetic energy in GeV for a projectile to interact.
+        Default 0.3 GeV.
+    enhanceSDtarget : float
+        Enhancement factor for target-side single diffraction in
+        sub-collisions after the first.  Default 0.5.
+    init_file : str
+        Path to the MPI initialisation .cmnd file.  Leave empty to
+        use the bundled ``setups/InitDefaultMPI.cmnd``.
+    """
+
+    _name = "Pythia8Cascade"
+    _version = "8.317"
+    _library_name = "_pythia8"
+    _event_class = PYTHIA8CascadeEvent
+    _frame = EventFrame.FIXED_TARGET
+    _projectiles = standard_projectiles | Nuclei(a_min=2, a_max=208)
+    _targets = {
+        name2pdg(x) for x in ("H1", "He4", "N14", "O16", "Ar40", "Fe56", "Pb208")
+    }
+    _restartable = True
+    _data_url = Pythia8._data_url
+
+    def __init__(self, evt_kin, *, seed=None, eKinMin=0.3, enhanceSDtarget=0.5,
+                 init_file=""):
+        super().__init__(seed)
+
+        datdir = _cached_data_dir(self._data_url) + "xmldoc"
+        # PythiaCascade constructs its own internal Pythia objects, which
+        # locate XML data via PYTHIA8DATA.  Set it explicitly here.
+        environ["PYTHIA8DATA"] = datdir
+        if not init_file:
+            # TODO: add setups/ to the Pythia8 data zip (data version bump
+            # required) so this file is co-located with xmldoc/pdfdata/tunes.
+            # For now fall back to the file in the Pythia8 source submodule.
+            bundled = Path(datdir).parent / "setups" / "InitDefaultMPI.cmnd"
+            src_tree = (
+                Path(__file__).parent.parent.parent
+                / "cpp/pythia83/share/Pythia8/setups/InitDefaultMPI.cmnd"
+            )
+            if bundled.exists():
+                init_file = str(bundled)
+            elif src_tree.exists():
+                init_file = str(src_tree)
+            else:
+                raise FileNotFoundError(
+                    "Could not find InitDefaultMPI.cmnd. "
+                    "Pass init_file= explicitly or add setups/ to the data bundle."
+                )
+
+        self._cascade = self._lib.PythiaCascadeForChromo()
+        if not self._cascade.init(eKinMin, enhanceSDtarget, init_file):
+            raise RuntimeError("Pythia8Cascade (ChromaCascade) initialization failed")
+
+        self._last_result = None
+        self.kinematics = evt_kin
+        self._set_final_state_particles()
+
+    def _set_kinematics(self, kin):
+        p2 = kin.p2
+        self._Z_targ = p2.Z or 1
+        self._A_targ = p2.A or 1
+
+        p1 = kin.p1
+        A1 = p1.A or 1
+        Z1 = p1.Z or 1
+        if A1 > 1:
+            self._nucleon_ids = [2212] * Z1 + [2112] * (A1 - Z1)
+        else:
+            self._nucleon_ids = [int(p1)]
+
+        # Per-nucleon lab momentum and energy
+        self._plab_per_nuc = kin.plab / A1
+        self._elab_per_nuc = kin.elab / A1
+
+    def _generate(self):
+        pd = self._cascade.particle_data()
+        last = None
+        for nid in self._nucleon_ids:
+            m = pd.findParticle(nid).m0
+            pz = self._plab_per_nuc
+            e = math.sqrt(pz * pz + m * m)
+            result = self._cascade.next_coll(nid, 0.0, 0.0, pz, e, m,
+                                             self._Z_targ, self._A_targ)
+            if result is not None:
+                last = result
+        if last is None:
+            return False
+        self._last_result = last
+        return True
+
+    def _cross_section(self, kin=None, max_info=False):
+        if kin is None:
+            kin = self.kinematics
+        pd = self._cascade.particle_data()
+        nid = self._nucleon_ids[0]
+        m = pd.findParticle(nid).m0
+        pz = self._plab_per_nuc
+        e = math.sqrt(pz * pz + m * m)
+        sigma = self._cascade.sigma_hA(nid, 0.0, 0.0, pz, e, m, self._A_targ)
+        return CrossSectionData(inelastic=sigma)
+
+    def _set_stable(self, pdgid, stable):
+        self._cascade.particle_data().mayDecay(pdgid, not stable)

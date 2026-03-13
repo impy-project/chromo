@@ -5,6 +5,7 @@
 #include <Pythia8/Pythia.h>
 #include <Pythia8/PythiaStdlib.h>
 #include <Pythia8/Basics.h>
+#include <Pythia8Plugins/PythiaCascade.h>
 #include <array>
 #include <cassert>
 #include <limits>
@@ -136,6 +137,93 @@ void fill(Event &event,
                      px_[i], py_[i], pz_[i], energy_[i], mass_[i]);
     }
 }
+
+// High-level wrapper around PythiaCascade for use from chromo.
+// Owns the PythiaCascade internally, manages the sigmaSetuphN→nextColl
+// sequence, and returns particle data as pre-copied numpy arrays so
+// there is no Event& lifetime issue on the Python side.
+class ChromaCascade
+{
+public:
+    bool init(double eKinMin, double enhanceSDtarget, string initFile,
+              bool rapidDecays, double smallTau0, bool slowDecays,
+              bool listFinalOnly)
+    {
+        return _cascade.init(eKinMin, enhanceSDtarget, initFile,
+                             rapidDecays, smallTau0, slowDecays, listFinalOnly);
+    }
+
+    // Attempt one hadron+nucleus inelastic collision.
+    // Returns py::none() when the projectile cannot interact (low energy,
+    // unknown species, or empty event generated).  Otherwise returns a
+    // tuple (pid, status, px, py, pz, en, m, vx, vy, vz, vt, mothers,
+    // daughters) of numpy arrays copied out of the internal Event before
+    // the next call can overwrite it.
+    py::object next_coll(int id, double px, double py, double pz, double e,
+                         double m, int Z, int A)
+    {
+        Vec4 pVec(px, py, pz, e);
+        if (!_cascade.sigmaSetuphN(id, pVec, m))
+            return py::none();
+        Event &ev = _cascade.nextColl(Z, A);
+        if (ev.size() == 0)
+            return py::none();
+        return _extract(ev);
+    }
+
+    // Returns the inelastic h+A cross section (mb) for the given projectile
+    // and lab-frame four-momentum.  Returns 0 if not available.
+    double sigma_hA(int id, double px, double py, double pz, double e,
+                    double m, int A)
+    {
+        Vec4 pVec(px, py, pz, e);
+        if (!_cascade.sigmaSetuphN(id, pVec, m))
+            return 0.0;
+        return _cascade.sigmahA(A);
+    }
+
+    int  n_collisions()        { return _cascade.nCollisions(); }
+    int  first_collision_code(){ return _cascade.firstCollisionCode(); }
+    void stat()                { _cascade.stat(); }
+
+    ParticleData &particle_data() { return _cascade.particleData(); }
+
+    py::array_t<float> charge(py::object result)
+    {
+        // result is the tuple returned by next_coll; pid is element 0
+        auto pid = result.attr("__getitem__")(0).cast<py::array_t<int>>();
+        auto &pd = _cascade.particleData();
+        int size = pid.size();
+        py::array_t<float> out(size);
+        float *ptr = out.mutable_data();
+        auto pid_ = pid.unchecked<1>();
+        for (int i = 0; i < size; ++i)
+            ptr[i] = charge_from_pid(pd, pid_[i]);
+        return out;
+    }
+
+private:
+    PythiaCascade _cascade;
+
+    // Reuses the event_array<> helpers already defined in this file.
+    static py::tuple _extract(Event &ev)
+    {
+        return py::make_tuple(
+            event_array<Particle_idSave>(ev),
+            event_status(ev),
+            event_array_p<Vec4_xx>(ev),
+            event_array_p<Vec4_yy>(ev),
+            event_array_p<Vec4_zz>(ev),
+            event_array_p<Vec4_tt>(ev),
+            event_array<Particle_mSave>(ev),
+            event_array_v<Vec4_xx>(ev),
+            event_array_v<Vec4_yy>(ev),
+            event_array_v<Vec4_zz>(ev),
+            event_array_v<Vec4_tt>(ev),
+            event_array_mothers(ev),
+            event_array_daughters(ev));
+    }
+};
 
 PYBIND11_MODULE(_pythia8, m)
 {
@@ -345,63 +433,22 @@ PYBIND11_MODULE(_pythia8, m)
         .def("fill", [](Event &self, py::array_t<int> pid, py::array_t<int> status, py::array_t<double> px, py::array_t<double> py, py::array_t<double> pz, py::array_t<double> energy, py::array_t<double> mass)
              { fill(self, pid, status, px, py, pz, energy, mass); }, "pid"_a, "status"_a, "px"_a, "py"_a, "pz"_a, "energy"_a, "mass"_a);
 
-    py::class_<PythiaCascade>(m, "PythiaCascade")
-        .def(py::init<>(), py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
-        .def("init", py::overload_cast<double, bool, bool, double, int, string>(&PythiaCascade::init),
-             "eMaxIn"_a = 1e9, "listFinalIn"_a = false, "rapidDecaysIn"_a = false,
-             "smallTau0In"_a = 1e-10, "reuseMPI"_a = 3, "initFile"_a = "pythiaCascade.mpi")
-        .def("sigmaSetuphN", [](PythiaCascade &self, int id, py::array_t<double> p, double m)
-             {
-            auto p_buf = p.request();
-            if (p_buf.size != 4) {
-                throw std::runtime_error("Momentum array must have 4 components (px, py, pz, e)");
-            }
-            double *p_ptr = static_cast<double*>(p_buf.ptr);
-            Vec4 pVec(p_ptr[0], p_ptr[1], p_ptr[2], p_ptr[3]);
-            return self.sigmaSetuphN(id, pVec, m); }, "id"_a, "p"_a, "m"_a)
-        .def("sigmahA", &PythiaCascade::sigmahA, "A"_a)
-        .def("nextColl", [](PythiaCascade &self, int Z, int A, py::array_t<double> v = py::array_t<double>())
-             {
-            Vec4 vVec(0., 0., 0., 0.);
-            if (v.size() > 0) {
-                auto v_buf = v.request();
-                if (v_buf.size != 4) {
-                    throw std::runtime_error("Vertex array must have 4 components (x, y, z, t)");
-                }
-                double *v_ptr = static_cast<double*>(v_buf.ptr);
-                vVec = Vec4(v_ptr[0], v_ptr[1], v_ptr[2], v_ptr[3]);
-            }
-            return &self.nextColl(Z, A, vVec); }, "Z"_a, "A"_a, "v"_a = py::array_t<double>(), py::return_value_policy::reference_internal)
-        .def("nextDecay", [](PythiaCascade &self, int id, py::array_t<double> p, double m, py::array_t<double> v = py::array_t<double>())
-             {
-            auto p_buf = p.request();
-            if (p_buf.size != 4) {
-                throw std::runtime_error("Momentum array must have 4 components (px, py, pz, e)");
-            }
-            double *p_ptr = static_cast<double*>(p_buf.ptr);
-            Vec4 pVec(p_ptr[0], p_ptr[1], p_ptr[2], p_ptr[3]);
-            
-            Vec4 vVec(0., 0., 0., 0.);
-            if (v.size() > 0) {
-                auto v_buf = v.request();
-                if (v_buf.size != 4) {
-                    throw std::runtime_error("Vertex array must have 4 components (x, y, z, t)");
-                }
-                double *v_ptr = static_cast<double*>(v_buf.ptr);
-                vVec = Vec4(v_ptr[0], v_ptr[1], v_ptr[2], v_ptr[3]);
-            }
-            return &self.nextDecay(id, pVec, m, vVec); }, "id"_a, "p"_a, "m"_a, "v"_a = py::array_t<double>(), py::return_value_policy::reference_internal)
-        .def("stat", &PythiaCascade::stat)
-        .def("particleData", &PythiaCascade::particleData, py::return_value_policy::reference_internal)
-        .def("rndm", &PythiaCascade::rndm, py::return_value_policy::reference_internal)
-        .def("charge", [](PythiaCascade &self, Event &event)
-             {
-                 // skip first pseudoparticle
-                 int size = event.size() - 1;
-                 py::array_t<float> result(size);
-                 float *ptr = result.mutable_data();
-                 for (auto pit = event.begin() + 1; pit != event.end(); ++pit)
-                     *ptr++ = charge_from_pid(self.particleData(), pit->id());
-                 return result;
-             });
+    py::class_<ChromaCascade>(m, "ChromaCascade")
+        .def(py::init<>())
+        .def("init", &ChromaCascade::init,
+             py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>(),
+             "eKinMin"_a = 0.3, "enhanceSDtarget"_a = 0.5,
+             "initFile"_a = "../share/Pythia8/setups/InitDefaultMPI.cmnd",
+             "rapidDecays"_a = false, "smallTau0"_a = 1e-10,
+             "slowDecays"_a = true, "listFinalOnly"_a = false)
+        .def("next_coll", &ChromaCascade::next_coll,
+             "id"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a, "Z"_a, "A"_a)
+        .def("sigma_hA", &ChromaCascade::sigma_hA,
+             "id"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a, "A"_a)
+        .def("n_collisions",        &ChromaCascade::n_collisions)
+        .def("first_collision_code",&ChromaCascade::first_collision_code)
+        .def("stat",                &ChromaCascade::stat)
+        .def("particle_data", &ChromaCascade::particle_data,
+             py::return_value_policy::reference_internal)
+        .def("charge", &ChromaCascade::charge, "result"_a);
 }
