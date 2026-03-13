@@ -48,7 +48,7 @@ jobs:
           # Disable Windows for now, as long as numpy is buggy on Windows
           # - os: windows-latest
           #   python-version: "3.12"
-          - os: macos-14
+          - os: macos-latest
             python-version: "3.12"
           - os: ubuntu-latest
             python-version: "3.13"
@@ -97,3 +97,77 @@ jobs:
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}
           path: "fig/**"
+
+  cibuildwheel:
+    if: contains(github.event.pull_request.labels.*.name, 'skip CI') == false
+    needs: prepare-cache
+    name: cibw ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-intel-latest, macos-latest]
+    steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v2
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Set macOS deployment target
+        if: runner.os == 'macOS'
+        run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-intel-latest' && '13.0' || '15.0' }}" >> $GITHUB_ENV
+
+      - uses: awvwgk/setup-fortran@main
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 13
+
+      - if: ${{ matrix.os != 'macos-intel-latest' }}
+        uses: ts-graphviz/setup-graphviz@v2
+        name: Install Graphviz
+
+      - if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm' }}
+        name: cibuildwheel on Linux
+        uses: pypa/cibuildwheel@v3.4.0
+        env:
+          CIBW_BUILD: cp314-*
+          CIBW_ARCHS: auto
+          CIBW_ENVIRONMENT_PASS_LINUX: CI
+
+      - name: Random delay to avoid rate limits
+        if: runner.os == 'macOS'
+        run: |
+          delay=$((RANDOM % 14 + 2))
+          echo "Sleeping $delay seconds to stagger cibuildwheel downloads..."
+          sleep $delay
+
+      - if: ${{ matrix.os == 'macos-intel-latest' }}
+        name: cibuildwheel on macOS Intel
+        uses: pypa/cibuildwheel@v3.4.0
+        env:
+          CIBW_BUILD: cp314-*
+          CIBW_ARCHS: auto
+          no_proxy: '*'
+          CHROMO_SKIP_GRAPHVIZ: 1
+          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
+
+      - if: ${{ matrix.os == 'macos-latest' }}
+        name: cibuildwheel on macOS
+        uses: pypa/cibuildwheel@v3.4.0
+        env:
+          CIBW_BUILD: cp314-*
+          CIBW_ARCHS: auto
+          no_proxy: '*'
+          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          path: ./wheelhouse/*.whl
+          name: wheel-cp314-${{ matrix.os }}

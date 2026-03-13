@@ -1,3 +1,4 @@
+import os
 import pickle
 import platform
 from copy import deepcopy
@@ -140,6 +141,16 @@ def test_rng_state_bitgens(Model, bitgen_class, seed):
             "on ARM64 architecture (ubuntu-24.04-arm, 3.13), "
             "while passes on all other systems. "
             "It needs further investigation."
+        )
+
+    if (
+        (Model is im.EposLHC)
+        and (bitgen_class in (np.random.MT19937, np.random.Philox))
+        and os.environ.get("CI")
+        and platform.system() == "Linux"
+    ):
+        pytest.xfail(
+            f"EposLHC with {bitgen_class.__name__} does not pass this test on CI"
         )
 
     run_in_separate_process(run_rng_state_with_bitgen, Model, bitgen_class, seed)

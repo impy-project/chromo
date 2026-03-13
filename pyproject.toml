@@ -103,7 +103,11 @@ ignore_missing_imports = true
 minversion = "6.0"
 addopts = "-q -ra --ff -n auto"
 testpaths = ["tests"]
-filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
+filterwarnings = [
+    "error::FutureWarning",
+    "error::DeprecationWarning",
+    "ignore::pyparsing.warnings.PyparsingDeprecationWarning",
+]
 
 [tool.pydocstyle]
 convention = "numpy"
