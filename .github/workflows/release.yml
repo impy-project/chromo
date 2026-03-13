@@ -91,7 +91,7 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-14] # windows-latest: Disable windows for now
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-intel-latest, macos-latest] # windows-latest: Disable windows for now
         arch: [auto]
         py: [cp39, cp310, cp311, cp312, cp313]
     steps:
@@ -106,8 +106,8 @@ jobs:
           fetch-depth: 0
 
       - name: Set macOS deployment target
-        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
-        run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-13' && '13.0' || matrix.os == 'macos-14' && '14.0' || '' }}" >> $GITHUB_ENV
+        if: runner.os == 'macOS'
+        run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-intel-latest' && '13.0' || '14.0' }}" >> $GITHUB_ENV
 
       - name: Setup gfortran
         uses: awvwgk/setup-fortran@v1.6.1
@@ -116,16 +116,9 @@ jobs:
           compiler: gcc
           version: 13
 
-      - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
-        if: ${{ matrix.os == 'macos-13'  }}
-        name: Setup Xcode
-        with:
-          xcode-version: '14.3'
-
-      - if: ${{ matrix.os != 'macos-13' }}
+      - if: ${{ matrix.os != 'macos-intel-latest' }}
         uses: ts-graphviz/setup-graphviz@v2
         name: Install Graphviz
-
 
       - if: ${{ matrix.os == 'windows-latest' }}
         name: cibuildwheel on Windows
@@ -146,8 +139,15 @@ jobs:
           # Will avoid testing on emulated architectures
           CIBW_TEST_SKIP: "*-*linux_{ppc64le,s390x,armv7l}"
 
-      - if: ${{ matrix.os == 'macos-13'}}
-        name: cibuildwheel on MacOS-13
+      - name: Random delay to avoid rate limits
+        if: runner.os == 'macOS'
+        run: |
+          delay=$((RANDOM % 14 + 2))
+          echo "Sleeping $delay seconds to stagger cibuildwheel downloads..."
+          sleep $delay
+
+      - if: ${{ matrix.os == 'macos-intel-latest' }}
+        name: cibuildwheel on macOS Intel
         uses: pypa/cibuildwheel@v2.23.3
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
@@ -156,8 +156,8 @@ jobs:
           CHROMO_SKIP_GRAPHVIZ: 1
           CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
 
-      - if: ${{matrix.os == 'macos-14' }}
-        name: cibuildwheel on MacOS-14
+      - if: ${{ matrix.os == 'macos-latest' }}
+        name: cibuildwheel on macOS
         uses: pypa/cibuildwheel@v2.23.3
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
