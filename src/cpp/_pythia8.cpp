@@ -43,6 +43,8 @@ PRIVATE_ACCESS_MEMBER(Vec4, xx, double)
 PRIVATE_ACCESS_MEMBER(Vec4, yy, double)
 PRIVATE_ACCESS_MEMBER(Vec4, zz, double)
 PRIVATE_ACCESS_MEMBER(Vec4, tt, double)
+PRIVATE_ACCESS_MEMBER(PythiaCascade, pythiaMain, Pythia)
+PRIVATE_ACCESS_MEMBER(PythiaCascade, pythiaColl, Pythia)
 
 template <class Accessor>
 auto event_array(Event &event)
@@ -142,7 +144,7 @@ void fill(Event &event,
 // Owns the PythiaCascade internally, manages the sigmaSetuphN→nextColl
 // sequence, and returns particle data as pre-copied numpy arrays so
 // there is no Event& lifetime issue on the Python side.
-class ChromaCascade
+class PythiaCascadeForChromo
 {
 public:
     bool init(double eKinMin, double enhanceSDtarget, string initFile,
@@ -187,6 +189,12 @@ public:
     void stat()                { _cascade.stat(); }
 
     ParticleData &particle_data() { return _cascade.particleData(); }
+    
+    // Set mayDecay flag for a particle in both internal Pythia instances.
+    void set_may_decay(int pdgid, bool may_decay) {
+        private_access::member<PythiaCascade_pythiaMain>(_cascade).particleData.mayDecay(pdgid, may_decay);
+        private_access::member<PythiaCascade_pythiaColl>(_cascade).particleData.mayDecay(pdgid, may_decay);
+    }
 
     py::array_t<float> charge(py::object result)
     {
@@ -202,6 +210,7 @@ public:
         return out;
     }
 
+      
 private:
     PythiaCascade _cascade;
 
@@ -301,6 +310,10 @@ PYBIND11_MODULE(_pythia8, m)
         .def_property_readonly("nPartProj", &HIInfo::nPartProj)
         .def_property_readonly("nPartTarg", &HIInfo::nPartTarg)
         .def_property_readonly("b", &HIInfo::b)
+        .def("glauberTot",  &HIInfo::glauberTot)
+        .def("glauberINEL", &HIInfo::glauberINEL)
+        .def("glauberEL",   &HIInfo::glauberEL)
+        .def("glauberND",   &HIInfo::glauberND)
 
         ;
 
@@ -345,6 +358,8 @@ PYBIND11_MODULE(_pythia8, m)
             );
             self.listAll();
         })
+        .def("writeFile", py::overload_cast<string, bool>(&Settings::writeFile),
+             "toFile"_a, "writeAll"_a = false)
 
         ;
 
@@ -409,7 +424,13 @@ PYBIND11_MODULE(_pythia8, m)
                  for (auto pit = self.event.begin() + 1; pit != self.event.end(); ++pit)
                      *ptr++ = charge_from_pid(self.particleData, pit->id());
                  return result;
-             });
+             })
+        .def("readFile",
+             py::overload_cast<string, bool, int>(&Pythia::readFile),
+             "fileName"_a, "warn"_a = true, "subrun"_a = SUBRUNDEFAULT,
+             py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+        .def("setBeamIDs", &Pythia::setBeamIDs, "idA"_a, "idB"_a = 0)
+        .def("setKinematics", py::overload_cast<double>(&Pythia::setKinematics), "eCM"_a);
 
     py::class_<Event>(m, "Event")
         .def_property_readonly("size", [](Event &self)
@@ -433,22 +454,24 @@ PYBIND11_MODULE(_pythia8, m)
         .def("fill", [](Event &self, py::array_t<int> pid, py::array_t<int> status, py::array_t<double> px, py::array_t<double> py, py::array_t<double> pz, py::array_t<double> energy, py::array_t<double> mass)
              { fill(self, pid, status, px, py, pz, energy, mass); }, "pid"_a, "status"_a, "px"_a, "py"_a, "pz"_a, "energy"_a, "mass"_a);
 
-    py::class_<ChromaCascade>(m, "ChromaCascade")
+    py::class_<PythiaCascadeForChromo>(m, "PythiaCascadeForChromo")
         .def(py::init<>())
-        .def("init", &ChromaCascade::init,
+        .def("init", &PythiaCascadeForChromo::init,
              py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>(),
              "eKinMin"_a = 0.3, "enhanceSDtarget"_a = 0.5,
              "initFile"_a = "../share/Pythia8/setups/InitDefaultMPI.cmnd",
              "rapidDecays"_a = false, "smallTau0"_a = 1e-10,
              "slowDecays"_a = true, "listFinalOnly"_a = false)
-        .def("next_coll", &ChromaCascade::next_coll,
+        .def("next_coll", &PythiaCascadeForChromo::next_coll,
              "id"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a, "Z"_a, "A"_a)
-        .def("sigma_hA", &ChromaCascade::sigma_hA,
+        .def("sigma_hA", &PythiaCascadeForChromo::sigma_hA,
              "id"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a, "A"_a)
-        .def("n_collisions",        &ChromaCascade::n_collisions)
-        .def("first_collision_code",&ChromaCascade::first_collision_code)
-        .def("stat",                &ChromaCascade::stat)
-        .def("particle_data", &ChromaCascade::particle_data,
+        .def("n_collisions",        &PythiaCascadeForChromo::n_collisions)
+        .def("first_collision_code",&PythiaCascadeForChromo::first_collision_code)
+        .def("stat",                &PythiaCascadeForChromo::stat)
+        .def("particle_data", &PythiaCascadeForChromo::particle_data,
              py::return_value_policy::reference_internal)
-        .def("charge", &ChromaCascade::charge, "result"_a);
+        .def("set_may_decay", &PythiaCascadeForChromo::set_may_decay,
+             "pdgid"_a, "may_decay"_a)
+        .def("charge", &PythiaCascadeForChromo::charge, "result"_a);
 }

@@ -13,6 +13,30 @@ from chromo.kinematics import EventFrame
 from chromo.util import Nuclei, _cached_data_dir, name2pdg
 
 
+def _merge_cascade_results(results):
+    """Concatenate multiple next_coll result tuples, remapping mother/daughter
+    indices so they remain valid in the merged particle array.
+
+    Each result is a 13-tuple (pid, status, px, py, pz, en, m, vx, vy, vz, vt,
+    mothers, daughters) where mothers/daughters are (N,2) int arrays with
+    1-based Pythia indices (0 = no parent/child).
+    """
+    if len(results) == 1:
+        return results[0]
+    parts = [[] for _ in range(13)]
+    offset = 0
+    for result in results:
+        n = len(result[0])
+        for i in range(11):  # scalar arrays: just append
+            parts[i].append(result[i])
+        for i in (11, 12):  # index arrays: add offset to non-zero entries
+            arr = result[i].copy()
+            arr[arr > 0] += offset
+            parts[i].append(arr)
+        offset += n
+    return tuple(np.concatenate(parts[i]) for i in range(13))
+
+
 class PYTHIA8Event(EventData):
     """Wrapper for Pythia8 event stack."""
 
@@ -294,7 +318,7 @@ class PYTHIA8CascadeEvent(EventData):
             generator.kinematics,
             generator.nevents,
             np.nan,
-            (cascade.n_collisions(), 0),
+            generator._n_wounded,
             generator._inel_or_prod_cross_section,
             pid,
             status,
@@ -355,8 +379,9 @@ class Pythia8Cascade(MCRun):
     _restartable = True
     _data_url = Pythia8._data_url
 
-    def __init__(self, evt_kin, *, seed=None, eKinMin=0.3, enhanceSDtarget=0.5,
-                 init_file=""):
+    def __init__(
+        self, evt_kin, *, seed=None, eKinMin=0.3, enhanceSDtarget=0.5, init_file=""
+    ):
         super().__init__(seed)
 
         datdir = _cached_data_dir(self._data_url) + "xmldoc"
@@ -383,10 +408,21 @@ class Pythia8Cascade(MCRun):
                 )
 
         self._cascade = self._lib.PythiaCascadeForChromo()
-        if not self._cascade.init(eKinMin, enhanceSDtarget, init_file):
-            raise RuntimeError("Pythia8Cascade (ChromaCascade) initialization failed")
+        if not self._cascade.init(
+            eKinMin,
+            enhanceSDtarget,
+            init_file,
+            rapidDecays=False,
+            smallTau0=0.,
+            slowDecays=False,
+            listFinalOnly=True,
+        ):
+            raise RuntimeError(
+                "Pythia8Cascade (PythiaCascadeForChromo) initialization failed"
+            )
 
         self._last_result = None
+        self._n_wounded = (0, 0)
         self.kinematics = evt_kin
         self._set_final_state_particles()
 
@@ -409,18 +445,22 @@ class Pythia8Cascade(MCRun):
 
     def _generate(self):
         pd = self._cascade.particle_data()
-        last = None
+        results = []
+        total_n_coll = 0
         for nid in self._nucleon_ids:
             m = pd.findParticle(nid).m0
             pz = self._plab_per_nuc
             e = math.sqrt(pz * pz + m * m)
-            result = self._cascade.next_coll(nid, 0.0, 0.0, pz, e, m,
-                                             self._Z_targ, self._A_targ)
+            result = self._cascade.next_coll(
+                nid, 0.0, 0.0, pz, e, m, self._Z_targ, self._A_targ
+            )
             if result is not None:
-                last = result
-        if last is None:
+                results.append(result)
+                total_n_coll += self._cascade.n_collisions()
+        if not results:
             return False
-        self._last_result = last
+        self._last_result = _merge_cascade_results(results)
+        self._n_wounded = (total_n_coll, len(results))
         return True
 
     def _cross_section(self, kin=None, max_info=False):
@@ -435,4 +475,181 @@ class Pythia8Cascade(MCRun):
         return CrossSectionData(inelastic=sigma)
 
     def _set_stable(self, pdgid, stable):
-        self._cascade.particle_data().mayDecay(pdgid, not stable)
+        self._cascade.set_may_decay(pdgid, not stable)
+
+
+class Pythia8Angantyr(MCRun):
+    """Pythia8 Angantyr heavy-ion model for nuclear interactions.
+
+    Uses precomputed Angantyr initialization grids for fast, proper nuclear
+    collision modeling with Glauber geometry, impact parameters, and wounded
+    nucleon tracking.  The bundled tables cover CMS energies from 20 GeV to
+    20 PeV, which covers cosmic-ray lab energies up to ~200 EeV.
+
+    Parameters
+    ----------
+    evt_kin : kinematics object
+        Center-of-mass or fixed-target kinematics.
+    seed : int or None
+        Random seed.
+    config : str or list of str, optional
+        Extra Pythia8 configuration strings applied on top of the Angantyr
+        defaults.
+    banner : bool
+        Whether to print the Pythia8 banner.
+    """
+
+    _name = "Pythia8Angantyr"
+    _version = "8.317"
+    _library_name = "_pythia8"
+    _event_class = PYTHIA8Event
+    _frame = EventFrame.CENTER_OF_MASS
+    _projectiles = standard_projectiles | Nuclei(a_min=2, a_max=208)
+    _targets = standard_projectiles | {
+        name2pdg(x)
+        for x in (
+            "He4",
+            "Li6",
+            "C12",
+            "N14",
+            "O16",
+            "Ar40",
+            "Cu63",
+            "Xe129",
+            "Au197",
+            "Pb208",
+        )
+    }
+    _restartable = True
+    _data_url = Pythia8._data_url
+
+    def __init__(self, evt_kin, *, seed=None, config=None, banner=True):
+        super().__init__(seed)
+
+        datdir = _cached_data_dir(self._data_url) + "xmldoc"
+
+        if "PYTHIA8DATA" in environ:
+            del environ["PYTHIA8DATA"]
+        self._pythia = self._lib.Pythia(datdir, banner)
+
+        # Locate Angantyr setup files (prefer bundled in data zip, fall back to source tree)
+        setups_candidates = [
+            Path(datdir).parent / "setups",
+            Path(__file__).parent.parent.parent / "cpp/pythia83/share/Pythia8/setups",
+        ]
+        setups_dir = None
+        for candidate in setups_candidates:
+            if (candidate / "AngantyrCascade.cmnd").exists():
+                setups_dir = candidate
+                break
+        if setups_dir is None:
+            raise FileNotFoundError(
+                "Could not find Angantyr setup files (AngantyrCascade.cmnd). "
+                "Ensure the Pythia8 submodule is checked out or add setups/ to the data bundle."
+            )
+        self._setups_dir = setups_dir
+        self._angantyr_cmnd = setups_dir / "AngantyrCascade.cmnd"
+        self._init_angantyr_cmnd = setups_dir / "InitDefaultAngantyr.cmnd"
+
+        self._extra_config = [] if config is None else Pythia8._parse_config(config)
+        self._banner = banner
+        self._initialized = False
+
+        self.kinematics = evt_kin
+        self._set_final_state_particles()
+
+    @staticmethod
+    def _load_cmnd_file(pythia, path):
+        """Load a .cmnd file line-by-line, skipping comments and include directives."""
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith(("!", "include")):
+                    continue
+                if not pythia.readString(line):
+                    msg = f"readString({line!r}) failed"
+                    raise RuntimeError(msg)
+
+    def _set_kinematics(self, kin):
+        pythia = self._pythia
+
+        if not self._initialized:
+            pythia.settings.resetAll()
+
+            # Load the three setup files manually in order, skipping `include =`
+            # directives since include paths are resolved relative to the data
+            # bundle's xmldoc/../ directory, and setups/ is not in the bundle.
+            #
+            # Order: MPI init → Angantyr init (includes MPI) → Cascade settings
+            self._load_cmnd_file(pythia, self._setups_dir / "InitDefaultMPI.cmnd")
+            self._load_cmnd_file(pythia, self._init_angantyr_cmnd)
+            self._load_cmnd_file(pythia, self._angantyr_cmnd)
+
+            # Common settings; turn off cascadeMode (which AngantyrCascade.cmnd
+            # enables for hadronic air-shower cascades) since here we generate
+            # standalone events and expect next() to always return an interaction.
+            for line in [
+                "Random:setSeed = on",
+                f"Random:seed = {self.seed % 900_000_000}",
+                "Print:quiet = on",
+                "Next:numberCount = 0",
+                "Beams:frameType = 1",
+                "Beams:allowVariableEnergy = on",
+                "Angantyr:cascadeMode = off",
+            ]:
+                if not pythia.readString(line):
+                    msg = f"readString({line!r}) failed"
+                    raise RuntimeError(msg)
+
+            for line in self._extra_config:
+                if not pythia.readString(line):
+                    msg = f"readString({line!r}) failed"
+                    raise RuntimeError(msg)
+
+            # Set initial beam IDs and CMS energy
+            pythia.readString(f"Beams:idA = {int(kin.p1)}")
+            pythia.readString(f"Beams:idB = {int(kin.p2)}")
+            pythia.readString(f"Beams:eCM = {kin.ecm}")
+
+            if not pythia.init():
+                raise RuntimeError("Pythia8Angantyr initialization failed")
+            self._initialized = True
+            self._idA = int(kin.p1)
+            self._idB = int(kin.p2)
+        else:
+            # If beam species changed, force a full re-initialization
+            if int(kin.p1) != self._idA or int(kin.p2) != self._idB:
+                self._initialized = False
+                self._set_kinematics(kin)
+                return
+            # Only energy changed: update in place without re-init
+            if not pythia.setKinematics(kin.ecm):
+                msg = f"setKinematics({kin.ecm}) failed"
+                raise RuntimeError(msg)
+
+    def _generate(self):
+        return self._pythia.next()
+
+    def _cross_section(self, kin=None, max_info=False):
+        hi = self._pythia.info.hiInfo
+        if hi is not None and hi.glauberINEL() > 0:
+            return CrossSectionData(
+                total=hi.glauberTot(),
+                inelastic=hi.glauberINEL(),
+                elastic=hi.glauberEL(),
+            )
+        # Glauber stats are only populated after events have been generated.
+        # Return zeros as a placeholder (updated after the first event).
+        return CrossSectionData()
+
+    def _set_stable(self, pdgid, stable):
+        self._pythia.particleData.mayDecay(pdgid, not stable)
+
+    def _get_stable(self):
+        r = set()
+        for p in self._pythia.particleData.all():
+            if p.tau0 > 1e-5 and not p.mayDecay:
+                r.add(p.id)
+                if p.hasAnti:
+                    r.add(-p.id)
+        return r
