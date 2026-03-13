@@ -107,7 +107,7 @@ jobs:
 
       - name: Set macOS deployment target
         if: runner.os == 'macOS'
-        run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-intel-latest' && '13.0' || '14.0' }}" >> $GITHUB_ENV
+        run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-intel-latest' && '13.0' || '15.0' }}" >> $GITHUB_ENV
 
       - name: Setup gfortran
         uses: awvwgk/setup-fortran@v1.6.1
