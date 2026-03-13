@@ -1,49 +1,47 @@
 c=======================================================================
       subroutine npyrng( rval )
 c-----------------------------------------------------------------------
-c  interface to C code
+c  Interface to NumPy random number generator
 c-----------------------------------------------------------------------
       implicit none
       external npynxt
       double precision rval
       integer*8 bitgen
-      common /npy/bitgen
+      integer gen_id
+      common /npy/bitgen, gen_id
       call npynxt(rval, bitgen)
       end
 
 c=======================================================================
       subroutine ranfgt(seed)
 c-----------------------------------------------------------------------
-c     used by EPOS
-c     Stash the state of the random number generator
-c     interface to C code
+c  Save RNG state (used by EPOS)
+c  Supports: PCG64, PCG64DXSM, MT19937, Philox, SFC64
 c-----------------------------------------------------------------------           
       implicit none
       external npynxt_get_state
       integer*8 bitgen
-      integer*8 state_arr(4)
+      integer gen_id
+      integer*8 state_arr(628)
       double precision seed
-      common /npy/ bitgen
+      common /npy/ bitgen, gen_id
       common /npystash/ state_arr
-c     seed is dummy for compiler
       seed = 0       
-      call npynxt_get_state(state_arr, bitgen)   
+      call npynxt_get_state(state_arr, bitgen, gen_id)   
       end
-
 
 c=======================================================================
       subroutine ranfst(seed)
 c-----------------------------------------------------------------------
-c     used by EPOS
-c     Restore the state of the random number generator from stash
-c     interface to C code
+c  Restore RNG state (used by EPOS)
 c-----------------------------------------------------------------------           
       implicit none
       external npynxt_set_state
       integer*8 bitgen
-      integer*8 state_arr(4)
+      integer gen_id
+      integer*8 state_arr(628)
       double precision seed
-      common /npy/ bitgen
+      common /npy/ bitgen, gen_id
       common /npystash/ state_arr
 c     seed is dummy for compiler     
       seed = 0     
@@ -53,7 +51,7 @@ c     seed is dummy for compiler
 c=======================================================================
       function rangen()
 c-----------------------------------------------------------------------
-c  used by EPOS
+c  Random number in (0,1) for EPOS
 c-----------------------------------------------------------------------
       double precision rval
  20   call npyrng(rval)
@@ -64,7 +62,7 @@ c-----------------------------------------------------------------------
 c=======================================================================
       function drangen( dummy )
 c-----------------------------------------------------------------------
-c  used by EPOS
+c  Random number in [0,1) for EPOS
 c-----------------------------------------------------------------------
       double precision drangen, dummy
       call npyrng(drangen)
@@ -73,7 +71,7 @@ c-----------------------------------------------------------------------
 c=======================================================================
       double precision function simrnd()
 c-----------------------------------------------------------------------
-c  alternative interface to npyrng
+c  Alternative interface to npyrng
 c-----------------------------------------------------------------------
       call npyrng(simrnd)
       end
@@ -81,28 +79,30 @@ c-----------------------------------------------------------------------
 c=======================================================================
       function gasdev( dummy )
 c-----------------------------------------------------------------------
-c  used by SIBYLL-2.3x
+c  Gaussian random number (used by SIBYLL-2.3x)
 c-----------------------------------------------------------------------
       implicit none
       external npygas
       double precision gasdev
       integer dummy
       integer*8 bitgen
-      common /npy/bitgen
+      integer gen_id
+      common /npy/bitgen, gen_id
       call npygas(gasdev, bitgen)
       end
 
 c=======================================================================
       function spgasdev( dummy )
 c-----------------------------------------------------------------------
-c  used by SIBYLL-2.1
+c  Gaussian random number, single precision (used by SIBYLL-2.1)
 c-----------------------------------------------------------------------
       implicit none
       external npygas
       real spgasdev
       integer dummy
       integer*8 bitgen
-      common /npy/bitgen
+      integer gen_id
+      common /npy/bitgen, gen_id
       double precision rval
       call npygas(rval, bitgen)
       spgasdev = sngl(rval)
@@ -130,7 +130,7 @@ c-----------------------------------------------------------------------
 c=======================================================================
       subroutine rmmard( rvec,lenv,iseq )
 c-----------------------------------------------------------------------
-c  used by epos
+c  Fill vector with random numbers (used by EPOS)
 c-----------------------------------------------------------------------
       implicit none
       double precision rvec(*)
@@ -221,8 +221,6 @@ c-----------------------------------------------------------------------
       double precision vdummy
       call npyrng(dt_rndm)
       end
-
-
 
 c=======================================================================
       double precision function qgran(vdummy)

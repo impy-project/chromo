@@ -20,11 +20,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
       - name: Download all cache files if missing
         run: |
           mkdir -p ~/.cache/chromo
-          for file in qgsjet_v001 qgsjet_v002 Pythia8_v003 Pythia8_v004 Pythia8_v005 eposlhcr_v001 eposlhc_v001 epos_v001 dpm3191_v001 dpm3_v001 ; do
+          for file in qgsjet_v002 Pythia8_v006 eposlhcr_v001 eposlhc_v001 dpm3191_v001 dpm3_v001 ; do
             if [ ! -f ~/.cache/chromo/$file.zip ]; then
               echo "Downloading $file.zip..."
               curl -L -o ~/.cache/chromo/$file.zip "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip"
@@ -36,7 +36,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
   wheels_on_PR:
     needs: prepare-cache
     if: ${{ github.event.pull_request.merged == true }}
@@ -53,7 +53,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
 
       - uses: actions/checkout@v4
         with:
@@ -98,7 +98,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
       - uses: actions/checkout@v4
         with:
           submodules: true
@@ -108,15 +108,7 @@ jobs:
         if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-13' && '13.0' || matrix.os == 'macos-14' && '14.0' || '' }}" >> $GITHUB_ENV
 
-      - if: ${{ matrix.os == 'macos-13' }}
-        name: Install gfortran via Homebrew
-        run: |
-          brew install gcc
-          gfortran --version
-          which gfortran
-
-      - if: ${{ matrix.os != 'macos-13'}}
-        name: Setup gfortran
+      - name: Setup gfortran
         uses: awvwgk/setup-fortran@v1.6.1
         id: setup-fortran
         with:
@@ -187,7 +179,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
 
       - uses: actions/checkout@v4
         with:

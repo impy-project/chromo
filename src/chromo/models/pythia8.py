@@ -79,7 +79,7 @@ class PYTHIA8Event(EventData):
 
 class Pythia8(MCRun):
     _name = "Pythia"
-    _version = "8.315"
+    _version = "8.317"
     _library_name = "_pythia8"
     _event_class = PYTHIA8Event
     _frame = EventFrame.CENTER_OF_MASS
@@ -101,7 +101,7 @@ class Pythia8(MCRun):
     _restartable = True
     _data_url = (
         "https://github.com/impy-project/chromo"
-        "/releases/download/zipped_data_v1.0/Pythia8_v005.zip"
+        "/releases/download/zipped_data_v1.0/Pythia8_v006.zip"
     )
 
     def __init__(self, evt_kin, *, seed=None, config=None, banner=True):
@@ -219,6 +219,8 @@ class Pythia8(MCRun):
                 msg = f"readString({line!r}) failed"
                 raise RuntimeError(msg)
 
+        self._final_config = config
+
         # calling init several times is allowed
         if not pythia.init():
             raise RuntimeError("Pythia8 initialization failed")
@@ -266,234 +268,12 @@ class Pythia8(MCRun):
             result2.append(line)
         return result2
 
-
-class PYTHIA8CascadeEvent(EventData):
-    """Wrapper for Pythia8 cascade event stack."""
-
-    def __init__(self, generator):
-        """
-        Parameters
-        ----------
-        generator : Pythia8Cascade
-            The generator instance
-        """
-        # Get the current event from the generator
-        event = generator.current_event
-
-        super().__init__(
-            (generator.name, generator.version),
-            generator.kinematics,
-            generator.nevents,
-            np.nan,  # impact parameter not available in cascade mode
-            (0, 0),  # n_wounded not available in cascade mode
-            generator._inel_or_prod_cross_section,
-            event.pid(),
-            event.status(),
-            generator._cascade.charge(event),
-            event.px(),
-            event.py(),
-            event.pz(),
-            event.en(),
-            event.m(),
-            event.vx(),
-            event.vy(),
-            event.vz(),
-            event.vt(),
-            np.maximum(event.mothers() - 1, -1),
-            np.maximum(event.daughters() - 1, -1),
-        )
-
-class Pythia8Cascade(Pythia8):
-    """
-    Pythia8 wrapper using PythiaCascade for hadron-nucleus interactions.
-
-    This class extends the base Pythia8 class to use the PythiaCascade
-    functionality for simulating hadron-nucleus collisions at various energies.
-    It's particularly useful for cosmic ray simulations and high-energy
-    hadron-nucleus interactions.
-    """
-
-    _name = "Pythia8Cascade"
-    _version = "8.315"
-    _library_name = "_pythia8"
-    _event_class = PYTHIA8CascadeEvent
-    _frame = EventFrame.FIXED_TARGET
-
-    # Support more nucleus types for cascade interactions
-    _targets = standard_projectiles | {
-        name2pdg(x)
-        for x in (
-            "He4",
-            "Li6",
-            "Be9",
-            "C12",
-            "N14",
-            "O16",
-            "Al27",
-            "Ar40",
-            "Fe56",
-            "Cu63",
-            "Kr84",
-            "Ag107",
-            "Xe129",
-            "Au197",
-            "Pb208",
-        )
-    }
-
-    def __init__(
-        self,
-        evt_kin,
-        *,
-        seed=None,
-        config=None,
-        banner=True,
-        max_energy=1e9,
-        use_mpi_tables=True,
-        mpi_file="pythiaCascade.mpi",
-    ):
-        """
-        Parameters
-        ----------
-        max_energy : float, optional
-            Maximum energy for cascade initialization (GeV). Default: 1e9
-        use_mpi_tables : bool, optional
-            Whether to use pre-computed MPI tables for acceleration. Default: True
-        mpi_file : str, optional
-            File name for MPI initialization data. Default: "pythiaCascade.mpi"
-        """
-
-        if evt_kin is None:
-            raise ValueError("evt_kin is required for Pythia8Cascade")
-
-        # Ensure we're working in fixed target frame for equivalence with 484 example
-        if evt_kin.frame != EventFrame.FIXED_TARGET:
-            raise ValueError("Pythia8Cascade requires fixed target frame kinematics")
-
-        # Store cascade-specific parameters
-        self._max_energy = max_energy
-        self._use_mpi_tables = use_mpi_tables
-        self._mpi_file = mpi_file
-
-        # Set default config for cascade mode
-        if config is None:
-            config = ["SoftQCD:inelastic = on"]
-
-        # Initialize base class with kinematics
-        super().__init__(evt_kin, seed=seed, config=config, banner=banner) # TODO: No need to initialize Pythia at all.
-
-        # Initialize cascade after base initialization
-        self._init_cascade()
-
-        # Initialize current event storage
-        self._current_event = None
-
-    def _init_cascade(self):
-        """Initialize the PythiaCascade object."""
-        from chromo.util import _cached_data_dir
-
-        # Set up data directory for Pythia XML files
-        datdir = _cached_data_dir(self._data_url) + "xmldoc"
-        environ["PYTHIA8DATA"] = datdir
-
-        # Initialize cascade with appropriate settings
-        reuse_mpi = 3 if self._use_mpi_tables else 0
-        init_file = self._mpi_file if self._use_mpi_tables else ""
-
-        # Use main424.cmnd if available for acceleration
-        try:
-            # Try to find main424.cmnd file
-            import os
-
-            possible_paths = [
-                "/home/anatoli/devel/chromo/src/cpp/pythia83/examples/main424.cmnd",
-                "main424.cmnd",
-            ]
-            for path in possible_paths:
-                if os.path.exists(path):
-                    reuse_mpi = -1  # Use cmnd file
-                    init_file = path
-                    break
-        except Exception:
-            pass
-
-        self._cascade = self._lib.PythiaCascade()
-
-        # Initialize with appropriate parameters
-        if not self._cascade.init(
-            self._max_energy,
-            False,  # listFinal
-            True,  # rapidDecays
-            0.0,  # smallTau0
-            reuse_mpi,
-            init_file,
-        ):
-            raise RuntimeError("PythiaCascade initialization failed")
-
-    def _set_kinematics(self, kin):
-        """Set up kinematics for Pythia 8 Cascade mode collision."""
-        # Ensure we're working in fixed target frame for equivalence with 484 example
-        if kin.frame != EventFrame.FIXED_TARGET:
-            raise ValueError("Pythia8Cascade requires fixed target frame kinematics")
-
-    def _cross_section(self, kin=None, max_info=False):
-        """Calculate cross sections for hadron-nucleus interaction."""
-        if kin is None:
-            kin = self.kinematics
-
-        # Check if cascade is initialized
-        if not hasattr(self, "_cascade") or self._cascade is None:
-            warnings.warn(
-                "Cascade not initialized, returning zero cross section", RuntimeWarning
-            )
-            return CrossSectionData(total=0, inelastic=0, elastic=0)
-
-        # Calculate hadron-nucleon cross section using kinematic values
-        if not self._cascade.sigmaSetuphN(int(kin.p1), kin.beams[0], kin.m1):
-            warnings.warn(
-                "Could not calculate hadron-nucleon cross section", RuntimeWarning
-            )
-            return CrossSectionData(total=0, inelastic=0, elastic=0)
-
-        # Get hadron-nucleus cross section
-        sigma_hA = self._cascade.sigmahA(self.p2.A)
-
-        # For now, assume all cross section is inelastic
-        # (could be refined with more detailed cross section info)
-        return CrossSectionData(
-            total=sigma_hA,
-            inelastic=sigma_hA,
-            elastic=0,  # Cascade mode focuses on inelastic processes
-        )
-
-    def _generate(self):
-        """Generate a hadron-nucleus collision event."""
-        # Check if cascade is initialized
-        if not hasattr(self, "_cascade") or self._cascade is None:
-            return False
-        kin = self.kinematics
-        # Set up for collision using kinematic values
-        if not self._cascade.sigmaSetuphN(int(kin.p1), kin.beams[0], kin.m1):
-            return False
-
-        # Generate collision at origin (vertex can be set later)
-        vertex = np.array([0, 0, 0, 0])  # (x, y, z, t)
-        self._current_event = self._cascade.nextColl(kin.p2.Z, kin.p2.A, vertex)
-        return self._current_event.size > 0
-
-    def stat(self):
-        """Print statistics."""
-        if hasattr(self, "_cascade") and self._cascade is not None:
-            self._cascade.stat()
-
     @property
-    def max_energy(self):
-        """Maximum energy for cascade initialization."""
-        return self._max_energy
+    def random_state(self):
+        """Get Pythia8's random number generator state."""
+        return self._pythia.getRndmState()
 
-    @property
-    def current_event(self):
-        """Get the current event."""
-        if self._current_event is None:
-            raise RuntimeError("No current event available")
-        return self._current_event
+    @random_state.setter
+    def random_state(self, rng_state):
+        """Restore Pythia8's random number generator state."""
+        self._pythia.setRndmState(rng_state)

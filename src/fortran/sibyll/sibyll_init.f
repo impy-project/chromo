@@ -65,7 +65,7 @@ C-----------------------------------------------------------------------
          ELSE
             ISTHEP(I) = 2
          END IF
-         ICHG(I) = ICHP(ABS(MOD(LLIST(I),10000)))
+         ICHG(I) = sign(1, LLIST(I)) * ICHP(ABS(MOD(LLIST(I),10000)))
          IDHEP(I) = ISIB_PID2PDG(MOD(LLIST(I),10000))
          JMOHEP(1,I) = LLIST1(I)
          JMOHEP(2,I) = LLIST1(I)

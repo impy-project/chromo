@@ -176,7 +176,7 @@ def test_models_beam(Model):
         evt_kin = CenterOfMass(100, "photon", "proton")
     elif Model.name in ["DPMJET-III", "EPOS"]:
         evt_kin = CenterOfMass(100, "N", "O")
-    elif Model.name in ["SIBYLL"]:
+    elif Model.name == "SIBYLL":
         evt_kin = CenterOfMass(100, "p", "O")
 
     beam_list = run_in_separate_process(run_model, Model, evt_kin)

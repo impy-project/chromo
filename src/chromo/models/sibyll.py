@@ -200,10 +200,11 @@ class SIBYLLRun(MCRun):
 
     def _cross_section(self, kin=None, max_info=False):
         kin = self.kinematics if kin is None else kin
-        if abs(kin.p1) not in self._projectiles:
+        if abs(kin.p1) not in self._cross_section_projectiles and not is_real_nucleus(
+            kin.p1
+        ):
             warnings.warn(
-                f"Cross section for {kin.p1} projectiles not "
-                f"supported in {self.label}",
+                f"Cross section for {kin.p1} projectiles not supported in {self.label}",
                 RuntimeWarning,
             )
             return CrossSectionData()
@@ -231,11 +232,7 @@ class SIBYLLRun(MCRun):
             nsig = self._lib.nucsig
             return CrossSectionData(
                 total=float(nsig.sigt),
-                prod=(
-                    float(nsig.sigt - nsig.sigqe)
-                    if not np.isnan(nsig.sigqe)
-                    else float(nsig.siginel)
-                ),
+                prod=float(nsig.sigt - nsig.sigqe),
                 quasielastic=float(nsig.sigqe),
                 inelastic=float(nsig.siginel),
                 diffractive_sum=float(nsig.sigqsd),

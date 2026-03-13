@@ -55,7 +55,6 @@ def event_run(model):
 
 @pytest.mark.parametrize("model", get_sibylls())
 def test_charge(model):
-    pytest.xfail(reason="The SIBYLL charge test needs a fix.")
     event = run_in_separate_process(event_run, model)
     expected = reference_charge(event.pid)
     assert_allclose(event.charge, expected)
@@ -120,3 +119,33 @@ def test_cross_section(model):
         c.non_diffractive,
         c.inelastic - c.diffractive_xb - c.diffractive_ax - c.diffractive_xx,
     )
+
+
+def run_with_runtime_warning(model, p1, p2):
+    evt_kin = CenterOfMass(10 * TeV, p1, p2)
+    with pytest.warns(RuntimeWarning) as record:
+        _ = model(evt_kin, seed=1)
+    return [str(w.message) for w in record]
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        (
+            pytest.param(
+                m,
+                marks=pytest.mark.skip(
+                    reason="Sibyll defines all cs for its projectiles"
+                ),
+            )
+            if m.__name__ == "Sibyll21"
+            else m
+        )
+        for m in get_sibylls()
+    ],
+)
+def test_not_supported_cross_section(model):
+    msgs = run_in_separate_process(run_with_runtime_warning, model, "D_0", "p")
+
+    assert len(msgs) == 1
+    assert "Cross section for <PDGID: 421> projectiles not supported" in msgs[0]

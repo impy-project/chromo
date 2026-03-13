@@ -30,7 +30,6 @@ from chromo.cli import MODELS
 
 def format_matches_extension(p):
     ext = p.suffixes
-    _, model, seed, pid1, pid2, en, *rest = p.stem.split("_")
     if ext[0] == ".hepmc":
         with pyhepmc.open(p) as f:
             event = f.read()

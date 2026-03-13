@@ -71,7 +71,7 @@ def test_final_state_mass_shell(Model, frame, target, projectile):
     atol = 0.005
     if issubclass(Model, im.EposLHC):
         atol = 0.02
-    elif Model in [im.QGSJetIII] and p1 == "He" and target == "air":
+    elif Model == im.QGSJetIII and p1 == "He" and target == "air":
         atol = 0.05
     assert_allclose(inv_mass, event.m, atol=atol)
 

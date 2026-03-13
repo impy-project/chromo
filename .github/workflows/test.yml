@@ -12,17 +12,18 @@ concurrency:
 
 jobs:
   prepare-cache:
+    if: contains(github.event.pull_request.labels.*.name, 'skip CI') == false
     runs-on: ubuntu-latest
     steps:
       - name: Restore chromo data cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
       - name: Download all cache files if missing
         run: |
           mkdir -p ~/.cache/chromo
-          for file in qgsjet_v001 qgsjet_v002 Pythia8_v003 Pythia8_v004 Pythia8_v005 eposlhcr_v001 eposlhc_v001 epos_v001 dpm3191_v001 dpm3_v001 ; do
+          for file in qgsjet_v002 Pythia8_v006 eposlhcr_v001 eposlhc_v001 dpm3191_v001 dpm3_v001 ; do
             if [ ! -f ~/.cache/chromo/$file.zip ]; then
               echo "Downloading $file.zip..."
               curl -L -o ~/.cache/chromo/$file.zip "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip"
@@ -34,9 +35,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
 
   test:
+    if: contains(github.event.pull_request.labels.*.name, 'skip CI') == false
     needs: prepare-cache
     runs-on: ${{ matrix.os }}
     strategy:
@@ -58,7 +60,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
       - uses: actions/checkout@v4
         with:
           submodules: true
