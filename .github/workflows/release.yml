@@ -66,6 +66,13 @@ jobs:
           compiler: gcc
           version: 13
 
+      - name: Random delay to avoid rate limits
+        if: runner.os == 'macOS'
+        run: |
+          delay=$((RANDOM % 14 + 2))
+          echo "Sleeping $delay seconds to stagger cibuildwheel downloads..."
+          sleep $delay
+
       - name: cibuildwheel on Linux
         uses: pypa/cibuildwheel@v3.4.0
         env:
@@ -89,7 +96,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
-      max-parallel: 4
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-intel-latest, macos-latest] # windows-latest: Disable windows for now
         arch: [auto]
