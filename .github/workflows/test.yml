@@ -138,7 +138,7 @@ jobs:
         name: cibuildwheel on Linux
         uses: pypa/cibuildwheel@v2.23.3
         env:
-          CIBW_BUILD: cp314-*
+          CIBW_BUILD: cp313-*
           CIBW_ARCHS: auto
           CIBW_ENVIRONMENT_PASS_LINUX: CI
 
@@ -153,7 +153,7 @@ jobs:
         name: cibuildwheel on macOS Intel
         uses: pypa/cibuildwheel@v2.23.3
         env:
-          CIBW_BUILD: cp314-*
+          CIBW_BUILD: cp313-*
           CIBW_ARCHS: auto
           no_proxy: '*'
           CHROMO_SKIP_GRAPHVIZ: 1
@@ -163,7 +163,7 @@ jobs:
         name: cibuildwheel on macOS
         uses: pypa/cibuildwheel@v2.23.3
         env:
-          CIBW_BUILD: cp314-*
+          CIBW_BUILD: cp313-*
           CIBW_ARCHS: auto
           no_proxy: '*'
           CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
@@ -171,4 +171,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
-          name: wheel-cp314-${{ matrix.os }}
+          name: wheel-cp313-${{ matrix.os }}
