@@ -89,6 +89,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-14] # windows-latest: Disable windows for now
         arch: [auto]

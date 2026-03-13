@@ -97,3 +97,77 @@ jobs:
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}
           path: "fig/**"
+
+  cibuildwheel:
+    if: contains(github.event.pull_request.labels.*.name, 'skip CI') == false
+    needs: prepare-cache
+    name: cibw ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-14]
+    steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v2
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Set macOS deployment target
+        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-13' && '13.0' || matrix.os == 'macos-14' && '14.0' || '' }}" >> $GITHUB_ENV
+
+      - uses: awvwgk/setup-fortran@main
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 13
+
+      - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
+        if: ${{ matrix.os == 'macos-13' }}
+        name: Setup Xcode
+        with:
+          xcode-version: '14.3'
+
+      - if: ${{ matrix.os != 'macos-13' }}
+        uses: ts-graphviz/setup-graphviz@v2
+        name: Install Graphviz
+
+      - if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm' }}
+        name: cibuildwheel on Linux
+        uses: pypa/cibuildwheel@v2.23.3
+        env:
+          CIBW_BUILD: cp314-*
+          CIBW_ARCHS: auto
+          CIBW_ENVIRONMENT_PASS_LINUX: CI
+
+      - if: ${{ matrix.os == 'macos-13' }}
+        name: cibuildwheel on macOS-13
+        uses: pypa/cibuildwheel@v2.23.3
+        env:
+          CIBW_BUILD: cp314-*
+          CIBW_ARCHS: auto
+          no_proxy: '*'
+          CHROMO_SKIP_GRAPHVIZ: 1
+          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
+
+      - if: ${{ matrix.os == 'macos-14' }}
+        name: cibuildwheel on macOS-14
+        uses: pypa/cibuildwheel@v2.23.3
+        env:
+          CIBW_BUILD: cp314-*
+          CIBW_ARCHS: auto
+          no_proxy: '*'
+          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          path: ./wheelhouse/*.whl
+          name: wheel-cp314-${{ matrix.os }}
