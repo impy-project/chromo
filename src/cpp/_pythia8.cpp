@@ -310,10 +310,11 @@ PYBIND11_MODULE(_pythia8, m)
         .def_property_readonly("nPartProj", &HIInfo::nPartProj)
         .def_property_readonly("nPartTarg", &HIInfo::nPartTarg)
         .def_property_readonly("b", &HIInfo::b)
-        .def("glauberTot",  &HIInfo::glauberTot)
-        .def("glauberINEL", &HIInfo::glauberINEL)
-        .def("glauberEL",   &HIInfo::glauberEL)
-        .def("glauberND",   &HIInfo::glauberND)
+        .def("glauberTot",   &HIInfo::glauberTot)
+        .def("glauberINEL",  &HIInfo::glauberINEL)
+        .def("glauberEL",    &HIInfo::glauberEL)
+        .def("glauberND",    &HIInfo::glauberND)
+        .def("glauberReset", &HIInfo::glauberReset)
 
         ;
 

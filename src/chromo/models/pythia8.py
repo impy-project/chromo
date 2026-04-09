@@ -665,9 +665,10 @@ class Pythia8Angantyr(MCRun):
 
     def _run_glauber_trials(self):
         """Run GlauberOnly trials and store the resulting cross sections."""
+        hi = self._pythia.info.hiInfo
+        hi.glauberReset()
         for _ in range(self._n_glauber_trials):
             self._pythia.next()
-        hi = self._pythia.info.hiInfo
         self._glauber_cs = CrossSectionData(
             total=hi.glauberTot(),
             inelastic=hi.glauberINEL(),
@@ -693,9 +694,27 @@ class Pythia8Angantyr(MCRun):
             self._idA = int(kin.p1)
             self._idB = int(kin.p2)
         else:
-            # Beam species or energy changed: full re-initialization
-            self._initialized = False
-            self._set_kinematics(kin)
+            if self._has_precomputed_tables():
+                # Fast path: re-init with GlauberOnly to get cross sections,
+                # then re-init for event generation. With precomputed tables
+                # each init takes ~2.5s.
+                self._init_pythia(kin, glauber_only=True)
+                self._run_glauber_trials()
+                self._init_pythia(kin, glauber_only=False)
+            else:
+                # Slow path: use setBeamIDs for live switching.
+                # Cross sections only available after event generation.
+                idA, idB = int(kin.p1), int(kin.p2)
+                if idA != self._idA or idB != self._idB:
+                    if not self._pythia.setBeamIDs(idA, idB):
+                        msg = f"setBeamIDs({idA}, {idB}) failed"
+                        raise RuntimeError(msg)
+                if not self._pythia.setKinematics(kin.ecm):
+                    msg = f"setKinematics({kin.ecm}) failed"
+                    raise RuntimeError(msg)
+                self._glauber_cs = None
+            self._idA = int(kin.p1)
+            self._idB = int(kin.p2)
 
     def _generate(self):
         return self._pythia.next()
