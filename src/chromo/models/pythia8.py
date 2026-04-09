@@ -127,7 +127,7 @@ class Pythia8(MCRun):
     _restartable = True
     _data_url = (
         "https://github.com/impy-project/chromo"
-        "/releases/download/zipped_data_v1.0/Pythia8_v006.zip"
+        "/releases/download/zipped_data_v1.0/Pythia8_v007.zip"
     )
 
     def __init__(self, evt_kin, *, seed=None, config=None, banner=True):
@@ -372,7 +372,36 @@ class Pythia8Cascade(MCRun):
     _library_name = "_pythia8"
     _event_class = PYTHIA8CascadeEvent
     _frame = EventFrame.FIXED_TARGET
-    _projectiles = standard_projectiles | Nuclei(a_min=2, a_max=208)
+    # PythiaCascade supports any hadron that Pythia's getSigmaTotal can handle.
+    # This includes standard projectiles, strange/charm/bottom hadrons, and nuclei.
+    _projectiles = (
+        standard_projectiles
+        | {
+            p.pdgid
+            for p in (
+                # Strange baryons
+                lp.Lambda,
+                lp.Sigma_plus,
+                lp.Sigma_minus,
+                lp.Xi_minus,
+                lp.Xi_0,
+                lp.Omega_minus,
+                # Charm mesons
+                lp.D_plus,
+                lp.D_0,
+                lp.D_s_plus,
+                # Charm baryons
+                lp.Lambda_c_plus,
+                # Bottom mesons
+                lp.B_plus,
+                lp.B_0,
+                lp.B_s_0,
+                # Bottom baryons
+                lp.Lambda_b_0,
+            )
+        }
+        | Nuclei(a_min=2, a_max=208)
+    )
     _targets = {
         name2pdg(x) for x in ("H1", "He4", "N14", "O16", "Ar40", "Fe56", "Pb208")
     }
@@ -389,9 +418,6 @@ class Pythia8Cascade(MCRun):
         # locate XML data via PYTHIA8DATA.  Set it explicitly here.
         environ["PYTHIA8DATA"] = datdir
         if not init_file:
-            # TODO: add setups/ to the Pythia8 data zip (data version bump
-            # required) so this file is co-located with xmldoc/pdfdata/tunes.
-            # For now fall back to the file in the Pythia8 source submodule.
             bundled = Path(datdir).parent / "setups" / "InitDefaultMPI.cmnd"
             src_tree = (
                 Path(__file__).parent.parent.parent
@@ -408,12 +434,16 @@ class Pythia8Cascade(MCRun):
                 )
 
         self._cascade = self._lib.PythiaCascadeForChromo()
+        # rapidDecays=True with smallTau0=1000 gives the default Pythia8
+        # decay setup (see PythiaCascade.h line 113-114).
+        # slowDecays=False keeps mu/pi/K/K0L stable, matching collider
+        # conventions and the default Pythia8 behavior.
         if not self._cascade.init(
             eKinMin,
             enhanceSDtarget,
             init_file,
-            rapidDecays=False,
-            smallTau0=0.,
+            rapidDecays=True,
+            smallTau0=1000.0,
             slowDecays=False,
             listFinalOnly=True,
         ):
@@ -570,67 +600,110 @@ class Pythia8Angantyr(MCRun):
                     msg = f"readString({line!r}) failed"
                     raise RuntimeError(msg)
 
-    def _set_kinematics(self, kin):
+    _n_glauber_trials = 10000
+
+    def _init_pythia(self, kin, glauber_only=False):
+        """Load setup files and apply settings, then call init()."""
         pythia = self._pythia
+        pythia.settings.resetAll()
 
+        # Load the three setup files manually in order, skipping `include =`
+        # directives since include paths are resolved relative to the data
+        # bundle's xmldoc/../ directory, and setups/ is not in the bundle.
+        #
+        # Order: MPI init → Angantyr init (includes MPI) → Cascade settings
+        self._load_cmnd_file(pythia, self._setups_dir / "InitDefaultMPI.cmnd")
+        self._load_cmnd_file(pythia, self._init_angantyr_cmnd)
+        self._load_cmnd_file(pythia, self._angantyr_cmnd)
+
+        # Common settings; turn off cascadeMode (which AngantyrCascade.cmnd
+        # enables for hadronic air-shower cascades) since here we generate
+        # standalone events and expect next() to always return an interaction.
+        for line in [
+            "Random:setSeed = on",
+            f"Random:seed = {self.seed % 900_000_000}",
+            "Print:quiet = on",
+            "Next:numberCount = 0",
+            "Beams:frameType = 1",
+            "Beams:allowVariableEnergy = on",
+            "Angantyr:cascadeMode = off",
+        ]:
+            if not pythia.readString(line):
+                msg = f"readString({line!r}) failed"
+                raise RuntimeError(msg)
+
+        if glauber_only:
+            pythia.readString("Angantyr:GlauberOnly = on")
+
+        for line in self._extra_config:
+            if not pythia.readString(line):
+                msg = f"readString({line!r}) failed"
+                raise RuntimeError(msg)
+
+        pythia.readString(f"Beams:idA = {int(kin.p1)}")
+        pythia.readString(f"Beams:idB = {int(kin.p2)}")
+        pythia.readString(f"Beams:eCM = {kin.ecm}")
+
+        if not pythia.init():
+            raise RuntimeError("Pythia8Angantyr initialization failed")
+
+    def _has_precomputed_tables(self):
+        """Check if the InitDefaultAngantyr.cmnd contains precomputed tables.
+
+        When Init:reuseHeavyIonSigFit is present, Angantyr init is fast and
+        we can afford a GlauberOnly pre-init to compute cross sections.
+        Without it, init involves expensive fitting and must not be repeated.
+        """
+        with open(self._init_angantyr_cmnd) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("!"):
+                    continue
+                if "Init:reuseHeavyIonSigFit" in line:
+                    return True
+        return False
+
+    def _run_glauber_trials(self):
+        """Run GlauberOnly trials and store the resulting cross sections."""
+        for _ in range(self._n_glauber_trials):
+            self._pythia.next()
+        hi = self._pythia.info.hiInfo
+        self._glauber_cs = CrossSectionData(
+            total=hi.glauberTot(),
+            inelastic=hi.glauberINEL(),
+            elastic=hi.glauberEL(),
+        )
+
+    def _set_kinematics(self, kin):
         if not self._initialized:
-            pythia.settings.resetAll()
-
-            # Load the three setup files manually in order, skipping `include =`
-            # directives since include paths are resolved relative to the data
-            # bundle's xmldoc/../ directory, and setups/ is not in the bundle.
-            #
-            # Order: MPI init → Angantyr init (includes MPI) → Cascade settings
-            self._load_cmnd_file(pythia, self._setups_dir / "InitDefaultMPI.cmnd")
-            self._load_cmnd_file(pythia, self._init_angantyr_cmnd)
-            self._load_cmnd_file(pythia, self._angantyr_cmnd)
-
-            # Common settings; turn off cascadeMode (which AngantyrCascade.cmnd
-            # enables for hadronic air-shower cascades) since here we generate
-            # standalone events and expect next() to always return an interaction.
-            for line in [
-                "Random:setSeed = on",
-                f"Random:seed = {self.seed % 900_000_000}",
-                "Print:quiet = on",
-                "Next:numberCount = 0",
-                "Beams:frameType = 1",
-                "Beams:allowVariableEnergy = on",
-                "Angantyr:cascadeMode = off",
-            ]:
-                if not pythia.readString(line):
-                    msg = f"readString({line!r}) failed"
-                    raise RuntimeError(msg)
-
-            for line in self._extra_config:
-                if not pythia.readString(line):
-                    msg = f"readString({line!r}) failed"
-                    raise RuntimeError(msg)
-
-            # Set initial beam IDs and CMS energy
-            pythia.readString(f"Beams:idA = {int(kin.p1)}")
-            pythia.readString(f"Beams:idB = {int(kin.p2)}")
-            pythia.readString(f"Beams:eCM = {kin.ecm}")
-
-            if not pythia.init():
-                raise RuntimeError("Pythia8Angantyr initialization failed")
+            if self._has_precomputed_tables():
+                # Fast path: precomputed tables make init cheap, so we can
+                # afford a GlauberOnly init to pre-compute cross sections
+                # followed by a real init for event generation.
+                self._init_pythia(kin, glauber_only=True)
+                self._run_glauber_trials()
+                self._init_pythia(kin, glauber_only=False)
+            else:
+                # Slow path: no precomputed tables, init is expensive.
+                # Do a single init; cross sections will only be available
+                # after events have been generated.
+                self._glauber_cs = None
+                self._init_pythia(kin, glauber_only=False)
             self._initialized = True
             self._idA = int(kin.p1)
             self._idB = int(kin.p2)
         else:
-            # If beam species changed, force a full re-initialization
-            if int(kin.p1) != self._idA or int(kin.p2) != self._idB:
-                self._initialized = False
-                self._set_kinematics(kin)
-                return
-            # Only energy changed: update in place without re-init
-            if not pythia.setKinematics(kin.ecm):
-                msg = f"setKinematics({kin.ecm}) failed"
-                raise RuntimeError(msg)
+            # Beam species or energy changed: full re-initialization
+            self._initialized = False
+            self._set_kinematics(kin)
 
     def _generate(self):
         return self._pythia.next()
 
     def _cross_section(self, kin=None, max_info=False):
+        if self._glauber_cs is not None:
+            return self._glauber_cs
+        # Slow-init path: cross sections accumulate during event generation
         hi = self._pythia.info.hiInfo
         if hi is not None and hi.glauberINEL() > 0:
             return CrossSectionData(
@@ -638,9 +711,12 @@ class Pythia8Angantyr(MCRun):
                 inelastic=hi.glauberINEL(),
                 elastic=hi.glauberEL(),
             )
-        # Glauber stats are only populated after events have been generated.
-        # Return zeros as a placeholder (updated after the first event).
-        return CrossSectionData()
+        raise RuntimeError(
+            "Angantyr cross sections are not yet available. "
+            "Without precomputed initialization tables, cross sections "
+            "are only populated after events have been generated. "
+            "Call the generator to produce events first."
+        )
 
     def _set_stable(self, pdgid, stable):
         self._pythia.particleData.mayDecay(pdgid, not stable)

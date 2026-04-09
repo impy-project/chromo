@@ -32,12 +32,14 @@ def test_generator(projectile, target, Model):
     if Model is im.UrQMD34:
         pytest.skip("UrQMD34 cross sections broken.")
     if Model is im.Pythia8Cascade:
-        pytest.skip("Pythia8Cascade requires FixedTarget kinematics; tested in test_pythia8_cascade.py")
-    if Model is im.Pythia8Angantyr:
-        pytest.skip("Pythia8Angantyr cross sections accumulate during event generation; tested in test_pythia8_angantyr.py")
+        pytest.skip(
+            "Pythia8Cascade requires FixedTarget kinematics; tested in test_pythia8_cascade.py"
+        )
     if p2 == "air":
         if Model is im.Pythia8:
             pytest.skip("Simulating nuclei in Pythia8 is very time-consuming")
+        if Model is im.Pythia8Angantyr:
+            pytest.skip("Pythia8Angantyr does not support CompositeTarget")
         # cannot use Argon in SIBYLL, so make air from N, O only
         p2 = CompositeTarget((("N", 0.78), ("O", 0.22)))
 

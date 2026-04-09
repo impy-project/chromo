@@ -24,7 +24,7 @@ jobs:
       - name: Download all cache files if missing
         run: |
           mkdir -p ~/.cache/chromo
-          for file in qgsjet_v002 Pythia8_v006 eposlhcr_v001 eposlhc_v001 dpm3191_v001 dpm3_v001 ; do
+          for file in qgsjet_v002 Pythia8_v007 eposlhcr_v001 eposlhc_v001 dpm3191_v001 dpm3_v001 ; do
             if [ ! -f ~/.cache/chromo/$file.zip ]; then
               echo "Downloading $file.zip..."
               curl -L -o ~/.cache/chromo/$file.zip "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip"
