@@ -46,6 +46,8 @@ def test_generator(Model):
 
     if Model is im.Sophia20:
         kin = CenterOfMass(1000 * GeV, "gamma", "p")
+    elif Model in (im.Pythia8Cascade, im.Pythia8Angantyr):
+        kin = CenterOfMass(1000 * GeV, "p", "N14")
     else:
         kin = CenterOfMass(1000 * GeV, "p", "p")
     counts = run_in_separate_process(

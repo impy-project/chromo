@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from particle import literals as lp
 
+import chromo.models as im
 from chromo.constants import GeV
 from chromo.kinematics import CenterOfMass
 from chromo.util import get_all_models
@@ -26,6 +27,8 @@ def run_model(Model, stable):
     if Model.name == "Sophia":
         p1 = "gamma"
     p2 = "p"
+    if Model.pyname in ("Pythia8Cascade", "Pythia8Angantyr"):
+        p2 = "N14"
     kin = CenterOfMass(200 * GeV, p1, p2)
     model = Model(kin, seed=1)
     for pid in decay_list:
@@ -40,6 +43,12 @@ def run_model(Model, stable):
 @pytest.mark.parametrize("stable", (False, True))
 @pytest.mark.parametrize("Model", get_all_models())
 def test_setstable(Model, stable):
+    if Model is im.Pythia8Cascade and not stable:
+        pytest.xfail(
+            "PythiaCascade does not force-decay long-lived particles "
+            "(tau0 > smallTau0); set_may_decay only allows decay during "
+            "intranuclear cascade, not at the end"
+        )
     if "UrQMD" in Model.name:
         pytest.xfail(f"{Model.pyname} does not support changing decays")
     if not stable:
