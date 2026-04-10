@@ -2,7 +2,7 @@
 
 Replicates the logic of Pythia8 examples/main424.cc (option 2) to produce
 an InitDefaultAngantyr.cmnd file for arbitrary CMS energy ranges.  The
-bundled file covers 20 GeV – 20 PeV; use this script if you need tables
+bundled file covers 20 GeV - 20 PeV; use this script if you need tables
 at higher energies (e.g. beyond 200 EeV lab / ~600 TeV CMS).
 
 This initialization run is slow (hours for large grids).  The output file
@@ -42,10 +42,11 @@ def find_setup_file(filename):
     for p in candidates:
         if p.exists():
             return str(p)
-    raise FileNotFoundError(
+    msg = (
         f"Could not find {filename}. "
         "Ensure the Pythia8 submodule is checked out or add setups/ to the data bundle."
     )
+    raise FileNotFoundError(msg)
 
 
 def main():
@@ -112,7 +113,7 @@ def main():
 
     for line in config:
         if not pythia.readString(line):
-            print(
+            print(  # noqa: T201
                 f"WARNING: readString({line!r}) returned False", file=sys.stderr
             )
 
@@ -123,7 +124,7 @@ def main():
 
     print(f"Writing output to {args.output!r} ...")  # noqa: T201
     if not pythia.settings.writeFile(args.output, True):
-        print(
+        print(  # noqa: T201
             f"ERROR: writeFile({args.output!r}) failed", file=sys.stderr
         )
         sys.exit(1)
