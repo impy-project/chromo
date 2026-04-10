@@ -20,7 +20,6 @@ Options:
 """
 
 import argparse
-import os
 import sys
 from os import environ
 from pathlib import Path
@@ -30,14 +29,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 def find_setup_file(filename):
     """Locate a Pythia8 setup file in the source tree."""
-    from chromo.util import _cached_data_dir
-
     from chromo.models.pythia8 import Pythia8
+    from chromo.util import _cached_data_dir
 
     datdir = Path(_cached_data_dir(Pythia8._data_url) + "xmldoc")
     candidates = [
         datdir.parent / "setups" / filename,
-        Path(__file__).parent.parent / "src/cpp/pythia83/share/Pythia8/setups" / filename,
+        Path(__file__).parent.parent
+        / "src/cpp/pythia83/share/Pythia8/setups"
+        / filename,
     ]
     for p in candidates:
         if p.exists():
@@ -49,17 +49,35 @@ def find_setup_file(filename):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--ecm-max", type=float, default=1e8,
-                        help="Maximum CMS energy in GeV (default: 1e8)")
-    parser.add_argument("--ecm-min", type=float, default=10.0,
-                        help="Minimum CMS energy in GeV (default: 10.0)")
-    parser.add_argument("--grid-pts", type=int, default=25,
-                        help="Number of sigma-fit grid points (default: 25)")
-    parser.add_argument("--output", default="InitDefaultAngantyr_custom.cmnd",
-                        help="Output file path (default: InitDefaultAngantyr_custom.cmnd)")
-    parser.add_argument("--mpi-init", default="",
-                        help="Path to MPI init .cmnd file (default: bundled)")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--ecm-max",
+        type=float,
+        default=1e8,
+        help="Maximum CMS energy in GeV (default: 1e8)",
+    )
+    parser.add_argument(
+        "--ecm-min",
+        type=float,
+        default=10.0,
+        help="Minimum CMS energy in GeV (default: 10.0)",
+    )
+    parser.add_argument(
+        "--grid-pts",
+        type=int,
+        default=25,
+        help="Number of sigma-fit grid points (default: 25)",
+    )
+    parser.add_argument(
+        "--output",
+        default="InitDefaultAngantyr_custom.cmnd",
+        help="Output file path (default: InitDefaultAngantyr_custom.cmnd)",
+    )
+    parser.add_argument(
+        "--mpi-init", default="", help="Path to MPI init .cmnd file (default: bundled)"
+    )
     args = parser.parse_args()
 
     from chromo.models.pythia8 import Pythia8
@@ -107,7 +125,9 @@ def main():
         sys.exit(1)
 
     print(f"Done. Tables written to {args.output}")
-    print("Place this file in the setups/ directory and update AngantyrCascade.cmnd to include it.")
+    print(
+        "Place this file in the setups/ directory and update AngantyrCascade.cmnd to include it."
+    )
 
 
 if __name__ == "__main__":
