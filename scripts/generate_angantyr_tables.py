@@ -112,7 +112,9 @@ def main():
 
     for line in config:
         if not pythia.readString(line):
-            print(f"WARNING: readString({line!r}) returned False", file=sys.stderr)  # noqa: T201
+            print(
+                f"WARNING: readString({line!r}) returned False", file=sys.stderr
+            )
 
     print("Running Pythia8 initialization (this may take hours) ...")  # noqa: T201
     if not pythia.init():
@@ -121,7 +123,9 @@ def main():
 
     print(f"Writing output to {args.output!r} ...")  # noqa: T201
     if not pythia.settings.writeFile(args.output, True):
-        print(f"ERROR: writeFile({args.output!r}) failed", file=sys.stderr)  # noqa: T201
+        print(
+            f"ERROR: writeFile({args.output!r}) failed", file=sys.stderr
+        )
         sys.exit(1)
 
     print(f"Done. Tables written to {args.output}")  # noqa: T201
