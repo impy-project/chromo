@@ -90,11 +90,11 @@ def main():
 
     import _pythia8
 
-    print(f"Initializing Pythia8 with datdir={datdir}")
+    print(f"Initializing Pythia8 with datdir={datdir}")  # noqa: T201
     pythia = _pythia8.Pythia(datdir, True)
 
     mpi_init = args.mpi_init or find_setup_file("InitDefaultMPI.cmnd")
-    print(f"Using MPI init file: {mpi_init}")
+    print(f"Using MPI init file: {mpi_init}")  # noqa: T201
 
     config = [
         f"include = {mpi_init}",
@@ -112,20 +112,20 @@ def main():
 
     for line in config:
         if not pythia.readString(line):
-            print(f"WARNING: readString({line!r}) returned False", file=sys.stderr)
+            print(f"WARNING: readString({line!r}) returned False", file=sys.stderr)  # noqa: T201
 
-    print("Running Pythia8 initialization (this may take hours) ...")
+    print("Running Pythia8 initialization (this may take hours) ...")  # noqa: T201
     if not pythia.init():
-        print("ERROR: Pythia8 initialization failed", file=sys.stderr)
+        print("ERROR: Pythia8 initialization failed", file=sys.stderr)  # noqa: T201
         sys.exit(1)
 
-    print(f"Writing output to {args.output!r} ...")
+    print(f"Writing output to {args.output!r} ...")  # noqa: T201
     if not pythia.settings.writeFile(args.output, True):
-        print(f"ERROR: writeFile({args.output!r}) failed", file=sys.stderr)
+        print(f"ERROR: writeFile({args.output!r}) failed", file=sys.stderr)  # noqa: T201
         sys.exit(1)
 
-    print(f"Done. Tables written to {args.output}")
-    print(
+    print(f"Done. Tables written to {args.output}")  # noqa: T201
+    print(  # noqa: T201
         "Place this file in the setups/ directory and update AngantyrCascade.cmnd to include it."
     )
 
