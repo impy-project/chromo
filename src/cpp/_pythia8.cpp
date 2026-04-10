@@ -196,6 +196,24 @@ public:
         private_access::member<PythiaCascade_pythiaColl>(_cascade).particleData.mayDecay(pdgid, may_decay);
     }
 
+    // Get RNG state from both internal Pythia instances.
+    py::dict getRndmState() {
+        auto &main = private_access::member<PythiaCascade_pythiaMain>(_cascade);
+        auto &coll = private_access::member<PythiaCascade_pythiaColl>(_cascade);
+        py::dict result;
+        result["main"] = _getRndmStateFrom(main);
+        result["coll"] = _getRndmStateFrom(coll);
+        return result;
+    }
+
+    // Set RNG state on both internal Pythia instances.
+    void setRndmState(py::dict state_dict) {
+        auto &main = private_access::member<PythiaCascade_pythiaMain>(_cascade);
+        auto &coll = private_access::member<PythiaCascade_pythiaColl>(_cascade);
+        _setRndmStateOn(main, state_dict["main"].cast<py::dict>());
+        _setRndmStateOn(coll, state_dict["coll"].cast<py::dict>());
+    }
+
     py::array_t<float> charge(py::object result)
     {
         // result is the tuple returned by next_coll; pid is element 0
@@ -213,6 +231,38 @@ public:
       
 private:
     PythiaCascade _cascade;
+
+    static py::dict _getRndmStateFrom(Pythia &p) {
+        RndmState state = p.rndm.getState();
+        py::dict result;
+        result["i97"] = state.i97;
+        result["j97"] = state.j97;
+        result["seed"] = state.seed;
+        result["sequence"] = state.sequence;
+        result["c"] = state.c;
+        result["cd"] = state.cd;
+        result["cm"] = state.cm;
+        py::list u_array;
+        for (int i = 0; i < 97; i++)
+            u_array.append(state.u[i]);
+        result["u"] = u_array;
+        return result;
+    }
+
+    static void _setRndmStateOn(Pythia &p, py::dict state_dict) {
+        RndmState state;
+        state.i97 = state_dict["i97"].cast<int>();
+        state.j97 = state_dict["j97"].cast<int>();
+        state.seed = state_dict["seed"].cast<int>();
+        state.sequence = state_dict["sequence"].cast<long>();
+        state.c = state_dict["c"].cast<double>();
+        state.cd = state_dict["cd"].cast<double>();
+        state.cm = state_dict["cm"].cast<double>();
+        py::list u_list = state_dict["u"].cast<py::list>();
+        for (int i = 0; i < 97; i++)
+            state.u[i] = u_list[i].cast<double>();
+        p.rndm.setState(state);
+    }
 
     // Reuses the event_array<> helpers already defined in this file.
     static py::tuple _extract(Event &ev)
@@ -474,5 +524,7 @@ PYBIND11_MODULE(_pythia8, m)
              py::return_value_policy::reference_internal)
         .def("set_may_decay", &PythiaCascadeForChromo::set_may_decay,
              "pdgid"_a, "may_decay"_a)
-        .def("charge", &PythiaCascadeForChromo::charge, "result"_a);
+        .def("charge", &PythiaCascadeForChromo::charge, "result"_a)
+        .def("getRndmState", &PythiaCascadeForChromo::getRndmState)
+        .def("setRndmState", &PythiaCascadeForChromo::setRndmState);
 }

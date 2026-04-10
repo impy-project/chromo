@@ -8,7 +8,7 @@ import numpy as np
 from particle import literals as lp
 
 from chromo.common import CrossSectionData, EventData, MCRun
-from chromo.constants import standard_projectiles
+from chromo.constants import GeV, standard_projectiles
 from chromo.kinematics import EventFrame
 from chromo.util import Nuclei, _cached_data_dir, name2pdg
 
@@ -110,20 +110,36 @@ class Pythia8(MCRun):
     _event_class = PYTHIA8Event
     _frame = EventFrame.CENTER_OF_MASS
     _projectiles = standard_projectiles | {
-        lp.photon.pdgid,
-        lp.e_plus.pdgid,
-        lp.e_minus.pdgid,
+        p.pdgid
+        for p in (
+            lp.photon,
+            lp.e_plus,
+            lp.e_minus,
+            # Strange baryons
+            lp.Lambda,
+            lp.Sigma_plus,
+            lp.Sigma_minus,
+            lp.Xi_minus,
+            lp.Xi_0,
+            lp.Omega_minus,
+            # Charm mesons
+            lp.D_plus,
+            lp.D_0,
+            lp.D_s_plus,
+            # Charm baryons
+            lp.Lambda_c_plus,
+            # Bottom mesons
+            lp.B_plus,
+            lp.B_0,
+            lp.B_s_0,
+            # Bottom baryons
+            lp.Lambda_b_0,
+        )
     }
-    # Nuclei are supported in principle, but generation is very slow.
-    # Support for more nuclei can be added with ParticleData.addParticle.
-    _targets = (
-        _projectiles
-        | {
-            name2pdg(x)
-            for x in ("He4", "Li6", "C12", "O16", "Cu63", "Xe129", "Au197", "Pb208")
-        }
-        | {lp.e_plus.pdgid, lp.e_minus.pdgid}
-    )
+    # Nuclear targets/projectiles are NOT supported in the base Pythia8 class.
+    # Use Pythia8Angantyr for heavy-ion collisions or Pythia8Cascade for
+    # single-collision hadron-nucleus mode.
+    _targets = _projectiles | {lp.e_plus.pdgid, lp.e_minus.pdgid}
     _restartable = True
     _data_url = (
         "https://github.com/impy-project/chromo"
@@ -215,18 +231,6 @@ class Pythia8(MCRun):
             # do not print progress
             "Next:numberCount = 0",
         ]
-
-        if (kin.p1.A or 0) > 1 or (kin.p2.A or 1) > 1:
-            import warnings
-
-            warnings.warn(
-                "Support for nuclei is experimental; event generation takes a long time",
-                RuntimeWarning,
-            )
-
-            # speed-up initialization by not fitting nuclear cross-section
-            config.append("HeavyIon:SigFitNGen = 0")
-            config.append("HeavyIon:SigFitDefPar = 10.79,1.75,0.30,0.0,0.0,0.0,0.0,0.0")
 
         config += [
             f"Beams:idA = {int(kin.p1)}",
@@ -374,6 +378,8 @@ class Pythia8Cascade(MCRun):
     _frame = EventFrame.FIXED_TARGET
     # PythiaCascade supports any hadron that Pythia's getSigmaTotal can handle.
     # This includes standard projectiles, strange/charm/bottom hadrons, and nuclei.
+    # Nuclear projectiles are decomposed into Z protons and (A-Z) neutrons,
+    # each carrying 1/A of the total lab momentum.
     _projectiles = (
         standard_projectiles
         | {
@@ -402,9 +408,7 @@ class Pythia8Cascade(MCRun):
         }
         | Nuclei(a_min=2, a_max=208)
     )
-    _targets = {
-        name2pdg(x) for x in ("H1", "He4", "N14", "O16", "Ar40", "Fe56", "Pb208")
-    }
+    _targets = {name2pdg(x) for x in ("He4", "N14", "O16", "Ar40", "Fe56", "Pb208")}
     _restartable = True
     _data_url = Pythia8._data_url
 
@@ -444,7 +448,7 @@ class Pythia8Cascade(MCRun):
             init_file,
             rapidDecays=True,
             smallTau0=1000.0,
-            slowDecays=False,
+            slowDecays=True,
             listFinalOnly=True,
         ):
             raise RuntimeError(
@@ -502,10 +506,20 @@ class Pythia8Cascade(MCRun):
         pz = self._plab_per_nuc
         e = math.sqrt(pz * pz + m * m)
         sigma = self._cascade.sigma_hA(nid, 0.0, 0.0, pz, e, m, self._A_targ)
-        return CrossSectionData(inelastic=sigma)
+        return CrossSectionData(inelastic=sigma, prod=sigma)
 
     def _set_stable(self, pdgid, stable):
         self._cascade.set_may_decay(pdgid, not stable)
+
+    @property
+    def random_state(self):
+        """Get RNG state for both internal Pythia instances."""
+        return {"cascade": self._cascade.getRndmState()}
+
+    @random_state.setter
+    def random_state(self, rng_state):
+        """Restore RNG state for both internal Pythia instances."""
+        self._cascade.setRndmState(rng_state["cascade"])
 
 
 class Pythia8Angantyr(MCRun):
@@ -534,8 +548,9 @@ class Pythia8Angantyr(MCRun):
     _library_name = "_pythia8"
     _event_class = PYTHIA8Event
     _frame = EventFrame.CENTER_OF_MASS
+    _ecm_min = 20 * GeV  # precomputed Angantyr tables start at 20 GeV CMS
     _projectiles = standard_projectiles | Nuclei(a_min=2, a_max=208)
-    _targets = standard_projectiles | {
+    _targets = {
         name2pdg(x)
         for x in (
             "He4",
@@ -673,6 +688,7 @@ class Pythia8Angantyr(MCRun):
             total=hi.glauberTot(),
             inelastic=hi.glauberINEL(),
             elastic=hi.glauberEL(),
+            prod=hi.glauberINEL(),
         )
 
     def _set_kinematics(self, kin):
@@ -694,46 +710,48 @@ class Pythia8Angantyr(MCRun):
             self._idA = int(kin.p1)
             self._idB = int(kin.p2)
         else:
-            if self._has_precomputed_tables():
-                # Fast path: re-init with GlauberOnly to get cross sections,
-                # then re-init for event generation. With precomputed tables
-                # each init takes ~2.5s.
-                self._init_pythia(kin, glauber_only=True)
-                self._run_glauber_trials()
-                self._init_pythia(kin, glauber_only=False)
-            else:
-                # Slow path: use setBeamIDs for live switching.
-                # Cross sections only available after event generation.
-                idA, idB = int(kin.p1), int(kin.p2)
-                if idA != self._idA or idB != self._idB:
-                    if not self._pythia.setBeamIDs(idA, idB):
-                        msg = f"setBeamIDs({idA}, {idB}) failed"
-                        raise RuntimeError(msg)
-                if not self._pythia.setKinematics(kin.ecm):
-                    msg = f"setKinematics({kin.ecm}) failed"
+            # Use live switching via setBeamIDs — avoids expensive
+            # full re-initialization (~5s per switch).
+            idA, idB = int(kin.p1), int(kin.p2)
+            if idA != self._idA or idB != self._idB:
+                if not self._pythia.setBeamIDs(idA, idB):
+                    msg = f"setBeamIDs({idA}, {idB}) failed"
                     raise RuntimeError(msg)
-                self._glauber_cs = None
-            self._idA = int(kin.p1)
-            self._idB = int(kin.p2)
+            if not self._pythia.setKinematics(kin.ecm):
+                msg = f"setKinematics({kin.ecm}) failed"
+                raise RuntimeError(msg)
+            # Cross sections computed lazily in _cross_section when
+            # actually requested.  This avoids wasting time during
+            # _temporary_kinematics switches that only need events.
+            self._glauber_cs = None
+            self._idA = idA
+            self._idB = idB
 
     def _generate(self):
         return self._pythia.next()
 
+    _n_quick_glauber = 50
+
     def _cross_section(self, kin=None, max_info=False):
         if self._glauber_cs is not None:
             return self._glauber_cs
-        # Slow-init path: cross sections accumulate during event generation
+        # Lazy cross section: run a quick batch of full events to
+        # accumulate Glauber statistics after a setBeamIDs switch.
         hi = self._pythia.info.hiInfo
-        if hi is not None and hi.glauberINEL() > 0:
-            return CrossSectionData(
-                total=hi.glauberTot(),
-                inelastic=hi.glauberINEL(),
-                elastic=hi.glauberEL(),
-            )
+        if hi is not None:
+            hi.glauberReset()
+            for _ in range(self._n_quick_glauber):
+                self._pythia.next()
+            if hi.glauberINEL() > 0:
+                self._glauber_cs = CrossSectionData(
+                    total=hi.glauberTot(),
+                    inelastic=hi.glauberINEL(),
+                    elastic=hi.glauberEL(),
+                    prod=hi.glauberINEL(),
+                )
+                return self._glauber_cs
         raise RuntimeError(
-            "Angantyr cross sections are not yet available. "
-            "Without precomputed initialization tables, cross sections "
-            "are only populated after events have been generated. "
+            "Angantyr cross sections are not available. "
             "Call the generator to produce events first."
         )
 
