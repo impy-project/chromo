@@ -68,7 +68,9 @@ Please note that `chromo` only provides a user interface for the following model
 | [EPOS-LHC-R](https://inspirehep.net/literature/2680791)     | *hN, hA, AA*              | |
 | [EPOS-LHC-R (w/ hadr. rescattering)](https://inspirehep.net/literature/2680791)     | *hN, hA, AA*              | | Version with explicit hadronic rescattering in UrQMD (slow!)
 | [PYTHIA 6.4](https://inspirehep.net/literature/712925)    | *hN, ee, γγ, γN*          | |
-| [PYTHIA 8.3](https://inspirehep.net/literature/2056998) (https://pythia.org/) | *hN, ee, γγ, γN* & *hA, AA* (Argantyr) | unavailable on Windows |
+| [PYTHIA 8.317](https://inspirehep.net/literature/2056998) (https://pythia.org/) | *hN, ee, γγ, γN* | unavailable on Windows |
+| PYTHIA 8.317 Cascade (PythiaCascade plugin) | *hA* (single-collision mode) | unavailable on Windows |
+| PYTHIA 8.317 Angantyr (Glauber heavy-ion) | *hA, AA* | unavailable on Windows, precomputed tables for 20 GeV–20 PeV CMS |
 | [QGSJet-01](https://inspirehep.net/literature/460408)     | *hN, hA, AA*              | |
 | [QGSJet-II-03](https://inspirehep.net/literature/667881)  | *hN, hA, AA*              | |
 | [QGSJet-II-04](https://inspirehep.net/literature/872658)  | *hN, hA, AA*              | |
