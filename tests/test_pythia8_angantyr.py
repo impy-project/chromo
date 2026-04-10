@@ -51,8 +51,8 @@ def run_angantyr_changing_kinematics():
 
 @pytest.fixture
 @lru_cache(maxsize=1)
-def event_pp():
-    return run_in_separate_process(run_angantyr_collision, 100, "p", "p")
+def event_p_N14():
+    return run_in_separate_process(run_angantyr_collision, 100, "p", "N14")
 
 
 @pytest.fixture
@@ -61,9 +61,9 @@ def event_p_O16():
     return run_in_separate_process(run_angantyr_collision, 100, "p", "O16")
 
 
-def test_pp_collision(event_pp):
-    fs = event_pp.final_state_charged()
-    assert len(fs) > 0, "No final-state charged particles in p+p"
+def test_p_N14_collision(event_p_N14):
+    fs = event_p_N14.final_state_charged()
+    assert len(fs) > 0, "No final-state charged particles in p+N14"
 
 
 def test_p_O16_collision(event_p_O16):
@@ -80,31 +80,31 @@ def test_p_N14_cross_section():
     assert cs.inelastic < 2000, f"Cross section too large: {cs.inelastic} mb"
 
 
-def test_impact_parameter(event_p_O16):
-    assert np.isfinite(event_p_O16.impact_parameter), (
-        f"Impact parameter not finite: {event_p_O16.impact_parameter}"
-    )
+def test_impact_parameter(event_p_N14):
+    assert np.isfinite(
+        event_p_N14.impact_parameter
+    ), f"Impact parameter not finite: {event_p_N14.impact_parameter}"
 
 
-def test_n_wounded(event_p_O16):
-    nw = event_p_O16.n_wounded
+def test_n_wounded(event_p_N14):
+    nw = event_p_N14.n_wounded
     assert nw[0] >= 1 or nw[1] >= 1, f"No wounded nucleons: {nw}"
 
 
-def test_charge(event_p_O16):
-    expected = reference_charge(event_p_O16.pid)
+def test_charge(event_p_N14):
+    expected = reference_charge(event_p_N14.pid)
     ma = np.isnan(expected)
     assert np.mean(ma) < 0.1
-    event_p_O16.charge[ma] = np.nan
-    assert_allclose(event_p_O16.charge, expected)
+    event_p_N14.charge[ma] = np.nan
+    assert_allclose(event_p_N14.charge, expected)
 
 
-def test_daughters(event_p_O16):
-    assert event_p_O16.daughters.shape == (len(event_p_O16), 2)
+def test_daughters(event_p_N14):
+    assert event_p_N14.daughters.shape == (len(event_p_N14), 2)
 
 
-def test_mothers(event_p_O16):
-    assert event_p_O16.mothers.shape == (len(event_p_O16), 2)
+def test_mothers(event_p_N14):
+    assert event_p_N14.mothers.shape == (len(event_p_N14), 2)
 
 
 def test_changing_kinematics():
@@ -114,8 +114,7 @@ def test_changing_kinematics():
 
 
 def test_fixed_target_mode():
-    event = run_in_separate_process(
-        run_angantyr_collision, 100 * GeV, "p", "O16", True
-    )
+    # 250 GeV lab → ~21.7 GeV CMS, above Angantyr's 20 GeV minimum
+    event = run_in_separate_process(run_angantyr_collision, 250 * GeV, "p", "O16", True)
     fs = event.final_state_charged()
     assert len(fs) > 2

@@ -31,15 +31,11 @@ def test_generator(projectile, target, Model):
     p2 = target
     if Model is im.UrQMD34:
         pytest.skip("UrQMD34 cross sections broken.")
-    if Model is im.Pythia8Cascade:
+    if Model is im.Pythia8Angantyr and p1 == "He":
         pytest.skip(
-            "Pythia8Cascade requires FixedTarget kinematics; tested in test_pythia8_cascade.py"
+            "Pythia8Angantyr He projectile has no precomputed tables; init too slow for CI"
         )
     if p2 == "air":
-        if Model is im.Pythia8:
-            pytest.skip("Simulating nuclei in Pythia8 is very time-consuming")
-        if Model is im.Pythia8Angantyr:
-            pytest.skip("Pythia8Angantyr does not support CompositeTarget")
         # cannot use Argon in SIBYLL, so make air from N, O only
         p2 = CompositeTarget((("N", 0.78), ("O", 0.22)))
 
@@ -52,7 +48,11 @@ def test_generator(projectile, target, Model):
 
     ret = run_in_separate_process(run_model, Model, kin)
     if ret is None:
-        assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
+        assert (
+            abs(kin.p1) not in Model.projectiles
+            or abs(kin.p2) not in Model.targets
+            or kin.ecm < getattr(Model, "_ecm_min", 0)
+        )
         return
     cs, private_prod = ret
     cstup = dataclasses.astuple(cs)

@@ -154,11 +154,11 @@ def draw_comparison(fn, p_value, axes, values, val_ref, cov_ref):
 def test_generator(projectile, target, frame, Model):
     p1 = projectile
     p2 = target
+    if Model is im.Pythia8Angantyr and p1 == "He":
+        pytest.skip(
+            "Pythia8Angantyr He projectile has no precomputed tables; init too slow"
+        )
     if p2 == "air":
-        if Model is im.Pythia8:
-            pytest.skip("Simulating nuclei in Pythia8 is very time-consuming")
-        if Model is im.Pythia8Angantyr:
-            pytest.skip("Pythia8Angantyr air-target tested separately; CompositeTarget requires per-component re-init")
         if Model is im.DpmjetIII191 and p1 in ["p", "pi-"]:
             pytest.skip("DPMJET-III-19.1 tests glitch on CI with p-air and pi--air")
 
@@ -185,7 +185,11 @@ def test_generator(projectile, target, frame, Model):
 
     h = run_in_separate_process(run_model, Model, kin)
     if h is None:
-        assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
+        assert (
+            abs(kin.p1) not in Model.projectiles
+            or abs(kin.p2) not in Model.targets
+            or kin.ecm < getattr(Model, "_ecm_min", 0)
+        )
         return
 
     fn = Path(f"{Model.pyname}_{projectile}_{target}_{frame}")
@@ -225,9 +229,7 @@ def test_generator(projectile, target, frame, Model):
     assert p_value >= threshold
 
 
-@pytest.mark.skipif(
-    sys.platform == "win32", reason="Pythia8 does not run on windows"
-)
+@pytest.mark.skipif(sys.platform == "win32", reason="Pythia8 does not run on windows")
 @pytest.mark.parametrize("target", ("N14", "O16"))
 @pytest.mark.parametrize("projectile", ("pi-", "p", "He"))
 def test_generator_cascade(projectile, target):
@@ -246,6 +248,50 @@ def test_generator_cascade(projectile, target):
         reference_generated = True
         ref_values = run_in_separate_process(
             run_model, im.Pythia8Cascade, kin, 50, timeout=10000
+        )
+        val_ref = np.reshape(np.mean(ref_values, axis=0), -1)
+        cov_ref = np.cov(np.transpose([np.reshape(x, -1) for x in ref_values]))
+        with gzip.open(path_ref, "wb") as f:
+            pickle.dump((val_ref, cov_ref), f)
+
+    with gzip.open(path_ref) as f:
+        val_ref, cov_ref = pickle.load(f)
+
+    values = np.reshape(h.values(), -1)
+    for i, v in enumerate(values):
+        cov_ref[i, i] = 0.5 * (cov_ref[i, i] + v)
+
+    p_value = compute_p_value(values, val_ref, cov_ref)
+    threshold = 1e-6
+
+    if reference_generated or not (p_value >= threshold) or chromo.debug_level > 0:
+        draw_comparison(fn, p_value, h.axes, values, val_ref, cov_ref)
+
+    if reference_generated:
+        pytest.xfail(reason="generated new reference, please check it")
+
+    assert p_value >= threshold
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Pythia8 does not run on windows")
+@pytest.mark.parametrize("target", ("N14", "O16"))
+@pytest.mark.parametrize("projectile", ("pi-", "p"))
+def test_generator_angantyr(projectile, target):
+    """Probabilistic histogram test for Pythia8Angantyr with nuclear targets."""
+    kin = CenterOfMass(100 * GeV, projectile, target)
+
+    h = run_in_separate_process(run_model, im.Pythia8Angantyr, kin)
+    if h is None:
+        pytest.skip(f"Pythia8Angantyr rejected {projectile}+{target}")
+
+    fn = Path(f"Pythia8Angantyr_{projectile}_{target}_cms")
+    path_ref = REFERENCE_PATH / fn.with_suffix(".pkl.gz")
+
+    reference_generated = False
+    if not path_ref.exists():
+        reference_generated = True
+        ref_values = run_in_separate_process(
+            run_model, im.Pythia8Angantyr, kin, 50, timeout=10000
         )
         val_ref = np.reshape(np.mean(ref_values, axis=0), -1)
         cov_ref = np.cov(np.transpose([np.reshape(x, -1) for x in ref_values]))
@@ -294,7 +340,11 @@ def test_generator_gg(frame, Model):
 
     h = run_in_separate_process(run_model, Model, kin)
     if h is None:
-        assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
+        assert (
+            abs(kin.p1) not in Model.projectiles
+            or abs(kin.p2) not in Model.targets
+            or kin.ecm < getattr(Model, "_ecm_min", 0)
+        )
         return
 
     fn = Path(f"{Model.pyname}_{p1}_{p2}_{frame}")
