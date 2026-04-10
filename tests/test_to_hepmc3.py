@@ -4,6 +4,7 @@ import numpy as np
 import pyhepmc
 import pytest
 
+import chromo.models as im
 from chromo.constants import GeV
 from chromo.kinematics import CenterOfMass
 from chromo.models.sophia import Sophia20
@@ -30,6 +31,11 @@ def run(Model):
 
 @pytest.mark.parametrize("Model", models)
 def test_to_hepmc3(Model):
+    if Model in (im.Pythia8Cascade, im.Pythia8Angantyr):
+        pytest.skip(
+            f"{Model.pyname} requires nuclear targets; "
+            "tested in test_to_hepmc3_nuclear"
+        )
     event = run_in_separate_process(run, Model)
     unique_vertices = {}
     for i, pa in enumerate(event.mothers):
@@ -133,4 +139,78 @@ def run_test_io_hepmc(Model):
 
 @pytest.mark.parametrize("Model", models)
 def test_io_hepmc(Model):
+    if Model in (im.Pythia8Cascade, im.Pythia8Angantyr):
+        pytest.skip(
+            f"{Model.pyname} requires nuclear targets; "
+            "tested in test_io_hepmc_nuclear"
+        )
     run_in_separate_process(run_test_io_hepmc, Model)
+
+
+def run_nuclear(Model):
+    """Run a nuclear-target model and return _prepare_for_hepmc output."""
+    evt_kin = CenterOfMass(100 * GeV, "proton", "N14")
+    m = Model(evt_kin, seed=1)
+    for event in m(100):
+        if len(event) > 10:
+            break
+    return event._prepare_for_hepmc()
+
+
+def run_test_io_hepmc_nuclear(Model):
+    """HepMC write+read round-trip for nuclear-target models."""
+    evt_kin = CenterOfMass(100 * GeV, "proton", "N14")
+    generator = Model(evt_kin, seed=1)
+
+    filename = Path(f"{generator.pyname}_nuclear_test.hepmc")
+
+    for event in generator(100):
+        with Hepmc(file=filename, model=event.generator[0]) as f:
+            f.write(event)
+
+        event_number = None
+        with pyhepmc.open(filename) as f:
+            for evt in f:
+                event_number = evt.event_number
+
+        assert (
+            event_number is not None
+        ), f"Pyhepmc could not read event from file {filename}"
+
+    filename.unlink(missing_ok=True)
+
+
+@pytest.mark.parametrize("Model", (im.Pythia8Cascade, im.Pythia8Angantyr))
+def test_to_hepmc3_nuclear(Model):
+    """Test HepMC3 conversion for Pythia8 nuclear-target models (p + N14)."""
+    event = run_in_separate_process(run_nuclear, Model)
+    unique_vertices = {}
+    for i, pa in enumerate(event.mothers):
+        assert pa.shape == (2,)
+        if np.all(pa == -1):
+            continue
+        if pa[1] == -1:
+            pa = (pa[0], pa[0])
+        pa = (pa[0], pa[1])
+        for a, b in unique_vertices:
+            if pa != (a, b) and a <= pa[0] <= b:
+                pa = b + 1, pa[1]
+        unique_vertices.setdefault(pa, []).append(i)
+
+    nmax = len(event.px)
+    for i, (a, b) in enumerate(unique_vertices):
+        assert a >= -1
+        assert b <= nmax - 1, (
+            f"vertex {i} has parent range {(a, b)} which "
+            f"exceeds particle record nmax={nmax - 1}"
+        )
+
+    hev = event.to_hepmc3()
+    assert len(hev.particles) == len(event)
+    assert len(hev.vertices) == len(unique_vertices)
+
+
+@pytest.mark.parametrize("Model", (im.Pythia8Cascade, im.Pythia8Angantyr))
+def test_io_hepmc_nuclear(Model):
+    """Test HepMC write/read round-trip for nuclear-target models (p + N14)."""
+    run_in_separate_process(run_test_io_hepmc_nuclear, Model)

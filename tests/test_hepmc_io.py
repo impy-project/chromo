@@ -26,34 +26,22 @@ def run(Model):
     return list(gen(3)), inel_cs
 
 
-@pytest.mark.parametrize(
-    "Model",
-    models,
-)
-def test_hepmc_io(Model):
-    # To run this test do `pytest tests/test_hepmc_writer.py`
-    # This test fails because the event record written by HepMC3 C++ is bad,
-    # a lot of particles are missing. Either a bug in the original chromo record or a
-    # bug in the HepMC3 C++ code (not the pyhepmc code).
-
-    test_file = Path(f"{Path(__file__).stem}_{Model.pyname}.dat")
-
-    events, inel_cs = run_in_separate_process(run, Model)
+def _run_hepmc_io_test(events, inel_cs, Model, test_file):
+    """Shared logic for HepMC IO tests."""
     expected = []
     genevent = None
 
     with (
         pytest.warns(RuntimeWarning)
-        if (Model.name in ["DPMJET-III", "PhoJet"] or Model.pyname == "Pythia8")
+        if (
+            Model.name in ["DPMJET-III", "PhoJet"]
+            or Model.pyname in ("Pythia8", "Pythia8Angantyr")
+        )
         else nullcontext()
     ):
         for ev in events:
             genevent = ev.to_hepmc3(genevent)
             expected.append(genevent)
-
-    # Uncomment this to get debugging output. Higher number shows more.
-    # This only works if you compile pyhepmc in debug mode.
-    # pyhepmc.Setup.debug_level = 100
 
     with pyhepmc.open(test_file, "w") as f:
         for event in expected:
@@ -73,5 +61,36 @@ def test_hepmc_io(Model):
         assert ev1.cross_section.xsec() / 1e9 == approx(inel_cs)
         assert ev2.cross_section.xsec() / 1e9 == approx(inel_cs)
 
-    # delete test_file if test is successful
     test_file.unlink()
+
+
+@pytest.mark.parametrize(
+    "Model",
+    models,
+)
+def test_hepmc_io(Model):
+    if Model in (im.Pythia8Cascade, im.Pythia8Angantyr):
+        pytest.skip(
+            f"{Model.pyname} requires nuclear targets; "
+            "tested in test_hepmc_io_nuclear"
+        )
+
+    test_file = Path(f"{Path(__file__).stem}_{Model.pyname}.dat")
+    events, inel_cs = run_in_separate_process(run, Model)
+    _run_hepmc_io_test(events, inel_cs, Model, test_file)
+
+
+def run_nuclear(Model):
+    """Run nuclear-target model for HepMC IO test."""
+    evt_kin = CenterOfMass(100 * GeV, "proton", "N14")
+    gen = Model(evt_kin, seed=1)
+    inel_cs = gen.cross_section().inelastic
+    return list(gen(3)), inel_cs
+
+
+@pytest.mark.parametrize("Model", (im.Pythia8Cascade, im.Pythia8Angantyr))
+def test_hepmc_io_nuclear(Model):
+    """HepMC write/read round-trip for nuclear-target models (p + N14)."""
+    test_file = Path(f"{Path(__file__).stem}_{Model.pyname}_nuclear.dat")
+    events, inel_cs = run_in_separate_process(run_nuclear, Model)
+    _run_hepmc_io_test(events, inel_cs, Model, test_file)
