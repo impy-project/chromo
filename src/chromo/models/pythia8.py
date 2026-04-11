@@ -440,8 +440,8 @@ class Pythia8Cascade(MCRun):
         self._cascade = self._lib.PythiaCascadeForChromo()
         # rapidDecays=True with smallTau0=1000 gives the default Pythia8
         # decay setup (see PythiaCascade.h line 113-114).
-        # slowDecays=False keeps mu/pi/K/K0L stable, matching collider
-        # conventions and the default Pythia8 behavior.
+        # slowDecays=True decays mu/pi/K/K0L, matching cosmic-ray
+        # conventions where all particles decay at the interaction point.
         if not self._cascade.init(
             eKinMin,
             enhanceSDtarget,
@@ -489,7 +489,8 @@ class Pythia8Cascade(MCRun):
                 nid, 0.0, 0.0, pz, e, m, self._Z_targ, self._A_targ
             )
             if result is not None:
-                results.append(result)
+                # Copy arrays now; the next next_coll() overwrites the C++ buffer.
+                results.append(tuple(np.array(a, copy=True) for a in result))
                 total_n_coll += self._cascade.n_collisions()
         if not results:
             return False

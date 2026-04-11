@@ -159,8 +159,9 @@ public:
     // Returns py::none() when the projectile cannot interact (low energy,
     // unknown species, or empty event generated).  Otherwise returns a
     // tuple (pid, status, px, py, pz, en, m, vx, vy, vz, vt, mothers,
-    // daughters) of numpy arrays copied out of the internal Event before
-    // the next call can overwrite it.
+    // daughters) of numpy arrays.  These are views into the internal Event
+    // buffer and will be overwritten by the next call; callers must copy
+    // the arrays if they need to persist across calls.
     py::object next_coll(int id, double px, double py, double pz, double e,
                          double m, int Z, int A)
     {
