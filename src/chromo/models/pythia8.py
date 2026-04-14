@@ -463,8 +463,8 @@ class Pythia8Cascade(MCRun):
 
     Nuclear projectiles (A > 1) are decomposed into Z protons and
     (A-Z) neutrons each carrying 1/A of the total lab momentum.
-    Each nucleon is collided independently; the last successful
-    sub-collision is returned as the event.
+    Each nucleon is collided independently; all successful
+    sub-collisions are merged and returned as the event.
 
     Parameters
     ----------
