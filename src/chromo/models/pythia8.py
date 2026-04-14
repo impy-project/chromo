@@ -890,10 +890,10 @@ class Pythia8Angantyr(MCRun):
         For full Angantyr Glauber cross sections, call
         :meth:`glauber_cross_section` instead.
         """
+        internal = self._internal_cs_call
+        self._internal_cs_call = False
         result = super().cross_section(kin, max_info=max_info)
-        if self._internal_cs_call:
-            self._internal_cs_call = False
-        elif self._glauber_cs is None:
+        if not internal and self._glauber_cs is None:
             warnings.warn(
                 "Returning parametric (PythiaCascade) cross section. "
                 "For Angantyr Glauber cross sections, call "
@@ -927,10 +927,16 @@ class Pythia8Angantyr(MCRun):
         if kin is not None:
             self._check_kinematics(kin)
         kin = kin or self.kinematics
+        restore = self.kinematics
         self._init_pythia(kin, glauber_only=True)
-        self._glauber_cs = self._run_glauber_trials(n_trials)
-        self._init_pythia(kin, glauber_only=False)
-        return self._glauber_cs
+        result = self._run_glauber_trials(n_trials)
+        # Re-init for event generation and restore original kinematics
+        self._init_pythia(restore, glauber_only=False)
+        self._idA = int(restore.p1)
+        self._idB = int(restore.p2)
+        self._parametric_cs = self._compute_parametric_cs(restore)
+        self._glauber_cs = result if kin is restore else None
+        return result
 
     def _set_stable(self, pdgid, stable):
         self._pythia.particleData.mayDecay(pdgid, not stable)

@@ -14,11 +14,13 @@
 #include <io.h>
 #define DUP _dup
 #define DUP2 _dup2
+#define CLOSE _close
 #define FILENO _fileno
 #else
 #include <unistd.h>
 #define DUP dup
 #define DUP2 dup2
+#define CLOSE close
 #define FILENO fileno
 #endif
 #include <private_access.hpp>
@@ -105,24 +107,23 @@ py::array_t<double> event_array_v(Event &event)
 
 py::array_t<int> event_array_mothers(Event &event)
 {
-    // skip first pseudoparticle
-    auto ptr1 = &private_access::member<Particle_mother1Save>(event[1]);
-    auto ptr2 = &private_access::member<Particle_mother2Save>(event[1]);
+    // skip first pseudoparticle; mother1Save and mother2Save are adjacent
+    // int members so a (N,2) stride view starting at mother1Save works.
+    auto *ptr = &private_access::member<Particle_mother1Save>(event[1]);
     int number = event.size() - 1;
     int shape[2] = {number, 2};
     int strides[2] = {sizeof(Particle), sizeof(int)};
-    return py::array_t<int>(shape, strides, ptr1);
+    return py::array_t<int>(shape, strides, ptr);
 }
 
 py::array_t<int> event_array_daughters(Event &event)
 {
-    // skip first pseudoparticle
-    auto ptr1 = &private_access::member<Particle_daughter1Save>(event[1]);
-    auto ptr2 = &private_access::member<Particle_daughter2Save>(event[1]);
+    // skip first pseudoparticle; daughter1Save and daughter2Save are adjacent.
+    auto *ptr = &private_access::member<Particle_daughter1Save>(event[1]);
     int number = event.size() - 1;
     int shape[2] = {number, 2};
     int strides[2] = {sizeof(Particle), sizeof(int)};
-    return py::array_t<int>(shape, strides, ptr1);
+    return py::array_t<int>(shape, strides, ptr);
 }
 
 // refills "event" stack with particles
@@ -235,7 +236,7 @@ public:
     void stat()                { _cascade.stat(); }
 
     ParticleData &particle_data() { return _cascade.particleData(); }
-    
+
     // Set mayDecay flag for a particle in both internal Pythia instances.
     void set_may_decay(int pdgid, bool may_decay) {
         private_access::member<PythiaCascade_pythiaMain>(_cascade).particleData.mayDecay(pdgid, may_decay);
@@ -510,7 +511,7 @@ PYBIND11_MODULE(_pythia8, m)
             std::fflush(stdout);
             if (saved_fd >= 0) {
                 DUP2(saved_fd, FILENO(stdout));
-                close(saved_fd);
+                CLOSE(saved_fd);
             }
             return obj;
         }), "banner"_a = true)
