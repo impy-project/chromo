@@ -60,7 +60,7 @@ To see the help of the command-line interface. If that does not work, just repla
 
 Please note that `chromo` only provides a user interface for the following models, and does not contain any particle physics models itself. When using any of these models in public-facing work, it is important to properly cite the original model reference by following the links below. Additionally, if you find `chromo` useful in your work, we would appreciate an acknowledgement, footnote, or link to `chromo`.
 
-| Interaction model                                         | Supported proj/targ       | Comment                         | 
+| Interaction model (click for [iNSPIRE.HEP](https://inspirehep.net/) link)                          | Supported proj/targ       | Comment                         | 
 |------------------------------------------------------------|---------------------------|--------------------------------|
 | [DPMJET-III 3.0.7](https://inspirehep.net/literature/538940) & [PHOJET 1.12-36](https://inspirehep.net/literature/373339)      | *hN, γγ, γN, hA, γA, AA*  | |
 | [DPMJET-III & PHOJET 19.1 and 19.3](https://inspirehep.net/literature/1503512) [(repo on GitHub)](https://github.com/DPMJET/DPMJET) |  *hN, γγ, γN, hA, γA, AA* | |
@@ -68,7 +68,9 @@ Please note that `chromo` only provides a user interface for the following model
 | [EPOS-LHC-R](https://inspirehep.net/literature/2680791)     | *hN, hA, AA*              | |
 | [EPOS-LHC-R (w/ hadr. rescattering)](https://inspirehep.net/literature/2680791)     | *hN, hA, AA*              | | Version with explicit hadronic rescattering in UrQMD (slow!)
 | [PYTHIA 6.4](https://inspirehep.net/literature/712925)    | *hN, ee, γγ, γN*          | |
-| [PYTHIA 8.3](https://inspirehep.net/literature/2056998) (https://pythia.org/) | *hN, ee, γγ, γN* & *hA, AA* (Argantyr) | unavailable on Windows |
+| [PYTHIA 8.317](https://inspirehep.net/literature/2056998) (https://pythia.org/) | *hN, ee, γγ, γN* | unavailable on Windows |
+| [PYTHIA 8.317 Cascade](https://inspirehep.net/literature/3092823) | *hA* | unavailable on Windows |
+| [PYTHIA 8.317 Angantyr](https://inspirehep.net/literature/1680030) | *hA, AA* | unavailable on Windows, uses precomputed glauber tables for 20 GeV–20 PeV CMS by default |
 | [QGSJet-01](https://inspirehep.net/literature/460408)     | *hN, hA, AA*              | |
 | [QGSJet-II-03](https://inspirehep.net/literature/667881)  | *hN, hA, AA*              | |
 | [QGSJet-II-04](https://inspirehep.net/literature/872658)  | *hN, hA, AA*              | |
@@ -97,17 +99,27 @@ Advanced and developer installation instructions can be found [here](doc/dev_doc
 
 ## Citation
 
-If you use `chromo` in your research, please cite it using the following DOI:
+If you use `chromo` in your research, please cite the paper:
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16562752.svg)](https://doi.org/10.5281/zenodo.16562752)
+> A. Fedynitch, H. Dembinski and A. Prosekin, *Chromo: A high-performance python interface to hadronic event generators for collider and cosmic-ray simulations*, [Comput.Phys.Commun. 321 (2026) 110031](https://doi.org/10.1016/j.cpc.2026.110031), [arXiv:2507.21856](https://arxiv.org/abs/2507.21856) [[INSPIRE](https://inspirehep.net/literature/2955234)]
 
-You can also cite it in your bibliography as:
-
+BibTeX:
+```bibtex
+@article{Fedynitch:2025mgj,
+    author = "Fedynitch, Anatoli and Dembinski, Hans and Prosekin, Anton",
+    title = "{Chromo: A high-performance python interface to hadronic event generators for collider and cosmic-ray simulations}",
+    eprint = "2507.21856",
+    archivePrefix = "arXiv",
+    primaryClass = "physics.comp-ph",
+    doi = "10.1016/j.cpc.2026.110031",
+    journal = "Comput. Phys. Commun.",
+    volume = "321",
+    pages = "110031",
+    year = "2026"
+}
 ```
-Fedynitch, A., Dembinski, H., Prosekin, A., El Hadri, S., & Watanabe, K. (2025). 
-CHROMO: Cosmic ray and HadROnic interactiOn MOnte-carlo frontend. 
-Zenodo. https://doi.org/10.5281/zenodo.16562752
-```
+
+Software release: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16562752.svg)](https://doi.org/10.5281/zenodo.16562752)
 
 ## Authors
 

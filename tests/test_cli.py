@@ -188,7 +188,7 @@ def test_model_2():
         "py8",
         returncode=1,
         stderr="Error: model=py8 is ambiguous, matches "
-        "\\(Pythia-6.428, Pythia-8.[0-9]+\\)",
+        "\\(Pythia-6.428, Pythia-8.[0-9]+, Pythia8Angantyr-8.[0-9]+, Pythia8Cascade-8.[0-9]+\\)",
     )
 
 

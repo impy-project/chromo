@@ -60,6 +60,16 @@ Run `pre-commit run -a` to apply all hooks to the codebase, and fix errors befor
 ### Model Implementations (`src/chromo/models/`)
 Each model file (e.g., `sibyll.py`, `qgsjet.py`, `pythia8.py`) subclasses `MCRun`/`MCEvent` and interfaces with compiled backends. Models can only be instantiated **once per process** due to Fortran global state — tests run each model in a separate subprocess. The relevant model classes are exposed in `src/chromo/models/__init__.py:__all__` for user access, extra models can be accessed through `src/chromo/models/_extra_models.py` if needed, whereas those with "_DEV" suffix are for development and testing only and are not located in the source code base.
 
+### Pythia8 Nuclear Modes (`src/chromo/models/pythia8.py`)
+
+Three Pythia8 model classes with distinct physics scopes:
+
+- **`Pythia8`** — Standard Pythia8 for hN, ee, γγ, γN collisions. Extended projectiles include strange/charm/bottom hadrons. No nuclear targets.
+- **`Pythia8Cascade`** — PythiaCascade plugin for single-collision h+A mode. Nuclear projectiles decomposed into Z protons + (A-Z) neutrons. Targets: nuclei with A>1. Uses `slowDecays=True` (cosmic-ray convention). RNG state save/restore via both internal Pythia instances (pythiaMain + pythiaColl). Supports `CompositeTarget` via `_composite_plan`.
+- **`Pythia8Angantyr`** — Glauber heavy-ion model for hA/AA with precomputed tables (20 GeV–20 PeV CMS, `_ecm_min=20 GeV`). Targets: nuclei only (no proton/neutron). Live target switching via `setBeamIDs`. Cross sections: `cross_section()` returns fast parametric estimates (PythiaCascade `nCollAvg` formula); `glauber_cross_section(n_trials)` runs GlauberOnly MC for precise Angantyr values. Supports `CompositeTarget`.
+
+C++ bindings in `src/cpp/_pythia8.cpp`: `PythiaCascadeForChromo` wraps `PythiaCascade` with numpy array extraction, `set_may_decay` on both internal Pythia instances, and `getRndmState`/`setRndmState` for RNG state serialization.
+
 ### Fortran/C++ Sources
 - `src/fortran/` — Fortran source for SIBYLL, QGSJet, DPMJET, EPOS, UrQMD, SOPHIA, PYTHIA6
 - `src/cpp/` — PYTHIA 8 C++ source with pybind11 bindings

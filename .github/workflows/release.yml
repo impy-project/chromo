@@ -24,7 +24,7 @@ jobs:
       - name: Download all cache files if missing
         run: |
           mkdir -p ~/.cache/chromo
-          for file in qgsjet_v002 Pythia8_v006 eposlhcr_v001 eposlhc_v001 dpm3191_v001 dpm3_v001 ; do
+          for file in qgsjet_v002 Pythia8_v007 eposlhcr_v001 eposlhc_v001 dpm3191_v001 dpm3_v001 ; do
             if [ ! -f ~/.cache/chromo/$file.zip ]; then
               echo "Downloading $file.zip..."
               curl -L -o ~/.cache/chromo/$file.zip "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip"
@@ -97,7 +97,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-intel-latest, macos-latest] # windows-latest: Disable windows for now
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest] # windows-latest: Disable windows for now
         arch: [auto]
         py: [cp39, cp310, cp311, cp312, cp313]
     steps:
@@ -113,7 +113,7 @@ jobs:
 
       - name: Set macOS deployment target
         if: runner.os == 'macOS'
-        run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-intel-latest' && '13.0' || '15.0' }}" >> $GITHUB_ENV
+        run: echo "MACOSX_DEPLOYMENT_TARGET=15.0" >> $GITHUB_ENV
 
       - name: Setup gfortran
         uses: awvwgk/setup-fortran@v1.6.1
@@ -122,7 +122,7 @@ jobs:
           compiler: gcc
           version: 13
 
-      - if: ${{ matrix.os != 'macos-intel-latest' }}
+      - if: ${{ matrix.os != 'macos-15-intel' }}
         uses: ts-graphviz/setup-graphviz@v2
         name: Install Graphviz
 
@@ -152,7 +152,7 @@ jobs:
           echo "Sleeping $delay seconds to stagger cibuildwheel downloads..."
           sleep $delay
 
-      - if: ${{ matrix.os == 'macos-intel-latest' }}
+      - if: ${{ matrix.os == 'macos-15-intel' }}
         name: cibuildwheel on macOS Intel
         uses: pypa/cibuildwheel@v3.4.0
         env:

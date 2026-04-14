@@ -19,6 +19,8 @@ def run_rng_state(Model):
         evt_kin = FixedTarget(13 * TeV, "photon", "proton")
     elif Model is im.UrQMD34:
         evt_kin = CenterOfMass(50 * GeV, "proton", "proton")
+    elif Model in (im.Pythia8Cascade, im.Pythia8Angantyr):
+        evt_kin = CenterOfMass(13 * TeV, "proton", "N14")
     else:
         evt_kin = CenterOfMass(13 * TeV, "proton", "proton")
 
@@ -58,6 +60,8 @@ def run_rng_state_with_bitgen(Model, bitgen_class, seed):
         evt_kin = FixedTarget(13 * TeV, "photon", "proton")
     elif Model is im.UrQMD34:
         evt_kin = CenterOfMass(50 * GeV, "proton", "proton")
+    elif Model in (im.Pythia8Cascade, im.Pythia8Angantyr):
+        evt_kin = CenterOfMass(13 * TeV, "proton", "N14")
     else:
         evt_kin = CenterOfMass(13 * TeV, "proton", "proton")
 
