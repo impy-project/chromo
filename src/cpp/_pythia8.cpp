@@ -8,7 +8,19 @@
 #include <Pythia8Plugins/PythiaCascade.h>
 #include <array>
 #include <cassert>
+#include <cstdio>
 #include <limits>
+#ifdef _WIN32
+#include <io.h>
+#define DUP _dup
+#define DUP2 _dup2
+#define FILENO _fileno
+#else
+#include <unistd.h>
+#define DUP dup
+#define DUP2 dup2
+#define FILENO fileno
+#endif
 #include <private_access.hpp>
 #include <pybind11/iostream.h>
 #include <pybind11/numpy.h>
@@ -140,6 +152,39 @@ void fill(Event &event,
     }
 }
 
+// Serialize / deserialize Pythia8's internal RNG state to / from a Python dict.
+py::dict getRndmStateFrom(Pythia &p) {
+    RndmState state = p.rndm.getState();
+    py::dict result;
+    result["i97"] = state.i97;
+    result["j97"] = state.j97;
+    result["seed"] = state.seed;
+    result["sequence"] = state.sequence;
+    result["c"] = state.c;
+    result["cd"] = state.cd;
+    result["cm"] = state.cm;
+    py::list u_array;
+    for (int i = 0; i < 97; i++)
+        u_array.append(state.u[i]);
+    result["u"] = u_array;
+    return result;
+}
+
+void setRndmStateOn(Pythia &p, py::dict state_dict) {
+    RndmState state;
+    state.i97 = state_dict["i97"].cast<int>();
+    state.j97 = state_dict["j97"].cast<int>();
+    state.seed = state_dict["seed"].cast<int>();
+    state.sequence = state_dict["sequence"].cast<long>();
+    state.c = state_dict["c"].cast<double>();
+    state.cd = state_dict["cd"].cast<double>();
+    state.cm = state_dict["cm"].cast<double>();
+    py::list u_list = state_dict["u"].cast<py::list>();
+    for (int i = 0; i < 97; i++)
+        state.u[i] = u_list[i].cast<double>();
+    p.rndm.setState(state);
+}
+
 // High-level wrapper around PythiaCascade for use from chromo.
 // Owns the PythiaCascade internally, manages the sigmaSetuphN→nextColl
 // sequence, and returns particle data as pre-copied numpy arrays so
@@ -202,8 +247,8 @@ public:
         auto &main = private_access::member<PythiaCascade_pythiaMain>(_cascade);
         auto &coll = private_access::member<PythiaCascade_pythiaColl>(_cascade);
         py::dict result;
-        result["main"] = _getRndmStateFrom(main);
-        result["coll"] = _getRndmStateFrom(coll);
+        result["main"] = getRndmStateFrom(main);
+        result["coll"] = getRndmStateFrom(coll);
         return result;
     }
 
@@ -211,8 +256,8 @@ public:
     void setRndmState(py::dict state_dict) {
         auto &main = private_access::member<PythiaCascade_pythiaMain>(_cascade);
         auto &coll = private_access::member<PythiaCascade_pythiaColl>(_cascade);
-        _setRndmStateOn(main, state_dict["main"].cast<py::dict>());
-        _setRndmStateOn(coll, state_dict["coll"].cast<py::dict>());
+        setRndmStateOn(main, state_dict["main"].cast<py::dict>());
+        setRndmStateOn(coll, state_dict["coll"].cast<py::dict>());
     }
 
     py::array_t<float> charge(py::object result)
@@ -229,41 +274,8 @@ public:
         return out;
     }
 
-      
 private:
     PythiaCascade _cascade;
-
-    static py::dict _getRndmStateFrom(Pythia &p) {
-        RndmState state = p.rndm.getState();
-        py::dict result;
-        result["i97"] = state.i97;
-        result["j97"] = state.j97;
-        result["seed"] = state.seed;
-        result["sequence"] = state.sequence;
-        result["c"] = state.c;
-        result["cd"] = state.cd;
-        result["cm"] = state.cm;
-        py::list u_array;
-        for (int i = 0; i < 97; i++)
-            u_array.append(state.u[i]);
-        result["u"] = u_array;
-        return result;
-    }
-
-    static void _setRndmStateOn(Pythia &p, py::dict state_dict) {
-        RndmState state;
-        state.i97 = state_dict["i97"].cast<int>();
-        state.j97 = state_dict["j97"].cast<int>();
-        state.seed = state_dict["seed"].cast<int>();
-        state.sequence = state_dict["sequence"].cast<long>();
-        state.c = state_dict["c"].cast<double>();
-        state.cd = state_dict["cd"].cast<double>();
-        state.cm = state_dict["cm"].cast<double>();
-        py::list u_list = state_dict["u"].cast<py::list>();
-        for (int i = 0; i < 97; i++)
-            state.u[i] = u_list[i].cast<double>();
-        p.rndm.setState(state);
-    }
 
     // Reuses the event_array<> helpers already defined in this file.
     static py::tuple _extract(Event &ev)
@@ -426,46 +438,8 @@ PYBIND11_MODULE(_pythia8, m)
         .def_readwrite("event", &Pythia::event)
         .def_property_readonly("info", [](Pythia &self)
                                { return self.info; })
-        .def("getRndmState", [](Pythia &self) -> py::dict {
-            // Get the internal RNG state from Pythia8
-            RndmState state = self.rndm.getState();
-            py::dict result;
-            result["i97"] = state.i97;
-            result["j97"] = state.j97;
-            result["seed"] = state.seed;
-            result["sequence"] = state.sequence;
-            result["c"] = state.c;
-            result["cd"] = state.cd;
-            result["cm"] = state.cm;
-            
-            // Convert the u array to a Python list
-            py::list u_array;
-            for (int i = 0; i < 97; i++) {
-                u_array.append(state.u[i]);
-            }
-            result["u"] = u_array;
-            
-            return result;
-        })
-        .def("setRndmState", [](Pythia &self, py::dict state_dict) {
-            // Set the internal RNG state in Pythia8
-            RndmState state;
-            state.i97 = state_dict["i97"].cast<int>();
-            state.j97 = state_dict["j97"].cast<int>();
-            state.seed = state_dict["seed"].cast<int>();
-            state.sequence = state_dict["sequence"].cast<long>();
-            state.c = state_dict["c"].cast<double>();
-            state.cd = state_dict["cd"].cast<double>();
-            state.cm = state_dict["cm"].cast<double>();
-            
-            // Convert Python list back to array
-            py::list u_list = state_dict["u"].cast<py::list>();
-            for (int i = 0; i < 97; i++) {
-                state.u[i] = u_list[i].cast<double>();
-            }
-            
-            self.rndm.setState(state);
-        })
+        .def("getRndmState", [](Pythia &self) { return getRndmStateFrom(self); })
+        .def("setRndmState", [](Pythia &self, py::dict s) { setRndmStateOn(self, s); })
         .def("charge",
              [](Pythia &self)
              {
@@ -482,7 +456,13 @@ PYBIND11_MODULE(_pythia8, m)
              "fileName"_a, "warn"_a = true, "subrun"_a = SUBRUNDEFAULT,
              py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
         .def("setBeamIDs", &Pythia::setBeamIDs, "idA"_a, "idB"_a = 0)
-        .def("setKinematics", py::overload_cast<double>(&Pythia::setKinematics), "eCM"_a);
+        .def("setKinematics", py::overload_cast<double>(&Pythia::setKinematics), "eCM"_a)
+        .def("getSigmaTotal",
+             py::overload_cast<int, int, double, int>(&Pythia::getSigmaTotal),
+             "id1"_a, "id2"_a, "eCM"_a, "mixLoHi"_a = 0)
+        .def("getSigmaPartial",
+             py::overload_cast<int, int, double, int, int>(&Pythia::getSigmaPartial),
+             "id1"_a, "id2"_a, "eCM"_a, "procType"_a, "mixLoHi"_a = 0);
 
     py::class_<Event>(m, "Event")
         .def_property_readonly("size", [](Event &self)
@@ -507,7 +487,33 @@ PYBIND11_MODULE(_pythia8, m)
              { fill(self, pid, status, px, py, pz, energy, mass); }, "pid"_a, "status"_a, "px"_a, "py"_a, "pz"_a, "energy"_a, "mass"_a);
 
     py::class_<PythiaCascadeForChromo>(m, "PythiaCascadeForChromo")
-        .def(py::init<>())
+        .def(py::init([](bool banner) {
+            if (banner)
+                return std::make_unique<PythiaCascadeForChromo>();
+            // PythiaCascade's internal Pythia members print banners in
+            // their default constructors via std::cout.  Silence them
+            // by temporarily redirecting file descriptor 1 to /dev/null.
+            std::cout.flush();
+            std::fflush(stdout);
+            int saved_fd = DUP(FILENO(stdout));
+#ifdef _WIN32
+            FILE *devnull = std::fopen("NUL", "w");
+#else
+            FILE *devnull = std::fopen("/dev/null", "w");
+#endif
+            if (devnull) {
+                DUP2(FILENO(devnull), FILENO(stdout));
+                std::fclose(devnull);
+            }
+            auto obj = std::make_unique<PythiaCascadeForChromo>();
+            std::cout.flush();
+            std::fflush(stdout);
+            if (saved_fd >= 0) {
+                DUP2(saved_fd, FILENO(stdout));
+                close(saved_fd);
+            }
+            return obj;
+        }), "banner"_a = true)
         .def("init", &PythiaCascadeForChromo::init,
              py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>(),
              "eKinMin"_a = 0.3, "enhanceSDtarget"_a = 0.5,

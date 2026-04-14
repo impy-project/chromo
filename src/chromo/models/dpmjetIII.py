@@ -219,8 +219,24 @@ class DpmjetIIIRun(MCRun):
                 + glxs.xsela[0, 0, 0],
             )
         if (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1):
+            # Recompute Glauber production cross section for the requested kin
+            self._lib.dtglgp.lprod = True
+            self._lib.dt_xsglau(
+                kin.p1.A or 1,
+                kin.p2.A or 1,
+                (
+                    self._lib.idt_icihad(2212)
+                    if (kin.p1.A and kin.p1.A > 1)
+                    else self._lib.idt_icihad(kin.p1)
+                ),
+                photon_x,
+                kin.virt_p1,
+                kin.ecm,
+                1,
+                1,
+                1,
+            )
             glxs = self._lib.dtglxs
-
             return CrossSectionData(
                 prod=glxs.xspro[0, 0, 0],
             )

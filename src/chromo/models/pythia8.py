@@ -12,6 +12,117 @@ from chromo.constants import GeV, standard_projectiles
 from chromo.kinematics import EventFrame
 from chromo.util import Nuclei, _cached_data_dir, name2pdg
 
+# Tabulated average number of inelastic hN collisions per hA collision,
+# ported from PythiaCascade.h (Pythia 8.317).  Used by both Cascade and
+# Angantyr to compute parametric nuclear cross sections without MC.
+_TAB_A = np.array([1, 2, 4, 9, 12, 14, 16, 27, 40, 56, 63, 84, 107, 129, 197, 208])
+_TAB_OFFSET = np.array(
+    [
+        0.0,
+        0.0510,
+        0.1164,
+        0.2036,
+        0.2328,
+        0.2520,
+        0.2624,
+        0.3190,
+        0.3562,
+        0.3898,
+        0.3900,
+        0.3446,
+        0.3496,
+        0.3504,
+        0.3484,
+        0.3415,
+    ]
+)
+_TAB_SLOPE = np.array(
+    [
+        0.0,
+        0.00187,
+        0.00496,
+        0.0107,
+        0.0136,
+        0.0152,
+        0.0169,
+        0.0243,
+        0.0314,
+        0.0385,
+        0.0415,
+        0.0506,
+        0.0581,
+        0.0644,
+        0.0806,
+        0.0830,
+    ]
+)
+_TAB_SLOPE_LO = np.array(
+    [
+        0.0,
+        0.00361,
+        0.00884,
+        0.0174,
+        0.0210,
+        0.0233,
+        0.0252,
+        0.0340,
+        0.0418,
+        0.0496,
+        0.0524,
+        0.0600,
+        0.0668,
+        0.0727,
+        0.0873,
+        0.0893,
+    ]
+)
+
+
+def _n_coll_avg(A, sigma_hN):
+    """Average number of inelastic hN collisions in one hA collision.
+
+    Ported from ``PythiaCascade::nCollAvg`` (PythiaCascade.h, Pythia 8.317).
+
+    Parameters
+    ----------
+    A : int
+        Mass number of the target nucleus (1 ≤ A ≤ 208).
+    sigma_hN : float
+        Inelastic hadron-nucleon cross section in mb.
+    """
+    for i, Ai in enumerate(_TAB_A):
+        if A == Ai:
+            return min(
+                1.0 + _TAB_SLOPE_LO[i] * sigma_hN,
+                1.0 + _TAB_OFFSET[i] + _TAB_SLOPE[i] * sigma_hN,
+            )
+        if A < Ai:
+            nc1 = min(
+                _TAB_SLOPE_LO[i - 1] * sigma_hN,
+                _TAB_OFFSET[i - 1] + _TAB_SLOPE[i - 1] * sigma_hN,
+            )
+            nc2 = min(
+                _TAB_SLOPE_LO[i] * sigma_hN,
+                _TAB_OFFSET[i] + _TAB_SLOPE[i] * sigma_hN,
+            )
+            wt1 = (Ai - A) / (Ai - _TAB_A[i - 1])
+            return (
+                1.0
+                + wt1 * (A / _TAB_A[i - 1]) ** (2.0 / 3.0) * nc1
+                + (1.0 - wt1) * (A / Ai) ** (2.0 / 3.0) * nc2
+            )
+    return float("nan")
+
+
+def _parametric_sigma_hA(A, sigma_hN):
+    """Parametric hadron-nucleus inelastic cross section (mb).
+
+    Uses the PythiaCascade formula: sigma(hA) = A * sigma(hN) / nCollAvg(A).
+    """
+    if A <= 1:
+        return sigma_hN
+    return A * sigma_hN / _n_coll_avg(A, sigma_hN)
+
 
 def _merge_cascade_results(results):
     """Concatenate multiple next_coll result tuples, remapping mother/daughter
@@ -22,6 +133,7 @@ def _merge_cascade_results(results):
     1-based Pythia indices (0 = no parent/child).
     """
     if len(results) == 1:
+        # Caller (_generate) already copies arrays from the C++ buffer.
         return results[0]
     parts = [[] for _ in range(13)]
     offset = 0
@@ -295,7 +407,8 @@ class Pythia8(MCRun):
                 if line.startswith(ig):
                     warnings.warn(f"configuration ignored: {line!r}", RuntimeWarning)
                     break
-            result2.append(line)
+            else:
+                result2.append(line)
         return result2
 
     @property
@@ -413,7 +526,14 @@ class Pythia8Cascade(MCRun):
     _data_url = Pythia8._data_url
 
     def __init__(
-        self, evt_kin, *, seed=None, eKinMin=0.3, enhanceSDtarget=0.5, init_file=""
+        self,
+        evt_kin,
+        *,
+        seed=None,
+        eKinMin=0.3,
+        enhanceSDtarget=0.5,
+        init_file="",
+        banner=True,
     ):
         super().__init__(seed)
 
@@ -437,7 +557,7 @@ class Pythia8Cascade(MCRun):
                     "Pass init_file= explicitly or add setups/ to the data bundle."
                 )
 
-        self._cascade = self._lib.PythiaCascadeForChromo()
+        self._cascade = self._lib.PythiaCascadeForChromo(banner)
         # rapidDecays=True with smallTau0=1000 gives the default Pythia8
         # decay setup (see PythiaCascade.h line 113-114).
         # slowDecays=True decays mu/pi/K/K0L, matching cosmic-ray
@@ -495,6 +615,10 @@ class Pythia8Cascade(MCRun):
         if not results:
             return False
         self._last_result = _merge_cascade_results(results)
+        # Convention differs from Glauber models: first element is the total
+        # number of inelastic sub-collisions inside the nucleus (from
+        # PythiaCascade::nCollisions), second is the number of projectile
+        # nucleons that interacted successfully.
         self._n_wounded = (total_n_coll, len(results))
         return True
 
@@ -600,6 +724,7 @@ class Pythia8Angantyr(MCRun):
         self._extra_config = [] if config is None else Pythia8._parse_config(config)
         self._banner = banner
         self._initialized = False
+        self._internal_cs_call = False
 
         self.kinematics = evt_kin
         self._set_final_state_particles()
@@ -673,24 +798,46 @@ class Pythia8Angantyr(MCRun):
         with open(self._init_angantyr_cmnd) as f:
             for line in f:
                 line = line.strip()
-                if line.startswith("!"):
+                if line.startswith(("!", "#")):
                     continue
                 if "Init:reuseHeavyIonSigFit" in line:
                     return True
         return False
 
-    def _run_glauber_trials(self):
-        """Run GlauberOnly trials and store the resulting cross sections."""
+    def _run_glauber_trials(self, n_trials=None):
+        """Run GlauberOnly trials and return the resulting cross sections."""
+        if n_trials is None:
+            n_trials = self._n_glauber_trials
         hi = self._pythia.info.hiInfo
         hi.glauberReset()
-        for _ in range(self._n_glauber_trials):
+        for _ in range(n_trials):
             self._pythia.next()
-        self._glauber_cs = CrossSectionData(
+        return CrossSectionData(
             total=hi.glauberTot(),
             inelastic=hi.glauberINEL(),
             elastic=hi.glauberEL(),
             prod=hi.glauberINEL(),
         )
+
+    def _compute_parametric_cs(self, kin):
+        """Compute cross section using the PythiaCascade parametric formula.
+
+        Uses ``Pythia::getSigmaTotal/Partial`` for the hadron-nucleon cross
+        section and the PythiaCascade nCollAvg table for the nuclear
+        scaling.  Fast (no event generation) and deterministic.
+        """
+        p1 = kin.p1
+        # For nuclear projectiles, use proton as representative nucleon
+        proj_id = 2212 if (p1.is_nucleus and (p1.A or 1) > 1) else int(p1)
+        # Pythia::getSigmaTotal/Partial work correctly in Angantyr mode
+        # (unlike info.sigmaTot which holds frozen placeholder values).
+        sigma_tot = self._pythia.getSigmaTotal(proj_id, 2212, kin.ecm)
+        sigma_el = self._pythia.getSigmaPartial(proj_id, 2212, kin.ecm, 2)
+        sigma_hN_inel = sigma_tot - sigma_el
+
+        A_targ = kin.p2.A or 1
+        sigma = _parametric_sigma_hA(A_targ, sigma_hN_inel)
+        return CrossSectionData(inelastic=sigma, prod=sigma)
 
     def _set_kinematics(self, kin):
         if not self._initialized:
@@ -699,12 +846,10 @@ class Pythia8Angantyr(MCRun):
                 # afford a GlauberOnly init to pre-compute cross sections
                 # followed by a real init for event generation.
                 self._init_pythia(kin, glauber_only=True)
-                self._run_glauber_trials()
+                self._glauber_cs = self._run_glauber_trials()
                 self._init_pythia(kin, glauber_only=False)
             else:
                 # Slow path: no precomputed tables, init is expensive.
-                # Do a single init; cross sections will only be available
-                # after events have been generated.
                 self._glauber_cs = None
                 self._init_pythia(kin, glauber_only=False)
             self._initialized = True
@@ -721,40 +866,71 @@ class Pythia8Angantyr(MCRun):
             if not self._pythia.setKinematics(kin.ecm):
                 msg = f"setKinematics({kin.ecm}) failed"
                 raise RuntimeError(msg)
-            # Cross sections computed lazily in _cross_section when
-            # actually requested.  This avoids wasting time during
-            # _temporary_kinematics switches that only need events.
             self._glauber_cs = None
             self._idA = idA
             self._idB = idB
+        # Always available immediately — no event generation needed.
+        self._parametric_cs = self._compute_parametric_cs(kin)
+        # Flag suppresses the user-facing warning during internal
+        # kinematics setter calls; cleared after cross_section() runs.
+        self._internal_cs_call = True
 
     def _generate(self):
         return self._pythia.next()
 
-    _n_quick_glauber = 50
-
     def _cross_section(self, kin=None, max_info=False):
         if self._glauber_cs is not None:
             return self._glauber_cs
-        # Lazy cross section: run a quick batch of full events to
-        # accumulate Glauber statistics after a setBeamIDs switch.
-        hi = self._pythia.info.hiInfo
-        if hi is not None:
-            hi.glauberReset()
-            for _ in range(self._n_quick_glauber):
-                self._pythia.next()
-            if hi.glauberINEL() > 0:
-                self._glauber_cs = CrossSectionData(
-                    total=hi.glauberTot(),
-                    inelastic=hi.glauberINEL(),
-                    elastic=hi.glauberEL(),
-                    prod=hi.glauberINEL(),
-                )
-                return self._glauber_cs
-        raise RuntimeError(
-            "Angantyr cross sections are not available. "
-            "Call the generator to produce events first."
-        )
+        return self._parametric_cs
+
+    def cross_section(self, kin=None, max_info=False):
+        """Cross sections for the current beam/energy configuration.
+
+        By default returns a fast parametric estimate (PythiaCascade formula).
+        For full Angantyr Glauber cross sections, call
+        :meth:`glauber_cross_section` instead.
+        """
+        result = super().cross_section(kin, max_info=max_info)
+        if self._internal_cs_call:
+            self._internal_cs_call = False
+        elif self._glauber_cs is None:
+            warnings.warn(
+                "Returning parametric (PythiaCascade) cross section. "
+                "For Angantyr Glauber cross sections, call "
+                "glauber_cross_section(n_trials).",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        return result
+
+    def glauber_cross_section(self, kin=None, n_trials=10000):
+        """Compute Angantyr Glauber cross sections by running MC trials.
+
+        Parameters
+        ----------
+        kin : EventKinematics, optional
+            If provided, compute for these kinematics instead of the
+            current setup (same convention as ``cross_section(kin)``).
+        n_trials : int
+            Number of GlauberOnly events to run (default 10 000).
+
+        Returns
+        -------
+        CrossSectionData
+            Total, inelastic, elastic, and production cross sections.
+        """
+        if not self._has_precomputed_tables():
+            raise RuntimeError(
+                "glauber_cross_section() requires precomputed Angantyr tables. "
+                "Use the default parametric cross_section() instead."
+            )
+        if kin is not None:
+            self._check_kinematics(kin)
+        kin = kin or self.kinematics
+        self._init_pythia(kin, glauber_only=True)
+        self._glauber_cs = self._run_glauber_trials(n_trials)
+        self._init_pythia(kin, glauber_only=False)
+        return self._glauber_cs
 
     def _set_stable(self, pdgid, stable):
         self._pythia.particleData.mayDecay(pdgid, not stable)
@@ -767,3 +943,13 @@ class Pythia8Angantyr(MCRun):
                 if p.hasAnti:
                     r.add(-p.id)
         return r
+
+    @property
+    def random_state(self):
+        """Get Pythia8's random number generator state."""
+        return self._pythia.getRndmState()
+
+    @random_state.setter
+    def random_state(self, rng_state):
+        """Restore Pythia8's random number generator state."""
+        self._pythia.setRndmState(rng_state)

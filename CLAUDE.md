@@ -66,7 +66,7 @@ Three Pythia8 model classes with distinct physics scopes:
 
 - **`Pythia8`** — Standard Pythia8 for hN, ee, γγ, γN collisions. Extended projectiles include strange/charm/bottom hadrons. No nuclear targets.
 - **`Pythia8Cascade`** — PythiaCascade plugin for single-collision h+A mode. Nuclear projectiles decomposed into Z protons + (A-Z) neutrons. Targets: nuclei with A>1. Uses `slowDecays=True` (cosmic-ray convention). RNG state save/restore via both internal Pythia instances (pythiaMain + pythiaColl). Supports `CompositeTarget` via `_composite_plan`.
-- **`Pythia8Angantyr`** — Glauber heavy-ion model for hA/AA with precomputed tables (20 GeV–20 PeV CMS, `_ecm_min=20 GeV`). Targets: nuclei only (no proton/neutron). Live target switching via `setBeamIDs` with lazy cross-section estimation. Supports `CompositeTarget`.
+- **`Pythia8Angantyr`** — Glauber heavy-ion model for hA/AA with precomputed tables (20 GeV–20 PeV CMS, `_ecm_min=20 GeV`). Targets: nuclei only (no proton/neutron). Live target switching via `setBeamIDs`. Cross sections: `cross_section()` returns fast parametric estimates (PythiaCascade `nCollAvg` formula); `glauber_cross_section(n_trials)` runs GlauberOnly MC for precise Angantyr values. Supports `CompositeTarget`.
 
 C++ bindings in `src/cpp/_pythia8.cpp`: `PythiaCascadeForChromo` wraps `PythiaCascade` with numpy array extraction, `set_may_decay` on both internal Pythia instances, and `getRndmState`/`setRndmState` for RNG state serialization.
 
