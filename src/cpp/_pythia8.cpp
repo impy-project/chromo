@@ -1,4 +1,5 @@
 #include <Pythia8/Event.h>
+#include <Pythia8/HeavyIons.h>
 #include <Pythia8/HIInfo.h>
 #include <Pythia8/Info.h>
 #include <Pythia8/ParticleData.h>
@@ -59,6 +60,7 @@ PRIVATE_ACCESS_MEMBER(Vec4, zz, double)
 PRIVATE_ACCESS_MEMBER(Vec4, tt, double)
 PRIVATE_ACCESS_MEMBER(PythiaCascade, pythiaMain, Pythia)
 PRIVATE_ACCESS_MEMBER(PythiaCascade, pythiaColl, Pythia)
+PRIVATE_ACCESS_MEMBER(HeavyIons, pythia, vector<Pythia*>)
 
 template <class Accessor>
 auto event_array(Event &event)
@@ -184,6 +186,44 @@ void setRndmStateOn(Pythia &p, py::dict state_dict) {
     for (int i = 0; i < 97; i++)
         state.u[i] = u_list[i].cast<double>();
     p.rndm.setState(state);
+}
+
+// Get/set RNG state for Pythia in Angantyr (heavy-ion) mode.
+// Angantyr creates multiple internal sub-Pythia objects (MBIAS, SASD, HADRON,
+// SIGPP, etc.), each with its own Rndm.  To properly save/restore the full
+// generator state we must capture all of them.
+py::dict getAngantyrRndmState(Pythia &p) {
+    py::dict result;
+    result["main"] = getRndmStateFrom(p);
+    auto hiPtr = p.getHeavyIonsPtr();
+    if (hiPtr) {
+        auto &subPythias = private_access::member<HeavyIons_pythia>(*hiPtr);
+        py::list subStates;
+        // Index 0 is the main Pythia itself; sub-Pythia objects start at index 1
+        for (size_t i = 1; i < subPythias.size(); i++) {
+            if (subPythias[i])
+                subStates.append(getRndmStateFrom(*subPythias[i]));
+            else
+                subStates.append(py::none());
+        }
+        result["sub"] = subStates;
+    }
+    return result;
+}
+
+void setAngantyrRndmState(Pythia &p, py::dict state_dict) {
+    setRndmStateOn(p, state_dict["main"].cast<py::dict>());
+    if (state_dict.contains("sub")) {
+        auto hiPtr = p.getHeavyIonsPtr();
+        if (hiPtr) {
+            auto &subPythias = private_access::member<HeavyIons_pythia>(*hiPtr);
+            py::list subStates = state_dict["sub"].cast<py::list>();
+            for (size_t i = 0; i < subStates.size() && (i + 1) < subPythias.size(); i++) {
+                if (!subStates[i].is_none() && subPythias[i + 1])
+                    setRndmStateOn(*subPythias[i + 1], subStates[i].cast<py::dict>());
+            }
+        }
+    }
 }
 
 // High-level wrapper around PythiaCascade for use from chromo.
@@ -441,6 +481,8 @@ PYBIND11_MODULE(_pythia8, m)
                                { return self.info; })
         .def("getRndmState", [](Pythia &self) { return getRndmStateFrom(self); })
         .def("setRndmState", [](Pythia &self, py::dict s) { setRndmStateOn(self, s); })
+        .def("getAngantyrRndmState", [](Pythia &self) { return getAngantyrRndmState(self); })
+        .def("setAngantyrRndmState", [](Pythia &self, py::dict s) { setAngantyrRndmState(self, s); })
         .def("charge",
              [](Pythia &self)
              {

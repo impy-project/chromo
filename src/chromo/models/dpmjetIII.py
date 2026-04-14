@@ -229,7 +229,11 @@ class DpmjetIIIRun(MCRun):
                 + glxs.xsela[0, 0, 0],
             )
         if (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1):
-            self._run_glauber(kin, photon_x, prod_only=True)
+            # Do NOT re-run Glauber here: the production cross section in
+            # dtglxs.xspro is already populated during DPMJET initialisation.
+            # An extra dt_xsglau call would consume Fortran RNG draws and
+            # shift the random state, causing the subsequent max_info=True
+            # Glauber MC to produce slightly different results.
             glxs = self._lib.dtglxs
             return CrossSectionData(
                 prod=glxs.xspro[0, 0, 0],
