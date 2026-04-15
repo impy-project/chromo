@@ -87,6 +87,8 @@ class CrossSectionData:
         Sum of diffractive cross sections.
     b_elastic : float
         Slope of elastic cross section in mb/GeV^2.
+    emd : float
+        Electromagnetic-dissociation cross section in mb (FLUKA/DPMJET).
     """
 
     total: float = np.nan
@@ -101,6 +103,7 @@ class CrossSectionData:
     diffractive_axb: float = np.nan
     diffractive_sum: float = np.nan
     b_elastic: float = np.nan
+    emd: float = np.nan
 
     @property
     def non_diffractive(self):
