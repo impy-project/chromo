@@ -47,7 +47,7 @@ class InteractionType(IntEnum):
 # user + kinematics target) must not exceed 10. Keep this list ≤ 9 to
 # leave room for one extra target not in the list.
 _DEFAULT_MATERIALS = (
-    2212,       # free proton
+    2212,  # free proton
     "He4",
     "C12",
     "N14",
@@ -333,17 +333,11 @@ class Fluka(MCRun):
         flag = int(self._interaction_type)
         inel = el = emd = np.nan
         if flag % 10 == 1:
-            inel = float(
-                self._lib.chromo_sgmxyz(proj_code, mat_idx, ekin, 0.0, 1)
-            )
+            inel = float(self._lib.chromo_sgmxyz(proj_code, mat_idx, ekin, 0.0, 1))
         if (flag // 10) % 10 == 1 and int(kin.p1) != 22:
-            el = float(
-                self._lib.chromo_sgmxyz(proj_code, mat_idx, ekin, 0.0, 10)
-            )
+            el = float(self._lib.chromo_sgmxyz(proj_code, mat_idx, ekin, 0.0, 10))
         if (flag // 100) % 10 == 1:
-            emd = float(
-                self._lib.chromo_sgmxyz(proj_code, mat_idx, ekin, 0.0, 100)
-            )
+            emd = float(self._lib.chromo_sgmxyz(proj_code, mat_idx, ekin, 0.0, 100))
         return CrossSectionData(inelastic=inel, elastic=el, emd=emd)
 
     def _set_stable(self, pdgid, stable):
@@ -362,10 +356,10 @@ class Fluka(MCRun):
             proj_code,
             mat_idx,
             ekin,
-            0.0,   # pproj0; ekin takes precedence
+            0.0,  # pproj0; ekin takes precedence
             0.0,
             0.0,
-            1.0,   # on-axis +z
+            1.0,  # on-axis +z
             int(self._interaction_type),
         )
         self._lib.chromo_fllhep()
@@ -396,7 +390,7 @@ class Fluka(MCRun):
     def __del__(self):
         try:
             self._cleanup_fort()
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
 
     # ------------------------------------------------------------------
