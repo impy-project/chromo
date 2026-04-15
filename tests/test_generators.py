@@ -158,6 +158,11 @@ def test_generator(projectile, target, frame, Model):
         pytest.skip(
             "Pythia8Angantyr He projectile has no precomputed tables; init too slow"
         )
+    if Model is im.Fluka and p1 == "He":
+        pytest.skip(
+            "FLUKA EVTXYZ aborts with nuclear projectiles (A>1); "
+            "cross_section() works but event generation does not"
+        )
     if p2 == "air":
         # cannot use Argon in SIBYLL, so make air from N, O only
         p2 = CompositeTarget((("N", 0.78), ("O", 0.22)))
