@@ -536,3 +536,48 @@ Cf2py integer intent(hide),depend(mat_idx) :: n_materials=len(mat_idx)
 
       RETURN
       END SUBROUTINE fluka_elem_properties
+
+      SUBROUTINE fluka_hepevt_summary(nhep_total, n_standard,
+     &                                n_heavy, n_residual)
+!----------------------------------------------------------------------!
+!     Scan HEPEVT (populated by FLLHEP) and count entries by category.
+!     Used by tests to assert that nuclear remnants are present.
+!
+!       n_standard -- standard particles (|pid| < 1e9)
+!       n_heavy    -- light nuclei/fragments (d, t, 3He, 4He, ...)
+!                     counted as entries with |pid| >= 1e9 AND A <= 4
+!       n_residual -- residual nuclei (|pid| >= 1e9 AND A > 4)
+!
+!     (The A threshold of 4 separates FLUKA's FHEAVY light fragments
+!      from RESNUC evaporation residues / projectile remnants.)
+!----------------------------------------------------------------------!
+      INCLUDE '(DBLPRC)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(HEPCMM)'
+
+      INTEGER nhep_total, n_standard, n_heavy, n_residual
+      INTEGER i, pid, absp, a
+Cf2py intent(out) nhep_total, n_standard, n_heavy, n_residual
+
+      nhep_total = NHEP
+      n_standard = 0
+      n_heavy    = 0
+      n_residual = 0
+
+      DO i = 1, NHEP
+         pid = IDHEP(i)
+         absp = ABS(pid)
+         IF (absp .LT. 1000000000) THEN
+            n_standard = n_standard + 1
+         ELSE
+            a = MOD(absp / 10, 1000)
+            IF (a .LE. 4) THEN
+               n_heavy = n_heavy + 1
+            ELSE
+               n_residual = n_residual + 1
+            END IF
+         END IF
+      END DO
+
+      RETURN
+      END SUBROUTINE fluka_hepevt_summary
