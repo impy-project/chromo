@@ -152,11 +152,20 @@ for event in gen(10):
 
 - **Single instantiation per Python process.** Fortran globals; tests use
   `tests/util.py::run_in_separate_process`.
-- **Material cap of 10 entries.** FLUKA's `STPXYZ` allocates geometry via
-  `GLBCRD(WHAT(1)=10)`. Chromo's default `_DEFAULT_MATERIALS` list has 9
-  entries (`p`, `He4`, `C12`, `N14`, `O16`, `Ar40`, `Fe56`, `Cu63`, `Pb208`)
-  leaving 1 slot for an extra target. Use `targets=["Si28", ...]` to swap
-  elements; exceeding 10 raises `ValueError`.
+- **Hard material cap of 10 entries.** FLUKA's shipped `stpxyz.f:256` has
+  a compile-time `MEDFLK` upper bound of 10 (empirically confirmed: index
+  11 fires a Fortran runtime array-bound error). Cannot be raised from
+  Python/F2PY; would require patching FLUKA's source. Chromo's default
+  `_DEFAULT_MATERIALS` list has 9 entries (`p`, `He4`, `C12`, `N14`,
+  `O16`, `Ar40`, `Fe56`, `Cu63`, `Pb208`) leaving 1 slot for an extra
+  target. Use `targets=["Si28", ...]` to swap elements; exceeding 10
+  raises `ValueError`.
+- **Energy ceilings are split between cross-section and event scopes.**
+  `cross_section()` works up to 1 PeV/nucleon for both hadron and photon
+  projectiles (smooth up to ≥100 EeV for hadrons, ≥1 PeV for photons).
+  Event generation has tighter FLUKA-internal limits: hadron EVTXYZ
+  crashes between 20 and 25 TeV/nucleon; photon PHNEVT works to at least
+  100 TeV/nucleon. Lower floor is 1 MeV/nucleon.
 - **Nuclear projectiles cannot generate events.** `cross_section()` works
   for AA (heavy-ion) kinematics, but `_generate()` with a nucleus as
   projectile aborts inside FLUKA's EVTXYZ. Use hadronic projectiles

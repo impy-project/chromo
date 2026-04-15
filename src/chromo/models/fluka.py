@@ -16,9 +16,16 @@ from particle import Particle
 from particle import literals as lp
 
 from chromo.common import CrossSectionData, MCEvent, MCRun
-from chromo.constants import GeV, TeV, standard_projectiles
+from chromo.constants import GeV, PeV, TeV, standard_projectiles
 from chromo.kinematics import EventFrame
-from chromo.util import CompositeTarget, Nuclei, info, process_particle
+from chromo.util import (
+    CompositeTarget,
+    Nuclei,
+    info,
+    is_real_nucleus,
+    pdg2AZ,
+    process_particle,
+)
 
 log = logging.getLogger(__name__)
 
@@ -59,31 +66,19 @@ _DEFAULT_MATERIALS = (
 )
 
 
-def _pdg_to_zA(pdg_id):
-    """Return (Z, A) for a PDG nucleus id or standard hadron.
-
-    For the free proton (pdg=2212) returns (1, 1).
-    For a PDG nucleus id 10LZZZAAAI returns (Z, A).
-    """
-    p = Particle.from_pdgid(pdg_id)
-    return p.pdgid.Z or 0, p.pdgid.A or 0
-
-
 class FlukaEvent(MCEvent):
     """Event data from FLUKA's HEPEVT common block."""
 
     def _get_charge(self, npart):
         pids = self._lib.hepevt.idhep[:npart]
-        hadron_charges = self._lib.charge_from_pdg_arr(pids)
-        # charge_from_pdg_arr returns 0 for nuclei (MCIHAD returns 0 for
-        # |pid|>=1e9). Recompute charge for nuclei directly from the PDG
-        # id: Z = (|pid| // 10000) % 1000.
-        result = hadron_charges.astype(float)
-        for i, pid in enumerate(pids):
-            if abs(int(pid)) >= 1000000000:
-                result[i] = (abs(int(pid)) // 10000) % 1000
-                if pid < 0:
-                    result[i] = -result[i]
+        # charge_from_pdg_arr (Fortran) returns 0 for nuclei because MCIHAD
+        # returns 0 for |pid|>=1e9. Recover the nucleus charge Z directly
+        # from the PDG ion code 10LZZZAAAI via vectorised numpy ops.
+        result = self._lib.charge_from_pdg_arr(pids).astype(float)
+        absp = np.abs(pids.astype(np.int64))
+        nucleus = absp >= 1_000_000_000
+        z = ((absp // 10000) % 1000).astype(float)
+        result = np.where(nucleus, np.sign(pids) * z, result)
         return result
 
     def _history_zero_indexing(self):
@@ -131,9 +126,21 @@ class Fluka(MCRun):
     _library_name = "_fluka"
     _projectiles = standard_projectiles | Nuclei() | {lp.photon.pdgid}
     _targets = Nuclei()
-    _ecm_min = 0.01 * GeV  # covers GDR region for γA
-    _ekin_per_nucleon_max_hadron = 20 * TeV
-    _ekin_per_nucleon_max_photon = 1 * TeV  # refined by investigation
+    # Kinematics are controlled per-nucleon in the lab frame (ecm becomes
+    # ill-defined for photonuclear at the GDR). Bounds below were
+    # determined empirically against FLUKA 2025.1:
+    # - hadron cross section: smooth up to at least 100 EeV (1e8 GeV)
+    # - hadron event generation: crashes between 20 and 25 TeV/nucleon
+    # - photon cross section: smooth up to at least 1 PeV
+    # - photon event generation: OK to at least 100 TeV (not probed higher)
+    # _check_kinematics enforces only the liberal xsec ceiling and a sane
+    # floor; tight event-gen caps are enforced in _generate().
+    _ecm_min = 0.0                  # liberal; effective floor set by ekin/n
+    _ekin_per_nucleon_min = 0.001 * GeV       # 1 MeV/n: FLUKA low-E floor
+    _ekin_per_nucleon_max_hadron_xsec = 1 * PeV
+    _ekin_per_nucleon_max_photon_xsec = 1 * PeV
+    _ekin_per_nucleon_max_hadron_event = 20 * TeV
+    _ekin_per_nucleon_max_photon_event = 100 * TeV
 
     def __init__(
         self,
@@ -245,8 +252,9 @@ class Fluka(MCRun):
             )
         # Each entry is a single-element material; nelmfl[i]=1 for all.
         nelmfl = np.ones(len(materials), dtype=np.int32)
+        # pdg2AZ returns (A, Z); we want Z. Free proton (2212) → (1, 1).
         izelfl = np.array(
-            [max(_pdg_to_zA(pdg)[0], 1) for pdg in materials], dtype=np.int32
+            [max(pdg2AZ(pdg)[1], 1) for pdg in materials], dtype=np.int32
         )
         wfelfl = np.ones(len(materials), dtype=np.float64)
         lprint = 0  # suppress FLUKA material printout
@@ -298,14 +306,40 @@ class Fluka(MCRun):
         super()._check_kinematics(kin)
         a = kin.p1.A or 1
         ekin_per_n = kin.ekin / a
+        if ekin_per_n < self._ekin_per_nucleon_min:
+            raise ValueError(
+                f"kinetic energy/nucleon {ekin_per_n / GeV:.3g} GeV < "
+                f"min {self._ekin_per_nucleon_min / GeV:.3g} GeV"
+            )
         if int(kin.p1) == 22:
-            upper = self._ekin_per_nucleon_max_photon
+            upper = self._ekin_per_nucleon_max_photon_xsec
         else:
-            upper = self._ekin_per_nucleon_max_hadron
+            upper = self._ekin_per_nucleon_max_hadron_xsec
         if ekin_per_n > upper:
             raise ValueError(
                 f"kinetic energy/nucleon {ekin_per_n / GeV:.3g} GeV > "
-                f"max {upper / GeV:.3g} GeV for this projectile class"
+                f"cross-section ceiling {upper / GeV:.3g} GeV"
+            )
+
+    def _check_event_kinematics(self, kin):
+        """Tighter ceiling applied only when generating events.
+
+        Cross-section queries can run up to the looser xsec ceiling set in
+        ``_check_kinematics``; FLUKA's ``EVTXYZ`` breaks earlier than its
+        ``SGMXYZ`` at high lab energies.
+        """
+        a = kin.p1.A or 1
+        ekin_per_n = kin.ekin / a
+        if int(kin.p1) == 22:
+            upper = self._ekin_per_nucleon_max_photon_event
+        else:
+            upper = self._ekin_per_nucleon_max_hadron_event
+        if ekin_per_n > upper:
+            raise ValueError(
+                f"kinetic energy/nucleon {ekin_per_n / GeV:.3g} GeV > "
+                f"event-generation ceiling {upper / GeV:.3g} GeV "
+                f"(FLUKA EVTXYZ crashes beyond this; cross_section() "
+                f"still works)"
             )
 
     def _set_kinematics(self, kin):
@@ -338,7 +372,11 @@ class Fluka(MCRun):
             el = float(self._lib.chromo_sgmxyz(proj_code, mat_idx, ekin, 0.0, 10))
         if (flag // 100) % 10 == 1:
             emd = float(self._lib.chromo_sgmxyz(proj_code, mat_idx, ekin, 0.0, 100))
-        return CrossSectionData(inelastic=inel, elastic=el, emd=emd)
+        # For nuclear targets, FLUKA's inelastic (with quasielastic disabled,
+        # the chromo default) is the production cross section. Populate both
+        # `inelastic` and `prod` so downstream code that keys on either works.
+        prod = inel if is_real_nucleus(kin.p2) else np.nan
+        return CrossSectionData(inelastic=inel, elastic=el, emd=emd, prod=prod)
 
     def _set_stable(self, pdgid, stable):
         info(
@@ -349,6 +387,8 @@ class Fluka(MCRun):
 
     def _generate(self):
         k = self.kinematics
+        # Tighter ceiling: FLUKA EVTXYZ breaks earlier than SGMXYZ.
+        self._check_event_kinematics(k)
         proj_code = self._fluka_projectile_code(int(k.p1))
         mat_idx = self._current_target_idx
         ekin = k.ekin
