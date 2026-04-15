@@ -369,3 +369,26 @@ def test_print_native_event_not_implemented():
     dummy = SimpleNamespace(pyname="DummyRun")
     with pytest.raises(NotImplementedError, match="DummyRun"):
         MCRun.print_native_event(dummy)
+
+
+def test_cross_section_data_has_emd_field():
+    from chromo.common import CrossSectionData
+
+    import numpy as np
+
+    cs = CrossSectionData(inelastic=100.0, emd=5.0)
+    assert cs.inelastic == 100.0
+    assert cs.emd == 5.0
+    # default
+    cs2 = CrossSectionData()
+    assert np.isnan(cs2.emd)
+
+
+def test_cross_section_data_emd_mul_radd():
+    from chromo.common import CrossSectionData
+
+    a = CrossSectionData(inelastic=0.0, emd=0.0)
+    b = CrossSectionData(inelastic=10.0, emd=2.0)
+    a._mul_radd(0.5, b)
+    assert a.emd == 1.0
+    assert a.inelastic == 5.0
