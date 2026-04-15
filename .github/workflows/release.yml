@@ -5,227 +5,81 @@ on:
   push:
     tags:
       - v*
-  pull_request:
-    branches:
-      - main
-    types:
-      - closed
 
+permissions:
+  actions: read
+  contents: read
 
 jobs:
-  prepare-cache:
+  download-and-publish:
+    name: Download artifacts and publish to PyPI
     runs-on: ubuntu-latest
     steps:
-      - name: Restore chromo data cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/chromo
-          key: chromo-cache-v2
-      - name: Download all cache files if missing
-        run: |
-          mkdir -p ~/.cache/chromo
-          for file in qgsjet_v002 Pythia8_v007 eposlhcr_v001 eposlhc_v001 dpm3191_v001 dpm3_v001 ; do
-            if [ ! -f ~/.cache/chromo/$file.zip ]; then
-              echo "Downloading $file.zip..."
-              curl -L -o ~/.cache/chromo/$file.zip "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip"
-            else
-              echo "$file.zip already exists, skipping."
-            fi
-          done
-      - name: Save chromo data cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/chromo
-          key: chromo-cache-v2
-  wheels_on_PR:
-    needs: prepare-cache
-    if: ${{ github.event.pull_request.merged == true }}
-    name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        arch: [auto]
-        py: [cp313]
-    steps:
-      - name: Restore chromo data cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/chromo
-          key: chromo-cache-v2
-
       - uses: actions/checkout@v4
         with:
-          submodules: true
-
-      - name: Setup gfortran for Linux
-        uses: awvwgk/setup-fortran@main
-        id: setup-fortran
-        with:
-          compiler: gcc
-          version: 13
-
-      - name: Random delay to avoid rate limits
-        if: runner.os == 'macOS'
-        run: |
-          delay=$((RANDOM % 14 + 2))
-          echo "Sleeping $delay seconds to stagger cibuildwheel downloads..."
-          sleep $delay
-
-      - name: cibuildwheel on Linux
-        uses: pypa/cibuildwheel@v3.4.0
-        env:
-          CIBW_BUILD: ${{ matrix.py }}-*
-          CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_ENVIRONMENT_PASS_LINUX: CI
-          # Will avoid testing on emulated architectures
-          CIBW_TEST_SKIP: "*-*linux_{ppc64le,s390x,armv7l}"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          path: ./wheelhouse/*.whl
-          name: wheel-${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
-
-
-
-  wheels:
-    needs: prepare-cache
-    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v') }}
-    name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest] # windows-latest: Disable windows for now
-        arch: [auto]
-        py: [cp39, cp310, cp311, cp312, cp313]
-    steps:
-      - name: Restore chromo data cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/chromo
-          key: chromo-cache-v2
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
           fetch-depth: 0
 
-      - name: Set macOS deployment target
-        if: runner.os == 'macOS'
-        run: echo "MACOSX_DEPLOYMENT_TARGET=15.0" >> $GITHUB_ENV
-
-      - name: Setup gfortran
-        uses: awvwgk/setup-fortran@v1.6.1
-        id: setup-fortran
-        with:
-          compiler: gcc
-          version: 13
-
-      - if: ${{ matrix.os != 'macos-15-intel' }}
-        uses: ts-graphviz/setup-graphviz@v2
-        name: Install Graphviz
-
-      - if: ${{ matrix.os == 'windows-latest' }}
-        name: cibuildwheel on Windows
-        uses: pypa/cibuildwheel@v3.4.0
-        env:
-          CIBW_BUILD: ${{ matrix.py }}-*
-          CIBW_ARCHS: ${{ matrix.arch }}
-          CMAKE_GENERATOR: "MinGW Makefiles"
-          FC: ${{ steps.setup-fortran.outputs.fc }}
-
-      - if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm' }}
-        name: cibuildwheel on Linux
-        uses: pypa/cibuildwheel@v3.4.0
-        env:
-          CIBW_BUILD: ${{ matrix.py }}-*
-          CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_ENVIRONMENT_PASS_LINUX: CI
-          # Will avoid testing on emulated architectures
-          CIBW_TEST_SKIP: "*-*linux_{ppc64le,s390x,armv7l}"
-
-      - name: Random delay to avoid rate limits
-        if: runner.os == 'macOS'
+      - name: Get commit SHA for this ref
+        id: get-sha
         run: |
-          delay=$((RANDOM % 14 + 2))
-          echo "Sleeping $delay seconds to stagger cibuildwheel downloads..."
-          sleep $delay
+          COMMIT_SHA=$(git rev-parse HEAD)
+          echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "Looking for Build workflow artifacts for commit $COMMIT_SHA"
 
-      - if: ${{ matrix.os == 'macos-15-intel' }}
-        name: cibuildwheel on macOS Intel
-        uses: pypa/cibuildwheel@v3.4.0
+      - name: Find successful Build workflow run
+        id: find-run
         env:
-          CIBW_BUILD: ${{ matrix.py }}-*
-          CIBW_ARCHS: ${{ matrix.arch }}
-          no_proxy: '*'
-          CHROMO_SKIP_GRAPHVIZ: 1
-          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Search for a successful Build workflow run matching this commit
+          RUN_ID=$(gh run list \
+            --repo ${{ github.repository }} \
+            --workflow build.yml \
+            --commit ${{ steps.get-sha.outputs.sha }} \
+            --status success \
+            --limit 1 \
+            --json databaseId \
+            --jq '.[0].databaseId')
 
-      - if: ${{ matrix.os == 'macos-latest' }}
-        name: cibuildwheel on macOS
-        uses: pypa/cibuildwheel@v3.4.0
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+            echo "::error::No successful Build workflow run found for commit ${{ steps.get-sha.outputs.sha }}."
+            echo "::error::Make sure the Build workflow has completed successfully on main before tagging a release."
+            exit 1
+          fi
+
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+          echo "Found Build workflow run: $RUN_ID"
+
+      - name: Download all artifacts
         env:
-          CIBW_BUILD: ${{ matrix.py }}-*
-          CIBW_ARCHS: ${{ matrix.arch }}
-          no_proxy: '*'
-          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh run download ${{ steps.find-run.outputs.run_id }} \
+            --repo ${{ github.repository }} \
+            --dir artifacts/
 
-      - uses: actions/upload-artifact@v4
-        with:
-          path: ./wheelhouse/*.whl
-          name: wheel-${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
+          # Flatten wheels and sdist into dist/
+          find artifacts/ -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} dist/ \;
+          rmdir artifacts/*/ 2>/dev/null || true
+          rmdir artifacts/ 2>/dev/null || true
 
+      - name: Validate downloaded packages
+        run: |
+          wheel_count=$(find dist -maxdepth 1 -type f -name "*.whl" | wc -l)
+          sdist_count=$(find dist -maxdepth 1 -type f -name "*.tar.gz" | wc -l)
 
-  sdist:
-    needs: prepare-cache
-    name: source package
-    runs-on: ubuntu-latest
-    steps:
-      - name: Restore chromo data cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/chromo
-          key: chromo-cache-v2
+          if [ "$wheel_count" -eq 0 ] || [ "$sdist_count" -eq 0 ]; then
+            echo "::error::Expected wheels and sdist in dist/, but found $wheel_count wheel(s) and $sdist_count sdist(s)."
+            exit 1
+          fi
 
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - uses: actions/setup-python@v4
-        name: Install Python
-        with:
-          python-version: '3.12'
-
-      - uses: tlylt/install-graphviz@v1
-        name: Install Graphviz
-
-      - run: python -m pip install --upgrade pip wheel setuptools
-      - run: pipx run build --sdist
-      - run: python -m pip install --prefer-binary -v `echo dist/chromo-*`[test]
-      - run: python -m pytest -v
-
-      - uses: actions/upload-artifact@v4
-        with:
-          path: dist/*.tar.gz
-
-  upload_to_PyPI:
-    name: Upload to PyPI
-    needs: [wheels, sdist]
-    runs-on: ubuntu-latest
-    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-    steps:
-      - name: Download files in artifact to "dist/" directory
-        uses: actions/download-artifact@v4.1.7
-        with:
-          merge-multiple: true
-          path: dist
+          echo "Packages found: $wheel_count wheel(s), $sdist_count sdist(s)"
+          ls -lh dist/
 
       - name: Publish package to PyPI
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         uses: pypa/gh-action-pypi-publish@release/v1.8
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-
-
-
