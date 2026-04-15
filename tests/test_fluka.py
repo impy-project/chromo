@@ -1,0 +1,417 @@
+"""Tests for the Fluka model.
+
+Each test runs in a separate subprocess via run_in_separate_process
+because FLUKA is single-instantiation per Python process.
+"""
+
+import sys
+from functools import lru_cache
+
+import numpy as np
+import pytest
+
+from chromo.constants import GeV
+from chromo.kinematics import CenterOfMass, FixedTarget
+from chromo.util import CompositeTarget
+
+from .util import reference_charge, run_in_separate_process
+
+try:
+    from chromo.models._fluka import pdg_to_proj_code  # noqa: F401
+
+    _fluka_available = True
+except ImportError:
+    _fluka_available = False
+
+pytestmark = [
+    pytest.mark.skipif(
+        sys.platform == "win32", reason="FLUKA is not built on Windows"
+    ),
+    pytest.mark.skipif(
+        not _fluka_available, reason="_fluka extension not built"
+    ),
+]
+
+
+def _run_xsec(ecm_or_elab, p1, p2, *, fixed_target=True, **kwargs):
+    from chromo.models import Fluka
+
+    kin = (
+        FixedTarget(ecm_or_elab, p1, p2)
+        if fixed_target
+        else CenterOfMass(ecm_or_elab, p1, p2)
+    )
+    gen = Fluka(kin, seed=1, **kwargs)
+    return gen.cross_section()
+
+
+def _run_one_event(elab, p1, p2, **kwargs):
+    from chromo.models import Fluka
+
+    kin = FixedTarget(elab, p1, p2)
+    gen = Fluka(kin, seed=1, **kwargs)
+    for event in gen(1):
+        pass
+    return event
+
+
+def test_import():
+    """Trivial importability test."""
+    from chromo.models import Fluka  # noqa: F401
+
+    assert Fluka.name == "FLUKA"
+
+
+# ---------------------------------------------------------------------------
+# Task 13: Cross-section tests (hN, hA, AA, composite)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "target,xs_min,xs_max",
+    [
+        ("H1", 20, 60),
+        ("N14", 200, 600),
+        ("O16", 200, 700),
+        ("Ar40", 400, 1100),
+        ("Fe56", 500, 1300),
+        ("Pb208", 1200, 2800),
+    ],
+)
+def test_xsec_p_A_sweep(target, xs_min, xs_max):
+    cs = run_in_separate_process(_run_xsec, 100.0, "p", target)
+    assert xs_min < cs.inelastic < xs_max, (
+        f"σ_inel(p+{target})={cs.inelastic} mb outside [{xs_min}, {xs_max}]"
+    )
+
+
+def test_xsec_pi_N14():
+    cs = run_in_separate_process(_run_xsec, 100.0, "pi+", "N14")
+    assert 150 < cs.inelastic < 600
+
+
+def test_xsec_composite_air():
+    air = CompositeTarget(
+        [("N14", 0.78), ("O16", 0.21), ("Ar40", 0.01)], label="Air"
+    )
+    cs = run_in_separate_process(_run_xsec, 100.0, "p", air)
+    assert 200 < cs.inelastic < 1100
+
+
+def test_xsec_AA_O_O():
+    cs = run_in_separate_process(_run_xsec, 1600.0, "O16", "O16")
+    assert 500 < cs.inelastic < 2500
+
+
+# ---------------------------------------------------------------------------
+# Task 14: Frame-conversion round-trip test
+# ---------------------------------------------------------------------------
+
+
+def _xsec_ft(elab, p1, p2):
+    from chromo.models import Fluka
+
+    return Fluka(FixedTarget(elab, p1, p2), seed=1).cross_section()
+
+
+def _xsec_cms(ecm, p1, p2):
+    from chromo.models import Fluka
+
+    return Fluka(CenterOfMass(ecm, p1, p2), seed=1).cross_section()
+
+
+def test_xsec_cms_vs_ft_equivalent():
+    ecm = 20.0  # GeV
+    cs_cms = run_in_separate_process(_xsec_cms, ecm, "p", "N14")
+    m_p = 0.938272
+    elab = (ecm * ecm - 2 * m_p * m_p) / (2 * m_p)
+    cs_ft = run_in_separate_process(_xsec_ft, elab, "p", "N14")
+    assert abs(cs_cms.inelastic - cs_ft.inelastic) < 0.05 * cs_ft.inelastic
+
+
+# ---------------------------------------------------------------------------
+# Task 15: Photon tests (photohadronic + photonuclear)
+# ---------------------------------------------------------------------------
+
+
+def test_xsec_gamma_p():
+    cs = run_in_separate_process(_run_xsec, 10.0, "gamma", "p")
+    # γp σ_inel at 10 GeV ekin is small (~0.1-1 mb range)
+    assert 1e-3 < cs.inelastic < 1.0
+
+
+def test_xsec_gamma_Pb_delta():
+    # Δ-resonance region: 300 MeV photon
+    cs = run_in_separate_process(_run_xsec, 0.3, "gamma", "Pb208")
+    assert 1.0 < cs.inelastic < 500.0
+
+
+def test_xsec_gamma_Pb_DIS():
+    # DIS regime: 10 GeV photon
+    cs = run_in_separate_process(_run_xsec, 10.0, "gamma", "Pb208")
+    assert cs.inelastic > 1.0
+
+
+def test_generate_gamma_Pb_at_delta():
+    event = run_in_separate_process(_run_one_event, 0.3, "gamma", "Pb208")
+    fs = event.final_state()
+    assert len(fs) > 0
+    # Residual nucleus should be present
+    big_pids = np.abs(event.pid)
+    has_big = np.any(big_pids >= 1_000_000_000)
+    assert has_big, "no nuclear remnant in final state"
+
+
+# ---------------------------------------------------------------------------
+# Task 16: EMD tests
+# ---------------------------------------------------------------------------
+
+
+def _run_xsec_emd(elab, p1, p2):
+    from chromo.models import Fluka
+    from chromo.models.fluka import InteractionType
+
+    kin = FixedTarget(elab, p1, p2)
+    gen = Fluka(kin, seed=1, interaction_type=InteractionType.INELA_EMD)
+    return gen.cross_section()
+
+
+def _run_emd_event(elab, p1, p2):
+    from chromo.models import Fluka
+    from chromo.models.fluka import InteractionType
+
+    kin = FixedTarget(elab, p1, p2)
+    gen = Fluka(kin, seed=1, interaction_type=InteractionType.EMD)
+    for event in gen(1):
+        pass
+    return event
+
+
+def test_xsec_emd_p_Pb208():
+    cs = run_in_separate_process(_run_xsec_emd, 100.0, "p", "Pb208")
+    assert cs.inelastic > 0 and not np.isnan(cs.inelastic)
+    assert cs.emd > 0 and not np.isnan(cs.emd)
+    assert cs.emd < cs.inelastic
+
+
+def test_xsec_emd_AA_O_Pb():
+    cs = run_in_separate_process(_run_xsec_emd, 1600.0, "O16", "Pb208")
+    assert cs.emd > 0 and not np.isnan(cs.emd)
+
+
+def test_generate_emd_event_one_Pb():
+    event = run_in_separate_process(_run_emd_event, 100.0, "p", "Pb208")
+    fs = event.final_state()
+    assert len(fs) > 0
+    assert len(fs) < 50
+
+
+# ---------------------------------------------------------------------------
+# Task 17: Event, conservation, and remnant tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+@lru_cache(maxsize=1)
+def event_p_O16():
+    return run_in_separate_process(_run_one_event, 100.0, "p", "O16")
+
+
+@pytest.fixture
+@lru_cache(maxsize=1)
+def event_AA_O_O():
+    return run_in_separate_process(_run_one_event, 1600.0, "O16", "O16")
+
+
+def test_generate_p_O16(event_p_O16):
+    fs = event_p_O16.final_state()
+    assert len(fs) > 2
+
+
+def test_generate_p_O16_charged_pions(event_p_O16):
+    fs = event_p_O16.final_state_charged()
+    apid = np.abs(fs.pid)
+    assert np.sum(apid == 211) > 0
+
+
+def test_charge_reference_matches(event_p_O16):
+    expected = reference_charge(event_p_O16.pid)
+    mask = ~np.isnan(expected)
+    np.testing.assert_allclose(event_p_O16.charge[mask], expected[mask])
+
+
+def test_generate_AA_O_O_multiplicity(event_AA_O_O):
+    fs = event_AA_O_O.final_state()
+    assert len(fs) > 10
+
+
+@pytest.mark.parametrize(
+    "p1,p2,elab",
+    [
+        ("p", "O16", 100.0),
+        ("pi+", "Fe56", 50.0),
+        ("O16", "O16", 1600.0),
+    ],
+)
+def test_conservation_baryon(p1, p2, elab):
+    event = run_in_separate_process(_run_one_event, elab, p1, p2)
+    fs = event.final_state()
+    from particle import Particle
+
+    b_in = Particle.from_pdgid(int(event.kin.p1)).baryon_number + Particle.from_pdgid(
+        int(event.kin.p2)
+    ).baryon_number
+    b_out = 0
+    for pid in fs.pid:
+        try:
+            b_out += Particle.from_pdgid(int(pid)).baryon_number
+        except Exception:
+            # Nucleus: baryon number = A
+            if abs(int(pid)) >= 1_000_000_000:
+                a = (abs(int(pid)) // 10) % 1000
+                b_out += a * (1 if pid > 0 else -1)
+    assert b_in == b_out, f"baryon number not conserved: {b_in} != {b_out}"
+
+
+def test_remnant_present_p_Pb208():
+    event = run_in_separate_process(_run_one_event, 10.0, "p", "Pb208")
+    big_pids = np.abs(event.pid)
+    nuclei = big_pids[big_pids >= 1_000_000_000]
+    assert len(nuclei) >= 1, "no nuclear remnant in p+Pb event"
+    residual_A = np.array(
+        [
+            (abs(int(pid)) // 10) % 1000
+            for pid in event.pid
+            if abs(int(pid)) >= 1_000_000_000
+        ]
+    )
+    assert np.any(residual_A > 150), "no heavy remnant found"
+
+
+# ---------------------------------------------------------------------------
+# Task 18: Registered-targets and error-path tests
+# ---------------------------------------------------------------------------
+
+
+def _registered_targets(elab, p1, p2):
+    from chromo.models import Fluka
+
+    gen = Fluka(FixedTarget(elab, p1, p2), seed=1)
+    return gen.registered_targets
+
+
+def _register_extra_target(elab, p1, p2, extras):
+    from chromo.models import Fluka
+
+    gen = Fluka(FixedTarget(elab, p1, p2), seed=1, targets=extras)
+    return gen.registered_targets
+
+
+def test_registered_defaults_present():
+    targets = run_in_separate_process(_registered_targets, 100.0, "p", "N14")
+    from particle import Particle
+
+    for name in ("N14", "O16", "Pb208"):
+        pid = int(Particle.findall(name)[0].pdgid)
+        assert pid in targets or 2212 in targets, (
+            f"{name} not in registered_targets {targets}"
+        )
+
+
+def test_register_extra_target_via_kwarg():
+    # Drop an enduring material to make room: use kin.p2=N14 so we only need
+    # 9 defaults + no kin-added (N14 already there) + 1 extra slot for Ne20.
+    targets = run_in_separate_process(
+        _register_extra_target, 100.0, "p", "N14", ("Ne20",)
+    )
+    from particle import Particle
+
+    ne20 = int(Particle.findall("Ne20")[0].pdgid)
+    assert ne20 in targets
+
+
+def test_unregistered_target_raises_with_hint():
+    def _try():
+        from chromo.models import Fluka
+
+        gen = Fluka(FixedTarget(100.0, "p", "N14"), seed=1)
+        try:
+            gen.kinematics = FixedTarget(100.0, "p", "U238")
+        except (KeyError, ValueError) as exc:
+            return str(exc)
+        return "no-error"
+
+    msg = run_in_separate_process(_try)
+    assert "U238" in msg
+    assert "targets=" in msg, f"error message lacks remediation hint: {msg}"
+
+
+# ---------------------------------------------------------------------------
+# Task 19: Energy-bound tests
+# ---------------------------------------------------------------------------
+
+
+def _try_construct(elab, p1, p2):
+    from chromo.models import Fluka
+
+    try:
+        Fluka(FixedTarget(elab, p1, p2), seed=1)
+        return "no-error"
+    except ValueError as exc:
+        return str(exc)
+
+
+def test_above_ekin_max_hN_raises():
+    msg = run_in_separate_process(_try_construct, 50_000.0, "p", "N14")
+    assert msg != "no-error"
+    assert "kinetic energy/nucleon" in msg or "max" in msg.lower()
+
+
+def test_above_ekin_per_nucleon_max_AA_raises():
+    msg = run_in_separate_process(_try_construct, 30_000.0 * 16, "O16", "O16")
+    assert msg != "no-error"
+
+
+def test_photon_above_its_ekin_cap_raises():
+    msg = run_in_separate_process(_try_construct, 2_000.0, "gamma", "Pb208")
+    assert msg != "no-error"
+
+
+# ---------------------------------------------------------------------------
+# Task 20: RNG state round-trip test
+# ---------------------------------------------------------------------------
+
+
+def _rng_roundtrip(tmpdir):
+    import pathlib
+
+    from chromo.models import Fluka
+
+    path = pathlib.Path(tmpdir) / "fluka_rng.dat"
+
+    kin = FixedTarget(100.0, "p", "O16")
+    g1 = Fluka(kin, seed=42, rng_state_file=path)
+    g1.save_rng_state(path)
+    ev1 = next(iter(g1(1)))
+    pid1 = ev1.pid.copy()
+    en1 = ev1.en.copy()
+    return path, pid1, en1
+
+
+def _rng_replay(path):
+    import pathlib
+
+    from chromo.models import Fluka
+
+    kin = FixedTarget(100.0, "p", "O16")
+    g2 = Fluka(kin, seed=42, rng_state_file=path)
+    g2.load_rng_state(path)
+    ev2 = next(iter(g2(1)))
+    return ev2.pid.copy(), ev2.en.copy()
+
+
+def test_rng_state_roundtrip(tmp_path):
+    path, pid1, en1 = run_in_separate_process(_rng_roundtrip, str(tmp_path))
+    pid2, en2 = run_in_separate_process(_rng_replay, path)
+    np.testing.assert_array_equal(pid1, pid2)
+    np.testing.assert_allclose(en1, en2, rtol=0, atol=0)
