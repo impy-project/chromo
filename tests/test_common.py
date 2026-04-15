@@ -182,6 +182,12 @@ def test_models_beam(Model):
             "Pythia8Angantyr nuclear beam momenta differ from idealized "
             "CMS beam data due to per-nucleon kinematics"
         )
+    if Model.__name__ == "Fluka":
+        pytest.xfail(
+            "FLUKA's FLLHEP populates HEPEVT with GENSTK ejectiles and RESNUC "
+            "residuals only; beam records are not in positions 0-1 "
+            "(_prepend_initial_beam is a no-op)"
+        )
     evt_kin = CenterOfMass(100, "proton", "proton")
     if Model.pyname in "Sophia20":
         evt_kin = CenterOfMass(100, "photon", "proton")
