@@ -1,0 +1,143 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  prepare-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v2
+      - name: Download all cache files if missing
+        run: |
+          mkdir -p ~/.cache/chromo
+          for file in qgsjet_v002 Pythia8_v007 eposlhcr_v001 eposlhc_v001 dpm3191_v001 dpm3_v001 ; do
+            if [ ! -f ~/.cache/chromo/$file.zip ]; then
+              echo "Downloading $file.zip..."
+              curl -L -o ~/.cache/chromo/$file.zip "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip"
+            else
+              echo "$file.zip already exists, skipping."
+            fi
+          done
+      - name: Save chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v2
+
+  wheels:
+    needs: prepare-cache
+    name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest]
+        arch: [auto]
+        py: [cp39, cp310, cp311, cp312, cp313]
+    steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v2
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Set macOS deployment target
+        if: runner.os == 'macOS'
+        run: echo "MACOSX_DEPLOYMENT_TARGET=15.0" >> $GITHUB_ENV
+
+      - name: Setup gfortran
+        uses: awvwgk/setup-fortran@v1.6.1
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 13
+
+      - if: ${{ matrix.os != 'macos-15-intel' }}
+        uses: ts-graphviz/setup-graphviz@v2
+        name: Install Graphviz
+
+      - if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm' }}
+        name: cibuildwheel on Linux
+        uses: pypa/cibuildwheel@v3.4.0
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_ENVIRONMENT_PASS_LINUX: CI
+          # Will avoid testing on emulated architectures
+          CIBW_TEST_SKIP: "*-*linux_{ppc64le,s390x,armv7l}"
+
+      - name: Random delay to avoid rate limits
+        if: runner.os == 'macOS'
+        run: |
+          delay=$((RANDOM % 14 + 2))
+          echo "Sleeping $delay seconds to stagger cibuildwheel downloads..."
+          sleep $delay
+
+      - if: ${{ matrix.os == 'macos-15-intel' }}
+        name: cibuildwheel on macOS Intel
+        uses: pypa/cibuildwheel@v3.4.0
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          no_proxy: '*'
+          CHROMO_SKIP_GRAPHVIZ: 1
+          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
+
+      - if: ${{ matrix.os == 'macos-latest' }}
+        name: cibuildwheel on macOS
+        uses: pypa/cibuildwheel@v3.4.0
+        env:
+          CIBW_BUILD: ${{ matrix.py }}-*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          no_proxy: '*'
+          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          path: ./wheelhouse/*.whl
+          name: wheel-${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
+
+  sdist:
+    needs: prepare-cache
+    name: source package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v2
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-python@v4
+        name: Install Python
+        with:
+          python-version: '3.12'
+
+      - uses: tlylt/install-graphviz@v1
+        name: Install Graphviz
+
+      - run: python -m pip install --upgrade pip wheel setuptools
+      - run: pipx run build --sdist
+      - run: python -m pip install --prefer-binary -v `echo dist/chromo-*`[test]
+      - run: python -m pytest -v
+
+      - uses: actions/upload-artifact@v4
+        with:
+          path: dist/*.tar.gz
+          name: sdist

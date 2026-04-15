@@ -122,7 +122,7 @@ The mechanism lives in `src/chromo/util.py:_cached_data_dir(url)`:
 4. Create the zip: `cd src/chromo/iamdata && zip -r <Model>_v00N.zip <Model>/xmldoc <Model>/pdfdata <Model>/tunes`
    The zip must contain `<Model>/subdir/...` paths (NOT the version file — that is created after extraction).
 5. Upload zip to `https://github.com/impy-project/chromo/releases/tag/zipped_data_v1.0`.
-6. Add the new version name to the cache download loop in `.github/workflows/test.yml` and `release.yml`.
+6. Add the new version name to the cache download loop in `.github/workflows/test.yml` and `build.yml`.
 
 Note: `iamdata/` is git-ignored; only the model `.py` and CI workflow files are committed.
 
