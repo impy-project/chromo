@@ -448,3 +448,46 @@ Cf2py intent(out) MTFLKA
       RETURN
 
       END SUBROUTINE
+      SUBROUTINE pdg_to_proj_code(pdg_id, proj_code)
+!----------------------------------------------------------------------!
+!     Convert a PDG particle id to the FLUKA external "PAPROP" code
+!     expected by SGMXYZ/EVTXYZ. Handles hadrons, the photon, and
+!     nuclei.
+!
+!     Hadron/lepton:   proj_code = KPTOIP(MCIHAD(pdg_id))
+!     Photon (pdg=22): proj_code = 7  (FLUKA external photon code)
+!     Nucleus (|pdg|>=1e9 per PDG 10LZZZAAAI):
+!                      proj_code = A*10 + Z*10000 + L*10000000 + 1e9
+!                      (EVTXYZ/SGMXYZ branch on |proj_code|>=1e9 and
+!                       call PDGION/SETION internally.)
+!----------------------------------------------------------------------!
+      INCLUDE '(DBLPRC)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(PAPROP)'
+      INCLUDE '(PART2)'
+
+      INTEGER pdg_id, proj_code
+      INTEGER A, Z, L, KFLK
+Cf2py intent(out) proj_code
+
+      IF (ABS(pdg_id) .LT. 1000000000) THEN
+         IF (pdg_id .EQ. 22) THEN
+            proj_code = 7
+         ELSE
+            KFLK = MCIHAD(pdg_id)
+            IF (KFLK .LT. -6 .OR. KFLK .GT. 390) THEN
+               proj_code = 0
+            ELSE
+               proj_code = KPTOIP(KFLK)
+            END IF
+         END IF
+      ELSE
+         A = MOD(ABS(pdg_id) / 10,        1000)
+         Z = MOD(ABS(pdg_id) / 10000,     1000)
+         L = MOD(ABS(pdg_id) / 10000000,  10)
+         proj_code = A*10 + Z*10000 + L*10000000 + 1000000000
+         IF (pdg_id .LT. 0) proj_code = -proj_code
+      END IF
+
+      RETURN
+      END SUBROUTINE pdg_to_proj_code
