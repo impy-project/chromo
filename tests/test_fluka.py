@@ -365,20 +365,61 @@ def _try_construct(elab, p1, p2):
         return str(exc)
 
 
-def test_above_ekin_max_hN_raises():
-    msg = run_in_separate_process(_try_construct, 50_000.0, "p", "N14")
+def _try_generate_event(elab, p1, p2):
+    from chromo.models import Fluka
+
+    try:
+        gen = Fluka(FixedTarget(elab, p1, p2), seed=1)
+        for _ in gen(1):
+            pass
+        return "no-error"
+    except ValueError as exc:
+        return str(exc)
+
+
+def test_above_hadron_xsec_ceiling_raises():
+    # 10 EeV hadron ekin: above the 1 PeV/nucleon xsec ceiling.
+    msg = run_in_separate_process(_try_construct, 1e10, "p", "N14")
     assert msg != "no-error"
-    assert "kinetic energy/nucleon" in msg or "max" in msg.lower()
+    assert "cross-section ceiling" in msg
 
 
-def test_above_ekin_per_nucleon_max_AA_raises():
-    msg = run_in_separate_process(_try_construct, 30_000.0 * 16, "O16", "O16")
+def test_above_photon_xsec_ceiling_raises():
+    # 10 PeV photon: above the 1 PeV xsec ceiling.
+    msg = run_in_separate_process(_try_construct, 1e7, "gamma", "Pb208")
     assert msg != "no-error"
+    assert "cross-section ceiling" in msg
 
 
-def test_photon_above_its_ekin_cap_raises():
-    msg = run_in_separate_process(_try_construct, 2_000.0, "gamma", "Pb208")
+def _xsec_between_ceilings():
+    from chromo.models import Fluka
+
+    gen = Fluka(FixedTarget(1e5, "p", "N14"), seed=1)
+    cs = gen.cross_section()
+    return cs.inelastic
+
+
+def test_construct_between_event_and_xsec_ceilings_ok():
+    # Hadron at 100 TeV: below 1 PeV xsec ceiling, above 20 TeV event
+    # ceiling. Construction + cross_section() succeed; event generation
+    # raises separately (covered by test_above_hadron_event_ceiling_raises).
+    inel = run_in_separate_process(_xsec_between_ceilings)
+    assert 100 < inel < 1000
+
+
+def test_above_hadron_event_ceiling_raises():
+    # 100 TeV hadron event: below xsec ceiling, above event ceiling.
+    msg = run_in_separate_process(_try_generate_event, 1e5, "p", "N14")
     assert msg != "no-error"
+    assert "event-generation ceiling" in msg
+
+
+def test_below_ekin_per_nucleon_min_raises():
+    # proton @ elab = m_p + 0.5 MeV → ekin/n = 5e-4 GeV < 1e-3 GeV floor,
+    # but elab > m_p so the kinematics constructor accepts it.
+    msg = run_in_separate_process(_try_construct, 0.938772, "p", "O16")
+    assert msg != "no-error", f"expected error, got {msg!r}"
+    assert "< min" in msg, f"expected '< min' in error, got {msg!r}"
 
 
 # ---------------------------------------------------------------------------
