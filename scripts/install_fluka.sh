@@ -38,7 +38,7 @@ for f in "${REQUIRED[@]}"; do
     exit 1
   fi
 done
-ls "$FLUPRO"/interface/libdpmjet*.a >/dev/null || {
+ls "$FLUPRO"/interface/libdpmjet*.a >/dev/null 2>&1 || {
   echo "ERROR: no libdpmjet*.a under $FLUPRO/interface/" >&2; exit 1;
 }
 

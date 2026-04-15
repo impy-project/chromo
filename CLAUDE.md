@@ -26,7 +26,8 @@ Compiled modules go to `build/cp*/`. Model enable/disable is controlled in `pypr
 python scripts/download_data.py
 
 # Run all tests (parallel by default via pytest-xdist)
-python -m pytest -vv -n 16 # in the cloud use 2 or 3 processes.
+# This dev box has 32-40 cores available; use -n 32. CI runners use 2-3.
+python -m pytest -vv -n 32 # in CI/cloud use 2 or 3 processes.
 
 # Run tests serially
 python -m pytest -n 0
