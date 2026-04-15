@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_equal
 
+import chromo.models as im
 from chromo.common import CrossSectionData, EventData, MCEvent
 from chromo.kinematics import CenterOfMass, EventFrame
 from chromo.util import get_all_models
@@ -171,13 +172,25 @@ def run_model(Model, evt_kin, n_events=10):
 @pytest.mark.parametrize("Model", get_all_models())
 def test_models_beam(Model):
     """Tests whether all models have correct beam particles"""
+    if Model is im.Pythia8Cascade:
+        pytest.xfail(
+            "Pythia8Cascade returns final-state-only events (listFinalOnly=True); "
+            "event record has no beam particles at positions 0-1"
+        )
+    if Model is im.Pythia8Angantyr:
+        pytest.xfail(
+            "Pythia8Angantyr nuclear beam momenta differ from idealized "
+            "CMS beam data due to per-nucleon kinematics"
+        )
     evt_kin = CenterOfMass(100, "proton", "proton")
     if Model.pyname in "Sophia20":
         evt_kin = CenterOfMass(100, "photon", "proton")
     elif Model.name in ["DPMJET-III", "EPOS"]:
         evt_kin = CenterOfMass(100, "N", "O")
-    elif Model.name in ["SIBYLL"]:
+    elif Model.name == "SIBYLL":
         evt_kin = CenterOfMass(100, "p", "O")
+    elif Model is im.Pythia8Angantyr:
+        evt_kin = CenterOfMass(100, "p", "N14")
 
     beam_list = run_in_separate_process(run_model, Model, evt_kin)
     for field, beam_field, event_field in beam_list:

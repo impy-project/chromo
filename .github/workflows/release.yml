@@ -20,11 +20,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
       - name: Download all cache files if missing
         run: |
           mkdir -p ~/.cache/chromo
-          for file in qgsjet_v001 qgsjet_v002 Pythia8_v003 Pythia8_v004 Pythia8_v005 eposlhcr_v001 eposlhc_v001 epos_v001 dpm3191_v001 dpm3_v001 ; do
+          for file in qgsjet_v002 Pythia8_v007 eposlhcr_v001 eposlhc_v001 dpm3191_v001 dpm3_v001 ; do
             if [ ! -f ~/.cache/chromo/$file.zip ]; then
               echo "Downloading $file.zip..."
               curl -L -o ~/.cache/chromo/$file.zip "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip"
@@ -36,7 +36,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
   wheels_on_PR:
     needs: prepare-cache
     if: ${{ github.event.pull_request.merged == true }}
@@ -53,7 +53,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
 
       - uses: actions/checkout@v4
         with:
@@ -66,8 +66,15 @@ jobs:
           compiler: gcc
           version: 13
 
+      - name: Random delay to avoid rate limits
+        if: runner.os == 'macOS'
+        run: |
+          delay=$((RANDOM % 14 + 2))
+          echo "Sleeping $delay seconds to stagger cibuildwheel downloads..."
+          sleep $delay
+
       - name: cibuildwheel on Linux
-        uses: pypa/cibuildwheel@v2.23.3
+        uses: pypa/cibuildwheel@v3.4.0
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
@@ -90,7 +97,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-14] # windows-latest: Disable windows for now
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest] # windows-latest: Disable windows for now
         arch: [auto]
         py: [cp39, cp310, cp311, cp312, cp313]
     steps:
@@ -98,45 +105,30 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
       - uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 0
 
       - name: Set macOS deployment target
-        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
-        run: echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-13' && '13.0' || matrix.os == 'macos-14' && '14.0' || '' }}" >> $GITHUB_ENV
+        if: runner.os == 'macOS'
+        run: echo "MACOSX_DEPLOYMENT_TARGET=15.0" >> $GITHUB_ENV
 
-      - if: ${{ matrix.os == 'macos-13' }}
-        name: Install gfortran via Homebrew
-        run: |
-          brew install gcc
-          gfortran --version
-          which gfortran
-
-      - if: ${{ matrix.os != 'macos-13'}}
-        name: Setup gfortran
+      - name: Setup gfortran
         uses: awvwgk/setup-fortran@v1.6.1
         id: setup-fortran
         with:
           compiler: gcc
           version: 13
 
-      - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
-        if: ${{ matrix.os == 'macos-13'  }}
-        name: Setup Xcode
-        with:
-          xcode-version: '14.3'
-
-      - if: ${{ matrix.os != 'macos-13' }}
+      - if: ${{ matrix.os != 'macos-15-intel' }}
         uses: ts-graphviz/setup-graphviz@v2
         name: Install Graphviz
 
-
       - if: ${{ matrix.os == 'windows-latest' }}
         name: cibuildwheel on Windows
-        uses: pypa/cibuildwheel@v2.23.3
+        uses: pypa/cibuildwheel@v3.4.0
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
@@ -145,7 +137,7 @@ jobs:
 
       - if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm' }}
         name: cibuildwheel on Linux
-        uses: pypa/cibuildwheel@v2.23.3
+        uses: pypa/cibuildwheel@v3.4.0
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
@@ -153,9 +145,16 @@ jobs:
           # Will avoid testing on emulated architectures
           CIBW_TEST_SKIP: "*-*linux_{ppc64le,s390x,armv7l}"
 
-      - if: ${{ matrix.os == 'macos-13'}}
-        name: cibuildwheel on MacOS-13
-        uses: pypa/cibuildwheel@v2.23.3
+      - name: Random delay to avoid rate limits
+        if: runner.os == 'macOS'
+        run: |
+          delay=$((RANDOM % 14 + 2))
+          echo "Sleeping $delay seconds to stagger cibuildwheel downloads..."
+          sleep $delay
+
+      - if: ${{ matrix.os == 'macos-15-intel' }}
+        name: cibuildwheel on macOS Intel
+        uses: pypa/cibuildwheel@v3.4.0
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
@@ -163,9 +162,9 @@ jobs:
           CHROMO_SKIP_GRAPHVIZ: 1
           CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
 
-      - if: ${{matrix.os == 'macos-14' }}
-        name: cibuildwheel on MacOS-14
-        uses: pypa/cibuildwheel@v2.23.3
+      - if: ${{ matrix.os == 'macos-latest' }}
+        name: cibuildwheel on macOS
+        uses: pypa/cibuildwheel@v3.4.0
         env:
           CIBW_BUILD: ${{ matrix.py }}-*
           CIBW_ARCHS: ${{ matrix.arch }}
@@ -187,7 +186,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
 
       - uses: actions/checkout@v4
         with:

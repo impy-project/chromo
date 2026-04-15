@@ -1,12 +1,29 @@
 #include <Pythia8/Event.h>
+#include <Pythia8/HeavyIons.h>
 #include <Pythia8/HIInfo.h>
 #include <Pythia8/Info.h>
 #include <Pythia8/ParticleData.h>
 #include <Pythia8/Pythia.h>
 #include <Pythia8/PythiaStdlib.h>
+#include <Pythia8/Basics.h>
+#include <Pythia8Plugins/PythiaCascade.h>
 #include <array>
 #include <cassert>
+#include <cstdio>
 #include <limits>
+#ifdef _WIN32
+#include <io.h>
+#define DUP _dup
+#define DUP2 _dup2
+#define CLOSE _close
+#define FILENO _fileno
+#else
+#include <unistd.h>
+#define DUP dup
+#define DUP2 dup2
+#define CLOSE close
+#define FILENO fileno
+#endif
 #include <private_access.hpp>
 #include <pybind11/iostream.h>
 #include <pybind11/numpy.h>
@@ -41,6 +58,9 @@ PRIVATE_ACCESS_MEMBER(Vec4, xx, double)
 PRIVATE_ACCESS_MEMBER(Vec4, yy, double)
 PRIVATE_ACCESS_MEMBER(Vec4, zz, double)
 PRIVATE_ACCESS_MEMBER(Vec4, tt, double)
+PRIVATE_ACCESS_MEMBER(PythiaCascade, pythiaMain, Pythia)
+PRIVATE_ACCESS_MEMBER(PythiaCascade, pythiaColl, Pythia)
+PRIVATE_ACCESS_MEMBER(HeavyIons, pythia, vector<Pythia*>)
 
 template <class Accessor>
 auto event_array(Event &event)
@@ -89,24 +109,23 @@ py::array_t<double> event_array_v(Event &event)
 
 py::array_t<int> event_array_mothers(Event &event)
 {
-    // skip first pseudoparticle
-    auto ptr1 = &private_access::member<Particle_mother1Save>(event[1]);
-    auto ptr2 = &private_access::member<Particle_mother2Save>(event[1]);
+    // skip first pseudoparticle; mother1Save and mother2Save are adjacent
+    // int members so a (N,2) stride view starting at mother1Save works.
+    auto *ptr = &private_access::member<Particle_mother1Save>(event[1]);
     int number = event.size() - 1;
     int shape[2] = {number, 2};
     int strides[2] = {sizeof(Particle), sizeof(int)};
-    return py::array_t<int>(shape, strides, ptr1);
+    return py::array_t<int>(shape, strides, ptr);
 }
 
 py::array_t<int> event_array_daughters(Event &event)
 {
-    // skip first pseudoparticle
-    auto ptr1 = &private_access::member<Particle_daughter1Save>(event[1]);
-    auto ptr2 = &private_access::member<Particle_daughter2Save>(event[1]);
+    // skip first pseudoparticle; daughter1Save and daughter2Save are adjacent.
+    auto *ptr = &private_access::member<Particle_daughter1Save>(event[1]);
     int number = event.size() - 1;
     int shape[2] = {number, 2};
     int strides[2] = {sizeof(Particle), sizeof(int)};
-    return py::array_t<int>(shape, strides, ptr1);
+    return py::array_t<int>(shape, strides, ptr);
 }
 
 // refills "event" stack with particles
@@ -135,6 +154,189 @@ void fill(Event &event,
                      px_[i], py_[i], pz_[i], energy_[i], mass_[i]);
     }
 }
+
+// Serialize / deserialize Pythia8's internal RNG state to / from a Python dict.
+py::dict getRndmStateFrom(Pythia &p) {
+    RndmState state = p.rndm.getState();
+    py::dict result;
+    result["i97"] = state.i97;
+    result["j97"] = state.j97;
+    result["seed"] = state.seed;
+    result["sequence"] = state.sequence;
+    result["c"] = state.c;
+    result["cd"] = state.cd;
+    result["cm"] = state.cm;
+    py::list u_array;
+    for (int i = 0; i < 97; i++)
+        u_array.append(state.u[i]);
+    result["u"] = u_array;
+    return result;
+}
+
+void setRndmStateOn(Pythia &p, py::dict state_dict) {
+    RndmState state;
+    state.i97 = state_dict["i97"].cast<int>();
+    state.j97 = state_dict["j97"].cast<int>();
+    state.seed = state_dict["seed"].cast<int>();
+    state.sequence = state_dict["sequence"].cast<long>();
+    state.c = state_dict["c"].cast<double>();
+    state.cd = state_dict["cd"].cast<double>();
+    state.cm = state_dict["cm"].cast<double>();
+    py::list u_list = state_dict["u"].cast<py::list>();
+    for (int i = 0; i < 97; i++)
+        state.u[i] = u_list[i].cast<double>();
+    p.rndm.setState(state);
+}
+
+// Get/set RNG state for Pythia in Angantyr (heavy-ion) mode.
+// Angantyr creates multiple internal sub-Pythia objects (MBIAS, SASD, HADRON,
+// SIGPP, etc.), each with its own Rndm.  To properly save/restore the full
+// generator state we must capture all of them.
+py::dict getAngantyrRndmState(Pythia &p) {
+    py::dict result;
+    result["main"] = getRndmStateFrom(p);
+    auto hiPtr = p.getHeavyIonsPtr();
+    if (hiPtr) {
+        auto &subPythias = private_access::member<HeavyIons_pythia>(*hiPtr);
+        py::list subStates;
+        // Index 0 is the main Pythia itself; sub-Pythia objects start at index 1
+        for (size_t i = 1; i < subPythias.size(); i++) {
+            if (subPythias[i])
+                subStates.append(getRndmStateFrom(*subPythias[i]));
+            else
+                subStates.append(py::none());
+        }
+        result["sub"] = subStates;
+    }
+    return result;
+}
+
+void setAngantyrRndmState(Pythia &p, py::dict state_dict) {
+    setRndmStateOn(p, state_dict["main"].cast<py::dict>());
+    if (state_dict.contains("sub")) {
+        auto hiPtr = p.getHeavyIonsPtr();
+        if (hiPtr) {
+            auto &subPythias = private_access::member<HeavyIons_pythia>(*hiPtr);
+            py::list subStates = state_dict["sub"].cast<py::list>();
+            for (size_t i = 0; i < subStates.size() && (i + 1) < subPythias.size(); i++) {
+                if (!subStates[i].is_none() && subPythias[i + 1])
+                    setRndmStateOn(*subPythias[i + 1], subStates[i].cast<py::dict>());
+            }
+        }
+    }
+}
+
+// High-level wrapper around PythiaCascade for use from chromo.
+// Owns the PythiaCascade internally, manages the sigmaSetuphN→nextColl
+// sequence, and returns particle data as pre-copied numpy arrays so
+// there is no Event& lifetime issue on the Python side.
+class PythiaCascadeForChromo
+{
+public:
+    bool init(double eKinMin, double enhanceSDtarget, string initFile,
+              bool rapidDecays, double smallTau0, bool slowDecays,
+              bool listFinalOnly)
+    {
+        return _cascade.init(eKinMin, enhanceSDtarget, initFile,
+                             rapidDecays, smallTau0, slowDecays, listFinalOnly);
+    }
+
+    // Attempt one hadron+nucleus inelastic collision.
+    // Returns py::none() when the projectile cannot interact (low energy,
+    // unknown species, or empty event generated).  Otherwise returns a
+    // tuple (pid, status, px, py, pz, en, m, vx, vy, vz, vt, mothers,
+    // daughters) of numpy arrays.  These are views into the internal Event
+    // buffer and will be overwritten by the next call; callers must copy
+    // the arrays if they need to persist across calls.
+    py::object next_coll(int id, double px, double py, double pz, double e,
+                         double m, int Z, int A)
+    {
+        Vec4 pVec(px, py, pz, e);
+        if (!_cascade.sigmaSetuphN(id, pVec, m))
+            return py::none();
+        Event &ev = _cascade.nextColl(Z, A);
+        if (ev.size() == 0)
+            return py::none();
+        return _extract(ev);
+    }
+
+    // Returns the inelastic h+A cross section (mb) for the given projectile
+    // and lab-frame four-momentum.  Returns 0 if not available.
+    double sigma_hA(int id, double px, double py, double pz, double e,
+                    double m, int A)
+    {
+        Vec4 pVec(px, py, pz, e);
+        if (!_cascade.sigmaSetuphN(id, pVec, m))
+            return 0.0;
+        return _cascade.sigmahA(A);
+    }
+
+    int  n_collisions()        { return _cascade.nCollisions(); }
+    int  first_collision_code(){ return _cascade.firstCollisionCode(); }
+    void stat()                { _cascade.stat(); }
+
+    ParticleData &particle_data() { return _cascade.particleData(); }
+
+    // Set mayDecay flag for a particle in both internal Pythia instances.
+    void set_may_decay(int pdgid, bool may_decay) {
+        private_access::member<PythiaCascade_pythiaMain>(_cascade).particleData.mayDecay(pdgid, may_decay);
+        private_access::member<PythiaCascade_pythiaColl>(_cascade).particleData.mayDecay(pdgid, may_decay);
+    }
+
+    // Get RNG state from both internal Pythia instances.
+    py::dict getRndmState() {
+        auto &main = private_access::member<PythiaCascade_pythiaMain>(_cascade);
+        auto &coll = private_access::member<PythiaCascade_pythiaColl>(_cascade);
+        py::dict result;
+        result["main"] = getRndmStateFrom(main);
+        result["coll"] = getRndmStateFrom(coll);
+        return result;
+    }
+
+    // Set RNG state on both internal Pythia instances.
+    void setRndmState(py::dict state_dict) {
+        auto &main = private_access::member<PythiaCascade_pythiaMain>(_cascade);
+        auto &coll = private_access::member<PythiaCascade_pythiaColl>(_cascade);
+        setRndmStateOn(main, state_dict["main"].cast<py::dict>());
+        setRndmStateOn(coll, state_dict["coll"].cast<py::dict>());
+    }
+
+    py::array_t<float> charge(py::object result)
+    {
+        // result is the tuple returned by next_coll; pid is element 0
+        auto pid = result.attr("__getitem__")(0).cast<py::array_t<int>>();
+        auto &pd = _cascade.particleData();
+        int size = pid.size();
+        py::array_t<float> out(size);
+        float *ptr = out.mutable_data();
+        auto pid_ = pid.unchecked<1>();
+        for (int i = 0; i < size; ++i)
+            ptr[i] = charge_from_pid(pd, pid_[i]);
+        return out;
+    }
+
+private:
+    PythiaCascade _cascade;
+
+    // Reuses the event_array<> helpers already defined in this file.
+    static py::tuple _extract(Event &ev)
+    {
+        return py::make_tuple(
+            event_array<Particle_idSave>(ev),
+            event_status(ev),
+            event_array_p<Vec4_xx>(ev),
+            event_array_p<Vec4_yy>(ev),
+            event_array_p<Vec4_zz>(ev),
+            event_array_p<Vec4_tt>(ev),
+            event_array<Particle_mSave>(ev),
+            event_array_v<Vec4_xx>(ev),
+            event_array_v<Vec4_yy>(ev),
+            event_array_v<Vec4_zz>(ev),
+            event_array_v<Vec4_tt>(ev),
+            event_array_mothers(ev),
+            event_array_daughters(ev));
+    }
+};
 
 PYBIND11_MODULE(_pythia8, m)
 {
@@ -212,6 +414,11 @@ PYBIND11_MODULE(_pythia8, m)
         .def_property_readonly("nPartProj", &HIInfo::nPartProj)
         .def_property_readonly("nPartTarg", &HIInfo::nPartTarg)
         .def_property_readonly("b", &HIInfo::b)
+        .def("glauberTot",   &HIInfo::glauberTot)
+        .def("glauberINEL",  &HIInfo::glauberINEL)
+        .def("glauberEL",    &HIInfo::glauberEL)
+        .def("glauberND",    &HIInfo::glauberND)
+        .def("glauberReset", &HIInfo::glauberReset)
 
         ;
 
@@ -242,6 +449,22 @@ PYBIND11_MODULE(_pythia8, m)
 
     py::class_<Settings>(m, "Settings")
         .def("resetAll", &Settings::resetAll)
+        .def("listChanged", [](Settings &self) {
+            py::scoped_ostream_redirect stream(
+                std::cout,
+                py::module_::import("sys").attr("stdout")
+            );
+            self.listChanged();
+        })
+        .def("listAll", [](Settings &self) {
+            py::scoped_ostream_redirect stream(
+                std::cout,
+                py::module_::import("sys").attr("stdout")
+            );
+            self.listAll();
+        })
+        .def("writeFile", py::overload_cast<string, bool>(&Settings::writeFile),
+             "toFile"_a, "writeAll"_a = false)
 
         ;
 
@@ -256,6 +479,10 @@ PYBIND11_MODULE(_pythia8, m)
         .def_readwrite("event", &Pythia::event)
         .def_property_readonly("info", [](Pythia &self)
                                { return self.info; })
+        .def("getRndmState", [](Pythia &self) { return getRndmStateFrom(self); })
+        .def("setRndmState", [](Pythia &self, py::dict s) { setRndmStateOn(self, s); })
+        .def("getAngantyrRndmState", [](Pythia &self) { return getAngantyrRndmState(self); })
+        .def("setAngantyrRndmState", [](Pythia &self, py::dict s) { setAngantyrRndmState(self, s); })
         .def("charge",
              [](Pythia &self)
              {
@@ -266,7 +493,19 @@ PYBIND11_MODULE(_pythia8, m)
                  for (auto pit = self.event.begin() + 1; pit != self.event.end(); ++pit)
                      *ptr++ = charge_from_pid(self.particleData, pit->id());
                  return result;
-             });
+             })
+        .def("readFile",
+             py::overload_cast<string, bool, int>(&Pythia::readFile),
+             "fileName"_a, "warn"_a = true, "subrun"_a = SUBRUNDEFAULT,
+             py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+        .def("setBeamIDs", &Pythia::setBeamIDs, "idA"_a, "idB"_a = 0)
+        .def("setKinematics", py::overload_cast<double>(&Pythia::setKinematics), "eCM"_a)
+        .def("getSigmaTotal",
+             py::overload_cast<int, int, double, int>(&Pythia::getSigmaTotal),
+             "id1"_a, "id2"_a, "eCM"_a, "mixLoHi"_a = 0)
+        .def("getSigmaPartial",
+             py::overload_cast<int, int, double, int, int>(&Pythia::getSigmaPartial),
+             "id1"_a, "id2"_a, "eCM"_a, "procType"_a, "mixLoHi"_a = 0);
 
     py::class_<Event>(m, "Event")
         .def_property_readonly("size", [](Event &self)
@@ -289,4 +528,53 @@ PYBIND11_MODULE(_pythia8, m)
         .def("append", py::overload_cast<int, int, int, int, double, double, double, double, double, double, double>(&Event::append), "pdgid"_a, "status"_a, "col"_a, "acol"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a = 0, "scale"_a = 0, "pol"_a = 9.)
         .def("fill", [](Event &self, py::array_t<int> pid, py::array_t<int> status, py::array_t<double> px, py::array_t<double> py, py::array_t<double> pz, py::array_t<double> energy, py::array_t<double> mass)
              { fill(self, pid, status, px, py, pz, energy, mass); }, "pid"_a, "status"_a, "px"_a, "py"_a, "pz"_a, "energy"_a, "mass"_a);
+
+    py::class_<PythiaCascadeForChromo>(m, "PythiaCascadeForChromo")
+        .def(py::init([](bool banner) {
+            if (banner)
+                return std::make_unique<PythiaCascadeForChromo>();
+            // PythiaCascade's internal Pythia members print banners in
+            // their default constructors via std::cout.  Silence them
+            // by temporarily redirecting file descriptor 1 to /dev/null.
+            std::cout.flush();
+            std::fflush(stdout);
+            int saved_fd = DUP(FILENO(stdout));
+#ifdef _WIN32
+            FILE *devnull = std::fopen("NUL", "w");
+#else
+            FILE *devnull = std::fopen("/dev/null", "w");
+#endif
+            if (devnull) {
+                DUP2(FILENO(devnull), FILENO(stdout));
+                std::fclose(devnull);
+            }
+            auto obj = std::make_unique<PythiaCascadeForChromo>();
+            std::cout.flush();
+            std::fflush(stdout);
+            if (saved_fd >= 0) {
+                DUP2(saved_fd, FILENO(stdout));
+                CLOSE(saved_fd);
+            }
+            return obj;
+        }), "banner"_a = true)
+        .def("init", &PythiaCascadeForChromo::init,
+             py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>(),
+             "eKinMin"_a = 0.3, "enhanceSDtarget"_a = 0.5,
+             "initFile"_a = "../share/Pythia8/setups/InitDefaultMPI.cmnd",
+             "rapidDecays"_a = false, "smallTau0"_a = 1e-10,
+             "slowDecays"_a = true, "listFinalOnly"_a = false)
+        .def("next_coll", &PythiaCascadeForChromo::next_coll,
+             "id"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a, "Z"_a, "A"_a)
+        .def("sigma_hA", &PythiaCascadeForChromo::sigma_hA,
+             "id"_a, "px"_a, "py"_a, "pz"_a, "e"_a, "m"_a, "A"_a)
+        .def("n_collisions",        &PythiaCascadeForChromo::n_collisions)
+        .def("first_collision_code",&PythiaCascadeForChromo::first_collision_code)
+        .def("stat",                &PythiaCascadeForChromo::stat)
+        .def("particle_data", &PythiaCascadeForChromo::particle_data,
+             py::return_value_policy::reference_internal)
+        .def("set_may_decay", &PythiaCascadeForChromo::set_may_decay,
+             "pdgid"_a, "may_decay"_a)
+        .def("charge", &PythiaCascadeForChromo::charge, "result"_a)
+        .def("getRndmState", &PythiaCascadeForChromo::getRndmState)
+        .def("setRndmState", &PythiaCascadeForChromo::setRndmState);
 }

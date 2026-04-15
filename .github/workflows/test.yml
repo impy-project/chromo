@@ -11,18 +11,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    if: contains(github.event.pull_request.labels.*.name, 'skip CI') == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: pre-commit/action@v3.0.1
+
   prepare-cache:
+    if: contains(github.event.pull_request.labels.*.name, 'skip CI') == false
     runs-on: ubuntu-latest
     steps:
       - name: Restore chromo data cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
       - name: Download all cache files if missing
         run: |
           mkdir -p ~/.cache/chromo
-          for file in qgsjet_v001 qgsjet_v002 Pythia8_v003 Pythia8_v004 Pythia8_v005 eposlhcr_v001 eposlhc_v001 epos_v001 dpm3191_v001 dpm3_v001 ; do
+          for file in qgsjet_v002 Pythia8_v007 eposlhcr_v001 eposlhc_v001 dpm3191_v001 dpm3_v001 ; do
             if [ ! -f ~/.cache/chromo/$file.zip ]; then
               echo "Downloading $file.zip..."
               curl -L -o ~/.cache/chromo/$file.zip "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip"
@@ -34,19 +45,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
 
   test:
-    needs: prepare-cache
+    if: contains(github.event.pull_request.labels.*.name, 'skip CI') == false
+    needs: [prepare-cache, lint]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           # Python version number must be string, otherwise 3.10 becomes 3.1
-          # Disable Windows for now, as long as numpy is buggy on Windows
-          # - os: windows-latest
-          #   python-version: "3.12"
-          - os: macos-14
+          - os: macos-latest
             python-version: "3.12"
           - os: ubuntu-latest
             python-version: "3.13"
@@ -58,7 +67,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/chromo
-          key: chromo-cache-v1
+          key: chromo-cache-v2
       - uses: actions/checkout@v4
         with:
           submodules: true
@@ -95,3 +104,77 @@ jobs:
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}
           path: "fig/**"
+
+  cibuildwheel:
+    if: contains(github.event.pull_request.labels.*.name, 'skip CI') == false
+    needs: [prepare-cache, lint]
+    name: cibw ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest]
+    steps:
+      - name: Restore chromo data cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chromo
+          key: chromo-cache-v2
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Set macOS deployment target
+        if: runner.os == 'macOS'
+        run: echo "MACOSX_DEPLOYMENT_TARGET=15.0" >> $GITHUB_ENV
+
+      - uses: awvwgk/setup-fortran@main
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 13
+
+      - if: ${{ matrix.os != 'macos-15-intel' }}
+        uses: ts-graphviz/setup-graphviz@v2
+        name: Install Graphviz
+
+      - if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm' }}
+        name: cibuildwheel on Linux
+        uses: pypa/cibuildwheel@v3.4.0
+        env:
+          CIBW_BUILD: cp314-*
+          CIBW_ARCHS: auto
+          CIBW_ENVIRONMENT_PASS_LINUX: CI
+
+      - name: Random delay to avoid rate limits
+        if: runner.os == 'macOS'
+        run: |
+          delay=$((RANDOM % 14 + 2))
+          echo "Sleeping $delay seconds to stagger cibuildwheel downloads..."
+          sleep $delay
+
+      - if: ${{ matrix.os == 'macos-15-intel' }}
+        name: cibuildwheel on macOS Intel
+        uses: pypa/cibuildwheel@v3.4.0
+        env:
+          CIBW_BUILD: cp314-*
+          CIBW_ARCHS: auto
+          no_proxy: '*'
+          CHROMO_SKIP_GRAPHVIZ: 1
+          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
+
+      - if: ${{ matrix.os == 'macos-latest' }}
+        name: cibuildwheel on macOS
+        uses: pypa/cibuildwheel@v3.4.0
+        env:
+          CIBW_BUILD: cp314-*
+          CIBW_ARCHS: auto
+          no_proxy: '*'
+          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          path: ./wheelhouse/*.whl
+          name: wheel-cp314-${{ matrix.os }}

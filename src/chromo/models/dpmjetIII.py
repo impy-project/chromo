@@ -175,6 +175,32 @@ class DpmjetIIIRun(MCRun):
 
         self._set_final_state_particles()
 
+    def _run_glauber(self, kin, photon_x, prod_only):
+        """Run Glauber calculation for nuclear cross sections.
+
+        Parameters
+        ----------
+        prod_only : bool
+            If True, only compute production cross section (fast).
+            If False, compute all components including total/elastic (slow).
+        """
+        self._lib.dtglgp.lprod = prod_only
+        self._lib.dt_xsglau(
+            kin.p1.A or 1,
+            kin.p2.A or 1,
+            (
+                self._lib.idt_icihad(2212)
+                if (kin.p1.A and kin.p1.A > 1)
+                else self._lib.idt_icihad(kin.p1)
+            ),
+            photon_x,
+            kin.virt_p1,
+            kin.ecm,
+            1,
+            1,
+            1,
+        )
+
     def _cross_section(self, kin=None, photon_x=0, max_info=False):
         kin = self.kinematics if kin is None else kin
         # we override to set precision
@@ -182,23 +208,7 @@ class DpmjetIIIRun(MCRun):
             (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1)
         ) and max_info:
             assert kin.p2.A >= 1, "DPMJET requires nucleons or nuclei on side 2."
-            # Enable total and elastic cross section calculation
-            self._lib.dtglgp.lprod = False
-            self._lib.dt_xsglau(
-                kin.p1.A or 1,
-                kin.p2.A or 1,
-                (
-                    self._lib.idt_icihad(2212)
-                    if (kin.p1.A and kin.p1.A > 1)
-                    else self._lib.idt_icihad(kin.p1)
-                ),
-                photon_x,
-                kin.virt_p1,
-                kin.ecm,
-                1,
-                1,
-                1,
-            )
+            self._run_glauber(kin, photon_x, prod_only=False)
             glxs = self._lib.dtglxs
 
             def _generate():
@@ -219,8 +229,12 @@ class DpmjetIIIRun(MCRun):
                 + glxs.xsela[0, 0, 0],
             )
         if (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1):
+            # Do NOT re-run Glauber here: the production cross section in
+            # dtglxs.xspro is already populated during DPMJET initialisation.
+            # An extra dt_xsglau call would consume Fortran RNG draws and
+            # shift the random state, causing the subsequent max_info=True
+            # Glauber MC to produce slightly different results.
             glxs = self._lib.dtglxs
-
             return CrossSectionData(
                 prod=glxs.xspro[0, 0, 0],
             )

@@ -10,7 +10,7 @@ build-backend = "mesonpy"
 
 [project]
 name = "chromo"
-version = "0.10.0"
+version = "0.11.0"
 description = "Hadronic Interaction Model interface in Python"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.9"
@@ -39,6 +39,7 @@ dependencies = [
     "scipy",
     "particle",
     "rich",
+    "packaging",
 ]
 
 [project.urls]
@@ -103,7 +104,11 @@ ignore_missing_imports = true
 minversion = "6.0"
 addopts = "-q -ra --ff -n auto"
 testpaths = ["tests"]
-filterwarnings = ["error::FutureWarning", "error::DeprecationWarning"]
+filterwarnings = [
+    "error::FutureWarning",
+    "error::DeprecationWarning",
+    "ignore::pyparsing.warnings.PyparsingDeprecationWarning",
+]
 
 [tool.pydocstyle]
 convention = "numpy"

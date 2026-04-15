@@ -90,9 +90,11 @@ def test_decay_handler(Model):
 
     if Model.name in ["PhoJet", "Pythia"]:
         evt_kin = chromo.kinematics.FixedTarget(100, "p", "p")
-
     elif Model.name == "Sophia":
         evt_kin = chromo.kinematics.FixedTarget(100, "gamma", "p")
+    elif Model.name == "Pythia8Angantyr":
+        # 250 GeV lab → ~21.7 GeV CMS, above Angantyr's 20 GeV minimum
+        evt_kin = chromo.kinematics.FixedTarget(250, "p", "O")
     else:
         evt_kin = chromo.kinematics.FixedTarget(100, "p", "O")
 

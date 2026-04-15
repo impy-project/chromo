@@ -39,10 +39,11 @@ def test_final_state_mass_shell(Model, frame, target, projectile):
         pytest.skip(
             "Epos doesn't conserve mass well when boosted from cms to ft frame."
         )
+    if Model is im.Pythia8Angantyr and p1 == "He":
+        pytest.skip(
+            "Pythia8Angantyr He projectile has no precomputed tables; init too slow"
+        )
     if p2 == "air":
-        if Model is im.Pythia8:
-            pytest.skip("Simulating nuclei in Pythia8 is very time-consuming")
-
         # cannot use Argon in SIBYLL, so make air from N, O only
         p2 = CompositeTarget((("N", 0.78), ("O", 0.22)))
 
@@ -63,7 +64,11 @@ def test_final_state_mass_shell(Model, frame, target, projectile):
 
     event = run_in_separate_process(run_model, Model, kin)
     if event is None:
-        assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
+        assert (
+            abs(kin.p1) not in Model.projectiles
+            or abs(kin.p2) not in Model.targets
+            or kin.ecm < getattr(Model, "_ecm_min", 0)
+        )
         return
     inv_mass2 = event.en**2 - event.p_tot**2
     inv_mass = np.sign(inv_mass2) * np.sqrt(np.abs(inv_mass2))
@@ -71,7 +76,7 @@ def test_final_state_mass_shell(Model, frame, target, projectile):
     atol = 0.005
     if issubclass(Model, im.EposLHC):
         atol = 0.02
-    elif Model in [im.QGSJetIII] and p1 == "He" and target == "air":
+    elif Model == im.QGSJetIII and p1 == "He" and target == "air":
         atol = 0.05
     assert_allclose(inv_mass, event.m, atol=atol)
 
@@ -95,7 +100,11 @@ def test_mass_shell_gg(frame, Model):
 
     event = run_in_separate_process(run_model, Model, kin)
     if event is None:
-        assert abs(kin.p1) not in Model.projectiles or abs(kin.p2) not in Model.targets
+        assert (
+            abs(kin.p1) not in Model.projectiles
+            or abs(kin.p2) not in Model.targets
+            or kin.ecm < getattr(Model, "_ecm_min", 0)
+        )
         return
     inv_mass2 = event.en**2 - event.p_tot**2
     inv_mass = np.sign(inv_mass2) * np.sqrt(np.abs(inv_mass2))
