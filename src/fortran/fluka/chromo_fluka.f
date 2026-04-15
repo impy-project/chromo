@@ -491,3 +491,48 @@ Cf2py intent(out) proj_code
 
       RETURN
       END SUBROUTINE pdg_to_proj_code
+
+      SUBROUTINE fluka_elem_properties(n_materials, mat_idx,
+     &                                 z_out, a_out, mass_out)
+!----------------------------------------------------------------------!
+!     Read FLUKA's FLKMAT common after STPXYZ to verify which
+!     materials are registered. Used by Python to build the
+!     pdg -> fluka material-index map and by tests.
+!
+!     Input:
+!        n_materials     -- number of materials to read
+!        mat_idx(n_mat)  -- FLUKA material indices (from MTFLKA of STPXYZ)
+!
+!     Output:
+!        z_out(n_mat)    -- atomic number Z of each material
+!        a_out(n_mat)    -- atomic weight A of each material
+!        mass_out(n_mat) -- atomic mass AMSS of each material (g/mol)
+!----------------------------------------------------------------------!
+      INCLUDE '(DBLPRC)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(FLKMAT)'
+
+      INTEGER n_materials
+      INTEGER mat_idx(n_materials)
+      INTEGER z_out(n_materials)
+      INTEGER a_out(n_materials)
+      DOUBLE PRECISION mass_out(n_materials)
+      INTEGER i, mi
+Cf2py intent(out) z_out, a_out, mass_out
+Cf2py integer intent(hide),depend(mat_idx) :: n_materials=len(mat_idx)
+
+      DO i = 1, n_materials
+         mi = mat_idx(i)
+         IF (mi .LT. 1 .OR. mi .GT. MXXMDF) THEN
+            z_out(i) = -1
+            a_out(i) = -1
+            mass_out(i) = -1.0D+00
+         ELSE
+            z_out(i) = NINT(ZTAR(mi))
+            a_out(i) = NINT(AMSS(mi))
+            mass_out(i) = AMSS(mi)
+         END IF
+      END DO
+
+      RETURN
+      END SUBROUTINE fluka_elem_properties
