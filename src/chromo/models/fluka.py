@@ -310,7 +310,15 @@ class Fluka(MCRun):
 
     def _set_kinematics(self, kin):
         # Resolve the target material index (required before _generate).
-        self._current_target_idx = self._get_material_index(kin.p2)
+        # For CompositeTarget, use the first component as the default;
+        # _composite_plan will call _set_kinematics again with each component
+        # before actually generating events.
+        p2 = kin.p2
+        if isinstance(p2, CompositeTarget):
+            first_component = p2.components[0]
+            self._current_target_idx = self._get_material_index(first_component)
+        else:
+            self._current_target_idx = self._get_material_index(p2)
 
     def _cross_section(self, kin=None, max_info=False):
         kin = self.kinematics if kin is None else kin
