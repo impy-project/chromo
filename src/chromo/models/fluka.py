@@ -418,3 +418,30 @@ class Fluka(MCRun):
     def registered_targets(self):
         """Tuple of PDG ids registered in FLUKA's material tables."""
         return self._materials_pdg
+
+    def register_target(self, pdg):
+        """Register an additional target nucleus at runtime.
+
+        Raises
+        ------
+        NotImplementedError
+            FLUKA 2025.1 does not expose a safe post-STPXYZ material-
+            registration API. STPXYZ itself aborts (FLABRT) on a second
+            call. While FLKMAT common block variables (nmat, ztar, amss)
+            are readable via F2PY, the downstream initialisation routines
+            SETITB (registers material with PEANUT nuclear tables) and
+            DFATWG (computes atomic weight) are not wrapped and therefore
+            not callable from Python. Direct manipulation of FLKMAT
+            without refreshing these tables would produce silent physics
+            errors or segfaults.
+
+        Note
+        ----
+        Pass ``targets=[...]`` to the ``Fluka`` constructor instead to
+        register all required nuclei before the STPXYZ call.
+        """
+        raise NotImplementedError(
+            "Runtime target extension not supported by FLUKA 2025.1. "
+            "STPXYZ aborts on a second call, and SETITB/DFATWG are not "
+            "wrapped. Pass targets=[...] to the Fluka constructor."
+        )
