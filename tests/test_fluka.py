@@ -340,18 +340,19 @@ def test_register_extra_target_via_kwarg():
     assert ne20 in targets
 
 
+def _try_unregistered_target():
+    from chromo.models import Fluka
+
+    gen = Fluka(FixedTarget(100.0, "p", "N14"), seed=1)
+    try:
+        gen.kinematics = FixedTarget(100.0, "p", "U238")
+    except (KeyError, ValueError) as exc:
+        return str(exc)
+    return "no-error"
+
+
 def test_unregistered_target_raises_with_hint():
-    def _try():
-        from chromo.models import Fluka
-
-        gen = Fluka(FixedTarget(100.0, "p", "N14"), seed=1)
-        try:
-            gen.kinematics = FixedTarget(100.0, "p", "U238")
-        except (KeyError, ValueError) as exc:
-            return str(exc)
-        return "no-error"
-
-    msg = run_in_separate_process(_try)
+    msg = run_in_separate_process(_try_unregistered_target)
     assert "U238" in msg
     assert "targets=" in msg, f"error message lacks remediation hint: {msg}"
 
