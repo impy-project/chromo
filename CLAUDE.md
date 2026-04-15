@@ -106,6 +106,82 @@ Windows builds are not yet **experimentally supported**. Key details:
 python -m pytest -vv -k "not (Pythia8 or test_decay_handler)" -n 2
 ```
 
+## FLUKA integration
+
+FLUKA 2025.1 is an optional, license-restricted backend. Not built in
+public CI.
+
+### Install
+
+```bash
+# One-shot install at $HOME/devel/FLUKA. Expects the two archives at
+# $HOME/devel/FLUKA-dev/ (or set FLUKA_ARCHIVE_DIR).
+export FLUPRO=$HOME/devel/FLUKA
+bash scripts/install_fluka.sh
+```
+
+Persist `export FLUPRO=$HOME/devel/FLUKA` in your shell rc.
+
+### Build chromo with Fluka
+
+```bash
+pip install --no-build-isolation -v -e .[test]
+```
+
+The meson `fluka` block fails fast if `$FLUPRO` is unset or any of the
+required archives (`libflukahp.a`, `libdpmmvax.a`, `librqmdmvax.a`,
+`latestRQMD/librqmd.a`, `interface/libdpmjet*.a`, `interface/dpmvers`)
+are missing.
+
+### Usage
+
+```python
+from chromo.models import Fluka
+from chromo.models.fluka import InteractionType
+from chromo.kinematics import FixedTarget
+
+gen = Fluka(FixedTarget(100, "p", "O16"),
+            interaction_type=InteractionType.INELA_EMD,
+            seed=42)
+for event in gen(10):
+    print(event.final_state().pid)
+```
+
+### Caveats & FLUKA-internal limitations
+
+- **Single instantiation per Python process.** Fortran globals; tests use
+  `tests/util.py::run_in_separate_process`.
+- **Material cap of 10 entries.** FLUKA's `STPXYZ` allocates geometry via
+  `GLBCRD(WHAT(1)=10)`. Chromo's default `_DEFAULT_MATERIALS` list has 9
+  entries (`p`, `He4`, `C12`, `N14`, `O16`, `Ar40`, `Fe56`, `Cu63`, `Pb208`)
+  leaving 1 slot for an extra target. Use `targets=["Si28", ...]` to swap
+  elements; exceeding 10 raises `ValueError`.
+- **Nuclear projectiles cannot generate events.** `cross_section()` works
+  for AA (heavy-ion) kinematics, but `_generate()` with a nucleus as
+  projectile aborts inside FLUKA's EVTXYZ. Use hadronic projectiles
+  (p, π, K, n, γ) for event generation; use nuclear-target, hadron-
+  projectile kinematics if you need AA-like final states.
+- **EMD-only event generation aborts FLUKA.** Use `InteractionType.EMD`
+  for cross-section queries only. For event generation, combine with
+  `INELA_EMD` (101) or `INELA_ELA_EMD` (111).
+- **EMD cross section is zero for single-proton projectiles** (physics:
+  needs a Z²-enhanced field, so meaningful EMD only appears for AA).
+- **No beam records in HEPEVT.** FLUKA's `FLLHEP` populates HEPEVT with
+  GENSTK ejectiles and RESNUC residuals. `FlukaEvent._prepend_initial_beam`
+  is intentionally a no-op. The generic `test_models_beam[Fluka]` is
+  xfailed for this reason (see `tests/test_common.py`).
+- **`_set_stable` is a no-op.** FLUKA's decay model is global and not
+  runtime-configurable.
+- **`e+/e-` projectiles are not supported.** Use `gamma` directly.
+- **RNG reproducibility requires the Pythia8DecayHandler off.** Pythia8's
+  own RNG is independent from FLUKA's Ranmar state and isn't seeded
+  deterministically across processes. For fully reproducible event
+  records: `Fluka(... )._activate_decay_handler(on=False)`.
+
+### Disable
+
+Remove `"fluka"` from `[tool.chromo] enabled-models` in `pyproject.toml`.
+
 ## Data Files (iamdata)
 
 Each model downloads a versioned zip from GitHub releases into `src/chromo/iamdata/<model>/`.
