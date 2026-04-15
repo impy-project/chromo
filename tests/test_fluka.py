@@ -203,9 +203,11 @@ def test_xsec_emd_AA_O_Pb():
 
 
 def test_generate_emd_event_one_Pb():
-    # EMD-only event generation (IFLXYZ=100) aborts FLUKA; use INELA_EMD
-    # (IFLXYZ=101) which generates an inelastic + possible EMD interaction.
-    event = run_in_separate_process(_run_emd_event, 1600.0, "O16", "Pb208")
+    # EMD-only event generation (IFLXYZ=100) aborts FLUKA.
+    # INELA_EMD (IFLXYZ=101) requires a hadronic projectile for event
+    # generation; nuclear projectiles (A>1) segfault in the FLUKA Fortran
+    # backend during EVTXYZ. Use p+Pb208 which is supported.
+    event = run_in_separate_process(_run_emd_event, 100.0, "p", "Pb208")
     fs = event.final_state()
     assert len(fs) > 0
     assert len(fs) < 500
