@@ -10,7 +10,6 @@ from functools import lru_cache
 import numpy as np
 import pytest
 
-from chromo.constants import GeV
 from chromo.kinematics import CenterOfMass, FixedTarget
 from chromo.util import CompositeTarget
 
@@ -24,12 +23,8 @@ except ImportError:
     _fluka_available = False
 
 pytestmark = [
-    pytest.mark.skipif(
-        sys.platform == "win32", reason="FLUKA is not built on Windows"
-    ),
-    pytest.mark.skipif(
-        not _fluka_available, reason="_fluka extension not built"
-    ),
+    pytest.mark.skipif(sys.platform == "win32", reason="FLUKA is not built on Windows"),
+    pytest.mark.skipif(not _fluka_available, reason="_fluka extension not built"),
 ]
 
 
@@ -57,7 +52,7 @@ def _run_one_event(elab, p1, p2, **kwargs):
 
 def test_import():
     """Trivial importability test."""
-    from chromo.models import Fluka  # noqa: F401
+    from chromo.models import Fluka
 
     assert Fluka.name == "FLUKA"
 
@@ -80,9 +75,9 @@ def test_import():
 )
 def test_xsec_p_A_sweep(target, xs_min, xs_max):
     cs = run_in_separate_process(_run_xsec, 100.0, "p", target)
-    assert xs_min < cs.inelastic < xs_max, (
-        f"σ_inel(p+{target})={cs.inelastic} mb outside [{xs_min}, {xs_max}]"
-    )
+    assert (
+        xs_min < cs.inelastic < xs_max
+    ), f"σ_inel(p+{target})={cs.inelastic} mb outside [{xs_min}, {xs_max}]"
 
 
 def test_xsec_pi_N14():
@@ -91,9 +86,7 @@ def test_xsec_pi_N14():
 
 
 def test_xsec_composite_air():
-    air = CompositeTarget(
-        [("N14", 0.78), ("O16", 0.21), ("Ar40", 0.01)], label="Air"
-    )
+    air = CompositeTarget([("N14", 0.78), ("O16", 0.21), ("Ar40", 0.01)], label="Air")
     cs = run_in_separate_process(_run_xsec, 100.0, "p", air)
     assert 200 < cs.inelastic < 1100
 
@@ -323,9 +316,9 @@ def test_registered_defaults_present():
 
     for name in ("N14", "O16", "Pb208"):
         pid = int(Particle.findall(name)[0].pdgid)
-        assert pid in targets or 2212 in targets, (
-            f"{name} not in registered_targets {targets}"
-        )
+        assert (
+            pid in targets or 2212 in targets
+        ), f"{name} not in registered_targets {targets}"
 
 
 def test_register_extra_target_via_kwarg():
@@ -417,7 +410,6 @@ def _rng_roundtrip(tmpdir):
 
 
 def _rng_replay(path):
-    import pathlib
 
     from chromo.models import Fluka
 
