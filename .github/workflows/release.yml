@@ -8,6 +8,7 @@ on:
 
 permissions:
   actions: read
+  contents: read
 
 jobs:
   download-and-publish:
@@ -63,12 +64,18 @@ jobs:
           rmdir artifacts/*/ 2>/dev/null || true
           rmdir artifacts/ 2>/dev/null || true
 
-      - name: List packages to be published
+      - name: Validate downloaded packages
         run: |
-          echo "Packages found:"
+          wheel_count=$(find dist -maxdepth 1 -type f -name "*.whl" | wc -l)
+          sdist_count=$(find dist -maxdepth 1 -type f -name "*.tar.gz" | wc -l)
+
+          if [ "$wheel_count" -eq 0 ] || [ "$sdist_count" -eq 0 ]; then
+            echo "::error::Expected wheels and sdist in dist/, but found $wheel_count wheel(s) and $sdist_count sdist(s)."
+            exit 1
+          fi
+
+          echo "Packages found: $wheel_count wheel(s), $sdist_count sdist(s)"
           ls -lh dist/
-          echo ""
-          echo "Total: $(ls dist/ | wc -l) files"
 
       - name: Publish package to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
