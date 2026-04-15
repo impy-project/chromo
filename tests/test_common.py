@@ -206,9 +206,9 @@ def test_models_beam(Model):
 
 
 def test_cross_section_data_has_emd_field():
-    from chromo.common import CrossSectionData
-
     import numpy as np
+
+    from chromo.common import CrossSectionData
 
     cs = CrossSectionData(inelastic=100.0, emd=5.0)
     assert cs.inelastic == 100.0
