@@ -344,10 +344,24 @@ if 'fluka' in enabled_models
   fluprod_inc = fluprod + '/flukapro'
   fluprod_aamod = fluprod + '/aamodmvax'
   
+  # Verify the five FLUKA archives chromo links against are present.
+  foreach req : [
+    'interface/dpmvers', 'libflukahp.a', 'libdpmmvax.a', 'librqmdmvax.a',
+    'latestRQMD/librqmd.a',
+  ]
+    chk = run_command('sh', '-c',
+      'test -e "' + fluprod + '/' + req + '" && echo yes || echo no',
+      check: true).stdout().strip()
+    if chk != 'yes'
+      error('FLUKA: missing ' + fluprod + '/' + req +
+            ' — run scripts/install_fluka.sh')
+    endif
+  endforeach
+
   # Read DPMVERS from the file
-  dpm_version = run_command('sh', '-c', 'grep "DPMVERS=" ' + 
-    meson.project_source_root() + 
-    '/../FLUKA/interface/dpmvers | cut -d= -f2', check: true).stdout().strip()
+  dpm_version = run_command('sh', '-c',
+    'grep "DPMVERS=" ' + fluprod + '/interface/dpmvers | cut -d= -f2',
+    check: true).stdout().strip()
   message('FLUKA DPM Version: ' + dpm_version)
   
   flka_src = [
@@ -402,14 +416,16 @@ if 'fluka' in enabled_models
   endforeach
   inc_str = ' '.join(inc_flags)
   
-  # Symbols
+  # Symbols exported to Python via f2py. Order doesn't matter.
   fluka_syms = [
     'chromo_evtxyz', 'chromo_stpxyz', 'chromo_sgmxyz', 'chromo_fllhep',
-    'fluka_key', 'random_direction',
-    'icode_from_pdg', 'pdg_from_icode',
-    'init_rng_state', 'load_rng_state', 'save_rng_state',
-    'fluka_rand', 'icode_from_pdg_arr', 'charge_from_pdg_arr',
-    'fluka_particle_scheme'
+    'pdg_to_proj_code',
+    'fluka_elem_properties', 'fluka_hepevt_summary',
+    'random_direction',
+    'icode_from_pdg', 'icode_from_pdg_arr', 'charge_from_pdg_arr',
+    'pdg_from_icode',
+    'init_rng_state', 'load_rng_state', 'save_rng_state', 'fluka_rand',
+    'fluka_particle_scheme',
   ]
 
   wrap = custom_target('_fluka'+'_wrap',
