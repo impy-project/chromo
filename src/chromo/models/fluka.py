@@ -135,8 +135,8 @@ class Fluka(MCRun):
     # - photon event generation: OK to at least 100 TeV (not probed higher)
     # _check_kinematics enforces only the liberal xsec ceiling and a sane
     # floor; tight event-gen caps are enforced in _generate().
-    _ecm_min = 0.0                  # liberal; effective floor set by ekin/n
-    _ekin_per_nucleon_min = 0.001 * GeV       # 1 MeV/n: FLUKA low-E floor
+    _ecm_min = 0.0  # liberal; effective floor set by ekin/n
+    _ekin_per_nucleon_min = 0.001 * GeV  # 1 MeV/n: FLUKA low-E floor
     _ekin_per_nucleon_max_hadron_xsec = 1 * PeV
     _ekin_per_nucleon_max_photon_xsec = 1 * PeV
     _ekin_per_nucleon_max_hadron_event = 20 * TeV
@@ -253,9 +253,7 @@ class Fluka(MCRun):
         # Each entry is a single-element material; nelmfl[i]=1 for all.
         nelmfl = np.ones(len(materials), dtype=np.int32)
         # pdg2AZ returns (A, Z); we want Z. Free proton (2212) → (1, 1).
-        izelfl = np.array(
-            [max(pdg2AZ(pdg)[1], 1) for pdg in materials], dtype=np.int32
-        )
+        izelfl = np.array([max(pdg2AZ(pdg)[1], 1) for pdg in materials], dtype=np.int32)
         wfelfl = np.ones(len(materials), dtype=np.float64)
         lprint = 0  # suppress FLUKA material printout
 
