@@ -384,8 +384,10 @@ if 'fluka' in enabled_models
   lib_dpmx  = fluka_lib_dir / 'libdpmmvax.a'
   lib_rqmx  = fluka_lib_dir / 'librqmdmvax.a'
 
+  out_dir   = meson.current_build_dir()
   cmd_script = '''
   tmp="@0@"
+  out="@6@/fluka_all.a"
   rm -rf "$tmp"
   mkdir -p "$tmp"
   cd "$tmp"
@@ -394,8 +396,8 @@ if 'fluka' in enabled_models
   ar x "@3@"
   ar x "@4@"
   ar x "@5@"
-  ar crs "@OUTPUT@" $(find . -name '*.o' -print)
-  '''.format(tmp_dir, lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx)
+  ar crs "$out" $(find . -name '*.o' -print)
+  '''.format(tmp_dir, lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx, out_dir)
 
   fluka_all = custom_target('fluka_all',
     input  : [lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx],
@@ -404,7 +406,7 @@ if 'fluka' in enabled_models
     depend_files: [lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx],
     build_by_default: true
   )
-  fluka_all_dep = declare_dependency(link_args: [tmp_dir / 'fluka_all.a'])
+  fluka_all_dep = declare_dependency(link_args: [out_dir / 'fluka_all.a'])
   
   # Prepare include flags for F2PY wrapper generation
   inc_flags = []
