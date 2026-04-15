@@ -374,18 +374,12 @@ class Fluka(MCRun):
 
     def _cleanup_fort(self):
         for fort_file in pathlib.Path(".").glob("fort.*"):
-            try:
-                fort_file.unlink()
-            except OSError:
-                pass
+            fort_file.unlink(missing_ok=True)
         for f in (
             pathlib.Path(__file__).parent / "fluka_rng_state.dat",
             pathlib.Path(".") / ".timer.out",
         ):
-            try:
-                f.unlink()
-            except OSError:
-                pass
+            f.unlink(missing_ok=True)
 
     def __del__(self):
         try:
