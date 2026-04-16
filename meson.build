@@ -406,7 +406,10 @@ if 'fluka' in enabled_models
     depend_files: [lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx],
     build_by_default: true
   )
-  fluka_all_dep = declare_dependency(link_args: [out_dir / 'fluka_all.a'])
+  fluka_all_dep = declare_dependency(
+    sources  : [fluka_all],
+    link_args: [fluka_all.full_path()],
+  )
   
   # Prepare include flags for F2PY wrapper generation
   inc_flags = []
@@ -421,7 +424,7 @@ if 'fluka' in enabled_models
   # Symbols exported to Python via f2py. Order doesn't matter.
   fluka_syms = [
     'chromo_evtxyz', 'chromo_stpxyz', 'chromo_sgmxyz', 'chromo_fllhep',
-    'pdg_to_proj_code',
+    'pdg_to_proj_code', 'pdg_to_evt_code',
     'fluka_elem_properties', 'fluka_hepevt_summary',
     'random_direction',
     'icode_from_pdg', 'icode_from_pdg_arr', 'charge_from_pdg_arr',
@@ -430,16 +433,24 @@ if 'fluka' in enabled_models
     'fluka_particle_scheme',
   ]
 
+  # FLUKA has its own RNG (Ranmar / flrndm_). Do NOT include chromo's
+  # rangen.f / rangen.c here — their RNG shims (dt_rndm_, rangen_,
+  # rlu_, pyr_, …) would shadow DPMJET's own DT_RNDM.o (which
+  # tail-calls flrndm_), desynchronising FLUKA's Ranmar state from
+  # DPMJET's random draws and causing FPEs at high energies.
+  # Also filter npyrng from the symbol list since rangen.f isn't
+  # compiled into this module.
+  fluka_common_syms = ['chromo_openlogfile','chromo_closelogfile']
   wrap = custom_target('_fluka'+'_wrap',
       output : ['_fluka'+'module.c', '_fluka'+'-f2pywrappers.f', '_fluka'+'.pyf'],
       input  : flka_src,
-      command: [py,scripts_dir + 'generate_f2py.py', '_fluka', ','.join(fluka_syms+common_syms),
+      command: [py,scripts_dir + 'generate_f2py.py', '_fluka', ','.join(fluka_syms+fluka_common_syms),
                 meson.global_build_root()/'meson-logs', inc_str, ' '.join(common_fargs),
                 '@OUTDIR@','@INPUT@'],
       build_by_default:true)
-  
+
   py.extension_module('_fluka',
-    sources            : [wrap, f2py_obj, files(flka_src + rangen_src + [normal_src])],
+    sources            : [wrap, f2py_obj, files(flka_src)],
     include_directories: include_directories(common_inc),
     dependencies       : [py_dep, numpy_dep, fluka_all_dep],
     c_args             : common_cargs,

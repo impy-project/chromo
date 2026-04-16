@@ -149,15 +149,21 @@ Cf2py intent(out) random_number
       subroutine fluka_particle_scheme
 !----------------------------------------------------------------------!
 !   Prints particle scheme used by FLUKA
-!   Also required to expose some common blocks from FLUKA     
+!   Also required to expose some common blocks from FLUKA
 !
-!   Inspired by PDGFLK program: 
-!   Copyright (C) 2023-2023      by    Alfredo Ferrari & Paola Sala           
+!   The GENTHR include pulls in FLUKA's hadronic-generator transition
+!   thresholds (Peanut <-> DPMJET for hA, rQMD <-> DPMJET for AA,
+!   DPMJET <-> UHE in both) so chromo's Python wrapper can override
+!   them via f2py-exposed common-block assignments.
+!
+!   Inspired by PDGFLK program:
+!   Copyright (C) 2023-2023      by    Alfredo Ferrari & Paola Sala
 !----------------------------------------------------------------------!
         INCLUDE '(DBLPRC)'
         INCLUDE '(DIMPAR)'
         INCLUDE '(PAPROP)'
         INCLUDE '(PART2)'
+        INCLUDE '(GENTHR)'
 
         WRITE(*, 2500) "Internal", "External", "PDG", 
      &  "NAME", "SHORT", "MASS", "CHARGE", "BARYON"
@@ -451,15 +457,19 @@ Cf2py intent(out) MTFLKA
       SUBROUTINE pdg_to_proj_code(pdg_id, proj_code)
 !----------------------------------------------------------------------!
 !     Convert a PDG particle id to the FLUKA external "PAPROP" code
-!     expected by SGMXYZ/EVTXYZ. Handles hadrons, the photon, and
-!     nuclei.
+!     expected by SGMXYZ. Handles hadrons, the photon, and nuclei.
 !
 !     Hadron/lepton:   proj_code = KPTOIP(MCIHAD(pdg_id))
-!     Photon (pdg=22): proj_code = 7  (FLUKA external photon code)
-!     Nucleus (|pdg|>=1e9 per PDG 10LZZZAAAI):
-!                      proj_code = A*10 + Z*10000 + L*10000000 + 1e9
-!                      (EVTXYZ/SGMXYZ branch on |proj_code|>=1e9 and
-!                       call PDGION/SETION internally.)
+!     Photon (pdg=22): proj_code = 7
+!     Light nuclei (d, t, 3He, 4He): dedicated native internal codes
+!                      -3, -4, -5, -6 respectively (FLUKA's internal
+!                      scheme, also valid for EVTXYZ).
+!     Heavy ions (A>4): PDG-style extended encoding
+!                      A*10 + Z*10000 + L*10000000 + 1e9. SGMXYZ
+!                      decodes this internally via PDGION. EVTXYZ
+!                      does NOT — callers generating events must
+!                      convert via pdg_to_evt_code (which first calls
+!                      PDGION and returns the -2 HEAVYION sentinel).
 !----------------------------------------------------------------------!
       INCLUDE '(DBLPRC)'
       INCLUDE '(DIMPAR)'
@@ -467,7 +477,7 @@ Cf2py intent(out) MTFLKA
       INCLUDE '(PART2)'
 
       INTEGER pdg_id, proj_code
-      INTEGER A, Z, L, KFLK
+      INTEGER ABSPDG, A, Z, L, KFLK
 Cf2py intent(out) proj_code
 
       IF (ABS(pdg_id) .LT. 1000000000) THEN
@@ -482,15 +492,66 @@ Cf2py intent(out) proj_code
             END IF
          END IF
       ELSE
-         A = MOD(ABS(pdg_id) / 10,        1000)
-         Z = MOD(ABS(pdg_id) / 10000,     1000)
-         L = MOD(ABS(pdg_id) / 10000000,  10)
-         proj_code = A*10 + Z*10000 + L*10000000 + 1000000000
-         IF (pdg_id .LT. 0) proj_code = -proj_code
+         ABSPDG = ABS(pdg_id)
+         A = MOD(ABSPDG / 10,        1000)
+         Z = MOD(ABSPDG / 10000,     1000)
+         L = MOD(ABSPDG / 10000000,  10)
+         IF (L .EQ. 0 .AND. A .EQ. 2 .AND. Z .EQ. 1) THEN
+            proj_code = -3          ! deuteron
+         ELSE IF (L .EQ. 0 .AND. A .EQ. 3 .AND. Z .EQ. 1) THEN
+            proj_code = -4          ! triton
+         ELSE IF (L .EQ. 0 .AND. A .EQ. 3 .AND. Z .EQ. 2) THEN
+            proj_code = -5          ! 3-He
+         ELSE IF (L .EQ. 0 .AND. A .EQ. 4 .AND. Z .EQ. 2) THEN
+            proj_code = -6          ! 4-He (alpha)
+         ELSE
+!           Heavy ion or hyper-nucleus: PDG-extended encoding (SGMXYZ
+!           decodes via PDGION; EVTXYZ requires pre-conversion).
+            proj_code = A*10 + Z*10000 + L*10000000 + 1000000000
+            IF (pdg_id .LT. 0) proj_code = -proj_code
+         END IF
       END IF
 
       RETURN
       END SUBROUTINE pdg_to_proj_code
+
+      SUBROUTINE pdg_to_evt_code(pdg_id, evt_code)
+!----------------------------------------------------------------------!
+!     Projectile-code variant for EVTXYZ. Same as pdg_to_proj_code
+!     except heavy ions (A > 4) are registered via PDGION into FLUKA's
+!     ion common blocks and returned as the -2 HEAVYION sentinel.
+!     EVTXYZ rejects the PDG-extended encoding (aborts with
+!     KPPRCT=-1/-2), whereas SGMXYZ accepts it directly.
+!----------------------------------------------------------------------!
+      INCLUDE '(DBLPRC)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(PAPROP)'
+      INCLUDE '(PART2)'
+
+      INTEGER pdg_id, evt_code
+      INTEGER ABSPDG, A, Z, L, KDUMMY
+      INTEGER PDGION
+Cf2py intent(out) evt_code
+
+!     Start from the xsec encoding, then replace heavy-ion extended
+!     codes with the -2 HEAVYION sentinel after PDGION registration.
+      CALL pdg_to_proj_code(pdg_id, evt_code)
+      IF (ABS(evt_code) .LT. 1000000000) RETURN
+
+      ABSPDG = ABS(pdg_id)
+      A = MOD(ABSPDG / 10,        1000)
+      Z = MOD(ABSPDG / 10000,     1000)
+      L = MOD(ABSPDG / 10000000,  10)
+!     Only attempt PDGION for non-strange standard nuclei — the rest
+!     falls through to the original extended encoding, which EVTXYZ
+!     still rejects but which we at least don't hide.
+      IF (L .EQ. 0) THEN
+         KDUMMY = PDGION(ABSPDG)
+         evt_code = -2
+      END IF
+
+      RETURN
+      END SUBROUTINE pdg_to_evt_code
 
       SUBROUTINE fluka_elem_properties(n_materials, mat_idx,
      &                                 z_out, a_out, mass_out)
