@@ -432,7 +432,7 @@ class EventData:
 
         Note that this is a slow convenience function for developing/debugging.
         """
-        return [Particle.from_pdgid(pid) for pid in self.pid]
+        return [Particle.from_pdgid(pid).name for pid in self.pid]
 
     def _prepare_for_hepmc(self):
         """
@@ -828,7 +828,7 @@ class MCRun(ABC):
         with self._temporary_kinematics(kin):
             kin2 = self.kinematics
             if isinstance(kin2.p2, CompositeTarget):
-                cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0)
+                cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0, emd=0.0)
                 kin3 = copy.copy(kin2)
                 for component, fraction in zip(kin2.p2.components, kin2.p2.fractions):
                     kin3.p2 = component

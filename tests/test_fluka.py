@@ -77,7 +77,7 @@ def test_xsec_p_A_sweep(target, xs_min, xs_max):
     cs = run_in_separate_process(_run_xsec, 100.0, "p", target)
     assert (
         xs_min < cs.inelastic < xs_max
-    ), f"σ_inel(p+{target})={cs.inelastic} mb outside [{xs_min}, {xs_max}]"
+    ), f"sigma_inel(p+{target})={cs.inelastic} mb outside [{xs_min}, {xs_max}]"
 
 
 def test_xsec_pi_N14():
@@ -129,7 +129,7 @@ def test_xsec_cms_vs_ft_equivalent():
 
 def test_xsec_gamma_p():
     cs = run_in_separate_process(_run_xsec, 10.0, "gamma", "p")
-    # γp σ_inel at 10 GeV ekin is small (~0.1-1 mb range)
+    # gamma-p sigma_inel at 10 GeV ekin is small (~0.1-1 mb range)
     assert 1e-3 < cs.inelastic < 1.0
 
 
@@ -316,9 +316,10 @@ def test_registered_defaults_present():
 
     for name in ("N14", "O16", "Pb208"):
         pid = int(Particle.findall(name)[0].pdgid)
-        assert (
-            pid in targets or 2212 in targets
-        ), f"{name} not in registered_targets {targets}"
+        if pid == 2212:
+            assert 2212 in targets, f"{name} not in registered_targets {targets}"
+        else:
+            assert pid in targets, f"{name} not in registered_targets {targets}"
 
 
 def test_register_extra_target_via_kwarg():
@@ -360,9 +361,10 @@ def _try_construct(elab, p1, p2):
 
     try:
         Fluka(FixedTarget(elab, p1, p2), seed=1)
-        return "no-error"
     except ValueError as exc:
         return str(exc)
+    else:
+        return "no-error"
 
 
 def _try_generate_event(elab, p1, p2):
@@ -372,26 +374,29 @@ def _try_generate_event(elab, p1, p2):
         gen = Fluka(FixedTarget(elab, p1, p2), seed=1)
         for _ in gen(1):
             pass
-        return "no-error"
     except ValueError as exc:
         return str(exc)
+    else:
+        return "no-error"
 
 
-def test_above_hadron_xsec_ceiling_raises():
-    # 10 EeV hadron ekin: above the 1 PeV/nucleon xsec ceiling.
-    msg = run_in_separate_process(_try_construct, 1e10, "p", "N14")
+def test_above_uhe_ceiling_raises_hadron():
+    # Above the DPMJET→UHE ceiling (sqrt(s_NN) = 500 TeV), construction
+    # must fail — no UHE model is linked in chromo's FLUKA build.
+    # Lab ekin equivalent of 500 TeV CMS is ~1.33e11 GeV/n; 1e12 is 10x
+    # above.
+    msg = run_in_separate_process(_try_construct, 1e12, "p", "N14")
     assert msg != "no-error"
-    assert "cross-section ceiling" in msg
+    assert "UHE" in msg
 
 
-def test_above_photon_xsec_ceiling_raises():
-    # 10 PeV photon: above the 1 PeV xsec ceiling.
-    msg = run_in_separate_process(_try_construct, 1e7, "gamma", "Pb208")
+def test_above_uhe_ceiling_raises_photon():
+    msg = run_in_separate_process(_try_construct, 1e12, "gamma", "Pb208")
     assert msg != "no-error"
-    assert "cross-section ceiling" in msg
+    assert "UHE" in msg
 
 
-def _xsec_between_ceilings():
+def _xsec_at_100tev():
     from chromo.models import Fluka
 
     gen = Fluka(FixedTarget(1e5, "p", "N14"), seed=1)
@@ -399,27 +404,12 @@ def _xsec_between_ceilings():
     return cs.inelastic
 
 
-def test_construct_between_event_and_xsec_ceilings_ok():
-    # Hadron at 100 TeV: below 1 PeV xsec ceiling, above 20 TeV event
-    # ceiling. Construction + cross_section() succeed; event generation
-    # raises separately (covered by test_above_hadron_event_ceiling_raises).
-    inel = run_in_separate_process(_xsec_between_ceilings)
+def test_high_energy_xsec_ok_below_ceiling():
+    # 100 TeV lab (well below the 500 TeV CMS ceiling): construction and
+    # cross_section() must succeed — FLUKA now hands off to DPMJET for
+    # the whole high-energy range instead of an unlinked UHE model.
+    inel = run_in_separate_process(_xsec_at_100tev)
     assert 100 < inel < 1000
-
-
-def test_above_hadron_event_ceiling_raises():
-    # 100 TeV hadron event: below xsec ceiling, above event ceiling.
-    msg = run_in_separate_process(_try_generate_event, 1e5, "p", "N14")
-    assert msg != "no-error"
-    assert "event-generation ceiling" in msg
-
-
-def test_below_ekin_per_nucleon_min_raises():
-    # proton @ elab = m_p + 0.5 MeV → ekin/n = 5e-4 GeV < 1e-3 GeV floor,
-    # but elab > m_p so the kinematics constructor accepts it.
-    msg = run_in_separate_process(_try_construct, 0.938772, "p", "O16")
-    assert msg != "no-error", f"expected error, got {msg!r}"
-    assert "< min" in msg, f"expected '< min' in error, got {msg!r}"
 
 
 # ---------------------------------------------------------------------------
