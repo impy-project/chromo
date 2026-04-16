@@ -246,6 +246,7 @@ class Fluka(MCRun):
     # ------------------------------------------------------------------
 
     def _init_rng(self, rng_state_file, seed):
+        self._rng_state_is_temp = rng_state_file is None
         if rng_state_file is None:
             rng_state_file = (
                 pathlib.Path(tempfile.gettempdir())
@@ -503,9 +504,12 @@ class Fluka(MCRun):
         if lu is not None:
             pathlib.Path(f"fort.{lu}").unlink(missing_ok=True)
         pathlib.Path(".timer.out").unlink(missing_ok=True)
-        rng = getattr(self, "_rng_state_file", None)
-        if rng is not None:
-            pathlib.Path(rng).unlink(missing_ok=True)
+        # Only remove the RNG state file if it's a temp file we created,
+        # not one the user explicitly passed for persistence.
+        if getattr(self, "_rng_state_is_temp", False):
+            rng = getattr(self, "_rng_state_file", None)
+            if rng is not None:
+                pathlib.Path(rng).unlink(missing_ok=True)
 
     def __del__(self):
         try:
