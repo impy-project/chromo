@@ -414,7 +414,7 @@ if 'fluka' in enabled_models
   # Prepare include flags for F2PY wrapper generation
   inc_flags = []
   foreach d : common_inc
-    if not d.startswith(meson.project_source_root())
+    if not d.startswith('/') and not d.startswith(meson.project_source_root())
       d = meson.project_source_root() / d
     endif
     inc_flags += '-I' + d
