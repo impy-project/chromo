@@ -358,11 +358,18 @@ if 'fluka' in enabled_models
     endif
   endforeach
 
-  # Read DPMVERS from the file
+  # Read DPMVERS and verify the DPMJET archive exists.
   dpm_version = run_command('sh', '-c',
     'grep "DPMVERS=" ' + fluprod + '/interface/dpmvers | cut -d= -f2',
     check: true).stdout().strip()
   message('FLUKA DPM Version: ' + dpm_version)
+  dpm_chk = run_command('sh', '-c',
+    'test -e "' + fluprod + '/interface/libdpmjet' + dpm_version + '.a" && echo yes || echo no',
+    check: true).stdout().strip()
+  if dpm_chk != 'yes'
+    error('FLUKA: missing ' + fluprod + '/interface/libdpmjet' + dpm_version + '.a'
+          + ' — run scripts/install_fluka.sh')
+  endif
   
   flka_src = [
     f/'fluka/chromo_fluka.f',
