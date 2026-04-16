@@ -828,7 +828,9 @@ class MCRun(ABC):
         with self._temporary_kinematics(kin):
             kin2 = self.kinematics
             if isinstance(kin2.p2, CompositeTarget):
-                cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0, emd=0.0)
+                cross_section = CrossSectionData(
+                    **{f.name: 0.0 for f in dataclasses.fields(CrossSectionData)}
+                )
                 kin3 = copy.copy(kin2)
                 for component, fraction in zip(kin2.p2.components, kin2.p2.fractions):
                     kin3.p2 = component
