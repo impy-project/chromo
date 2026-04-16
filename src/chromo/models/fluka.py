@@ -79,8 +79,7 @@ class FlukaEvent(MCEvent):
         absp = np.abs(pids.astype(np.int64))
         nucleus = absp >= 1_000_000_000
         z = ((absp // 10000) % 1000).astype(float)
-        result = np.where(nucleus, np.sign(pids) * z, result)
-        return result
+        return np.where(nucleus, np.sign(pids) * z, result)
 
     def _history_zero_indexing(self):
         pass
@@ -157,7 +156,7 @@ class Fluka(MCRun):
     _version = "2025.1"
     _library_name = "_fluka"
     _projectiles = standard_projectiles | Nuclei() | {lp.photon.pdgid}
-    _targets = Nuclei() | {2212, 2112}
+    _targets = Nuclei() | {2212}
 
     # ------------------------------------------------------------------
     # Hadronic-generator transition defaults (from flukapro/(GENTHR),
@@ -248,7 +247,10 @@ class Fluka(MCRun):
 
     def _init_rng(self, rng_state_file, seed):
         if rng_state_file is None:
-            rng_state_file = pathlib.Path(tempfile.gettempdir()) / "fluka_rng_state.dat"
+            rng_state_file = (
+                pathlib.Path(tempfile.gettempdir())
+                / f"fluka_rng_state_{os.getpid()}.dat"
+            )
         self._rng_state_file = pathlib.Path(rng_state_file)
         self._logical_unit = 888
 
@@ -495,7 +497,7 @@ class Fluka(MCRun):
         for fort_file in pathlib.Path(".").glob("fort.*"):
             fort_file.unlink(missing_ok=True)
         for f in (
-            pathlib.Path(tempfile.gettempdir()) / "fluka_rng_state.dat",
+            pathlib.Path(tempfile.gettempdir()) / f"fluka_rng_state_{os.getpid()}.dat",
             pathlib.Path(".") / ".timer.out",
         ):
             f.unlink(missing_ok=True)
