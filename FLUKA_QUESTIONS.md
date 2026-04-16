@@ -162,6 +162,18 @@ serialisation for full reproducibility?
 
 ---
 
+## 10. Free-neutron target in `STPXYZ`
+
+`STPXYZ` takes material Z values via the `IZELFL` array. For a free
+neutron (PDG 2112), Z = 0. I currently pass `max(Z, 1)` which silently
+maps neutron to hydrogen — incorrect physics.
+
+**Question.** Does `STPXYZ` accept Z = 0 for a free-neutron target, or
+is there a different mechanism (e.g. a dedicated material code, or a
+specific `IZELFL` convention for neutron matter)?
+
+---
+
 ## Build environment
 
 - FLUKA 2025.1, `DPMVERS = 3.19.3.2`
