@@ -4,6 +4,7 @@ Each test runs in a separate subprocess via run_in_separate_process
 because FLUKA is single-instantiation per Python process.
 """
 
+import os
 import sys
 from functools import lru_cache
 
@@ -22,9 +23,12 @@ try:
 except ImportError:
     _fluka_available = False
 
+_flupro_valid = "FLUPRO" in os.environ and os.path.isdir(os.environ.get("FLUPRO", ""))
+
 pytestmark = [
     pytest.mark.skipif(sys.platform == "win32", reason="FLUKA is not built on Windows"),
     pytest.mark.skipif(not _fluka_available, reason="_fluka extension not built"),
+    pytest.mark.skipif(not _flupro_valid, reason="FLUPRO not set or invalid"),
 ]
 
 

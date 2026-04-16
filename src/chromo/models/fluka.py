@@ -494,13 +494,18 @@ class Fluka(MCRun):
     # ------------------------------------------------------------------
 
     def _cleanup_fort(self):
-        for fort_file in pathlib.Path(".").glob("fort.*"):
-            fort_file.unlink(missing_ok=True)
-        for f in (
-            pathlib.Path(tempfile.gettempdir()) / f"fluka_rng_state_{os.getpid()}.dat",
-            pathlib.Path(".") / ".timer.out",
-        ):
-            f.unlink(missing_ok=True)
+        # Only remove FLUKA-specific files, not arbitrary fort.* the user
+        # might have in cwd. FLUKA opens fort.11 (log) and fort.19 (DPMJET
+        # scratch) during STPXYZ init.
+        for unit in (11, 19):
+            pathlib.Path(f"fort.{unit}").unlink(missing_ok=True)
+        lu = getattr(self, "_logical_unit", None)
+        if lu is not None:
+            pathlib.Path(f"fort.{lu}").unlink(missing_ok=True)
+        pathlib.Path(".timer.out").unlink(missing_ok=True)
+        rng = getattr(self, "_rng_state_file", None)
+        if rng is not None:
+            pathlib.Path(rng).unlink(missing_ok=True)
 
     def __del__(self):
         try:
