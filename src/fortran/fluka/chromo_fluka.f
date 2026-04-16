@@ -120,6 +120,9 @@ Cf2py intent(out) dir_cos
         open(unit=logical_unit, file=trim(file_name))
         call RNREAD(logical_unit, seed, success_flag)
         close(unit=logical_unit)
+        if (.not. success_flag) then
+          STOP 'load_rng_state: failed to read RNG state file'
+        end if
       end subroutine load_rng_state
       
       
