@@ -471,7 +471,7 @@ class EventData:
 
         Note that this is a slow convenience function for developing/debugging.
         """
-        return [Particle.from_pdgid(pid) for pid in self.pid]
+        return [Particle.from_pdgid(pid).name for pid in self.pid]
 
     def _prepare_for_hepmc(self):
         """

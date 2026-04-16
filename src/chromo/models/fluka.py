@@ -9,6 +9,7 @@ photonuclear, and EMD interactions, with nuclear remnants in HEPEVT.
 import logging
 import os
 import pathlib
+import tempfile
 from enum import IntEnum
 
 import numpy as np
@@ -16,7 +17,7 @@ from particle import Particle
 from particle import literals as lp
 
 from chromo.common import CrossSectionData, MCEvent, MCRun
-from chromo.constants import GeV, PeV, TeV, standard_projectiles
+from chromo.constants import GeV, TeV, nucleon_mass, standard_projectiles
 from chromo.kinematics import EventFrame
 from chromo.util import (
     CompositeTarget,
@@ -94,25 +95,56 @@ class FlukaEvent(MCEvent):
 class Fluka(MCRun):
     """FLUKA event generator (2025.1).
 
-    Supports hN, hA, AA, photohadronic (γ+p), photonuclear (γ+A), and
+    Supports hN, hA, AA, photohadronic (gamma+p), photonuclear (gamma+A), and
     electromagnetic dissociation (EMD). Generator is single-instantiation
     per Python process.
+
+    Generator transitions
+    ---------------------
+    FLUKA dispatches to different hadronic models depending on the
+    lab-frame kinetic energy per nucleon:
+
+    * **hA** (hadron-nucleus): Peanut below ``transition_peanut_dpmjet``,
+      DPMJET-3 above. ``transition_peanut_dpmjet_smearing`` randomises
+      the switch-over to avoid discontinuities (set to 0 for a sharp
+      handoff).
+    * **AA** (nucleus-nucleus): rQMD below ``transition_rqmd_dpmjet``,
+      DPMJET-3 above. Below roughly 125 MeV/n (``QMDIOT``, not user-
+      configurable) FLUKA's BME model takes over from rQMD.
+    * **DPMJET → UHE** (EPOS/SIBYLL/QGSJET) has no effect in chromo's
+      FLUKA build: FLUKA's own runtime UHE thresholds sit at 1e+30, and
+      no UHE model is linked in any case. The top of chromo's supported
+      range is the class-level sanity ceiling ``_max_sqrt_s_nn``
+      (500 TeV by default); kinematics above this raise ``ValueError``
+      at construction.
+
+    The class-attribute defaults mirror FLUKA's post-STPXYZ runtime
+    defaults and can be overridden instance-by-instance via the keyword
+    arguments below.
 
     Parameters
     ----------
     evt_kin : EventKinematicsBase
-        Initial kinematics. Target must be registered (see `targets`).
+        Initial kinematics. Target must be registered (see ``targets``).
     seed : int or None
         Random seed for FLUKA's Ranmar generator.
     targets : iterable of (str|int|PDGID), optional
-        Extra nuclei to register beyond `_DEFAULT_MATERIALS`. Required
+        Extra nuclei to register beyond ``_DEFAULT_MATERIALS``. Required
         if you plan to shoot at a nucleus outside the default list.
     interaction_type : InteractionType
         Which channels to generate/compute. Default INELASTIC.
-    transition_energy : float or None
-        FLUKA→DPMJET transition energy (GeV). None → FLUKA defaults.
-    transition_smearing : float or None
-        Smearing (+/-) of the transition energy. None → FLUKA default.
+    transition_peanut_dpmjet : float or None
+        hA Peanut↔DPMJET-3 transition energy (GeV, lab kin. energy).
+        ``None`` → class default (``_transition_peanut_dpmjet``).
+    transition_peanut_dpmjet_smearing : float or None
+        Smearing (±, GeV) of the hA Peanut↔DPMJET transition. Set to 0
+        for a sharp switch. ``None`` → class default.
+    transition_rqmd_dpmjet : float or None
+        AA rQMD↔DPMJET-3 transition energy (GeV/n, lab kin. energy per
+        nucleon). ``None`` → class default.
+    transition_rqmd_dpmjet_smearing : float or None
+        Smearing (±, GeV/n) of the AA rQMD↔DPMJET transition.
+        ``None`` → class default.
     enable_quasielastic : bool
         Enable quasi-elastic scattering. Default False.
     rng_state_file : pathlib.Path or str, optional
@@ -125,22 +157,39 @@ class Fluka(MCRun):
     _version = "2025.1"
     _library_name = "_fluka"
     _projectiles = standard_projectiles | Nuclei() | {lp.photon.pdgid}
-    _targets = Nuclei()
-    # Kinematics are controlled per-nucleon in the lab frame (ecm becomes
-    # ill-defined for photonuclear at the GDR). Bounds below were
-    # determined empirically against FLUKA 2025.1:
-    # - hadron cross section: smooth up to at least 100 EeV (1e8 GeV)
-    # - hadron event generation: crashes between 20 and 25 TeV/nucleon
-    # - photon cross section: smooth up to at least 1 PeV
-    # - photon event generation: OK to at least 100 TeV (not probed higher)
-    # _check_kinematics enforces only the liberal xsec ceiling and a sane
-    # floor; tight event-gen caps are enforced in _generate().
-    _ecm_min = 0.0  # liberal; effective floor set by ekin/n
-    _ekin_per_nucleon_min = 0.001 * GeV  # 1 MeV/n: FLUKA low-E floor
-    _ekin_per_nucleon_max_hadron_xsec = 1 * PeV
-    _ekin_per_nucleon_max_photon_xsec = 1 * PeV
-    _ekin_per_nucleon_max_hadron_event = 20 * TeV
-    _ekin_per_nucleon_max_photon_event = 100 * TeV
+    _targets = Nuclei() | {2212, 2112}
+
+    # ------------------------------------------------------------------
+    # Hadronic-generator transition defaults (from flukapro/(GENTHR),
+    # cross-checked against FLUKA's post-STPXYZ runtime state — the
+    # static PARAMETERs in (GENTHR) are superseded by BDNOPT/DFLTS init).
+    # Values are lab kinetic energy (GeV for hA, GeV/n for AA).
+    # ------------------------------------------------------------------
+
+    # hA: Peanut handles below this, DPMJET-3 above. FLUKA's runtime
+    # default is 20 TeV (scalar DPJHDT); Peanut is accurate well beyond
+    # 1 TeV for most hadrons. Smearing disabled by default (LFDSMR=0).
+    _transition_peanut_dpmjet = 20 * TeV
+    _transition_peanut_dpmjet_smearing = 0.0
+
+    # AA: rQMD handles the intermediate range (from QMDIOT ≈ 125 MeV/n
+    # upwards) and DPMJET-3 takes over above this. FLUKA runtime
+    # default: 12.5 GeV/n with 2.0 GeV/n smearing (LAASMR=1).
+    _transition_rqmd_dpmjet = 12.5 * GeV
+    _transition_rqmd_dpmjet_smearing = 2.0 * GeV
+
+    # ------------------------------------------------------------------
+    # Kinematics ceiling.
+    # ------------------------------------------------------------------
+    # FLUKA's runtime UHE boundaries (UHEHDT/UHEIOT) sit at 1e+30 out of
+    # the box, so DPMJET naturally handles the entire high-energy range;
+    # no UHE model is linked in chromo's FLUKA build in any case. This
+    # ceiling is chromo's own sanity limit: above it we raise before
+    # DPMJET has a chance to misbehave.
+    _max_sqrt_s_nn = 500 * TeV
+    # Convert: for ultra-relativistic kinematics, s ≈ 2·m_N·E_kin_lab.
+    _ekin_per_nucleon_max = _max_sqrt_s_nn**2 / (2 * nucleon_mass)
+    _ecm_min = 0.0  # liberal; FLUKA itself has no practical low-E floor
 
     def __init__(
         self,
@@ -149,8 +198,10 @@ class Fluka(MCRun):
         seed=None,
         targets=None,
         interaction_type=InteractionType.INELASTIC,
-        transition_energy=None,
-        transition_smearing=None,
+        transition_peanut_dpmjet=None,
+        transition_peanut_dpmjet_smearing=None,
+        transition_rqmd_dpmjet=None,
+        transition_rqmd_dpmjet_smearing=None,
         enable_quasielastic=False,
         rng_state_file=None,
     ):
@@ -165,16 +216,27 @@ class Fluka(MCRun):
                 "non-existing directory — run scripts/install_fluka.sh"
             )
 
+        # Resolve transition thresholds (ctor override → class default).
+        if transition_peanut_dpmjet is not None:
+            self._transition_peanut_dpmjet = float(transition_peanut_dpmjet)
+        if transition_peanut_dpmjet_smearing is not None:
+            self._transition_peanut_dpmjet_smearing = float(
+                transition_peanut_dpmjet_smearing
+            )
+        if transition_rqmd_dpmjet is not None:
+            self._transition_rqmd_dpmjet = float(transition_rqmd_dpmjet)
+        if transition_rqmd_dpmjet_smearing is not None:
+            self._transition_rqmd_dpmjet_smearing = float(
+                transition_rqmd_dpmjet_smearing
+            )
+
         self._interaction_type = int(interaction_type)
         self._init_rng(rng_state_file, seed)
         self._set_quasielastic(enable_quasielastic)
-        self._init_fluka_materials(
-            evt_kin,
-            targets or (),
-            pptmax=1e9 if transition_energy is None else max(transition_energy, 1e9),
-            ef2dp3=-1.0 if transition_energy is None else float(transition_energy),
-            df2dp3=-1.0 if transition_smearing is None else float(transition_smearing),
-        )
+        self._init_fluka_materials(evt_kin, targets or ())
+        # GENTHR defaults are installed by FLUKA during STPXYZ; override
+        # them AFTER the call so our values are final.
+        self._set_generator_thresholds()
 
         self.kinematics = evt_kin
         self._set_final_state_particles()
@@ -186,7 +248,7 @@ class Fluka(MCRun):
 
     def _init_rng(self, rng_state_file, seed):
         if rng_state_file is None:
-            rng_state_file = pathlib.Path(__file__).parent / "fluka_rng_state.dat"
+            rng_state_file = pathlib.Path(tempfile.gettempdir()) / "fluka_rng_state.dat"
         self._rng_state_file = pathlib.Path(rng_state_file)
         self._logical_unit = 888
 
@@ -233,23 +295,17 @@ class Fluka(MCRun):
                 seen.append(pdg)
         return seen
 
-    def _init_fluka_materials(
-        self,
-        evt_kin,
-        user_targets,
-        pptmax,
-        ef2dp3,
-        df2dp3,
-    ):
+    def _init_fluka_materials(self, evt_kin, user_targets):
         materials = self._build_material_list(evt_kin, user_targets)
         # FLUKA STPXYZ is initialised with GLBCRD(WHAT(1)=10), limiting the
         # allocatable MEDFLK geometry array to 10 regions.
         if len(materials) > 10:
-            raise ValueError(
+            msg = (
                 f"Too many materials ({len(materials)} > 10). "
                 "FLUKA STPXYZ is limited to 10 geometry regions. "
                 "Reduce the default list or pass fewer targets= entries."
             )
+            raise ValueError(msg)
         # Each entry is a single-element material; nelmfl[i]=1 for all.
         nelmfl = np.ones(len(materials), dtype=np.int32)
         # pdg2AZ returns (A, Z); we want Z. Free proton (2212) → (1, 1).
@@ -257,19 +313,55 @@ class Fluka(MCRun):
         wfelfl = np.ones(len(materials), dtype=np.float64)
         lprint = 0  # suppress FLUKA material printout
 
+        # STPXYZ's ef2dp3/df2dp3 only cover the hA Peanut↔DPMJET
+        # transition; pass sentinels and override via GENTHR afterwards
+        # (see _set_generator_thresholds) so all transitions go through
+        # a single mechanism.
+        #
+        # pptmax is the maximum momentum used to build DPMJET's
+        # initialisation tables. Keep it at 1 EeV/c — empirically the
+        # largest value FLUKA's DPMJET init accepts without regressing
+        # low-energy event generation. The UHE dispatch ceiling (set in
+        # _set_generator_thresholds) is separate from this.
         mt = self._lib.chromo_stpxyz(
             nelmfl,
             izelfl,
             wfelfl,
-            pptmax,
-            ef2dp3,
-            df2dp3,
+            1e9,  # pptmax (GeV/c)
+            -1.0,  # ef2dp3: FLUKA default, overridden below
+            -1.0,  # df2dp3: FLUKA default, overridden below
             int(self._interaction_type),
             lprint,
         )
         self._materials_pdg = tuple(materials)
         self._materials_idx = np.asarray(mt, dtype=np.int32)
         self._materials_map = dict(zip(materials, self._materials_idx.tolist()))
+
+    def _set_generator_thresholds(self):
+        """Write hadronic-generator transition thresholds into GENTHR.
+
+        Must be called AFTER ``chromo_stpxyz`` so FLUKA's own
+        initialisation can't overwrite our values. See
+        ``flukapro/(GENTHR)`` for variable semantics.
+
+        Touches only the interaction thresholds and their smearing
+        settings — leaves cross-section thresholds (``DPHDXT``/
+        ``DPIOXT``) and the UHE/rQMD lower bounds (``UHEHDT``/
+        ``UHEIOT``/``QMDIOT``) at their FLUKA runtime defaults.
+        """
+        g = self._lib.genthr
+
+        # hA: Peanut ↔ DPMJET-3 (scalar DPJHDT; particle-specific Peanut
+        # thresholds PEANCT/PEAPIT/... are not touched).
+        g.dpjhdt = self._transition_peanut_dpmjet
+        g.fldpsm = self._transition_peanut_dpmjet_smearing
+        g.lfdsmr = 1 if self._transition_peanut_dpmjet_smearing > 0 else 0
+
+        # AA: rQMD ↔ DPMJET-3. QMDIOT is rQMD's *lower* bound
+        # (≈125 MeV/n), not the rQMD↔DPMJET switch — leave it alone.
+        g.dpjiot = self._transition_rqmd_dpmjet
+        g.dpqmsm = self._transition_rqmd_dpmjet_smearing
+        g.laasmr = 1 if self._transition_rqmd_dpmjet_smearing > 0 else 0
 
     # ------------------------------------------------------------------
     # Internal helpers — projectile & target codes
@@ -302,43 +394,21 @@ class Fluka(MCRun):
 
     def _check_kinematics(self, kin):
         super()._check_kinematics(kin)
+        # Single ceiling: FLUKA has no practical low-energy floor (its
+        # transport threshold is 1 µeV/n, well below anything chromo
+        # users would set), and above _ekin_per_nucleon_max DPMJET would
+        # hand off to an unlinked UHE model and abort.
         a = kin.p1.A or 1
         ekin_per_n = kin.ekin / a
-        if ekin_per_n < self._ekin_per_nucleon_min:
-            raise ValueError(
-                f"kinetic energy/nucleon {ekin_per_n / GeV:.3g} GeV < "
-                f"min {self._ekin_per_nucleon_min / GeV:.3g} GeV"
-            )
-        if int(kin.p1) == 22:
-            upper = self._ekin_per_nucleon_max_photon_xsec
-        else:
-            upper = self._ekin_per_nucleon_max_hadron_xsec
-        if ekin_per_n > upper:
-            raise ValueError(
+        if ekin_per_n > self._ekin_per_nucleon_max:
+            msg = (
                 f"kinetic energy/nucleon {ekin_per_n / GeV:.3g} GeV > "
-                f"cross-section ceiling {upper / GeV:.3g} GeV"
+                f"FLUKA ceiling {self._ekin_per_nucleon_max / GeV:.3g} GeV "
+                f"(sqrt(s_NN) = {self._max_sqrt_s_nn / TeV:.0f} TeV). "
+                f"DPMJET->UHE transition not supported in chromo's FLUKA "
+                f"build - no UHE model is linked."
             )
-
-    def _check_event_kinematics(self, kin):
-        """Tighter ceiling applied only when generating events.
-
-        Cross-section queries can run up to the looser xsec ceiling set in
-        ``_check_kinematics``; FLUKA's ``EVTXYZ`` breaks earlier than its
-        ``SGMXYZ`` at high lab energies.
-        """
-        a = kin.p1.A or 1
-        ekin_per_n = kin.ekin / a
-        if int(kin.p1) == 22:
-            upper = self._ekin_per_nucleon_max_photon_event
-        else:
-            upper = self._ekin_per_nucleon_max_hadron_event
-        if ekin_per_n > upper:
-            raise ValueError(
-                f"kinetic energy/nucleon {ekin_per_n / GeV:.3g} GeV > "
-                f"event-generation ceiling {upper / GeV:.3g} GeV "
-                f"(FLUKA EVTXYZ crashes beyond this; cross_section() "
-                f"still works)"
-            )
+            raise ValueError(msg)
 
     def _set_kinematics(self, kin):
         # Resolve the target material index (required before _generate).
@@ -385,9 +455,20 @@ class Fluka(MCRun):
 
     def _generate(self):
         k = self.kinematics
-        # Tighter ceiling: FLUKA EVTXYZ breaks earlier than SGMXYZ.
-        self._check_event_kinematics(k)
-        proj_code = self._fluka_projectile_code(int(k.p1))
+        # EVTXYZ takes a different projectile-code encoding than SGMXYZ:
+        # heavy ions (A>4) must be registered via PDGION first and then
+        # passed as the -2 HEAVYION sentinel. pdg_to_evt_code handles
+        # both steps; for hadrons and light nuclei it is equivalent to
+        # the SGMXYZ encoding produced by pdg_to_proj_code.
+        proj_code = int(self._lib.pdg_to_evt_code(int(k.p1)))
+        if proj_code == -2:
+            msg = (
+                "Heavy-ion projectiles (A > 4) are not supported for event "
+                "generation in FLUKA — EVTXYZ aborts for nuclear projectiles. "
+                "Use hadronic projectiles (p, pi, K, n, gamma) for events; "
+                "cross_section() works for AA kinematics."
+            )
+            raise ValueError(msg)
         mat_idx = self._current_target_idx
         ekin = k.ekin
         self._lib.chromo_evtxyz(
@@ -414,7 +495,7 @@ class Fluka(MCRun):
         for fort_file in pathlib.Path(".").glob("fort.*"):
             fort_file.unlink(missing_ok=True)
         for f in (
-            pathlib.Path(__file__).parent / "fluka_rng_state.dat",
+            pathlib.Path(tempfile.gettempdir()) / "fluka_rng_state.dat",
             pathlib.Path(".") / ".timer.out",
         ):
             f.unlink(missing_ok=True)
