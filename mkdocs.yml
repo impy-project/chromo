@@ -35,6 +35,8 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
+          paths: [src]
+          load_external_modules: true
           options:
             show_source: false
             show_root_heading: true
@@ -42,10 +44,14 @@ plugins:
             heading_level: 3
             members_order: source
             docstring_style: numpy
+            allow_inspection: true
+            preload_modules: [pyhepmc]
   - mkdocs-jupyter:
       include: ["examples/*.ipynb"]
       ignore_h1_titles: true
       execute: false
+exclude_docs: |
+  superpowers/
 
 markdown_extensions:
   - admonition

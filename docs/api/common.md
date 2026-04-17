@@ -2,10 +2,14 @@
 
 Base classes for event generators and event data.
 
-::: chromo.common
+::: chromo.common.CrossSectionData
+
+::: chromo.common.EventData
     options:
-      members:
-        - CrossSectionData
-        - EventData
-        - MCEvent
-        - MCRun
+      inherited_members: false
+
+::: chromo.common.MCEvent
+    options:
+      inherited_members: false
+
+::: chromo.common.MCRun
