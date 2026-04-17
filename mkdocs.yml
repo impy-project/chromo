@@ -1,0 +1,102 @@
+site_name: chromo
+site_description: Cosmic Ray and Hadronic Interaction Monte Carlo Frontend
+site_url: https://impy-project.github.io/chromo
+repo_url: https://github.com/impy-project/chromo
+repo_name: impy-project/chromo
+
+theme:
+  name: material
+  logo: doc/chromo.svg
+  favicon: doc/chromo.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - content.code.copy
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: false
+            show_root_heading: true
+            show_root_full_path: false
+            heading_level: 3
+            members_order: source
+            docstring_style: numpy
+  - mkdocs-jupyter:
+      include: ["examples/*.ipynb"]
+      ignore_h1_titles: true
+      execute: false
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - toc:
+      permalink: true
+  - attr_list
+  - tables
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Your First Simulation: getting-started/first-simulation.md
+    - Building with FLUKA: getting-started/building-with-fluka.md
+  - User Guide:
+    - Kinematics: user-guide/kinematics.md
+    - Running a Generator: user-guide/running-a-generator.md
+    - Working with Events: user-guide/working-with-events.md
+    - Cross Sections: user-guide/cross-sections.md
+    - Output Formats: user-guide/output-formats.md
+    - Decay Handling: user-guide/decay-handling.md
+  - Models:
+    - Overview: models/overview.md
+    - Pythia 8 Guide: models/pythia8-guide.md
+    - SIBYLL Variants: models/sibyll-variants.md
+    - DPMJET & PHOJET: models/dpmjet-phojet.md
+    - FLUKA: models/fluka.md
+  - Architecture: architecture.md
+  - Examples:
+    - Comparing Models: examples/compare_models.ipynb
+    - Cross Sections: examples/cross_section.ipynb
+    - Nuclear Cross Sections: examples/nuclear_cross_sections.ipynb
+    - Final State Particles: examples/count_final_state_particles.ipynb
+    - Photon-Proton: examples/gamma_p.ipynb
+    - Photon-Photon: examples/gamma_gamma_example.ipynb
+    - HepMC IO & Visualization: examples/hepmc_io_and_visualization.ipynb
+    - Hyperon Feed-Down: examples/hyperon_feed_down.ipynb
+    - Decay Handler: examples/decayhandler.ipynb
+    - ROOT Output: examples/write_root.ipynb
+    - FLUKA & DPMJET Residuals: examples/fluka_dpmjet_residual_nuclei.ipynb
+  - API Reference:
+    - chromo.kinematics: api/kinematics.md
+    - chromo.common: api/common.md
+    - chromo.models: api/models.md
+    - chromo.writer: api/writer.md
+    - chromo.cli: api/cli.md
+  - Citation: citation.md
