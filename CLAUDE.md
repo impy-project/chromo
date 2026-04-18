@@ -26,7 +26,8 @@ Compiled modules go to `build/cp*/`. Model enable/disable is controlled in `pypr
 python scripts/download_data.py
 
 # Run all tests (parallel by default via pytest-xdist)
-python -m pytest -vv -n 16 # in the cloud use 2 or 3 processes.
+# This dev box has 32-40 cores available; use -n 32. CI runners use 2-3.
+python -m pytest -vv -n 32 # in CI/cloud use 2 or 3 processes.
 
 # Run tests serially
 python -m pytest -n 0
@@ -105,6 +106,89 @@ Windows builds are not yet **experimentally supported**. Key details:
 # Skip PYTHIA8 and problematic tests
 python -m pytest -vv -k "not (Pythia8 or test_decay_handler)" -n 2
 ```
+
+## FLUKA integration
+
+FLUKA 2025.1 is an optional, license-restricted backend. Not built in
+public CI.
+
+### Install
+
+```bash
+export FLUPRO=$HOME/devel/FLUKA
+export FLUKA_ARCHIVE_DIR=$HOME/devel/FLUKA-dev  # directory with the .tar.gz archives
+bash scripts/install_fluka.sh
+```
+
+Persist `export FLUPRO=$HOME/devel/FLUKA` in your shell rc.
+
+### Build chromo with Fluka
+
+```bash
+pip install --no-build-isolation -v -e .[test]
+```
+
+The meson `fluka` block fails fast if `$FLUPRO` is unset or any of the
+required archives (`libflukahp.a`, `libdpmmvax.a`, `librqmdmvax.a`,
+`latestRQMD/librqmd.a`, `interface/libdpmjet*.a`, `interface/dpmvers`)
+are missing.
+
+### Usage
+
+```python
+from chromo.models import Fluka
+from chromo.models.fluka import InteractionType
+from chromo.kinematics import FixedTarget
+
+gen = Fluka(FixedTarget(100, "p", "O16"),
+            interaction_type=InteractionType.INELA_EMD,
+            seed=42)
+for event in gen(10):
+    print(event.final_state().pid)
+```
+
+### Caveats & FLUKA-internal limitations
+
+- **Single instantiation per Python process.** Fortran globals; tests use
+  `tests/util.py::run_in_separate_process`.
+- **Hard material cap of 10 entries.** FLUKA's shipped `stpxyz.f:256` has
+  a compile-time `MEDFLK` upper bound of 10 (empirically confirmed: index
+  11 fires a Fortran runtime array-bound error). Cannot be raised from
+  Python/F2PY; would require patching FLUKA's source. Chromo's default
+  `_DEFAULT_MATERIALS` list has 9 entries (`p`, `He4`, `C12`, `N14`,
+  `O16`, `Ar40`, `Fe56`, `Cu63`, `Pb208`) leaving 1 slot for an extra
+  target. Use `targets=["Si28", ...]` to swap elements; exceeding 10
+  raises `ValueError`.
+- **Energy ceiling at 300 TeV CMS** (`_ecm_max`). `PPTMAX` is set to
+  the construction-kinematics `plab`, so DPMJET Glauber tables cover
+  the full requested range. `cross_section()` works at all energies
+  below the ceiling.
+- **Light-nucleus projectiles (d, t, 3He, 4He) work** for both cross
+  sections and event generation via dedicated FLUKA PAPROP codes.
+- **Heavy-ion projectiles (A > 4) are not yet supported** for event
+  generation (pending upstream support). `cross_section()` works for
+  AA kinematics via SGMXYZ.
+- **EMD-only event generation aborts FLUKA.** Use `InteractionType.EMD`
+  for cross-section queries only. For event generation, combine with
+  `INELA_EMD` (101) or `INELA_ELA_EMD` (111).
+- **EMD cross section is zero for single-proton projectiles** (physics:
+  needs a Z²-enhanced field, so meaningful EMD only appears for AA).
+- **No beam records in HEPEVT.** FLUKA's `FLLHEP` populates HEPEVT with
+  GENSTK ejectiles and RESNUC residuals. `FlukaEvent._prepend_initial_beam`
+  is intentionally a no-op. The generic `test_models_beam[Fluka]` is
+  xfailed for this reason (see `tests/test_common.py`).
+- **`_set_stable` is a no-op.** FLUKA's decay model is global and not
+  runtime-configurable.
+- **`e+/e-` projectiles are not yet supported** (SGMXYZ returns xsec
+  but EVTXYZ aborts on some targets). Pending upstream clarification.
+- **RNG reproducibility requires the Pythia8DecayHandler off.** Pythia8's
+  own RNG is independent from FLUKA's Ranmar state and isn't seeded
+  deterministically across processes. For fully reproducible event
+  records: `Fluka(... )._activate_decay_handler(on=False)`.
+
+### Disable
+
+Remove `"fluka"` from `[tool.chromo] enabled-models` in `pyproject.toml`.
 
 ## Data Files (iamdata)
 

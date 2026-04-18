@@ -182,6 +182,12 @@ def test_models_beam(Model):
             "Pythia8Angantyr nuclear beam momenta differ from idealized "
             "CMS beam data due to per-nucleon kinematics"
         )
+    if Model.__name__ == "Fluka":
+        pytest.xfail(
+            "FLUKA's FLLHEP populates HEPEVT with GENSTK ejectiles and RESNUC "
+            "residuals only; beam records are not in positions 0-1 "
+            "(_prepend_initial_beam is a no-op)"
+        )
     evt_kin = CenterOfMass(100, "proton", "proton")
     if Model.pyname in "Sophia20":
         evt_kin = CenterOfMass(100, "photon", "proton")
@@ -197,3 +203,26 @@ def test_models_beam(Model):
         assert np.allclose(
             event_field[0:2], beam_field
         ), f"{field}: {np.allclose(event_field[0:2], beam_field)}, {event_field[0:2]}, {beam_field}"
+
+
+def test_cross_section_data_has_emd_field():
+    import numpy as np
+
+    from chromo.common import CrossSectionData
+
+    cs = CrossSectionData(inelastic=100.0, emd=5.0)
+    assert cs.inelastic == 100.0
+    assert cs.emd == 5.0
+    # default
+    cs2 = CrossSectionData()
+    assert np.isnan(cs2.emd)
+
+
+def test_cross_section_data_emd_mul_radd():
+    from chromo.common import CrossSectionData
+
+    a = CrossSectionData(inelastic=0.0, emd=0.0)
+    b = CrossSectionData(inelastic=10.0, emd=2.0)
+    a._mul_radd(0.5, b)
+    assert a.emd == 1.0
+    assert a.inelastic == 5.0
