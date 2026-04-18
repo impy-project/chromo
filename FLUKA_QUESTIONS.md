@@ -96,18 +96,7 @@ How does `DPJHDT` interact with `PEANCT` (100 TeV)?
 
 ---
 
-## 6. STPXYZ re-entry
-
-Calling `STPXYZ` a second time triggers `FLABRT`. I register all
-materials in a single `STPXYZ` call, but would like to add materials
-later (e.g. a target nucleus not in the initial list).
-
-**Question.** Is there a way to register additional materials after the
-first `STPXYZ` — via `SETITB`/`DFATWG` directly, or a re-entry flag?
-
----
-
-## 7. `EVTXYZ` with `IFLXYZ = 100` (EMD-only)
+## 6. `EVTXYZ` with `IFLXYZ = 100` (EMD-only)
 
 `SGMXYZ(…, IFLXYZ=100)` returns valid EMD cross sections (e.g.
 O16+Pb208 at 1.6 TeV). `EVTXYZ(…, IFLXYZ=100)` aborts. I work around
@@ -118,7 +107,7 @@ must it always be combined with inelastic?
 
 ---
 
-## 8. `EVTXYZ` with electron/positron projectile
+## 7. `EVTXYZ` with electron/positron projectile
 
 Calling `EVTXYZ` with the electron PAPROP code aborts.
 
@@ -127,7 +116,7 @@ users convert to equivalent-photon kinematics upstream?
 
 ---
 
-## 9. Ranmar state completeness
+## 8. Ranmar state completeness
 
 I serialise Ranmar state via `RNINIT` / `RNWRIT` / `RNREAD` and
 confirm event-level reproducibility across processes.
@@ -138,7 +127,7 @@ serialisation for full reproducibility?
 
 ---
 
-## 10. Free-neutron target in `STPXYZ`
+## 9. Free-neutron target in `STPXYZ`
 
 `STPXYZ` takes material Z values via the `IZELFL` array. For a free
 neutron (PDG 2112), Z = 0. I currently pass `max(Z, 1)` which silently
