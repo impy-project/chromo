@@ -429,36 +429,37 @@ def test_high_energy_xsec_ok_below_ceiling():
 
 
 def _rng_roundtrip(tmpdir):
-    """Run one event and save the pre-event RNG state.
+    """Run one event and save the pre-event RNG state via random_state API.
 
     The Pythia8DecayHandler uses its own RNG and is disabled here so that
-    only FLUKA's Ranmar state is exercised — the round-trip test is
-    specifically for FLUKA's RNG, not Pythia8's.
+    only FLUKA's Ranmar state is exercised.
     """
     import pathlib
 
     from chromo.models import Fluka
 
-    path = pathlib.Path(tmpdir) / "fluka_rng.dat"
-
     kin = FixedTarget(100.0, "p", "O16")
-    g1 = Fluka(kin, seed=42, rng_state_file=path)
+    g1 = Fluka(kin, seed=42, rng_state_file=pathlib.Path(tmpdir) / "rng.dat")
     g1._activate_decay_handler(on=False)
-    g1.save_rng_state(path)
+    state = g1.random_state
     ev1 = next(iter(g1(1)))
     pid1 = ev1.pid.copy()
     en1 = ev1.en.copy()
-    return path, pid1, en1
+    return state, pid1, en1
 
 
-def _rng_replay(path):
+def _rng_replay(state):
+    import pathlib
+    import tempfile
 
     from chromo.models import Fluka
 
     kin = FixedTarget(100.0, "p", "O16")
-    g2 = Fluka(kin, seed=42, rng_state_file=path)
+    g2 = Fluka(
+        kin, seed=42, rng_state_file=pathlib.Path(tempfile.mkdtemp()) / "rng.dat"
+    )
     g2._activate_decay_handler(on=False)
-    g2.load_rng_state(path)
+    g2.random_state = state
     ev2 = next(iter(g2(1)))
     return ev2.pid.copy(), ev2.en.copy()
 
@@ -466,10 +467,10 @@ def _rng_replay(path):
 def test_rng_state_roundtrip(tmp_path):
     """Confirm FLUKA Ranmar state reproduces identical events across processes.
 
-    The Pythia8DecayHandler is disabled to isolate FLUKA's own RNG; its
-    own RNG is not seeded deterministically and would cause spurious failures.
+    Uses the standard ``random_state`` property API (get/set bytes).
+    The Pythia8DecayHandler is disabled to isolate FLUKA's own RNG.
     """
-    path, pid1, en1 = run_in_separate_process(_rng_roundtrip, str(tmp_path))
-    pid2, en2 = run_in_separate_process(_rng_replay, path)
+    state, pid1, en1 = run_in_separate_process(_rng_roundtrip, str(tmp_path))
+    pid2, en2 = run_in_separate_process(_rng_replay, state)
     np.testing.assert_array_equal(pid1, pid2)
     np.testing.assert_allclose(en1, en2, rtol=0, atol=0)
