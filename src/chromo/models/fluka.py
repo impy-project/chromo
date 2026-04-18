@@ -155,7 +155,15 @@ class Fluka(MCRun):
     _frame = EventFrame.FIXED_TARGET
     _version = "2025.1"
     _library_name = "_fluka"
-    _projectiles = standard_projectiles | Nuclei() | {lp.photon.pdgid}
+    # EVTXYZ supports hadrons, photon, and light nuclei (d/t/3He/4He).
+    # Heavy ions (A > 4) work for cross_section() via SGMXYZ but abort
+    # in EVTXYZ — they are excluded here so _check_kinematics rejects
+    # them before reaching EVTXYZ.
+    _projectiles = (
+        standard_projectiles
+        | {lp.photon.pdgid}
+        | {1000010020, 1000010030, 1000020030, 1000020040}  # d, t, 3He, 4He
+    )
     _targets = Nuclei() | {2212}
 
     # ------------------------------------------------------------------
@@ -445,20 +453,7 @@ class Fluka(MCRun):
 
     def _generate(self):
         k = self.kinematics
-        # EVTXYZ takes a different projectile-code encoding than SGMXYZ:
-        # heavy ions (A>4) must be registered via PDGION first and then
-        # passed as the -2 HEAVYION sentinel. pdg_to_evt_code handles
-        # both steps; for hadrons and light nuclei it is equivalent to
-        # the SGMXYZ encoding produced by pdg_to_proj_code.
         proj_code = int(self._lib.pdg_to_evt_code(int(k.p1)))
-        if proj_code == -2:
-            msg = (
-                "Heavy-ion projectiles (A > 4) are not supported for event "
-                "generation in FLUKA — EVTXYZ aborts for nuclear projectiles. "
-                "Use hadronic projectiles (p, pi, K, n, gamma) for events; "
-                "cross_section() works for AA kinematics."
-            )
-            raise ValueError(msg)
         mat_idx = self._current_target_idx
         ekin = k.ekin
         self._lib.chromo_evtxyz(
