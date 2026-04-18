@@ -47,3 +47,6 @@ Untitled*.ipynb
 .venv*
 fort.*
 .timer.out
+# MkDocs build output
+site/
+program_structure.pdf
