@@ -523,4 +523,3 @@ class Fluka(MCRun):
     def registered_targets(self):
         """Tuple of PDG ids registered in FLUKA's material tables."""
         return self._materials_pdg
-
