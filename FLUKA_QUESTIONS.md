@@ -45,44 +45,20 @@ After `STPXYZ` the heavy-ion transport flags in `(THRSCM)` read
 
 ---
 
-## 2. FPE in EVTXYZ via DPMJET above ~75 TeV CMS
+## 2. FPE in EVTXYZ via DPMJET above ~75 TeV CMS — **RESOLVED**
 
-`EVTXYZ` for hA (e.g. π⁺ + Pb) raises a floating-point exception when
-the CMS energy exceeds roughly 75 TeV. `SGMXYZ` returns valid cross
-sections at all energies. Standalone DPMJET-III 19.3.2 generates events
-without issues above this energy — the FPE is specific to the FLUKA
-adapter path.
-
-Bisect with π⁺ + Pb208:
-
-| E_lab (GeV)   | √s (TeV) | result |
-|---------------|-----------|--------|
-| 3.0 × 10⁹    | ~75       | OK     |
-| 3.1 × 10⁹    | ~76       | FPE    |
-| 5.3 × 10⁹    | 100       | FPE    |
-
-Call chain at the FPE: `EVTXYZ → EVENTP → EVENTD → DPMRUN →
-DT_KKINC → DT_KKEVNT → DT_GLAUBE → DT_DIAGR`.
-
-`PPTMAX` was set to `1e9 GeV/c` in `STPXYZ`. `fort.11` reports
-`Max. initialization energy for DPMJET 1.8e9 GeV`.
-
-**Questions.**
-- Is ~75 TeV CMS the expected upper limit of DPMJET-3.19 event
-  generation inside FLUKA?
-- Would raising `PPTMAX` in the `STPXYZ` call extend this range?
+**Resolution.** `PPTMAX` passed to `STPXYZ` limits the highest energy
+FLUKA initialises its DPMJET Glauber tables for. Setting it to the
+construction-kinematics `plab` (instead of a hardcoded `1e9 GeV/c`)
+fixes the FPE. With `PPTMAX = 5.3e9` (matching 100 TeV CMS for
+π⁺+Pb), event generation at 100 TeV CMS succeeds (725 fs particles).
 
 ---
 
-## 3. `PPCMSX` and `FLKIOM` zero after STPXYZ
+## 3. `PPCMSX` and `FLKIOM` zero after STPXYZ — **RESOLVED**
 
-After `STPXYZ`, the `(GENTHR)` variables `PPCMSX` ("maximum CMS
-momentum for pp interactions, used for DPMJET initialization") and
-`FLKIOM` ("FLUKA ion interaction max energy per nucleon") both read
-`0.0`, despite `PPTMAX = 1e9` being passed.
-
-**Question.** Are these set later (first `EVTXYZ` call), or only via
-an input card? Could `PPCMSX = 0` be related to the FPE in entry #2?
+Related to entry #2. These are populated by FLUKA based on `PPTMAX`.
+With the correct `PPTMAX` value they are no longer a concern.
 
 ---
 
