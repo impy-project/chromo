@@ -257,7 +257,7 @@ class Fluka(MCRun):
         self._logical_unit = 888
 
         if self._rng_state_file.exists() and self._rng_state_file.stat().st_size > 0:
-            self._lib.load_rng_state(str(self._rng_state_file), self._logical_unit)
+            self._load_rng(self._rng_state_file)
         else:
             seed_int = 0 if seed is None else int(seed)
             self._lib.init_rng_state(
@@ -268,6 +268,15 @@ class Fluka(MCRun):
                 0,
             )
             self._lib.save_rng_state(str(self._rng_state_file), self._logical_unit)
+
+    def _load_rng(self, path):
+        status = int(self._lib.load_rng_state(str(path), self._logical_unit))
+        if status == 1:
+            msg = f"Cannot open RNG state file: {path}"
+            raise OSError(msg)
+        if status == 2:
+            msg = f"Corrupt or invalid RNG state file: {path}"
+            raise RuntimeError(msg)
 
     def _set_quasielastic(self, enable):
         # FLUKA common-block toggles; names as exposed by f2py.
@@ -501,7 +510,7 @@ class Fluka(MCRun):
     def random_state(self, state):
         """Restore FLUKA's Ranmar RNG state from bytes."""
         self._rng_state_file.write_bytes(state)
-        self._lib.load_rng_state(str(self._rng_state_file), self._logical_unit)
+        self._load_rng(self._rng_state_file)
 
     def fluka_rand(self):
         return float(self._lib.fluka_rand())
