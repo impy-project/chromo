@@ -17,7 +17,7 @@ from particle import Particle
 from particle import literals as lp
 
 from chromo.common import CrossSectionData, MCEvent, MCRun
-from chromo.constants import GeV, TeV, nucleon_mass, standard_projectiles
+from chromo.constants import GeV, TeV, standard_projectiles
 from chromo.kinematics import EventFrame
 from chromo.util import (
     CompositeTarget,
@@ -113,8 +113,8 @@ class Fluka(MCRun):
     * **DPMJET → UHE** (EPOS/SIBYLL/QGSJET) has no effect in chromo's
       FLUKA build: FLUKA's own runtime UHE thresholds sit at 1e+30, and
       no UHE model is linked in any case. The top of chromo's supported
-      range is the class-level sanity ceiling ``_max_sqrt_s_nn``
-      (500 TeV by default); kinematics above this raise ``ValueError``
+      range is the class-level sanity ceiling ``_ecm_max``
+      (300 TeV by default); kinematics above this raise ``ValueError``
       at construction.
 
     The class-attribute defaults mirror FLUKA's post-STPXYZ runtime
@@ -185,10 +185,8 @@ class Fluka(MCRun):
     # no UHE model is linked in chromo's FLUKA build in any case. This
     # ceiling is chromo's own sanity limit: above it we raise before
     # DPMJET has a chance to misbehave.
-    _max_sqrt_s_nn = 500 * TeV
-    # Convert: for ultra-relativistic kinematics, s ≈ 2·m_N·E_kin_lab.
-    _ekin_per_nucleon_max = _max_sqrt_s_nn**2 / (2 * nucleon_mass)
-    _ecm_min = 0.0  # liberal; FLUKA itself has no practical low-E floor
+    _ecm_max = 300 * TeV
+    _ecm_min = 0.0
 
     def __init__(
         self,
@@ -394,19 +392,11 @@ class Fluka(MCRun):
 
     def _check_kinematics(self, kin):
         super()._check_kinematics(kin)
-        # Single ceiling: FLUKA has no practical low-energy floor (its
-        # transport threshold is 1 µeV/n, well below anything chromo
-        # users would set), and above _ekin_per_nucleon_max DPMJET would
-        # hand off to an unlinked UHE model and abort.
-        a = kin.p1.A or 1
-        ekin_per_n = kin.ekin / a
-        if ekin_per_n > self._ekin_per_nucleon_max:
+        if kin.ecm > self._ecm_max:
             msg = (
-                f"kinetic energy/nucleon {ekin_per_n / GeV:.3g} GeV > "
-                f"FLUKA ceiling {self._ekin_per_nucleon_max / GeV:.3g} GeV "
-                f"(sqrt(s_NN) = {self._max_sqrt_s_nn / TeV:.0f} TeV). "
-                f"DPMJET->UHE transition not supported in chromo's FLUKA "
-                f"build - no UHE model is linked."
+                f"sqrt(s) = {kin.ecm / TeV:.3g} TeV exceeds FLUKA ceiling "
+                f"of {self._ecm_max / TeV:.0f} TeV. No UHE model is linked "
+                f"in chromo's FLUKA build."
             )
             raise ValueError(msg)
 

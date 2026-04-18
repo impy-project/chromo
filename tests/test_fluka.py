@@ -384,20 +384,18 @@ def _try_generate_event(elab, p1, p2):
         return "no-error"
 
 
-def test_above_uhe_ceiling_raises_hadron():
-    # Above the DPMJET→UHE ceiling (sqrt(s_NN) = 500 TeV), construction
-    # must fail — no UHE model is linked in chromo's FLUKA build.
-    # Lab ekin equivalent of 500 TeV CMS is ~1.33e11 GeV/n; 1e12 is 10x
-    # above.
-    msg = run_in_separate_process(_try_construct, 1e12, "p", "N14")
+def test_above_ecm_ceiling_raises_hadron():
+    # Above the ceiling (ecm = 300 TeV), construction must fail.
+    # 1e11 GeV lab ekin for proton gives ecm ~ 430 TeV > 300 TeV.
+    msg = run_in_separate_process(_try_construct, 1e11, "p", "N14")
     assert msg != "no-error"
-    assert "UHE" in msg
+    assert "ceiling" in msg
 
 
-def test_above_uhe_ceiling_raises_photon():
-    msg = run_in_separate_process(_try_construct, 1e12, "gamma", "Pb208")
+def test_above_ecm_ceiling_raises_photon():
+    msg = run_in_separate_process(_try_construct, 1e11, "gamma", "Pb208")
     assert msg != "no-error"
-    assert "UHE" in msg
+    assert "ceiling" in msg
 
 
 def _xsec_at_100tev():
@@ -409,7 +407,7 @@ def _xsec_at_100tev():
 
 
 def test_high_energy_xsec_ok_below_ceiling():
-    # 100 TeV lab (well below the 500 TeV CMS ceiling): construction and
+    # 100 TeV lab (well below the 300 TeV CMS ceiling): construction and
     # cross_section() must succeed — FLUKA now hands off to DPMJET for
     # the whole high-energy range instead of an unlinked UHE model.
     inel = run_in_separate_process(_xsec_at_100tev)
