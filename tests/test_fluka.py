@@ -62,7 +62,7 @@ def test_import():
 
 
 # ---------------------------------------------------------------------------
-# Task 13: Cross-section tests (hN, hA, AA, composite)
+# Cross-section tests (hN, hA, AA, composite)
 # ---------------------------------------------------------------------------
 
 
@@ -104,7 +104,7 @@ def test_xsec_AA_O_O():
 
 
 # ---------------------------------------------------------------------------
-# Task 14: Frame-conversion round-trip test
+# Frame-conversion round-trip test
 # ---------------------------------------------------------------------------
 
 
@@ -130,7 +130,7 @@ def test_xsec_cms_vs_ft_equivalent():
 
 
 # ---------------------------------------------------------------------------
-# Task 15: Photon tests (photohadronic + photonuclear)
+# Photon tests (photohadronic + photonuclear)
 # ---------------------------------------------------------------------------
 
 
@@ -163,7 +163,7 @@ def test_generate_gamma_Pb_at_delta():
 
 
 # ---------------------------------------------------------------------------
-# Task 16: EMD tests
+# EMD tests
 # ---------------------------------------------------------------------------
 
 
@@ -220,7 +220,7 @@ def test_generate_emd_event_one_Pb():
 
 
 # ---------------------------------------------------------------------------
-# Task 17: Event, conservation, and remnant tests
+# Event, conservation, and remnant tests
 # ---------------------------------------------------------------------------
 
 
@@ -305,7 +305,7 @@ def test_remnant_present_p_Pb208():
 
 
 # ---------------------------------------------------------------------------
-# Task 18: Registered-targets and error-path tests
+# Registered-targets and error-path tests
 # ---------------------------------------------------------------------------
 
 
@@ -365,7 +365,7 @@ def test_unregistered_target_raises_with_hint():
 
 
 # ---------------------------------------------------------------------------
-# Task 19: Energy-bound tests
+# Energy-bound tests
 # ---------------------------------------------------------------------------
 
 
@@ -424,7 +424,7 @@ def test_high_energy_xsec_ok_below_ceiling():
 
 
 # ---------------------------------------------------------------------------
-# Task 20: RNG state round-trip test
+# RNG state round-trip test
 # ---------------------------------------------------------------------------
 
 

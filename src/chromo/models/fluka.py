@@ -6,7 +6,6 @@ librqmd.a, libdpmjet*.a). Supports hN, hA, AA, photohadronic,
 photonuclear, and EMD interactions, with nuclear remnants in HEPEVT.
 """
 
-import logging
 import os
 import pathlib
 import tempfile
@@ -27,8 +26,6 @@ from chromo.util import (
     pdg2AZ,
     process_particle,
 )
-
-log = logging.getLogger(__name__)
 
 
 class InteractionType(IntEnum):
@@ -155,10 +152,8 @@ class Fluka(MCRun):
     _frame = EventFrame.FIXED_TARGET
     _version = "2025.1"
     _library_name = "_fluka"
-    # EVTXYZ supports hadrons, photon, and light nuclei (d/t/3He/4He).
-    # Heavy ions (A > 4) work for cross_section() via SGMXYZ but abort
-    # in EVTXYZ — they are excluded here so _check_kinematics rejects
-    # them before reaching EVTXYZ.
+    # Supported projectiles for event generation via EVTXYZ.
+    # Heavy ions (A > 4) abort in EVTXYZ (pending upstream support).
     _projectiles = (
         standard_projectiles
         | {lp.photon.pdgid}
@@ -423,11 +418,7 @@ class Fluka(MCRun):
     def _cross_section(self, kin=None, max_info=False):
         kin = self.kinematics if kin is None else kin
         proj_code = self._fluka_projectile_code(int(kin.p1))
-        mat_idx = (
-            self._current_target_idx
-            if not isinstance(process_particle(kin.p2), CompositeTarget)
-            else self._get_material_index(kin.p2.components[0])
-        )
+        mat_idx = self._current_target_idx
         ekin = kin.ekin
         # Three channels at most; route by interaction_type flag.
         flag = int(self._interaction_type)
@@ -467,9 +458,6 @@ class Fluka(MCRun):
             int(self._interaction_type),
         )
         self._lib.chromo_fllhep()
-        # If chromo_fill_remnants was added (see Task 9), call it too.
-        if hasattr(self._lib, "chromo_fill_remnants"):
-            self._lib.chromo_fill_remnants()
         return True
 
     # ------------------------------------------------------------------

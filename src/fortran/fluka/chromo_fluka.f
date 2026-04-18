@@ -27,8 +27,8 @@ Cf2py integer intent(hide),depend(pdg_id) :: npart=len(pdg_id)
       end subroutine icode_from_pdg_arr
       
       subroutine charge_from_pdg_arr(npart, pdg_id, charge)
-!----------------------------------------------------------------------!        
-!     get internal fluka code of particle type from pdg id  
+!----------------------------------------------------------------------!
+!     get electric charge of particle from pdg id
 !----------------------------------------------------------------------!
       INCLUDE '(DBLPRC)'
       INCLUDE '(DIMPAR)'
