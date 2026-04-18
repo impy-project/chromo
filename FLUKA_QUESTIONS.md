@@ -34,33 +34,7 @@ Is this a known limitation or a missing initialization step?
 
 ---
 
-## 3. UHE thresholds at 1e+30 after STPXYZ
-
-**Problem.** `UHEHDT`, `UHEIOT`, `UHHDXT`, `UHIOXT` all read `1e+30`
-after STPXYZ. The DPMJET→UHE transition never fires.
-
-**Question.** Is this expected when no UHE model is linked? What
-registers a UHE model at runtime?
-
----
-
-## 4. GENTHR state after STPXYZ
-
-After STPXYZ (PPTMAX=plab, EF2DP3=-1, DF2DP3=-1):
-
-| variable | value  | variable | value |
-|----------|--------|----------|-------|
-| DPJHDT   | 20000  | PEANCT   | 100000|
-| DPJIOT   | 12.5   | QMDIOT   | 0.125 |
-| DPQMSM   | 2.0    | LAASMR   | 1     |
-| FLDPSM   | 10000  | LFDSMR   | 0     |
-
-**Question.** Is DPJHDT=20 TeV the intended Peanut→DPMJET threshold?
-How does it interact with PEANCT=100 TeV?
-
----
-
-## 5. EMD-only event generation (IFLXYZ=100) aborts
+## 3. EMD-only event generation (IFLXYZ=100) aborts
 
 **Problem.** `SGMXYZ(…, 100)` returns valid EMD cross sections.
 `EVTXYZ(…, 100)` aborts.
@@ -69,28 +43,6 @@ How does it interact with PEANCT=100 TeV?
 
 **Question.** Is EMD-only event generation supported, or must it be
 combined with inelastic (IFLXYZ=101)?
-
----
-
-## 6. Ranmar state completeness
-
-**Problem.** I serialise Ranmar via RNINIT/RNWRIT/RNREAD and get
-event-level reproducibility.
-
-**Question.** Is Ranmar the only PRNG in FLUKA, or are there other
-stochastic states that need separate serialisation?
-
----
-
-## Resolved
-
-**DPMJET event gen FPE above ~75 TeV CMS.** Was caused by hardcoded
-`PPTMAX=1e9`. Fix: set `PPTMAX = plab` from construction kinematics.
-100 TeV CMS now works.
-
-**DPMJET event gen segfault.** Was caused by chromo's numpy RNG shims
-(`rangen.f`) shadowing DPMJET's `DT_RNDM.o` (which tail-calls
-`FLRNDM`). Fix: exclude `rangen` from the FLUKA build entirely.
 
 ---
 
