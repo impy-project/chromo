@@ -316,21 +316,18 @@ class Fluka(MCRun):
         wfelfl = np.ones(len(materials), dtype=np.float64)
         lprint = 0  # suppress FLUKA material printout
 
-        # STPXYZ's ef2dp3/df2dp3 only cover the hA Peanut↔DPMJET
-        # transition; pass sentinels and override via GENTHR afterwards
-        # (see _set_generator_thresholds) so all transitions go through
-        # a single mechanism.
-        #
-        # pptmax is the maximum momentum used to build DPMJET's
-        # initialisation tables. Keep it at 1 EeV/c — empirically the
-        # largest value FLUKA's DPMJET init accepts without regressing
-        # low-energy event generation. The UHE dispatch ceiling (set in
-        # _set_generator_thresholds) is separate from this.
+        # pptmax sets the highest energy FLUKA initialises its internal
+        # tables for (DPMJET Glauber, cross-section grids, etc.).  It
+        # must match the construction kinematics — if the user later
+        # switches to higher energies via the kinematics setter, the
+        # tables won't cover that range (STPXYZ cannot be called twice).
+        pptmax = evt_kin.plab
+
         mt = self._lib.chromo_stpxyz(
             nelmfl,
             izelfl,
             wfelfl,
-            1e9,  # pptmax (GeV/c)
+            pptmax,
             -1.0,  # ef2dp3: FLUKA default, overridden below
             -1.0,  # df2dp3: FLUKA default, overridden below
             int(self._interaction_type),
