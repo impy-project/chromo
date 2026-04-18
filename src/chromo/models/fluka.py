@@ -503,13 +503,17 @@ class Fluka(MCRun):
     # Public accessors
     # ------------------------------------------------------------------
 
-    def save_rng_state(self, file=None):
-        target = pathlib.Path(file) if file else self._rng_state_file
-        self._lib.save_rng_state(str(target), self._logical_unit)
+    @property
+    def random_state(self):
+        """Get FLUKA's Ranmar RNG state as bytes."""
+        self._lib.save_rng_state(str(self._rng_state_file), self._logical_unit)
+        return self._rng_state_file.read_bytes()
 
-    def load_rng_state(self, file=None):
-        target = pathlib.Path(file) if file else self._rng_state_file
-        self._lib.load_rng_state(str(target), self._logical_unit)
+    @random_state.setter
+    def random_state(self, state):
+        """Restore FLUKA's Ranmar RNG state from bytes."""
+        self._rng_state_file.write_bytes(state)
+        self._lib.load_rng_state(str(self._rng_state_file), self._logical_unit)
 
     def fluka_rand(self):
         return float(self._lib.fluka_rand())
