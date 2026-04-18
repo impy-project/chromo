@@ -108,20 +108,27 @@ Cf2py intent(out) dir_cos
       end subroutine init_rng_state 
 
 
-      subroutine load_rng_state(file_name, logical_unit)
-!----------------------------------------------------------------------! 
-!       Loads state of fluka's random number generator
-!----------------------------------------------------------------------!          
-        integer logical_unit, seed
+      subroutine load_rng_state(file_name, logical_unit, status)
+!----------------------------------------------------------------------!
+!       Loads state of fluka's random number generator.
+!       Returns status: 0 = OK, 1 = open failed, 2 = read failed.
+!----------------------------------------------------------------------!
+        integer logical_unit, seed, status, io_status
+Cf2py intent(out) status
         character(300) file_name
-        logical success_flag 
-        ! seed = -1: reads seed from file
+        logical success_flag
         seed = -1
-        open(unit=logical_unit, file=trim(file_name))
+        status = 0
+        open(unit=logical_unit, file=trim(file_name),
+     &       iostat=io_status)
+        if (io_status .ne. 0) then
+          status = 1
+          return
+        end if
         call RNREAD(logical_unit, seed, success_flag)
         close(unit=logical_unit)
         if (.not. success_flag) then
-          STOP 'load_rng_state: failed to read RNG state file'
+          status = 2
         end if
       end subroutine load_rng_state
       
