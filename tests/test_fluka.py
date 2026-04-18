@@ -95,7 +95,9 @@ def test_xsec_composite_air():
     assert 200 < cs.inelastic < 1100
 
 
-@pytest.mark.xfail(reason="Heavy-ion projectiles (A>4) pending FLUKA maintainer support")
+@pytest.mark.xfail(
+    reason="Heavy-ion projectiles (A>4) pending FLUKA maintainer support"
+)
 def test_xsec_AA_O_O():
     cs = run_in_separate_process(_run_xsec, 1600.0, "O16", "O16")
     assert 500 < cs.inelastic < 2500
@@ -187,7 +189,9 @@ def _run_emd_event(elab, p1, p2):
     return event
 
 
-@pytest.mark.xfail(reason="Heavy-ion projectiles (A>4) pending FLUKA maintainer support")
+@pytest.mark.xfail(
+    reason="Heavy-ion projectiles (A>4) pending FLUKA maintainer support"
+)
 def test_xsec_emd_O16_Pb208():
     # EMD requires a nuclear projectile. Proton has EMD=0.
     # O16+Pb208 should have a sizeable EMD cross section.
@@ -196,7 +200,9 @@ def test_xsec_emd_O16_Pb208():
     assert cs.emd > 0 and not np.isnan(cs.emd)
 
 
-@pytest.mark.xfail(reason="Heavy-ion projectiles (A>4) pending FLUKA maintainer support")
+@pytest.mark.xfail(
+    reason="Heavy-ion projectiles (A>4) pending FLUKA maintainer support"
+)
 def test_xsec_emd_AA_O_Pb():
     cs = run_in_separate_process(_run_xsec_emd, 1600.0, "O16", "Pb208")
     assert cs.emd > 0 and not np.isnan(cs.emd)
