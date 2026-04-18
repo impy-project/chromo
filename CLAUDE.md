@@ -115,9 +115,8 @@ public CI.
 ### Install
 
 ```bash
-# One-shot install at $HOME/devel/FLUKA. Expects the two archives at
-# $HOME/devel/FLUKA-dev/ (or set FLUKA_ARCHIVE_DIR).
 export FLUPRO=$HOME/devel/FLUKA
+export FLUKA_ARCHIVE_DIR=$HOME/devel/FLUKA-dev  # directory with the .tar.gz archives
 bash scripts/install_fluka.sh
 ```
 
@@ -160,17 +159,15 @@ for event in gen(10):
   `O16`, `Ar40`, `Fe56`, `Cu63`, `Pb208`) leaving 1 slot for an extra
   target. Use `targets=["Si28", ...]` to swap elements; exceeding 10
   raises `ValueError`.
-- **Energy ceilings are split between cross-section and event scopes.**
-  `cross_section()` works up to 1 PeV/nucleon for both hadron and photon
-  projectiles (smooth up to ≥100 EeV for hadrons, ≥1 PeV for photons).
-  Event generation has tighter FLUKA-internal limits: hadron EVTXYZ
-  crashes between 20 and 25 TeV/nucleon; photon PHNEVT works to at least
-  100 TeV/nucleon. Lower floor is 1 MeV/nucleon.
-- **Nuclear projectiles cannot generate events.** `cross_section()` works
-  for AA (heavy-ion) kinematics, but `_generate()` with a nucleus as
-  projectile aborts inside FLUKA's EVTXYZ. Use hadronic projectiles
-  (p, π, K, n, γ) for event generation; use nuclear-target, hadron-
-  projectile kinematics if you need AA-like final states.
+- **Energy ceiling at 300 TeV CMS** (`_ecm_max`). `PPTMAX` is set to
+  the construction-kinematics `plab`, so DPMJET Glauber tables cover
+  the full requested range. `cross_section()` works at all energies
+  below the ceiling.
+- **Light-nucleus projectiles (d, t, 3He, 4He) work** for both cross
+  sections and event generation via dedicated FLUKA PAPROP codes.
+- **Heavy-ion projectiles (A > 4) are not yet supported** for event
+  generation (pending upstream support). `cross_section()` works for
+  AA kinematics via SGMXYZ.
 - **EMD-only event generation aborts FLUKA.** Use `InteractionType.EMD`
   for cross-section queries only. For event generation, combine with
   `INELA_EMD` (101) or `INELA_ELA_EMD` (111).
@@ -182,7 +179,8 @@ for event in gen(10):
   xfailed for this reason (see `tests/test_common.py`).
 - **`_set_stable` is a no-op.** FLUKA's decay model is global and not
   runtime-configurable.
-- **`e+/e-` projectiles are not supported.** Use `gamma` directly.
+- **`e+/e-` projectiles are not yet supported** (SGMXYZ returns xsec
+  but EVTXYZ aborts on some targets). Pending upstream clarification.
 - **RNG reproducibility requires the Pythia8DecayHandler off.** Pythia8's
   own RNG is independent from FLUKA's Ranmar state and isn't seeded
   deterministically across processes. For fully reproducible event
