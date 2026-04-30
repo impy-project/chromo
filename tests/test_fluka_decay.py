@@ -554,3 +554,116 @@ def _chain_max_depth_raises():
 
 def test_chain_max_depth_raises():
     assert run_in_separate_process(_chain_max_depth_raises) == "raised"
+
+
+def _fluka_post_event_called():
+    """Verify ``Fluka(post_event=hook)`` invokes the hook on every event."""
+    from chromo.kinematics import FixedTarget
+    from chromo.models import Fluka
+
+    n_calls = [0]
+
+    def hook(event):
+        n_calls[0] += 1
+        return event
+
+    fluka = Fluka(FixedTarget(100, "p", "O16"), seed=1, post_event=hook)
+    n_events = 0
+    for _ev in fluka(20):
+        n_events += 1
+    return n_events, n_calls[0]
+
+
+def test_fluka_post_event_called_per_event():
+    n, n_hook = run_in_separate_process(_fluka_post_event_called)
+    assert n == 20
+    assert n_hook == 20, f"hook called {n_hook} times, expected 20"
+
+
+def _fluka_post_event_can_replace_event():
+    """Verify post_event return value replaces the yielded event.
+
+    Uses a trivial transform that drops every nuclear residual (so the
+    yielded event has fewer particles than the raw FLUKA event).
+    """
+    from chromo.common import EventData
+    from chromo.kinematics import FixedTarget
+    from chromo.models import Fluka
+
+    def drop_nuclei(event):
+        keep = abs(event.pid.astype("int64")) < 1_000_000_000
+        return EventData(
+            generator=event.generator,
+            kin=event.kin,
+            nevent=event.nevent,
+            impact_parameter=event.impact_parameter,
+            n_wounded=event.n_wounded,
+            production_cross_section=event.production_cross_section,
+            pid=event.pid[keep],
+            status=event.status[keep] if event.status is not None else None,
+            charge=event.charge[keep] if event.charge is not None else None,
+            px=event.px[keep],
+            py=event.py[keep],
+            pz=event.pz[keep],
+            en=event.en[keep],
+            m=event.m[keep],
+            vx=event.vx[keep] if event.vx is not None else None,
+            vy=event.vy[keep] if event.vy is not None else None,
+            vz=event.vz[keep] if event.vz is not None else None,
+            vt=event.vt[keep] if event.vt is not None else None,
+            mothers=None,
+            daughters=None,
+        )
+
+    fluka = Fluka(FixedTarget(100, "p", "O16"), seed=1, post_event=drop_nuclei)
+    n_events = 0
+    n_with_nucleus = 0
+    for ev in fluka(10):
+        n_events += 1
+        if any(abs(int(p)) >= 1_000_000_000 for p in ev.pid):
+            n_with_nucleus += 1
+    return n_events, n_with_nucleus
+
+
+def test_fluka_post_event_replaces_event():
+    n, n_with_nucleus = run_in_separate_process(_fluka_post_event_can_replace_event)
+    assert n == 10
+    # post_event stripped every nuclear residual, so the yielded events
+    # must contain none.
+    assert n_with_nucleus == 0
+
+
+def _fluka_no_post_event_regression():
+    """Default Fluka(post_event=None) still produces nuclear residuals."""
+    from chromo.kinematics import FixedTarget
+    from chromo.models import Fluka
+
+    fluka = Fluka(FixedTarget(100, "p", "O16"), seed=1)
+    n_events = 0
+    n_with_nucleus = 0
+    for ev in fluka(5):
+        n_events += 1
+        if any(abs(int(p)) >= 1_000_000_000 for p in ev.pid):
+            n_with_nucleus += 1
+    return n_events, n_with_nucleus
+
+
+def test_fluka_no_post_event_baseline():
+    n, n_with_nucleus = run_in_separate_process(_fluka_no_post_event_regression)
+    assert n == 5
+    # Hadronic p + O16 @ 100 GeV always leaves at least one nuclear
+    # residual (the wounded-nucleon remnant). Confirms the comparison
+    # baseline for `test_fluka_post_event_replaces_event`.
+    assert n_with_nucleus == 5
+
+
+# NOTE: we deliberately do NOT exercise DecayChainHandler.expand inside a
+# Fluka post_event callback here. After EVTXYZ has run, FLUKA's
+# EDPSCO state is left in a configuration that crashes any subsequent
+# beta-decay sample via SPDCEV (Fortran bound check fails in
+# lcendp.f:74). See FLUKA_QUESTIONS.md #6. Pure alpha-decay sampling
+# survives, so partial chain expansion is possible -- but the
+# fragmentation cocktail in p + O16 events overwhelmingly contains
+# beta-emitters (H-3, Be-7, C-14, ...) and would always trip the crash.
+# This test file documents the integration via the simpler hooks above
+# until the upstream issue is resolved.
