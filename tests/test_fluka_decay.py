@@ -241,3 +241,41 @@ def test_dcy_sample_cs137_succeeds():
     assert ok
     assert kdcy == 2  # B-
     assert nhep >= 2  # at least e- + nubar
+
+
+def _scaffold_imports():
+    from chromo.models.fluka_decay import (  # noqa: F401
+        STABLE_DEFAULT,
+        DecayChannel,
+        DecayLine,
+        FlukaDecay,
+        FlukaIsotope,
+    )
+
+    return True
+
+
+def test_module_scaffold_imports():
+    assert run_in_separate_process(_scaffold_imports) is True
+
+
+def _dataclass_smoke():
+    from chromo.models.fluka_decay import DecayChannel, DecayLine
+
+    ch = DecayChannel(
+        name="B-",
+        branching=1.0,
+        daughter_A=137,
+        daughter_Z=56,
+        daughter_m=1,
+        q_value=0.514,
+    )
+    ln = DecayLine(energy=0.66166, branching=0.85, end_level=0, is_positron=False)
+    return ch.name, ch.daughter_A, ln.energy
+
+
+def test_dataclass_smoke():
+    name, a, e = run_in_separate_process(_dataclass_smoke)
+    assert name == "B-"
+    assert a == 137
+    assert abs(e - 0.66166) < 1e-6
