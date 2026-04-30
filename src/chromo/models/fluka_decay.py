@@ -7,7 +7,10 @@ See ``docs/superpowers/specs/2026-04-30-fluka-decay-interface-design.md``.
 
 from __future__ import annotations
 
+import os
+import pathlib
 import re
+import tempfile
 from dataclasses import dataclass
 
 # --------------------------------------------------------------------- #
@@ -409,6 +412,7 @@ class FlukaDecay:
         from chromo.models import _fluka
 
         self._lib = _fluka
+        self._rng_state_file: pathlib.Path | None = None
         _ensure_init(self._lib)
         if seed is not None:
             self._seed_rng(int(seed))
@@ -419,25 +423,30 @@ class FlukaDecay:
         if not STABLE_DEFAULT:
             _populate_stable_default(self._catalog)
 
-    @staticmethod
-    def _seed_rng(seed: int) -> None:
+    def _seed_rng(self, seed: int) -> None:
         """Initialise FLUKA's Ranmar generator with a deterministic seed.
 
         Mirrors ``Fluka._init_rng``: writes a temporary RNG state file
         via ``init_rng_state(file, lun, seed, ntot, ntot2)``.  ntot=ntot2=0
         means no skipping, logical unit 888 matches the Fluka model.
+        The temp file path is saved on ``self._rng_state_file`` so
+        ``__del__`` can clean it up.
         """
-        import os
-        import pathlib
-        import tempfile
-
-        from chromo.models import _fluka
-
         rng_file = (
             pathlib.Path(tempfile.gettempdir())
             / f"fluka_decay_rng_state_{os.getpid()}.dat"
         )
-        _fluka.init_rng_state(str(rng_file), 888, int(seed), 0, 0)
+        self._rng_state_file = rng_file
+        self._lib.init_rng_state(str(rng_file), 888, int(seed), 0, 0)
+
+    def __del__(self):
+        # Best-effort cleanup of the temp RNG state file written by _seed_rng.
+        rng_file = getattr(self, "_rng_state_file", None)
+        if rng_file is not None:
+            try:
+                rng_file.unlink(missing_ok=True)
+            except OSError:
+                pass
 
     # -- lookup ---------------------------------------------------------
 
