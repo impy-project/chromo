@@ -652,3 +652,69 @@ Cf2py intent(out) nhep_total, n_standard, n_heavy, n_residual
 
       RETURN
       END SUBROUTINE fluka_hepevt_summary
+
+!======================================================================!
+!  Radioactive-decay tables: lightweight init (no STPXYZ).             !
+!  Mirrors dcytst.f's main-program init sequence.  Idempotent: safe    !
+!  to call after STPXYZ (which already loads the same tables).         !
+!======================================================================!
+      SUBROUTINE chromo_dcy_init()
+      INCLUDE '(DBLPRW)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(IOUNIT)'
+
+      EXTERNAL BDNOPT, BDEVAP, BDPREE, BDINPT, BDTRNS, BDPART, BDPRDC
+
+      INCLUDE '(EMFCMP)'
+      INCLUDE '(EMFMAT)'
+      INCLUDE '(EMFSWT)'
+      INCLUDE '(EMFTHR)'
+      INCLUDE '(EVAPRD)'
+      INCLUDE '(FLUOXR)'
+      INCLUDE '(FLKMAT)'
+      INCLUDE '(FRBKCM)'
+      INCLUDE '(NUCDAT)'
+      INCLUDE '(PAPROP)'
+      INCLUDE '(PAREVT)'
+      INCLUDE '(TRACKR)'
+
+      INTEGER MMAT, MREG
+      LOGICAL LDCYINI
+      SAVE    LDCYINI
+      DATA    LDCYINI /.FALSE./
+
+      IF (LDCYINI) RETURN
+
+      CALL CMSPPR
+      CALL ZEROIN
+      LEVPRT = .TRUE.
+      LDEEXG = .TRUE.
+      LHEAVY = .TRUE.
+      LGDHPR = .TRUE.
+      LFRMBK = .FALSE.
+      CALL NCDTRD
+      CALL KPIXSR
+      CALL INCINI
+      AMUMEV = GEVMEV * AMUAMU
+
+      LFLUKA = .FALSE.
+      LEMFON = .TRUE.
+      MMAT   = 3
+      NMAT   = MMAT
+      MREG   = 1
+      IPRODC = 2
+      MMTRCK = MMAT
+      MRTRCK = MREG
+      NMDEMF = 1
+      METOFL(NMDEMF) = MMAT
+      MFLTOE(MMAT)   = NMDEMF
+      LXFLUO(NMDEMF) = .TRUE.
+      MEDFLK(MREG,1) = MMAT
+      MEDFLK(MREG,2) = MMAT
+      EPHMIN(NMDEMF) = 1.D-07 * GV2EMF
+      EEPMIN(NMDEMF) = (AMELCT + 1.D-07) * GV2EMF
+      CALL RDFLUO
+
+      LDCYINI = .TRUE.
+      RETURN
+      END SUBROUTINE chromo_dcy_init
