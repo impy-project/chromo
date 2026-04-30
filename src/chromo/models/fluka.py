@@ -145,6 +145,15 @@ class Fluka(MCRun):
         Enable quasi-elastic scattering. Default False.
     rng_state_file : pathlib.Path or str, optional
         File used to persist Ranmar state across runs.
+    post_event : callable, optional
+        Hook invoked on every generated event after frame boost and
+        decay-handler validation. Signature: ``f(event) -> event``. The
+        canonical use is ``DecayChainHandler(FlukaDecay(...)).expand``,
+        which recursively decays all unstable nuclear residuals down to
+        a configurable final-state set. The returned object is yielded
+        in place of the original event; both ``MCEvent`` and
+        ``EventData`` are acceptable. ``None`` (default) disables the
+        hook.
     """
 
     _name = "FLUKA"
@@ -204,8 +213,10 @@ class Fluka(MCRun):
         transition_rqmd_dpmjet_smearing=None,
         enable_quasielastic=False,
         rng_state_file=None,
+        post_event=None,
     ):
         super().__init__(seed)
+        self._post_event = post_event
 
         if (
             "FLUPRO" not in os.environ
@@ -234,6 +245,13 @@ class Fluka(MCRun):
         self._init_rng(rng_state_file, seed)
         self._set_quasielastic(enable_quasielastic)
         self._init_fluka_materials(evt_kin, targets or ())
+        # STPXYZ has now run the full FLUKA bootstrap. Tell fluka_decay
+        # that the singleton is hot so subsequent FlukaDecay() construction
+        # in the same process is a no-op (the chromo_dcy_init internals
+        # would otherwise try to re-run BDNOPT/DFLTS).
+        from chromo.models.fluka_decay import _mark_fluka_init_done
+
+        _mark_fluka_init_done()
         # GENTHR defaults are installed by FLUKA during STPXYZ; override
         # them AFTER the call so our values are final.
         self._set_generator_thresholds()
@@ -468,6 +486,21 @@ class Fluka(MCRun):
         )
         self._lib.chromo_fllhep()
         return True
+
+    def __call__(self, nevents):
+        """Generate events with optional ``post_event`` post-processing.
+
+        Wraps :meth:`MCRun.__call__` to apply ``self._post_event`` after
+        frame boost / decay-handler validation. The hook receives the
+        fully constructed ``MCEvent`` snapshot (HEPEVT already extracted
+        into Python arrays) so it is safe to call back into FLUKA's
+        Fortran routines that re-write HEPEVT (e.g. ``SPDCEV``) inside
+        the hook without corrupting the current event.
+        """
+        for event in super().__call__(nevents):
+            if self._post_event is not None:
+                event = self._post_event(event)
+            yield event
 
     # ------------------------------------------------------------------
     # Cleanup
