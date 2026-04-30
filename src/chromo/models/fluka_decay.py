@@ -414,6 +414,11 @@ class FlukaDecay:
             self._seed_rng(int(seed))
         self._catalog = None  # filled in Task 10
 
+        # Eagerly materialise so STABLE_DEFAULT is populated for chain ops.
+        self._catalog = self._fetch_full_catalog()
+        if not STABLE_DEFAULT:
+            _populate_stable_default(self._catalog)
+
     @staticmethod
     def _seed_rng(seed: int) -> None:
         """Initialise FLUKA's Ranmar generator with a deterministic seed.
@@ -721,3 +726,214 @@ class FlukaDecay:
             return int(args[0]), int(args[1]), int(args[2])
         msg = "lookup() expects (name) or (A, Z, m); got " + repr(args)
         raise TypeError(msg)
+
+
+# --------------------------------------------------------------------- #
+# Stable-default set + DecayChainHandler                                #
+# --------------------------------------------------------------------- #
+
+# Lepton/photon/light-nucleon PDG ids that anchor the chain.
+_BASE_STABLE_PDG = {
+    11,
+    -11,  # e-, e+
+    12,
+    -12,  # nu_e, anu_e
+    13,
+    -13,  # mu-, mu+
+    14,
+    -14,  # nu_mu, anu_mu
+    16,
+    -16,  # nu_tau, anu_tau
+    22,  # gamma
+    2212,  # proton
+    2112,  # neutron
+}
+
+
+def _populate_stable_default(catalog) -> None:
+    """Add to STABLE_DEFAULT every (A,Z,m) entry with T1/2 = 1e38."""
+    STABLE_DEFAULT.clear()
+    STABLE_DEFAULT.update(_BASE_STABLE_PDG)
+    for iso in catalog:
+        if iso.t_half >= 1e38:
+            pdg = 1_000_000_000 + iso.Z * 10_000 + iso.A * 10 + iso.m
+            STABLE_DEFAULT.add(pdg)
+
+
+class DecayChainHandler:
+    """Recursive decay-chain post-processor.
+
+    For each event passed to ``expand()``, every product whose PDG id is
+    *not* in ``final_state`` *and* corresponds to a FLUKA-decayable
+    nuclide is sampled via ``SPDCEV`` and replaced with its products.
+    Recursion stops when all products are in ``final_state`` or the
+    isotope is stable / has no decay data.
+    """
+
+    def __init__(
+        self,
+        owner: FlukaDecay,
+        final_state: set[int] | None = None,
+        max_depth: int = 20,
+        on_max_depth: str = "raise",
+    ):
+        self._owner = owner
+        self.final_state = (
+            set(STABLE_DEFAULT) if final_state is None else set(final_state)
+        )
+        self.max_depth = int(max_depth)
+        if on_max_depth not in {"raise", "warn"}:
+            msg = f"on_max_depth must be 'raise' or 'warn', got " f"{on_max_depth!r}"
+            raise ValueError(msg)
+        self.on_max_depth = on_max_depth
+
+    def expand(self, event):
+        """Expand chained decays until all products in final_state."""
+        import warnings
+
+        import numpy as np
+
+        owner = self._owner
+        # Concatenated product arrays + parent indices.
+        pid = list(event.pid.tolist())
+        px = list(event.px.tolist())
+        py = list(event.py.tolist())
+        pz = list(event.pz.tolist())
+        en = list(event.en.tolist())
+        mass = list(event.m.tolist())
+        status = (
+            list(event.status.tolist()) if event.status is not None else [1] * len(pid)
+        )
+        mothers_in = event.mothers if event.mothers is not None else None
+        parents = [-1] * len(pid)
+
+        # Active queue: only consider status==1 (final-state) products.
+        # Status==4 entries are FLUKA history records (parent + 9999 marker)
+        # and must not be re-decayed.
+        queue: list[tuple[int, int]] = [
+            (i, 0) for i in range(len(pid)) if status[i] == 1
+        ]
+
+        while queue:
+            i, depth = queue.pop()
+            this_pid = pid[i]
+            if this_pid in self.final_state:
+                continue
+            if abs(this_pid) < 1_000_000_000:
+                # Standard particle but not in final_state: leave as-is
+                # (FLUKA's decay tables don't cover it).
+                continue
+            A = (abs(this_pid) // 10) % 1000
+            Z = (abs(this_pid) // 10_000) % 1000
+            m = (abs(this_pid) // 100_000_000) % 10
+            iso = owner.lookup(A, Z, m)
+            if iso is None or iso.t_half >= 1e38:
+                continue
+            if depth >= self.max_depth:
+                msg = (
+                    f"DecayChainHandler hit max_depth={self.max_depth} "
+                    f"on ({A},{Z},{m})"
+                )
+                if self.on_max_depth == "raise":
+                    raise RuntimeError(msg)
+                warnings.warn(msg, stacklevel=2)
+                continue
+
+            ok_int, _kdcy, _ilv = owner._lib.chromo_dcy_sample(A, Z, m)
+            if not ok_int:
+                continue
+            # Sampler already wrote to HEPEVT; just snapshot it.
+            sub = owner._hepevt_to_event_data()
+
+            sub_status = (
+                sub.status.tolist() if sub.status is not None else [1] * len(sub.pid)
+            )
+            for j in range(len(sub.pid)):
+                # Skip FLUKA history records (status==4): the parent and
+                # the 9999 sentinel must not re-enter the chain.
+                if int(sub_status[j]) == 4:
+                    continue
+                pid.append(int(sub.pid[j]))
+                px.append(float(sub.px[j]))
+                py.append(float(sub.py[j]))
+                pz.append(float(sub.pz[j]))
+                en.append(float(sub.en[j]))
+                mass.append(float(sub.m[j]))
+                status.append(int(sub_status[j]))
+                parents.append(i)
+                if int(sub_status[j]) == 1:
+                    queue.append((len(pid) - 1, depth + 1))
+
+            # Mark this product as decayed-away by setting status to 0.
+            status[i] = 0
+
+        # Drop placeholders (status==0) before storing.
+        keep = [k for k, s in enumerate(status) if s != 0]
+        new_pid = np.array([pid[k] for k in keep], dtype=np.int32)
+        new_px = np.array([px[k] for k in keep], dtype=np.float64)
+        new_py = np.array([py[k] for k in keep], dtype=np.float64)
+        new_pz = np.array([pz[k] for k in keep], dtype=np.float64)
+        new_en = np.array([en[k] for k in keep], dtype=np.float64)
+        new_m = np.array([mass[k] for k in keep], dtype=np.float64)
+        new_status = np.array([status[k] for k in keep], dtype=np.int32)
+        # Recompute charge from the (possibly extended) PDG list.
+        std_charge = owner._lib.charge_from_pdg_arr(new_pid).astype(np.float64)
+        absp = np.abs(new_pid.astype(np.int64))
+        is_nucleus = absp >= 1_000_000_000
+        z_from_code = ((absp // 10000) % 1000).astype(np.float64)
+        new_charge = np.where(is_nucleus, np.sign(new_pid) * z_from_code, std_charge)
+        # Pad/trim vertex arrays so they have one entry per kept particle.
+        n_total = len(pid)
+
+        def _resize(name):
+            arr = getattr(event, name, None)
+            if arr is None:
+                return np.zeros(len(keep), dtype=np.float64)
+            old_n = len(arr)
+            if n_total > old_n:
+                arr = np.concatenate([arr, np.zeros(n_total - old_n, dtype=arr.dtype)])
+            return np.array([arr[k] for k in keep], dtype=np.float64)
+
+        new_vx = _resize("vx")
+        new_vy = _resize("vy")
+        new_vz = _resize("vz")
+        new_vt = _resize("vt")
+        # Re-map mothers indices to the compacted arrays.
+        index_map = {old: new for new, old in enumerate(keep)}
+        new_mothers = np.full((len(keep), 2), -1, dtype=np.int32)
+        for new_idx, old_idx in enumerate(keep):
+            p = parents[old_idx]
+            if p >= 0:
+                new_mothers[new_idx, 0] = index_map.get(p, -1)
+            elif mothers_in is not None and old_idx < len(mothers_in):
+                # Preserve any pre-existing mother info from the input event.
+                m0 = int(mothers_in[old_idx, 0])
+                new_mothers[new_idx, 0] = index_map.get(m0, -1) if m0 >= 0 else -1
+                if mothers_in.shape[1] > 1:
+                    m1 = int(mothers_in[old_idx, 1])
+                    new_mothers[new_idx, 1] = index_map.get(m1, -1) if m1 >= 0 else -1
+
+        from chromo.common import EventData
+
+        return EventData(
+            generator=event.generator,
+            kin=event.kin,
+            nevent=event.nevent,
+            impact_parameter=event.impact_parameter,
+            n_wounded=event.n_wounded,
+            production_cross_section=event.production_cross_section,
+            pid=new_pid,
+            status=new_status,
+            charge=new_charge,
+            px=new_px,
+            py=new_py,
+            pz=new_pz,
+            en=new_en,
+            m=new_m,
+            vx=new_vx,
+            vy=new_vy,
+            vz=new_vz,
+            vt=new_vt,
+            mothers=new_mothers,
+            daughters=None,
+        )

@@ -475,3 +475,39 @@ def _sample_stable_raises():
 
 def test_sample_stable_raises():
     assert run_in_separate_process(_sample_stable_raises) == "raised"
+
+
+def _stable_default_populated():
+    from chromo.models.fluka_decay import STABLE_DEFAULT, FlukaDecay
+
+    FlukaDecay()  # construction populates STABLE_DEFAULT
+    return len(STABLE_DEFAULT), 22 in STABLE_DEFAULT  # 22 = photon
+
+
+def test_stable_default_populated():
+    n, has_photon = run_in_separate_process(_stable_default_populated)
+    assert n > 200  # leptons + photons + ~250 stable nuclei
+    assert has_photon
+
+
+def _chain_cs137_handler():
+    from chromo.models.fluka_decay import DecayChainHandler, FlukaDecay
+
+    dcy = FlukaDecay(seed=7)
+    handler = DecayChainHandler(dcy)
+    n_events = 0
+    n_with_gamma = 0
+    for ev in dcy("Cs137", n=200):
+        chained = handler.expand(ev)
+        n_events += 1
+        n_g = sum(1 for p in chained.pid if p == 22)
+        if n_g >= 1:
+            n_with_gamma += 1
+    return n_events, n_with_gamma
+
+
+def test_chain_handler_cs137_includes_gamma():
+    n, n_g = run_in_separate_process(_chain_cs137_handler)
+    assert n == 200
+    # Cs137 -> Ba137m1 -> Ba137 + 0.661 MeV gamma in ~94.7% of decays.
+    assert n_g >= 150  # generous for stat fluctuations and chain edge cases
