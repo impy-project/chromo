@@ -841,3 +841,227 @@ Cf2py intent(out) n_out
 
       RETURN
       END SUBROUTINE chromo_dcy_catalog
+
+!======================================================================!
+!  Per-isotope decay-channel data: branching ratios, daughter (A,Z,m), !
+!  Q value (via QRDDCY).  KIND code: 1=alpha, 2=B-, 3=B+, 4=EC, 5=IT,  !
+!  6=SF, 7=B-N, 8=B+P, 9=B-2N, 10=B-3N, 11=B-NA, 12=other.             !
+!======================================================================!
+      SUBROUTINE chromo_dcy_channels(ia, iz, im, max_ch, n_ch,
+     &                               kind_ch, br_ch,
+     &                               da_ch, dz_ch, dm_ch, q_ch)
+      INCLUDE '(DBLPRW)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(IDPPRM)'
+      INCLUDE '(ISOTOP)'
+
+      INTEGER ia, iz, im, max_ch, n_ch
+      INTEGER kind_ch(*), da_ch(*), dz_ch(*), dm_ch(*)
+      DOUBLE PRECISION br_ch(*), q_ch(*)
+Cf2py intent(in) ia, iz, im, max_ch
+Cf2py intent(inplace) kind_ch, br_ch, da_ch, dz_ch, dm_ch, q_ch
+Cf2py intent(out) n_ch
+
+      INTEGER kisitp, jsporu, jptoru, iia, jdcy, kdcy
+      DOUBLE PRECISION t12, exm, brdctt
+      DOUBLE PRECISION QRDDCY
+      EXTERNAL QRDDCY
+
+      n_ch = 0
+      kisitp = 0
+      CALL ISMRCH(ia, iz, im, kisitp, t12, exm, jsporu, jptoru)
+      IF (kisitp .LE. 0) RETURN
+
+      iia = KQMDIN(ia, KMSFVR)
+      brdctt = 0.0D0
+
+      DO jdcy = 1, MXDCIS
+         IF (im .LE. 0) THEN
+            kdcy = IDCNUC(jdcy, iia, kisitp)
+            IF (jdcy .LT. MXDCIS) THEN
+               br_ch(MIN(n_ch+1, max_ch)) = BRDECY(jdcy, iia, kisitp)
+            ELSE
+               br_ch(MIN(n_ch+1, max_ch)) = 1.0D0 - brdctt
+            END IF
+         ELSE
+            kdcy = IDCISM(jdcy, kisitp)
+            IF (jdcy .LT. MXDCIS) THEN
+               br_ch(MIN(n_ch+1, max_ch)) = BRDISM(jdcy, kisitp)
+            ELSE
+               br_ch(MIN(n_ch+1, max_ch)) = 1.0D0 - brdctt
+            END IF
+         END IF
+
+         IF (kdcy .LE. 0) CYCLE
+         IF (n_ch .GE. max_ch) RETURN
+         n_ch = n_ch + 1
+         brdctt = brdctt + br_ch(n_ch)
+
+!  Map FLUKA kdcy to a compact KIND code.  See (ISOTOP) for KDCY*
+!  parameters: KDCYAL=2 (alpha), KDCYBM=22 (B-), KDCYBP=8 (B+),
+!  KDCYEC=15 (EC), KDCYIT=1 (IT), KDCYSF=38 (SF), KDCBMN=23 (B-N),
+!  KDCBPP=24 (B+P), KDCB2N=28 (B-2N), KDCB3N=29 (B-3N), KDCBNA=30 (B-NA).
+         IF (kdcy .EQ. KDCYAL .OR. kdcy .EQ. KDCALM) THEN
+            kind_ch(n_ch) = 1
+         ELSE IF (kdcy .EQ. KDCYBM .OR. kdcy .EQ. KDCBMM) THEN
+            kind_ch(n_ch) = 2
+         ELSE IF (kdcy .EQ. KDCYBP .OR. kdcy .EQ. KDCBPM) THEN
+            kind_ch(n_ch) = 3
+         ELSE IF (kdcy .EQ. KDCYEC .OR. kdcy .EQ. KDCECM) THEN
+            kind_ch(n_ch) = 4
+         ELSE IF (kdcy .EQ. KDCYIT .OR. kdcy .EQ. KDCITM) THEN
+            kind_ch(n_ch) = 5
+         ELSE IF (kdcy .EQ. KDCYSF) THEN
+            kind_ch(n_ch) = 6
+         ELSE IF (kdcy .EQ. KDCBMN) THEN
+            kind_ch(n_ch) = 7
+         ELSE IF (kdcy .EQ. KDCBPP) THEN
+            kind_ch(n_ch) = 8
+         ELSE IF (kdcy .EQ. KDCB2N) THEN
+            kind_ch(n_ch) = 9
+         ELSE IF (kdcy .EQ. KDCB3N) THEN
+            kind_ch(n_ch) = 10
+         ELSE IF (kdcy .EQ. KDCBNA) THEN
+            kind_ch(n_ch) = 11
+         ELSE
+            kind_ch(n_ch) = 12
+         END IF
+
+         IF (IDCYDA(kdcy) .GT. -100) THEN
+            da_ch(n_ch) = ia + IDCYDA(kdcy)
+            dz_ch(n_ch) = iz + IDCYDZ(kdcy)
+            IF (kdcy .GT. NDCY1M) THEN
+               dm_ch(n_ch) = 2
+            ELSE IF (kdcy .GT. NDCYGS) THEN
+               dm_ch(n_ch) = 1
+            ELSE
+               dm_ch(n_ch) = 0
+            END IF
+            q_ch(n_ch) = QRDDCY(ia, iz, im, kdcy, .FALSE.) * GEVMEV
+         ELSE
+            da_ch(n_ch) = -1
+            dz_ch(n_ch) = -1
+            dm_ch(n_ch) = -1
+            q_ch(n_ch) = 0.0D0
+         END IF
+      END DO
+
+      RETURN
+      END SUBROUTINE chromo_dcy_channels
+
+*$ CREATE QRDDCY.FOR
+*COPY QRDDCY
+*
+*=== Qrddcy ===========================================================*
+*
+*     QRDDCY is shipped as user-supplied source in FLUKA 2025.x's
+*     decay-test harness (dcytst.f) and is NOT exported by libflukahp.a.
+*     We replicate it verbatim here so chromo_dcy_channels can resolve
+*     the Q-value at link time.  Source: FLUKA 2025.1 dcytst.f.
+*
+      DOUBLE PRECISION FUNCTION QRDDCY ( IADCYP, IZDCYP, ISDCYP, IFLDCY,
+     &                                   LNCMSS )
+
+      INCLUDE '(DBLPRN)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(IOUNIT)'
+*
+*----------------------------------------------------------------------*
+*                                                                      *
+*     Copyright (C) 2024-2026       by   Alfredo Ferrari & Paola Sala  *
+*     All Rights Reserved.                                             *
+*                                                                      *
+*     Q's for RaDioactive DeCaY                                        *
+*                                                                      *
+*----------------------------------------------------------------------*
+*
+      LOGICAL          LNCMSS
+      INTEGER          IADCYP, IZDCYP, ISDCYP, IFLDCY
+*
+      INCLUDE '(IDPPRM)'
+      INCLUDE '(ISOTOP)'
+      INCLUDE '(PAPROP)'
+
+      LOGICAL          LECBPL, LBETAP
+      INTEGER          NASUM , IZDUM , JZDUM , JA    , JZ    , JS    ,
+     &                 KZDUM , KA    , KZ    , KS    , K
+      DOUBLE PRECISION AMDCAY, AMDGHT, AMPRTC
+      DOUBLE PRECISION EXMAZM
+      EXTERNAL         EXMAZM
+
+      QRDDCY = ZERZER
+
+      IF ( IDCYDA (IFLDCY) .GT. -100 ) THEN
+         NASUM  = IADCYP
+         AMDCAY = EMVGEV * EXMAZM ( IADCYP, IZDCYP, ISDCYP,
+     &                              LNCMSS, IZDUM )
+         KA     = IADCYP + IDCYDA (IFLDCY)
+         KZ     = IZDCYP + IDCYDZ (IFLDCY)
+         IF ( IFLDCY .GT. NDCY1M ) THEN
+            KS  = 2
+         ELSE IF ( IFLDCY .GT. NDCYGS ) THEN
+            KS  = 1
+         ELSE
+            KS  = 0
+         END IF
+         NASUM  = NASUM - KA
+         AMDGHT = EMVGEV * EXMAZM ( KA, KZ, KS, LNCMSS, KZDUM )
+         QRDDCY = AMDCAY - AMDGHT
+         LECBPL = .FALSE.
+         LBETAP = .FALSE.
+         DO 1000 K = 1, NDCYPR (IFLDCY)
+            IF ( KDCYPR (K,IFLDCY) .EQ. IJNUEL .OR.
+     &           KDCYPR (K,IFLDCY) .EQ. IJANUE ) THEN
+               LECBPL = KDCYPR (K,IFLDCY) .EQ. IJNUEL
+               GO TO 1000
+            ELSE IF ( KDCYPR (K,IFLDCY) .EQ. IJELCT ) THEN
+               IF ( LNCMSS ) THEN
+                  QRDDCY = QRDDCY - AMELCT
+               ELSE
+                  GO TO 1000
+               END IF
+            ELSE IF ( KDCYPR (K,IFLDCY) .EQ. IJPOST ) THEN
+               LBETAP = .TRUE.
+               IF ( LNCMSS ) THEN
+                  QRDDCY = QRDDCY - AMELCT
+               ELSE
+                  QRDDCY = QRDDCY - TWOTWO * AMELCT
+               END IF
+            ELSE IF ( KDCYPR (K,IFLDCY) .GE. IJALPH .AND.
+     &                KDCYPR (K,IFLDCY) .LE. NALLWP ) THEN
+               JA     = IBARCH ( KDCYPR (K,IFLDCY) )
+               JZ     = ICHRGE ( KDCYPR (K,IFLDCY) )
+               JS     = 0
+               NASUM  = NASUM  - JA
+               AMPRTC = EMVGEV * EXMAZM ( JA, JZ, JS, LNCMSS, JZDUM )
+               QRDDCY = QRDDCY - AMPRTC
+            ELSE IF ( KDCYPR (K,IFLDCY) .LT. IJALPH ) THEN
+               JA     = MOD ( ABS ( KDCYPR (K,IFLDCY) ), 100000 )
+     &                / 100
+               JZ     = MOD ( ABS ( KDCYPR (K,IFLDCY) ), 10000000 )
+     &                / 100000
+               JS     = MOD ( ABS ( KDCYPR (K,IFLDCY) ), 1000000000 )
+     &                / 100000000
+               NASUM  = NASUM - JA
+               AMPRTC = EMVGEV * EXMAZM ( JA, JZ, JS, LNCMSS, JZDUM )
+               QRDDCY = QRDDCY - AMPRTC
+            ELSE
+               CALL FLABRT ( 'QRDDCY', 'INVALID KDCYPR' )
+               STOP
+            END IF
+ 1000    CONTINUE
+         IF ( NASUM  .NE. 0 ) THEN
+            CALL FLABRT ( 'QRDDCY', 'NASUM!=0' )
+            STOP
+         ELSE IF ( LBETAP .AND. .NOT. LECBPL ) THEN
+            CALL FLABRT ( 'QRDDCY', 'LBETAP&&!LECBPL' )
+            STOP
+         END IF
+         IF ( LECBPL .AND. .NOT. LBETAP .AND. LNCMSS ) THEN
+            QRDDCY = QRDDCY + AMELCT
+            QRDDCY = QRDDCY - AINFNT
+         END IF
+      END IF
+
+      RETURN
+      END
