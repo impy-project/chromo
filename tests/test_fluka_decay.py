@@ -667,3 +667,23 @@ def test_fluka_no_post_event_baseline():
 # beta-emitters (H-3, Be-7, C-14, ...) and would always trip the crash.
 # This test file documents the integration via the simpler hooks above
 # until the upstream issue is resolved.
+
+
+def _public_export():
+    import chromo.models as M
+
+    return all(
+        hasattr(M, name)
+        for name in (
+            "FlukaDecay",
+            "FlukaIsotope",
+            "DecayChannel",
+            "DecayLine",
+            "DecayChainHandler",
+            "STABLE_DEFAULT",
+        )
+    )
+
+
+def test_public_export():
+    assert run_in_separate_process(_public_export) is True
