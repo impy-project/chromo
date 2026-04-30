@@ -759,3 +759,82 @@ Cf2py intent(out) ifound, t12, exm, jsp, jpt
 
       RETURN
       END SUBROUTINE chromo_dcy_lookup
+
+!======================================================================!
+!  Bulk walk of the FLUKA decay-data catalogue.  Conservative valley-  !
+!  of-stability Z-band per A; ground-state probe gates isomer probes.  !
+!  Returns N total entries written to caller-allocated arrays.         !
+!                                                                      !
+!  Arrays are declared (*) (assumed-size) so f2py exposes max_n as a   !
+!  regular positional input rather than auto-hiding it from the array  !
+!  shape; intent(inplace) keeps writes in the caller's buffers and     !
+!  avoids returning resized copies.                                    !
+!======================================================================!
+      SUBROUTINE chromo_dcy_catalog(max_n, n_out,
+     &                              a_out, z_out, m_out,
+     &                              t12_out, exm_out,
+     &                              jsp_out, jpt_out)
+      INCLUDE '(DBLPRW)'
+      INCLUDE '(DIMPAR)'
+
+      INTEGER max_n, n_out
+      INTEGER a_out(*), z_out(*), m_out(*)
+      INTEGER jsp_out(*), jpt_out(*)
+      DOUBLE PRECISION t12_out(*), exm_out(*)
+Cf2py intent(in) max_n
+Cf2py intent(inplace) a_out, z_out, m_out, t12_out, exm_out, jsp_out, jpt_out
+Cf2py intent(out) n_out
+
+      INTEGER ia, iz, im, izmin, izmax, kisitp, jsp, jpt
+      DOUBLE PRECISION t12, exm
+
+      n_out = 0
+      DO ia = 1, 295
+         IF (ia .LE. 4) THEN
+            izmin = 1
+            izmax = MIN(ia, 110)
+         ELSE IF (ia .LE. 20) THEN
+            izmin = MAX(1, INT(0.30D0*ia) - 4)
+            izmax = MIN(ia, 110)
+         ELSE
+            izmin = MAX(1, INT(0.30D0*ia) - 5)
+            izmax = MIN(110, INT(0.55D0*ia) + 8)
+         END IF
+         DO iz = izmin, izmax
+!  Probe ground state first; only try isomers if g.s. exists.
+            kisitp = 0
+            CALL ISMRCH(ia, iz, 0, kisitp, t12, exm, jsp, jpt)
+            IF (kisitp .GT. 0) THEN
+               IF (n_out .GE. max_n) RETURN
+               n_out = n_out + 1
+               a_out(n_out)   = ia
+               z_out(n_out)   = iz
+               m_out(n_out)   = 0
+               t12_out(n_out) = t12
+               exm_out(n_out) = exm
+               jsp_out(n_out) = jsp
+               jpt_out(n_out) = jpt
+               IF (ia .GE. 5) THEN
+                  DO im = 1, 4
+                     kisitp = 0
+                     CALL ISMRCH(ia, iz, im, kisitp,
+     &                           t12, exm, jsp, jpt)
+                     IF (kisitp .GT. 0) THEN
+                        IF (n_out .GE. max_n) RETURN
+                        n_out = n_out + 1
+                        a_out(n_out)   = ia
+                        z_out(n_out)   = iz
+                        m_out(n_out)   = im
+                        t12_out(n_out) = t12
+                        exm_out(n_out) = exm
+                        jsp_out(n_out) = jsp
+                        jpt_out(n_out) = jpt
+                     END IF
+                  END DO
+               END IF
+            END IF
+         END DO
+      END DO
+
+      RETURN
+      END SUBROUTINE chromo_dcy_catalog
