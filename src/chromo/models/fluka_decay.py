@@ -318,6 +318,73 @@ class FlukaIsotope:
             self._channels = self._owner._fetch_channels(self.A, self.Z, self.m)
         return self._channels
 
+    def _line_list(self, kind_int: int, kind_str: str) -> tuple[DecayLine, ...]:
+        if kind_str in self._lines:
+            return self._lines[kind_str]
+        result = self._owner._fetch_lines(self.A, self.Z, self.m, kind_int)
+        self._lines[kind_str] = result
+        return result
+
+    @property
+    def gamma_lines(self) -> tuple[DecayLine, ...]:
+        return self._line_list(1, "gamma")
+
+    @property
+    def alpha_lines(self) -> tuple[DecayLine, ...]:
+        return self._line_list(2, "alpha")
+
+    @property
+    def ce_lines(self) -> tuple[DecayLine, ...]:
+        return self._line_list(3, "ce")
+
+    @property
+    def beta_spectra(self) -> tuple[DecayLine, ...]:
+        return self._line_list(4, "beta")
+
+    def __str__(self) -> str:
+        m_tag = "" if self.m == 0 else f"m{self.m}"
+        head = (
+            f"Isotope {self.symbol}{self.A}{m_tag}  "
+            f"(A={self.A}, Z={self.Z}, m={self.m})\n"
+            f"  T1/2     = {self.t_half:.3e} s\n"
+            f"  ExMass   = {self.mass_excess:.4f} MeV\n"
+            f"  J        = {self.j_spin / 2:.1f}  parity = "
+            f"{'+' if self.j_parity > 0 else '-' if self.j_parity < 0 else '?'}"
+        )
+        rows = []
+        for c in self.channels:
+            d = (
+                f"-> {c.daughter_A:3d}/{c.daughter_Z:3d}/m{c.daughter_m}"
+                if c.daughter_A >= 0
+                else "-> (no single daughter)"
+            )
+            rows.append(
+                f"    {c.name:<5s}  BR={c.branching * 100:7.3f}%  "
+                f"{d}  Q={c.q_value:.4f} MeV"
+            )
+        chan = "\n  Channels:\n" + "\n".join(rows) if rows else ""
+
+        def _fmt_lines(label, lines, n_max=10):
+            if not lines:
+                return ""
+            out = [f"\n  {label} ({len(lines)}):"]
+            out.extend(
+                f"    E={ln.energy:9.5f} MeV  BR={ln.branching * 100:7.3f}%"
+                for ln in lines[:n_max]
+            )
+            if len(lines) > n_max:
+                out.append(f"    ... ({len(lines) - n_max} more)")
+            return "\n".join(out)
+
+        body = (
+            chan
+            + _fmt_lines("Gamma lines", self.gamma_lines)
+            + _fmt_lines("Alpha lines", self.alpha_lines)
+            + _fmt_lines("CE/Auger lines", self.ce_lines)
+            + _fmt_lines("Beta+/- spectra", self.beta_spectra)
+        )
+        return head + body
+
 
 class FlukaDecay:
     """FLUKA radioactive-decay generator and database.
@@ -484,6 +551,25 @@ class FlukaDecay:
                 daughter_Z=int(dz[i]),
                 daughter_m=int(dm[i]),
                 q_value=float(qv[i]),
+            )
+            for i in range(int(n))
+        )
+
+    def _fetch_lines(self, A: int, Z: int, m: int, kind: int) -> tuple[DecayLine, ...]:
+        import numpy as np
+
+        max_l = 256
+        br = np.zeros(max_l, dtype=np.float64)
+        e_mev = np.zeros(max_l, dtype=np.float64)
+        nlev = np.zeros(max_l, dtype=np.int32)
+        lpos = np.zeros(max_l, dtype=np.int32)
+        n = self._lib.chromo_dcy_lines(A, Z, m, kind, max_l, br, e_mev, nlev, lpos)
+        return tuple(
+            DecayLine(
+                energy=float(e_mev[i]),
+                branching=float(br[i]),
+                end_level=int(nlev[i]),
+                is_positron=bool(lpos[i]),
             )
             for i in range(int(n))
         )
