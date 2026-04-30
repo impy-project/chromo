@@ -311,6 +311,13 @@ class FlukaIsotope:
     def __repr__(self):
         return f"<FlukaIsotope {self.short()}>"
 
+    @property
+    def channels(self) -> tuple[DecayChannel, ...]:
+        """Decay channels (lazy fetch on first access)."""
+        if self._channels is None:
+            self._channels = self._owner._fetch_channels(self.A, self.Z, self.m)
+        return self._channels
+
 
 class FlukaDecay:
     """FLUKA radioactive-decay generator and database.
@@ -455,6 +462,31 @@ class FlukaDecay:
             )
             for i in range(int(n))
         ]
+
+    # -- lazy backends used by FlukaIsotope -----------------------------
+
+    def _fetch_channels(self, A: int, Z: int, m: int) -> tuple[DecayChannel, ...]:
+        import numpy as np
+
+        max_ch = 8
+        kind = np.zeros(max_ch, dtype=np.int32)
+        br = np.zeros(max_ch, dtype=np.float64)
+        da = np.zeros(max_ch, dtype=np.int32)
+        dz = np.zeros(max_ch, dtype=np.int32)
+        dm = np.zeros(max_ch, dtype=np.int32)
+        qv = np.zeros(max_ch, dtype=np.float64)
+        n = self._lib.chromo_dcy_channels(A, Z, m, max_ch, kind, br, da, dz, dm, qv)
+        return tuple(
+            DecayChannel(
+                name=_CHANNEL_NAMES.get(int(kind[i]), "other"),
+                branching=float(br[i]),
+                daughter_A=int(da[i]),
+                daughter_Z=int(dz[i]),
+                daughter_m=int(dm[i]),
+                q_value=float(qv[i]),
+            )
+            for i in range(int(n))
+        )
 
     @staticmethod
     def _parse_arg(args) -> tuple[int, int, int]:
