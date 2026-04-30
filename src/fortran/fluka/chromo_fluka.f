@@ -1077,3 +1077,100 @@ Cf2py intent(out) n_ch
 
       RETURN
       END
+
+!======================================================================!
+!  Per-isotope line lists.  KIND: 1=gamma (BR, E), 2=alpha (BR, E,     !
+!  end-level), 3=CE/Auger (BR, E), 4=beta+/- (BR, <E>, end-point E,    !
+!  end-level; positron flag encoded in sign of <E>).                   !
+!  Energies returned in MeV.                                           !
+!  SIGGTT is the REAL*4 view of the FLUKA blank common; it is brought  !
+!  in via (DBLPRW) -> (USFLMD) -> USE AABLMD.  Do NOT redeclare it.    !
+!======================================================================!
+      SUBROUTINE chromo_dcy_lines(ia, iz, im, kind, max_l, n_l,
+     &                            br_l, e_l, nlev_l)
+      INCLUDE '(DBLPRW)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(IDPPRM)'
+      INCLUDE '(ISOTOP)'
+
+      INTEGER ia, iz, im, kind, max_l, n_l
+      INTEGER nlev_l(*)
+      DOUBLE PRECISION br_l(*), e_l(*)
+Cf2py intent(in) ia, iz, im, kind, max_l
+Cf2py intent(inplace) br_l, e_l, nlev_l
+Cf2py intent(out) n_l
+
+      INTEGER kisitp, jsporu, jptoru, iia, kn_lines, kp_lines, ipt
+      INTEGER ndata
+      DOUBLE PRECISION t12, exm
+
+      n_l = 0
+      kisitp = 0
+      CALL ISMRCH(ia, iz, im, kisitp, t12, exm, jsporu, jptoru)
+      IF (kisitp .LE. 0) RETURN
+
+      iia = KQMDIN(ia, KMSFVR)
+      kn_lines = 0
+      kp_lines = 0
+
+      IF (im .LE. 0) THEN
+         IF (kind .EQ. 1) THEN
+            kn_lines = NGMLNS(iia, kisitp)
+            kp_lines = KGMLNS(iia, kisitp)
+            ndata = 2
+         ELSE IF (kind .EQ. 2) THEN
+            kn_lines = NALLNS(iia, kisitp)
+            kp_lines = KALLNS(iia, kisitp)
+            ndata = 3
+         ELSE IF (kind .EQ. 3) THEN
+            kn_lines = NCELNS(iia, kisitp)
+            kp_lines = KCELNS(iia, kisitp)
+            ndata = 2
+         ELSE IF (kind .EQ. 4) THEN
+            kn_lines = NBTSPC(iia, kisitp)
+            kp_lines = KBTSPC(iia, kisitp)
+            ndata = 4
+         ELSE
+            RETURN
+         END IF
+      ELSE
+         IF (kind .EQ. 1) THEN
+            kn_lines = NGMISM(kisitp)
+            kp_lines = KGMISM(kisitp)
+            ndata = 2
+         ELSE IF (kind .EQ. 2) THEN
+            kn_lines = NALISM(kisitp)
+            kp_lines = KALISM(kisitp)
+            ndata = 3
+         ELSE IF (kind .EQ. 3) THEN
+            kn_lines = NCEISM(kisitp)
+            kp_lines = KCEISM(kisitp)
+            ndata = 2
+         ELSE IF (kind .EQ. 4) THEN
+            kn_lines = NBTISM(kisitp)
+            kp_lines = KBTISM(kisitp)
+            ndata = 4
+         ELSE
+            RETURN
+         END IF
+      END IF
+
+      DO ipt = 1, kn_lines
+         IF (n_l .GE. max_l) RETURN
+         n_l = n_l + 1
+         br_l(n_l) = ABS(DBLE(SIGGTT(kp_lines + ndata*(ipt-1) + 1)))
+         e_l(n_l)  = DBLE(SIGGTT(kp_lines + ndata*(ipt-1) + 2)) * GEVMEV
+         IF (ndata .EQ. 3) THEN
+            nlev_l(n_l) = NINT(SIGGTT(kp_lines + ndata*(ipt-1) + 3))
+         ELSE IF (ndata .EQ. 4) THEN
+!  Beta: index +2 holds <E> (signed), +3 end-point E, +4 end-level
+            e_l(n_l) = DBLE(SIGGTT(kp_lines + ndata*(ipt-1) + 3))
+     &                * GEVMEV
+            nlev_l(n_l) = NINT(SIGGTT(kp_lines + ndata*(ipt-1) + 4))
+         ELSE
+            nlev_l(n_l) = 0
+         END IF
+      END DO
+
+      RETURN
+      END SUBROUTINE chromo_dcy_lines

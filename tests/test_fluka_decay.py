@@ -152,3 +152,29 @@ def test_dcy_channels_saturation_preserves_first_slot():
     assert kind0 == 2
     assert (da0, dz0) == (137, 56)
     assert abs(br0 - 0.947) < 0.005
+
+
+def _gamma_lines_ba137m():
+    import numpy as np
+
+    from chromo.models import _fluka
+
+    _fluka.chromo_dcy_init()
+    max_l = 64
+    br = np.zeros(max_l, dtype=np.float64)
+    e_mev = np.zeros(max_l, dtype=np.float64)
+    nlev = np.zeros(max_l, dtype=np.int32)
+    # The famous 661.66 keV line associated with Cs-137 sources is in
+    # FLUKA's table under the metastable daughter Ba-137m (im=1).
+    n = _fluka.chromo_dcy_lines(137, 56, 1, 1, max_l, br, e_mev, nlev)
+    return int(n), e_mev[:n].tolist(), br[:n].tolist()
+
+
+def test_dcy_lines_ba137m_gamma():
+    n, energies, brs = run_in_separate_process(_gamma_lines_ba137m)
+    assert n >= 1
+    # Ba-137m de-excites via the famous 661.66 keV gamma (the line that
+    # makes Cs-137/Ba-137m a calibration source).  BR ~0.90 in FLUKA.
+    matches = [(e, br) for e, br in zip(energies, brs) if abs(e - 0.66166) < 0.001]
+    assert matches, energies
+    assert abs(matches[0][1] - 0.899) < 0.01, matches
