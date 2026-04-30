@@ -186,6 +186,29 @@ for event in gen(10):
   deterministically across processes. For fully reproducible event
   records: `Fluka(... )._activate_decay_handler(on=False)`.
 
+### Radioactive-decay interface (`FlukaDecay`)
+
+A separate, kinematics-free `FlukaDecay` class exposes FLUKA's decay
+tables (catalog query, isotope inspection, inclusive sampling, recursive
+decay chains).  Spec:
+`docs/superpowers/specs/2026-04-30-fluka-decay-interface-design.md`.
+
+```python
+from chromo.models import FlukaDecay, DecayChainHandler, STABLE_DEFAULT
+
+dcy = FlukaDecay(seed=42)
+catalog = dcy.catalog(t_half_min=1.0)         # filter by lifetime
+print(dcy.lookup("Cs137"))                     # DCYPRN-style table
+events = list(dcy("Cs137", n=1000))            # inclusive decay sampling
+chain  = list(dcy.chain("U238", n=10))         # recursive series
+```
+
+`Fluka(post_event=DecayChainHandler(...).expand)` is wired up but
+currently blocked by an upstream FLUKA bug (β-emitter SPDCEV crashes
+after EVTXYZ — see `FLUKA_QUESTIONS.md` #6).  See spec §11 for the
+fallback path.  Single-instantiation guard is shared between `Fluka`
+and `FlukaDecay`; whichever is constructed first does the FLUKA init.
+
 ### Disable
 
 Remove `"fluka"` from `[tool.chromo] enabled-models` in `pyproject.toml`.
