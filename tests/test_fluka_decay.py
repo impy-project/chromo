@@ -97,3 +97,29 @@ def test_dcy_catalog_size():
     assert 4000 <= n <= 5500
     assert 200 < a_max <= 295
     assert 80 < z_max <= 110
+
+
+def _channels_cs137():
+    import numpy as np
+
+    from chromo.models import _fluka
+
+    _fluka.chromo_dcy_init()
+    max_ch = 8
+    kind = np.zeros(max_ch, dtype=np.int32)
+    br = np.zeros(max_ch, dtype=np.float64)
+    da = np.zeros(max_ch, dtype=np.int32)
+    dz = np.zeros(max_ch, dtype=np.int32)
+    dm = np.zeros(max_ch, dtype=np.int32)
+    qv = np.zeros(max_ch, dtype=np.float64)
+
+    n = _fluka.chromo_dcy_channels(137, 55, 0, max_ch, kind, br, da, dz, dm, qv)
+    return int(n), kind[:n].tolist(), br[:n].tolist()
+
+
+def test_dcy_channels_cs137():
+    n, kinds, brs = run_in_separate_process(_channels_cs137)
+    assert n >= 1
+    # All recorded channels should be Beta- (kind=2) for Cs-137
+    assert all(k == 2 for k in kinds), kinds
+    assert abs(sum(brs) - 1.0) < 0.01
