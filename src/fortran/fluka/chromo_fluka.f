@@ -743,7 +743,9 @@ Cf2py intent(out) ifound, t12, exm, jsp, jpt
       jsp = 0
       jpt = 0
 
-!  Guard against ISMRCH OOB on pathological inputs:
+!  Guard against ISMRCH OOB on pathological inputs.  iz>ia is a
+!  physical-nuclide constraint (Z<=A always) that also defangs FLUKA's
+!  EXMSAZ:KA0-KZ0 abort path; do not remove without retesting (2,50,0).
       IF (ia .LT. 1) RETURN
       IF (iz .LT. 0) RETURN
       IF (ia .EQ. 1 .AND. iz .GT. 1) RETURN
