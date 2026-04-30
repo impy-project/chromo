@@ -434,3 +434,44 @@ def test_gamma_lines_and_str():
     # str(iso) should contain identifier + gamma energy
     assert "Ba137m" in s or "Ba137" in s
     assert "0.66" in s or "0.6617" in s
+
+
+def _sample_cs137_1000():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay(seed=42)
+    n_events = 0
+    n_with_electron = 0
+    np_total = 0
+    for ev in dcy("Cs137", n=1000):
+        n_events += 1
+        np_total += len(ev.pid)
+        if 11 in ev.pid:  # PDG 11 = e-
+            n_with_electron += 1
+    return n_events, n_with_electron, np_total
+
+
+def test_sample_cs137_1000_events():
+    n, n_e, np_total = run_in_separate_process(_sample_cs137_1000)
+    assert n == 1000
+    # Cs-137 always B-: every event has at least one e-
+    assert n_e == 1000
+    # FLUKA's FLLHEP emits 2 status=4 history entries (vacuum + parent)
+    # plus the products: e-, nubar, optional gamma, Ba-137 residual.
+    # Mean NP comes out near 6 in practice; bound generously.
+    assert 4.0 < np_total / n < 8.0
+
+
+def _sample_stable_raises():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay()
+    try:
+        list(dcy("Fe56", n=1))
+    except ValueError:
+        return "raised"
+    return "did_not_raise"
+
+
+def test_sample_stable_raises():
+    assert run_in_separate_process(_sample_stable_raises) == "raised"

@@ -574,6 +574,134 @@ class FlukaDecay:
             for i in range(int(n))
         )
 
+    # -- inclusive event sampling --------------------------------------
+
+    # FLUKA's RDDCAY tags genuinely stable nuclides with T1/2 = 1e38 s.
+    _STABLE_T_HALF = 1e38
+
+    def __call__(self, parent, n: int):
+        """Yield ``n`` correlated decay events for ``parent``.
+
+        Parameters
+        ----------
+        parent : str | tuple | int
+            Same forms accepted by ``lookup`` (name, ``(A, Z, m)``, or
+            PDG ion code).
+        n : int
+            Number of events to generate.
+
+        Yields
+        ------
+        EventData
+            One event per yield, with FLUKA's products in
+            ``ev.pid / px / py / pz / en / mass``.
+
+        Raises
+        ------
+        ValueError
+            If ``parent`` is unknown to FLUKA's table or stable.
+        """
+        # Resolve parent first so we validate name and catch stables before
+        # the (potentially expensive) sampling loop starts.
+        if isinstance(parent, tuple):
+            iso = self.lookup(*parent)
+        else:
+            iso = self.lookup(parent)
+        if iso is None:
+            msg = f"FLUKA has no decay data for parent {parent!r}."
+            raise ValueError(msg)
+        if iso.t_half >= self._STABLE_T_HALF:
+            msg = (
+                f"{parent!r} is stable in FLUKA's table "
+                f"(T1/2 = {iso.t_half:.3e} s); cannot decay-sample."
+            )
+            raise ValueError(msg)
+
+        for _ in range(int(n)):
+            yield self._sample_one(iso.A, iso.Z, iso.m)
+
+    def _sample_one(self, A: int, Z: int, m: int):
+        """One SPDCEV call -> one EventData built from HEPEVT.
+
+        FlukaDecay has no kinematics/frame, so we bypass FlukaEvent and
+        build an EventData directly from the HEPEVT common block populated
+        by FLLHEP.  Falls back to an empty EventData on persistent failure
+        (logged via ``chromo.util.info``).
+        """
+
+        from chromo.util import info as _info
+
+        ok = False
+        for _attempt in range(2):
+            ok_int, _kdcy, _ilv = self._lib.chromo_dcy_sample(A, Z, m)
+            if ok_int:
+                ok = True
+                break
+        if not ok:
+            _info(0, f"chromo_dcy_sample failed for ({A},{Z},{m}) twice")
+
+        return self._hepevt_to_event_data()
+
+    def _hepevt_to_event_data(self):
+        """Snapshot the HEPEVT common block into a fresh EventData."""
+        import numpy as np
+
+        from chromo.common import EventData
+
+        evt = self._lib.hepevt
+        nhep = int(evt.nhep)
+        sel = slice(0, nhep)
+
+        pid = np.array(evt.idhep[sel], dtype=np.int32, copy=True)
+        status = np.array(evt.isthep[sel], dtype=np.int32, copy=True)
+        phep = np.asarray(evt.phep[:, sel], dtype=np.float64)
+        vhep = np.asarray(evt.vhep[:, sel], dtype=np.float64)
+        # phep rows: 0=px, 1=py, 2=pz, 3=E, 4=m. vhep rows: 0=vx, ...
+        px = np.array(phep[0], dtype=np.float64, copy=True)
+        py = np.array(phep[1], dtype=np.float64, copy=True)
+        pz = np.array(phep[2], dtype=np.float64, copy=True)
+        en = np.array(phep[3], dtype=np.float64, copy=True)
+        mass = np.array(phep[4], dtype=np.float64, copy=True)
+        vx = np.array(vhep[0], dtype=np.float64, copy=True)
+        vy = np.array(vhep[1], dtype=np.float64, copy=True)
+        vz = np.array(vhep[2], dtype=np.float64, copy=True)
+        vt = np.array(vhep[3], dtype=np.float64, copy=True)
+
+        # Charge: reuse FLUKA's helper for ordinary particles, recover Z
+        # for nuclei from the PDG ion code (10LZZZAAAI) — same logic as
+        # FlukaEvent._get_charge but without an MCEvent wrapper.
+        charge = self._lib.charge_from_pdg_arr(pid).astype(np.float64)
+        absp = np.abs(pid.astype(np.int64))
+        is_nucleus = absp >= 1_000_000_000
+        z_from_code = ((absp // 10000) % 1000).astype(np.float64)
+        charge = np.where(is_nucleus, np.sign(pid) * z_from_code, charge)
+
+        mothers = np.array(evt.jmohep[:, sel].T, dtype=np.int32, copy=True)
+        daughters = np.array(evt.jdahep[:, sel].T, dtype=np.int32, copy=True)
+
+        return EventData(
+            generator=("FLUKA-decay", self._lib.__name__.split(".")[-1]),
+            kin=None,
+            nevent=int(evt.nevhep),
+            impact_parameter=float("nan"),
+            n_wounded=(0, 0),
+            production_cross_section=float("nan"),
+            pid=pid,
+            status=status,
+            charge=charge,
+            px=px,
+            py=py,
+            pz=pz,
+            en=en,
+            m=mass,
+            vx=vx,
+            vy=vy,
+            vz=vz,
+            vt=vt,
+            mothers=mothers,
+            daughters=daughters,
+        )
+
     @staticmethod
     def _parse_arg(args) -> tuple[int, int, int]:
         if len(args) == 1:
