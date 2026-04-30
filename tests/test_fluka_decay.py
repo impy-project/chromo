@@ -385,3 +385,32 @@ def _catalog_contains_known():
 def test_catalog_contains_known_isotopes():
     found = run_in_separate_process(_catalog_contains_known)
     assert all(found), found
+
+
+def _cs137_channels():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay()
+    iso = dcy.lookup("Cs137")
+    chs = iso.channels
+    return len(chs), chs[0].name, chs[0].daughter_A, chs[0].daughter_Z
+
+
+def test_isotope_channels_cs137():
+    n, name, dA, dZ = run_in_separate_process(_cs137_channels)
+    assert n >= 1
+    assert name == "B-"
+    assert (dA, dZ) == (137, 56)
+
+
+def _u238_alpha():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay()
+    iso = dcy.lookup("U238")
+    return [(c.name, c.branching, c.daughter_A, c.daughter_Z) for c in iso.channels]
+
+
+def test_isotope_channels_u238_has_alpha():
+    chs = run_in_separate_process(_u238_alpha)
+    assert any(c[0] == "alpha" and c[2] == 234 and c[3] == 90 for c in chs)
