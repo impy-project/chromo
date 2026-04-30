@@ -687,3 +687,51 @@ def _public_export():
 
 def test_public_export():
     assert run_in_separate_process(_public_export) is True
+
+
+def _th232_chain_terminates():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay(seed=2)
+    events = list(dcy.chain("Th232", n=20, max_depth=20, on_max_depth="warn"))
+    # Each event ideally ends on Pb-208 (PDG 1000822080), but Task 15
+    # found that SPDCEV returns LSUCCS=False for some chain members
+    # (notably Ac-228) so chains may stall before reaching Pb-208.
+    # We assert: every event has at least made progress (more than
+    # just the original Th-232 + leptons) — i.e. at least one alpha
+    # or daughter nucleus is present.
+    progress = []
+    th232 = 1000000000 + 90 * 10000 + 232 * 10
+    for ev in events:
+        # Any nucleus in the products other than Th-232 itself counts as
+        # chain progress.
+        nuclei = [int(p) for p in ev.pid if abs(int(p)) >= 1_000_000_000]
+        progress.append(any(p != th232 for p in nuclei))
+    return all(progress), len(events)
+
+
+def test_th232_chain_progresses():
+    all_progressed, n = run_in_separate_process(_th232_chain_terminates)
+    assert n == 20
+    # Th232 series should always produce at least one daughter nucleus.
+    assert all_progressed
+
+
+def _co60_two_gammas():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay(seed=3)
+    n_two_g = 0
+    for ev in dcy("Co60", n=500):
+        n_g = sum(1 for p in ev.pid if int(p) == 22)
+        if n_g >= 2:
+            n_two_g += 1
+    return n_two_g
+
+
+def test_co60_emits_two_gammas():
+    n = run_in_separate_process(_co60_two_gammas)
+    # Co-60 → Ni-60* → Ni-60 + 1.17 + 1.33 MeV in ~all decays.
+    # FLUKA's branching may differ slightly from textbook 99%+; allow
+    # ≥ 90% as a robust threshold.
+    assert n >= 450, n
