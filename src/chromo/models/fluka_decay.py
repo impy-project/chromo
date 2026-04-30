@@ -92,7 +92,8 @@ STABLE_DEFAULT: set[int] = set()
 class FlukaIsotope:
     """Single nuclide record from FLUKA's decay catalogue.
 
-    Filled out across Tasks 8, 11, 12.
+    Heavy data (decay channels, line lists) is fetched lazily on first
+    access via the parent ``FlukaDecay`` instance.  See Tasks 11, 12.
     """
 
     __slots__ = (
@@ -108,6 +109,32 @@ class FlukaIsotope:
         "symbol",
         "t_half",
     )
+
+    def __init__(
+        self, *, owner, A, Z, m, t_half, mass_excess, symbol, j_spin, j_parity
+    ):
+        self._owner = owner
+        self.A = A
+        self.Z = Z
+        self.m = m
+        self.t_half = t_half
+        self.mass_excess = mass_excess
+        self.symbol = symbol
+        self.j_spin = j_spin
+        self.j_parity = j_parity
+        self._channels = None
+        self._lines = {}
+
+    def short(self) -> str:
+        """One-line summary."""
+        m_tag = "" if self.m == 0 else f"m{self.m}"
+        return (
+            f"{self.symbol}{self.A}{m_tag} (Z={self.Z}, m={self.m}): "
+            f"T1/2={self.t_half:.3e} s, ExM={self.mass_excess:.3f} MeV"
+        )
+
+    def __repr__(self):
+        return f"<FlukaIsotope {self.short()}>"
 
 
 class FlukaDecay:
