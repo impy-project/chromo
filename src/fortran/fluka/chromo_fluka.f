@@ -1179,3 +1179,62 @@ Cf2py intent(out) n_l
 
       RETURN
       END SUBROUTINE chromo_dcy_lines
+
+!======================================================================!
+!  Sample one correlated radioactive-decay event for (A,Z,m).  Clears  !
+!  GENSTK / EMFSTK / FHEAVY counters, calls SPDCEV, then FLLHEP to put !
+!  decay products into HEPEVT.  Returns LSUCCS, channel code, daughter !
+!  level.                                                              !
+!======================================================================!
+      SUBROUTINE chromo_dcy_sample(ia, iz, im, lsuccs_out,
+     &                             kdcy_out, ilv_out)
+      INCLUDE '(DBLPRW)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(IOUNIT)'
+
+      INCLUDE '(DCYFLG)'
+      INCLUDE '(EMFSTK)'
+      INCLUDE '(FHEAVY)'
+      INCLUDE '(GENSTK)'
+
+      INTEGER ia, iz, im, lsuccs_out, kdcy_out, ilv_out
+      DOUBLE PRECISION tdelay
+      LOGICAL lsuccs
+Cf2py intent(in)  ia, iz, im
+Cf2py intent(out) lsuccs_out, kdcy_out, ilv_out
+
+      lsuccs_out = 0
+      kdcy_out = -1
+      ilv_out = 0
+
+      np     = 0
+      np0    = 0
+      npheav = 0
+      npemf  = 0
+      lsuccs = .TRUE.
+      tdelay = -1.0D+09
+
+      CALL SPDCEV(ia, iz, im, ZERZER, ZERZER, ZERZER, ZERZER,
+     &            ONEONE, ONEONE, tdelay, .TRUE., .TRUE., lsuccs)
+
+      IF (.NOT. lsuccs) RETURN
+      lsuccs_out = 1
+      ilv_out = ILVDCY
+
+      IF (LALDCY) THEN
+         kdcy_out = 1
+      ELSE IF (LBMDCY) THEN
+         kdcy_out = 2
+      ELSE IF (LBPDCY) THEN
+         kdcy_out = 3
+      ELSE IF (LECDCY) THEN
+         kdcy_out = 4
+      ELSE IF (LITDCY) THEN
+         kdcy_out = 5
+      ELSE IF (LSFDCY) THEN
+         kdcy_out = 6
+      END IF
+
+      CALL chromo_fllhep
+      RETURN
+      END SUBROUTINE chromo_dcy_sample

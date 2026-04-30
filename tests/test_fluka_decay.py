@@ -219,10 +219,25 @@ def _beta_spectra_cs137():
 
 
 def test_dcy_lines_cs137_beta():
-    n, endpoints, brs, lpos = run_in_separate_process(_beta_spectra_cs137)
+    n, endpoints, _brs, lpos = run_in_separate_process(_beta_spectra_cs137)
     assert n >= 1
     # Endpoints around 0.514 MeV (94.7%) and 1.176 MeV (5.3%) for Cs-137.
     assert any(abs(e - 0.514) < 0.02 for e in endpoints), endpoints
     assert any(abs(e - 1.176) < 0.02 for e in endpoints), endpoints
     # Cs-137 is pure beta-, no positrons.
     assert all(p == 0 for p in lpos), lpos
+
+
+def _sample_cs137_one():
+    from chromo.models import _fluka
+
+    _fluka.chromo_dcy_init()
+    success, kdcy, ilv = _fluka.chromo_dcy_sample(137, 55, 0)
+    return bool(success), int(kdcy), int(ilv), int(_fluka.hepevt.nhep)
+
+
+def test_dcy_sample_cs137_succeeds():
+    ok, kdcy, _ilv, nhep = run_in_separate_process(_sample_cs137_one)
+    assert ok
+    assert kdcy == 2  # B-
+    assert nhep >= 2  # at least e- + nubar
