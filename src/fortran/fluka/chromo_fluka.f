@@ -718,3 +718,42 @@ Cf2py intent(out) nhep_total, n_standard, n_heavy, n_residual
       LDCYINI = .TRUE.
       RETURN
       END SUBROUTINE chromo_dcy_init
+
+!======================================================================!
+!  ISMRCH wrapper: returns IFOUND=1 if (A,Z,m) has decay data,         !
+!  IFOUND=0 otherwise.  Caller is responsible for staying within the   !
+!  safe (A,Z) probe band (see chromo_dcy_catalog).                     !
+!======================================================================!
+      SUBROUTINE chromo_dcy_lookup(ia, iz, im, ifound,
+     &                             t12, exm, jsp, jpt)
+      INCLUDE '(DBLPRW)'
+      INCLUDE '(DIMPAR)'
+
+      INTEGER ia, iz, im, ifound, jsp, jpt
+      DOUBLE PRECISION t12, exm
+Cf2py intent(in)  ia, iz, im
+Cf2py intent(out) ifound, t12, exm, jsp, jpt
+
+      INTEGER kisitp
+
+      kisitp = 0
+      ifound = 0
+      t12 = 0.0D0
+      exm = 0.0D0
+      jsp = 0
+      jpt = 0
+
+!  Guard against ISMRCH OOB on pathological inputs:
+      IF (ia .LT. 1) RETURN
+      IF (iz .LT. 0) RETURN
+      IF (ia .EQ. 1 .AND. iz .GT. 1) RETURN
+      IF (ia .GT. 1 .AND. iz .LT. 1) RETURN
+      IF (iz .GT. ia) RETURN
+      IF (im .LT. 0 .OR. im .GT. 4) RETURN
+
+      CALL ISMRCH(ia, iz, im, kisitp, t12, exm, jsp, jpt)
+
+      IF (kisitp .GT. 0) ifound = 1
+
+      RETURN
+      END SUBROUTINE chromo_dcy_lookup
