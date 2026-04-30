@@ -1087,22 +1087,22 @@ Cf2py intent(out) n_ch
 !  in via (DBLPRW) -> (USFLMD) -> USE AABLMD.  Do NOT redeclare it.    !
 !======================================================================!
       SUBROUTINE chromo_dcy_lines(ia, iz, im, kind, max_l, n_l,
-     &                            br_l, e_l, nlev_l)
+     &                            br_l, e_l, nlev_l, lpos_l)
       INCLUDE '(DBLPRW)'
       INCLUDE '(DIMPAR)'
       INCLUDE '(IDPPRM)'
       INCLUDE '(ISOTOP)'
 
       INTEGER ia, iz, im, kind, max_l, n_l
-      INTEGER nlev_l(*)
+      INTEGER nlev_l(*), lpos_l(*)
       DOUBLE PRECISION br_l(*), e_l(*)
 Cf2py intent(in) ia, iz, im, kind, max_l
-Cf2py intent(inplace) br_l, e_l, nlev_l
+Cf2py intent(inplace) br_l, e_l, nlev_l, lpos_l
 Cf2py intent(out) n_l
 
       INTEGER kisitp, jsporu, jptoru, iia, kn_lines, kp_lines, ipt
       INTEGER ndata
-      DOUBLE PRECISION t12, exm
+      DOUBLE PRECISION t12, exm, eave_signed
 
       n_l = 0
       kisitp = 0
@@ -1160,10 +1160,15 @@ Cf2py intent(out) n_l
          n_l = n_l + 1
          br_l(n_l) = ABS(DBLE(SIGGTT(kp_lines + ndata*(ipt-1) + 1)))
          e_l(n_l)  = DBLE(SIGGTT(kp_lines + ndata*(ipt-1) + 2)) * GEVMEV
+         lpos_l(n_l) = 0
          IF (ndata .EQ. 3) THEN
             nlev_l(n_l) = NINT(SIGGTT(kp_lines + ndata*(ipt-1) + 3))
          ELSE IF (ndata .EQ. 4) THEN
-!  Beta: index +2 holds <E> (signed), +3 end-point E, +4 end-level
+!  Beta: index +2 holds <E> (signed: +ve = positron, -ve = electron),
+!  +3 end-point E (unsigned), +4 end-level.  Capture the sign for
+!  positron flag BEFORE overwriting e_l with the endpoint.
+            eave_signed = DBLE(SIGGTT(kp_lines + ndata*(ipt-1) + 2))
+            IF (eave_signed .GT. 0.0D0) lpos_l(n_l) = 1
             e_l(n_l) = DBLE(SIGGTT(kp_lines + ndata*(ipt-1) + 3))
      &                * GEVMEV
             nlev_l(n_l) = NINT(SIGGTT(kp_lines + ndata*(ipt-1) + 4))

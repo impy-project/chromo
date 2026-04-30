@@ -154,19 +154,26 @@ def test_dcy_channels_saturation_preserves_first_slot():
     assert abs(br0 - 0.947) < 0.005
 
 
-def _gamma_lines_ba137m():
+def _alloc_line_buffers(max_l):
     import numpy as np
 
+    return (
+        np.zeros(max_l, dtype=np.float64),  # br
+        np.zeros(max_l, dtype=np.float64),  # e_mev
+        np.zeros(max_l, dtype=np.int32),  # nlev
+        np.zeros(max_l, dtype=np.int32),  # lpos
+    )
+
+
+def _gamma_lines_ba137m():
     from chromo.models import _fluka
 
     _fluka.chromo_dcy_init()
     max_l = 64
-    br = np.zeros(max_l, dtype=np.float64)
-    e_mev = np.zeros(max_l, dtype=np.float64)
-    nlev = np.zeros(max_l, dtype=np.int32)
+    br, e_mev, nlev, lpos = _alloc_line_buffers(max_l)
     # The famous 661.66 keV line associated with Cs-137 sources is in
     # FLUKA's table under the metastable daughter Ba-137m (im=1).
-    n = _fluka.chromo_dcy_lines(137, 56, 1, 1, max_l, br, e_mev, nlev)
+    n = _fluka.chromo_dcy_lines(137, 56, 1, 1, max_l, br, e_mev, nlev, lpos)
     return int(n), e_mev[:n].tolist(), br[:n].tolist()
 
 
@@ -178,3 +185,44 @@ def test_dcy_lines_ba137m_gamma():
     matches = [(e, br) for e, br in zip(energies, brs) if abs(e - 0.66166) < 0.001]
     assert matches, energies
     assert abs(matches[0][1] - 0.899) < 0.01, matches
+
+
+def _alpha_lines_u238():
+    from chromo.models import _fluka
+
+    _fluka.chromo_dcy_init()
+    max_l = 64
+    br, e_mev, nlev, lpos = _alloc_line_buffers(max_l)
+    # U-238 alpha decays. kind=2 (alpha), 3 doubles per record.
+    n = _fluka.chromo_dcy_lines(238, 92, 0, 2, max_l, br, e_mev, nlev, lpos)
+    return int(n), e_mev[:n].tolist(), br[:n].tolist()
+
+
+def test_dcy_lines_u238_alpha():
+    n, energies, brs = run_in_separate_process(_alpha_lines_u238)
+    assert n >= 1
+    # Dominant U-238 alpha line is around 4.20 MeV.
+    assert any(abs(e - 4.20) < 0.05 for e in energies), energies
+    # All BRs are valid probabilities.
+    assert all(0.0 <= br <= 1.0 for br in brs), brs
+
+
+def _beta_spectra_cs137():
+    from chromo.models import _fluka
+
+    _fluka.chromo_dcy_init()
+    max_l = 64
+    br, e_mev, nlev, lpos = _alloc_line_buffers(max_l)
+    # Cs-137 has two beta- branches (endpoints ~0.514, 1.176 MeV).
+    n = _fluka.chromo_dcy_lines(137, 55, 0, 4, max_l, br, e_mev, nlev, lpos)
+    return int(n), e_mev[:n].tolist(), br[:n].tolist(), lpos[:n].tolist()
+
+
+def test_dcy_lines_cs137_beta():
+    n, endpoints, brs, lpos = run_in_separate_process(_beta_spectra_cs137)
+    assert n >= 1
+    # Endpoints around 0.514 MeV (94.7%) and 1.176 MeV (5.3%) for Cs-137.
+    assert any(abs(e - 0.514) < 0.02 for e in endpoints), endpoints
+    assert any(abs(e - 1.176) < 0.02 for e in endpoints), endpoints
+    # Cs-137 is pure beta-, no positrons.
+    assert all(p == 0 for p in lpos), lpos
