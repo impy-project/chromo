@@ -279,3 +279,27 @@ def test_dataclass_smoke():
     assert name == "B-"
     assert a == 137
     assert abs(e - 0.66166) < 1e-6
+
+
+def _make_isotope():
+    from chromo.models.fluka_decay import FlukaIsotope
+
+    iso = FlukaIsotope(
+        owner=None,
+        A=137,
+        Z=55,
+        m=0,
+        t_half=9.49e8,
+        mass_excess=-86.546,
+        symbol="Cs",
+        j_spin=7,
+        j_parity=1,
+    )
+    return (iso.A, iso.Z, iso.m, iso.symbol, iso.short())
+
+
+def test_isotope_init_and_short():
+    A, Z, m, sym, short = run_in_separate_process(_make_isotope)
+    assert A == 137 and Z == 55 and m == 0 and sym == "Cs"
+    assert "Cs137" in short
+    assert "9.49" in short or "9.490" in short
