@@ -625,6 +625,44 @@ class FlukaDecay:
         for _ in range(int(n)):
             yield self._sample_one(iso.A, iso.Z, iso.m)
 
+    # -- decay chains ---------------------------------------------------
+
+    def chain(
+        self,
+        parent,
+        n: int,
+        final_state: set[int] | None = None,
+        max_depth: int = 20,
+        on_max_depth: str = "raise",
+    ):
+        """Yield ``n`` decay-chain events for ``parent``.
+
+        Each event contains products from the initial decay plus all
+        recursive decays; products are kept (final state) when their
+        PDG id is in ``final_state`` (default: ``STABLE_DEFAULT``) or
+        when FLUKA cannot decay them.
+
+        Parameters
+        ----------
+        parent : str | tuple | int
+        n : int
+        final_state : set[int], optional
+            PDG ids to keep as final products. Defaults to
+            ``STABLE_DEFAULT``.
+        max_depth : int
+            Maximum chain depth before erroring/warning.
+        on_max_depth : str
+            ``"raise"`` (default) or ``"warn"``.
+        """
+        handler = DecayChainHandler(
+            self,
+            final_state=final_state,
+            max_depth=max_depth,
+            on_max_depth=on_max_depth,
+        )
+        for ev in self(parent, n):
+            yield handler.expand(ev)
+
     def _sample_one(self, A: int, Z: int, m: int):
         """One SPDCEV call -> one EventData built from HEPEVT.
 

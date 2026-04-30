@@ -511,3 +511,46 @@ def test_chain_handler_cs137_includes_gamma():
     assert n == 200
     # Cs137 -> Ba137m1 -> Ba137 + 0.661 MeV gamma in ~94.7% of decays.
     assert n_g >= 150  # generous for stat fluctuations and chain edge cases
+
+
+def _chain_cs137_method():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay(seed=11)
+    n_events = 0
+    n_with_ba137_stable = 0
+    for ev in dcy.chain("Cs137", n=200):
+        n_events += 1
+        # Ba137 g.s. PDG: 1000000000 + 56*10000 + 137*10 + 0
+        ba137 = 1000000000 + 56 * 10000 + 137 * 10
+        if ba137 in ev.pid:
+            n_with_ba137_stable += 1
+    return n_events, n_with_ba137_stable
+
+
+def test_chain_cs137_terminates_on_ba137():
+    n, n_ba = run_in_separate_process(_chain_cs137_method)
+    assert n == 200
+    # All Cs137 chains end on stable Ba137
+    assert n_ba >= 195
+
+
+def _chain_max_depth_raises():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay()
+    # U-238 series goes ~14 steps before reaching stable Pb-206. With
+    # max_depth=2, recursion always exceeds the limit and raises.
+    # (Th-232 was specified in the plan, but its Ac-228 daughter is not
+    # sampleable by FLUKA's SPDCEV in this build, terminating the chain
+    # at depth 1.)
+    try:
+        for _ev in dcy.chain("U238", n=1, max_depth=2):
+            pass
+    except RuntimeError:
+        return "raised"
+    return "no_raise"
+
+
+def test_chain_max_depth_raises():
+    assert run_in_separate_process(_chain_max_depth_raises) == "raised"
