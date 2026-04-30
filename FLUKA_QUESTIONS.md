@@ -34,6 +34,25 @@ Is this a known limitation or a missing initialization step?
 
 ---
 
+## 5. `SPDCEV` returns `LSUCCS=.FALSE.` for Ac-228 (and possibly others)
+
+**Problem.** Calling `SPDCEV(228, 89, 0, ...)` returns `LSUCCS=.FALSE.`
+even though Ac-228 has decay data in FLUKA's table (β⁻ to Th-228, T1/2
+≈ 6.15 h). The Th-232 natural-decay series therefore terminates
+prematurely at Ac-228 instead of running through to Pb-208.
+
+**Reproduce.** After standard decay-table init (`NCDTRD`/`RDFLUO`/...),
+call `SPDCEV(228, 89, 0, ZERZER, ZERZER, ZERZER, ZERZER, ONEONE,
+ONEONE, -1.D9, .TRUE., .TRUE., LSUCCS)`. Returns `LSUCCS=.FALSE.`
+without populating GENSTK.
+
+**Question.** Is this a known limitation of `SPDCEV` (e.g., specific
+isotopes excluded)? Is there a list of decay-data isotopes for which
+`SPDCEV` is *not* a valid sampler? Is there an alternative sampler we
+should call for the affected entries?
+
+---
+
 ## 4. `QRDDCY` is in `dcytst.f` rather than `libflukahp.a`
 
 **Problem.** `QRDDCY(IADCYP, IZDCYP, ISDCYP, IFLDCY, LNCMSS)` — Q-value
