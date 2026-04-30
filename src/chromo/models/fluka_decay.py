@@ -387,6 +387,75 @@ class FlukaDecay:
             j_parity=int(jpt),
         )
 
+    # -- catalogue ------------------------------------------------------
+
+    def catalog(
+        self,
+        *,
+        t_half_min: float | None = None,
+        t_half_max: float | None = None,
+        a_min: int | None = None,
+        a_max: int | None = None,
+        z_min: int | None = None,
+        z_max: int | None = None,
+    ) -> list[FlukaIsotope]:
+        """Return all isotopes/isomers in FLUKA's decay-data table.
+
+        First call materialises the full catalogue (~4 500 entries) by
+        calling ``chromo_dcy_catalog``; subsequent calls reuse the cache.
+
+        Parameters
+        ----------
+        t_half_min, t_half_max : float, optional
+            Half-life range in seconds (inclusive).
+        a_min, a_max, z_min, z_max : int, optional
+            Mass / atomic-number ranges (inclusive).
+        """
+        if self._catalog is None:
+            self._catalog = self._fetch_full_catalog()
+
+        out = self._catalog
+        if t_half_min is not None:
+            out = [i for i in out if i.t_half >= t_half_min]
+        if t_half_max is not None:
+            out = [i for i in out if i.t_half <= t_half_max]
+        if a_min is not None:
+            out = [i for i in out if i.A >= a_min]
+        if a_max is not None:
+            out = [i for i in out if i.A <= a_max]
+        if z_min is not None:
+            out = [i for i in out if i.Z >= z_min]
+        if z_max is not None:
+            out = [i for i in out if i.Z <= z_max]
+        return list(out)
+
+    def _fetch_full_catalog(self) -> list[FlukaIsotope]:
+        import numpy as np
+
+        max_n = 5500
+        a = np.zeros(max_n, dtype=np.int32)
+        z = np.zeros(max_n, dtype=np.int32)
+        m = np.zeros(max_n, dtype=np.int32)
+        t12 = np.zeros(max_n, dtype=np.float64)
+        exm = np.zeros(max_n, dtype=np.float64)
+        jsp = np.zeros(max_n, dtype=np.int32)
+        jpt = np.zeros(max_n, dtype=np.int32)
+        n = self._lib.chromo_dcy_catalog(max_n, a, z, m, t12, exm, jsp, jpt)
+        return [
+            FlukaIsotope(
+                owner=self,
+                A=int(a[i]),
+                Z=int(z[i]),
+                m=int(m[i]),
+                t_half=float(t12[i]),
+                mass_excess=float(exm[i]),
+                symbol=_z_to_symbol(int(z[i])),
+                j_spin=int(jsp[i]),
+                j_parity=int(jpt[i]),
+            )
+            for i in range(int(n))
+        ]
+
     @staticmethod
     def _parse_arg(args) -> tuple[int, int, int]:
         if len(args) == 1:

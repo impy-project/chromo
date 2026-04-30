@@ -347,3 +347,41 @@ def test_fluka_decay_lookup_tuple_and_missing():
     A, Z, none_ = run_in_separate_process(_lookup_tuple_and_missing)
     assert (A, Z) == (238, 92)
     assert none_ is None
+
+
+def _catalog_full_and_filter():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay()
+    full = dcy.catalog()
+    long_lived = dcy.catalog(t_half_min=1e10)
+    short_only = dcy.catalog(t_half_max=1.0, t_half_min=1e-3)
+    actinides = dcy.catalog(z_min=89, z_max=99)
+    return len(full), len(long_lived), len(short_only), len(actinides)
+
+
+def test_catalog_filters():
+    n, n_long, n_short, n_act = run_in_separate_process(_catalog_full_and_filter)
+    assert 4000 <= n <= 5500
+    assert 200 <= n_long <= 600  # plenty of T1/2 > 1e10 s entries
+    assert n_short > 0
+    assert n_act > 0
+
+
+def _catalog_contains_known():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay()
+    full = dcy.catalog()
+    azm = {(i.A, i.Z, i.m) for i in full}
+    return (
+        (238, 92, 0) in azm,
+        (137, 55, 0) in azm,
+        (14, 6, 0) in azm,
+        (99, 43, 1) in azm,
+    )
+
+
+def test_catalog_contains_known_isotopes():
+    found = run_in_separate_process(_catalog_contains_known)
+    assert all(found), found
