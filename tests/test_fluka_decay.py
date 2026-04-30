@@ -43,3 +43,30 @@ def _call_init():
 
 def test_chromo_dcy_init_runs():
     assert run_in_separate_process(_call_init) is True
+
+
+def _lookup_u238():
+    from chromo.models import _fluka
+
+    _fluka.chromo_dcy_init()
+    found, t12, exm, jsp, jpt = _fluka.chromo_dcy_lookup(238, 92, 0)
+    return int(found), float(t12), float(exm)
+
+
+def test_dcy_lookup_u238():
+    found, t12, exm = run_in_separate_process(_lookup_u238)
+    assert found == 1
+    assert abs(t12 - 1.41e17) / 1.41e17 < 0.01      # ~4.5 Gyr
+    assert abs(exm - 47.31) < 0.05                   # MeV
+
+
+def _lookup_invalid():
+    from chromo.models import _fluka
+
+    _fluka.chromo_dcy_init()
+    found, _t12, _exm, _jsp, _jpt = _fluka.chromo_dcy_lookup(2, 50, 0)
+    return int(found)
+
+
+def test_dcy_lookup_invalid_returns_zero():
+    assert run_in_separate_process(_lookup_invalid) == 0
