@@ -107,12 +107,15 @@ SUBROUTINE CHROMO_DCY_CHANNELS(IA, IZ, IM, MAX_CH, N_CH,
 * DA/DZ/DM = -1 if no single daughter (e.g. SF).
 
 SUBROUTINE CHROMO_DCY_LINES(IA, IZ, IM, KIND, MAX_L, N_L,
-&                           BR_L, E_L, NLEV_L)
+&                           BR_L, E_L, NLEV_L, LPOS_L)
 * Per-isotope line list. KIND = 1 (γ), 2 (α), 3 (CE/Auger), 4 (β±).
-* For β±: E_L is end-point, NLEV_L is daughter level index, sign of
-* BR encodes electron/positron (mirrors SIGGTT layout).
+* For β±: E_L is end-point, NLEV_L is daughter level index. The
+* positron flag is captured separately in LPOS_L (1 = e+, 0 = e-);
+* FLUKA's SIGGTT layout encodes it in the sign of <E> at offset +2,
+* which we read before overwriting E_L with the unsigned endpoint.
+* For γ/α/CE: LPOS_L is always 0.
 * Reads via NGMLNS/KGMLNS, NCELNS/KCELNS, NALLNS/KALLNS, NBTSPC/KBTSPC
-* and walks SIGGTT(:).
+* and walks SIGGTT(:) (a REAL*4 module pointer, not a function).
 
 SUBROUTINE CHROMO_DCY_SAMPLE(IA, IZ, IM, LSUCCS, KDCY_OUT, ILV_OUT)
 * Zeroes NP/NP0/NPHEAV/NPEMF, calls SPDCEV with the stock argument
