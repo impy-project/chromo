@@ -876,25 +876,31 @@ Cf2py intent(out) n_ch
       brdctt = 0.0D0
 
       DO jdcy = 1, MXDCIS
+!  Look up the channel index first; skip empty slots without writing.
          IF (im .LE. 0) THEN
             kdcy = IDCNUC(jdcy, iia, kisitp)
-            IF (jdcy .LT. MXDCIS) THEN
-               br_ch(MIN(n_ch+1, max_ch)) = BRDECY(jdcy, iia, kisitp)
-            ELSE
-               br_ch(MIN(n_ch+1, max_ch)) = 1.0D0 - brdctt
-            END IF
          ELSE
             kdcy = IDCISM(jdcy, kisitp)
-            IF (jdcy .LT. MXDCIS) THEN
-               br_ch(MIN(n_ch+1, max_ch)) = BRDISM(jdcy, kisitp)
-            ELSE
-               br_ch(MIN(n_ch+1, max_ch)) = 1.0D0 - brdctt
-            END IF
          END IF
-
          IF (kdcy .LE. 0) CYCLE
          IF (n_ch .GE. max_ch) RETURN
          n_ch = n_ch + 1
+
+!  BR write happens AFTER the cap check so an under-sized buffer cannot
+!  leave a stale value in the last accepted slot (was a Task-4 bug).
+         IF (im .LE. 0) THEN
+            IF (jdcy .LT. MXDCIS) THEN
+               br_ch(n_ch) = BRDECY(jdcy, iia, kisitp)
+            ELSE
+               br_ch(n_ch) = 1.0D0 - brdctt
+            END IF
+         ELSE
+            IF (jdcy .LT. MXDCIS) THEN
+               br_ch(n_ch) = BRDISM(jdcy, kisitp)
+            ELSE
+               br_ch(n_ch) = 1.0D0 - brdctt
+            END IF
+         END IF
          brdctt = brdctt + br_ch(n_ch)
 
 !  Map FLUKA kdcy to a compact KIND code.  See (ISOTOP) for KDCY*
@@ -957,7 +963,13 @@ Cf2py intent(out) n_ch
 *     QRDDCY is shipped as user-supplied source in FLUKA 2025.x's
 *     decay-test harness (dcytst.f) and is NOT exported by libflukahp.a.
 *     We replicate it verbatim here so chromo_dcy_channels can resolve
-*     the Q-value at link time.  Source: FLUKA 2025.1 dcytst.f.
+*     the Q-value at link time.
+*
+*     Source vintage: FLUKA 2025.1 dcytst.f (Last change on 25-Apr-26
+*     by Alfredo Ferrari).
+*
+*     TODO(FLUKA-bump): re-sync this body from $FLUPRO/dcytst.f whenever
+*     the FLUKA version is bumped.  See FLUKA_QUESTIONS.md.
 *
       DOUBLE PRECISION FUNCTION QRDDCY ( IADCYP, IZDCYP, ISDCYP, IFLDCY,
      &                                   LNCMSS )

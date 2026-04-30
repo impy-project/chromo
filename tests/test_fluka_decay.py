@@ -123,3 +123,32 @@ def test_dcy_channels_cs137():
     # All recorded channels should be Beta- (kind=2) for Cs-137
     assert all(k == 2 for k in kinds), kinds
     assert abs(sum(brs) - 1.0) < 0.01
+
+
+def _channels_cs137_saturated():
+    """Caller passes max_ch=1 even though Cs-137 has 2 channels.
+    Ensures the BR slot is not corrupted by a write past the cap.
+    """
+    import numpy as np
+
+    from chromo.models import _fluka
+
+    _fluka.chromo_dcy_init()
+    max_ch = 1
+    kind = np.zeros(max_ch, dtype=np.int32)
+    br = np.zeros(max_ch, dtype=np.float64)
+    da = np.zeros(max_ch, dtype=np.int32)
+    dz = np.zeros(max_ch, dtype=np.int32)
+    dm = np.zeros(max_ch, dtype=np.int32)
+    qv = np.zeros(max_ch, dtype=np.float64)
+    n = _fluka.chromo_dcy_channels(137, 55, 0, max_ch, kind, br, da, dz, dm, qv)
+    return int(n), float(br[0]), int(kind[0]), int(da[0]), int(dz[0])
+
+
+def test_dcy_channels_saturation_preserves_first_slot():
+    n, br0, kind0, da0, dz0 = run_in_separate_process(_channels_cs137_saturated)
+    assert n == 1
+    # Cs-137 first channel: B- to Ba-137m1, BR ~0.947
+    assert kind0 == 2
+    assert (da0, dz0) == (137, 56)
+    assert abs(br0 - 0.947) < 0.005
