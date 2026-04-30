@@ -85,6 +85,50 @@ combined with inelastic (IFLXYZ=101)?
 
 ---
 
+## 6. `SPDCEV` for beta decays crashes after `EVTXYZ`
+
+**Problem.** Calling `SPDCEV(A, Z, 0, ...)` for a beta-emitter
+*after* one or more `EVTXYZ` hadronic events have run aborts with a
+Fortran array-bound error in `lcendp.f` line 74:
+
+```
+At line 74 of file lcendp.f
+Fortran runtime error: Index '0' of dimension 2 of array 'edpsco'
+below lower bound of 1
+```
+
+Standalone (no prior `EVTXYZ`) `SPDCEV` works for the same isotopes.
+Pure α-decay (e.g. U-238) sampling *after* `EVTXYZ` works. Only β−/β+
+samplers go through `lcendp.f` and trip the bound. The same condition
+appears for tritium, Cs-137, Co-60, and likely every β-emitter.
+
+**Reproduce.**
+```fortran
+CALL STPXYZ(...)              ! standard FLUKA bootstrap
+CALL chromo_dcy_init           ! decay-table init (NCDTRD/RDFLUO/...)
+CALL EVTXYZ(...)               ! one hadronic event, e.g. p + O16 @ 100 GeV
+CALL SPDCEV(137, 55, 0, 0d0, 0d0, 0d0, 0d0, 1d0, 1d0, -1d9,
+            .TRUE., .TRUE., LSUCCS)  ! crashes
+```
+
+**Suspected cause.** `EVTXYZ` modifies a common-block array (`EDPSCO`?
+shared between hadronic event scoring and β-endpoint tables) in a way
+that leaves the index `LFNDP`/`KFNDP` (or similar) at an invalid
+value when `lcendp.f:74` next reads it.
+
+**Impact for chromo.** `Fluka(..., post_event=DecayChainHandler(...))`
+crashes the moment a β-decayable residual (tritium, Be-7, C-14, P-32,
+Cs-137, …) is encountered. Currently we work around this by
+documenting that the pattern is unsafe; a clean fix needs the FLUKA
+side to either reset the relevant common before SPDCEV or expose a
+"reset" entry-point we can call between `EVTXYZ` and `SPDCEV`.
+
+**Question.** Is there an init/reset routine we should call between
+`EVTXYZ` and `SPDCEV`? Is interleaving the two within one process a
+supported usage pattern?
+
+---
+
 ## Build environment
 
 - FLUKA 2025.1, DPMVERS=3.19.3.2
