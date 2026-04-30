@@ -303,3 +303,47 @@ def test_isotope_init_and_short():
     assert A == 137 and Z == 55 and m == 0 and sym == "Cs"
     assert "Cs137" in short
     assert "9.49" in short or "9.490" in short
+
+
+def _construct_and_lookup():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay(seed=42)
+    iso = dcy.lookup("Cs137")
+    return (iso.A, iso.Z, iso.m, iso.symbol, round(iso.t_half / 1e8, 1))
+
+
+def test_fluka_decay_construct_and_lookup_cs137():
+    A, Z, m, sym, t12_e8 = run_in_separate_process(_construct_and_lookup)
+    assert (A, Z, m) == (137, 55, 0)
+    assert sym == "Cs"
+    assert 9.0 < t12_e8 < 10.0
+
+
+def _lookup_isomer():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay()
+    iso = dcy.lookup("Tc99m")
+    return iso.A, iso.Z, iso.m, round(iso.t_half, 0)
+
+
+def test_fluka_decay_lookup_isomer():
+    A, Z, m, t12 = run_in_separate_process(_lookup_isomer)
+    assert (A, Z, m) == (99, 43, 1)
+    assert 20000 <= t12 <= 23000  # ~ 6.0 hr ≈ 21600 s
+
+
+def _lookup_tuple_and_missing():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay()
+    iso_t = dcy.lookup(238, 92, 0)
+    iso_none = dcy.lookup(2, 50, 0)
+    return iso_t.A, iso_t.Z, iso_none
+
+
+def test_fluka_decay_lookup_tuple_and_missing():
+    A, Z, none_ = run_in_separate_process(_lookup_tuple_and_missing)
+    assert (A, Z) == (238, 92)
+    assert none_ is None

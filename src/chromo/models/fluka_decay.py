@@ -7,6 +7,7 @@ See ``docs/superpowers/specs/2026-04-30-fluka-decay-interface-design.md``.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 # --------------------------------------------------------------------- #
@@ -85,6 +86,180 @@ STABLE_DEFAULT: set[int] = set()
 
 
 # --------------------------------------------------------------------- #
+# Module-level init guard + helpers                                     #
+# --------------------------------------------------------------------- #
+
+# Module-level guard - shared with chromo.models.fluka.Fluka via
+# `_mark_fluka_init_done()` (set in fluka.py after STPXYZ in Task 16).
+_INITIALIZED = False
+_INSTANCE_COUNT = 0
+_NAME_RE = re.compile(r"^([A-Za-z]{1,2})(\d{1,3})(?:m(\d*))?$")
+
+
+def _mark_fluka_init_done():
+    """Called by Fluka.__init__ after STPXYZ to share the init state."""
+    global _INITIALIZED
+    _INITIALIZED = True
+
+
+def _ensure_init(lib):
+    global _INITIALIZED
+    if _INITIALIZED:
+        return
+    lib.chromo_dcy_init()
+    _INITIALIZED = True
+
+
+# Compact Z->symbol table (covers Z=0..110, sufficient for FLUKA's
+# experimental decay catalogue):
+_Z_FALLBACK = {
+    0: "n",
+    1: "H",
+    2: "He",
+    3: "Li",
+    4: "Be",
+    5: "B",
+    6: "C",
+    7: "N",
+    8: "O",
+    9: "F",
+    10: "Ne",
+    11: "Na",
+    12: "Mg",
+    13: "Al",
+    14: "Si",
+    15: "P",
+    16: "S",
+    17: "Cl",
+    18: "Ar",
+    19: "K",
+    20: "Ca",
+    21: "Sc",
+    22: "Ti",
+    23: "V",
+    24: "Cr",
+    25: "Mn",
+    26: "Fe",
+    27: "Co",
+    28: "Ni",
+    29: "Cu",
+    30: "Zn",
+    31: "Ga",
+    32: "Ge",
+    33: "As",
+    34: "Se",
+    35: "Br",
+    36: "Kr",
+    37: "Rb",
+    38: "Sr",
+    39: "Y",
+    40: "Zr",
+    41: "Nb",
+    42: "Mo",
+    43: "Tc",
+    44: "Ru",
+    45: "Rh",
+    46: "Pd",
+    47: "Ag",
+    48: "Cd",
+    49: "In",
+    50: "Sn",
+    51: "Sb",
+    52: "Te",
+    53: "I",
+    54: "Xe",
+    55: "Cs",
+    56: "Ba",
+    57: "La",
+    58: "Ce",
+    59: "Pr",
+    60: "Nd",
+    61: "Pm",
+    62: "Sm",
+    63: "Eu",
+    64: "Gd",
+    65: "Tb",
+    66: "Dy",
+    67: "Ho",
+    68: "Er",
+    69: "Tm",
+    70: "Yb",
+    71: "Lu",
+    72: "Hf",
+    73: "Ta",
+    74: "W",
+    75: "Re",
+    76: "Os",
+    77: "Ir",
+    78: "Pt",
+    79: "Au",
+    80: "Hg",
+    81: "Tl",
+    82: "Pb",
+    83: "Bi",
+    84: "Po",
+    85: "At",
+    86: "Rn",
+    87: "Fr",
+    88: "Ra",
+    89: "Ac",
+    90: "Th",
+    91: "Pa",
+    92: "U",
+    93: "Np",
+    94: "Pu",
+    95: "Am",
+    96: "Cm",
+    97: "Bk",
+    98: "Cf",
+    99: "Es",
+    100: "Fm",
+    101: "Md",
+    102: "No",
+    103: "Lr",
+    104: "Rf",
+    105: "Db",
+    106: "Sg",
+    107: "Bh",
+    108: "Hs",
+    109: "Mt",
+    110: "Ds",
+}
+_SYM_TO_Z = {v: k for k, v in _Z_FALLBACK.items()}
+
+
+def _z_to_symbol(z: int) -> str:
+    """Element symbol for atomic number Z (or 'n' for free neutron)."""
+    return _Z_FALLBACK.get(z, "?")
+
+
+def _parse_isotope_name(name: str) -> tuple[int, int, int]:
+    """Parse 'Cs137', 'Tc99m', 'U238m1' into (A, Z, m).
+
+    'Tc99' -> m=0; 'Tc99m' -> m=1 (1st isomer);
+    'U238m2' -> m=2 (2nd isomer).
+    """
+    match = _NAME_RE.match(name.strip())
+    if not match:
+        msg = f"Cannot parse isotope name: {name!r}"
+        raise ValueError(msg)
+    sym, a_str, m_str = match.groups()
+    sym = sym[0].upper() + (sym[1:].lower() if len(sym) > 1 else "")
+    if sym not in _SYM_TO_Z:
+        msg = f"Unknown element symbol: {sym!r}"
+        raise ValueError(msg)
+    A = int(a_str)
+    Z = _SYM_TO_Z[sym]
+    if m_str is None:
+        m = 0
+    elif m_str == "":
+        m = 1
+    else:
+        m = int(m_str)
+    return A, Z, m
+
+
+# --------------------------------------------------------------------- #
 # FlukaIsotope and FlukaDecay placeholders - filled in later tasks      #
 # --------------------------------------------------------------------- #
 
@@ -140,5 +315,94 @@ class FlukaIsotope:
 class FlukaDecay:
     """FLUKA radioactive-decay generator and database.
 
-    Filled out across Tasks 9, 10, 13, 14, 15.
+    No kinematics are required.  The first instance triggers FLUKA's
+    decay-table init (``CMSPPR`` / ``ZEROIN`` / ``NCDTRD`` / ``RDFLUO`` /
+    ...).  If a ``Fluka`` instance has already initialised the library
+    (via ``STPXYZ``), construction is a no-op.
+
+    Two ``FlukaDecay`` instances in the same process raise
+    ``RuntimeError`` (matches the FLUKA singleton).
     """
+
+    def __init__(self, seed: int | None = None):
+        global _INSTANCE_COUNT
+        if _INSTANCE_COUNT > 0:
+            raise RuntimeError(
+                "FlukaDecay can only be instantiated once per process "
+                "(FLUKA singleton)."
+            )
+        _INSTANCE_COUNT += 1
+        from chromo.models import _fluka
+
+        self._lib = _fluka
+        _ensure_init(self._lib)
+        if seed is not None:
+            self._seed_rng(int(seed))
+        self._catalog = None  # filled in Task 10
+
+    @staticmethod
+    def _seed_rng(seed: int) -> None:
+        """Initialise FLUKA's Ranmar generator with a deterministic seed.
+
+        Mirrors ``Fluka._init_rng``: writes a temporary RNG state file
+        via ``init_rng_state(file, lun, seed, ntot, ntot2)``.  ntot=ntot2=0
+        means no skipping, logical unit 888 matches the Fluka model.
+        """
+        import os
+        import pathlib
+        import tempfile
+
+        from chromo.models import _fluka
+
+        rng_file = (
+            pathlib.Path(tempfile.gettempdir())
+            / f"fluka_decay_rng_state_{os.getpid()}.dat"
+        )
+        _fluka.init_rng_state(str(rng_file), 888, int(seed), 0, 0)
+
+    # -- lookup ---------------------------------------------------------
+
+    def lookup(self, *args) -> FlukaIsotope | None:
+        """Return the FlukaIsotope for the given (A, Z, m) or name.
+
+        Accepts:
+
+        - ``lookup("Cs137")`` / ``lookup("Tc99m")`` / ``lookup("U238m1")``
+        - ``lookup(A, Z, m)``
+        - ``lookup(pdg_ion_id)``
+        """
+        A, Z, m = self._parse_arg(args)
+        found, t12, exm, jsp, jpt = self._lib.chromo_dcy_lookup(A, Z, m)
+        if not found:
+            return None
+        return FlukaIsotope(
+            owner=self,
+            A=A,
+            Z=Z,
+            m=m,
+            t_half=float(t12),
+            mass_excess=float(exm),
+            symbol=_z_to_symbol(Z) if Z >= 0 else "n",
+            j_spin=int(jsp),
+            j_parity=int(jpt),
+        )
+
+    @staticmethod
+    def _parse_arg(args) -> tuple[int, int, int]:
+        if len(args) == 1:
+            arg = args[0]
+            if isinstance(arg, str):
+                return _parse_isotope_name(arg)
+            if isinstance(arg, int):
+                # PDG ion code: 10LZZZAAAI
+                if arg >= 1_000_000_000:
+                    A = (arg // 10) % 1000
+                    Z = (arg // 10_000) % 1000
+                    m = (arg // 100_000_000) % 10
+                    return A, Z, m
+                msg = f"Cannot parse single-int arg {arg}"
+                raise ValueError(msg)
+        if len(args) == 3:
+            return int(args[0]), int(args[1]), int(args[2])
+        msg = "lookup() expects (name) or (A, Z, m); got " + repr(args)
+        raise TypeError(msg)
