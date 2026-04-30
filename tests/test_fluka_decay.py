@@ -735,3 +735,60 @@ def test_co60_emits_two_gammas():
     # FLUKA's branching may differ slightly from textbook 99%+; allow
     # ≥ 90% as a robust threshold.
     assert n >= 450, n
+
+
+def _lookup_pdg_ion():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay()
+    # PDG ion code for U-238 g.s.: 10LZZZAAAI = 1000922380
+    iso = dcy.lookup(1000922380)
+    return iso.A, iso.Z, iso.m
+
+
+def test_lookup_pdg_ion_code():
+    A, Z, m = run_in_separate_process(_lookup_pdg_ion)
+    assert (A, Z, m) == (238, 92, 0)
+
+
+def _chain_custom_final_state():
+    from chromo.models.fluka_decay import STABLE_DEFAULT, FlukaDecay
+
+    dcy = FlukaDecay(seed=4)
+    # Th-234 is U-238's immediate alpha daughter; adding it to
+    # final_state should halt the chain right there so every chained
+    # event retains Th-234 as a product instead of decaying it further.
+    th234_pdg = 1000902340
+    final_state = STABLE_DEFAULT | {th234_pdg}
+    n_with_th234 = 0
+    for ev in dcy.chain("U238", n=50, final_state=final_state):
+        if th234_pdg in ev.pid:
+            n_with_th234 += 1
+    return n_with_th234
+
+
+def test_chain_custom_final_state_halts_at_daughter():
+    n = run_in_separate_process(_chain_custom_final_state)
+    # U-238 -> Th-234 is the dominant alpha branch (~100%); with Th-234
+    # marked final, every chained event should retain it.
+    assert n >= 48
+
+
+def _chain_warn_on_max_depth():
+    import warnings
+
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay()
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        # U-238 chain has many sampleable steps -> max_depth=2 will be
+        # exceeded; with on_max_depth="warn" we get a warning, not a raise.
+        for _ev in dcy.chain("U238", n=1, max_depth=2, on_max_depth="warn"):
+            pass
+    return any("max_depth" in str(w.message) for w in caught)
+
+
+def test_chain_warn_on_max_depth():
+    saw_warning = run_in_separate_process(_chain_warn_on_max_depth)
+    assert saw_warning
