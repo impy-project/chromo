@@ -789,6 +789,9 @@ Cf2py intent(out) n_out
       DOUBLE PRECISION t12, exm
 
       n_out = 0
+!  Empirical ceiling; (ISOTOP)'s NAMSMX=330 but FLUKA's catalogue is
+!  empty above A~290.  Probing higher costs ~2700 dead cells with no
+!  benefit on the one-shot init path.
       DO ia = 1, 295
          IF (ia .LE. 4) THEN
             izmin = 1
