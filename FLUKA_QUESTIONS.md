@@ -34,6 +34,26 @@ Is this a known limitation or a missing initialization step?
 
 ---
 
+## 4. `QRDDCY` is in `dcytst.f` rather than `libflukahp.a`
+
+**Problem.** `QRDDCY(IADCYP, IZDCYP, ISDCYP, IFLDCY, LNCMSS)` — Q-value
+for a radioactive-decay channel — is shipped as user-supplied source in
+the `dcytst.f` test harness, not as a library symbol. `nm libflukahp.a |
+grep qrddcy` is empty across all archives at `$FLUPRO`.
+
+**Workaround.** chromo's `chromo_fluka.f` ships a verbatim copy of
+`QRDDCY` (vintage FLUKA 2025.1, last upstream change 25-Apr-26) so the
+chromo `_fluka` extension can link `chromo_dcy_channels`. This
+introduces a drift risk on FLUKA bumps; the embed has a
+`TODO(FLUKA-bump)` marker to flag re-sync.
+
+**Question.** Should `QRDDCY` be exported by a future FLUKA library
+release, or is it intended to remain user-supplied? If user-supplied,
+is there a recommended location (vendored, or sourced from a stable
+auxiliary archive)?
+
+---
+
 ## 3. EMD-only event generation (IFLXYZ=100) aborts
 
 **Problem.** `SGMXYZ(…, 100)` returns valid EMD cross sections.
