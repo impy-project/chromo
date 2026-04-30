@@ -119,9 +119,14 @@ SUBROUTINE CHROMO_DCY_LINES(IA, IZ, IM, KIND, MAX_L, N_L,
 
 SUBROUTINE CHROMO_DCY_SAMPLE(IA, IZ, IM, LSUCCS, KDCY_OUT, ILV_OUT)
 * Zeroes NP/NP0/NPHEAV/NPEMF, calls SPDCEV with the stock argument
-* tuple from dcytst.f, then FLLHEP. Products land in HEPEVT for chromo's
-* existing extraction pipeline.
+* tuple from dcytst.f, then FLLHEP (which itself resets NHEP=0 on
+* entry, so no manual HEPEVT scrub is needed in the Python sampling
+* loop). Products land in HEPEVT (f2py attribute `_fluka.hepevt`,
+* not `_fluka.hepcmm` -- the include file is (HEPCMM) but the COMMON
+* block name is /HEPEVT/) for chromo's existing extraction pipeline.
 * KDCY_OUT: 1=alpha, 2=B-, 3=B+, 4=EC, 5=IT, 6=SF, -1=other.
+* Note: KDCY_OUT is restricted to 1..6 even though chromo_dcy_channels
+* returns 1..12 -- DCYFLG only has six fundamental-mode flags.
 * ILV_OUT: daughter level (ILVDCY).
 ```
 
