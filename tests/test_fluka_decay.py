@@ -414,3 +414,23 @@ def _u238_alpha():
 def test_isotope_channels_u238_has_alpha():
     chs = run_in_separate_process(_u238_alpha)
     assert any(c[0] == "alpha" and c[2] == 234 and c[3] == 90 for c in chs)
+
+
+def _cs137_gamma_and_str():
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay()
+    _iso = dcy.lookup("Ba137")  # Note: 661.66 keV gamma is on Ba-137m
+    iso_m = dcy.lookup("Ba137m")
+    gammas = iso_m.gamma_lines
+    s = str(iso_m)
+    return [(round(g.energy, 5), round(g.branching, 4)) for g in gammas], s
+
+
+def test_gamma_lines_and_str():
+    gammas, s = run_in_separate_process(_cs137_gamma_and_str)
+    energies = [e for e, _b in gammas]
+    assert any(abs(e - 0.66166) < 0.001 for e in energies), gammas
+    # str(iso) should contain identifier + gamma energy
+    assert "Ba137m" in s or "Ba137" in s
+    assert "0.66" in s or "0.6617" in s
