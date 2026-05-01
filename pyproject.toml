@@ -90,7 +90,6 @@ enabled-models = [
     "sophia",
     "pythia6",
     "urqmd34",
-    "fluka",
 ]
 disabled-models = [
 ]
