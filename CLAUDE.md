@@ -203,11 +203,25 @@ events = list(dcy("Cs137", n=1000))            # inclusive decay sampling
 chain  = list(dcy.chain("U238", n=10))         # recursive series
 ```
 
-`Fluka(post_event=DecayChainHandler(...).expand)` is wired up but
-currently blocked by an upstream FLUKA bug (β-emitter SPDCEV crashes
-after EVTXYZ — see `FLUKA_QUESTIONS.md` #6).  See spec §11 for the
-fallback path.  Single-instantiation guard is shared between `Fluka`
-and `FlukaDecay`; whichever is constructed first does the FLUKA init.
+`Fluka(post_event=DecayChainHandler(...).expand)` is wired up and
+works for correlated isotopes (Cs-137, Co-60, U-238 chain, …).  The
+EVTXYZ→SPDCEV crash from `FLUKA_QUESTIONS.md` #6 is fixed in
+`chromo_fluka.f:chromo_dcy_sample` by restoring `IPRODC=2`,
+`MRTRCK=1`, `MMTRCK=MEDFLK(1,1)` in `(TRACKR)` before each `SPDCEV`
+call (regression tests `test_dcy_sample_{cs137,co60}_after_evtxyz`).
+Uncorrelated isotopes (e.g. Ac-228; see #5) are still skipped with a
+one-time `UserWarning`; the upstream "uncorrelated decay" sampler is
+not yet vendored — pending discussion with the FLUKA author.
+Single-instantiation guard is shared between `Fluka` and `FlukaDecay`;
+whichever is constructed first does the FLUKA init.  **Construction
+order matters when you need both:** construct `Fluka` first, then
+`FlukaDecay`.  In the reverse order (FlukaDecay → Fluka), the first
+`EVTXYZ` aborts in `evprtn.f:516` with `KQMDIN(-1)` because
+`chromo_dcy_init`'s minimal material/region scaffolding leaves RESNUC
+in a state STPXYZ doesn't reconcile.  Tracked as a follow-up; for now
+the regression test
+`tests/test_fluka_decay.py::test_fluka_post_event_decay_chain` pins
+the supported order.
 
 ### Disable
 

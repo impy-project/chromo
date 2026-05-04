@@ -227,6 +227,22 @@ class Fluka(MCRun):
                 "non-existing directory — run scripts/install_fluka.sh"
             )
 
+        # FlukaDecay-then-Fluka order leaves RESNUC/KQMDIN scaffolding
+        # from chromo_dcy_init that STPXYZ does not reconcile, and the
+        # first EVTXYZ aborts in evprtn.f:516 with KQMDIN(-1).  Refuse
+        # the order with a clear message instead of letting the user hit
+        # the Fortran abort.  Construct Fluka first, then FlukaDecay.
+        from chromo.models.fluka_decay import _chromo_dcy_init_already_ran
+
+        if _chromo_dcy_init_already_ran():
+            raise RuntimeError(
+                "Fluka cannot be constructed after FlukaDecay in the same "
+                "process: chromo_dcy_init's material/region setup leaves "
+                "FLUKA in a state where the first EVTXYZ aborts in "
+                "evprtn.f:516 (KQMDIN(-1)).  Construct Fluka first, then "
+                "FlukaDecay.  See CLAUDE.md (FLUKA integration)."
+            )
+
         # Resolve transition thresholds (ctor override → class default).
         if transition_peanut_dpmjet is not None:
             self._transition_peanut_dpmjet = float(transition_peanut_dpmjet)
