@@ -162,12 +162,12 @@ class Fluka(MCRun):
     _version = "2025.1"
     _library_name = "_fluka"
     # Supported projectiles for event generation via EVTXYZ.
-    # Heavy ions (A > 4) abort in EVTXYZ (pending upstream support).
-    _projectiles = (
-        standard_projectiles
-        | {lp.photon.pdgid}
-        | {1000010020, 1000010030, 1000020030, 1000020040}  # d, t, 3He, 4He
-    )
+    # Light ions (d, t, 3He, 4He) and heavy ions (A > 4) are excluded:
+    # ion projectiles push plab past the Peanut↔DPMJET-3 transition
+    # (~20 TeV) at modest CMS energies, and DPMJET-3 in this FLUKA
+    # build aborts silently above that cut.  Pending full upstream
+    # ion-projectile support.
+    _projectiles = standard_projectiles | {lp.photon.pdgid}
     _targets = Nuclei() | {2212}
 
     # ------------------------------------------------------------------
