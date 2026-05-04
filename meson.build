@@ -330,47 +330,65 @@ foreach ver, cfg : dpm_cfg
 endforeach
 
 # ── FLUKA block --------------------------------------------------------
+# FLUKA is license-restricted and not redistributed in chromo wheels.
+# Missing prerequisites here are NON-FATAL: meson emits a prominent
+# warning and skips the _fluka Fortran extension while the rest of the
+# build proceeds.  The chromo.models.Fluka class still imports cleanly
+# (the _fluka shared library is loaded lazily at construct time), so
+# CI / non-FLUKA users get a working chromo without Fluka, and a clear
+# error if they try to instantiate Fluka anyway (see common.py).
+fluka_skip_hint = 'For FLUKA support, build chromo from source with FLUPRO pointing at a working FLUKA installation (run scripts/install_fluka.sh).'
+fluka_ok = false
 if 'fluka' in enabled_models
-  # assign environment variable from $FLUPRO, check that the directory it is pointing to exists
-  fluprod = run_command('sh', '-c', 'echo ${FLUPRO:-}', check: true).stdout().strip()
+  fluka_ok = true
+  fluprod  = run_command('sh', '-c', 'echo ${FLUPRO:-}', check: true).stdout().strip()
   if fluprod == ''
-    error('FLUKA: Environment variable FLUPRO not set.')
-  endif
-  # Check if directory exists using shell command
-  dir_check = run_command('sh', '-c', 'test -d "' + fluprod + '" && echo "exists" || echo "missing"', check: true).stdout().strip()
-  if dir_check != 'exists'
-    error('Directory set by FLUPRO does not exist: ' + fluprod)
-  endif
-  fluprod_inc = fluprod + '/flukapro'
-  fluprod_aamod = fluprod + '/aamodmvax'
-  
-  # Verify the five FLUKA archives chromo links against are present.
-  foreach req : [
-    'interface/dpmvers', 'libflukahp.a', 'libdpmmvax.a', 'librqmdmvax.a',
-    'latestRQMD/librqmd.a',
-  ]
-    chk = run_command('sh', '-c',
-      'test -e "' + fluprod + '/' + req + '" && echo yes || echo no',
-      check: true).stdout().strip()
-    if chk != 'yes'
-      error('FLUKA: missing ' + fluprod + '/' + req +
-            ' — run scripts/install_fluka.sh')
+    warning('FLUKA: environment variable FLUPRO not set — skipping _fluka extension build. ' + fluka_skip_hint)
+    fluka_ok = false
+  else
+    dir_check = run_command('sh', '-c', 'test -d "' + fluprod + '" && echo "exists" || echo "missing"', check: true).stdout().strip()
+    if dir_check != 'exists'
+      warning('FLUKA: directory set by FLUPRO does not exist: ' + fluprod + ' — skipping _fluka extension build. ' + fluka_skip_hint)
+      fluka_ok = false
     endif
-  endforeach
-
-  # Read DPMVERS and verify the DPMJET archive exists.
-  dpm_version = run_command('sh', '-c',
-    'grep "DPMVERS=" ' + fluprod + '/interface/dpmvers | cut -d= -f2',
-    check: true).stdout().strip()
-  message('FLUKA DPM Version: ' + dpm_version)
-  dpm_chk = run_command('sh', '-c',
-    'test -e "' + fluprod + '/interface/libdpmjet' + dpm_version + '.a" && echo yes || echo no',
-    check: true).stdout().strip()
-  if dpm_chk != 'yes'
-    error('FLUKA: missing ' + fluprod + '/interface/libdpmjet' + dpm_version + '.a'
-          + ' — run scripts/install_fluka.sh')
   endif
-  
+
+  if fluka_ok
+    fluprod_inc   = fluprod + '/flukapro'
+    fluprod_aamod = fluprod + '/aamodmvax'
+
+    # Verify the five FLUKA archives chromo links against are present.
+    foreach req : [
+      'interface/dpmvers', 'libflukahp.a', 'libdpmmvax.a', 'librqmdmvax.a',
+      'latestRQMD/librqmd.a',
+    ]
+      chk = run_command('sh', '-c',
+        'test -e "' + fluprod + '/' + req + '" && echo yes || echo no',
+        check: true).stdout().strip()
+      if chk != 'yes'
+        warning('FLUKA: missing ' + fluprod + '/' + req + ' — skipping _fluka extension build. ' + fluka_skip_hint)
+        fluka_ok = false
+      endif
+    endforeach
+  endif
+
+  if fluka_ok
+    # Read DPMVERS and verify the DPMJET archive exists.
+    dpm_version = run_command('sh', '-c',
+      'grep "DPMVERS=" ' + fluprod + '/interface/dpmvers | cut -d= -f2',
+      check: true).stdout().strip()
+    message('FLUKA DPM Version: ' + dpm_version)
+    dpm_chk = run_command('sh', '-c',
+      'test -e "' + fluprod + '/interface/libdpmjet' + dpm_version + '.a" && echo yes || echo no',
+      check: true).stdout().strip()
+    if dpm_chk != 'yes'
+      warning('FLUKA: missing ' + fluprod + '/interface/libdpmjet' + dpm_version + '.a — skipping _fluka extension build. ' + fluka_skip_hint)
+      fluka_ok = false
+    endif
+  endif
+endif
+
+if 'fluka' in enabled_models and fluka_ok
   flka_src = [
     f/'fluka/chromo_fluka.f',
     logging_src

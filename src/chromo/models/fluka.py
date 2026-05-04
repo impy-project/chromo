@@ -161,6 +161,12 @@ class Fluka(MCRun):
     _frame = EventFrame.FIXED_TARGET
     _version = "2025.1"
     _library_name = "_fluka"
+    _install_hint = (
+        "FLUKA is license-restricted and not redistributed in chromo "
+        "wheels.  For FLUKA support, build chromo from source with "
+        "FLUPRO pointing at a working FLUKA installation (run "
+        "scripts/install_fluka.sh)."
+    )
     # Supported projectiles for event generation via EVTXYZ.
     # Light ions (d, t, 3He, 4He) and heavy ions (A > 4) are excluded
     # because their plab (per nucleon * A) crosses the Peanut/DPMJET-3

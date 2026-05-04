@@ -659,7 +659,17 @@ class MCRun(ABC):
         try:
             self._lib = importlib.import_module(f"chromo.models.{self._library_name}")
         except ModuleNotFoundError:
-            self._lib = importlib.import_module(f"{self._library_name}")
+            try:
+                self._lib = importlib.import_module(f"{self._library_name}")
+            except ModuleNotFoundError as exc:
+                hint = getattr(self, "_install_hint", None)
+                if hint:
+                    msg = (
+                        f"chromo was built without {self._name} support "
+                        f"(missing extension '{self._library_name}'). {hint}"
+                    )
+                    raise ModuleNotFoundError(msg) from exc
+                raise
 
         self._rng = np.random.default_rng(seed)
         if hasattr(self._lib, "npy"):
