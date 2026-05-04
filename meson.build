@@ -440,6 +440,8 @@ if 'fluka' in enabled_models
     'fluka_particle_scheme',
     'chromo_dcy_init', 'chromo_dcy_lookup', 'chromo_dcy_catalog',
     'chromo_dcy_channels', 'chromo_dcy_lines', 'chromo_dcy_sample',
+    'chromo_set_dpmjet_lpri',
+    'chromo_get_dpmjet_ehfl', 'chromo_set_dpmjet_ehfl',
   ]
 
   # FLUKA has its own RNG (Ranmar / flrndm_). Do NOT include chromo's
