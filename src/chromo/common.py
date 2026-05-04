@@ -87,6 +87,8 @@ class CrossSectionData:
         Sum of diffractive cross sections.
     b_elastic : float
         Slope of elastic cross section in mb/GeV^2.
+    emd : float
+        Electromagnetic-dissociation cross section in mb (FLUKA/DPMJET).
     """
 
     total: float = np.nan
@@ -101,6 +103,7 @@ class CrossSectionData:
     diffractive_axb: float = np.nan
     diffractive_sum: float = np.nan
     b_elastic: float = np.nan
+    emd: float = np.nan
 
     @property
     def non_diffractive(self):
@@ -423,6 +426,14 @@ class EventData:
         """Quantity needed for invariant cross section histograms."""
         return self.en / self.kin.pcm
 
+    @property
+    def name(self):
+        """Name of the particle according scikit-hep/pythia naming.
+
+        Note that this is a slow convenience function for developing/debugging.
+        """
+        return [pdg2name(pid) for pid in self.pid]
+
     def _prepare_for_hepmc(self):
         """
         Override this method in classes that need to modify event
@@ -648,7 +659,17 @@ class MCRun(ABC):
         try:
             self._lib = importlib.import_module(f"chromo.models.{self._library_name}")
         except ModuleNotFoundError:
-            self._lib = importlib.import_module(f"{self._library_name}")
+            try:
+                self._lib = importlib.import_module(f"{self._library_name}")
+            except ModuleNotFoundError as exc:
+                hint = getattr(self, "_install_hint", None)
+                if hint:
+                    msg = (
+                        f"chromo was built without {self._name} support "
+                        f"(missing extension '{self._library_name}'). {hint}"
+                    )
+                    raise ModuleNotFoundError(msg) from exc
+                raise
 
         self._rng = np.random.default_rng(seed)
         if hasattr(self._lib, "npy"):
@@ -781,8 +802,8 @@ class MCRun(ABC):
             raise ValueError(msg)
         if kin.ecm < self._ecm_min:
             msg = (
-                f"center-of-mass energy {kin.ecm/GeV} GeV < "
-                f"minimum energy {self._ecm_min/GeV} GeV"
+                f"center-of-mass energy {kin.ecm / GeV} GeV < "
+                f"minimum energy {self._ecm_min / GeV} GeV"
             )
             raise ValueError(msg)
 
@@ -817,7 +838,9 @@ class MCRun(ABC):
         with self._temporary_kinematics(kin):
             kin2 = self.kinematics
             if isinstance(kin2.p2, CompositeTarget):
-                cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0)
+                cross_section = CrossSectionData(
+                    **{f.name: 0.0 for f in dataclasses.fields(CrossSectionData)}
+                )
                 kin3 = copy.copy(kin2)
                 for component, fraction in zip(kin2.p2.components, kin2.p2.fractions):
                     kin3.p2 = component

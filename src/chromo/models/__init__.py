@@ -1,5 +1,14 @@
 from chromo.models.dpmjetIII import DpmjetIII191, DpmjetIII193, DpmjetIII307
 from chromo.models.epos import EposLHC, EposLHCR, EposLHCRHadrRescattering
+from chromo.models.fluka import Fluka
+from chromo.models.fluka_decay import (
+    STABLE_DEFAULT,
+    DecayChainHandler,
+    DecayChannel,
+    DecayLine,
+    FlukaDecay,
+    FlukaIsotope,
+)
 from chromo.models.phojet import Phojet112, Phojet191, Phojet193
 from chromo.models.pythia6 import Pythia6
 from chromo.models.pythia8 import Pythia8, Pythia8Angantyr, Pythia8Cascade
@@ -16,12 +25,19 @@ from chromo.models.sophia import Sophia20
 from chromo.models.urqmd import UrQMD34
 
 __all__ = (
+    "STABLE_DEFAULT",
+    "DecayChainHandler",
+    "DecayChannel",
+    "DecayLine",
     "DpmjetIII191",
     "DpmjetIII193",
     "DpmjetIII307",
     "EposLHC",
     "EposLHCR",
     "EposLHCRHadrRescattering",
+    "Fluka",
+    "FlukaDecay",
+    "FlukaIsotope",
     "Phojet112",
     "Phojet191",
     "Phojet193",

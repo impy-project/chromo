@@ -26,7 +26,8 @@ Compiled modules go to `build/cp*/`. Model enable/disable is controlled in `pypr
 python scripts/download_data.py
 
 # Run all tests (parallel by default via pytest-xdist)
-python -m pytest -vv -n 16 # in the cloud use 2 or 3 processes.
+# This dev box has 32-40 cores available; use -n 32. CI runners use 2-3.
+python -m pytest -vv -n 32 # in CI/cloud use 2 or 3 processes.
 
 # Run tests serially
 python -m pytest -n 0
@@ -105,6 +106,157 @@ Windows builds are not yet **experimentally supported**. Key details:
 # Skip PYTHIA8 and problematic tests
 python -m pytest -vv -k "not (Pythia8 or test_decay_handler)" -n 2
 ```
+
+## FLUKA integration
+
+FLUKA 2025.1 is an optional, license-restricted backend. Not built in
+public CI.
+
+### Install
+
+```bash
+export FLUPRO=$HOME/devel/FLUKA
+export FLUKA_ARCHIVE_DIR=$HOME/devel/FLUKA-dev  # directory with the .tar.gz archives
+bash scripts/install_fluka.sh
+```
+
+Persist `export FLUPRO=$HOME/devel/FLUKA` in your shell rc.
+
+### Build chromo with Fluka
+
+```bash
+pip install --no-build-isolation -v -e .[test]
+```
+
+`"fluka"` is permanently in `[tool.chromo] enabled-models`.  The meson
+`fluka` block validates `$FLUPRO` and the required archives
+(`libflukahp.a`, `libdpmmvax.a`, `librqmdmvax.a`,
+`latestRQMD/librqmd.a`, `interface/libdpmjet*.a`, `interface/dpmvers`).
+If any are missing, meson emits a prominent warning with the same hint
+("For FLUKA support, build chromo from source with FLUPRO pointing at
+a working FLUKA installation — run `scripts/install_fluka.sh`") and
+**skips the `_fluka` extension build** while the rest of chromo
+proceeds to install normally.  Public CI (no FLUPRO, no archives)
+therefore builds cleanly and just ships chromo without FLUKA.
+
+`chromo.models.Fluka` always imports as a class (the `_fluka` shared
+library is loaded lazily at construct time).  Calling `Fluka(...)` on
+a build that skipped the FLUKA extension raises a `ModuleNotFoundError`
+with the install hint above, courtesy of `MCRun.__init__`'s
+`_install_hint` lookup.
+
+### Usage
+
+```python
+from chromo.models import Fluka
+from chromo.models.fluka import InteractionType
+from chromo.kinematics import FixedTarget
+
+gen = Fluka(FixedTarget(100, "p", "O16"),
+            interaction_type=InteractionType.INELA_EMD,
+            seed=42)
+for event in gen(10):
+    print(event.final_state().pid)
+```
+
+### Caveats & FLUKA-internal limitations
+
+- **Single instantiation per Python process.** Fortran globals; tests use
+  `tests/util.py::run_in_separate_process`.
+- **Hard material cap of 10 entries.** FLUKA's shipped `stpxyz.f:256` has
+  a compile-time `MEDFLK` upper bound of 10 (empirically confirmed: index
+  11 fires a Fortran runtime array-bound error). Cannot be raised from
+  Python/F2PY; would require patching FLUKA's source. Chromo's default
+  `_DEFAULT_MATERIALS` list has 9 entries (`p`, `He4`, `C12`, `N14`,
+  `O16`, `Ar40`, `Fe56`, `Cu63`, `Pb208`) leaving 1 slot for an extra
+  target. Use `targets=["Si28", ...]` to swap elements; exceeding 10
+  raises `ValueError`.
+- **Energy ceiling at 300 TeV CMS** (`_ecm_max`). `PPTMAX` is set to
+  the construction-kinematics `plab`, so DPMJET Glauber tables cover
+  the full requested range. `cross_section()` works at all energies
+  below the ceiling.
+- **DPMJET-3 hadronic generator aborts above plab ≈ 20 TeV — Mac
+  arm64 prebuilt only.** EVTXYZ exits silently the moment plab
+  crosses `_transition_peanut_dpmjet` (default 20 TeV) and DPMJET-3
+  takes over from Peanut, on the `fluka2025.1-macm1234-gfor64bit-14.3`
+  archive (DT_KKINC.f:73 bare STOP, "0.000E+00 GeV initialization
+  energy" diagnostic — see `FLUKA_QUESTIONS.md` #7).  The same code
+  paths run cleanly on the `fluka2025.1-linux-gfor64bit-10.3-glibc2.32`
+  archive (verified on satori 2026-05-04: p+p plab=200 TeV, p+O16
+  plab=50 TeV — clean 3-event runs).  Workaround on Mac: pass
+  `transition_peanut_dpmjet=100*TeV` (or higher) to keep Peanut on
+  the path — Peanut is accurate well beyond 1 TeV for most hadrons.
+  Practical p+p ceiling at the default cut on Mac: ≈ 195 GeV CMS
+  (plab 19.8 TeV).  Pending FLUKA author confirmation of the macm1234
+  binary regression.
+- **Light-nucleus and heavy-ion projectiles are not currently
+  supported.**  `_projectiles` excludes both as a defensive guard
+  against the macm1234 DPMJET-3 abort above: ion projectiles push
+  plab past the 20 TeV cut at modest CMS energies (e.g. He+p at any
+  CMS ≥ ~14 GeV).  `Fluka(He, p, ...)` raises `ValueError` from
+  `_check_kinematics`.  `cross_section()` for AA kinematics still
+  works via SGMXYZ when constructed below the plab cut.  Once the
+  Mac prebuilt is fixed, d/t/3He/4He can be restored to
+  `_projectiles` (and the default `_transition_peanut_dpmjet` lifted
+  to its FLUKA-runtime value).
+- **EMD-only event generation aborts FLUKA.** Use `InteractionType.EMD`
+  for cross-section queries only. For event generation, combine with
+  `INELA_EMD` (101) or `INELA_ELA_EMD` (111).
+- **EMD cross section is zero for single-proton projectiles** (physics:
+  needs a Z²-enhanced field, so meaningful EMD only appears for AA).
+- **No beam records in HEPEVT.** FLUKA's `FLLHEP` populates HEPEVT with
+  GENSTK ejectiles and RESNUC residuals. `FlukaEvent._prepend_initial_beam`
+  is intentionally a no-op. The generic `test_models_beam[Fluka]` is
+  xfailed for this reason (see `tests/test_common.py`).
+- **`_set_stable` is a no-op.** FLUKA's decay model is global and not
+  runtime-configurable.
+- **`e+/e-` projectiles are not yet supported** (SGMXYZ returns xsec
+  but EVTXYZ aborts on some targets). Pending upstream clarification.
+- **RNG reproducibility requires the Pythia8DecayHandler off.** Pythia8's
+  own RNG is independent from FLUKA's Ranmar state and isn't seeded
+  deterministically across processes. For fully reproducible event
+  records: `Fluka(... )._activate_decay_handler(on=False)`.
+
+### Radioactive-decay interface (`FlukaDecay`)
+
+A separate, kinematics-free `FlukaDecay` class exposes FLUKA's decay
+tables (catalog query, isotope inspection, inclusive sampling, recursive
+decay chains).  Spec:
+`docs/superpowers/specs/2026-04-30-fluka-decay-interface-design.md`.
+
+```python
+from chromo.models import FlukaDecay, DecayChainHandler, STABLE_DEFAULT
+
+dcy = FlukaDecay(seed=42)
+catalog = dcy.catalog(t_half_min=1.0)         # filter by lifetime
+print(dcy.lookup("Cs137"))                     # DCYPRN-style table
+events = list(dcy("Cs137", n=1000))            # inclusive decay sampling
+chain  = list(dcy.chain("U238", n=10))         # recursive series
+```
+
+`Fluka(post_event=DecayChainHandler(...).expand)` is wired up and
+works for correlated isotopes (Cs-137, Co-60, U-238 chain, …).  The
+EVTXYZ→SPDCEV crash from `FLUKA_QUESTIONS.md` #6 is fixed in
+`chromo_fluka.f:chromo_dcy_sample` by restoring `IPRODC=2`,
+`MRTRCK=1`, `MMTRCK=MEDFLK(1,1)` in `(TRACKR)` before each `SPDCEV`
+call (regression tests `test_dcy_sample_{cs137,co60}_after_evtxyz`).
+Uncorrelated isotopes (e.g. Ac-228; see #5) are still skipped with a
+one-time `UserWarning`; the upstream "uncorrelated decay" sampler is
+not yet vendored — pending discussion with the FLUKA author.
+Single-instantiation guard is shared between `Fluka` and `FlukaDecay`;
+whichever is constructed first does the FLUKA init.  **Construction
+order matters when you need both:** construct `Fluka` first, then
+`FlukaDecay`.  In the reverse order (FlukaDecay → Fluka), the first
+`EVTXYZ` aborts in `evprtn.f:516` with `KQMDIN(-1)` because
+`chromo_dcy_init`'s minimal material/region scaffolding leaves RESNUC
+in a state STPXYZ doesn't reconcile.  Tracked as a follow-up; for now
+the regression test
+`tests/test_fluka_decay.py::test_fluka_post_event_decay_chain` pins
+the supported order.
+
+### Disable
+
+Remove `"fluka"` from `[tool.chromo] enabled-models` in `pyproject.toml`.
 
 ## Data Files (iamdata)
 
