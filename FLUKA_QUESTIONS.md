@@ -51,6 +51,25 @@ isotopes excluded)? Is there a list of decay-data isotopes for which
 `SPDCEV` is *not* a valid sampler? Is there an alternative sampler we
 should call for the affected entries?
 
+**Author response (2026-05).** SPDCEV is the *correlated* decay
+sampler — it requires unambiguous knowledge of the daughter nuclear
+level so the decay kinematics close exactly. Most α decays in heavy
+nuclei (and many β chains, e.g. Ac-228) lack that level information,
+so `LSUCCS=.FALSE.` is by design. FLUKA has a separate *uncorrelated*
+routine that walks the chain to a stable isotope regardless of level
+information; it's appropriate for inventory/dose-rate work but not for
+in-flight kinematics, where uncorrelated decays produce buggy boost
+behaviour. The author offered a simplified version of that routine
+that would close the isotope chain (e.g. Th-232 → Pb-208) at the cost
+of non-physical β/γ/α kinematics.
+
+**Decision (chromo, 2026-05).** Do not invoke any uncorrelated
+fallback yet. `chromo_dcy_sample` returns the `LSUCCS=.FALSE.` flag
+unchanged; `FlukaDecay._sample_one` and `DecayChainHandler.expand`
+emit a one-time per-(A,Z,m) `UserWarning` and yield an empty event /
+terminate the chain branch. To revisit after further discussion with
+the author about scoping (correlated-only vs. opt-in uncorrelated mode).
+
 ---
 
 ## 4. `QRDDCY` is in `dcytst.f` rather than `libflukahp.a`
@@ -70,6 +89,18 @@ introduces a drift risk on FLUKA bumps; the embed has a
 release, or is it intended to remain user-supplied? If user-supplied,
 is there a recommended location (vendored, or sourced from a stable
 auxiliary archive)?
+
+**Author response (2026-05).** The routine will be included in the
+next FLUKA respin. Until then the author provided the source directly
+(his email spelled it `QRRDCY` but the attached `dcytst.f` snapshot
+spells it `QRDDCY` — a transcription typo, not an upstream rename).
+
+**Status (chromo, 2026-05-04).** The embedded copy in `chromo_fluka.f`
+already matches the author-supplied snapshot byte-for-byte (vintage
+`25-Apr-26 by Alfredo Ferrari`); cross-checked against
+`dcytst_xAnatoli.f`.  Embed stays with a `TODO(FLUKA-bump): drop in
+favour of upstream library symbol` comment until the next FLUKA
+respin.
 
 ---
 
@@ -126,6 +157,21 @@ side to either reset the relevant common before SPDCEV or expose a
 **Question.** Is there an init/reset routine we should call between
 `EVTXYZ` and `SPDCEV`? Is interleaving the two within one process a
 supported usage pattern?
+
+**Author response (2026-05).** `IPRODC = 2` (in common `(TRACKR)`)
+must hold *before each* `SPDCEV` call. It's not a one-time init flag;
+`EVTXYZ` overwrites it during normal hadronic tracking.
+
+**Fix (chromo).** `chromo_dcy_sample` (in `chromo_fluka.f`) now
+includes `(TRACKR)` and resets `IPRODC = 2`, `MRTRCK = 1`,
+`MMTRCK = MEDFLK(MRTRCK, 1)` immediately before `CALL SPDCEV`. The
+two extra TRACKR fields cover a secondary abort observed in
+`geoden.f:100` (`MEDFLK` indexed at 0 because `MRTRCK` was 0 after
+EVTXYZ). Regression tests:
+`tests/test_fluka_decay.py::test_dcy_sample_cs137_after_evtxyz`,
+`...::test_dcy_sample_co60_after_evtxyz`. With this fix, interleaving
+`EVTXYZ` and `SPDCEV` (the `Fluka(post_event=DecayChainHandler(...))`
+pattern) is unblocked for correlated isotopes.
 
 ---
 

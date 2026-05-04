@@ -243,6 +243,75 @@ def test_dcy_sample_cs137_succeeds():
     assert nhep >= 2  # at least e- + nubar
 
 
+# ---------------------------------------------------------------------------
+# Regression: SPDCEV β-decay after EVTXYZ (FLUKA_QUESTIONS.md #6).
+#
+# Pre-fix, calling SPDCEV on a β-emitter after one EVTXYZ event aborted in
+# lcendp.f:74 ("Index 0 of dimension 2 of array EDPSCO below lower bound")
+# because EVTXYZ overwrites IPRODC.  The FLUKA author confirmed IPRODC=2
+# must hold before each SPDCEV call; chromo_dcy_sample now restores it.
+# ---------------------------------------------------------------------------
+
+
+def _evtxyz_then_spdcev(A, Z, m):
+    from chromo.kinematics import FixedTarget
+    from chromo.models import Fluka
+
+    gen = Fluka(FixedTarget(100.0, "p", "O16"), seed=1)
+    # One hadronic event so EVTXYZ has run and (pre-fix) clobbered IPRODC.
+    for _ in gen(1):
+        pass
+    success, kdcy, _ilv = gen._lib.chromo_dcy_sample(A, Z, m)
+    return bool(success), int(kdcy), int(gen._lib.hepevt.nhep)
+
+
+def test_dcy_sample_cs137_after_evtxyz():
+    """Regression for FLUKA_QUESTIONS.md #6 — Cs-137 β-emitter."""
+    ok, kdcy, nhep = run_in_separate_process(_evtxyz_then_spdcev, 137, 55, 0)
+    assert ok, "SPDCEV failed for Cs-137 after EVTXYZ — IPRODC reset broken?"
+    assert kdcy == 2  # B-
+    assert nhep >= 2
+
+
+def test_dcy_sample_co60_after_evtxyz():
+    """Regression for FLUKA_QUESTIONS.md #6 — Co-60 β-emitter."""
+    ok, kdcy, nhep = run_in_separate_process(_evtxyz_then_spdcev, 60, 27, 0)
+    assert ok, "SPDCEV failed for Co-60 after EVTXYZ — IPRODC reset broken?"
+    assert kdcy == 2  # B-
+    assert nhep >= 2
+
+
+# ---------------------------------------------------------------------------
+# Warning when SPDCEV reports an uncorrelated isotope (LSUCCS=.FALSE.).
+# See FLUKA_QUESTIONS.md #5.
+# ---------------------------------------------------------------------------
+
+
+def _sample_uncorrelated_warns():
+    """Sample Ac-228 (LSUCCS=.FALSE.) twice; expect one warning, two empty events."""
+    import warnings
+
+    from chromo.models.fluka_decay import FlukaDecay
+
+    dcy = FlukaDecay()
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        events = list(dcy("Ac228", n=2))
+    matched = [
+        w for w in caught if "Ac228" in str(w.message) or "228" in str(w.message)
+    ]
+    return len(events), [len(ev.pid) for ev in events], len(matched)
+
+
+def test_uncorrelated_isotope_warns_once_and_yields_empty():
+    n_events, lengths, n_warn = run_in_separate_process(_sample_uncorrelated_warns)
+    assert n_events == 2
+    # SPDCEV failed -> no products written; HEPEVT snapshot is empty.
+    assert lengths == [0, 0]
+    # Warned exactly once (subsequent calls deduplicated).
+    assert n_warn == 1, f"expected 1 warning, got {n_warn}"
+
+
 def _scaffold_imports():
     from chromo.models.fluka_decay import (  # noqa: F401
         STABLE_DEFAULT,
@@ -657,16 +726,69 @@ def test_fluka_no_post_event_baseline():
     assert n_with_nucleus == 5
 
 
-# NOTE: we deliberately do NOT exercise DecayChainHandler.expand inside a
-# Fluka post_event callback here. After EVTXYZ has run, FLUKA's
-# EDPSCO state is left in a configuration that crashes any subsequent
-# beta-decay sample via SPDCEV (Fortran bound check fails in
-# lcendp.f:74). See FLUKA_QUESTIONS.md #6. Pure alpha-decay sampling
-# survives, so partial chain expansion is possible -- but the
-# fragmentation cocktail in p + O16 events overwhelmingly contains
-# beta-emitters (H-3, Be-7, C-14, ...) and would always trip the crash.
-# This test file documents the integration via the simpler hooks above
-# until the upstream issue is resolved.
+# Integration: Fluka(post_event=DecayChainHandler(...).expand).
+#
+# Until the IPRODC reset landed, this pattern crashed the moment a
+# β-emitting residual reached SPDCEV (lcendp.f:74; FLUKA_QUESTIONS.md
+# #6). The test below pins the end-to-end pattern: p + O16 events
+# pumped through the chain handler must complete without aborting and
+# the handler must materially expand at least one residual.
+
+
+def _fluka_post_event_decay_chain():
+    from chromo.kinematics import FixedTarget
+    from chromo.models import Fluka
+    from chromo.models.fluka_decay import DecayChainHandler, FlukaDecay
+
+    # Fluka must be constructed first: STPXYZ owns the FLUKA material/
+    # tracking state; if FlukaDecay's chromo_dcy_init runs first and STPXYZ
+    # runs after, RESNUC/EVPRTN trip on inconsistent state at first event.
+    deltas = []
+
+    def expand_and_track(event):
+        before = len(event.pid)
+        expanded = handler.expand(event)
+        deltas.append(len(expanded.pid) - before)
+        return expanded
+
+    fluka = Fluka(FixedTarget(100, "p", "O16"), seed=1, post_event=expand_and_track)
+    dcy = FlukaDecay(seed=42)
+    handler = DecayChainHandler(dcy)
+    n_events = 0
+    for _ev in fluka(10):
+        n_events += 1
+    return n_events, deltas
+
+
+def test_fluka_post_event_decay_chain():
+    """Regression for FLUKA_QUESTIONS.md #6 — Fluka + DecayChainHandler hook."""
+    n, deltas = run_in_separate_process(_fluka_post_event_decay_chain)
+    assert n == 10, f"only {n}/10 events completed — SPDCEV-after-EVTXYZ regression?"
+    assert len(deltas) == 10
+    # p+O16 @ 100 GeV reliably leaves at least one decayable residual; the
+    # chain handler must add products somewhere across the 10 events.
+    assert sum(deltas) > 0, deltas
+
+
+def _fluka_after_flukadecay_raises():
+    """Construct FlukaDecay first, then Fluka — must raise, not abort."""
+    from chromo.kinematics import FixedTarget
+    from chromo.models import Fluka
+    from chromo.models.fluka_decay import FlukaDecay
+
+    FlukaDecay(seed=42)
+    try:
+        Fluka(FixedTarget(100, "p", "O16"), seed=1)
+    except RuntimeError as exc:
+        return "raised", str(exc)
+    return "did_not_raise", ""
+
+
+def test_fluka_after_flukadecay_raises_clearly():
+    """Guard against the FlukaDecay→Fluka order that aborts in evprtn.f:516."""
+    outcome, msg = run_in_separate_process(_fluka_after_flukadecay_raises)
+    assert outcome == "raised", f"expected RuntimeError, got {outcome!r}"
+    assert "Fluka first" in msg or "construct Fluka first" in msg.lower()
 
 
 def _public_export():
