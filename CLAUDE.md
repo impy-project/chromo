@@ -128,10 +128,22 @@ Persist `export FLUPRO=$HOME/devel/FLUKA` in your shell rc.
 pip install --no-build-isolation -v -e .[test]
 ```
 
-The meson `fluka` block fails fast if `$FLUPRO` is unset or any of the
-required archives (`libflukahp.a`, `libdpmmvax.a`, `librqmdmvax.a`,
-`latestRQMD/librqmd.a`, `interface/libdpmjet*.a`, `interface/dpmvers`)
-are missing.
+`"fluka"` is permanently in `[tool.chromo] enabled-models`.  The meson
+`fluka` block validates `$FLUPRO` and the required archives
+(`libflukahp.a`, `libdpmmvax.a`, `librqmdmvax.a`,
+`latestRQMD/librqmd.a`, `interface/libdpmjet*.a`, `interface/dpmvers`).
+If any are missing, meson emits a prominent warning with the same hint
+("For FLUKA support, build chromo from source with FLUPRO pointing at
+a working FLUKA installation — run `scripts/install_fluka.sh`") and
+**skips the `_fluka` extension build** while the rest of chromo
+proceeds to install normally.  Public CI (no FLUPRO, no archives)
+therefore builds cleanly and just ships chromo without FLUKA.
+
+`chromo.models.Fluka` always imports as a class (the `_fluka` shared
+library is loaded lazily at construct time).  Calling `Fluka(...)` on
+a build that skipped the FLUKA extension raises a `ModuleNotFoundError`
+with the install hint above, courtesy of `MCRun.__init__`'s
+`_install_hint` lookup.
 
 ### Usage
 

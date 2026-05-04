@@ -91,6 +91,7 @@ enabled-models = [
     "sophia",
     "pythia6",
     "urqmd34",
+    "fluka",
 ]
 disabled-models = [
 ]
@@ -105,7 +106,7 @@ testpaths = ["tests"]
 filterwarnings = [
     "error::FutureWarning",
     "error::DeprecationWarning",
-    "ignore::pyparsing.warnings.PyparsingDeprecationWarning",
+    "ignore::DeprecationWarning:pyparsing",
 ]
 
 [tool.pydocstyle]
