@@ -175,6 +175,218 @@ pattern) is unblocked for correlated isotopes.
 
 ---
 
+## 7. DPMJET-3 event generation silently aborts above the Peanut cut
+
+**Problem.**  The moment `EVTXYZ`'s internal dispatcher hands off from
+Peanut to DPMJET-3 (event lab momentum above
+`_transition_peanut_dpmjet`, default 20 TeV), DPMJET-3 reaches a bare
+`STOP` at `DT_KKINC.f:73` — a silent process exit (code 0, no
+backtrace, no message on stderr; gfortran's `STOP` without a string
+prints nothing).  This reproduces in **a minimal F77 driver linked
+straight against `libflukahp + libdpmjet3.19.3.2 + librqmd + libdpmmvax
++ librqmdmvax`, with no chromo wrapping at all** — so it's a FLUKA
+library-level issue, not a chromo issue.
+
+**Reproduce.**  Self-contained F77 driver (≈120 lines, no chromo
+includes):
+
+```fortran
+      PROGRAM TEST_DPMJET_DRV
+      INCLUDE '(DBLPRC)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(IOUNIT)'
+      INCLUDE '(BEAMCM)'
+      INCLUDE '(FLKMAT)'
+      INCLUDE '(GENSTK)'
+      INCLUDE '(NUCDAT)'
+      INCLUDE '(PAPROP)'
+      INCLUDE '(PAREVT)'
+      INCLUDE '(PART2)'
+
+      INTEGER NELMFL(4), IZELFL(4), MTFLKA(4)
+      DOUBLE PRECISION WFELFL(4)
+      DOUBLE PRECISION CUMSGI(0:NELEMX), CUMSGE(0:NELEMX),
+     &                 CUMSGM(0:NELEMX)
+      LOGICAL LPRINT, LSEEDI
+      CHARACTER CRVRCK*8
+
+      OPEN(UNIT=LUNRDB, FILE='ranpeaxyz', STATUS='OLD')
+      IJKL = -1
+      CALL RNREAD(LUNRDB, IJKL, LSEEDI)
+      CLOSE(UNIT=LUNRDB)
+      ICR = NINT(AMPRMU * 1.D+12 - 1.0072D+12)
+      WRITE(CRVRCK,'(I8)') ICR
+
+      NMATFL    = 1
+      NELMFL(1) = 1
+      IZELFL(1) = 1
+      WFELFL(1) = ONEONE
+      PPTMAX    = 4.8D+04
+      EF2DP3    = -ONEONE
+      DF2DP3    = -ONEONE
+      IFLXYZ    = 1
+      LPRINT    = .TRUE.
+
+      CALL STPXYZ(NMATFL, NELMFL, IZELFL, WFELFL, 4,
+     &            PPTMAX, EF2DP3, DF2DP3, IFLXYZ, LPRINT,
+     &            MTFLKA, CRVRCK)
+
+      ELAB     = 4.8D+04            ! switch to 1.D+02 for low-E
+      KP       = 1
+      IPFLK_KP = KPTOIP(KP)
+      EKIN     = ELAB - AMPRTN
+      PPROJ    = SQRT(ELAB*ELAB - AMPRTN*AMPRTN)
+
+      DO IEV = 1, 3
+         CALL EVTXYZ(IPFLK_KP, MTFLKA(1), EKIN, PPROJ,
+     &               ZERZER, ZERZER, ONEONE, IFLXYZ,
+     &               CUMSGI, CUMSGE, CUMSGM)
+         WRITE(6,*) ' event ', IEV, ' NP=', NP
+      END DO
+      STOP
+      END
+```
+
+Build:
+
+```bash
+gfortran -ffixed-form -fno-automatic -finit-local-zero \
+  -frecord-marker=4 -fd-lines-as-comments \
+  -I$FLUPRO/flukapro -I$FLUPRO/aamodmvax \
+  -c dpmjet_drv.f
+gfortran -o dpmjet_drv dpmjet_drv.o fluka_all.a
+```
+
+Same driver, only `ELAB` differs (with `PPTMAX` fixed at 48 TeV
+throughout):
+
+| `ELAB` | Path inside FLUKA | Result |
+|---|---|---|
+| 100 GeV | Peanut | ✅ 3 events generated, `NP = 4, 17, 12` |
+| 48 000 GeV (= 48 TeV) | DPMJET-3 | ❌ silent crash inside event 1 (only an `IEEE_UNDERFLOW_FLAG` note) |
+
+**Backtrace at the crash** (lldb breakpoint on `_gfortran_stop_string`):
+
+```
+exit
+_gfortran_stop_string + 20      ← STOP with NULL string, len=0 (silent)
+dt_kkinc_     at DT_KKINC.f:73
+dpmrun_       at DPMRUN.f:69
+eventd_       at eventd.f:6
+eventp_       at eventp.f:1354
+evtxyz_       at evtxyz.f:528
+```
+
+**Diagnostic message** (with `LPri = 10` set in `(DTFLKA)` before the
+event loop, so DPMJET writes to its own log unit `LOUDPM = 19`):
+
+```
+fort.19:
+   Requested energy (0.480E+05 GeV) exceeds initialization energy (0.000E+00 GeV) !
+```
+
+The "initialization energy" reported as `0.000E+00 GeV` is the
+suspicious value — DPMJET clearly thinks it was never initialised
+for this energy.
+
+**What's set after `STPXYZ` returns** (read from common `(DTFLKA)`):
+
+| Variable | Value | Comment |
+|---|---|---|
+| `EHFLLO` | 15 GeV | low energy bound |
+| `EHFLHI` | **30 GeV** | high energy bound — well below event plab 48 TeV |
+| `AMXPFR` | 0.27 GeV | maximum Fermi momentum (looks correct) |
+| `LPri` | 0 | DPMJET verbose flag (off by default) |
+
+`fort.11` (FLUKA's main log) reports `Max. initialization energy for
+DPMJET: 86331.4 GeV` — i.e. ≈ 1.8 × `PPTMAX`.  So FLUKA's outer init
+*does* compute a sensible high-energy bound, but the value that
+`DT_KKINC` checks against (and that `LPri≥4` prints as "0.000E+00 GeV"
+in `fort.19`) is *not* `EHFLHI` and *not* the 86 TeV grid bound — it
+is a DPMJET-internal variable set only by sub-inits that aren't
+running.  Overriding `EHFLLO`/`EHFLHI`/`AMXPFR` to large values from
+outside (via a small `INCLUDE '(DTFLKA)'` setter) does not unblock
+the crash.
+
+**`dt_init_` is called** from `dpmini_` line 117 with arguments:
+
+```
+NCASES = -1                ! variable-energy mode flag
+EPN    = 86331.4 GeV       ! max projectile energy per nucleon (correct)
+NPMASS = 12, NPCHAR = 6    ! C-12 placeholder (we asked for p projectile)
+NTMASS = 0,  NTCHAR = 0    ! placeholder target
+```
+
+After `dt_init_` returns, **the only DPMJET sub-init invoked** (lldb
+breakpoint regex `^dt_.*ini.*`) is `dt_ltini_` (at `DT_LTINI.f:33`).
+Notably **none** of `dt_dtuini_`, `dt_phoini_`, `dt_glbini_`,
+`dt_evtini_`, `dt_xhoini_` are called.  These are the routines that
+populate the DPMJET-internal energy bounds, so the per-event check at
+`DT_KKINC.f:73` always sees zero and rejects.
+
+**Workaround that works in chromo today.**  `Fluka(...,
+transition_peanut_dpmjet=100*TeV)` keeps Peanut on the path; DPMJET-3
+is never dispatched; events run cleanly up to plab ≈ 192 TeV (Peanut's
+own ceiling).  This is the documented workaround, but it caps the
+useful range to Peanut's accuracy region.
+
+**Things that did NOT unblock the crash:**
+
+1. Bumping `PPTMAX` to 10 × `plab` (DPMJET Glauber grid → 863 TeV per
+   `fort.11`) — it's a per-event init-energy state, not a
+   grid-coverage problem.
+2. Overriding `EHFLLO`/`EHFLHI`/`AMXPFR` in `(DTFLKA)` to large values
+   from outside before the event loop.  The "init energy" `DT_KKINC`
+   reads is a different DPMJET-private value (set only by sub-inits
+   that aren't running).
+3. Calling `SGMXYZ(KPROJ, MMAT, EKIN, PPROJ, IFLXYZ)` before
+   `EVTXYZ` for each event — this is what the original
+   `prinmvax/peaxyz.f` does (line 430).  `SGMXYZ` returns a sensible
+   inelastic cross section (44 mb for p+p at 48 TeV plab — DPMJET's
+   Glauber path is fine), but `EVTXYZ` immediately afterwards still
+   trips the same bare `STOP` in `DT_KKINC.f:73`.
+
+**Tested: linking `afedynitch/fluka_chromo`'s `prinmvax/stpxyz.f` in
+place of `libflukahp.a`'s `STPXYZ` does NOT fix it.** That `STPXYZ`
+sets `LFLUKA=.F.`, `LCRSKA=.T.`, `LHEPCM=.T.`, `LIONTR=.T.`,
+coalescence flags, `IJBEAM=1`, `PBEAM=PPTMAX`, and calls `EVXINI`
+(= current `INEVTI`) before the material loop — the long "Corsika-mode"
+preamble we suspected was the missing piece.
+
+Test setup: same F77 driver as above, with `prinmvax/stpxyz.f`
+compiled and linked before `fluka_all.a` so its `_stpxyz_` wins
+(confirmed by a runtime trace marker we added in the override). One
+edit only: rename `EVXINI → INEVTI` to match the FLUKA 2025.1 symbol.
+Driver run at `ELAB = 1.333E+09 GeV` (≈ 50 TeV CMS), `PPTMAX = 1.4E+09
+GeV`, hydrogen target.
+
+Result, identical to the `libflukahp.a` `STPXYZ` run:
+
+```
+fort.11:  Max. initialization energy for DPMJET   2.52E+09 GeV    (= 1.8 × PPTMAX, OK)
+fort.19:  Requested energy (0.133E+10GeV) exceeds initialization energy (0.000E+00GeV) !
+```
+
+Silent exit at `DT_KKINC.f:73`, same diagnostic, same `0.000E+00 GeV`
+internal value. `_stpxyz_` from the override is the one that ran;
+the issue isn't whatever `STPXYZ` does. Same driver at `ELAB = 100
+GeV` (Peanut path) generates the expected 3 events.
+
+So the `STPXYZ`-side flags (`LCRSKA`, `IJBEAM`, `PBEAM`, …) don't
+affect the per-event `0.000E+00 GeV` reject. The variable
+`DT_KKINC` checks lives in `(DTVARE)` (binary scan: only
+`DT_DEFAUL`, `DT_INIT`, `DT_SHMAKI` touch it), and is left at zero by
+the `dt_init` path taken under `NCASES=-1, NPMASS=12, NPCHAR=6`.
+
+**Question, narrowed.**  Under `NCASES=-1` (variable-energy mode) with
+the C-12 placeholder that `DPMINI` passes to `dt_init`, what populates
+the `(DTVARE)` energy bound that `DT_KKINC` then checks per event?
+Is there a routine the library-mode caller is expected to invoke
+between `INEVTI` and the first `EVTXYZ` (or per event) to bring this
+bound up to `EPN`?
+
+---
+
 ## Build environment
 
 - FLUKA 2025.1, DPMVERS=3.19.3.2
