@@ -163,21 +163,30 @@ for event in gen(10):
   the construction-kinematics `plab`, so DPMJET Glauber tables cover
   the full requested range. `cross_section()` works at all energies
   below the ceiling.
-- **DPMJET-3 hadronic generator aborts above plab ≈ 20 TeV.** EVTXYZ
-  exits silently the moment plab crosses
-  `_transition_peanut_dpmjet` (default 20 TeV) and DPMJET-3 takes
-  over from Peanut.  Workaround: pass
+- **DPMJET-3 hadronic generator aborts above plab ≈ 20 TeV — Mac
+  arm64 prebuilt only.** EVTXYZ exits silently the moment plab
+  crosses `_transition_peanut_dpmjet` (default 20 TeV) and DPMJET-3
+  takes over from Peanut, on the `fluka2025.1-macm1234-gfor64bit-14.3`
+  archive (DT_KKINC.f:73 bare STOP, "0.000E+00 GeV initialization
+  energy" diagnostic — see `FLUKA_QUESTIONS.md` #7).  The same code
+  paths run cleanly on the `fluka2025.1-linux-gfor64bit-10.3-glibc2.32`
+  archive (verified on satori 2026-05-04: p+p plab=200 TeV, p+O16
+  plab=50 TeV — clean 3-event runs).  Workaround on Mac: pass
   `transition_peanut_dpmjet=100*TeV` (or higher) to keep Peanut on
   the path — Peanut is accurate well beyond 1 TeV for most hadrons.
-  Practical p+p ceiling at the default cut: ≈ 195 GeV CMS (plab
-  19.8 TeV).  Pending FLUKA upstream investigation.
+  Practical p+p ceiling at the default cut on Mac: ≈ 195 GeV CMS
+  (plab 19.8 TeV).  Pending FLUKA author confirmation of the macm1234
+  binary regression.
 - **Light-nucleus and heavy-ion projectiles are not currently
-  supported.**  `_projectiles` excludes both because their plab
-  scales with mass per nucleon, so they hit the broken DPMJET-3
-  path even at modest CMS energies (e.g. He+p crashes at any CMS ≥
-  ~14 GeV).  `Fluka(He, p, ...)` raises `ValueError` from
+  supported.**  `_projectiles` excludes both as a defensive guard
+  against the macm1234 DPMJET-3 abort above: ion projectiles push
+  plab past the 20 TeV cut at modest CMS energies (e.g. He+p at any
+  CMS ≥ ~14 GeV).  `Fluka(He, p, ...)` raises `ValueError` from
   `_check_kinematics`.  `cross_section()` for AA kinematics still
-  works via SGMXYZ when constructed below the plab cut.
+  works via SGMXYZ when constructed below the plab cut.  Once the
+  Mac prebuilt is fixed, d/t/3He/4He can be restored to
+  `_projectiles` (and the default `_transition_peanut_dpmjet` lifted
+  to its FLUKA-runtime value).
 - **EMD-only event generation aborts FLUKA.** Use `InteractionType.EMD`
   for cross-section queries only. For event generation, combine with
   `INELA_EMD` (101) or `INELA_ELA_EMD` (111).
