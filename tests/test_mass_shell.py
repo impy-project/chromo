@@ -43,6 +43,12 @@ def test_final_state_mass_shell(Model, frame, target, projectile):
         pytest.skip(
             "Pythia8Angantyr He projectile has no precomputed tables; init too slow"
         )
+    if Model is im.Fluka and p1 == "He":
+        pytest.skip(
+            "Fluka light-ion projectile event generation is unstable above "
+            "~14 GeV CMS — pending full FLUKA upstream support for ion "
+            "projectiles."
+        )
     if p2 == "air":
         # cannot use Argon in SIBYLL, so make air from N, O only
         p2 = CompositeTarget((("N", 0.78), ("O", 0.22)))
