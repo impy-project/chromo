@@ -95,6 +95,10 @@ STABLE_DEFAULT: set[int] = set()
 # Module-level guard - shared with chromo.models.fluka.Fluka via
 # `_mark_fluka_init_done()` (set in fluka.py after STPXYZ in Task 16).
 _INITIALIZED = False
+# Set only when chromo_dcy_init actually ran (FlukaDecay path); stays
+# False if Fluka.__init__'s STPXYZ was the initialiser.  Fluka checks
+# this to refuse construction after FlukaDecay — see _check_dcy_first.
+_DCY_INIT_RAN = False
 _INSTANCE_COUNT = 0
 _NAME_RE = re.compile(r"^([A-Za-z]{1,2})(\d{1,3})(?:m(\d*))?$")
 
@@ -106,11 +110,23 @@ def _mark_fluka_init_done():
 
 
 def _ensure_init(lib):
-    global _INITIALIZED
+    global _INITIALIZED, _DCY_INIT_RAN
     if _INITIALIZED:
         return
     lib.chromo_dcy_init()
     _INITIALIZED = True
+    _DCY_INIT_RAN = True
+
+
+def _chromo_dcy_init_already_ran() -> bool:
+    """True iff chromo_dcy_init was called by FlukaDecay in this process.
+
+    Fluka.__init__ uses this to refuse construction in the
+    FlukaDecay-then-Fluka order, which crashes the first EVTXYZ in
+    evprtn.f:516 (KQMDIN(-1)).  See CLAUDE.md and the regression
+    test_fluka_post_event_decay_chain.
+    """
+    return _DCY_INIT_RAN
 
 
 # Compact Z->symbol table (covers Z=0..110, sufficient for FLUKA's
@@ -413,6 +429,9 @@ class FlukaDecay:
 
         self._lib = _fluka
         self._rng_state_file: pathlib.Path | None = None
+        # Track (A, Z, m) tuples for which SPDCEV returned LSUCCS=.FALSE.
+        # so we warn at most once per uncorrelated isotope per process.
+        self._uncorrelated_warned: set[tuple[int, int, int]] = set()
         _ensure_init(self._lib)
         if seed is not None:
             self._seed_rng(int(seed))
@@ -677,22 +696,41 @@ class FlukaDecay:
 
         FlukaDecay has no kinematics/frame, so we bypass FlukaEvent and
         build an EventData directly from the HEPEVT common block populated
-        by FLLHEP.  Falls back to an empty EventData on persistent failure
-        (logged via ``chromo.util.info``).
+        by FLLHEP.  Returns an empty EventData when SPDCEV reports
+        ``LSUCCS=.FALSE.`` (uncorrelated isotope; a per-(A,Z,m) warning
+        is emitted once via ``_warn_uncorrelated``).
         """
-
-        from chromo.util import info as _info
-
-        ok = False
-        for _attempt in range(2):
-            ok_int, _kdcy, _ilv = self._lib.chromo_dcy_sample(A, Z, m)
-            if ok_int:
-                ok = True
-                break
-        if not ok:
-            _info(0, f"chromo_dcy_sample failed for ({A},{Z},{m}) twice")
-
+        ok_int, _kdcy, _ilv = self._lib.chromo_dcy_sample(A, Z, m)
+        if not ok_int:
+            self._warn_uncorrelated(A, Z, m)
         return self._hepevt_to_event_data()
+
+    def _warn_uncorrelated(self, A: int, Z: int, m: int) -> None:
+        """Warn once per process that SPDCEV has no correlated table for
+        this isotope.
+
+        FLUKA's SPDCEV only samples isotopes whose final nuclear level
+        is unambiguously known (correlated decay).  For uncorrelated
+        isotopes (e.g. Ac-228) it returns ``LSUCCS=.FALSE.`` and we
+        currently skip sampling entirely; an uncorrelated fallback is
+        intentionally not invoked yet — pending the FLUKA author's
+        simplified routine and scope discussion.  See
+        ``FLUKA_QUESTIONS.md`` #5.
+        """
+        import warnings
+
+        key = (int(A), int(Z), int(m))
+        if key in self._uncorrelated_warned:
+            return
+        self._uncorrelated_warned.add(key)
+        iso = self.lookup(A, Z, m)
+        label = iso.short() if iso is not None else f"(A={A}, Z={Z}, m={m})"
+        warnings.warn(
+            f"FLUKA SPDCEV has no correlated decay table for {label}; "
+            "skipping (uncorrelated decay sampling is not yet wired up). "
+            "See FLUKA_QUESTIONS.md #5.",
+            stacklevel=3,
+        )
 
     def _hepevt_to_event_data(self):
         """Snapshot the HEPEVT common block into a fresh EventData."""
@@ -888,6 +926,10 @@ class DecayChainHandler:
 
             ok_int, _kdcy, _ilv = owner._lib.chromo_dcy_sample(A, Z, m)
             if not ok_int:
+                # Uncorrelated isotope: warn once, terminate this branch
+                # of the chain.  An uncorrelated sampler is not yet wired
+                # up — see FLUKA_QUESTIONS.md #5.
+                owner._warn_uncorrelated(A, Z, m)
                 continue
             # Sampler already wrote to HEPEVT; just snapshot it.
             sub = owner._hepevt_to_event_data()

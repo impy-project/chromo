@@ -966,10 +966,12 @@ Cf2py intent(out) n_ch
 *     the Q-value at link time.
 *
 *     Source vintage: FLUKA 2025.1 dcytst.f (Last change on 25-Apr-26
-*     by Alfredo Ferrari).
+*     by Alfredo Ferrari).  Cross-checked 2026-05-04 against the
+*     author-supplied dcytst.f snapshot — bodies match.
 *
-*     TODO(FLUKA-bump): re-sync this body from $FLUPRO/dcytst.f whenever
-*     the FLUKA version is bumped.  See FLUKA_QUESTIONS.md.
+*     TODO(FLUKA-bump): drop this embed in favour of the upstream
+*     library symbol on the next FLUKA respin.  See FLUKA_QUESTIONS.md
+*     #4.
 *
       DOUBLE PRECISION FUNCTION QRDDCY ( IADCYP, IZDCYP, ISDCYP, IFLDCY,
      &                                   LNCMSS )
@@ -1196,6 +1198,7 @@ Cf2py intent(out) n_l
       INCLUDE '(EMFSTK)'
       INCLUDE '(FHEAVY)'
       INCLUDE '(GENSTK)'
+      INCLUDE '(TRACKR)'
 
       INTEGER ia, iz, im, lsuccs_out, kdcy_out, ilv_out
       DOUBLE PRECISION tdelay
@@ -1213,6 +1216,17 @@ Cf2py intent(out) lsuccs_out, kdcy_out, ilv_out
       npemf  = 0
       lsuccs = .TRUE.
       tdelay = -1.0D+09
+
+!  EVTXYZ leaves the TRACKR common in a state inconsistent with the
+!  decay context: IPRODC drifts away from 2 (lcendp.f then indexes
+!  EDPSCO at 0 -> abort), and MRTRCK/MMTRCK can be 0 (geoden.f then
+!  indexes MEDFLK at 0 -> abort).  Restore the same values
+!  chromo_dcy_init installed (per FLUKA author, IPRODC=2 must hold
+!  before each SPDCEV call).  Use MEDFLK(1,1) so this works whether
+!  STPXYZ set up the materials (Fluka path) or chromo_dcy_init did.
+      IPRODC = 2
+      MRTRCK = 1
+      MMTRCK = MEDFLK(MRTRCK, 1)
 
       CALL SPDCEV(ia, iz, im, ZERZER, ZERZER, ZERZER, ZERZER,
      &            ONEONE, ONEONE, tdelay, .TRUE., .TRUE., lsuccs)
