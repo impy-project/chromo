@@ -372,6 +372,56 @@ Cf2py intent(out) CUMSGI, CUMSGE, CUMSGM
       RETURN
       END SUBROUTINE
 
+      SUBROUTINE chromo_set_dpmjet_lpri(level)
+!----------------------------------------------------------------------!
+!     Set DPMJET's LPri verbosity flag (in common DTFLKA) so the
+!     DT_KKINC reject path prints diagnostic output before the bare
+!     STOP fires.  level >= 4 enables verbose output to fort.6.
+!----------------------------------------------------------------------!
+      INCLUDE '(DBLPRC)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(DTFLKA)'
+      INTEGER level
+Cf2py intent(in) level
+      LPRI = level
+      RETURN
+      END SUBROUTINE
+
+
+      SUBROUTINE chromo_get_dpmjet_ehfl(lo_out, hi_out, amxp_out)
+!----------------------------------------------------------------------!
+!     Read DPMJET's EHFLLO / EHFLHI / AMXPFR from common DTFLKA.
+!     DT_KKINC compares requested event plab against the init bound;
+!     if too high, it bare-STOPs.
+!----------------------------------------------------------------------!
+      INCLUDE '(DBLPRC)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(DTFLKA)'
+      DOUBLE PRECISION lo_out, hi_out, amxp_out
+Cf2py intent(out) lo_out, hi_out, amxp_out
+      lo_out = EHFLLO
+      hi_out = EHFLHI
+      amxp_out = AMXPFR
+      RETURN
+      END SUBROUTINE
+
+
+      SUBROUTINE chromo_set_dpmjet_ehfl(lo_in, hi_in, amxp_in)
+!----------------------------------------------------------------------!
+!     Override DPMJET's DTFLKA energy bounds.
+!----------------------------------------------------------------------!
+      INCLUDE '(DBLPRC)'
+      INCLUDE '(DIMPAR)'
+      INCLUDE '(DTFLKA)'
+      DOUBLE PRECISION lo_in, hi_in, amxp_in
+Cf2py intent(in) lo_in, hi_in, amxp_in
+      EHFLLO = lo_in
+      EHFLHI = hi_in
+      AMXPFR = amxp_in
+      RETURN
+      END SUBROUTINE
+
+
       SUBROUTINE CHROMO_STPXYZ ( NMATFL, NELMFL, IZELFL, WFELFL, MXELFL,
      &                    PPTMAX, EF2DP3, DF2DP3, IFLXYZ, LPRINT,
      &                    MTFLKA )
