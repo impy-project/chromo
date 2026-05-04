@@ -163,11 +163,21 @@ for event in gen(10):
   the construction-kinematics `plab`, so DPMJET Glauber tables cover
   the full requested range. `cross_section()` works at all energies
   below the ceiling.
-- **Light-nucleus projectiles (d, t, 3He, 4He) work** for both cross
-  sections and event generation via dedicated FLUKA PAPROP codes.
-- **Heavy-ion projectiles (A > 4) are not yet supported** for event
-  generation (pending upstream support). `cross_section()` works for
-  AA kinematics via SGMXYZ.
+- **DPMJET-3 hadronic generator aborts above plab ≈ 20 TeV.** EVTXYZ
+  exits silently the moment plab crosses
+  `_transition_peanut_dpmjet` (default 20 TeV) and DPMJET-3 takes
+  over from Peanut.  Workaround: pass
+  `transition_peanut_dpmjet=100*TeV` (or higher) to keep Peanut on
+  the path — Peanut is accurate well beyond 1 TeV for most hadrons.
+  Practical p+p ceiling at the default cut: ≈ 195 GeV CMS (plab
+  19.8 TeV).  Pending FLUKA upstream investigation.
+- **Light-nucleus and heavy-ion projectiles are not currently
+  supported.**  `_projectiles` excludes both because their plab
+  scales with mass per nucleon, so they hit the broken DPMJET-3
+  path even at modest CMS energies (e.g. He+p crashes at any CMS ≥
+  ~14 GeV).  `Fluka(He, p, ...)` raises `ValueError` from
+  `_check_kinematics`.  `cross_section()` for AA kinematics still
+  works via SGMXYZ when constructed below the plab cut.
 - **EMD-only event generation aborts FLUKA.** Use `InteractionType.EMD`
   for cross-section queries only. For event generation, combine with
   `INELA_EMD` (101) or `INELA_ELA_EMD` (111).
