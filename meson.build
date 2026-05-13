@@ -478,12 +478,30 @@ if 'fluka' in enabled_models and fluka_ok
                 '@OUTDIR@','@INPUT@'],
       build_by_default:true)
 
+  # On modern macOS (Xcode 15+), Apple's new linker (ld-prime) handles
+  # weak / duplicate / common symbols differently from the classic linker.
+  # The FLUKA archives carry many overlapping COMMON-block symbols across
+  # libdpmjet, librqmd, libdpmmvax, librqmdmvax, and libflukahp, and the
+  # Apple-Silicon prebuilt's DPMJET-3 then hands off with a zero-init
+  # energy (DT_KKINC.f:73 silent STOP — FLUKA_QUESTIONS.md #7).  Falling
+  # back to ld_classic resolves the symbols the way the FLUKA build
+  # expects.  Probe for the flag at configure time: only Apple's new
+  # linker (Xcode 15+) accepts -ld_classic, so cc.has_link_argument
+  # doubles as a "is this the new linker?" check — older toolchains
+  # and non-Darwin platforms get an empty link_args.
+  fluka_link_args = []
+  if host_machine.system() == 'darwin' and cc.has_link_argument('-Wl,-ld_classic')
+    fluka_link_args += ['-Wl,-ld_classic']
+    message('FLUKA: linking _fluka with -Wl,-ld_classic (Apple new-linker workaround for DPMJET-3 abort).')
+  endif
+
   py.extension_module('_fluka',
     sources            : [wrap, f2py_obj, files(flka_src)],
     include_directories: include_directories(common_inc),
     dependencies       : [py_dep, numpy_dep, fluka_all_dep],
     c_args             : common_cargs,
     fortran_args       : common_fargs + ['-DCHROMO', '-DDPMVER=' + dpm_version],
+    link_args          : fluka_link_args,
     subdir             : 'chromo/models',
     install            : true,
     install_rpath      : rpath_tok,

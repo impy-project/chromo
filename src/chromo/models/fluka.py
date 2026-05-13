@@ -168,17 +168,24 @@ class Fluka(MCRun):
         "scripts/install_fluka.sh)."
     )
     # Supported projectiles for event generation via EVTXYZ.
-    # Light ions (d, t, 3He, 4He) and heavy ions (A > 4) are excluded
-    # because their plab (per nucleon * A) crosses the Peanut/DPMJET-3
-    # transition (~20 TeV) at modest CMS energies (e.g. He+p at any
-    # CMS ≥ ~14 GeV), and the DPMJET-3 path is broken in the macm1234
-    # (Apple Silicon) FLUKA 2025.1 prebuilt — DT_KKINC silently STOPs.
-    # The same kinematics run cleanly on the linux x86_64 prebuilt (cf.
-    # smoke test on satori, 2026-05-04: p+p plab=200 TeV, p+O16 plab
-    # =50 TeV both succeed).  Pending FLUKA author confirmation that
-    # the macm1234 build is the regression source; once a fixed Mac
-    # prebuilt lands, restore d/t/3He/4He here.
-    _projectiles = standard_projectiles | {lp.photon.pdgid}
+    # Hadrons + photon + light nuclei (d, t, 3He, 4He): FLUKA exposes
+    # dedicated native projectile codes (-3..-6) and EVTXYZ accepts
+    # them at all energies in chromo's supported range.  Heavy ions
+    # (A > 4) are NOT in the set — EVTXYZ aborts with KPPRCT=-1/-2
+    # (FLUKA_QUESTIONS.md #1, separate library-level issue pending the
+    # FLUKA author's reply).  The previous Mac-only exclusion of light
+    # nuclei (DPMJET-3 silent STOP on the macm1234 prebuilt) was fixed
+    # in 2026-05 by linking _fluka with -Wl,-ld_classic; see meson.build.
+    _projectiles = (
+        standard_projectiles
+        | {lp.photon.pdgid}
+        | {
+            1000010020,  # deuteron
+            1000010030,  # triton
+            1000020030,  # 3He
+            1000020040,  # 4He (alpha)
+        }
+    )
     _targets = Nuclei() | {2212}
 
     # ------------------------------------------------------------------
@@ -483,10 +490,11 @@ class Fluka(MCRun):
             el = float(self._lib.chromo_sgmxyz(proj_code, mat_idx, ekin, 0.0, 10))
         if (flag // 100) % 10 == 1:
             emd = float(self._lib.chromo_sgmxyz(proj_code, mat_idx, ekin, 0.0, 100))
-        # For nuclear targets, FLUKA's inelastic (with quasielastic disabled,
-        # the chromo default) is the production cross section. Populate both
-        # `inelastic` and `prod` so downstream code that keys on either works.
-        prod = inel if is_real_nucleus(kin.p2) else np.nan
+        # When either side of the collision is a real nucleus, FLUKA's
+        # inelastic (with quasielastic disabled, the chromo default) is
+        # the production cross section. Populate both `inelastic` and
+        # `prod` so downstream code that keys on either works.
+        prod = inel if (is_real_nucleus(kin.p1) or is_real_nucleus(kin.p2)) else np.nan
         return CrossSectionData(inelastic=inel, elastic=el, emd=emd, prod=prod)
 
     def _set_stable(self, pdgid, stable):
