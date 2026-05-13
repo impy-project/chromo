@@ -175,7 +175,33 @@ pattern) is unblocked for correlated isotopes.
 
 ---
 
-## 7. DPMJET-3 event generation silently aborts above the Peanut cut
+## 7. DPMJET-3 event generation silently aborts above the Peanut cut — RESOLVED (Apple linker workaround)
+
+**Status (2026-05-12).**  Fixed on chromo's side by linking the
+`_fluka` extension with `-Wl,-ld_classic` on Darwin (gated on a
+`cc.has_link_argument` probe in `meson.build` so older toolchains
+and non-Darwin platforms are unaffected).  Apple's new linker
+(ld-prime, Xcode 15+) handles overlapping COMMON-block / weak
+symbols across the FLUKA archives (`libdpmjet`, `librqmd`,
+`libdpmmvax`, `librqmdmvax`, `libflukahp`) differently from the
+classic linker; under the new linker DPMJET-3's `(DTVARE)` energy
+bound is left at zero and every event past the Peanut→DPMJET-3
+transition is silently rejected (`DT_KKINC.f:73` bare `STOP`).
+Falling back to `ld_classic` resolves the symbols the way the FLUKA
+build expects.  Verified end-to-end after the fix: p+p CMS=300 GeV
+(plab ≈ 48 TeV, DPMJET-3 path) — 3 events; p+p CMS=1 TeV
+(plab ≈ 533 TeV) — 3 events; p+O16 CMS=300 GeV — 3 events; He+p
+CMS=1 TeV (plab ≈ 533 TeV/n) — 3 events.  Light-nucleus projectiles
+(d, t, 3He, 4He) are back in `Fluka._projectiles`.
+
+**Caveat.**  Apple's ld warns that `-ld_classic` is deprecated and
+will be removed in a future release.  When that happens chromo will
+need either a fixed FLUKA prebuilt (root cause is the prebuilt's
+handling of overlapping symbols, not the source) or a different
+linker flag that preserves the same symbol-resolution semantics.
+
+The original failure analysis follows for the record (pending the
+FLUKA author's preferred upstream fix).
 
 **Problem.**  The moment `EVTXYZ`'s internal dispatcher hands off from
 Peanut to DPMJET-3 (event lab momentum above
