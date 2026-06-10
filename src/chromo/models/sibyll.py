@@ -289,7 +289,11 @@ class SIBYLLRun(MCRun):
         self._glauber_trials = ntrials
 
     def _set_kinematics(self, kin):
-        if not kin.p1.is_nucleus:
+        # Nucleons (p, n) have PDGID.is_nucleus == True (they are A=1 nuclei),
+        # so route only real nuclei (A > 1) through sibnuc; nucleons must keep
+        # their distinct production id (13=p, 14=n) and go through sibyll(),
+        # otherwise a neutron beam is treated like a proton (loses isospin).
+        if not is_real_nucleus(kin.p1):
             self._production_id = self._lib.isib_pdg2pid(kin.p1)
             if self._production_id == 0:
                 msg = f"Invalid _production_id: {self._production_id}. Check the input kinematics: {kin.p1}"
@@ -315,11 +319,11 @@ class SIBYLLRun(MCRun):
 
     def _generate(self):
         kin = self.kinematics
-        if kin.p1.is_nucleus:
-            # Nucleus-nucleus collisions
+        if is_real_nucleus(kin.p1):
+            # Nucleus-nucleus collisions (A > 1 only; sibnuc has no p/n identity)
             self._lib.sibnuc(kin.p1.A, kin.p2.A, kin.ecm)
         else:
-            # hadron-nucleon collisions
+            # hadron-nucleon collisions (incl. p/n via distinct production id)
             self._lib.sibyll(self._production_id, kin.p2.A, kin.ecm)
         self._lib.decsib()
         self._lib.sibhep()
