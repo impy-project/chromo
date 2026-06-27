@@ -19,6 +19,36 @@ in EVTXYZ? Is `LIONTR`/`LHVTRN` needed before STPXYZ?
 
 ---
 
+## 8. Free-neutron target not supported by the element/material interface
+
+**Problem.** There is no way to set up a *free neutron* as the target.
+The chromo driver addresses targets only as FLUKA materials keyed by
+element Z: `CHROMO_STPXYZ`/`STPXYZ` take `IZELFL` (Z per element) and
+`WFELFL` (weight fractions) — no mass-number input — and the event /
+cross-section calls (`EVTXYZ`, `SGMXYZ`) take only the material index, no
+target nucleon. A free neutron is (A,Z) = (1,0); passing `IZELFL = 0`
+aborts:
+
+```
+ STOP INVALID IZELFL
+STOP STOP: FLUKA ABORTED
+```
+
+(chromo previously clamped `izelfl = max(Z, 1)`, which silently ran a
+*proton* for a "neutron" target — same σ_inel and π± spectra as Z=1
+hydrogen. chromo now raises a clear `ValueError` for PDG 2112 instead.)
+
+**Reproduce.** `STPXYZ` with `IZELFL(1) = 0` (single-element material,
+`NELMFL(1) = 1`).
+
+**Question.** Is there a supported way to run photonuclear interactions on
+a *free neutron* target (γ + n → p + π⁻, etc.)? PEANUT clearly has the
+physics when sampling a neutron out of a Z≥1 nucleus — is there a
+lower-level entry point that takes the target nucleon (or an (A,Z)=(1,0)
+pseudo-material) directly, bypassing the element-based STPXYZ?
+
+---
+
 ## 2. `e+/e-` projectiles: EVTXYZ aborts on some targets
 
 **Problem.** `SGMXYZ` returns valid cross sections for e+/e- on all
