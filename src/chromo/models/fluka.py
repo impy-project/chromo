@@ -373,6 +373,19 @@ class Fluka(MCRun):
             raise ValueError(msg)
         # Each entry is a single-element material; nelmfl[i]=1 for all.
         nelmfl = np.ones(len(materials), dtype=np.int32)
+        # FLUKA addresses targets by element Z (STPXYZ takes IZELFL only, no
+        # mass number), so a free neutron (PDG 2112 → A,Z = 1,0) cannot be a
+        # target: FLUKA has no Z=0 element and STPXYZ aborts with
+        # "STOP INVALID IZELFL". The previous code silently clamped Z 0→1,
+        # which ran a *proton* instead — a latent, misleading bug. Fail fast.
+        if 2112 in {int(p) for p in materials}:
+            msg = (
+                "FLUKA cannot use a free neutron (PDG 2112) as a target. Its "
+                "photonuclear interface addresses targets by element Z and "
+                "FLUKA has no Z=0 element (STPXYZ aborts: 'INVALID IZELFL'). "
+                "Use a nucleus (e.g. deuterium 'H2') or a proton target."
+            )
+            raise ValueError(msg)
         # pdg2AZ returns (A, Z); we want Z. Free proton (2212) → (1, 1).
         izelfl = np.array([max(pdg2AZ(pdg)[1], 1) for pdg in materials], dtype=np.int32)
         wfelfl = np.ones(len(materials), dtype=np.float64)
