@@ -494,6 +494,20 @@ if 'fluka' in enabled_models and fluka_ok
     fluka_link_args += ['-Wl,-ld_classic']
     message('FLUKA: linking _fluka with -Wl,-ld_classic (Apple new-linker workaround for DPMJET-3 abort).')
   endif
+  # FLUKA bundles its own LAPACK (e.g. strtrs_) inside libflukahp.a.  On
+  # ELF/Linux, when _fluka.so is loaded into a process whose numpy is linked
+  # against MKL/OpenBLAS, the global-scope strtrs_ from that BLAS interposes
+  # FLUKA's own, so FLUKA's internal calls (phnevt -> strtrs_) hit the wrong
+  # routine and abort in the DPMJET regime ("Intel oneMKL ERROR ... STRTRS" /
+  # "STOP AM(KP)!=AKPRIN").  -Bsymbolic binds this module's references to its
+  # OWN defined symbols first — the link-time equivalent of
+  # dlopen(RTLD_DEEPBIND) — so FLUKA's strtrs_ wins.  Replaces the per-consumer
+  # ctypes RTLD_DEEPBIND preload workaround.  macOS (two-level namespaces) does
+  # not have this clash and uses a different linker, so restrict to non-Darwin.
+  if host_machine.system() != 'darwin' and cc.has_link_argument('-Wl,-Bsymbolic')
+    fluka_link_args += ['-Wl,-Bsymbolic']
+    message('FLUKA: linking _fluka with -Wl,-Bsymbolic (FLUKA strtrs_/LAPACK wins over MKL interposition; replaces RTLD_DEEPBIND).')
+  endif
 
   py.extension_module('_fluka',
     sources            : [wrap, f2py_obj, files(flka_src)],
