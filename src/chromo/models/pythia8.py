@@ -805,6 +805,16 @@ class Pythia8Angantyr(MCRun):
             if not pythia.readString(f"Beams:idAList = {{{ida_str}}}"):
                 msg = "setting Beams:idAList failed"
                 raise RuntimeError(msg)
+            # Per-beam initialization tables (generated once with
+            # scripts/generate_angantyr_tables.py, with the target species
+            # appended to Beams:idAList; main424-equivalent)
+            # for species the bundled InitDefault* files do not cover;
+            # without them every init recomputes the MPI/SigFit grids
+            # for this beam (>1 h).  Loaded last so the stored
+            # Init:reuse* grids override the bundled ones.
+            beam_table = self._setups_dir / f"InitAngantyr_beam_{idA}.cmnd"
+            if beam_table.exists():
+                self._load_cmnd_file(pythia, beam_table)
 
         pythia.readString(f"Beams:idA = {idA}")
         pythia.readString(f"Beams:idB = {int(kin.p2)}")
