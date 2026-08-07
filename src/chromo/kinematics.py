@@ -165,7 +165,7 @@ class EventKinematicsBase:
         self._beam_data = {
             "pid": np.array([int(self.p1), int(self.p2)]),
             "status": np.array([4, 4]),
-            "charge": np.array([self.p1.charge, self.p2.charge]),
+            "charge": np.array([self.p1.charge, self.p2.charge], dtype=np.float64),
             "px": np.zeros((2,), dtype=np.float64),
             "py": np.zeros((2,), dtype=np.float64),
             "pz": event_like.pz,
