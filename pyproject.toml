@@ -134,6 +134,9 @@ CIBW = "1"
 line-length = 88
 
 [tool.ruff.lint]
+# Pin the pre-0.16 default rule set; ruff 0.16 widened its defaults
+# (B, SIM, N, S, FA, ...) which we opt into deliberately via extend-select.
+select = ["E4", "E7", "E9", "F"]
 exclude = ["examples/**", "obsolete/**", "bench/**"]
 
 extend-select = [
