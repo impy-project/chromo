@@ -4,17 +4,59 @@ on:
   push:
     branches:
       - main
+  # Runs the preflight stage only; the wheel matrix stays push-only.
+  pull_request:
+    paths:
+      - '.github/workflows/build.yml'
+      - 'scripts/ci/**'
   workflow_dispatch:
 
 jobs:
-  prepare-cache:
-    # actions/cache archives are OS-scoped, so populate the cache on every OS
-    # that downstream jobs run on.
+  # Gate for the wheel matrix: no compilation, ~30 s. Fails on an unusable
+  # Fortran toolchain or a deployment target the bundled gfortran runtime does
+  # not satisfy, both of which cibuildwheel only reports an hour in.
+  preflight:
+    name: preflight ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15, macos-15-intel]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup gfortran
+        uses: fortran-lang/setup-fortran@v1.9.2
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 13
+
+      - name: Check Fortran toolchain
+        if: runner.os != 'macOS'
+        run: |
+          command -v "${{ steps.setup-fortran.outputs.fc }}" \
+            || { echo "::error::Fortran compiler not on PATH"; exit 1; }
+          "${{ steps.setup-fortran.outputs.fc }}" --version | head -1
+
+      - name: Check macOS wheel toolchain
+        if: runner.os == 'macOS'
+        env:
+          FC: ${{ steps.setup-fortran.outputs.fc }}
+          EXPECTED_MACOS_TARGET: '15.0'
+        run: bash scripts/ci/macos_wheel_preflight.sh
+
+  prepare-cache:
+    # actions/cache archives are OS-scoped, so populate the cache on every OS
+    # that downstream jobs run on.
+    if: github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     steps:
       - name: Restore chromo data cache
         uses: actions/cache@v4
@@ -39,13 +81,19 @@ jobs:
           key: chromo-cache-v2
 
   wheels:
-    needs: prepare-cache
+    needs: [preflight, prepare-cache]
     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
+    # Slowest job is ~85 min; the GitHub default of 6 h is too coarse to
+    # notice a wedged runner.
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest]
+        # Pinned, not macos-latest: Homebrew builds the gfortran runtime for
+        # the runner's own OS, so the image release sets the minimum macOS of
+        # the published wheels.
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-15]
         arch: [auto]
         py: [cp39, cp310, cp311, cp312, cp313]
     steps:
@@ -59,16 +107,21 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - name: Set macOS deployment target
-        if: runner.os == 'macOS'
-        run: echo "MACOSX_DEPLOYMENT_TARGET=15.0" >> $GITHUB_ENV
-
       - name: Setup gfortran
-        uses: awvwgk/setup-fortran@v1.6.1
+        # Keep >= v1.9: earlier releases hardcode the /opt/homebrew prefix and
+        # leave a dangling gfortran symlink on the Intel runners.
+        uses: fortran-lang/setup-fortran@v1.9.2
         id: setup-fortran
         with:
           compiler: gcc
           version: 13
+
+      - name: Set macOS deployment target from the gfortran runtime
+        if: runner.os == 'macOS'
+        env:
+          FC: ${{ steps.setup-fortran.outputs.fc }}
+          EXPECTED_MACOS_TARGET: '15.0'
+        run: bash scripts/ci/macos_wheel_preflight.sh
 
       - if: ${{ matrix.os != 'macos-15-intel' }}
         uses: ts-graphviz/setup-graphviz@v2
@@ -101,7 +154,7 @@ jobs:
           CHROMO_SKIP_GRAPHVIZ: 1
           CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
 
-      - if: ${{ matrix.os == 'macos-latest' }}
+      - if: ${{ matrix.os == 'macos-15' }}
         name: cibuildwheel on macOS
         uses: pypa/cibuildwheel@v3.4.0
         env:
@@ -116,9 +169,10 @@ jobs:
           name: wheel-${{ matrix.py }}-${{ matrix.os }}-${{ matrix.arch }}
 
   sdist:
-    needs: prepare-cache
+    needs: [preflight, prepare-cache]
     name: source package
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Restore chromo data cache
         uses: actions/cache@v4

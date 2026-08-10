@@ -77,7 +77,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
-      - uses: awvwgk/setup-fortran@main
+      - uses: fortran-lang/setup-fortran@v1.9.2
         id: setup-fortran
         with:
           compiler: gcc
@@ -126,27 +126,21 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - uses: awvwgk/setup-fortran@main
+      - uses: fortran-lang/setup-fortran@v1.9.2
         id: setup-fortran
         with:
           compiler: gcc
           version: 13
 
-      # The wheel must target at least the minimum OS of the gfortran
-      # runtime dylibs it bundles (Homebrew builds them for the runner's
-      # OS release), otherwise delocate-wheel rejects it. Deriving the
-      # target from libgfortran itself keeps working when macos-latest
-      # moves to a new image.
-      - name: Set macOS deployment target from the gfortran runtime
+      # Same script build.yml uses. This job stays on macos-latest, so
+      # EXPECTED_MACOS_TARGET warns when a new image would raise the minimum
+      # macOS of the wheels build.yml publishes from macos-15.
+      - name: Check macOS wheel toolchain
         if: runner.os == 'macOS'
-        run: |
-          lib=$(${{ steps.setup-fortran.outputs.fc }} --print-file-name=libgfortran.dylib)
-          minos=$(vtool -show-build "$lib" | awk '$1 == "minos" || $1 == "version" {print $2; exit}')
-          if [ -z "$minos" ]; then
-            minos="$(sw_vers -productVersion | cut -d. -f1).0"
-          fi
-          echo "libgfortran at $lib has minimum OS $minos"
-          echo "MACOSX_DEPLOYMENT_TARGET=$minos" >> $GITHUB_ENV
+        env:
+          FC: ${{ steps.setup-fortran.outputs.fc }}
+          EXPECTED_MACOS_TARGET: '15.0'
+        run: bash scripts/ci/macos_wheel_preflight.sh
 
       - if: ${{ matrix.os != 'macos-15-intel' }}
         uses: ts-graphviz/setup-graphviz@v2
