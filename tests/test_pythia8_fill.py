@@ -89,7 +89,7 @@ def run_event_fill():
     and uses `pythia.event.append` in C++ loop
     """
 
-    config = ["ProcessLevel:all = off" "ParticleDecays:tau0Max = 1e100"]
+    config = ["ProcessLevel:all = off", "ParticleDecays:tau0Max = 1e100"]
     pythia8 = chromo.models.Pythia8(None, seed=1, config=config, banner=False)
     pythia = pythia8._pythia
 

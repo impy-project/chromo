@@ -168,8 +168,6 @@ class SIBYLLRun(MCRun):
             431,
             4122,
             4132,
-            4232,
-            431,
             4332,
         }
         | Nuclei(a_max=56)

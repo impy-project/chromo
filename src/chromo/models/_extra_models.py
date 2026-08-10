@@ -16,7 +16,6 @@ from chromo.models.sibyll import (
 
 __all__ = (
     "DpmjetIII193_DEV",
-    "DpmjetIII193_DEV",
     "Sibyll23c00",
     "Sibyll23c01",
     "Sibyll23c02",
