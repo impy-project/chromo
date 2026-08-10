@@ -10,7 +10,7 @@ c---------------------------------------------------------------------------
       parameter (mmry=1)   !memory saving factor
 
       parameter (mxptl=300000/mmry) !max nr of particles in epos ptl list
-      parameter (nmxhep=9990)    !max nr of particles in hep ptl list
+      parameter (nmxhep=100000)    !max nr of particles in hep ptl list
       parameter (myptl=1000)        !max nr of droplets in epos ptl list
       parameter (nzeta=60)          !max nr of zeta bins for droplets
       parameter (nflav=6)           !max nr of flavors
