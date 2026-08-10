@@ -4,9 +4,7 @@ on:
   push:
     branches:
       - main
-  # Changes to the wheel build itself never reached a PR before, which is how
-  # this workflow drifted away from the (green) macOS setup in test.yml. Run the
-  # cheap pre-flight stage on such PRs so the drift is caught before the merge.
+  # Runs the preflight stage only; the wheel matrix stays push-only.
   pull_request:
     paths:
       - '.github/workflows/build.yml'
@@ -14,9 +12,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Stage 1: seconds, no compilation. Catches a broken Fortran toolchain and a
-  # deployment target that the bundled gfortran runtime cannot satisfy -- the
-  # two things that have taken this workflow down after ~1.5 h of doomed matrix.
+  # Gate for the wheel matrix: no compilation, ~30 s. Fails on an unusable
+  # Fortran toolchain or a deployment target the bundled gfortran runtime does
+  # not satisfy, both of which cibuildwheel only reports an hour in.
   preflight:
     name: preflight ${{ matrix.os }}
     strategy:
@@ -82,21 +80,19 @@ jobs:
           path: ~/.cache/chromo
           key: chromo-cache-v2
 
-  # Stage 2: the real matrix, only once the toolchain is known to be sane.
   wheels:
     needs: [preflight, prepare-cache]
     name: ${{ matrix.py }} ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
-    # The slowest job in this matrix runs ~85 min. Without a bound a wedged
-    # runner burns the GitHub default of 6 h before reporting anything.
+    # Slowest job is ~85 min; the GitHub default of 6 h is too coarse to
+    # notice a wedged runner.
     timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
-        # macos-15 rather than macos-latest: Homebrew builds the gfortran
-        # runtime for the runner's own OS, so building on macOS 26 would raise
-        # the wheels' minimum supported macOS to 16.0 (= 26). Pin the image to
-        # keep the published support floor at macOS 15.
+        # Pinned, not macos-latest: Homebrew builds the gfortran runtime for
+        # the runner's own OS, so the image release sets the minimum macOS of
+        # the published wheels.
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-15]
         arch: [auto]
         py: [cp39, cp310, cp311, cp312, cp313]
@@ -112,10 +108,8 @@ jobs:
           fetch-depth: 0
 
       - name: Setup gfortran
-        # v1.6.1 symlinked /opt/homebrew/bin/gfortran-13 on every macOS >= 14,
-        # which dangles on the Intel runners (Homebrew prefix /usr/local) and
-        # made meson report "Unknown compiler(s): [['gfortran']]". v1.9.x
-        # derives the prefix with `brew --prefix`.
+        # Keep >= v1.9: earlier releases hardcode the /opt/homebrew prefix and
+        # leave a dangling gfortran symlink on the Intel runners.
         uses: fortran-lang/setup-fortran@v1.9.2
         id: setup-fortran
         with:

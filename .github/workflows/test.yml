@@ -132,10 +132,9 @@ jobs:
           compiler: gcc
           version: 13
 
-      # Same pre-flight the release build runs, so the two cannot drift again.
-      # This job deliberately stays on macos-latest: EXPECTED_MACOS_TARGET makes
-      # it warn as soon as a new runner image would raise the support floor of
-      # the wheels that build.yml publishes from macos-15.
+      # Same script build.yml uses. This job stays on macos-latest, so
+      # EXPECTED_MACOS_TARGET warns when a new image would raise the minimum
+      # macOS of the wheels build.yml publishes from macos-15.
       - name: Check macOS wheel toolchain
         if: runner.os == 'macOS'
         env:
