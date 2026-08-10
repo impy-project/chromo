@@ -102,11 +102,21 @@ class EPOSEvent(MCEvent):
         """
         # Search among epos's beam particles the particles with the
         # same energy as projectile/target
+        # A generator can hand us a degenerate record: EPOS truncates and
+        # skips events whose multiplicity exceeds nmxhep, leaving nothing to
+        # attach the beam to. Without this guard the next line raises
+        # IndexError and kills the process instead of the event.
+        if len(event.en) <= ind:
+            return
         is_parent = np.isclose(event.en, event.en[ind], rtol=1e-2) & (event.status == 4)
         # Attach them to the parent
         event.mothers[is_parent] = [ind, -1]
         # Assign daughters for projectile/target
         daughters = np.where(is_parent)[0]
+        # No beam remnants matched: np.min/np.max on an empty array would
+        # raise ValueError.
+        if daughters.size == 0:
+            return
         event.daughters[ind] = [np.min(daughters), np.max(daughters)]
 
     def _repair_initial_beam(self):
@@ -119,6 +129,12 @@ class EPOSEvent(MCEvent):
 
         # Don't do anything if it's not a nucleus
         if not (np.any(is_nucleus)):
+            return
+
+        # Nothing to repair on a degenerate (skipped) event -- see the guard
+        # in _beam_mother_daughters_fix. Returning here keeps the empty event
+        # intact so the caller can drop it, rather than crashing the run.
+        if len(self.pid) == 0:
             return
 
         bstatus = 555  # status of prepended particles
