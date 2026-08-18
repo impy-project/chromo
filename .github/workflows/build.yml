@@ -27,6 +27,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup gfortran
+        if: runner.os == 'macOS'
         uses: fortran-lang/setup-fortran@v1.9.2
         id: setup-fortran
         with:
@@ -36,9 +37,9 @@ jobs:
       - name: Check Fortran toolchain
         if: runner.os != 'macOS'
         run: |
-          command -v "${{ steps.setup-fortran.outputs.fc }}" \
+          command -v gfortran \
             || { echo "::error::Fortran compiler not on PATH"; exit 1; }
-          "${{ steps.setup-fortran.outputs.fc }}" --version | head -1
+          gfortran --version | head -1
 
       - name: Check macOS wheel toolchain
         if: runner.os == 'macOS'
@@ -110,6 +111,7 @@ jobs:
       - name: Setup gfortran
         # Keep >= v1.9: earlier releases hardcode the /opt/homebrew prefix and
         # leave a dangling gfortran symlink on the Intel runners.
+        if: runner.os == 'macOS'
         uses: fortran-lang/setup-fortran@v1.9.2
         id: setup-fortran
         with:
