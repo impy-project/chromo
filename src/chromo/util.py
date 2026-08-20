@@ -641,7 +641,9 @@ def _cached_data_dir(url: str) -> str:
 
             if not zip_obtained:
                 info(1, f"Downloading {url} to {temp_zip_path}")
-                _download_file(temp_zip_path, url)  # _download_file is an existing function
+                _download_file(
+                    temp_zip_path, url
+                )  # _download_file is an existing function
                 zip_obtained = True
 
             if not zip_obtained or not temp_zip_path.is_file():
@@ -671,9 +673,7 @@ def _cached_data_dir(url: str) -> str:
             except OSError as e:
                 # If version file creation fails, the data is there but might be re-processed.
                 # This is a critical step for recognizing the data next time.
-                msg = (
-                    f"Failed to create version file {version_file.name} for {model_name}: {e}"
-                )
+                msg = f"Failed to create version file {version_file.name} for {model_name}: {e}"
                 raise OSError(msg) from e
 
             return str(model_dir) + "/"
