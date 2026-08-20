@@ -525,9 +525,17 @@ def _cache_lock(lock_file: Path, timeout: float = 300.0, poll_interval: float = 
                 pid = None
             if pid is not None and not _is_pid_alive(pid):
                 try:
-                    lock_file.unlink()
-                except OSError:
-                    pass
+                    current_pid = int(lock_file.read_text(encoding="ascii").strip())
+                except (OSError, ValueError):
+                    current_pid = None
+                if current_pid == pid:
+                    try:
+                        lock_file.unlink()
+                    except OSError:
+                        pass
+                else:
+                    time.sleep(poll_interval)
+                    continue
                 continue
             if time.monotonic() - start > timeout:
                 msg = f"Timeout while waiting for cache lock {lock_file}"

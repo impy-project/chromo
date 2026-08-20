@@ -149,6 +149,8 @@ def test_cached_data_dir_uses_lock(tmp_path, monkeypatch):
     t1.join(timeout=10)
     t2.join(timeout=10)
 
+    assert not t1.is_alive()
+    assert not t2.is_alive()
     assert not errors
     assert len(results) == 2
     assert len(set(results)) == 1
