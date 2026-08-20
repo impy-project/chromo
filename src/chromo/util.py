@@ -551,7 +551,7 @@ def _cache_lock(lock_file: Path, timeout: float = 300.0, poll_interval: float = 
                 pass
         try:
             lock_file.unlink()
-        except FileNotFoundError:
+        except OSError:
             pass
 
 
