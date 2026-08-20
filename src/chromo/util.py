@@ -515,7 +515,10 @@ def _cache_lock(lock_file: Path, timeout: float = 300.0, poll_interval: float = 
         yield
     finally:
         if fd is not None:
-            os.close(fd)
+            try:
+                os.close(fd)
+            except OSError:
+                pass
         try:
             lock_file.unlink()
         except FileNotFoundError:
