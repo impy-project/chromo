@@ -500,13 +500,35 @@ def _extract_zip(zip_file_path: Path, destination_dir: Path):
 
 @contextmanager
 def _cache_lock(lock_file: Path, timeout: float = 300.0, poll_interval: float = 0.1):
+    def _is_pid_alive(pid: int) -> bool:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+        except OSError:
+            return True
+        return True
+
     start = time.monotonic()
     fd = None
     while True:
         try:
             fd = os.open(lock_file, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+            os.write(fd, str(os.getpid()).encode("ascii"))
             break
         except FileExistsError:
+            try:
+                pid = int(lock_file.read_text(encoding="ascii").strip())
+            except (OSError, ValueError):
+                pid = None
+            if pid is not None and not _is_pid_alive(pid):
+                try:
+                    lock_file.unlink()
+                except OSError:
+                    pass
+                continue
             if time.monotonic() - start > timeout:
                 msg = f"Timeout while waiting for cache lock {lock_file}"
                 raise OSError(msg)
