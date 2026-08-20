@@ -5,12 +5,15 @@ import dataclasses
 import importlib.util
 import inspect
 import math
+import os
 import pkgutil
 import shutil
+import time
 import urllib.request
 import warnings
 import zipfile
 from collections.abc import Collection, Sequence
+from contextlib import contextmanager
 from enum import Enum
 from pathlib import Path
 from typing import Union
@@ -495,6 +498,30 @@ def _extract_zip(zip_file_path: Path, destination_dir: Path):
     info(1, f"Successfully extracted {zip_file_path.name} to {destination_dir}")
 
 
+@contextmanager
+def _cache_lock(lock_file: Path, timeout: float = 300.0, poll_interval: float = 0.1):
+    start = time.monotonic()
+    fd = None
+    while True:
+        try:
+            fd = os.open(lock_file, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+            break
+        except FileExistsError:
+            if time.monotonic() - start > timeout:
+                msg = f"Timeout while waiting for cache lock {lock_file}"
+                raise OSError(msg)
+            time.sleep(poll_interval)
+    try:
+        yield
+    finally:
+        if fd is not None:
+            os.close(fd)
+        try:
+            lock_file.unlink()
+        except FileNotFoundError:
+            pass
+
+
 # REFACTORED _cached_data_dir function
 def _cached_data_dir(url: str) -> str:
     """
@@ -534,113 +561,117 @@ def _cached_data_dir(url: str) -> str:
         model_dir / vname_stem
     )  # Expected version file, e.g., iamdata/qgsjet/qgsjet_v002
 
-    if version_file.exists():
-        info(
-            2,
-            f"Version file {version_file.name} found for {model_name}. Using existing data.",
-        )
-        return str(model_dir) + "/"
-
-    # Prepare model_dir: remove if exists, then recreate for a clean slate
-    if model_dir.exists():
-        info(1, f"Removing existing model directory: {model_dir}")
-        try:
-            shutil.rmtree(model_dir)
-        except OSError as e:
-            warnings.warn(
-                f"Could not remove existing model directory {model_dir}: {e}. "
-                "Proceeding, but extraction might fail or be incomplete."
+    lock_file = iamdata_dir / f".{model_name}.lock"
+    with _cache_lock(lock_file):
+        if version_file.exists():
+            info(
+                2,
+                f"Version file {version_file.name} found for {model_name}. Using existing data.",
             )
-    try:
-        model_dir.mkdir(parents=True, exist_ok=True)
-    except OSError as e:
-        msg = f"Could not create model directory {model_dir}: {e}"
-        raise OSError(msg) from e
+            return str(model_dir) + "/"
 
-    # temp_zip_path is where the zip will be before extraction (inside iamdata_dir)
-    temp_zip_path = iamdata_dir / zip_filename
-    zip_obtained = False
-
-    try:
-        # Attempt to get ZIP from CI cache or download
-        ci_cache_file = Path.home() / ".cache" / "chromo" / zip_filename
-        info(1, f"CI: Checking cache: {ci_cache_file}")
-        if ci_cache_file.is_file():
-            try:
-                shutil.copy2(ci_cache_file, temp_zip_path)
-                info(1, f"CI: Copied {zip_filename} from cache to {temp_zip_path}")
-                zip_obtained = True
-            except Exception as e:
-                warnings.warn(
-                    f"CI: Failed to copy {zip_filename} from cache: {e}. Will try download."
-                )
-        else:
-            info(1, f"CI: Cache miss for {zip_filename}. Will try download.")
-
-        if not zip_obtained:
-            info(1, f"Downloading {url} to {temp_zip_path}")
-            _download_file(temp_zip_path, url)  # _download_file is an existing function
-            zip_obtained = True
-
-        if not zip_obtained or not temp_zip_path.is_file():
-            # This case should ideally be caught by _download_file raising an error
-            msg = f"Failed to obtain zip file: {zip_filename}"
-            raise ConnectionError(msg)  # noqa: TRY301
-
-        # Extract the zip
-        info(1, f"Extracting {temp_zip_path.name} to {model_dir}")
-        _extract_zip(temp_zip_path, model_dir.parent)
-
-        # Post-extraction: Clean up old version files and create new one
-        for old_vfile in model_dir.glob(f"{model_name}_v*"):
-            if old_vfile.name != vname_stem:
-                try:
-                    old_vfile.unlink()
-                    info(5, f"Removed old version artifact: {old_vfile.name}")
-                except OSError as e:
-                    warnings.warn(
-                        f"Could not remove old version file {old_vfile.name}: {e}"
-                    )
-
-        try:
-            with open(version_file, "w", encoding="utf-8") as vf:
-                vf.write(url)  # Store the URL as the content of the version file
-            info(1, f"Created version file: {version_file.name} for {model_name}")
-        except OSError as e:
-            # If version file creation fails, the data is there but might be re-processed.
-            # This is a critical step for recognizing the data next time.
-            msg = f"Failed to create version file {version_file.name} for {model_name}: {e}"
-            raise OSError(msg) from e
-
-        return str(model_dir) + "/"
-
-    except (ConnectionError, OSError) as e:
-        # If any crucial step failed, log it and re-raise.
-        # The model_dir might be in an incomplete state.
-        # On next run, version_file check will fail, and it will try to rebuild.
-        warnings.warn(f"Error during data caching for {model_name} from {url}: {e}")
-        # Clean up model_dir to ensure a fresh start next time if it exists
+        # Prepare model_dir: remove if exists, then recreate for a clean slate
         if model_dir.exists():
-            shutil.rmtree(model_dir, ignore_errors=True)
-        raise  # Re-raise the caught specific exception (ConnectionError or OSError)
-    except Exception as e:
-        # Catch any other unexpected errors
-        warnings.warn(f"Unexpected error during data caching for {model_name}: {e}")
-        if model_dir.exists():
-            shutil.rmtree(model_dir, ignore_errors=True)
-        # Wrap in a RuntimeError for unexpected issues
-        msg = f"Unexpected error processing {model_name}: {e}"
-        raise RuntimeError(msg) from e
-    finally:
-        # Always try to clean up the temporary zip file from iamdata_dir
-        if temp_zip_path.exists():
+            info(1, f"Removing existing model directory: {model_dir}")
             try:
-                temp_zip_path.unlink()
-                info(5, f"Cleaned up temporary zip: {temp_zip_path.name}")
+                shutil.rmtree(model_dir)
             except OSError as e:
                 warnings.warn(
-                    f"Could not remove temporary zip {temp_zip_path.name}: {e}"
+                    f"Could not remove existing model directory {model_dir}: {e}. "
+                    "Proceeding, but extraction might fail or be incomplete."
                 )
+        try:
+            model_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            msg = f"Could not create model directory {model_dir}: {e}"
+            raise OSError(msg) from e
+
+        # temp_zip_path is where the zip will be before extraction (inside iamdata_dir)
+        temp_zip_path = iamdata_dir / zip_filename
+        zip_obtained = False
+
+        try:
+            # Attempt to get ZIP from CI cache or download
+            ci_cache_file = Path.home() / ".cache" / "chromo" / zip_filename
+            info(1, f"CI: Checking cache: {ci_cache_file}")
+            if ci_cache_file.is_file():
+                try:
+                    shutil.copy2(ci_cache_file, temp_zip_path)
+                    info(1, f"CI: Copied {zip_filename} from cache to {temp_zip_path}")
+                    zip_obtained = True
+                except Exception as e:
+                    warnings.warn(
+                        f"CI: Failed to copy {zip_filename} from cache: {e}. Will try download."
+                    )
+            else:
+                info(1, f"CI: Cache miss for {zip_filename}. Will try download.")
+
+            if not zip_obtained:
+                info(1, f"Downloading {url} to {temp_zip_path}")
+                _download_file(temp_zip_path, url)  # _download_file is an existing function
+                zip_obtained = True
+
+            if not zip_obtained or not temp_zip_path.is_file():
+                # This case should ideally be caught by _download_file raising an error
+                msg = f"Failed to obtain zip file: {zip_filename}"
+                raise ConnectionError(msg)  # noqa: TRY301
+
+            # Extract the zip
+            info(1, f"Extracting {temp_zip_path.name} to {model_dir}")
+            _extract_zip(temp_zip_path, model_dir.parent)
+
+            # Post-extraction: Clean up old version files and create new one
+            for old_vfile in model_dir.glob(f"{model_name}_v*"):
+                if old_vfile.name != vname_stem:
+                    try:
+                        old_vfile.unlink()
+                        info(5, f"Removed old version artifact: {old_vfile.name}")
+                    except OSError as e:
+                        warnings.warn(
+                            f"Could not remove old version file {old_vfile.name}: {e}"
+                        )
+
+            try:
+                with open(version_file, "w", encoding="utf-8") as vf:
+                    vf.write(url)  # Store the URL as the content of the version file
+                info(1, f"Created version file: {version_file.name} for {model_name}")
+            except OSError as e:
+                # If version file creation fails, the data is there but might be re-processed.
+                # This is a critical step for recognizing the data next time.
+                msg = (
+                    f"Failed to create version file {version_file.name} for {model_name}: {e}"
+                )
+                raise OSError(msg) from e
+
+            return str(model_dir) + "/"
+
+        except (ConnectionError, OSError) as e:
+            # If any crucial step failed, log it and re-raise.
+            # The model_dir might be in an incomplete state.
+            # On next run, version_file check will fail, and it will try to rebuild.
+            warnings.warn(f"Error during data caching for {model_name} from {url}: {e}")
+            # Clean up model_dir to ensure a fresh start next time if it exists
+            if model_dir.exists():
+                shutil.rmtree(model_dir, ignore_errors=True)
+            raise  # Re-raise the caught specific exception (ConnectionError or OSError)
+        except Exception as e:
+            # Catch any other unexpected errors
+            warnings.warn(f"Unexpected error during data caching for {model_name}: {e}")
+            if model_dir.exists():
+                shutil.rmtree(model_dir, ignore_errors=True)
+            # Wrap in a RuntimeError for unexpected issues
+            msg = f"Unexpected error processing {model_name}: {e}"
+            raise RuntimeError(msg) from e
+        finally:
+            # Always try to clean up the temporary zip file from iamdata_dir
+            if temp_zip_path.exists():
+                try:
+                    temp_zip_path.unlink()
+                    info(5, f"Cleaned up temporary zip: {temp_zip_path.name}")
+                except OSError as e:
+                    warnings.warn(
+                        f"Could not remove temporary zip {temp_zip_path.name}: {e}"
+                    )
 
 
 class TaggedFloat:

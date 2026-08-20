@@ -1,3 +1,7 @@
+import threading
+import time
+import zipfile
+
 import numpy as np
 from numpy.testing import assert_equal
 from particle import literals as lp
@@ -99,3 +103,53 @@ def test_is_real_nucleus():
     mix = util.CompositeTarget([("p", 0.5), ("He", 0.5)])
 
     assert util.is_real_nucleus(mix)
+
+
+def test_cached_data_dir_uses_lock(tmp_path, monkeypatch):
+    model_name = "TestModel"
+    version = "001"
+    zip_name = f"{model_name}_v{version}.zip"
+    url = f"https://example.invalid/{zip_name}"
+
+    fake_pkg = tmp_path / "pkg" / "chromo"
+    fake_pkg.mkdir(parents=True)
+    monkeypatch.setattr(util, "__file__", str(fake_pkg / "util.py"))
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+
+    cache_dir = tmp_path / "home" / ".cache" / "chromo"
+    cache_dir.mkdir(parents=True)
+    with zipfile.ZipFile(cache_dir / zip_name, "w") as zf:
+        zf.writestr(f"{model_name}/xmldoc/MainProgramSettings.xml", "<xml/>")
+
+    start = threading.Barrier(2)
+    extract_calls = []
+    real_extract = util._extract_zip
+
+    def wrapped_extract(*args, **kwargs):
+        extract_calls.append(time.monotonic())
+        time.sleep(0.2)
+        return real_extract(*args, **kwargs)
+
+    monkeypatch.setattr(util, "_extract_zip", wrapped_extract)
+
+    results = []
+    errors = []
+
+    def worker():
+        try:
+            start.wait(timeout=5)
+            results.append(util._cached_data_dir(url))
+        except Exception as exc:  # pragma: no cover
+            errors.append(exc)
+
+    t1 = threading.Thread(target=worker)
+    t2 = threading.Thread(target=worker)
+    t1.start()
+    t2.start()
+    t1.join(timeout=10)
+    t2.join(timeout=10)
+
+    assert not errors
+    assert len(results) == 2
+    assert len(set(results)) == 1
+    assert len(extract_calls) == 1
