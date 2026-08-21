@@ -1,5 +1,7 @@
 import dataclasses
+import sys
 from abc import ABC, abstractmethod
+from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
@@ -219,7 +221,23 @@ class Svg(Writer):
             _raise_import_error("pyhepmc", "write SVGs")
         if not hasattr(ge, "_repr_html_"):
             _raise_import_error("graphviz", "write SVGs")
-        svg = ge._repr_html_()
+        # pyhepmc's _repr_html_ uses the particle library which represents
+        # particle charges as fractions.Fraction. Graphviz then formats these
+        # with numeric format specs (e.g. ":.2g"). Python < 3.12 and >= 3.14
+        # do not support non-empty format specs on Fraction. Patch temporarily
+        # to convert to float for any non-empty spec.
+        if sys.version_info < (3, 12) or sys.version_info >= (3, 14):
+            from unittest.mock import patch
+
+            def _compat_fraction_format(self, spec):
+                if spec:
+                    return format(float(self), spec)
+                return str(self)
+
+            with patch.object(Fraction, "__format__", _compat_fraction_format):
+                svg = ge._repr_html_()
+        else:
+            svg = ge._repr_html_()
         odir, name, ext = self._template
         fn = Path(odir) / f"{name}_{self._idx:03}{ext}"
         self._idx += 1

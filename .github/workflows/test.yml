@@ -77,7 +77,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
-      - uses: fortran-lang/setup-fortran@v1.9.2
+      - if: runner.os == 'macOS'
+        uses: fortran-lang/setup-fortran@v1.9.2
         id: setup-fortran
         with:
           compiler: gcc
@@ -126,7 +127,8 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - uses: fortran-lang/setup-fortran@v1.9.2
+      - if: runner.os == 'macOS'
+        uses: fortran-lang/setup-fortran@v1.9.2
         id: setup-fortran
         with:
           compiler: gcc

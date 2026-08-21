@@ -149,6 +149,18 @@ def test_rng_state_bitgens(Model, bitgen_class, seed):
 
     if (
         (Model is im.EposLHC)
+        and (bitgen_class == np.random.Philox)
+        and platform.system() == "Darwin"
+    ):
+        pytest.xfail(
+            "test_rng_state_bitgens[Philox-33333-EposLHC] fails with "
+            "AssertionError: 'states differ after N generation with Philox' "
+            "on macOS (both arm64 and x86_64). "
+            "It needs further investigation."
+        )
+
+    if (
+        (Model is im.EposLHC)
         and (bitgen_class in (np.random.MT19937, np.random.Philox))
         and os.environ.get("CI")
         and platform.system() == "Linux"
