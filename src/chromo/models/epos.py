@@ -237,15 +237,41 @@ class EposLHC(MCRun):
         self.kinematics = evt_kin
 
     def _cross_section(self, kin=None, max_info=False):
-        total, inel, el, dd, sd, _ = self._lib.xsection()
+        kin = self.kinematics if kin is None else kin
+        total, inel, el, dd, sd, _, qel = self._lib.xsection()
+        if (kin.p1.A or 1) > 1 or (kin.p2.A or 1) > 1:
+            # Nuclear projectile and/or target. total/inelastic/elastic
+            # are Glauber-MC values from epocrossc; the sd/dd common-
+            # block values are hadron-proton quantities and do not apply
+            # here. inelastic (ionudi=1) includes all projectile
+            # diffraction and is the sigma CORSIKA transports EPOS with
+            # (CORSIKA 7.8050 corsika.F: NEXINI sets isetcs=3/ionudi=1,
+            # NEXSIG interpolates the epos.inics asect21 table = pre-
+            # tabulated epocrossc sigma_ine). prod excludes the
+            # quasi-elastic part qel (projectile emerges non-excited,
+            # target may break up).
+            if qel < 0:
+                # crseaaModel path: qel is not available
+                prod = np.nan
+                qela = np.nan
+            else:
+                prod = inel - qel
+                qela = el + qel
+            return CrossSectionData(
+                total=total,
+                inelastic=inel,
+                elastic=el,
+                prod=prod,
+                quasielastic=qela,
+            )
+        # Hadron-proton: every inelastic channel produces particles
+        # (non-excited projectile diffraction off a proton is elastic
+        # scattering), so prod equals inelastic.
         return CrossSectionData(
             total=total,
             inelastic=inel,
-            prod=total
-            - el
-            - sd
-            - dd,  # TODO: We need to ask Tanguy if this is correct to get sigprod
             elastic=el,
+            prod=inel,
             diffractive_xb=sd / 2,  # this is an approximation
             diffractive_ax=sd / 2,  # this is an approximation
             diffractive_xx=dd,

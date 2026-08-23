@@ -103,6 +103,20 @@ class DpmjetIIIRun(MCRun):
     It should work identically for the new 'dpmjet3' module and the legacy
     dpmjet307. No special constructor is necessary and everything is
     handled by the default constructor of the base class.
+
+    Notes
+    -----
+    Initialize with the highest energy expected in the simulation: the
+    PHOJET hadron-nucleon interpolation tables built by ``DT_INIT``
+    extend only up to the initialization energy, and requesting higher
+    energies later raises ``ValueError``.
+
+    For precision cross-section tabulation, use a fresh instance per
+    (projectile, energy) point: the Glauber cross sections drift
+    progressively when a single instance cycles through many different
+    kinematics (version 19.3, p + air at 100 GeV: sigma_prod 278 mb on
+    the first query vs ~258 mb after many queries at other kinematics
+    in the same process).
     """
 
     _name = "DPMJET-III"
@@ -120,6 +134,7 @@ class DpmjetIIIRun(MCRun):
     _ecm_min = 1 * GeV
     _max_A1 = 0
     _max_A2 = 0
+    _max_plab = 0.0
 
     def __init__(self, evt_kin, *, seed=None):
         import chromo
@@ -274,9 +289,10 @@ class DpmjetIIIRun(MCRun):
                 self._frame = EventFrame.CENTER_OF_MASS
             self._max_A1 = kin.p1.A or 1
             self._max_A2 = kin.p2.A or 1
+            self._max_plab = max(kin.plab, 100.0)
             self._lib.dt_init(
                 -1,
-                max(kin.plab, 100.0),
+                self._max_plab,
                 kin.p1.A or 1,
                 kin.p1.Z or 0,
                 kin.p2.A or 1,
@@ -289,6 +305,25 @@ class DpmjetIIIRun(MCRun):
             msg = (
                 "Maximal initialization mass exceeded "
                 f"{kin.p1.A}/{self._max_A1}, {kin.p2.A}/{self._max_A2}"
+            )
+            raise ValueError(msg)
+
+        # The PHOJET hadron-nucleon interpolation tables (filled by
+        # DT_INIT) extend only up to the initialization energy; above
+        # the last node PHO_CSINT log-extrapolates from the last two
+        # nodes (warning only at LPRi > 4).
+        if kin.plab > self._max_plab * (1.0 + 1e-9):
+            msg = (
+                f"Requested plab = {kin.plab:.6g} GeV/c exceeds the "
+                f"initialization momentum {self._max_plab:.6g} GeV/c. "
+                "Hadron-nucleon cross sections are tabulated only up to "
+                "the initialization energy and are extrapolated above "
+                "it. Initialize with the highest energy expected in the "
+                "simulation and set lower-energy kinematics afterwards, "
+                "e.g.\n"
+                "    kin = FixedTarget(highest_energy, 'p', 'O16')\n"
+                "    generator = DpmjetIII193(kin)\n"
+                "    generator.kinematics = FixedTarget(lower_energy, ...)"
             )
             raise ValueError(msg)
 

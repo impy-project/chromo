@@ -156,17 +156,24 @@ C anfe This is a workaround for nuclear fragments in particle history
 
 c-----------------------------------------------------------------------
       subroutine xsection(xsigtot,xsigine,xsigela,xsigdd,xsigsd
-     &    ,xsloela)
+     &    ,xsloela,xsigqel)
 c-----------------------------------------------------------------------
 c     cross section function
+c
+c     xsigqel = quasi-elastic (non-excited projectile diffraction)
+c     part of xsigine; the production cross section is
+c     xsigine - xsigqel. 0 for hadron-proton (non-excited projectile
+c     diffraction off a proton is elastic scattering); -1 if
+c     unavailable (crseaaModel path).
 c-----------------------------------------------------------------------
 
          implicit none
          include 'epos.inc'
          double precision xsigtot,xsigine,xsigela,xsigdd,xsigsd
-     &                   ,xsloela
+     &                   ,xsloela,xsigqel
+         real sigqelaa
 
-Cf2py intent(out) xsigtot,xsigine,xsigela,xsigdd,xsigsd,xsloela
+Cf2py intent(out) xsigtot,xsigine,xsigela,xsigdd,xsigsd,xsloela,xsigqel
 
          xsigtot   = dble( sigtot   )
          xsigine   = dble( sigine   )
@@ -174,15 +181,19 @@ Cf2py intent(out) xsigtot,xsigine,xsigela,xsigdd,xsigsd,xsloela
          xsigdd    = dble( sigdd    )
          xsigsd    = dble( sigsd    )
          xsloela   = dble( sloela   )
+         xsigqel   = 0d0
 c Nuclear cross section only if needed
          ! xsigtot = 0d0
          ! xsigine = 0d0
          ! xsigela = 0d0
          if(maproj.gt.1.or.matarg.gt.1)then
             if(model.eq.1)then
-               call crseaaEpos(sigtotaa,sigineaa,sigcutaa,sigelaaa)
+               call crseaaeposqel(sigtotaa,sigineaa,sigcutaa,sigelaaa
+     &                           ,sigqelaa)
+               xsigqel = dble( sigqelaa )
             else
                call crseaaModel(sigtotaa,sigineaa,sigcutaa,sigelaaa)
+               xsigqel = -1d0
             endif
             xsigtot = dble( sigtotaa )
             xsigine = dble( sigineaa )
@@ -190,4 +201,63 @@ c Nuclear cross section only if needed
          endif
 
          return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine crseaaeposqel(sigt,sigi,sigc,sige,sigql)
+c-----------------------------------------------------------------------
+c nucleus-nucleus (hadron) cross sections from epocrossc Glauber
+c simulations (air-weighted if the target is air), including the
+c quasi-elastic component
+c  sigt  = sig tot
+c  sigi  = sig inelastic (cut + all projectile diffraction)
+c  sigc  = sig cut
+c  sige  = sig elastic (includes target diffraction)
+c  sigql = quasi-elastic part of sigi: projectile emerges non-excited
+c          (0 if ionudi.ne.1, where it is counted as elastic)
+c The production cross section (projectile destroyed) is sigi - sigql.
+c
+c epogcr separates gqel from the diffractive part only under ionudi=2,
+c so ionudi=2 is used for the duration of the Glauber MC. The
+c gqel/gdd split is pure arithmetic after gprod/gabs/gcoh are formed
+c and draws no random numbers, so sigt/sigi/sigc/sige do not depend
+c on this setting.
+c-----------------------------------------------------------------------
+      include 'epos.inc'
+      niter=20000
+      matarg0=matarg
+      ionudi0=ionudi
+      ionudi=2
+      if(idtarg.eq.0)then
+        sigt=0.
+        sigc=0.
+        sigi=0.
+        sige=0.
+        sigd=0.
+        sigql=0.
+        do k=1,3
+          matarg=int(airanxs(k))
+          call epocrossc(niter,xsigt,xsigi,xsigc,xsige,xsigql,xsigd)
+          sigt=sigt+airwnxs(k)*xsigt
+          sigi=sigi+airwnxs(k)*xsigi
+          sigc=sigc+airwnxs(k)*xsigc
+          sige=sige+airwnxs(k)*xsige
+          sigd=sigd+airwnxs(k)*xsigd
+          sigql=sigql+airwnxs(k)*xsigql
+        enddo
+        matarg=matarg0
+      else
+        call epocrossc(niter,sigt,sigi,sigc,sige,sigql,sigd)
+      endif
+      ionudi=ionudi0
+      if(ionudi.ne.1)then
+        sige=sige+sigql      !add non-excited diffractive projectile to elastic
+        sigi=sigi-sigql      !do not count non-excited diffractive projectile in inelastic
+        sigql=0.             !no quasi-elastic part left in sigi
+        if(maproj+matarg.gt.2)then
+          sigc=sigc+sigd*0.95   !for absorbtion cross section remove 5% of the
+                                !excited projectile diffractive cross section
+                                !which "looks like" non excited (approximation)
+        endif
+      endif
       end
