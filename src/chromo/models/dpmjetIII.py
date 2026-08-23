@@ -106,17 +106,13 @@ class DpmjetIIIRun(MCRun):
 
     Notes
     -----
-    Initialize with the highest energy expected in the simulation: the
-    PHOJET hadron-nucleon interpolation tables built by ``DT_INIT``
-    extend only up to the initialization energy, and requesting higher
-    energies later raises ``ValueError``.
+    Initialize at the highest energy of the simulation: the PHOJET
+    hadron-nucleon tables (``DT_INIT``) end there, and higher-energy
+    requests raise ``ValueError``.
 
-    For precision cross-section tabulation, use a fresh instance per
-    (projectile, energy) point: the Glauber cross sections drift
-    progressively when a single instance cycles through many different
-    kinematics (version 19.3, p + air at 100 GeV: sigma_prod 278 mb on
-    the first query vs ~258 mb after many queries at other kinematics
-    in the same process).
+    For cross-section tabulation use a fresh instance per point: the
+    Glauber sigma drifts over many kinematics switches (19.3, p-air
+    100 GeV: sigma_prod 278 mb on first query, ~258 mb late in a loop).
     """
 
     _name = "DPMJET-III"
@@ -308,22 +304,16 @@ class DpmjetIIIRun(MCRun):
             )
             raise ValueError(msg)
 
-        # The PHOJET hadron-nucleon interpolation tables (filled by
-        # DT_INIT) extend only up to the initialization energy; above
-        # the last node PHO_CSINT log-extrapolates from the last two
-        # nodes (warning only at LPRi > 4).
+        # PHOJET h-N tables end at the init energy; PHO_CSINT
+        # log-extrapolates above it (warning only at LPRi > 4)
         if kin.plab > self._max_plab * (1.0 + 1e-9):
             msg = (
-                f"Requested plab = {kin.plab:.6g} GeV/c exceeds the "
-                f"initialization momentum {self._max_plab:.6g} GeV/c. "
-                "Hadron-nucleon cross sections are tabulated only up to "
-                "the initialization energy and are extrapolated above "
-                "it. Initialize with the highest energy expected in the "
-                "simulation and set lower-energy kinematics afterwards, "
-                "e.g.\n"
-                "    kin = FixedTarget(highest_energy, 'p', 'O16')\n"
-                "    generator = DpmjetIII193(kin)\n"
-                "    generator.kinematics = FixedTarget(lower_energy, ...)"
+                f"plab = {kin.plab:.6g} GeV/c exceeds the initialization "
+                f"momentum {self._max_plab:.6g} GeV/c; cross sections "
+                "are tabulated only up to the initialization energy. "
+                "Initialize at the highest energy of the simulation and "
+                "set lower-energy kinematics afterwards via "
+                "generator.kinematics = ..."
             )
             raise ValueError(msg)
 

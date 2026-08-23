@@ -240,18 +240,13 @@ class EposLHC(MCRun):
         kin = self.kinematics if kin is None else kin
         total, inel, el, dd, sd, _, qel = self._lib.xsection()
         if (kin.p1.A or 1) > 1 or (kin.p2.A or 1) > 1:
-            # Nuclear projectile and/or target. total/inelastic/elastic
-            # are Glauber-MC values from epocrossc; the sd/dd common-
-            # block values are hadron-proton quantities and do not apply
-            # here. inelastic (ionudi=1) includes all projectile
-            # diffraction and is the sigma CORSIKA transports EPOS with
-            # (CORSIKA 7.8050 corsika.F: NEXINI sets isetcs=3/ionudi=1,
-            # NEXSIG interpolates the epos.inics asect21 table = pre-
-            # tabulated epocrossc sigma_ine). prod excludes the
-            # quasi-elastic part qel (projectile emerges non-excited,
-            # target may break up).
+            # epocrossc sigma; the common-block sd/dd are h-p values,
+            # not reported here. inelastic (ionudi=1, all diffraction
+            # included) is CORSIKA's EPOS transport sigma (CORSIKA
+            # 7.8050 corsika.F: NEXINI/NEXSIG, epos.inics asect21).
+            # qel = non-excited projectile diffraction.
             if qel < 0:
-                # crseaaModel path: qel is not available
+                # crseaaModel path: qel unavailable
                 prod = np.nan
                 qela = np.nan
             else:
@@ -264,9 +259,8 @@ class EposLHC(MCRun):
                 prod=prod,
                 quasielastic=qela,
             )
-        # Hadron-proton: every inelastic channel produces particles
-        # (non-excited projectile diffraction off a proton is elastic
-        # scattering), so prod equals inelastic.
+        # h-p: prod = inelastic (non-excited projectile diffraction
+        # on a proton is elastic scattering)
         return CrossSectionData(
             total=total,
             inelastic=inel,

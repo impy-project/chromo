@@ -159,12 +159,9 @@ c-----------------------------------------------------------------------
      &    ,xsloela,xsigqel)
 c-----------------------------------------------------------------------
 c     cross section function
-c
 c     xsigqel = quasi-elastic (non-excited projectile diffraction)
-c     part of xsigine; the production cross section is
-c     xsigine - xsigqel. 0 for hadron-proton (non-excited projectile
-c     diffraction off a proton is elastic scattering); -1 if
-c     unavailable (crseaaModel path).
+c     part of xsigine; sigma_prod = xsigine - xsigqel.
+c     0 for hadron-proton, -1 if unavailable (crseaaModel path).
 c-----------------------------------------------------------------------
 
          implicit none
@@ -206,22 +203,15 @@ c Nuclear cross section only if needed
 c-----------------------------------------------------------------------
       subroutine crseaaeposqel(sigt,sigi,sigc,sige,sigql)
 c-----------------------------------------------------------------------
-c nucleus-nucleus (hadron) cross sections from epocrossc Glauber
-c simulations (air-weighted if the target is air), including the
-c quasi-elastic component
+c h-A / A-A cross sections from epocrossc (air-weighted for air)
 c  sigt  = sig tot
 c  sigi  = sig inelastic (cut + all projectile diffraction)
 c  sigc  = sig cut
 c  sige  = sig elastic (includes target diffraction)
-c  sigql = quasi-elastic part of sigi: projectile emerges non-excited
-c          (0 if ionudi.ne.1, where it is counted as elastic)
-c The production cross section (projectile destroyed) is sigi - sigql.
-c
-c epogcr separates gqel from the diffractive part only under ionudi=2,
-c so ionudi=2 is used for the duration of the Glauber MC. The
-c gqel/gdd split is pure arithmetic after gprod/gabs/gcoh are formed
-c and draws no random numbers, so sigt/sigi/sigc/sige do not depend
-c on this setting.
+c  sigql = quasi-elastic part of sigi (non-excited projectile);
+c          sigma_prod = sigi - sigql
+c ionudi=2 during the MC: epogcr computes gqel only then; the gqel/gdd
+c split is arithmetic after gprod/gabs/gcoh, which stay unchanged.
 c-----------------------------------------------------------------------
       include 'epos.inc'
       niter=20000
