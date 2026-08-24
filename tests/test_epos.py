@@ -9,6 +9,7 @@ from particle import literals as lp
 from chromo.constants import GeV
 from chromo.kinematics import CenterOfMass
 from chromo.models import EposLHC
+from chromo.util import naneq
 
 from .util import (
     reference_charge,
@@ -76,6 +77,8 @@ def test_cross_section():
     assert_allclose(c.total, 38.2, atol=0.1)
     assert_allclose(c.inelastic, 30.7, atol=0.1)
     assert_allclose(c.elastic, 7.4, atol=0.1)
+    # for hadron-proton every inelastic channel produces particles
+    assert_allclose(c.prod, c.inelastic)
     assert_allclose(c.diffractive_xb, 1.6, atol=0.1)
     assert_allclose(c.diffractive_ax, 1.6, atol=0.1)
     assert_allclose(c.diffractive_xx, 9.9, atol=0.1)
@@ -84,6 +87,21 @@ def test_cross_section():
         c.non_diffractive,
         c.inelastic - c.diffractive_xb - c.diffractive_ax - c.diffractive_xx,
     )
+
+
+def test_cross_section_hA():
+    c = run_in_separate_process(run_cross_section, "p", "O16")
+    # Glauber-MC (epocrossc) bookkeeping with ionudi=1:
+    # inelastic includes all projectile diffraction; prod excludes its
+    # quasi-elastic (non-excited projectile diffraction) part.
+    assert c.total > c.inelastic > c.prod > 0
+    assert c.quasielastic > c.elastic
+    assert_allclose(c.prod, c.inelastic + c.elastic - c.quasielastic, rtol=1e-6)
+    # the hadron-proton sd/dd values do not apply to h-A
+    naneq(c.diffractive_xb, np.nan)
+    naneq(c.diffractive_ax, np.nan)
+    naneq(c.diffractive_xx, np.nan)
+    naneq(c.diffractive_axb, np.nan)
 
 
 def test_charge(event):

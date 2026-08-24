@@ -103,6 +103,16 @@ class DpmjetIIIRun(MCRun):
     It should work identically for the new 'dpmjet3' module and the legacy
     dpmjet307. No special constructor is necessary and everything is
     handled by the default constructor of the base class.
+
+    Notes
+    -----
+    Initialize at the highest energy of the simulation: the PHOJET
+    hadron-nucleon tables (``DT_INIT``) end there, and higher-energy
+    requests raise ``ValueError``.
+
+    For cross-section tabulation use a fresh instance per point: the
+    Glauber sigma drifts over many kinematics switches (19.3, p-air
+    100 GeV: sigma_prod 278 mb on first query, ~258 mb late in a loop).
     """
 
     _name = "DPMJET-III"
@@ -120,6 +130,7 @@ class DpmjetIIIRun(MCRun):
     _ecm_min = 1 * GeV
     _max_A1 = 0
     _max_A2 = 0
+    _max_plab = 0.0
 
     def __init__(self, evt_kin, *, seed=None):
         import chromo
@@ -274,9 +285,10 @@ class DpmjetIIIRun(MCRun):
                 self._frame = EventFrame.CENTER_OF_MASS
             self._max_A1 = kin.p1.A or 1
             self._max_A2 = kin.p2.A or 1
+            self._max_plab = max(kin.plab, 100.0)
             self._lib.dt_init(
                 -1,
-                max(kin.plab, 100.0),
+                self._max_plab,
                 kin.p1.A or 1,
                 kin.p1.Z or 0,
                 kin.p2.A or 1,
@@ -289,6 +301,19 @@ class DpmjetIIIRun(MCRun):
             msg = (
                 "Maximal initialization mass exceeded "
                 f"{kin.p1.A}/{self._max_A1}, {kin.p2.A}/{self._max_A2}"
+            )
+            raise ValueError(msg)
+
+        # PHOJET h-N tables end at the init energy; PHO_CSINT
+        # log-extrapolates above it (warning only at LPRi > 4)
+        if kin.plab > self._max_plab * (1.0 + 1e-9):
+            msg = (
+                f"plab = {kin.plab:.6g} GeV/c exceeds the initialization "
+                f"momentum {self._max_plab:.6g} GeV/c; cross sections "
+                "are tabulated only up to the initialization energy. "
+                "Initialize at the highest energy of the simulation and "
+                "set lower-energy kinematics afterwards via "
+                "generator.kinematics = ..."
             )
             raise ValueError(msg)
 

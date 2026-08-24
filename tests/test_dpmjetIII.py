@@ -39,6 +39,26 @@ def run_three_events(p1, model):
         assert len(evt.en) > 0
 
 
+def run_init_energy_guard(model):
+    # DPMJET tabulates hadron-nucleon cross sections in dt_init only up
+    # to the initialization energy; requesting higher-energy kinematics
+    # afterwards must raise instead of silently extrapolating.
+    evt_kin = chromo.kinematics.FixedTarget(1e3, "proton", "O16")
+    m = model(evt_kin, seed=1)
+    # at or below the initialization energy: allowed
+    m.cross_section(chromo.kinematics.FixedTarget(1e2, "proton", "O16"))
+    try:
+        m.cross_section(chromo.kinematics.FixedTarget(1e4, "proton", "O16"))
+    except ValueError:
+        return True
+    return False
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+def test_init_energy_guard(model):
+    assert run_in_separate_process(run_init_energy_guard, model)
+
+
 def run_cross_section_ntrials(model):
     event_kin = chromo.kinematics.FixedTarget(1e4, "proton", "O16")
     event_generator = model(event_kin)

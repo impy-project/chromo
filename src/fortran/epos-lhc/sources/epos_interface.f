@@ -156,17 +156,21 @@ C anfe This is a workaround for nuclear fragments in particle history
 
 c-----------------------------------------------------------------------
       subroutine xsection(xsigtot,xsigine,xsigela,xsigdd,xsigsd
-     &    ,xsloela)
+     &    ,xsloela,xsigqel)
 c-----------------------------------------------------------------------
 c     cross section function
+c     xsigqel = quasi-elastic (non-excited projectile diffraction)
+c     part of xsigine; sigma_prod = xsigine - xsigqel.
+c     0 for hadron-proton, -1 if unavailable (crseaaModel path).
 c-----------------------------------------------------------------------
 
          implicit none
          include 'epos.inc'
          double precision xsigtot,xsigine,xsigela,xsigdd,xsigsd
-     &                   ,xsloela
+     &                   ,xsloela,xsigqel
+         real sigqelaa
 
-Cf2py intent(out) xsigtot,xsigine,xsigela,xsigdd,xsigsd,xsloela
+Cf2py intent(out) xsigtot,xsigine,xsigela,xsigdd,xsigsd,xsloela,xsigqel
 
          xsigtot   = dble( sigtot   )
          xsigine   = dble( sigine   )
@@ -174,15 +178,19 @@ Cf2py intent(out) xsigtot,xsigine,xsigela,xsigdd,xsigsd,xsloela
          xsigdd    = dble( sigdd    )
          xsigsd    = dble( sigsd    )
          xsloela   = dble( sloela   )
+         xsigqel   = 0d0
 c Nuclear cross section only if needed
          ! xsigtot = 0d0
          ! xsigine = 0d0
          ! xsigela = 0d0
          if(maproj.gt.1.or.matarg.gt.1)then
             if(model.eq.1)then
-               call crseaaEpos(sigtotaa,sigineaa,sigcutaa,sigelaaa)
+               call crseaaeposqel(sigtotaa,sigineaa,sigcutaa,sigelaaa
+     &                           ,sigqelaa)
+               xsigqel = dble( sigqelaa )
             else
                call crseaaModel(sigtotaa,sigineaa,sigcutaa,sigelaaa)
+               xsigqel = -1d0
             endif
             xsigtot = dble( sigtotaa )
             xsigine = dble( sigineaa )
@@ -190,4 +198,56 @@ c Nuclear cross section only if needed
          endif
 
          return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine crseaaeposqel(sigt,sigi,sigc,sige,sigql)
+c-----------------------------------------------------------------------
+c h-A / A-A cross sections from epocrossc (air-weighted for air)
+c  sigt  = sig tot
+c  sigi  = sig inelastic (cut + all projectile diffraction)
+c  sigc  = sig cut
+c  sige  = sig elastic (includes target diffraction)
+c  sigql = quasi-elastic part of sigi (non-excited projectile);
+c          sigma_prod = sigi - sigql
+c ionudi=2 during the MC: epogcr computes gqel only then; the gqel/gdd
+c split is arithmetic after gprod/gabs/gcoh, which stay unchanged.
+c-----------------------------------------------------------------------
+      include 'epos.inc'
+      niter=20000
+      matarg0=matarg
+      ionudi0=ionudi
+      ionudi=2
+      if(idtarg.eq.0)then
+        sigt=0.
+        sigc=0.
+        sigi=0.
+        sige=0.
+        sigd=0.
+        sigql=0.
+        do k=1,3
+          matarg=int(airanxs(k))
+          call epocrossc(niter,xsigt,xsigi,xsigc,xsige,xsigql,xsigd)
+          sigt=sigt+airwnxs(k)*xsigt
+          sigi=sigi+airwnxs(k)*xsigi
+          sigc=sigc+airwnxs(k)*xsigc
+          sige=sige+airwnxs(k)*xsige
+          sigd=sigd+airwnxs(k)*xsigd
+          sigql=sigql+airwnxs(k)*xsigql
+        enddo
+        matarg=matarg0
+      else
+        call epocrossc(niter,sigt,sigi,sigc,sige,sigql,sigd)
+      endif
+      ionudi=ionudi0
+      if(ionudi.ne.1)then
+        sige=sige+sigql      !add non-excited diffractive projectile to elastic
+        sigi=sigi-sigql      !do not count non-excited diffractive projectile in inelastic
+        sigql=0.             !no quasi-elastic part left in sigi
+        if(maproj+matarg.gt.2)then
+          sigc=sigc+sigd*0.95   !for absorbtion cross section remove 5% of the
+                                !excited projectile diffractive cross section
+                                !which "looks like" non excited (approximation)
+        endif
+      endif
       end

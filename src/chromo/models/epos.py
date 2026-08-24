@@ -237,15 +237,35 @@ class EposLHC(MCRun):
         self.kinematics = evt_kin
 
     def _cross_section(self, kin=None, max_info=False):
-        total, inel, el, dd, sd, _ = self._lib.xsection()
+        kin = self.kinematics if kin is None else kin
+        total, inel, el, dd, sd, _, qel = self._lib.xsection()
+        if (kin.p1.A or 1) > 1 or (kin.p2.A or 1) > 1:
+            # epocrossc sigma; the common-block sd/dd are h-p values,
+            # not reported here. inelastic (ionudi=1, all diffraction
+            # included) is CORSIKA's EPOS transport sigma (CORSIKA
+            # 7.8050 corsika.F: NEXINI/NEXSIG, epos.inics asect21).
+            # qel = non-excited projectile diffraction.
+            if qel < 0:
+                # crseaaModel path: qel unavailable
+                prod = np.nan
+                qela = np.nan
+            else:
+                prod = inel - qel
+                qela = el + qel
+            return CrossSectionData(
+                total=total,
+                inelastic=inel,
+                elastic=el,
+                prod=prod,
+                quasielastic=qela,
+            )
+        # h-p: prod = inelastic (non-excited projectile diffraction
+        # on a proton is elastic scattering)
         return CrossSectionData(
             total=total,
             inelastic=inel,
-            prod=total
-            - el
-            - sd
-            - dd,  # TODO: We need to ask Tanguy if this is correct to get sigprod
             elastic=el,
+            prod=inel,
             diffractive_xb=sd / 2,  # this is an approximation
             diffractive_ax=sd / 2,  # this is an approximation
             diffractive_xx=dd,
