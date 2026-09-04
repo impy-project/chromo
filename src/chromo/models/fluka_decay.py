@@ -2,7 +2,6 @@
 
 Exposes FLUKA 2025.1's nuclear-decay tables and `SPDCEV` event sampler
 to chromo users via a separate, kinematics-free `FlukaDecay` class.
-See ``docs/superpowers/specs/2026-04-30-fluka-decay-interface-design.md``.
 """
 
 from __future__ import annotations
