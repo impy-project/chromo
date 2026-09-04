@@ -130,6 +130,19 @@ class CompositeTarget:
         return f"CompositeTarget({args})"
 
 
+def dry_air(label: str = "Dry air (N2/O2/Ar)") -> CompositeTarget:
+    """Dry air composite target: N14/O16/Ar40 at 78.084/20.946/0.934 % by volume
+    (mass fractions 75.56/23.15/1.29 %).
+
+    Matches CORSIKA-7's FLUINI air material. Some models reject Ar40
+    (e.g. the SIBYLL family) and need an explicit override.
+    """
+    return CompositeTarget(
+        [("N14", 2 * 0.78084), ("O16", 2 * 0.20946), ("Ar40", 0.00934)],
+        label,
+    )
+
+
 def is_real_nucleus(pdgid: Union[int, PDGID, CompositeTarget]) -> bool:
     """
     Return True if pdgid is a nucleus with A > 1.
