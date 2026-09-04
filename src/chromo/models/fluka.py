@@ -373,19 +373,16 @@ class Fluka(MCRun):
             raise ValueError(msg)
         # Each entry is a single-element material; nelmfl[i]=1 for all.
         nelmfl = np.ones(len(materials), dtype=np.int32)
-        # FLUKA addresses targets by element Z via IZELFL. With A. Ferrari's
-        # 2026-06 photonuclear-interface patch (xAnatoliXYZ.tgz: patched
-        # stpxyz/sgtxyz/sgmxyz/evtxyz/fllhep objects in libflukahp.a), IZELFL=0
-        # selects a FREE NEUTRON target, and IZELFL = IZ + 1000*IA forces the
-        # isotope (Z=IZ, A=IA); IZELFL = IZ keeps the natural isotopic
-        # composition. Before the patch, Z=0 aborted with "STOP INVALID IZELFL"
-        # (a free neutron was not expressible) and the old code clamped Z 0->1,
-        # silently running a proton instead. See the UH-UHECR-Fluka-Prince
-        # lesson fluka-no-free-neutron-target. NOTE: this is a TEMPORARY
-        # consumer-side shim pending the fix landing in an official FLUKA
-        # release; kept reversible as
-        # prince-fluka-utils/patches/chromo-fluka-neutron-target.patch.
-        # pdg2AZ returns (A, Z). Ferrari 2025.1.4 patch IZELFL encoding:
+        # FLUKA addresses targets by element Z via IZELFL. Stock FLUKA
+        # 2025.1 rejects IZELFL=0 ("STOP INVALID IZELFL", so a free neutron
+        # was not expressible) and interprets plain Z as natural isotopic
+        # composition. A pending FLUKA response patch adds the encodings
+        # IZELFL=0 -> free neutron target and IZELFL=Z+1000*A -> specific
+        # isotope. NOTE: this is a TEMPORARY consumer-side shim requiring
+        # the patched libflukahp.a (not installed by scripts/install_fluka.sh
+        # yet); pending the fix landing in an official FLUKA release it is
+        # kept reversible as a consumer-side patch.
+        # pdg2AZ returns (A, Z). Patch IZELFL encoding:
         #   free neutron (2112, or nuclear 1000000010 -> A=1,Z=0) -> IZELFL 0
         #   any other (A,Z) nucleus/nucleon              -> IZELFL = Z + 1000*A
         #     (forces the SPECIFIC isotope; plain Z would be natural composition)

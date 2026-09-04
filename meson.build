@@ -414,14 +414,21 @@ if 'fluka' in enabled_models and fluka_ok
   tmp="@0@"
   out="@6@/fluka_all.a"
   rm -rf "$tmp"
-  mkdir -p "$tmp"
-  cd "$tmp"
-  ar x "@1@"
-  ar x "@2@"
-  ar x "@3@"
-  ar x "@4@"
-  ar x "@5@"
-  ar crs "$out" $(find . -name '*.o' -print)
+  mkdir -p "$tmp/merged"
+  i=0
+  for lib in "@1@" "@2@" "@3@" "@4@" "@5@"; do
+    i=$((i+1))
+    mkdir "$tmp/$i"
+    ( cd "$tmp/$i" && ar x "$lib" )
+    for o in "$tmp/$i"/*.o; do
+      base=$(basename "$o")
+      if test -e "$tmp/merged/$base"; then
+        echo "WARNING: duplicate object '$base' across FLUKA archives; archive $i wins" >&2
+      fi
+      cp "$o" "$tmp/merged/$base"
+    done
+  done
+  ar crs "$out" "$tmp"/merged/*.o
   '''.format(tmp_dir, lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx, out_dir)
 
   fluka_all = custom_target('fluka_all',
