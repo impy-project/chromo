@@ -131,14 +131,11 @@ class CompositeTarget:
 
 
 def dry_air(label: str = "Dry air (N2/O2/Ar)") -> CompositeTarget:
-    """Real dry-air composite: N2 78.084 %, O2 20.946 %, Ar 0.934 % by volume.
+    """Dry air composite target: N14/O16/Ar40 at 78.084/20.946/0.934 % by volume
+    (mass fractions 75.56/23.15/1.29 %).
 
-    Mass fractions 75.56/23.15/1.29 % N/O/Ar, <A> = 14.543 — identical to
-    CORSIKA-7's FLUINI air material, so cross sections and yields generated
-    on this target correspond to CORSIKA's interaction lengths. Prefer this
-    over ad-hoc argon-free mixtures (Ar mocked by O16 + protons), whose
-    hadron-air cross sections are ~0.8 % low. NOTE: some models reject Ar40
-    (e.g. the SIBYLL family) and must keep an explicit override.
+    Matches CORSIKA-7's FLUINI air material. Some models reject Ar40
+    (e.g. the SIBYLL family) and need an explicit override.
     """
     return CompositeTarget(
         [("N14", 2 * 0.78084), ("O16", 2 * 0.20946), ("Ar40", 0.00934)],
