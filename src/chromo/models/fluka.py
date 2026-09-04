@@ -373,6 +373,7 @@ class Fluka(MCRun):
             raise ValueError(msg)
         # Each entry is a single-element material; nelmfl[i]=1 for all.
         nelmfl = np.ones(len(materials), dtype=np.int32)
+
         # FLUKA addresses targets by element Z via IZELFL. Stock FLUKA
         # 2025.1 rejects IZELFL=0 ("STOP INVALID IZELFL", so a free neutron
         # was not expressible) and interprets plain Z as natural isotopic
@@ -393,6 +394,7 @@ class Fluka(MCRun):
             if Z >= 1 and A >= 1:
                 return int(Z + 1000 * A)  # specific isotope (Ferrari patch)
             return max(Z, 1)
+
         izelfl = np.array([_izelfl(pdg) for pdg in materials], dtype=np.int32)
         wfelfl = np.ones(len(materials), dtype=np.float64)
         lprint = 0  # suppress FLUKA material printout

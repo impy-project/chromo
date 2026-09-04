@@ -527,7 +527,7 @@ Cf2py intent(out) MTFLKA
 !     Heavy ions (A>4): PDG-style extended encoding
 !                      A*10 + Z*10000 + L*10000000 + 1e9. SGMXYZ
 !                      decodes this internally via PDGION. EVTXYZ
-!                      does NOT — callers generating events must
+!                      does NOT -- callers generating events must
 !                      convert via pdg_to_evt_code (which first calls
 !                      PDGION and returns the -2 HEAVYION sentinel).
 !----------------------------------------------------------------------!
@@ -602,7 +602,7 @@ Cf2py intent(out) evt_code
       A = MOD(ABSPDG / 10,        1000)
       Z = MOD(ABSPDG / 10000,     1000)
       L = MOD(ABSPDG / 10000000,  10)
-!     Only attempt PDGION for non-strange standard nuclei — the rest
+!     Only attempt PDGION for non-strange standard nuclei -- the rest
 !     falls through to the original extended encoding, which EVTXYZ
 !     still rejects but which we at least don't hide.
       IF (L .EQ. 0) THEN
@@ -1017,7 +1017,7 @@ Cf2py intent(out) n_ch
 *
 *     Source vintage: FLUKA 2025.1 dcytst.f (Last change on 25-Apr-26
 *     by Alfredo Ferrari).  Cross-checked 2026-05-04 against the
-*     author-supplied dcytst.f snapshot — bodies match.
+*     author-supplied dcytst.f snapshot -- bodies match.
 *
 *     TODO(FLUKA-bump): drop this embed in favour of the upstream
 *     library symbol on the next FLUKA respin.  See FLUKA_QUESTIONS.md
