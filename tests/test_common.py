@@ -226,3 +226,41 @@ def test_cross_section_data_emd_mul_radd():
     a._mul_radd(0.5, b)
     assert a.emd == 1.0
     assert a.inelastic == 5.0
+
+
+def test_install_hint_raised_when_extension_missing(monkeypatch):
+    """MCRun.__init__ should raise a helpful ModuleNotFoundError when the
+    compiled backend is absent and the subclass defines _install_hint.
+
+    This is the public-CI UX contract: Fluka (and any license-restricted
+    optional backend) always imports as a class, but instantiating it on a
+    build that skipped the extension must fail with the install hint.
+    """
+    from chromo.common import MCRun
+
+    class _NoBackend(MCRun):
+        _name = "TestBackend"
+        _version = "0.0"
+        _library_name = "_definitely_not_a_real_chromo_extension_xyz"
+        _event_class = object
+        _frame = None
+        _install_hint = "run scripts/install_testbackend.sh"
+
+        def _generate(self):
+            pass
+
+        def _set_kinematics(self, kin):
+            pass
+
+        def _cross_section(self, kin):
+            pass
+
+        def _set_stable(self, pdgid, stable):
+            pass
+
+    with pytest.raises(ModuleNotFoundError) as excinfo:
+        _NoBackend(seed=0)
+
+    msg = str(excinfo.value)
+    assert "built without TestBackend support" in msg
+    assert "run scripts/install_testbackend.sh" in msg
