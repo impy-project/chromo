@@ -373,21 +373,30 @@ class Fluka(MCRun):
             raise ValueError(msg)
         # Each entry is a single-element material; nelmfl[i]=1 for all.
         nelmfl = np.ones(len(materials), dtype=np.int32)
-        # FLUKA addresses targets by element Z (STPXYZ takes IZELFL only, no
-        # mass number), so a free neutron (PDG 2112 → A,Z = 1,0) cannot be a
-        # target: FLUKA has no Z=0 element and STPXYZ aborts with
-        # "STOP INVALID IZELFL". The previous code silently clamped Z 0→1,
-        # which ran a *proton* instead — a latent, misleading bug. Fail fast.
-        if 2112 in {int(p) for p in materials}:
-            msg = (
-                "FLUKA cannot use a free neutron (PDG 2112) as a target. Its "
-                "photonuclear interface addresses targets by element Z and "
-                "FLUKA has no Z=0 element (STPXYZ aborts: 'INVALID IZELFL'). "
-                "Use a nucleus (e.g. deuterium 'H2') or a proton target."
-            )
-            raise ValueError(msg)
-        # pdg2AZ returns (A, Z); we want Z. Free proton (2212) → (1, 1).
-        izelfl = np.array([max(pdg2AZ(pdg)[1], 1) for pdg in materials], dtype=np.int32)
+        # FLUKA addresses targets by element Z via IZELFL. With A. Ferrari's
+        # 2026-06 photonuclear-interface patch (xAnatoliXYZ.tgz: patched
+        # stpxyz/sgtxyz/sgmxyz/evtxyz/fllhep objects in libflukahp.a), IZELFL=0
+        # selects a FREE NEUTRON target, and IZELFL = IZ + 1000*IA forces the
+        # isotope (Z=IZ, A=IA); IZELFL = IZ keeps the natural isotopic
+        # composition. Before the patch, Z=0 aborted with "STOP INVALID IZELFL"
+        # (a free neutron was not expressible) and the old code clamped Z 0->1,
+        # silently running a proton instead. See the UH-UHECR-Fluka-Prince
+        # lesson fluka-no-free-neutron-target. NOTE: this is a TEMPORARY
+        # consumer-side shim pending the fix landing in an official FLUKA
+        # release; kept reversible as
+        # prince-fluka-utils/patches/chromo-fluka-neutron-target.patch.
+        # pdg2AZ returns (A, Z). Ferrari 2025.1.4 patch IZELFL encoding:
+        #   free neutron (2112, or nuclear 1000000010 -> A=1,Z=0) -> IZELFL 0
+        #   any other (A,Z) nucleus/nucleon              -> IZELFL = Z + 1000*A
+        #     (forces the SPECIFIC isotope; plain Z would be natural composition)
+        def _izelfl(pdg):
+            A, Z = pdg2AZ(pdg)
+            if int(pdg) == 2112 or (Z == 0 and A == 1):
+                return 0  # free neutron target (Ferrari patch)
+            if Z >= 1 and A >= 1:
+                return int(Z + 1000 * A)  # specific isotope (Ferrari patch)
+            return max(Z, 1)
+        izelfl = np.array([_izelfl(pdg) for pdg in materials], dtype=np.int32)
         wfelfl = np.ones(len(materials), dtype=np.float64)
         lprint = 0  # suppress FLUKA material printout
 
