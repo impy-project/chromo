@@ -106,7 +106,7 @@ testpaths = ["tests"]
 filterwarnings = [
     "error::FutureWarning",
     "error::DeprecationWarning",
-    "ignore::DeprecationWarning:pyparsing",
+    "ignore::pyparsing.warnings.PyparsingDeprecationWarning",
 ]
 
 [tool.pydocstyle]
