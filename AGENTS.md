@@ -161,6 +161,9 @@ for event in gen(10):
 
 ### Caveats & FLUKA-internal limitations
 
+- **`chromo_fluka.f` must stay ASCII-only.** numpy's f2py cracks Fortran
+  sources with the locale codec; under `LANG=C` non-ASCII characters (e.g. em
+  dashes in comments) abort the `_fluka` wrapper generation.
 - **Single instantiation per Python process.** Fortran globals; tests use
   `tests/util.py::run_in_separate_process`.
 - **Hard material cap of 10 entries.** FLUKA's shipped `stpxyz.f:256` has
