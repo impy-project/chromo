@@ -781,17 +781,11 @@ class Pythia8Angantyr(MCRun):
                 msg = f"readString({line!r}) failed"
                 raise RuntimeError(msg)
 
-        # The variable-beam machinery (Beams:allowIDAswitch, needed for
-        # live target/energy switching) only supports projectiles from
-        # Beams:idAList; HISubCollisionModel silently substitutes
-        # idAList[0] (= proton) for anything else, which freezes the
-        # hard-process (heavy-flavor) rates at the initialization energy
-        # for beams like n, pbar, K+-, K0L, pi-.  Put the actual
-        # projectile first in the list so it is properly initialized.
+        # Beams:idAList gates the variable-beam machinery; beams outside it
+        # silently run with idAList[0] (proton) hard-process rates. The
+        # Pythia 8.317 default (BeamParameters.xml) uses an exact-id match,
+        # so e.g. 2112, -2212, 321, 130 are not covered.
         idA = int(kin.p1)
-        # Pythia 8.317 default (BeamParameters.xml).  The membership
-        # check in HISubCollisionModel::init is an exact-id comparison,
-        # so e.g. 2112, -2212, 321, 130, -211 are NOT covered.
         default_ida = [
             2212,
             211,
@@ -816,23 +810,15 @@ class Pythia8Angantyr(MCRun):
             5312,
             5332,
         ]
-        # NB: PDGID.is_nucleus is True also for p/n, hence
-        # is_real_nucleus (A > 1).  The id must be APPENDED:
-        # BeamSetup::setBeamIDs hardcodes PDF slot indices matching the
-        # default list order (2212 -> 0, 211 -> 1, ...), so the default
-        # entries must keep their positions.
         if not is_real_nucleus(kin.p1) and idA not in default_ida:
-            ida_str = ",".join(str(i) for i in default_ida + [idA])
+            # Append only: BeamSetup::setBeamIDs maps PDF slots by
+            # default-list position.
+            ida_str = ",".join(str(i) for i in [*default_ida, idA])
             if not pythia.readString(f"Beams:idAList = {{{ida_str}}}"):
                 msg = "setting Beams:idAList failed"
                 raise RuntimeError(msg)
-            # Per-beam initialization tables (generated once with
-            # scripts/generate_angantyr_tables.py, with the target species
-            # appended to Beams:idAList; main424-equivalent)
-            # for species the bundled InitDefault* files do not cover;
-            # without them every init recomputes the MPI/SigFit grids
-            # for this beam (>1 h).  Loaded last so the stored
-            # Init:reuse* grids override the bundled ones.
+            # Per-beam init tables avoid recomputing MPI/SigFit grids at
+            # every init (>1 h). See scripts/generate_angantyr_tables.py.
             beam_table = self._setups_dir / f"InitAngantyr_beam_{idA}.cmnd"
             if beam_table.exists():
                 self._load_cmnd_file(pythia, beam_table)
