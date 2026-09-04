@@ -792,9 +792,30 @@ class Pythia8Angantyr(MCRun):
         # Pythia 8.317 default (BeamParameters.xml).  The membership
         # check in HISubCollisionModel::init is an exact-id comparison,
         # so e.g. 2112, -2212, 321, 130, -211 are NOT covered.
-        default_ida = [2212, 211, 311, 221, 331, 333, 411, 431,
-                       443, 511, 531, 541, 553, 3212, 3312, 3334,
-                       4112, 4312, 4332, 5112, 5312, 5332]
+        default_ida = [
+            2212,
+            211,
+            311,
+            221,
+            331,
+            333,
+            411,
+            431,
+            443,
+            511,
+            531,
+            541,
+            553,
+            3212,
+            3312,
+            3334,
+            4112,
+            4312,
+            4332,
+            5112,
+            5312,
+            5332,
+        ]
         # NB: PDGID.is_nucleus is True also for p/n, hence
         # is_real_nucleus (A > 1).  The id must be APPENDED:
         # BeamSetup::setBeamIDs hardcodes PDF slot indices matching the
