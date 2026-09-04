@@ -10,7 +10,7 @@ from particle import literals as lp
 from chromo.common import CrossSectionData, EventData, MCRun
 from chromo.constants import GeV, standard_projectiles
 from chromo.kinematics import EventFrame
-from chromo.util import Nuclei, _cached_data_dir, name2pdg
+from chromo.util import Nuclei, _cached_data_dir, is_real_nucleus, name2pdg
 
 # Tabulated average number of inelastic hN collisions per hA collision,
 # ported from PythiaCascade.h (Pythia 8.317).  Used by both Cascade and
@@ -781,7 +781,49 @@ class Pythia8Angantyr(MCRun):
                 msg = f"readString({line!r}) failed"
                 raise RuntimeError(msg)
 
-        pythia.readString(f"Beams:idA = {int(kin.p1)}")
+        # Beams:idAList gates the variable-beam machinery; beams outside it
+        # silently run with idAList[0] (proton) hard-process rates. The
+        # Pythia 8.317 default (BeamParameters.xml) uses an exact-id match,
+        # so e.g. 2112, -2212, 321, 130 are not covered.
+        idA = int(kin.p1)
+        default_ida = [
+            2212,
+            211,
+            311,
+            221,
+            331,
+            333,
+            411,
+            431,
+            443,
+            511,
+            531,
+            541,
+            553,
+            3212,
+            3312,
+            3334,
+            4112,
+            4312,
+            4332,
+            5112,
+            5312,
+            5332,
+        ]
+        if not is_real_nucleus(kin.p1) and idA not in default_ida:
+            # Append only: BeamSetup::setBeamIDs maps PDF slots by
+            # default-list position.
+            ida_str = ",".join(str(i) for i in [*default_ida, idA])
+            if not pythia.readString(f"Beams:idAList = {{{ida_str}}}"):
+                msg = "setting Beams:idAList failed"
+                raise RuntimeError(msg)
+            # Per-beam init tables avoid recomputing MPI/SigFit grids at
+            # every init (>1 h). See scripts/generate_angantyr_tables.py.
+            beam_table = self._setups_dir / f"InitAngantyr_beam_{idA}.cmnd"
+            if beam_table.exists():
+                self._load_cmnd_file(pythia, beam_table)
+
+        pythia.readString(f"Beams:idA = {idA}")
         pythia.readString(f"Beams:idB = {int(kin.p2)}")
         pythia.readString(f"Beams:eCM = {kin.ecm}")
 
