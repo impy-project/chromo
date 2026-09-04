@@ -329,6 +329,207 @@ foreach ver, cfg : dpm_cfg
   endforeach
 endforeach
 
+# ── FLUKA block --------------------------------------------------------
+# FLUKA is license-restricted and not redistributed in chromo wheels.
+# Missing prerequisites here are NON-FATAL: meson emits a prominent
+# warning and skips the _fluka Fortran extension while the rest of the
+# build proceeds.  The chromo.models.Fluka class still imports cleanly
+# (the _fluka shared library is loaded lazily at construct time), so
+# CI / non-FLUKA users get a working chromo without Fluka, and a clear
+# error if they try to instantiate Fluka anyway (see common.py).
+fluka_skip_hint = 'For FLUKA support, build chromo from source with FLUPRO pointing at a working FLUKA installation (run scripts/install_fluka.sh).'
+fluka_ok = false
+if 'fluka' in enabled_models
+  fluka_ok = true
+  fluprod  = run_command('sh', '-c', 'echo ${FLUPRO:-}', check: true).stdout().strip()
+  if fluprod == ''
+    warning('FLUKA: environment variable FLUPRO not set — skipping _fluka extension build. ' + fluka_skip_hint)
+    fluka_ok = false
+  else
+    dir_check = run_command('sh', '-c', 'test -d "' + fluprod + '" && echo "exists" || echo "missing"', check: true).stdout().strip()
+    if dir_check != 'exists'
+      warning('FLUKA: directory set by FLUPRO does not exist: ' + fluprod + ' — skipping _fluka extension build. ' + fluka_skip_hint)
+      fluka_ok = false
+    endif
+  endif
+
+  if fluka_ok
+    fluprod_inc   = fluprod + '/flukapro'
+    fluprod_aamod = fluprod + '/aamodmvax'
+
+    # Verify the five FLUKA archives chromo links against are present.
+    foreach req : [
+      'interface/dpmvers', 'libflukahp.a', 'libdpmmvax.a', 'librqmdmvax.a',
+      'latestRQMD/librqmd.a',
+    ]
+      chk = run_command('sh', '-c',
+        'test -e "' + fluprod + '/' + req + '" && echo yes || echo no',
+        check: true).stdout().strip()
+      if chk != 'yes'
+        warning('FLUKA: missing ' + fluprod + '/' + req + ' — skipping _fluka extension build. ' + fluka_skip_hint)
+        fluka_ok = false
+      endif
+    endforeach
+  endif
+
+  if fluka_ok
+    # Read DPMVERS and verify the DPMJET archive exists.
+    dpm_version = run_command('sh', '-c',
+      'grep "DPMVERS=" ' + fluprod + '/interface/dpmvers | cut -d= -f2',
+      check: true).stdout().strip()
+    message('FLUKA DPM Version: ' + dpm_version)
+    dpm_chk = run_command('sh', '-c',
+      'test -e "' + fluprod + '/interface/libdpmjet' + dpm_version + '.a" && echo yes || echo no',
+      check: true).stdout().strip()
+    if dpm_chk != 'yes'
+      warning('FLUKA: missing ' + fluprod + '/interface/libdpmjet' + dpm_version + '.a — skipping _fluka extension build. ' + fluka_skip_hint)
+      fluka_ok = false
+    endif
+  endif
+endif
+
+if 'fluka' in enabled_models and fluka_ok
+  flka_src = [
+    f/'fluka/chromo_fluka.f',
+    logging_src
+  ]
+  common_inc += [fluprod_inc, fluprod_aamod]
+  
+  # Find FLUKA library directories
+  fluka_lib_dir = fluprod
+  
+  # Extract all object files from all FLUKA archives and create a combined static library
+  # Only rebuild when input libraries change
+  
+  # Inputs
+  tmp_dir   = meson.current_build_dir() / 'fluka_temp_objects'
+  lib_dpm   = fluka_lib_dir / 'interface' / ('libdpmjet' + dpm_version + '.a')
+  lib_rqmd  = fluka_lib_dir / 'latestRQMD' / 'librqmd.a'
+  lib_hp    = fluka_lib_dir / 'libflukahp.a'
+  lib_dpmx  = fluka_lib_dir / 'libdpmmvax.a'
+  lib_rqmx  = fluka_lib_dir / 'librqmdmvax.a'
+
+  out_dir   = meson.current_build_dir()
+  cmd_script = '''
+  tmp="@0@"
+  out="@6@/fluka_all.a"
+  rm -rf "$tmp"
+  mkdir -p "$tmp/merged"
+  i=0
+  for lib in "@1@" "@2@" "@3@" "@4@" "@5@"; do
+    i=$((i+1))
+    mkdir "$tmp/$i"
+    ( cd "$tmp/$i" && ar x "$lib" )
+    for o in "$tmp/$i"/*.o; do
+      base=$(basename "$o")
+      if test -e "$tmp/merged/$base"; then
+        echo "WARNING: duplicate object '$base' across FLUKA archives; archive $i wins" >&2
+      fi
+      cp "$o" "$tmp/merged/$base"
+    done
+  done
+  ar crs "$out" "$tmp"/merged/*.o
+  '''.format(tmp_dir, lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx, out_dir)
+
+  fluka_all = custom_target('fluka_all',
+    input  : [lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx],
+    output : ['fluka_all.a'],
+    command: ['sh', '-ceu', cmd_script],
+    depend_files: [lib_dpm, lib_rqmd, lib_hp, lib_dpmx, lib_rqmx],
+    build_by_default: true
+  )
+  fluka_all_dep = declare_dependency(
+    sources  : [fluka_all],
+    link_args: [fluka_all.full_path()],
+  )
+  
+  # Prepare include flags for F2PY wrapper generation
+  inc_flags = []
+  foreach d : common_inc
+    if not d.startswith('/') and not d.startswith(meson.project_source_root())
+      d = meson.project_source_root() / d
+    endif
+    inc_flags += '-I' + d
+  endforeach
+  inc_str = ' '.join(inc_flags)
+  
+  # Symbols exported to Python via f2py. Order doesn't matter.
+  fluka_syms = [
+    'chromo_evtxyz', 'chromo_stpxyz', 'chromo_sgmxyz', 'chromo_fllhep',
+    'pdg_to_proj_code', 'pdg_to_evt_code',
+    'fluka_elem_properties', 'fluka_hepevt_summary',
+    'random_direction',
+    'icode_from_pdg', 'icode_from_pdg_arr', 'charge_from_pdg_arr',
+    'pdg_from_icode',
+    'init_rng_state', 'load_rng_state', 'save_rng_state', 'fluka_rand',
+    'fluka_particle_scheme',
+    'chromo_dcy_init', 'chromo_dcy_lookup', 'chromo_dcy_catalog',
+    'chromo_dcy_channels', 'chromo_dcy_lines', 'chromo_dcy_sample',
+    'chromo_set_dpmjet_lpri',
+    'chromo_get_dpmjet_ehfl', 'chromo_set_dpmjet_ehfl',
+  ]
+
+  # FLUKA has its own RNG (Ranmar / flrndm_). Do NOT include chromo's
+  # rangen.f / rangen.c here — their RNG shims (dt_rndm_, rangen_,
+  # rlu_, pyr_, …) would shadow DPMJET's own DT_RNDM.o (which
+  # tail-calls flrndm_), desynchronising FLUKA's Ranmar state from
+  # DPMJET's random draws and causing FPEs at high energies.
+  # Also filter npyrng from the symbol list since rangen.f isn't
+  # compiled into this module.
+  fluka_common_syms = ['chromo_openlogfile','chromo_closelogfile']
+  wrap = custom_target('_fluka'+'_wrap',
+      output : ['_fluka'+'module.c', '_fluka'+'-f2pywrappers.f', '_fluka'+'.pyf'],
+      input  : flka_src,
+      command: [py,scripts_dir + 'generate_f2py.py', '_fluka', ','.join(fluka_syms+fluka_common_syms),
+                meson.global_build_root()/'meson-logs', inc_str, ' '.join(common_fargs),
+                '@OUTDIR@','@INPUT@'],
+      build_by_default:true)
+
+  # On modern macOS (Xcode 15+), Apple's new linker (ld-prime) handles
+  # weak / duplicate / common symbols differently from the classic linker.
+  # The FLUKA archives carry many overlapping COMMON-block symbols across
+  # libdpmjet, librqmd, libdpmmvax, librqmdmvax, and libflukahp, and the
+  # Apple-Silicon prebuilt's DPMJET-3 then hands off with a zero-init
+  # energy (DT_KKINC.f:73 silent STOP — FLUKA_QUESTIONS.md #7).  Falling
+  # back to ld_classic resolves the symbols the way the FLUKA build
+  # expects.  Probe for the flag at configure time: only Apple's new
+  # linker (Xcode 15+) accepts -ld_classic, so cc.has_link_argument
+  # doubles as a "is this the new linker?" check — older toolchains
+  # and non-Darwin platforms get an empty link_args.
+  fluka_link_args = []
+  if host_machine.system() == 'darwin' and cc.has_link_argument('-Wl,-ld_classic')
+    fluka_link_args += ['-Wl,-ld_classic']
+    message('FLUKA: linking _fluka with -Wl,-ld_classic (Apple new-linker workaround for DPMJET-3 abort).')
+  endif
+  # FLUKA bundles its own LAPACK (e.g. strtrs_) inside libflukahp.a.  On
+  # ELF/Linux, when _fluka.so is loaded into a process whose numpy is linked
+  # against MKL/OpenBLAS, the global-scope strtrs_ from that BLAS interposes
+  # FLUKA's own, so FLUKA's internal calls (phnevt -> strtrs_) hit the wrong
+  # routine and abort in the DPMJET regime ("Intel oneMKL ERROR ... STRTRS" /
+  # "STOP AM(KP)!=AKPRIN").  -Bsymbolic binds this module's references to its
+  # OWN defined symbols first — the link-time equivalent of
+  # dlopen(RTLD_DEEPBIND) — so FLUKA's strtrs_ wins.  Replaces the per-consumer
+  # ctypes RTLD_DEEPBIND preload workaround.  macOS (two-level namespaces) does
+  # not have this clash and uses a different linker, so restrict to non-Darwin.
+  if host_machine.system() != 'darwin' and cc.has_link_argument('-Wl,-Bsymbolic')
+    fluka_link_args += ['-Wl,-Bsymbolic']
+    message('FLUKA: linking _fluka with -Wl,-Bsymbolic (FLUKA strtrs_/LAPACK wins over MKL interposition; replaces RTLD_DEEPBIND).')
+  endif
+
+  py.extension_module('_fluka',
+    sources            : [wrap, f2py_obj, files(flka_src)],
+    include_directories: include_directories(common_inc),
+    dependencies       : [py_dep, numpy_dep, fluka_all_dep],
+    c_args             : common_cargs,
+    fortran_args       : common_fargs + ['-DCHROMO', '-DDPMVER=' + dpm_version],
+    link_args          : fluka_link_args,
+    subdir             : 'chromo/models',
+    install            : true,
+    install_rpath      : rpath_tok,
+    build_rpath        : rpath_tok,
+  )
+endif
+
 # ── PYTHIA 8 block (unchanged) ----------------------------------------
 cpp_dir    = 'src/cpp'
 if 'pythia8' in enabled_models
