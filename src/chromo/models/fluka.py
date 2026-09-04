@@ -79,7 +79,20 @@ class FlukaEvent(MCEvent):
         return np.where(nucleus, np.sign(pids) * z, result)
 
     def _history_zero_indexing(self):
-        pass
+        # FLUKA's FLLHEP writes standard HEPEVT: one-based indices with
+        # (0, 0) meaning "no mother". Convert to chromo's / pyhepmc's
+        # zero-based convention ((-1, -1) = no mother, (N, -1) = single
+        # mother), like the base class and Epos do. The no-op override
+        # previously here left 1-based indices with (0, 0) sentinels,
+        # which pyhepmc's from_hepevt(fortran=False) interprets as
+        # self-referential links (particle 0 is its own mother),
+        # producing a corrupt GenEvent that segfaults on traversal/equality.
+        for name in ("mothers", "daughters"):
+            arr = getattr(self, name).copy()
+            no_mother = (arr[:, 0] == 0) & (arr[:, 1] == 0)
+            arr[arr > 0] -= 1
+            arr[no_mother] = -1
+            setattr(self, name, arr)
 
     def _prepend_initial_beam(self):
         pass
