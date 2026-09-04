@@ -289,11 +289,9 @@ class SIBYLLRun(MCRun):
         self._glauber_trials = ntrials
 
     def _set_kinematics(self, kin):
-        # NB: PDGID.is_nucleus is True also for p/n/pbar/nbar (A == 1), and
-        # sibnuc() has no beam-isospin identity — routing bare nucleons
-        # through it silently simulates every nucleon beam as a proton.
-        # Same A > 1 guard as dpmjetIII/qgsjet/pythia8.
-        if not (kin.p1.is_nucleus and kin.p1.A > 1):
+        # sibnuc() has no beam-isospin identity — bare nucleons must not
+        # route through it (they would silently run as protons).
+        if not is_real_nucleus(kin.p1):
             self._production_id = self._lib.isib_pdg2pid(kin.p1)
             if self._production_id == 0:
                 msg = f"Invalid _production_id: {self._production_id}. Check the input kinematics: {kin.p1}"
@@ -319,7 +317,7 @@ class SIBYLLRun(MCRun):
 
     def _generate(self):
         kin = self.kinematics
-        if kin.p1.is_nucleus and kin.p1.A > 1:
+        if is_real_nucleus(kin.p1):
             # Nucleus-nucleus collisions
             self._lib.sibnuc(kin.p1.A, kin.p2.A, kin.ecm)
         else:
