@@ -2548,7 +2548,7 @@ C  event debugging information
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -3933,7 +3933,7 @@ C  currently activated parton density parametrizations
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -6666,7 +6666,7 @@ C  nucleon-nucleus / nucleus-nucleus interface to DPMJET
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -7251,7 +7251,7 @@ C  nucleon-nucleus / nucleus-nucleus interface to DPMJET
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -13221,7 +13221,7 @@ C  light-cone x fractions and c.m. momenta of soft cut string ends
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -13854,7 +13854,7 @@ C  data of c.m. system of Pomeron / Reggeon exchange
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -14911,7 +14911,7 @@ C  event debugging information
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -15087,7 +15087,7 @@ C  model switches and parameters
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -15278,7 +15278,7 @@ C  nucleon-nucleus / nucleus-nucleus interface to DPMJET
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -15577,7 +15577,7 @@ C  model switches and parameters
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -15723,7 +15723,7 @@ C  model switches and parameters
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -15978,7 +15978,7 @@ C  model switches and parameters
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -16392,7 +16392,7 @@ C  model switches and parameters
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -16748,7 +16748,7 @@ C  hard cross sections and MC selection weights
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -17205,7 +17205,7 @@ C  global event kinematics and particle IDs
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -17245,7 +17245,7 @@ C  color string configurations including collapsed strings and hadrons
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       INTEGER N,NPAD,K
       DOUBLE PRECISION P,V
-      COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
+      COMMON/PYJETS/N,NPAD,K(12000,5),P(12000,5),V(12000,5)
 
       DIMENSION IJOIN(100)
 
@@ -17685,7 +17685,7 @@ C  color string configurations including collapsed strings and hadrons
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -18332,7 +18332,7 @@ C  hard scattering data
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -18734,7 +18734,7 @@ C  data of c.m. system of Pomeron / Reggeon exchange
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -19699,7 +19699,7 @@ C  model switches and parameters
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -20012,7 +20012,7 @@ C  hard scattering data
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -21441,7 +21441,7 @@ C  input/output channels
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -21567,7 +21567,7 @@ C  hard scattering data
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -27904,7 +27904,7 @@ C  event debugging information
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -28129,7 +28129,7 @@ C  table of particle indices for recursive PHOJET calls
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -28781,7 +28781,7 @@ C  some constants
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -28938,7 +28938,7 @@ C  cross sections
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -29233,7 +29233,7 @@ C  table of particle indices for recursive PHOJET calls
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -29728,7 +29728,7 @@ C  some constants
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -32208,7 +32208,7 @@ C  event debugging information
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -33051,7 +33051,7 @@ C  input/output channels
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -33228,7 +33228,7 @@ C  general particle data
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -33314,7 +33314,7 @@ C  event debugging information
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -33420,7 +33420,7 @@ C  event debugging information
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -33536,7 +33536,7 @@ C  model switches and parameters
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -33928,7 +33928,7 @@ C  nucleon-nucleus / nucleus-nucleus interface to DPMJET
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -34257,7 +34257,7 @@ C  model switches and parameters
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -34459,7 +34459,7 @@ C  event debugging information
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -34539,7 +34539,7 @@ C  general process information
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -34689,7 +34689,7 @@ C  event debugging information
 C  standard particle data interface
       INTEGER NMXHEP
 
-      PARAMETER (NMXHEP=4000)
+      PARAMETER (NMXHEP=12000)
 
       INTEGER NEVHEP,NHEP,ISTHEP,IDHEP,JMOHEP,JDAHEP
       DOUBLE PRECISION PHEP,VHEP
@@ -34812,7 +34812,7 @@ C  input/output channels
       COMMON /POINOU/ LI,LO
       INTEGER N,NPAD,K
       DOUBLE PRECISION P,V
-      COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
+      COMMON/PYJETS/N,NPAD,K(12000,5),P(12000,5),V(12000,5)
       INTEGER MSTU,MSTJ
       DOUBLE PRECISION PARU,PARJ
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
