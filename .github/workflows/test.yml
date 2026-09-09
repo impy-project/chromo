@@ -75,7 +75,7 @@ jobs:
         with:
           submodules: true
           fetch-depth: 3
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.0.1
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
