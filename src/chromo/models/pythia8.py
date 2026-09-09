@@ -781,54 +781,37 @@ class Pythia8Angantyr(MCRun):
                 msg = f"readString({line!r}) failed"
                 raise RuntimeError(msg)
 
-        # Beams:idAList gates the variable-beam machinery; beams outside it
-        # silently run with idAList[0] (proton) hard-process rates. The
-        # Pythia 8.317 default (BeamParameters.xml) uses an exact-id match,
-        # so e.g. 2112, -2212, 321, 130 are not covered.
+        # Initialize Angantyr with the representative of the projectile
+        # (BeamSetup::represent maps isospin/flavour partners onto a
+        # positive id covered by the default Beams:idAList, e.g.
+        # n -> p, K+ / K0 -> K0bar-representative 311, pi- -> pi+). The
+        # bundled precomputed tables cover exactly that list, so stored-fit
+        # reuse always hits. After init, switch the beam to the physical id
+        # via setBeamIDs: Angantyr then uses the physical particle record
+        # (PDF slots resolve through represent()) with the representative's
+        # fitted subcollision row (collPtr->setIDA(represent(idN))).
+        # Appending the raw id to Beams:idAList instead invalidates reuse
+        # of the precomputed tables and triggers a silent >1 h refit.
         idA = int(kin.p1)
-        default_ida = [
-            2212,
-            211,
-            311,
-            221,
-            331,
-            333,
-            411,
-            431,
-            443,
-            511,
-            531,
-            541,
-            553,
-            3212,
-            3312,
-            3334,
-            4112,
-            4312,
-            4332,
-            5112,
-            5312,
-            5332,
-        ]
-        if not is_real_nucleus(kin.p1) and idA not in default_ida:
-            # Append only: BeamSetup::setBeamIDs maps PDF slots by
-            # default-list position.
-            ida_str = ",".join(str(i) for i in [*default_ida, idA])
-            if not pythia.readString(f"Beams:idAList = {{{ida_str}}}"):
-                msg = "setting Beams:idAList failed"
-                raise RuntimeError(msg)
-            # Per-beam init tables avoid recomputing MPI/SigFit grids at
-            # every init (>1 h). See scripts/generate_angantyr_tables.py.
-            beam_table = self._setups_dir / f"InitAngantyr_beam_{idA}.cmnd"
-            if beam_table.exists():
-                self._load_cmnd_file(pythia, beam_table)
+        init_idA = idA
+        if not is_real_nucleus(kin.p1):
+            init_idA = {2112: 2212, 321: 311, 130: 311, 310: 311}.get(
+                abs(idA), abs(idA)
+            )
 
-        pythia.readString(f"Beams:idA = {idA}")
+        pythia.readString(f"Beams:idA = {init_idA}")
         pythia.readString(f"Beams:idB = {int(kin.p2)}")
         pythia.readString(f"Beams:eCM = {kin.ecm}")
 
         if not pythia.init():
             raise RuntimeError("Pythia8Angantyr initialization failed")
+
+        if init_idA != idA:
+            # Switch the initialized representative beam to the physical
+            # projectile id (see comment above).
+            if not pythia.setBeamIDs(idA, int(kin.p2)):
+                msg = f"setBeamIDs({idA}, {int(kin.p2)}) failed"
+                raise RuntimeError(msg)
 
     def _has_precomputed_tables(self):
         """Check if the InitDefaultAngantyr.cmnd contains precomputed tables.
