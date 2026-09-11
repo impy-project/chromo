@@ -111,12 +111,8 @@ class SibyllEvent(MCEvent):
         return self._lib.schg.ichg[:npart]
 
     def __init__(self, generator):
-        # Depending on the collision type, SIBYLL writes the collision
-        # geometry to /CNUCMS/ (sibnuc, A + A) or to /S_CNCM0/
-        # (sibyll, h + A). Fortran never clears these blocks, so
-        # which block to read must be decided from the event kinematics,
-        # not from the block content, otherwise leftovers from previous
-        # runs with different kinematics leak into the event.
+        # Geometry is in /CNUCMS/ for A + A and /S_CNCM0/ for h + A;
+        # Fortran never clears them, so select by kinematics, not content.
         kin = generator.kinematics
         self._is_aa = is_real_nucleus(kin.p1)
         self._is_ha = not self._is_aa and kin.p2.A > 1
