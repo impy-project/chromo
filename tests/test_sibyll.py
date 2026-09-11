@@ -149,3 +149,106 @@ def test_not_supported_cross_section(model):
 
     assert len(msgs) == 1
     assert "Cross section for <PDGID: 421> projectiles not supported" in msgs[0]
+
+
+def wounded_check(model, kins, n=20):
+    """Run one generator sequentially through a list of kinematics,
+    collecting (n_wounded[0], n_wounded[1], impact_parameter) per event.
+
+    The first events of each kinematics are dropped: SIBYLL only fills
+    the geometry blocks on non-coherent-diffraction events, so early
+    values may be uninitialized. Must run in a separate process
+    (Fortran global state).
+    """
+    out = []
+    gen = None
+    for kin in kins:
+        if gen is None:
+            gen = model(kin)
+        else:
+            gen.kinematics = kin
+        gen.set_stable(111)
+        events = list(gen(n + 2))
+        out.append(
+            [
+                (int(e.n_wounded[0]), int(e.n_wounded[1]), e.impact_parameter)
+                for e in events[2:]
+            ]
+        )
+    return out
+
+
+@pytest.mark.parametrize("model", get_sibylls())
+def test_wounded_hadron_proton(model):
+    """h + N has no Glauber geometry: no impact parameter, but one
+    wounded nucleon on each side (same convention as other generators)."""
+    (results,) = run_in_separate_process(
+        wounded_check, model, [CenterOfMass(5 * TeV, "p", "p")]
+    )
+    for na, nb, b in results:
+        assert (na, nb) == (1, 1)
+        assert b == 0.0  # SIBYLL does not sample b for hadron-nucleon
+
+
+@pytest.mark.parametrize("model", get_sibylls())
+def test_wounded_proton_nucleus(model):
+    """p + A runs through the sibyll() path with the Glauber geometry in
+    /S_CNCM0/: projectile side has exactly one wounded nucleon, target
+    side fluctuates, impact parameter is sampled."""
+    (results,) = run_in_separate_process(
+        wounded_check, model, [CenterOfMass(5 * TeV, "p", (16, 8))]
+    )
+    assert all(na == 1 for na, nb, b in results)
+    assert all(1 <= nb <= 16 for na, nb, b in results)
+    assert any(nb > 1 for na, nb, b in results), "no multiple interactions"
+    assert all(b > 0 for na, nb, b in results)
+
+
+@pytest.mark.parametrize("model", get_sibylls())
+def test_wounded_nucleus_proton(model):
+    """O + p runs through the sibnuc() path with geometry in /CNUCMS/.
+    chromo reports wounded as (projectile, target): the proton target is
+    singly wounded or, for elastic events, not wounded at all."""
+    (results,) = run_in_separate_process(
+        wounded_check, model, [CenterOfMass(5 * TeV, (16, 8), "p")]
+    )
+    assert all(0 <= na <= 16 for na, nb, b in results)
+    assert all(nb in (0, 1) for na, nb, b in results)
+    assert any(na > 1 for na, nb, b in results), "no multiple interactions"
+    assert all(b > 0 for na, nb, b in results)
+
+
+@pytest.mark.parametrize("model", get_sibylls())
+def test_wounded_nucleus_nucleus(model):
+    """O + O runs through the sibnuc() path with geometry in /CNUCMS/."""
+    (results,) = run_in_separate_process(
+        wounded_check, model, [CenterOfMass(5 * TeV, (16, 8), (16, 8))]
+    )
+    assert all(0 <= na <= 16 and 0 <= nb <= 16 for na, nb, b in results)
+    assert any(na > 1 and nb > 1 for na, nb, b in results)
+    assert all(b > 0 for na, nb, b in results)
+
+
+@pytest.mark.parametrize("model", get_sibylls())
+def test_wounded_no_stale_blocks(model):
+    """SIBYLL never clears its geometry common blocks. Retargeting a
+    generator must never leak wounded counts or impact parameters from a
+    previous collision type into events of the current one."""
+    results = run_in_separate_process(
+        wounded_check,
+        model,
+        [
+            CenterOfMass(5 * TeV, "p", (16, 8)),  # fill /S_CNCM0/
+            CenterOfMass(5 * TeV, "p", "p"),  # must not leak into h + N
+            CenterOfMass(5 * TeV, (16, 8), (16, 8)),  # fill /CNUCMS/
+            CenterOfMass(5 * TeV, "p", (16, 8)),  # hA geometry is live
+        ],
+    )
+    # after a p + O run, hadron-nucleon events must report exactly
+    # (1, 1) and b = 0, not the Glauber values from the previous stage
+    for na, nb, b in results[1]:
+        assert (na, nb, b) == (1, 1, 0.0)
+    # after switching to O + O, the /CNUCMS/ geometry must be freshly sampled
+    assert all(b > 0 for na, nb, b in results[2])
+    # and switching back to p + O must sample /S_CNCM0/ again
+    assert all(na == 1 and nb >= 1 and b > 0 for na, nb, b in results[3])

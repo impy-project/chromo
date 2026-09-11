@@ -110,11 +110,29 @@ class SibyllEvent(MCEvent):
     def _get_charge(self, npart):
         return self._lib.schg.ichg[:npart]
 
+    def __init__(self, generator):
+        # Geometry is in /CNUCMS/ for A + A and /S_CNCM0/ for h + A;
+        # Fortran never clears them, so select by kinematics, not content.
+        kin = generator.kinematics
+        self._is_aa = is_real_nucleus(kin.p1)
+        self._is_ha = not self._is_aa and kin.p2.A > 1
+        super().__init__(generator)
+
     def _get_impact_parameter(self):
-        return self._lib.cnucms.b
+        if self._is_aa:
+            return self._lib.cnucms.b
+        if self._is_ha:
+            return self._lib.s_cncm0.b
+        return 0.0  # SIBYLL does not sample an impact parameter for h+N
 
     def _get_n_wounded(self):
-        return self._lib.cnucms.na, self._lib.cnucms.nb
+        # SIBYLL blocks are ordered (target, projectile), but chromo
+        # convention across generators is (projectile, target)
+        if self._is_aa:
+            return int(self._lib.cnucms.nb), int(self._lib.cnucms.na)
+        if self._is_ha:
+            return 1, int(self._lib.s_cncm0.na)
+        return 1, 1  # h + N: single wounded nucleon on each side
 
     def _history_zero_indexing(self):
         # Sibyll has only mothers
