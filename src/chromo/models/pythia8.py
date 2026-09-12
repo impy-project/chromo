@@ -10,7 +10,7 @@ from particle import literals as lp
 from chromo.common import CrossSectionData, EventData, MCRun
 from chromo.constants import GeV, standard_projectiles
 from chromo.kinematics import EventFrame
-from chromo.util import Nuclei, _cached_data_dir, is_real_nucleus, name2pdg
+from chromo.util import Nuclei, _cached_data_dir, is_real_nucleus, name2pdg, pdg2name
 
 # Tabulated average number of inelastic hN collisions per hA collision,
 # ported from PythiaCascade.h (Pythia 8.317).  Used by both Cascade and
@@ -269,7 +269,9 @@ class Pythia8(MCRun):
             single string that is read from a configuration file or a list of
             strings, where each string is a single configuration command.
             If config is not set, 'SoftQCD:inelastic = on' is used to get the
-            equivalent of other generators in chromo.
+            equivalent of other generators in chromo. For lepton beams (e+e-,
+            e+p, ...) SoftQCD is not an option, so electroweak and
+            photon-induced processes are enabled instead.
         """
 
         super().__init__(seed)
@@ -285,16 +287,17 @@ class Pythia8(MCRun):
         self._pythia = self._lib.Pythia(datdir, banner)
 
         if config is None:
-            if evt_kin.p1 == lp.photon.pdgid and evt_kin.p2 == lp.photon.pdgid:
-                self._config = ["PhotonCollision:all = on"]
-            else:
-                # includes gamma p processes
-                self._config = ["SoftQCD:inelastic = on"]
+            self._custom_config = None
+            # The default process switches depend on the beam particles and
+            # are selected in _set_kinematics via _default_process_config.
+            # SoftQCD is used as a placeholder for the decay mode below and
+            # is replaced for actual collisions.
+            process_config = ["SoftQCD:inelastic = on"]
         else:
-            self._config = self._parse_config(config)
+            self._custom_config = process_config = self._parse_config(config)
 
         # Common settings
-        self._config += [
+        self._common_config = [
             # use our random seed
             "Random:setSeed = on",
             # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
@@ -303,8 +306,10 @@ class Pythia8(MCRun):
         ]
 
         # Add "Print:quiet = on" if no "Print:quiet" is in config
-        if not any("Print:quiet" in s for s in self._config):
-            self._config.append("Print:quiet = on")
+        if not any("Print:quiet" in s for s in process_config):
+            self._common_config.append("Print:quiet = on")
+
+        self._config = process_config + self._common_config
 
         # must come last
         if evt_kin is None:
@@ -314,15 +319,47 @@ class Pythia8(MCRun):
             self.kinematics = evt_kin
         self._set_final_state_particles()
 
-    def _cross_section(self, kin=None, max_info=False):
-        st = self._pythia.info.sigmaTot
+    @staticmethod
+    def _default_process_config(kin) -> list[str]:
+        """Default Pythia process switches for the given beam particles.
 
-        if (self.kinematics.p1.is_lepton) and (self.kinematics.p2.is_lepton):
-            return CrossSectionData(
-                total=st.sigmaTot,
-                inelastic=st.sigmaTot - st.sigmaEl,
-                elastic=st.sigmaEl,
+        SoftQCD is invalid for lepton beams. Pythia8 would abort during
+        init() or segfault when reading info.sigmaTot, so for lepton beams
+        electroweak and photon-induced processes are enabled instead,
+        following the official Pythia8 examples main224 (e+e-) and
+        main343 (e-p).
+        """
+        p1_lep = kin.p1.is_lepton
+        p2_lep = kin.p2.is_lepton
+        p1_gam = abs(kin.p1) == lp.photon.pdgid
+        p2_gam = abs(kin.p2) == lp.photon.pdgid
+        if (p1_lep and p2_gam) or (p2_lep and p1_gam):
+            msg = (
+                f"{pdg2name(kin.p1)} {pdg2name(kin.p2)} collision is not "
+                "supported: Pythia8 does not generate photon-lepton events"
             )
+            raise ValueError(msg)
+        if p1_gam and p2_gam:
+            return ["PhotonCollision:all = on"]
+        if p1_lep and p2_lep:
+            # e+e- and similar, e.g. gamma*/Z -> ffbar + photon PDFs
+            return ["WeakSingleBoson:ffbar2gmZ = on", "PhotonCollision:all = on"]
+        if p1_lep or p2_lep:
+            # lepton-hadron, e.g. e-p DIS + photoproduction
+            return ["WeakBosonExchange:all = on", "PhotonCollision:all = on"]
+        # includes gamma p processes
+        return ["SoftQCD:inelastic = on"]
+
+    def _cross_section(self, kin=None, max_info=False):
+        kin = self.kinematics if kin is None else kin
+        if kin.p1.is_lepton or kin.p2.is_lepton:
+            # Pythia8 does not compute a hadronic SigmaTotal for lepton
+            # beams, so `info.sigmaTot` would dereference a null pointer
+            # and crash. Cross sections for lepton-induced processes are
+            # defined only for a specific subprocess, i.e. per generated
+            # event (see `pythia.info.sigmaGen()`).
+            return CrossSectionData()
+        st = self._pythia.info.sigmaTot
         return CrossSectionData(
             total=st.sigmaTot,
             inelastic=st.sigmaTot - st.sigmaEl,
@@ -334,6 +371,9 @@ class Pythia8(MCRun):
         )
 
     def _set_kinematics(self, kin):
+        if self._custom_config is None:
+            # select default process switches for the current beams
+            self._config = self._default_process_config(kin) + self._common_config
         config = self._config[:]
 
         # TODO use numpy PRNG instead of Pythia's

@@ -6,7 +6,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_equal
 
 from chromo.constants import GeV, long_lived
-from chromo.kinematics import CenterOfMass
+from chromo.kinematics import CenterOfMass, FixedTarget
 from chromo.models import Pythia8
 
 from .util import reference_charge
@@ -161,3 +161,32 @@ def test_gp():
 def test_gg():
     evt = run_collision(100 * GeV, "gamma", "gamma")
     assert len(evt) > 2
+
+
+@pytest.mark.parametrize(
+    ("p1", "p2"),
+    [("e+", "e-"), ("e-", "e+"), ("e+", "p"), ("e-", "p")],
+)
+def test_lepton_beams(p1, p2):
+    # Pythia8 segfaults during init() if default hadronic processes
+    # are enabled for lepton beams
+    event = run_collision(100 * GeV, p1, p2)
+    assert len(event.final_state().pid) > 0
+
+
+@pytest.mark.parametrize(("p1", "p2"), [("e+", "e-"), ("e-", "p")])
+def test_lepton_cross_section_is_nan(p1, p2):
+    # Pythia8 does not compute hadronic cross sections for lepton beams
+    c = run_cross_section(100 * GeV, p1, p2)
+    assert np.isnan(c.total)
+    assert np.isnan(c.inelastic)
+
+
+def test_photon_lepton_beams_rejected():
+    # Pythia8 does not generate photon-lepton events
+    # FixedTarget instead of CenterOfMass, since CenterOfMass cannot
+    # combine a massless and a massive particle
+    with pytest.raises(ValueError, match="not supported"):
+        Pythia8(FixedTarget(1e6 * GeV, "gamma", "e+"), seed=1)
+    with pytest.raises(ValueError):
+        Pythia8(FixedTarget(1e6 * GeV, "e+", "gamma"), seed=1)
