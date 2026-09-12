@@ -192,6 +192,10 @@ class EventData:
         available for filtered events. In those cases, mothers is None.
     daughters: 2D array of int or None
         Same as mothers.
+    weight: float or None
+        Event weight as reported by the generator (e.g. Pythia8
+        ``info.weight()``). It is None for generators that do not
+        provide event weights.
     """
 
     generator: tuple[str, str]
@@ -214,6 +218,7 @@ class EventData:
     vt: np.ndarray
     mothers: Optional[np.ndarray]
     daughters: Optional[np.ndarray]
+    weight: Optional[float] = None
 
     def __getitem__(self, arg):
         """
@@ -269,11 +274,17 @@ class EventData:
             self.vt.copy(),
             self.mothers.copy() if self.mothers is not None else None,
             self.daughters.copy() if self.daughters is not None else None,
+            self.weight,
         ]
 
     def __setstate__(self, state):
-        for f, v in zip(dataclasses.fields(self), state):
+        fields = dataclasses.fields(self)
+        for f, v in zip(fields, state):
             setattr(self, f.name, v)
+        # fields missing in old pickles get their dataclass default
+        for f in fields[len(state) :]:
+            if f.default is not dataclasses.MISSING:
+                setattr(self, f.name, f.default)
 
     def copy(self):
         """
@@ -354,6 +365,7 @@ class EventData:
             self.vt[arg],
             select_mothers(arg, self.mothers) if update_mothers else None,
             None,
+            self.weight,
         )
 
     @property
@@ -456,10 +468,16 @@ class EventData:
 
         model, version = self.generator
 
+        run_info = None
         if genevent is None:
             genevent = pyhepmc.GenEvent()
-            genevent.run_info = pyhepmc.GenRunInfo()
-            genevent.run_info.tools = [(model, version, "")]
+            run_info = pyhepmc.GenRunInfo()
+            run_info.tools = [(model, version, "")]
+            if self.weight is not None:
+                # weight names must be registered before the run info
+                # is attached to the event
+                run_info.weight_names = ["weight"]
+            genevent.run_info = run_info
 
         ev = self._prepare_for_hepmc()
         genevent.from_hepevt(
@@ -484,6 +502,24 @@ class EventData:
         genevent.cross_section.set_cross_section(
             self.production_cross_section * 1e9, 0, -1, -1
         )
+        if self.weight is not None:
+            try:
+                names = genevent.run_info.weight_names
+            except (RuntimeError, AttributeError):
+                names = []
+            if "weight" in names:
+                # from_hepevt() may clear the weight vector, so re-attach
+                # the run info (this resizes the vector) before setting it
+                run_info = genevent.run_info
+                genevent.run_info = run_info
+                genevent.set_weight("weight", float(self.weight))
+            else:
+                warnings.warn(
+                    "event weight is not exported to HepMC3 because the"
+                    " GenEvent does not declare a 'weight' run attribute",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
 
         return genevent
 

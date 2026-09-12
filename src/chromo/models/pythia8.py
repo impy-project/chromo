@@ -176,6 +176,7 @@ class PYTHIA8Event(EventData):
             event.vt(),
             np.maximum(event.mothers() - 1, -1),
             np.maximum(event.daughters() - 1, -1),
+            weight=pythia.info.weight(),
         )
 
     @staticmethod
@@ -420,6 +421,16 @@ class Pythia8(MCRun):
     def random_state(self, rng_state):
         """Restore Pythia8's random number generator state."""
         self._pythia.setRndmState(rng_state)
+
+    @property
+    def sum_of_weights(self):
+        """Cumulative sum of the weights of all generated events.
+
+        Corresponds to ``Pythia::info.weightSum()``. It is 1 per event
+        unless the cross section or the phase-space selection was
+        modified by reweighting.
+        """
+        return self._pythia.info.weightSum()
 
 
 class PYTHIA8CascadeEvent(EventData):
@@ -984,3 +995,11 @@ class Pythia8Angantyr(MCRun):
     def random_state(self, rng_state):
         """Restore RNG state for the main Pythia and all Angantyr sub-Pythia objects."""
         self._pythia.setAngantyrRndmState(rng_state)
+
+    @property
+    def sum_of_weights(self):
+        """Cumulative sum of the weights of all generated events.
+
+        Corresponds to ``Pythia::info.weightSum()``.
+        """
+        return self._pythia.info.weightSum()

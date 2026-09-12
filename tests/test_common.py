@@ -103,6 +103,21 @@ def test_EventData_copy_and_pickle(evt):
     assert evt3 == evt
 
 
+def test_EventData_weight_default_and_roundtrip(evt):
+    # generators without weights leave the field as None
+    assert evt.weight is None
+    assert evt.copy().weight is None
+    assert pickle.loads(pickle.dumps(evt)).weight is None
+
+    evt.weight = 2.5
+    evt2 = evt.copy()
+    assert evt2.weight == 2.5
+    assert pickle.loads(pickle.dumps(evt)).weight == 2.5
+    # weights survive filtering of events
+    assert evt[1].weight == 2.5
+    assert evt.final_state().weight == 2.5
+
+
 class DummyEvent(MCEvent):
     def __init__(self):
         hepevt = SimpleNamespace(
