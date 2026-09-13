@@ -155,3 +155,43 @@ def test_cached_data_dir_uses_lock(tmp_path, monkeypatch):
     assert len(results) == 2
     assert len(set(results)) == 1
     assert len(extract_calls) == 1
+
+
+def test_find_models_photon_on_nucleus():
+    models = util.find_models(22, "O16")
+    names = {m.pyname for m in models}
+    assert "DpmjetIII307" in names
+    # QGSJet is hadron-only and must not show up for photon projectiles
+    assert "QGSJetIII" not in names
+    # the same as a name lookup and only_names
+    assert util.find_models("gamma", "Fe56") == models
+    assert util.find_models(22, "Fe56", only_names=True) == [
+        m.__name__ for m in util.find_models(22, "Fe56")
+    ]
+
+
+def test_find_models_photon_on_nucleon():
+    # DPMJET 3.0-7 refuses photons on nucleon targets even though the
+    # photon is in its projectile list
+    assert "DpmjetIII307" not in util.find_models(22, "p", only_names=True)
+    assert "DpmjetIII307" not in util.find_models(22, "n", only_names=True)
+
+
+def test_find_models_hadron():
+    models = util.find_models(2212, "Fe56")
+    assert util.find_models("proton", "Fe56") == models
+    names = {m.pyname for m in models}
+    assert "DpmjetIII307" in names
+    assert "QGSJetIII" in names
+
+
+def test_find_models_composite_and_tuple():
+    from chromo.util import CompositeTarget
+
+    air = CompositeTarget([("N", 2 * 0.78), ("O", 2 * 0.21)])
+    assert "DpmjetIII307" in {m.pyname for m in util.find_models(22, air)}
+    # (A, Z) tuple specification
+    assert "DpmjetIII307" in {
+        m.pyname for m in util.find_models(22, util.AZ2pdg(16, 8))
+    }
+    assert util.find_models(22, (56, 26)) == util.find_models(22, "Fe56")

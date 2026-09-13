@@ -1,6 +1,6 @@
 import warnings
 
-from particle import Particle
+from particle import PDGID, Particle
 
 from chromo.common import CrossSectionData, MCEvent, MCRun
 from chromo.constants import GeV, standard_projectiles
@@ -10,6 +10,7 @@ from chromo.util import (
     _cached_data_dir,
     fortran_chars,
     info,
+    pdg2AZ,
 )
 
 # The list below are all known particles to DPMJET, which can be used as
@@ -118,7 +119,7 @@ class DpmjetIIIRun(MCRun):
     _name = "DPMJET-III"
     _event_class = DpmjetIIIEvent
     _frame = None
-    # TODO: DPMJet supports photons as projectiles
+    # Photon projectiles on nuclear targets are enabled in DpmjetIII307.
     _projectiles = dpmjet_extended_projectiles | Nuclei(a_max=280)
     _targets = Nuclei()
     _param_file_name = "dpmjpar.dat"
@@ -367,14 +368,129 @@ class DpmjetIII193(DpmjetIIIRun):
 
 
 class DpmjetIII307(DpmjetIIIRun):
+    """DPMJET 3.0-7 with PHOJET 1.12 as the hadron/photon-nucleon engine.
+
+    In addition to the standard hadronic projectiles and nuclei, DPMJET
+    supports photons (PDG 22) as projectiles on nuclear targets
+    (photon-induced interactions, VDM + Glauber). The Fortran code of
+    DPMJET 3.0-7 selects the projectile identity (``IJPROJ``) from the
+    ``/DTPRTA/`` common block instead of the ``IDP`` argument of
+    ``DT_INIT``, and the photon cross-section tables in the Glauber
+    module are only initialized if ``IJPROJ = 7`` (the BAMJET index of
+    the photon) is already set when the Glauber initialization runs.
+    Therefore, the first call to ``DT_INIT`` (triggered by setting the
+    kinematics) is transparently redone here with ``IJPROJ = 7`` when a
+    photon projectile is requested.
+
+    Photons on nucleon targets (gamma + p / n) are not enabled, since
+    then no Glauber initialization is performed and the production
+    cross section that the interface caches when the kinematics is set
+    would be meaningless. Note that PHOJET 1.12 alone
+    (``Phojet112`` via :mod:`chromo.models.phojet`) supports photons
+    on nucleon targets.
+    """
+
     _version = "3.0-7"
     _library_name = "_dpmjet307"
-    _projectiles = standard_projectiles | Nuclei(a_max=280)
+    _projectiles = standard_projectiles | {PDGID(22)} | Nuclei(a_max=280)
     _param_file_name = "fitpar.dat"
     _data_url = (
         "https://github.com/impy-project/chromo"
         "/releases/download/zipped_data_v1.0/dpm3_v001.zip"
     )
+
+    @classmethod
+    def _pair_allowed(cls, p1, p2):
+        if p1 == 22 and pdg2AZ(p2)[0] == 1:
+            return False
+        return True
+
+    def _check_kinematics(self, kin):
+        super()._check_kinematics(kin)
+        if abs(kin.p1) == 22 and not self._pair_allowed(abs(kin.p1), abs(kin.p2)):
+            msg = (
+                "DpmjetIII307 supports photon projectiles only on nuclear "
+                "targets (A > 1); use Phojet112 or Pythia8 for gamma + "
+                "nucleon interactions."
+            )
+            raise ValueError(msg)
+
+    def _set_kinematics(self, kin):
+        super()._set_kinematics(kin)
+        if abs(kin.p1) != 22:
+            return
+        # DPMJET 3.0-7 reads the projectile identity for the Glauber
+        # initialization from the /DTPRTA/ common block (IJPROJ),
+        # ignoring the IDP argument of DT_INIT, and the very first DT_INIT
+        # resets IJPROJ to 1 (via DT_DEFAUL). Photon-nucleus cross
+        # sections are only tabulated when IJPROJ = 7 (the BAMJET index
+        # of the photon) while DT_SHMAKI/DT_XSGLAU run, so repeat the
+        # initialization with the photon index set. EPN is kept at the
+        # maximal lab momentum of the run (self._max_plab) so that the
+        # hadronic path is not degraded, and /DTPRTA/ is restored
+        # afterwards. The repeated initialization is skipped as long as
+        # the target nucleus does not change.
+        target_key = (kin.p2.A or 1, kin.p2.Z or 0)
+        if getattr(self, "_photon_init_target", None) == target_key:
+            return
+        self._lib.dtprta.ijproj = 7
+        self._lib.dtprta.ibproj = 7
+        try:
+            self._lib.dt_init(
+                -1,
+                self._max_plab,
+                1,
+                0,
+                *target_key,
+                22,
+                iglau=0,
+            )
+        finally:
+            self._lib.dtprta.ijproj = 1
+            self._lib.dtprta.ibproj = 1
+        self._photon_init_target = target_key
+
+    def _run_glauber(self, kin, photon_x, prod_only):
+        if abs(kin.p1) == 22:
+            # Use target slot 2 (NIDX = 2) for photon-induced cross sections
+            # so that the hadronic results in slot 1, which are tabulated
+            # once during DT_INIT and reused by the base class, remain intact.
+            self._lib.dtglgp.lprod = prod_only
+            self._lib.dt_xsglau(
+                1,  # photon has no nucleons
+                kin.p2.A or 1,
+                7,  # BAMJET index of the photon projectile
+                photon_x,
+                kin.virt_p1,
+                kin.ecm,
+                1,
+                1,
+                2,
+            )
+            return
+        super()._run_glauber(kin, photon_x, prod_only)
+
+    def _cross_section(self, kin=None, photon_x=0, max_info=False):
+        kin = self.kinematics if kin is None else kin
+        if abs(kin.p1) == 22 and kin.p2.A and kin.p2.A > 1:
+            # Photon-nucleus cross sections are computed with the Glauber
+            # module (DT_XSGLAU with IJPROJ=7, VDM); the DTGLXS arrays are
+            # populated by the call below into target slot 2.
+            self._run_glauber(kin, photon_x, prod_only=not max_info)
+            glxs = self._lib.dtglxs
+            stot = glxs.xstot[0, 0, 1]
+            sela = glxs.xsela[0, 0, 1]
+            return CrossSectionData(
+                total=stot,
+                elastic=sela,
+                inelastic=stot - sela,
+                prod=glxs.xspro[0, 0, 1],
+                quasielastic=glxs.xsqep[0, 0, 1]
+                + glxs.xsqet[0, 0, 1]
+                + glxs.xsqe2[0, 0, 1]
+                + sela,
+            )
+        return super()._cross_section(kin, photon_x=photon_x, max_info=max_info)
 
 
 class DpmjetIII193_DEV(DpmjetIIIRun):

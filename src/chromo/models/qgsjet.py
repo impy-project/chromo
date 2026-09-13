@@ -43,6 +43,15 @@ class QGSJET3Event(QGSJET2Event):
 
 
 class QGSJetRun(MCRun):
+    """Base class for the QGSJet family of event generators.
+
+    Note that QGSJet (all versions, including QGSJet-III) is a hadronic
+    model: its Fortran code provides no photon (or lepton) projectile
+    support (no VDM/photon flux machinery, cf. DPMJET), so photon-induced
+    interactions are not available here (see issue #142). Use
+    DpmjetIII307 for gamma + A and Phojet112 or Pythia8 for gamma + N.
+    """
+
     _name = "QGSJet"
     _frame = EventFrame.FIXED_TARGET
     _projectiles = standard_projectiles | Nuclei()
