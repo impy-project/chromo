@@ -310,6 +310,20 @@ class UrQMD34(MCRun):
                 self._lib.cascinit(self._lib.sys.zt, self._lib.sys.at, 2)
 
         self._lib.urqmd(0)
+        # UrQMD accepts events with elastic scattering only (it retries only
+        # if no collision at all happened). For meson projectiles such as
+        # pions, this leads to events with just the two beam particles in the
+        # final state, see issue #45. Here we reject events without any
+        # inelastic collision, so that the event sample is an inelastic one,
+        # as it is for the other models (elastic cross section is disabled
+        # via CTOption(7) in __init__).
+        #
+        # ctag counts all interactions (collisions and decays), dectag only
+        # decays, nelcoll elastic collisions and nblcoll Pauli-blocked ones.
+        sysb = self._lib.sys
+        n_inelastic = sysb.ctag - sysb.dectag - sysb.nelcoll - sysb.nblcoll
+        if n_inelastic <= 0:
+            return False
         # Convert URQMD event to HEPEVT
         self._lib.chepevt()
         return True
