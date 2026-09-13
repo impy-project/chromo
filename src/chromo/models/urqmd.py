@@ -221,7 +221,9 @@ class UrQMD34(MCRun):
         # Use bdb weighting for impact parameter selection
         self._lib.options.ctoption[5 - 1] = 1
 
-        # Disable elastic collision
+        # Disable elastic collisions of initial nucleon-nucleon pairs
+        # (see scatter.f; elastic scattering of other beams, e.g. pi+p,
+        # is still possible and filtered in _generate())
         self._lib.options.ctoption[7 - 1] = 1
 
         # Change CTParams and/or CTOptions if needed
@@ -310,16 +312,14 @@ class UrQMD34(MCRun):
                 self._lib.cascinit(self._lib.sys.zt, self._lib.sys.at, 2)
 
         self._lib.urqmd(0)
-        # UrQMD accepts events with elastic scattering only (it retries only
-        # if no collision at all happened). For meson projectiles such as
-        # pions, this leads to events with just the two beam particles in the
-        # final state, see issue #45. Here we reject events without any
-        # inelastic collision, so that the event sample is an inelastic one,
-        # as it is for the other models (elastic cross section is disabled
-        # via CTOption(7) in __init__).
-        #
-        # ctag counts all interactions (collisions and decays), dectag only
-        # decays, nelcoll elastic collisions and nblcoll Pauli-blocked ones.
+        # UrQMD accepts events where the only interaction was elastic
+        # scattering. For meson projectiles (pions, kaons) these events
+        # contain just the two beam particles in the final state,
+        # see issue #45. Reject events without any inelastic collision,
+        # consistent with UrQMD's own inelastic-collision counter
+        # (iinelcoll = ctag - dectag - NElColl - NBlColl in output.f):
+        # ctag counts all interactions, dectag decays, nelcoll elastic
+        # and nblcoll Pauli-blocked collisions.
         sysb = self._lib.sys
         n_inelastic = sysb.ctag - sysb.dectag - sysb.nelcoll - sysb.nblcoll
         if n_inelastic <= 0:
