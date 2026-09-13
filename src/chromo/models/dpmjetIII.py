@@ -407,7 +407,7 @@ class DpmjetIII307(DpmjetIIIRun):
 
     def _check_kinematics(self, kin):
         super()._check_kinematics(kin)
-        if abs(kin.p1) == 22 and not self._pair_allowed(abs(kin.p1), abs(kin.p2)):
+        if not self._pair_allowed(abs(kin.p1), abs(kin.p2)):
             msg = (
                 "DpmjetIII307 supports photon projectiles only on nuclear "
                 "targets (A > 1); use Phojet112 or Pythia8 for gamma + "
@@ -477,6 +477,16 @@ class DpmjetIII307(DpmjetIIIRun):
             # module (DT_XSGLAU with IJPROJ=7, VDM); the DTGLXS arrays are
             # populated by the call below into target slot 2.
             self._run_glauber(kin, photon_x, prod_only=not max_info)
+            if max_info:
+                # mirror the base class: the Glauber MC consumed Fortran
+                # RNG draws, so subsequent events are not reproducible
+                def _generate():
+                    raise RuntimeError(
+                        "Do not generate events with DPMJET after "
+                        "calculations of nuclear cross sections."
+                    )
+
+                self._generate = _generate
             glxs = self._lib.dtglxs
             stot = glxs.xstot[0, 0, 1]
             sela = glxs.xsela[0, 0, 1]

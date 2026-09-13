@@ -190,6 +190,9 @@ def test_find_models_composite_and_tuple():
 
     air = CompositeTarget([("N", 2 * 0.78), ("O", 2 * 0.21)])
     assert "DpmjetIII307" in {m.pyname for m in util.find_models(22, air)}
+    # a composite with a nucleon component must not match for photons
+    water = CompositeTarget([("H1", 2), ("O16", 1)])
+    assert util.find_models(22, water) == []
     # (A, Z) tuple specification
     assert "DpmjetIII307" in {
         m.pyname for m in util.find_models(22, util.AZ2pdg(16, 8))

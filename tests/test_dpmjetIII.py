@@ -209,19 +209,21 @@ def run_photon_on_nucleus(model, target, elab):
     assert 22 in model.projectiles
     xs = m.cross_section()
     assert 0 < xs.prod < 100, f"photon production xs out of range: {xs.prod}"
+    for evt in m(3):
+        assert evt.pid[0] == 22
+        assert len(evt.final_state().en) > 0
+    # max_info runs the Glauber MC and consumes the Fortran RNG state,
+    # so it must come last and forbid further event generation
     xs = m.cross_section(max_info=True)
     assert 0 < xs.total < 100
     assert xs.elastic < xs.total
     assert np.isclose(xs.inelastic, xs.total - xs.elastic)
-    n = 0
-    for evt in m(3):
-        assert evt.pid[0] == 22
-        assert len(evt.final_state().en) > 0
-        n += 1
-    assert n == 3
-    # production cross section must stay sane after event generation
-    xs = m.cross_section()
-    assert 0 < xs.prod < 100
+    try:
+        next(iter(m(1)))
+    except RuntimeError:
+        pass
+    else:
+        return False
     return True
 
 

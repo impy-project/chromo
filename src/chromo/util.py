@@ -975,16 +975,17 @@ def find_models(projectile, target, only_names=False):
         projectile-target combination.
     """
 
-    p1 = process_particle(projectile)
+    p1 = abs(process_particle(projectile))
     p2 = process_particle(target)
-    p1, p2 = abs(p1), abs(p2)
+    p2_components = p2.components if isinstance(p2, CompositeTarget) else [p2]
+    p2_components = [abs(c) for c in p2_components]
     active_classes = []
     for cls in get_all_models():
         if p1 not in cls.projectiles:
             continue
-        if p2 not in cls.targets:
+        if not all(c in cls.targets for c in p2_components):
             continue
-        if not cls._pair_allowed(p1, p2):
+        if not all(cls._pair_allowed(p1, c) for c in p2_components):
             continue
         active_classes.append(cls)
     return [cls.__name__ for cls in active_classes] if only_names else active_classes
