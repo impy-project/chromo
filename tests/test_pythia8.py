@@ -87,13 +87,6 @@ def test_sum_of_weights():
     assert m.sum_of_weights > 0
 
 
-def test_event_weight_pickle(event):
-    import pickle
-
-    evt2 = pickle.loads(pickle.dumps(event))
-    assert evt2.weight == event.weight
-
-
 def test_daughters(event):
     assert event.daughters.shape == (len(event), 2)
     # some particles have no daughters

@@ -278,13 +278,8 @@ class EventData:
         ]
 
     def __setstate__(self, state):
-        fields = dataclasses.fields(self)
-        for f, v in zip(fields, state):
+        for f, v in zip(dataclasses.fields(self), state):
             setattr(self, f.name, v)
-        # fields missing in old pickles get their dataclass default
-        for f in fields[len(state) :]:
-            if f.default is not dataclasses.MISSING:
-                setattr(self, f.name, f.default)
 
     def copy(self):
         """
@@ -468,16 +463,10 @@ class EventData:
 
         model, version = self.generator
 
-        run_info = None
         if genevent is None:
             genevent = pyhepmc.GenEvent()
-            run_info = pyhepmc.GenRunInfo()
-            run_info.tools = [(model, version, "")]
-            if self.weight is not None:
-                # weight names must be registered before the run info
-                # is attached to the event
-                run_info.weight_names = ["weight"]
-            genevent.run_info = run_info
+            genevent.run_info = pyhepmc.GenRunInfo()
+            genevent.run_info.tools = [(model, version, "")]
 
         ev = self._prepare_for_hepmc()
         genevent.from_hepevt(
@@ -502,24 +491,6 @@ class EventData:
         genevent.cross_section.set_cross_section(
             self.production_cross_section * 1e9, 0, -1, -1
         )
-        if self.weight is not None:
-            try:
-                names = genevent.run_info.weight_names
-            except (RuntimeError, AttributeError):
-                names = []
-            if "weight" in names:
-                # from_hepevt() may clear the weight vector, so re-attach
-                # the run info (this resizes the vector) before setting it
-                run_info = genevent.run_info
-                genevent.run_info = run_info
-                genevent.set_weight("weight", float(self.weight))
-            else:
-                warnings.warn(
-                    "event weight is not exported to HepMC3 because the"
-                    " GenEvent does not declare a 'weight' run attribute",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
 
         return genevent
 
