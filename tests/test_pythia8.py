@@ -165,7 +165,7 @@ def test_gg():
 
 @pytest.mark.parametrize(
     ("p1", "p2"),
-    [("e+", "e-"), ("e-", "e+"), ("e+", "p"), ("e-", "p")],
+    [("e+", "e-"), ("e-", "e+"), ("e+", "p"), ("p", "e-")],
 )
 def test_lepton_beams(p1, p2):
     # Pythia8 segfaults during init() if default hadronic processes
