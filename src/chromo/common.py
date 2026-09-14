@@ -491,8 +491,35 @@ class EventData:
         genevent.cross_section.set_cross_section(
             self.production_cross_section * 1e9, 0, -1, -1
         )
+        self._set_hepmc3_weight(pyhepmc, genevent)
 
         return genevent
+
+    def _set_hepmc3_weight(self, pyhepmc, genevent):
+        """
+        Write `self.weight` to the HepMC3 event weights, if available.
+
+        pyhepmc requires a run info that declares a "weight" attribute
+        before the event weights can be set, and `from_hepevt()` clears
+        the weight vector, so the run info is (re-)attached afterwards
+        to resize the vector.
+        """
+        if self.weight is None:
+            return
+        try:
+            names = genevent.run_info.weight_names
+        except (RuntimeError, AttributeError):
+            names = []
+        if "weight" not in names:
+            run_info = pyhepmc.GenRunInfo()
+            if genevent.run_info is not None:
+                run_info.tools = genevent.run_info.tools
+            run_info.weight_names = ["weight"]
+            genevent.run_info = run_info
+        # from_hepevt() may clear the weight vector, re-attaching the
+        # run info resizes it
+        genevent.run_info = genevent.run_info
+        genevent.set_weight("weight", float(self.weight))
 
     # if all required packages are available, add extra
     # method to draw event in Jupyter

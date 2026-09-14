@@ -65,7 +65,8 @@ class Null(Writer):
 #   - Branch n instead of nPart, name cannot be chosen in uproot
 #   - Branch ImpactParameter renamed to impact
 #   - Branch E is redundant, we skip this to save space
-#   - Extra branches: parent
+#   - Extra branches: parent, weight (weight is NaN if not provided
+#     by the generator)
 #
 # For chromo in default configuration, the vertex locations are not interesting,
 # so we don't write them. Long-lived particles are final state, and there is no
@@ -109,6 +110,7 @@ class Root(Writer):
 
         self._event_buffers = {
             "impact": np.empty(buffer_size, FLOAT_TYPE),
+            "weight": np.full(buffer_size, np.nan, FLOAT_TYPE),
         }
         self._particle_buffers = {
             "px": np.empty(buffer_size, FLOAT_TYPE),
@@ -194,6 +196,9 @@ class Root(Writer):
 
         ievent = len(self._lengths)
         self._event_buffers["impact"][ievent] = getattr(event, "impact_parameter", 0.0)
+        weight = getattr(event, "weight", None)
+        if weight is not None:
+            self._event_buffers["weight"][ievent] = weight
 
         a = self._iparticle
         self._iparticle += event_size

@@ -87,6 +87,13 @@ def test_sum_of_weights():
     assert m.sum_of_weights > 0
 
 
+def test_event_weight_in_hepmc3(event):
+    pytest.importorskip("pyhepmc")
+    hev = event.to_hepmc3()
+    assert "weight" in hev.run_info.weight_names
+    assert_allclose(hev.weight(), event.weight)
+
+
 def test_daughters(event):
     assert event.daughters.shape == (len(event), 2)
     # some particles have no daughters

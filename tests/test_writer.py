@@ -67,6 +67,7 @@ def test_Root(write_vertices, overflow, target):
         make_event(5),
         make_event(4),
     ]
+    events[0].weight = 3.5
     model = Model()
 
     # name must contain all parameters to not cause collisions when test is run parallel
@@ -111,5 +112,9 @@ def test_Root(write_vertices, overflow, target):
             assert_equal(d["parent"][i], np.maximum(event.mothers[2:, 0] - 2, -1))
             if write_vertices:
                 assert_allclose(d["vx"][i], event.vx[2:])
+            expected_weight = event.weight if event.weight is not None else np.nan
+            assert d["weight"][i] == pytest.approx(
+                expected_weight, nan_ok=True
+            ), "weight branch"
 
     p.unlink()
