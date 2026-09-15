@@ -416,6 +416,26 @@ class EventData:
         kin = self.kin
         if kin.frame == EventFrame.FIXED_TARGET:
             return self.en
+        if kin.frame == EventFrame.GENERIC:
+            # the event is in the generic frame, boost to the fixed target frame
+            from types import SimpleNamespace
+
+            from chromo.kinematics import boost_event, boost_vector
+
+            lab = SimpleNamespace(
+                en=self.en.copy(),
+                px=self.px.copy(),
+                py=self.py.copy(),
+                pz=self.pz.copy(),
+            )
+            boost_event(
+                lab,
+                boost_vector(
+                    kin.beams[0] + kin.beams[1],
+                    kin._total_beam_momentum(EventFrame.FIXED_TARGET),
+                ),
+            )
+            return lab.en
         return kin._gamma_cm * self.en + kin._betagamma_cm * self.pz
 
     @property
