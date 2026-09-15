@@ -85,19 +85,6 @@ def run_rng_state_with_bitgen(Model, bitgen_class, seed):
 
 @pytest.mark.parametrize("Model", get_all_models())
 def test_rng_state(Model):
-    if Model == im.UrQMD34:
-        #       UrQMD has internal state that affects event
-        #       generation but is not captured by RNG state
-        #       There are several places where it can occur:
-        #        - Commong blocks: I tried to save and restore all commong blocks
-        #        with help of Copilot. It doesn't work, meaning that answer buried deep
-        #       - Save statements: they are not reset and might influence rng
-        #       - Pythia internal rng: it might be but, it seems pythia uses correct rng
-        #       Noticed: there are kind of "warm-up" that calculates some variables
-        #       that at later stages is not called. There are many different rng in the code
-        #       it might be that connecting all of them to one rng merge different rng branches
-        #       that must be independent: event and variable sequencies
-        pytest.xfail(f"{Model.pyname} fails this test, needs investigation")
     if Model in (im.EposLHCR, im.EposLHCRHadrRescattering):
         pytest.skip(
             f"{Model.pyname} maintains UrQMD internal state that affects event "
@@ -120,8 +107,6 @@ def test_rng_state(Model):
 )
 def test_rng_state_bitgens(Model, bitgen_class, seed):
     """Test different NumPy bit generators with all models."""
-    if Model == im.UrQMD34:
-        pytest.xfail(f"{Model.pyname} fails this test, needs investigation")
     if Model in (im.EposLHCR, im.EposLHCRHadrRescattering):
         pytest.skip(
             f"{Model.pyname} maintains UrQMD internal state that affects event "

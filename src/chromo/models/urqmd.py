@@ -243,7 +243,37 @@ class UrQMD34(MCRun):
         self._lib.inputs.outsteps = int(0.01 + caltim / self._lib.pots.dtimestep)
         self.kinematics = evt_kin
 
+        # Absorb the one-time initialization of the embedded Pythia6, which
+        # is otherwise lazily triggered by the first hard scattering
+        # (make22.f -> upyth -> PYINIT) and burns ~140k draws from the RNG
+        # stream. Without this, saving the RNG state and restoring it later
+        # could not reproduce the first events (issue #64).
+        self._warm_up()
+
         self._set_final_state_particles()
+
+    def _warm_up(self):
+        """Trigger the lazy Pythia6 initialization inside UrQMD.
+
+        UrQMD calls PYINIT for the first hard scattering that passes the
+        phase-space veto. PYINIT performs a once-per-process Monte Carlo
+        scan for cross-section maxima (PYMAXI), and the first PYEVNT after
+        it builds more cached data, drawing heavily from the common RNG
+        stream; neither is repeated later. Generating a real event to
+        trigger them would consume a random number of draws, so PYINIT and
+        PYEVNT are called directly with fixed dummy beams, so that the
+        draws consumed during construction are a deterministic constant.
+        Suppress the Pythia6 event-record printout (MSTP(122)) around the
+        call.
+        """
+        mstp = self._lib.pypars.mstp
+        mstp_122 = mstp[122 - 1]
+        mstp[122 - 1] = 0
+        try:
+            self._lib.pyinit("CMS", "p", "pbar", 50.0)
+            self._lib.upyth(1, 1, -1, 1, 50.0)
+        finally:
+            mstp[122 - 1] = mstp_122
 
     def _cross_section(self, kin=None, max_info=False):
         tot = self._lib.ptsigtot()
