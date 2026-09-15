@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 from particle import literals as lp
@@ -16,6 +18,8 @@ from chromo.kinematics import (
     MeV,
     Momentum,
     TotalEnergy,
+    boost_event,
+    boost_vector,
 )
 from chromo.util import (
     AZ2pdg,
@@ -226,3 +230,172 @@ def test_kinematics_m1_m2():
     k = EventKinematicsWithRestframe("proton", "neutron", ecm=10)
     assert np.allclose(k.m1, mass(2212))
     assert np.allclose(k.m2, mass(2112))
+
+
+def test_boost_event_analytic_z():
+    # particle at rest, E=2, boost with b=(0,0,0.6): gamma=1.25
+    ev = SimpleNamespace(
+        en=np.array([2.0]), px=np.array([0.0]), py=np.array([0.0]), pz=np.array([0.0])
+    )
+    boost_event(ev, (0, 0, 0.6))
+    assert ev.en[0] == approx(2.5)
+    assert ev.pz[0] == approx(-1.5)
+    assert ev.px[0] == 0
+    assert ev.py[0] == 0
+    # b=(0,0,1) should be rejected
+    with pytest.raises(ValueError):
+        boost_event(ev, (0, 0, 1.0))
+    # zero boost is a no-op
+    ev2 = SimpleNamespace(
+        en=np.array([1.0]), px=np.array([0.1]), py=np.array([0.2]), pz=np.array([0.3])
+    )
+    boost_event(ev2, (0, 0, 0))
+    assert ev2.en[0] == 1.0
+
+
+def test_boost_event_generic_preserves_invariants():
+    rng = np.random.default_rng(1)
+    m = rng.uniform(0.1, 5, 100)
+    px, py, pz = (rng.normal(0, 3, 100) for _ in range(3))
+    en = np.sqrt(m**2 + px**2 + py**2 + pz**2)
+    ev = SimpleNamespace(en=en.copy(), px=px.copy(), py=py.copy(), pz=pz.copy())
+    b = (0.1, -0.2, 0.35)
+    boost_event(ev, b)
+    inv2 = ev.en**2 - ev.px**2 - ev.py**2 - ev.pz**2
+    assert inv2 == approx(m**2, rel=1e-10)
+    # total four-momentum transforms like a single four-vector
+    p_from = np.array([px.sum(), py.sum(), pz.sum(), en.sum()])
+    p_to = np.array([ev.px.sum(), ev.py.sum(), ev.pz.sum(), ev.en.sum()])
+    assert boost_vector(p_from, p_to) == approx(np.array(b))
+    # inverse boost restores the original four-vectors
+    boost_event(ev, -np.array(b))
+    assert ev.en == approx(en)
+    assert ev.px == approx(px)
+    assert ev.py == approx(py)
+    assert ev.pz == approx(pz)
+
+
+def test_boost_vector_roundtrip():
+    rng = np.random.default_rng(7)
+    for _ in range(100):
+        m = rng.uniform(0.1, 5)
+        p = rng.normal(0, 3, 3)
+        P = np.array([*p, np.sqrt(m**2 + p @ p)])
+        b = rng.uniform(-0.9, 0.9, 3)
+        while b @ b > 0.98:
+            b = rng.uniform(-0.9, 0.9, 3)
+        ev = SimpleNamespace(
+            en=np.array([P[3]]),
+            px=np.array([P[0]]),
+            py=np.array([P[1]]),
+            pz=np.array([P[2]]),
+        )
+        boost_event(ev, b)
+        Pp = np.array([ev.px[0], ev.py[0], ev.pz[0], ev.en[0]])
+        assert boost_vector(P, Pp) == approx(b, abs=1e-10)
+
+
+def test_apply_boost_cms2ft_matches_old_collinear():
+    k = EventKinematicsWithRestframe("proton", "neutron", elab=1000)
+    ev = SimpleNamespace(
+        en=np.array([1.0, 3.0]),
+        px=np.array([0.1, -2.0]),
+        py=np.array([0.5, 1.0]),
+        pz=np.array([0.2, 4.0]),
+    )
+    en0, pz0 = ev.en.copy(), ev.pz.copy()
+    k.apply_boost(ev, EventFrame.CENTER_OF_MASS)
+    g, bg = k._gamma_cm, k._betagamma_cm
+    assert ev.en == approx(g * en0 + bg * pz0, rel=1e-12)
+    assert ev.pz == approx(bg * en0 + g * pz0, rel=1e-12)
+    k.apply_boost(ev, EventFrame.CENTER_OF_MASS, inverse=True)
+    assert ev.en == approx(en0)
+    assert ev.pz == approx(pz0)
+    # UHECR energies: boost must stay exact in (gamma, betagamma),
+    # a boost reconstructed from b alone loses ~gamma**2 * eps precision
+    k_uhe = EventKinematicsWithRestframe("proton", "neutron", elab=1e11)
+    ev_uhe = SimpleNamespace(
+        en=np.array([1.0]), px=np.array([0.1]), py=np.array([0.5]), pz=np.array([0.2])
+    )
+    k_uhe.apply_boost(ev_uhe, EventFrame.CENTER_OF_MASS)
+    g, bg = k_uhe._gamma_cm, k_uhe._betagamma_cm
+    assert ev_uhe.en[0] == approx(g + bg * 0.2, rel=1e-10)
+    assert ev_uhe.pz[0] == approx(bg + g * 0.2, rel=1e-10)
+
+
+def test_apply_boost_generic_frame_pA():
+    # asymmetric collider configuration from issue #182
+    e_beam = 6.8e3
+    k = EventKinematicsWithRestframe("p", "O", beam=(e_beam, -e_beam * 8 / 16))
+    assert k.frame == EventFrame.GENERIC
+    total_generic = k.beams[0] + k.beams[1]
+    # a system at rest in the CMS must be boosted to the total beam momentum
+    ev = SimpleNamespace(
+        en=np.array([k.ecm / 2, k.ecm / 2]),
+        px=np.array([0.0, 0.0]),
+        py=np.array([0.0, 0.0]),
+        pz=np.array([0.0, 0.0]),
+    )
+    k.apply_boost(ev, EventFrame.CENTER_OF_MASS)
+    total = np.array([ev.px.sum(), ev.py.sum(), ev.pz.sum(), ev.en.sum()])
+    assert total == approx(total_generic, rel=1e-10)
+    # transverse momenta unchanged by a boost along the beam axis
+    assert ev.px.sum() == approx(0, abs=1e-12)
+    assert ev.py.sum() == approx(0, abs=1e-12)
+    # a generic frame specified as fixed target matches FixedTarget
+    kft = EventKinematicsWithRestframe("proton", "neutron", elab=1000)
+    kgen = EventKinematicsWithRestframe("proton", "neutron", beam=(kft.plab, 0))
+    assert kgen.frame == EventFrame.GENERIC
+    ev1 = SimpleNamespace(
+        en=np.array([1.0, 3.0]),
+        px=np.array([0.1, -2.0]),
+        py=np.array([0.5, 1.0]),
+        pz=np.array([0.2, 4.0]),
+    )
+    ev2 = SimpleNamespace(
+        en=ev1.en.copy(), px=ev1.px.copy(), py=ev1.py.copy(), pz=ev1.pz.copy()
+    )
+    kft.apply_boost(ev1, EventFrame.CENTER_OF_MASS)
+    kgen.apply_boost(ev2, EventFrame.CENTER_OF_MASS)
+    assert ev2.en == approx(ev1.en, rel=1e-10)
+    assert ev2.pz == approx(ev1.pz, rel=1e-10)
+
+
+def test_apply_boost_generic_symmetric_is_cms():
+    k = EventKinematicsWithRestframe("proton", "neutron", beam=(5, -5))
+    assert k.frame == EventFrame.GENERIC
+    ev = SimpleNamespace(
+        en=np.array([1.0]),
+        px=np.array([0.1]),
+        py=np.array([0.5]),
+        pz=np.array([0.2]),
+    )
+    k.apply_boost(ev, EventFrame.CENTER_OF_MASS)
+    assert ev.en[0] == approx(1.0, abs=1e-12)
+    assert ev.px[0] == approx(0.1, abs=1e-12)
+    assert ev.py[0] == approx(0.5, abs=1e-12)
+    assert ev.pz[0] == approx(0.2, abs=1e-12)
+    # boosting from the generic frame is not supported
+    kft = EventKinematicsWithRestframe("proton", "neutron", elab=1000)
+    with pytest.raises(NotImplementedError):
+        kft.apply_boost(ev, EventFrame.GENERIC)
+
+
+def test_apply_boost_generic_inverse_roundtrip():
+    k = EventKinematicsWithRestframe("p", "O", beam=(6.8e3, -3.4e3))
+    ev = SimpleNamespace(
+        en=np.array([1.0, 3.0]),
+        px=np.array([0.1, -2.0]),
+        py=np.array([0.5, 1.0]),
+        pz=np.array([0.2, 4.0]),
+    )
+    ref = (ev.en.copy(), ev.px.copy(), ev.py.copy(), ev.pz.copy())
+    k.apply_boost(ev, EventFrame.CENTER_OF_MASS)
+    assert ev.en**2 - ev.px**2 - ev.py**2 - ev.pz**2 == approx(
+        ref[0] ** 2 - ref[1] ** 2 - ref[2] ** 2 - ref[3] ** 2, rel=1e-10
+    )
+    k.apply_boost(ev, EventFrame.CENTER_OF_MASS, inverse=True)
+    assert ev.en == approx(ref[0])
+    assert ev.px == approx(ref[1])
+    assert ev.py == approx(ref[2])
+    assert ev.pz == approx(ref[3])

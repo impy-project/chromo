@@ -416,6 +416,18 @@ class EventData:
         kin = self.kin
         if kin.frame == EventFrame.FIXED_TARGET:
             return self.en
+        if kin.frame == EventFrame.GENERIC:
+            # the event is in the generic frame, boost to the fixed target
+            # frame; both total beam momenta are along z, so the boost is
+            # collinear and can be applied without modifying the arrays
+            from chromo.kinematics import boost_vector
+
+            b = boost_vector(
+                kin.beams[0] + kin.beams[1],
+                kin._total_beam_momentum(EventFrame.FIXED_TARGET),
+            )
+            gamma = 1 / np.sqrt(1 - b @ b)
+            return gamma * (self.en - b[2] * self.pz)
         return kin._gamma_cm * self.en + kin._betagamma_cm * self.pz
 
     @property

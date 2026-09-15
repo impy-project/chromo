@@ -7,7 +7,12 @@ from particle import literals as lp
 
 from chromo.common import CrossSectionData
 from chromo.constants import GeV
-from chromo.kinematics import CenterOfMass, CompositeTarget
+from chromo.kinematics import (
+    CenterOfMass,
+    CompositeTarget,
+    EventFrame,
+    EventKinematicsWithRestframe,
+)
 from chromo.models import QGSJet01d, QGSJetII03, QGSJetII04, QGSJetIII
 from chromo.util import get_all_models
 
@@ -194,3 +199,28 @@ def test_charge(event):
 
 #     # most particles have a single mother
 #     assert sum(x[0] >= 0 and x[1] == -1 for x in event.mothers) > 0
+
+
+def run_asymmetric_pA():
+    # asymmetric p-O beams from issue #182: both beams move in lab frame
+    e_beam = 1e3
+    kin = EventKinematicsWithRestframe("p", "O", beam=(e_beam, -e_beam / 2))
+    m = QGSJetIII(kin, seed=1)
+    return [event.copy() for event in m(2)]
+
+
+def test_asymmetric_pA_generic_frame():
+    # generation in a GENERIC frame used to raise NotImplementedError (#184)
+    events = run_in_separate_process(run_asymmetric_pA)
+    for event in events:
+        assert event.kin.frame == EventFrame.GENERIC
+        beams = event.kin.beams[0] + event.kin.beams[1]
+        initial = event[event.status == 4]
+        total = np.array(
+            [initial.px.sum(), initial.py.sum(), initial.pz.sum(), initial.en.sum()]
+        )
+        assert_allclose(total, beams, rtol=1e-8)
+        # mass shell is preserved by the generic boost
+        fs = event.final_state()
+        inv_mass2 = fs.en**2 - fs.px**2 - fs.py**2 - fs.pz**2
+        assert_allclose(inv_mass2, fs.m**2, atol=0.01)
