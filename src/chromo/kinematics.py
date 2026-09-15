@@ -38,7 +38,74 @@ __all__ = (
     "PeV",
     "TeV",
     "TotalEnergy",
+    "boost_event",
+    "boost_vector",
 )
+
+
+def boost_vector(p_from, p_to):
+    """Return the boost velocity vector connecting two Lorentz frames.
+
+    Parameters
+    ----------
+    p_from, p_to : 4-element sequences
+        The total four-momentum of the system (px, py, pz, E) as measured
+        in the initial frame (``p_from``) and in the target frame
+        (``p_to``). Both must refer to the same physical system, i.e. have
+        the same invariant mass squared.
+
+    Returns
+    -------
+    ndarray
+        The velocity in units of c such that :func:`boost_event` applied to
+        four-vectors expressed in the ``p_from`` frame re-expresses them in
+        the ``p_to`` frame, i.e. ``boost_event(p_from, b) == p_to``.
+
+    Notes
+    -----
+    For two four-vectors P and P' (same invariant mass, positive energy)
+    of the same system, the unique pure boost (px, py, pz, E) -> (px', py',
+    pz', E') = boost(P, b) is given by
+    b = -2 (E + E') (p' - p) / ((E + E')**2 + (p' - p)**2) .
+    """
+    p_from = np.asarray(p_from, dtype=np.float64)
+    p_to = np.asarray(p_to, dtype=np.float64)
+    dp = p_to[:3] - p_from[:3]
+    de = p_to[3] + p_from[3]
+    denom = de**2 + dp @ dp
+    if denom == 0:
+        return np.zeros(3)
+    return -2 * de * dp / denom
+
+
+def boost_event(event, b):
+    """Boost the particles of an event in-place by the velocity vector b.
+
+    Parameters
+    ----------
+    event: object
+        Object with writable 1D ndarray attributes ``en``, ``px``, ``py``,
+        ``pz``, e.g. :class:`chromo.common.EventData` or an MCEvent.
+    b: 3-element array-like
+        Boost velocity in units of c. The direction of b is the direction
+        in which the frame of the event moves; the particles are transformed
+        into that frame.
+    """
+    b = np.asarray(b, dtype=np.float64)
+    b2 = np.dot(b, b)
+    if b2 == 0:
+        return
+    if b2 >= 1:
+        msg = "Boost velocity must be smaller than the speed of light"
+        raise ValueError(msg)
+    gamma = 1 / np.sqrt(1 - b2)
+    en, px, py, pz = event.en, event.px, event.py, event.pz
+    bp = b[0] * px + b[1] * py + b[2] * pz
+    f = (gamma - 1) / b2 * bp - gamma * en
+    event.en[:] = gamma * (en - bp)
+    event.px[:] = px + f * b[0]
+    event.py[:] = py + f * b[1]
+    event.pz[:] = pz + f * b[2]
 
 
 @dataclasses.dataclass
@@ -89,27 +156,38 @@ class EventKinematicsBase:
     _betagamma_cm: float
 
     def apply_boost(self, event, generator_frame, inverse=False):
+        """Boost event in-place from the generator frame to ``self.frame``.
+
+        The boost is computed from the total four-momentum of the two beams
+        in both frames, which makes it well-defined for any frame, including
+        EventFrame.GENERIC, where the beams are given as two arbitrary momenta
+        along the z-axis (e.g. asymmetric p-A collisions).
+        """
         if generator_frame == self.frame:
             return
-        CMS = EventFrame.CENTER_OF_MASS
-        FT = EventFrame.FIXED_TARGET
-        if generator_frame == FT and self.frame == CMS:
-            bg = -self._betagamma_cm
-        elif generator_frame == CMS and self.frame == FT:
-            bg = self._betagamma_cm
-        else:
-            msg = f"Boosts from {generator_frame} to {self.frame} are not yet supported"
+        if generator_frame == EventFrame.GENERIC:
+            msg = f"Boosts from {generator_frame} are not supported"
             raise NotImplementedError(msg)
-
-        # Inverse transformation
+        b = boost_vector(
+            self._total_beam_momentum(generator_frame),
+            self._total_beam_momentum(self.frame),
+        )
         if inverse:
-            bg = -bg
+            b = -b
+        boost_event(event, b)
 
-        g = self._gamma_cm
-        en = g * event.en + bg * event.pz
-        pz = bg * event.en + g * event.pz
-        event.en[:] = en
-        event.pz[:] = pz
+    def _total_beam_momentum(self, frame):
+        """Return total beam four-momentum (px, py, pz, E) in the given frame."""
+        if frame == EventFrame.CENTER_OF_MASS:
+            return np.array((0.0, 0.0, 0.0, self.ecm))
+        if frame == EventFrame.FIXED_TARGET:
+            return np.array(
+                (0.0, 0.0, self._betagamma_cm * self.ecm, self._gamma_cm * self.ecm)
+            )
+        if frame == EventFrame.GENERIC:
+            return self.beams[0] + self.beams[1]
+        msg = f"Beam four-momentum in frame {frame} is not defined"
+        raise NotImplementedError(msg)
 
     def __eq__(self, other):
         at = dataclasses.astuple(self)
@@ -157,6 +235,8 @@ class EventKinematicsBase:
             return self._beam_data
 
         event_like = SimpleNamespace(
+            px=np.zeros((2,)),
+            py=np.zeros((2,)),
             pz=np.array([self.beams[0][2], self.beams[1][2]]),
             en=np.array([self.beams[0][3], self.beams[1][3]]),
         )
@@ -166,8 +246,8 @@ class EventKinematicsBase:
             "pid": np.array([int(self.p1), int(self.p2)]),
             "status": np.array([4, 4]),
             "charge": np.array([self.p1.charge, self.p2.charge], dtype=np.float64),
-            "px": np.zeros((2,), dtype=np.float64),
-            "py": np.zeros((2,), dtype=np.float64),
+            "px": event_like.px,
+            "py": event_like.py,
             "pz": event_like.pz,
             "en": event_like.en,
             # Note that the masses are from `particle` module:

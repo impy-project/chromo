@@ -4,7 +4,12 @@ from numpy.testing import assert_allclose, assert_equal
 
 from chromo.common import CrossSectionData
 from chromo.constants import GeV, TeV
-from chromo.kinematics import CenterOfMass, CompositeTarget
+from chromo.kinematics import (
+    CenterOfMass,
+    CompositeTarget,
+    EventFrame,
+    EventKinematicsWithRestframe,
+)
 from chromo.util import get_all_models
 
 from .util import (
@@ -287,3 +292,32 @@ def test_print_native_event(model):
         assert "Event record" in output
     else:
         assert "SIBYLL EVENT SUMMARY" in output
+
+def run_with_kin(kin):
+    from chromo.models import Sibyll23d
+
+    m = Sibyll23d(kin, seed=1)
+    return [event.copy() for event in m(1)]
+
+
+def test_generic_frame_matches_cms():
+    # generic frame with symmetric beams equals the CMS frame (issue #184);
+    # generation with a GENERIC frame used to raise NotImplementedError.
+    # Same seed and same ecm produce identical events in the two runs, since
+    # the boost from CMS to the symmetric generic frame is the identity.
+    kin_generic = EventKinematicsWithRestframe("p", "O", beam=(1e3, -1e3))
+    assert kin_generic.frame == EventFrame.GENERIC
+    kin_cms = EventKinematicsWithRestframe("p", "O", ecm=kin_generic.ecm)
+    events_generic = run_in_separate_process(run_with_kin, kin_generic)
+    events_cms = run_in_separate_process(run_with_kin, kin_cms)
+    for event_generic, event_cms in zip(events_generic, events_cms):
+        fs_g = event_generic.final_state()
+        fs_c = event_cms.final_state()
+        assert fs_g.pid == pytest.approx(fs_c.pid)
+        assert_allclose(fs_g.px, fs_c.px, rtol=1e-12, atol=1e-12)
+        assert_allclose(fs_g.py, fs_c.py, rtol=1e-12, atol=1e-12)
+        assert_allclose(fs_g.pz, fs_c.pz, rtol=1e-12, atol=1e-12)
+        assert_allclose(fs_g.en, fs_c.en, rtol=1e-12, atol=1e-12)
+        # mass shell is preserved
+        inv_mass2 = fs_g.en**2 - fs_g.px**2 - fs_g.py**2 - fs_g.pz**2
+        assert_allclose(inv_mass2, fs_g.m**2, atol=0.005)
