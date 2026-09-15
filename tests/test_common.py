@@ -168,6 +168,47 @@ def test_EventData_select(evt):
     assert_equal(x.pid, [1, 3])
 
 
+def test_final_state_with_nucl_frag():
+    # beam p, beam O16, decay pi0, spectator n, residual C12, raw-code n, pi0
+    n = 7
+    e = np.ones(n)
+    evt = EventData(
+        ("gen", "v"),
+        CenterOfMass(10, "p", "p"),
+        1,
+        np.nan,
+        (0, 0),
+        1.0,
+        np.array([2212, 1000080160, 211, 2112, 1000060120, 2112, 22]),
+        np.array([4, 4, 1, 5, 4, 13, 2]),
+        np.array([1, 8, 0, 0, 4, 0, 0]),
+        e,
+        e,
+        e,
+        e,
+        e,
+        e,
+        e,
+        e,
+        e,
+        e,
+        np.array([[1, 2], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [1, -1]]),
+        np.array([[-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [6, -1]]),
+    )
+
+    fs = evt.final_state()
+    assert_equal(fs.pid, [211])
+
+    nfrag = evt.final_state_with_nucl_frag()
+    assert_equal(nfrag.pid, [2212, 1000080160, 211, 2112, 1000060120])
+    assert set(nfrag.status) == {1, 4, 5}
+
+    # raw model codes must not leak into the final state, with or without
+    # the new filter: status 13 and 2 are not part of either selection
+    assert not np.any(nfrag.status == 13)
+    assert not np.any(fs.status == 2)
+
+
 def run_model(Model, evt_kin, n_events=10):
     """Run the model and return the histogram of events"""
     generator = Model(evt_kin, seed=1)
