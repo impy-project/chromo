@@ -73,7 +73,9 @@ def run_rng_state_events_reproducible(Model):
 
     nevents = 10
     state_0 = deepcopy(generator.random_state)
-    events = [event for event in generator(nevents)]
+    # deepcopy because events are views into the Fortran event record
+    # for some models, and the record is overwritten by the next event
+    events = [deepcopy(event) for event in generator(nevents)]
 
     generator.random_state = state_0
     for i, event in enumerate(generator(nevents)):

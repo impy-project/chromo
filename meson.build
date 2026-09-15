@@ -84,7 +84,7 @@ qgs_syms_base     = ['cqgsini','qgsect','qgini','qgconf','qgreg','chepevt','qgcr
 urqmd_syms        = [
   'urqmd','init','uinit','set0','params','uounit','strini','loginit','loadwtab',
   'norm_init','output','cascinit','nucrad','urqini','partname','chepevt','ptsigtot',
-  'pyinit','upyth']
+  'upyth']
 pythia6_syms      = [
   'pyinit','pyexec','pytune','pylist','pyevnt','pyevnw','pystat','pyedit',
   'pyhepc','pychge','pycomp','pyk']

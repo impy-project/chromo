@@ -245,7 +245,7 @@ class UrQMD34(MCRun):
 
         # Absorb the one-time initialization of the embedded Pythia6, which
         # is otherwise lazily triggered by the first hard scattering
-        # (make22.f -> upyth -> PYINIT) and burns ~140k draws from the RNG
+        # (make22.f -> upyth -> PYINIT) and draws heavily from the RNG
         # stream. Without this, saving the RNG state and restoring it later
         # could not reproduce the first events (issue #64).
         self._warm_up()
@@ -255,25 +255,20 @@ class UrQMD34(MCRun):
     def _warm_up(self):
         """Trigger the lazy Pythia6 initialization inside UrQMD.
 
-        UrQMD calls PYINIT for the first hard scattering that passes the
-        phase-space veto. PYINIT performs a once-per-process Monte Carlo
-        scan for cross-section maxima (PYMAXI), and the first PYEVNT after
-        it builds more cached data, drawing heavily from the common RNG
-        stream; neither is repeated later. Generating a real event to
-        trigger them would consume a random number of draws, so PYINIT and
-        PYEVNT are called directly with fixed dummy beams, so that the
-        draws consumed during construction are a deterministic constant.
-        Suppress the Pythia6 event-record printout (MSTP(122)) around the
-        call.
+        UrQMD routes hard scatterings through an embedded Pythia6. Its
+        PYINIT (called from upyth) runs PYMULT/PYMIGN, which adapt the
+        multiple-interaction cutoff (PARP(82)) with a Monte Carlo loop that
+        is repeated until the parton-parton cross section passes a
+        threshold and is then cached forever. This consumes a one-time
+        chunk of draws from the common RNG stream. A real event would
+        consume an unpredictable number of draws to trigger it, so one
+        fixed dummy upyth call is made at construction, making the draws
+        consumed during construction deterministic. upyth applies its own
+        fixed subprocess list and suppresses Pythia output (MSTP(122)),
+        so the warm-up is identical for every beam combination.
         """
-        mstp = self._lib.pypars.mstp
-        mstp_122 = mstp[122 - 1]
-        mstp[122 - 1] = 0
-        try:
-            self._lib.pyinit("CMS", "p", "pbar", 50.0)
-            self._lib.upyth(1, 1, -1, 1, 50.0)
-        finally:
-            mstp[122 - 1] = mstp_122
+        # UrQMD projectile/target codes (p, pbar) at 50 GeV CMS
+        self._lib.upyth(1, 1, -1, 1, 50.0)
 
     def _cross_section(self, kin=None, max_info=False):
         tot = self._lib.ptsigtot()
