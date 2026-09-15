@@ -428,11 +428,24 @@ class DpmjetIII307(DpmjetIIIRun):
         # initialization with the photon index set. EPN is kept at the
         # maximal lab momentum of the run (self._max_plab) so that the
         # hadronic path is not degraded, and /DTPRTA/ is restored
-        # afterwards. The repeated initialization is skipped as long as
-        # the target nucleus does not change.
+        # afterwards.
+        # Every DT_SHMAKI call allocates a new target slot (NTARG=NTARG+1)
+        # in tables dimensioned NCOMPX=20, so the re-initialization must
+        # run exactly once per unique target nucleus. Repeating it per
+        # kinematics switch (e.g. for composite targets cycling over their
+        # components between batches) overflows the slot table and
+        # corrupts memory. Slots are therefore cached per target; slot 1
+        # holds the hadronic results initialized by the base class, so
+        # photon slots start at 2.
         target_key = (kin.p2.A or 1, kin.p2.Z or 0)
-        if getattr(self, "_photon_init_target", None) == target_key:
+        slots = getattr(self, "_photon_slots", None)
+        if slots is None:
+            slots = self._photon_slots = {}
+        if target_key in slots:
             return
+        if len(slots) >= 19:
+            msg = "DPMJET Glauber target slot table (NCOMPX=20) exhausted"
+            raise ValueError(msg)
         self._lib.dtprta.ijproj = 7
         self._lib.dtprta.ibproj = 7
         try:
@@ -448,13 +461,14 @@ class DpmjetIII307(DpmjetIIIRun):
         finally:
             self._lib.dtprta.ijproj = 1
             self._lib.dtprta.ibproj = 1
-        self._photon_init_target = target_key
+        slots[target_key] = len(slots) + 2
 
     def _run_glauber(self, kin, photon_x, prod_only):
         if abs(kin.p1) == 22:
-            # Use target slot 2 (NIDX = 2) for photon-induced cross sections
-            # so that the hadronic results in slot 1, which are tabulated
-            # once during DT_INIT and reused by the base class, remain intact.
+            # Photon results live in the slot assigned to this target
+            # during its one-time photon initialization, so that the
+            # hadronic results in slot 1, which are tabulated once during
+            # DT_INIT and reused by the base class, remain intact.
             self._lib.dtglgp.lprod = prod_only
             self._lib.dt_xsglau(
                 1,  # photon has no nucleons
@@ -465,7 +479,9 @@ class DpmjetIII307(DpmjetIIIRun):
                 kin.ecm,
                 1,
                 1,
-                2,
+                getattr(self, "_photon_slots", {}).get(
+                    (kin.p2.A or 1, kin.p2.Z or 0), 2
+                ),
             )
             return
         super()._run_glauber(kin, photon_x, prod_only)
@@ -474,8 +490,14 @@ class DpmjetIII307(DpmjetIIIRun):
         kin = self.kinematics if kin is None else kin
         if abs(kin.p1) == 22 and kin.p2.A and kin.p2.A > 1:
             # Photon-nucleus cross sections are computed with the Glauber
-            # module (DT_XSGLAU with IJPROJ=7, VDM); the DTGLXS arrays are
-            # populated by the call below into target slot 2.
+            # module (DT_XSGLAU with IJPROJ=7, VDM) into the DTGLXS slot
+            # assigned to this target by the photon initialization.
+            nidx = (
+                getattr(self, "_photon_slots", {}).get(
+                    (kin.p2.A or 1, kin.p2.Z or 0), 2
+                )
+                - 1
+            )
             self._run_glauber(kin, photon_x, prod_only=not max_info)
             if max_info:
                 # mirror the base class: the Glauber MC consumed Fortran
@@ -488,16 +510,16 @@ class DpmjetIII307(DpmjetIIIRun):
 
                 self._generate = _generate
             glxs = self._lib.dtglxs
-            stot = glxs.xstot[0, 0, 1]
-            sela = glxs.xsela[0, 0, 1]
+            stot = glxs.xstot[0, 0, nidx]
+            sela = glxs.xsela[0, 0, nidx]
             return CrossSectionData(
                 total=stot,
                 elastic=sela,
                 inelastic=stot - sela,
-                prod=glxs.xspro[0, 0, 1],
-                quasielastic=glxs.xsqep[0, 0, 1]
-                + glxs.xsqet[0, 0, 1]
-                + glxs.xsqe2[0, 0, 1]
+                prod=glxs.xspro[0, 0, nidx],
+                quasielastic=glxs.xsqep[0, 0, nidx]
+                + glxs.xsqet[0, 0, nidx]
+                + glxs.xsqe2[0, 0, nidx]
                 + sela,
             )
         return super()._cross_section(kin, photon_x=photon_x, max_info=max_info)
