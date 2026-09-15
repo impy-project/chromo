@@ -424,6 +424,18 @@ class Pythia8(MCRun):
     def _generate(self):
         return self._pythia.next()
 
+    @property
+    def sigma_gen(self) -> tuple[float, float]:
+        """Integrated cross section of the enabled processes (mb) + uncertainty.
+
+        The value is filled by Pythia8 during event generation and is zero
+        right after init(). It is the only normalization available for lepton
+        beams, where the hadronic `cross_section()` is NaN. For hadronic
+        beams it agrees with `cross_section().inelastic`.
+        """
+        info = self._pythia.info
+        return info.sigmaGen(), info.sigmaErr()
+
     @staticmethod
     def _parse_config(config) -> list[str]:
         # convert config to lines and filter out lines that

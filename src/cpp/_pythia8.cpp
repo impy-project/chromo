@@ -444,6 +444,10 @@ PYBIND11_MODULE(_pythia8, m)
         .def_property_readonly("isDiffractiveB", &Info::isDiffractiveB)
         .def_property_readonly("isDiffractiveC", &Info::isDiffractiveC)
         .def_property_readonly("isNonDiffractive", &Info::isNonDiffractive)
+        .def("sigmaGen", &Info::sigmaGen, "iProcess"_a = 0)
+        .def("sigmaErr", &Info::sigmaErr, "iProcess"_a = 0)
+        .def("nSelected", &Info::nSelected, "iProcess"_a = 0)
+        .def("nAccepted", &Info::nAccepted, "iProcess"_a = 0)
 
         ;
 

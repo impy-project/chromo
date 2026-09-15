@@ -190,3 +190,26 @@ def test_photon_lepton_beams_rejected():
         Pythia8(FixedTarget(1e6 * GeV, "gamma", "e+"), seed=1)
     with pytest.raises(ValueError):
         Pythia8(FixedTarget(1e6 * GeV, "e+", "gamma"), seed=1)
+
+
+def test_sigma_gen_lepton():
+    # sigmaGen is the normalization for lepton beams, where
+    # cross_section() is NaN. At 100 GeV the e+e- -> hadrons cross
+    # section is a few nb.
+    evt_kin = CenterOfMass(100 * GeV, "e+", "e-")
+    m = Pythia8(evt_kin, seed=1)
+    for event in m(200):
+        pass
+    sigma, sigma_err = m.sigma_gen
+    assert 1e-6 < sigma < 1e-3  # mb, i.e. between 1 nb and 1 ub
+    assert sigma_err < sigma
+
+
+def test_sigma_gen_hadronic():
+    # for hadronic beams, sigmaGen agrees with cross_section().inelastic
+    evt_kin = CenterOfMass(100 * GeV, "p", "p")
+    m = Pythia8(evt_kin, seed=1)
+    for event in m(2000):
+        pass
+    sigma, _ = m.sigma_gen
+    assert_allclose(sigma, m.cross_section().inelastic, rtol=0.05)
