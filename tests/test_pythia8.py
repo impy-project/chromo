@@ -6,7 +6,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_equal
 
 from chromo.constants import GeV, long_lived
-from chromo.kinematics import CenterOfMass, FixedTarget
+from chromo.kinematics import CenterOfMass, CompositeTarget, FixedTarget
 from chromo.models import Pythia8
 
 from .util import reference_charge
@@ -207,6 +207,14 @@ def test_photon_lepton_beams_rejected():
         Pythia8(FixedTarget(1e6 * GeV, "gamma", "e+"), seed=1)
     with pytest.raises(ValueError):
         Pythia8(FixedTarget(1e6 * GeV, "e+", "gamma"), seed=1)
+
+
+def test_composite_target_rejected():
+    # composite targets (e.g. air) must be rejected via _check_kinematics,
+    # not crash on missing PDGID-like attributes of CompositeTarget
+    air = CompositeTarget((("N", 0.78), ("O", 0.22)))
+    with pytest.raises(ValueError):
+        Pythia8(CenterOfMass(100 * GeV, "p", air), seed=1)
 
 
 def test_sigma_gen_lepton():
