@@ -45,17 +45,20 @@ these records answers nothing about nuclear fragments, and the HepMC3 export
 keeps them (see `DpmjetIIIEvent._prepare_for_hepmc`) only so the string history
 is not orphaned.
 
-The nuclear fragments themselves are not in the event stack: DPMJET's
-fragment/residual-nucleus records per its steering cards (PDG ID 80000 with
-mass/charge in the extended history, statuses -1/1001) were not observed in
-the chromo stack at all (100 p+Pb events, both DPMJET versions). In practice
-the cascade and evaporation products enter the event as ordinary final-state
-nucleons and light nuclei (`status == 1`). A yield like
-$\sigma(p + C \to \mathrm{Be} + X)$ (issue #218) therefore has to be
-reconstructed by combining final-state nucleons (e.g. a Be is the
-momentum-sum of 4 p + 4 n within a narrow kinematic window); there is no Be
-record to select. The only ion record in the raw DPMJET stack is the incoming
-beam nucleus at index 0 or 1 with `status == 4`.
+What *is* in the raw stack is the nucleon-level bookkeeping of the
+intranuclear cascade: wounded participant nucleons (statuses 9/10/11/12,
+17/18 when re-scattered) and spectator nucleons (13/14), with 15/16 marking
+nucleons bound in the nuclear potential and their excitations, see
+`DT_COORDI`, `DT_RESNCL`, `DT_SCN4BA`. CORSIKA's DPMJET interface (`DPMJST`)
+counts exactly these records as projectile and target spectators. There are,
+however, no nucleus records with A > 1 besides the incoming beam record: the
+residual-nucleus/fragment records of the steering-card scheme (PDG ID 80000
+with A and Z in the extended history `IDRES`/`IDXRES`, statuses -1/1001) are
+not produced in chromo's default configuration (not once in 200 p+Pb events
+from 10 GeV to 100 TeV), so a yield like $\sigma(p + C \to \mathrm{Be} + X)$
+(issue #218) must be reconstructed by combining final-state nucleons (a Be is
+the momentum-sum of 4 p + 4 n within a narrow kinematic window); there is no
+Be record to select.
 
 ## EPOS-LHC: nucleon-level remnants with status 4
 
@@ -66,13 +69,17 @@ records, the raw stack contains cascade nucleons (protons and neutrons,
 nucleons are the beam-remnant content you can analyze; like in DPMJET, there
 are no fragment nuclei with A > 1 besides the incoming beam record.
 
-## QGSJet: no fragment information
+## QGSJet and SIBYLL: no fragment records in the stack
 
 The QGSJet converters (`chepevt` in the bundled Fortran) mark every generated
 particle with status 1 and chromo prepends the beam records with status 4, so
 the only ion in the raw stack of a QGSJet h+A run is the incoming nucleus and
 `final_state()` contains no nuclei at all. QGSJet-III does not write the
 spectator fragments produced by its `qgfrgm` routine into the HEPEVT stack.
+SIBYLL behaves the same in chromo (`sibnuc`/`sibhep` expose no A > 1 records);
+when run under CORSIKA, its spectator fragments are kept separately in
+CORSIKA's own `/S_PLNUC/` bookkeeping with code `1000 + A` (see `SIBNUC` in
+CORSIKA's `sibyll2.3e.f`), not in the particle stack.
 
 ## Runnable example
 
