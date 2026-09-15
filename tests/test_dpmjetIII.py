@@ -138,6 +138,55 @@ def test_cross_section_pA(model):
     naneq(c.diffractive_axb, np.nan)
 
 
+def run_cross_section_pA_energy_dependence(model):
+    # Issue #242: the production cross section for h+A must be calculated
+    # for the queried kinematics and not be the stale value left in the
+    # tables by the initialization at the highest energy.
+    gen = model(chromo.kinematics.FixedTarget(1e5, "proton", "O16"), seed=1)
+
+    prod = {
+        plab: gen.cross_section(
+            chromo.kinematics.FixedTarget(plab, "proton", "O16")
+        ).prod
+        for plab in (1e2, 1e5)
+    }
+
+    # physical and energy dependent
+    assert all(np.isfinite(p) and p > 0 for p in prod.values()), str(prod)
+    assert prod[1e2] < prod[1e5]
+
+    # consistent with the full Glauber MC estimate at the same energies
+    for plab in (1e2, 1e5):
+        full = gen.cross_section(
+            chromo.kinematics.FixedTarget(plab, "proton", "O16"), max_info=True
+        )
+        assert_allclose(prod[plab], full.prod, rtol=0.05)
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+def test_cross_section_pA_energy_dependence(model):
+    run_in_separate_process(run_cross_section_pA_energy_dependence, model)
+
+
+def run_prod_cs_event_stream(model, prod_queries):
+    gen = model(chromo.kinematics.FixedTarget(1e5, "proton", "O16"), seed=1)
+    if prod_queries:
+        for plab in (1e2, 1e4):
+            gen.cross_section(chromo.kinematics.FixedTarget(plab, "proton", "O16"))
+    return [(len(evt.final_state()), np.sum(evt.final_state().en)) for evt in gen(3)]
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+def test_cross_section_pA_rng_neutral(model):
+    # prod-only Glauber runs for cross-section queries must save/restore
+    # the RNG state, so the event generation stream is unaffected
+    ref = run_in_separate_process(run_prod_cs_event_stream, model, False)
+    with_queries = run_in_separate_process(run_prod_cs_event_stream, model, True)
+    for (n1, e1), (n2, e2) in zip(ref, with_queries):
+        assert n1 == n2
+        assert_allclose(e1, e2, rtol=1e-10)
+
+
 def get_model_projectile_combinations():
     """Get combinations of DPMJET models and their non-nuclei projectiles with PDG ID < 6000"""
     return [

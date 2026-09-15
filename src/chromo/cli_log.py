@@ -417,14 +417,13 @@ def get_model_settings(model, log_level="normal"):
 
     # DPMJet models
     if model_type in (
-        models.DpmjetIII191,
         models.DpmjetIII193,
         models.DpmjetIII307,
     ):
         return get_dpmjet_settings(model, log_level)
 
     # Phojet models
-    if model_type in (models.Phojet112, models.Phojet191, models.Phojet193):
+    if model_type in (models.Phojet112, models.Phojet193):
         return get_phojet_settings(model, log_level)
 
     # UrQMD models

@@ -159,9 +159,6 @@ def test_generator(projectile, target, frame, Model):
             "Pythia8Angantyr He projectile has no precomputed tables; init too slow"
         )
     if p2 == "air":
-        if Model is im.DpmjetIII191 and p1 in ["p", "pi-"]:
-            pytest.skip("DPMJET-III-19.1 tests glitch on CI with p-air and pi--air")
-
         # cannot use Argon in SIBYLL, so make air from N, O only
         p2 = CompositeTarget((("N", 0.78), ("O", 0.22)))
 
@@ -322,9 +319,7 @@ def test_generator_angantyr(projectile, target):
     reason="skip since none of the models currently works on Windows",
 )
 @pytest.mark.parametrize("frame", ("cms", "generic"))
-@pytest.mark.parametrize(
-    "Model", (im.Pythia8, im.Phojet112, im.Phojet191, im.Phojet193)
-)
+@pytest.mark.parametrize("Model", (im.Pythia8, im.Phojet112, im.Phojet193))
 def test_generator_gg(frame, Model):
     p1 = "gamma"
     p2 = "gamma"

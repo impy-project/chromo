@@ -5,7 +5,7 @@ from collections import Counter
 from chromo import chromo_config
 from chromo.constants import GeV
 from chromo.kinematics import EventKinematics
-from chromo.models import DpmjetIII191
+from chromo.models import DpmjetIII193
 
 # This class will go through the event and decay all particles that should be
 # unstable but did not decay in some other generator
@@ -98,7 +98,7 @@ def test_decay_afterburner():
     chromo_config["pre_slice"] = False
 
     # The rest is pretty standard
-    generator = DpmjetIII191(event_kinematics)
+    generator = DpmjetIII193(event_kinematics)
 
     # Here provide the list of particles which you want to retain as stable
     pythia_afterburner = Pythia8DecayAfterburner(

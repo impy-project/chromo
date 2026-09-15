@@ -240,14 +240,23 @@ class DpmjetIIIRun(MCRun):
                 + glxs.xsela[0, 0, 0],
             )
         if (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1):
-            # Do NOT re-run Glauber here: the production cross section in
-            # dtglxs.xspro is already populated during DPMJET initialisation.
-            # An extra dt_xsglau call would consume Fortran RNG draws and
-            # shift the random state, causing the subsequent max_info=True
-            # Glauber MC to produce slightly different results.
-            glxs = self._lib.dtglxs
+            # The value cached in dtglxs.xspro during initialisation is
+            # valid only at the initialization kinematics, so it must not
+            # be returned for arbitrary queries (issue #242). Run the
+            # production-only Glauber MC for the requested kinematics,
+            # saving and restoring the RNG state (all Fortran draws go
+            # through the numpy bit generator) so that event generation
+            # streams stay untouched.
+            rng_state = self.random_state
+            saved_lprod = self._lib.dtglgp.lprod
+            try:
+                self._run_glauber(kin, photon_x, prod_only=True)
+                prod = self._lib.dtglxs.xspro[0, 0, 0]
+            finally:
+                self._lib.dtglgp.lprod = saved_lprod
+                self.random_state = rng_state
             return CrossSectionData(
-                prod=glxs.xspro[0, 0, 0],
+                prod=prod,
             )
         if kin.p1 == 22 and kin.p2.A == 1:
             stot, sine, _ = self._lib.dt_siggp(photon_x, kin.virt_p1, kin.ecm, 0)
@@ -352,12 +361,7 @@ class DpmjetIIIRun(MCRun):
         self._lib.dtflka.lpri = saved_lpri
 
 
-class DpmjetIII191(DpmjetIIIRun):
-    _version = "19.1"
-    _library_name = "_dpmjet191"
-
-
-class DpmjetIII193(DpmjetIII191):
+class DpmjetIII193(DpmjetIIIRun):
     _version = "19.3"
     _library_name = "_dpmjet193"
 

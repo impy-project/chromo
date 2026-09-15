@@ -7,7 +7,7 @@ from particle import literals as lp
 
 from chromo.constants import GeV
 from chromo.kinematics import CenterOfMass
-from chromo.models import DpmjetIII191, DpmjetIII193, EposLHC
+from chromo.models import DpmjetIII193, EposLHC
 
 from .util import (
     reference_charge,
@@ -33,14 +33,14 @@ def run_ab_collision(model):
 
 
 @pytest.fixture
-@pytest.mark.parametrize("model", (DpmjetIII191, DpmjetIII193))
+@pytest.mark.parametrize("model", (DpmjetIII193,))
 @lru_cache(maxsize=1)
 def event(model):
     return run_in_separate_process(run_pp_collision, model)
 
 
 @pytest.fixture
-@pytest.mark.parametrize("model", (DpmjetIII191, DpmjetIII193))
+@pytest.mark.parametrize("model", (DpmjetIII193,))
 @lru_cache(maxsize=1)
 def event_ion(model):
     return run_in_separate_process(run_ab_collision, model)
@@ -69,7 +69,7 @@ def run_cross_section(model, p1, p2):
     return m.cross_section()
 
 
-@pytest.mark.parametrize("model", (DpmjetIII191, DpmjetIII193))
+@pytest.mark.parametrize("model", (DpmjetIII193,))
 def test_cross_section(model):
     c = run_in_separate_process(run_cross_section, model, "p", "p")
     assert_allclose(c.total, 38.2, atol=0.1)
