@@ -49,7 +49,7 @@ def run_in_separate_process(fn, *args, timeout=600):
     return out
 
 
-def capture_native_printout(model_class, ecm, p1, p2, print_kwargs=None):
+def capture_native_printout(model_class, ecm, p1, p2):
     """Generate one event and return the output of print_native_event().
 
     The generator backends write their printout on the Fortran/C++ level,
@@ -62,15 +62,15 @@ def capture_native_printout(model_class, ecm, p1, p2, print_kwargs=None):
     import subprocess
     import sys
 
-    payload = pickle.dumps((model_class, float(ecm), p1, p2, print_kwargs or {}))
+    payload = pickle.dumps((model_class, float(ecm), p1, p2))
     script = """
 import pickle, sys
-cls, ecm, p1, p2, print_kwargs = pickle.load(sys.stdin.buffer)
+cls, ecm, p1, p2 = pickle.load(sys.stdin.buffer)
 from chromo.kinematics import CenterOfMass
 generator = cls(CenterOfMass(ecm, p1, p2), seed=1)
 for event in generator(1):
     pass
-generator.print_native_event(**print_kwargs)
+generator.print_native_event()
 sys.stdout.flush()
 """
     proc = subprocess.run(

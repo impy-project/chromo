@@ -283,4 +283,7 @@ def test_wounded_no_stale_blocks(model):
 @pytest.mark.parametrize("model", get_sibylls())
 def test_print_native_event(model):
     output = capture_native_printout(model, 10 * TeV, "p", "p")
-    assert "SIBYLL EVENT SUMMARY" in output
+    if model.pyname == "Sibyll21":
+        assert "Event record" in output
+    else:
+        assert "SIBYLL EVENT SUMMARY" in output
