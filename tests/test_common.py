@@ -93,6 +93,24 @@ def test_mul_radd():
     assert_equal(csd1.inelastic, 20.0)
 
 
+def test_mul_radd_nan_safe():
+    # NaN in `other` means the quantity is not provided and must be skipped,
+    # not poison the accumulator (issue #241). NaN in the accumulator is
+    # treated as missing (np.nansum semantics).
+    csd1 = CrossSectionData(total=5.0, inelastic=10.0)
+    csd2 = CrossSectionData(total=10.0, prod=np.nan)
+
+    csd1._mul_radd(0.5, csd2)
+    assert_equal(csd1.total, 10.0)
+    assert_equal(csd1.inelastic, 10.0)
+    assert_equal(csd1.prod, np.nan)
+
+    # a NaN in the accumulator is overwritten as soon as a component provides it
+    csd1 = CrossSectionData(total=np.nan)
+    csd1._mul_radd(0.3, CrossSectionData(total=100.0))
+    assert_equal(csd1.total, 30.0)
+
+
 def test_EventData_copy_and_pickle(evt):
     evt2 = evt.copy()
     assert evt2 == evt

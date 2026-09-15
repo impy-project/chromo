@@ -128,12 +128,15 @@ class CrossSectionData:
         return not self == other
 
     def _mul_radd(self, factor, other):
+        # NaN-safe combine used for composite targets: NaN in `other` means
+        # "not provided by this component" and is skipped; a field stays NaN
+        # only if no component provided it (np.nansum-like semantics).
         for field in dataclasses.fields(self):
-            setattr(
-                self,
-                field.name,
-                getattr(self, field.name) + factor * getattr(other, field.name),
-            )
+            a = getattr(self, field.name)
+            b = getattr(other, field.name)
+            if bool(np.isnan(b)):
+                continue
+            setattr(self, field.name, (0.0 if bool(np.isnan(a)) else a) + factor * b)
 
 
 # Do we need EventData.n_spectators in addition to EventData.n_wounded?
@@ -851,7 +854,7 @@ class MCRun(ABC):
         with self._temporary_kinematics(kin):
             kin2 = self.kinematics
             if isinstance(kin2.p2, CompositeTarget):
-                cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0)
+                cross_section = CrossSectionData()
                 kin3 = copy.copy(kin2)
                 for component, fraction in zip(kin2.p2.components, kin2.p2.fractions):
                     kin3.p2 = component

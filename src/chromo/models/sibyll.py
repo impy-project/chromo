@@ -275,6 +275,7 @@ class SIBYLLRun(MCRun):
             total=tot,
             elastic=el,
             inelastic=inel,
+            prod=inel,
             diffractive_xb=diff[0],
             diffractive_ax=diff[1],
             diffractive_xx=diff[2],
