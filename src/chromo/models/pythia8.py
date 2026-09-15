@@ -149,6 +149,21 @@ def _merge_cascade_results(results):
     return tuple(np.concatenate(parts[i]) for i in range(13))
 
 
+def _normalize_pythia8_remnants(event):
+    # Chromo-wide remnant convention (see doc/nuclear_fragments.md):
+    # status 4 marks nucleus records, nucleon-level remnants get status 5.
+    # Pythia status codes 11/13/15/16 are beam remnants, spectators, and
+    # excited beam nucleons (see Event.h in the Pythia8 source). Records
+    # that are neither a nucleon nor a nucleus (e.g. diffractive systems
+    # with PDG code 990 or excited beams 9902xxx) keep their Pythia code.
+    st = event.status
+    codes = np.isin(st, (11, 13, 15, 16))
+    nucleon = np.isin(np.abs(event.pid), (2112, 2212))
+    nucleus = np.abs(event.pid) > 1000000000
+    st[codes & nucleon] = 5
+    st[codes & nucleus] = 4
+
+
 class PYTHIA8Event(EventData):
     """Wrapper for Pythia8 event stack."""
 
@@ -178,6 +193,7 @@ class PYTHIA8Event(EventData):
             np.maximum(event.daughters() - 1, -1),
             weight=pythia.info.weight(),
         )
+        _normalize_pythia8_remnants(self)
 
     @staticmethod
     def _get_impact_parameter(pythia):
@@ -541,6 +557,7 @@ class PYTHIA8CascadeEvent(EventData):
             np.maximum(mothers - 1, -1),
             np.maximum(daughters - 1, -1),
         )
+        _normalize_pythia8_remnants(self)
 
 
 class Pythia8Cascade(MCRun):

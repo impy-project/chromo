@@ -310,6 +310,9 @@ class EventData:
         produce Omega- and its antiparticle, so the final state never contains them.
         The QGSJet family does not produce Omega-, Xi-, Xi0, Sigma-, Sigma+ and their
         antiparticles.
+
+        Nuclear fragments and beam remnants carry status codes != 1 and are
+        therefore not part of the final state, see doc/nuclear_fragments.md.
         """
         return self._select(self.status == 1, False)
 
@@ -322,6 +325,34 @@ class EventData:
         seen by a tracking detector.
         """
         return self._select((self.status == 1) & (self.charge != 0), False)
+
+    def final_state_with_nucl_frag(self):
+        """
+        Return filtered event with final state particles and nuclear remnants.
+
+        The event is selected with ``status in (1, 4, 5)``, where chromo
+        normalizes the generator-specific particle stacks:
+
+        * status 1: final state particles, same as :meth:`final_state`
+        * status 4: nucleus records, i.e. the incoming beam nuclei and
+          residual/fragment nuclei when the generator reports them
+        * status 5: nucleon-level remnants (spectator, wounded, and
+          potential-bound nucleons)
+
+        The normalization is model-specific and not all generators provide
+        all information: QGSJet and SIBYLL only yield the status 4 beam
+        records, EPOS-LHC reports nucleon-level remnants as status 5, and
+        DPMJET additionally resolves the spectator content of the beam
+        nuclei. See doc/nuclear_fragments.md for details.
+
+        Caveat: the returned remnant records are not necessarily physical
+        final-state fragments. They often miss the last stage of the
+        nuclear de-excitation (evaporation, fission, gamma emission), and
+        spectator nucleons carry Fermi-motion kinematics instead of the
+        kinematics of a fragment nucleus. The amount of missing nuclear
+        physics depends on the generator, see doc/nuclear_fragments.md.
+        """
+        return self._select(np.isin(self.status, (1, 4, 5)), False)
 
     def without_parton_shower(self):
         """
@@ -338,8 +369,9 @@ class EventData:
             mask &= apid != pid
         return self[mask]
 
-    def _select(self, arg, update_mothers):
-        # This selection is faster than __getitem__, because we skip
+    def _select(
+        self, arg, update_mothers
+    ):  # This selection is faster than __getitem__, because we skip
         # parent selection, which is just wasting time if we select only
         # final state particles.
         return EventData(
