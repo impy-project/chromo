@@ -182,6 +182,23 @@ def test_lepton_cross_section_is_nan(p1, p2):
     assert np.isnan(c.inelastic)
 
 
+def test_switch_to_lepton_with_softqcd_rejected():
+    # switching beams to leptons is fine with a default or a lepton
+    # configuration, but must not be attempted with SoftQCD processes
+    # enabled, since Pythia8 segfaults in this case
+    m = Pythia8(CenterOfMass(100 * GeV, "p", "p"), seed=1)
+    m.kinematics = CenterOfMass(100 * GeV, "e+", "e-")  # defaults adapt
+    m = Pythia8(
+        CenterOfMass(100 * GeV, "p", "p"),
+        seed=1,
+        config=["SoftQCD:inelastic = on"],
+    )
+    with pytest.raises(ValueError, match="lepton"):
+        m.kinematics = CenterOfMass(100 * GeV, "e+", "e-")
+    with pytest.raises(ValueError, match="lepton"):
+        m.cross_section(CenterOfMass(100 * GeV, "e-", "p"))
+
+
 def test_photon_lepton_beams_rejected():
     # Pythia8 does not generate photon-lepton events
     # FixedTarget instead of CenterOfMass, since CenterOfMass cannot

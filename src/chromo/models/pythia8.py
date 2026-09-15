@@ -271,7 +271,9 @@ class Pythia8(MCRun):
             If config is not set, 'SoftQCD:inelastic = on' is used to get the
             equivalent of other generators in chromo. For lepton beams (e+e-,
             e+p, ...) SoftQCD is not an option, so electroweak and
-            photon-induced processes are enabled instead.
+            photon-induced processes are enabled instead. The default is
+            recomputed when `kinematics` is changed; a custom config is kept
+            as given and must be compatible with all beams used.
         """
 
         super().__init__(seed)
@@ -287,29 +289,22 @@ class Pythia8(MCRun):
         self._pythia = self._lib.Pythia(datdir, banner)
 
         if config is None:
-            self._custom_config = None
-            # The default process switches depend on the beam particles and
-            # are selected in _set_kinematics via _default_process_config.
-            # SoftQCD is used as a placeholder for the decay mode below and
-            # is replaced for actual collisions.
-            process_config = ["SoftQCD:inelastic = on"]
+            self._beam_dependent_config = evt_kin is not None
+            self._config = self._default_config(evt_kin)
         else:
-            self._custom_config = process_config = self._parse_config(config)
+            self._beam_dependent_config = False
+            self._config = self._parse_config(config)
+            self._config += [
+                # use our random seed
+                "Random:setSeed = on",
+                # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
+                # this may change in the future if they switch to a different PRNG
+                f"Random:seed = {self.seed % 900_000_000}",
+            ]
 
-        # Common settings
-        self._common_config = [
-            # use our random seed
-            "Random:setSeed = on",
-            # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
-            # this may change in the future if they switch to a different PRNG
-            f"Random:seed = {self.seed % 900_000_000}",
-        ]
-
-        # Add "Print:quiet = on" if no "Print:quiet" is in config
-        if not any("Print:quiet" in s for s in process_config):
-            self._common_config.append("Print:quiet = on")
-
-        self._config = process_config + self._common_config
+            # Add "Print:quiet = on" if no "Print:quiet" is in config
+            if not any("Print:quiet" in s for s in self._config):
+                self._config.append("Print:quiet = on")
 
         # must come last
         if evt_kin is None:
@@ -319,6 +314,19 @@ class Pythia8(MCRun):
             self.kinematics = evt_kin
         self._set_final_state_particles()
 
+    def _default_config(self, kin) -> list[str]:
+        """Default Pythia configuration for beams `kin` (None = decay mode)."""
+        config = self._default_process_config(kin)
+        config += [
+            # use our random seed
+            "Random:setSeed = on",
+            # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
+            # this may change in the future if they switch to a different PRNG
+            f"Random:seed = {self.seed % 900_000_000}",
+            "Print:quiet = on",
+        ]
+        return config
+
     @staticmethod
     def _default_process_config(kin) -> list[str]:
         """Default Pythia process switches for the given beam particles.
@@ -327,18 +335,15 @@ class Pythia8(MCRun):
         init() or segfault when reading info.sigmaTot, so for lepton beams
         electroweak and photon-induced processes are enabled instead,
         following the official Pythia8 examples main224 (e+e-) and
-        main343 (e-p).
+        main343 (e-p). For the decay mode (kin is None) the hadronic
+        default is irrelevant and kept for backward compatibility.
         """
+        if kin is None:
+            return ["SoftQCD:inelastic = on"]
         p1_lep = kin.p1.is_lepton
         p2_lep = kin.p2.is_lepton
         p1_gam = abs(kin.p1) == lp.photon.pdgid
         p2_gam = abs(kin.p2) == lp.photon.pdgid
-        if (p1_lep and p2_gam) or (p2_lep and p1_gam):
-            msg = (
-                f"{pdg2name(kin.p1)} {pdg2name(kin.p2)} collision is not "
-                "supported: Pythia8 does not generate photon-lepton events"
-            )
-            raise ValueError(msg)
         if p1_gam and p2_gam:
             return ["PhotonCollision:all = on"]
         if p1_lep and p2_lep:
@@ -371,9 +376,30 @@ class Pythia8(MCRun):
         )
 
     def _set_kinematics(self, kin):
-        if self._custom_config is None:
-            # select default process switches for the current beams
-            self._config = self._default_process_config(kin) + self._common_config
+        # Pythia8 can never generate photon-lepton events: init() "succeeds"
+        # but all events are rejected, so reject the beam combination up
+        # front, also for custom configs
+        if (kin.p1.is_lepton and abs(kin.p2) == lp.photon.pdgid) or (
+            kin.p2.is_lepton and abs(kin.p1) == lp.photon.pdgid
+        ):
+            msg = (
+                f"{pdg2name(kin.p1)} {pdg2name(kin.p2)} collision is not "
+                "supported: Pythia8 does not generate photon-lepton events"
+            )
+            raise ValueError(msg)
+        if self._beam_dependent_config:
+            # re-derive process switches for the new beams and re-init
+            self._config = self._default_config(kin)
+        elif kin.p1.is_lepton or kin.p2.is_lepton:
+            # beams switched to leptons, but the process config is fixed;
+            # SoftQCD with lepton beams crashes Pythia8 inside init()
+            if any(line.startswith("SoftQCD") for line in self._config):
+                msg = (
+                    "cannot switch to lepton beams while the configuration "
+                    "has SoftQCD processes enabled; construct the generator "
+                    "with a lepton-beam configuration instead"
+                )
+                raise ValueError(msg)
         config = self._config[:]
 
         # TODO use numpy PRNG instead of Pythia's
