@@ -436,6 +436,8 @@ PYBIND11_MODULE(_pythia8, m)
         ;
 
     py::class_<Info>(m, "Info")
+        .def("weight", &Info::weight, "i"_a = 0)
+        .def("weightSum", &Info::weightSum)
         .def_property_readonly("hiInfo", [](Info &self)
                                { return self.hiInfo; })
         .def_property_readonly("sigmaTot", [](Info &self)

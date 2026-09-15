@@ -73,6 +73,27 @@ def test_vertex(event):
     assert np.sum(event.vt != 0) > 0
 
 
+def test_event_weight(event):
+    assert event.weight is not None
+    assert np.isfinite(event.weight)
+
+
+def test_sum_of_weights():
+    evt_kin = CenterOfMass(10 * GeV, "p", "p")
+    m = Pythia8(evt_kin, seed=2)
+    for _ in m(5):
+        pass
+    assert np.isfinite(m.sum_of_weights)
+    assert m.sum_of_weights > 0
+
+
+def test_event_weight_in_hepmc3(event):
+    pytest.importorskip("pyhepmc")
+    hev = event.to_hepmc3()
+    assert "weight" in hev.run_info.weight_names
+    assert_allclose(hev.weight(), event.weight)
+
+
 def test_daughters(event):
     assert event.daughters.shape == (len(event), 2)
     # some particles have no daughters
