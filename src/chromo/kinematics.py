@@ -165,16 +165,36 @@ class EventKinematicsBase:
         """
         if generator_frame == self.frame:
             return
-        if generator_frame == EventFrame.GENERIC:
-            msg = f"Boosts from {generator_frame} are not supported"
+        CMS = EventFrame.CENTER_OF_MASS
+        FT = EventFrame.FIXED_TARGET
+        GENERIC = EventFrame.GENERIC
+        if self.frame == GENERIC or generator_frame == GENERIC:
+            if generator_frame == GENERIC:
+                msg = f"Boosts from {generator_frame} are not supported"
+                raise NotImplementedError(msg)
+            b = boost_vector(
+                self._total_beam_momentum(generator_frame),
+                self._total_beam_momentum(GENERIC),
+            )
+            if inverse:
+                b = -b
+            boost_event(event, b)
+            return
+        # Collinear CMS <-> FT boost, exact in (gamma, betagamma)
+        if generator_frame == FT and self.frame == CMS:
+            bg = -self._betagamma_cm
+        elif generator_frame == CMS and self.frame == FT:
+            bg = self._betagamma_cm
+        else:
+            msg = f"Boosts from {generator_frame} to {self.frame} are not yet supported"
             raise NotImplementedError(msg)
-        b = boost_vector(
-            self._total_beam_momentum(generator_frame),
-            self._total_beam_momentum(self.frame),
-        )
         if inverse:
-            b = -b
-        boost_event(event, b)
+            bg = -bg
+        g = self._gamma_cm
+        en = g * event.en + bg * event.pz
+        pz = bg * event.en + g * event.pz
+        event.en[:] = en
+        event.pz[:] = pz
 
     def _total_beam_momentum(self, frame):
         """Return total beam four-momentum (px, py, pz, E) in the given frame."""
@@ -416,6 +436,15 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
 
 class EventKinematicsMassless(EventKinematicsBase):
     """EventKinematics for massless particles."""
+
+    def _total_beam_momentum(self, frame):
+        if frame == EventFrame.FIXED_TARGET:
+            msg = (
+                "Massless systems have no rest frame, "
+                "boosts involving the fixed target frame are undefined"
+            )
+            raise NotImplementedError(msg)
+        return super()._total_beam_momentum(frame)
 
     def __init__(
         self,

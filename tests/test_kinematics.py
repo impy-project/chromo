@@ -311,6 +311,16 @@ def test_apply_boost_cms2ft_matches_old_collinear():
     k.apply_boost(ev, EventFrame.CENTER_OF_MASS, inverse=True)
     assert ev.en == approx(en0)
     assert ev.pz == approx(pz0)
+    # UHECR energies: boost must stay exact in (gamma, betagamma),
+    # a boost reconstructed from b alone loses ~gamma**2 * eps precision
+    k_uhe = EventKinematicsWithRestframe("proton", "neutron", elab=1e11)
+    ev_uhe = SimpleNamespace(
+        en=np.array([1.0]), px=np.array([0.1]), py=np.array([0.5]), pz=np.array([0.2])
+    )
+    k_uhe.apply_boost(ev_uhe, EventFrame.CENTER_OF_MASS)
+    g, bg = k_uhe._gamma_cm, k_uhe._betagamma_cm
+    assert ev_uhe.en[0] == approx(g + bg * 0.2, rel=1e-10)
+    assert ev_uhe.pz[0] == approx(bg + g * 0.2, rel=1e-10)
 
 
 def test_apply_boost_generic_frame_pA():
