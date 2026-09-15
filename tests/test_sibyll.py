@@ -7,7 +7,11 @@ from chromo.constants import GeV, TeV
 from chromo.kinematics import CenterOfMass, CompositeTarget
 from chromo.util import get_all_models
 
-from .util import reference_charge, run_in_separate_process
+from .util import (
+    capture_native_printout,
+    reference_charge,
+    run_in_separate_process,
+)
 
 cs_sibyll21 = CrossSectionData(
     total=117.90274047851562,
@@ -274,3 +278,9 @@ def test_wounded_no_stale_blocks(model):
     assert all(b > 0 for na, nb, b in results[2])
     # and switching back to p + O must sample /S_CNCM0/ again
     assert all(na == 1 and nb >= 1 and b > 0 for na, nb, b in results[3])
+
+
+@pytest.mark.parametrize("model", get_sibylls())
+def test_print_native_event(model):
+    output = capture_native_printout(model, 10 * TeV, "p", "p")
+    assert "SIBYLL EVENT SUMMARY" in output

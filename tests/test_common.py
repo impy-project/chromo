@@ -230,3 +230,11 @@ def test_models_beam(Model):
         assert np.allclose(
             event_field[0:2], beam_field
         ), f"{field}: {np.allclose(event_field[0:2], beam_field)}, {event_field[0:2]}, {beam_field}"
+
+
+def test_print_native_event_not_implemented():
+    from chromo.common import MCRun
+
+    dummy = SimpleNamespace(pyname="DummyRun")
+    with pytest.raises(NotImplementedError, match="DummyRun"):
+        MCRun.print_native_event(dummy)

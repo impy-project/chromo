@@ -9,7 +9,10 @@ from chromo.constants import GeV, long_lived
 from chromo.kinematics import CenterOfMass, CompositeTarget, FixedTarget
 from chromo.models import Pythia8
 
-from .util import reference_charge
+from .util import (
+    capture_native_printout,
+    reference_charge,
+)
 
 pytestmark = pytest.mark.skipif(
     sys.platform == "win32", reason="Pythia8 does not run on windows"
@@ -259,3 +262,8 @@ def test_sigma_gen_hadronic():
         pass
     sigma, _ = m.sigma_gen
     assert_allclose(sigma, m.cross_section().inelastic, rtol=0.05)
+
+
+def test_print_native_event():
+    output = capture_native_printout(Pythia8, 10 * GeV, "p", "p")
+    assert "PYTHIA Event Listing" in output

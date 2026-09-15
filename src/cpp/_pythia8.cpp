@@ -511,7 +511,20 @@ PYBIND11_MODULE(_pythia8, m)
              "id1"_a, "id2"_a, "eCM"_a, "mixLoHi"_a = 0)
         .def("getSigmaPartial",
              py::overload_cast<int, int, double, int, int>(&Pythia::getSigmaPartial),
-             "id1"_a, "id2"_a, "eCM"_a, "procType"_a, "mixLoHi"_a = 0);
+             "id1"_a, "id2"_a, "eCM"_a, "procType"_a, "mixLoHi"_a = 0)
+        .def("printEvent",
+             [](Pythia &self, bool showScaleAndVertex, bool showMothersAndDaughters,
+                int precision)
+             {
+                 py::scoped_ostream_redirect stream(
+                     std::cout,
+                     py::module_::import("sys").attr("stdout"));
+                 self.event.list(showScaleAndVertex, showMothersAndDaughters,
+                                 precision);
+             },
+             "showScaleAndVertex"_a = false,
+             "showMothersAndDaughters"_a = false,
+             "precision"_a = 3);
 
     py::class_<Event>(m, "Event")
         .def_property_readonly("size", [](Event &self)
