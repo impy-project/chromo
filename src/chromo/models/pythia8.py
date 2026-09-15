@@ -415,6 +415,9 @@ class Pythia8(MCRun):
             f"Beams:idA = {int(kin.p1)}",
             f"Beams:idB = {int(kin.p2)}",
             f"Beams:eCM = {kin.ecm}",
+            # update the seed, in case it was changed via
+            # MCRun._set_seed (used by MCRun.generate_batch)
+            f"Random:seed = {self.seed % 900_000_000}",
         ]
 
         self._init_pythia(config)
