@@ -63,7 +63,7 @@ Please note that `chromo` only provides a user interface for the following model
 | Interaction model (click for [iNSPIRE.HEP](https://inspirehep.net/) link)                          | Supported proj/targ       | Comment                         | 
 |------------------------------------------------------------|---------------------------|--------------------------------|
 | [DPMJET-III 3.0.7](https://inspirehep.net/literature/538940) & [PHOJET 1.12-36](https://inspirehep.net/literature/373339)      | *hN, γγ, γN, hA, γA, AA*  | |
-| [DPMJET-III & PHOJET 19.1 and 19.3](https://inspirehep.net/literature/1503512) [(repo on GitHub)](https://github.com/DPMJET/DPMJET) |  *hN, γγ, γN, hA, γA, AA* | |
+| [DPMJET-III & PHOJET 19.3](https://inspirehep.net/literature/1503512) [(repo on GitHub)](https://github.com/DPMJET/DPMJET) |  *hN, γγ, γN, hA, γA, AA* | |
 | [EPOS-LHC](https://inspirehep.net/literature/1236629)     | *hN, hA, AA*              | |
 | [EPOS-LHC-R](https://inspirehep.net/literature/2680791)     | *hN, hA, AA*              | |
 | [EPOS-LHC-R (w/ hadr. rescattering)](https://inspirehep.net/literature/2680791)     | *hN, hA, AA*              | | Version with explicit hadronic rescattering in UrQMD (slow!)

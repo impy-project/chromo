@@ -241,11 +241,6 @@ class Phojet112(PHOJETRun):
     )
 
 
-class Phojet191(PHOJETRun):
-    _version = "19.1"
-    _library_name = "_phojet191"
-
-
 class Phojet193(PHOJETRun):
     _version = "19.3"
     _library_name = "_phojet193"

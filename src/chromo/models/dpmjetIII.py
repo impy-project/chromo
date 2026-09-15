@@ -361,12 +361,7 @@ class DpmjetIIIRun(MCRun):
         self._lib.dtflka.lpri = saved_lpri
 
 
-class DpmjetIII191(DpmjetIIIRun):
-    _version = "19.1"
-    _library_name = "_dpmjet191"
-
-
-class DpmjetIII193(DpmjetIII191):
+class DpmjetIII193(DpmjetIIIRun):
     _version = "19.3"
     _library_name = "_dpmjet193"
 

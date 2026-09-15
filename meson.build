@@ -191,14 +191,6 @@ dpm_cfg = {
    'inc'  : [],
    'split': ['_dpmjet307','_phojet307'],
  },
- '191': {
-   'src'  : run_command(py, scripts_dir + 'list_dpmjet_sources.py',
-                        '--directory', f/'dpmjetIII-19.1', check:true)
-            .stdout().strip().split('\n'),
-   'inc'  : [f/'dpmjetIII-19.1/include/phojet',f/'dpmjetIII-19.1/include/dpmjet',
-             f/'dpmjetIII-19.1/include/pythia',f/'dpmjetIII-19.1/include/flinclude'],
-   'split': ['_dpmjet191','_phojet191'],
- },
  '193': {
    'src'  : run_command(py, scripts_dir + 'list_dpmjet_sources.py',
                         '--directory', f/'dpmjetIII-19.3', check:true)
