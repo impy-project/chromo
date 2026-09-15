@@ -6,7 +6,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_equal
 
 from chromo.constants import GeV, long_lived
-from chromo.kinematics import CenterOfMass
+from chromo.kinematics import CenterOfMass, CompositeTarget, FixedTarget
 from chromo.models import Pythia8
 
 from .util import reference_charge
@@ -182,3 +182,80 @@ def test_gp():
 def test_gg():
     evt = run_collision(100 * GeV, "gamma", "gamma")
     assert len(evt) > 2
+
+
+@pytest.mark.parametrize(
+    ("p1", "p2"),
+    [("e+", "e-"), ("e-", "e+"), ("e+", "p"), ("p", "e-")],
+)
+def test_lepton_beams(p1, p2):
+    # Pythia8 segfaults during init() if default hadronic processes
+    # are enabled for lepton beams
+    event = run_collision(100 * GeV, p1, p2)
+    assert len(event.final_state().pid) > 0
+
+
+@pytest.mark.parametrize(("p1", "p2"), [("e+", "e-"), ("e-", "p")])
+def test_lepton_cross_section_is_nan(p1, p2):
+    # Pythia8 does not compute hadronic cross sections for lepton beams
+    c = run_cross_section(100 * GeV, p1, p2)
+    assert np.isnan(c.total)
+    assert np.isnan(c.inelastic)
+
+
+def test_switch_to_lepton_with_softqcd_rejected():
+    # switching beams to leptons is fine with a default or a lepton
+    # configuration, but must not be attempted with SoftQCD processes
+    # enabled, since Pythia8 segfaults in this case
+    m = Pythia8(CenterOfMass(100 * GeV, "p", "p"), seed=1)
+    m.kinematics = CenterOfMass(100 * GeV, "e+", "e-")  # defaults adapt
+    m = Pythia8(
+        CenterOfMass(100 * GeV, "p", "p"),
+        seed=1,
+        config=["SoftQCD:inelastic = on"],
+    )
+    with pytest.raises(ValueError, match="lepton"):
+        m.kinematics = CenterOfMass(100 * GeV, "e+", "e-")
+    with pytest.raises(ValueError, match="lepton"):
+        m.cross_section(CenterOfMass(100 * GeV, "e-", "p"))
+
+
+def test_photon_lepton_beams_rejected():
+    # Pythia8 does not generate photon-lepton events
+    # FixedTarget instead of CenterOfMass, since CenterOfMass cannot
+    # combine a massless and a massive particle
+    with pytest.raises(ValueError, match="not supported"):
+        Pythia8(FixedTarget(1e6 * GeV, "gamma", "e+"), seed=1)
+    with pytest.raises(ValueError):
+        Pythia8(FixedTarget(1e6 * GeV, "e+", "gamma"), seed=1)
+
+
+def test_composite_target_rejected():
+    # composite targets (e.g. air) must be rejected via _check_kinematics,
+    # not crash on missing PDGID-like attributes of CompositeTarget
+    air = CompositeTarget((("N", 0.78), ("O", 0.22)))
+    with pytest.raises(ValueError):
+        Pythia8(CenterOfMass(100 * GeV, "p", air), seed=1)
+
+
+def test_sigma_gen_lepton():
+    # sigmaGen is the normalization for lepton beams, where
+    # cross_section() is NaN. At 100 GeV the e+e- -> hadrons cross
+    # section is a few nb.
+    evt_kin = CenterOfMass(100 * GeV, "e+", "e-")
+    m = Pythia8(evt_kin, seed=1)
+    for event in m(200):
+        pass
+    sigma, sigma_err = m.sigma_gen
+    assert 1e-6 < sigma < 1e-3  # mb, i.e. between 1 nb and 1 ub
+    assert sigma_err < sigma
+
+
+def test_sigma_gen_hadronic():
+    # for hadronic beams, sigmaGen agrees with cross_section().inelastic
+    evt_kin = CenterOfMass(100 * GeV, "p", "p")
+    m = Pythia8(evt_kin, seed=1)
+    for event in m(2000):
+        pass
+    sigma, _ = m.sigma_gen
+    assert_allclose(sigma, m.cross_section().inelastic, rtol=0.05)

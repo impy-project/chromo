@@ -10,7 +10,7 @@ from particle import literals as lp
 from chromo.common import CrossSectionData, EventData, MCRun
 from chromo.constants import GeV, standard_projectiles
 from chromo.kinematics import EventFrame
-from chromo.util import Nuclei, _cached_data_dir, is_real_nucleus, name2pdg
+from chromo.util import Nuclei, _cached_data_dir, is_real_nucleus, name2pdg, pdg2name
 
 # Tabulated average number of inelastic hN collisions per hA collision,
 # ported from PythiaCascade.h (Pythia 8.317).  Used by both Cascade and
@@ -270,7 +270,11 @@ class Pythia8(MCRun):
             single string that is read from a configuration file or a list of
             strings, where each string is a single configuration command.
             If config is not set, 'SoftQCD:inelastic = on' is used to get the
-            equivalent of other generators in chromo.
+            equivalent of other generators in chromo. For lepton beams (e+e-,
+            e+p, ...) SoftQCD is not an option, so electroweak and
+            photon-induced processes are enabled instead. The default is
+            recomputed when `kinematics` is changed; a custom config is kept
+            as given and must be compatible with all beams used.
         """
 
         super().__init__(seed)
@@ -286,26 +290,22 @@ class Pythia8(MCRun):
         self._pythia = self._lib.Pythia(datdir, banner)
 
         if config is None:
-            if evt_kin.p1 == lp.photon.pdgid and evt_kin.p2 == lp.photon.pdgid:
-                self._config = ["PhotonCollision:all = on"]
-            else:
-                # includes gamma p processes
-                self._config = ["SoftQCD:inelastic = on"]
+            self._beam_dependent_config = evt_kin is not None
+            self._config = self._default_config(evt_kin)
         else:
+            self._beam_dependent_config = False
             self._config = self._parse_config(config)
+            self._config += [
+                # use our random seed
+                "Random:setSeed = on",
+                # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
+                # this may change in the future if they switch to a different PRNG
+                f"Random:seed = {self.seed % 900_000_000}",
+            ]
 
-        # Common settings
-        self._config += [
-            # use our random seed
-            "Random:setSeed = on",
-            # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
-            # this may change in the future if they switch to a different PRNG
-            f"Random:seed = {self.seed % 900_000_000}",
-        ]
-
-        # Add "Print:quiet = on" if no "Print:quiet" is in config
-        if not any("Print:quiet" in s for s in self._config):
-            self._config.append("Print:quiet = on")
+            # Add "Print:quiet = on" if no "Print:quiet" is in config
+            if not any("Print:quiet" in s for s in self._config):
+                self._config.append("Print:quiet = on")
 
         # must come last
         if evt_kin is None:
@@ -315,15 +315,57 @@ class Pythia8(MCRun):
             self.kinematics = evt_kin
         self._set_final_state_particles()
 
-    def _cross_section(self, kin=None, max_info=False):
-        st = self._pythia.info.sigmaTot
+    def _default_config(self, kin) -> list[str]:
+        """Default Pythia configuration for beams `kin` (None = decay mode)."""
+        config = self._default_process_config(kin)
+        config += [
+            # use our random seed
+            "Random:setSeed = on",
+            # Pythia's RANMAR PRNG accepts only seeds smaller than 900_000_000,
+            # this may change in the future if they switch to a different PRNG
+            f"Random:seed = {self.seed % 900_000_000}",
+            "Print:quiet = on",
+        ]
+        return config
 
-        if (self.kinematics.p1.is_lepton) and (self.kinematics.p2.is_lepton):
-            return CrossSectionData(
-                total=st.sigmaTot,
-                inelastic=st.sigmaTot - st.sigmaEl,
-                elastic=st.sigmaEl,
-            )
+    @staticmethod
+    def _default_process_config(kin) -> list[str]:
+        """Default Pythia process switches for the given beam particles.
+
+        SoftQCD is invalid for lepton beams. Pythia8 would abort during
+        init() or segfault when reading info.sigmaTot, so for lepton beams
+        electroweak and photon-induced processes are enabled instead,
+        following the official Pythia8 examples main224 (e+e-) and
+        main343 (e-p). For the decay mode (kin is None) the hadronic
+        default is irrelevant and kept for backward compatibility.
+        """
+        if kin is None:
+            return ["SoftQCD:inelastic = on"]
+        p1_lep = kin.p1.is_lepton
+        p2_lep = kin.p2.is_lepton
+        p1_gam = abs(kin.p1) == lp.photon.pdgid
+        p2_gam = abs(kin.p2) == lp.photon.pdgid
+        if p1_gam and p2_gam:
+            return ["PhotonCollision:all = on"]
+        if p1_lep and p2_lep:
+            # e+e- and similar, e.g. gamma*/Z -> ffbar + photon PDFs
+            return ["WeakSingleBoson:ffbar2gmZ = on", "PhotonCollision:all = on"]
+        if p1_lep or p2_lep:
+            # lepton-hadron, e.g. e-p DIS + photoproduction
+            return ["WeakBosonExchange:all = on", "PhotonCollision:all = on"]
+        # includes gamma p processes
+        return ["SoftQCD:inelastic = on"]
+
+    def _cross_section(self, kin=None, max_info=False):
+        kin = self.kinematics if kin is None else kin
+        if kin.p1.is_lepton or kin.p2.is_lepton:
+            # Pythia8 does not compute a hadronic SigmaTotal for lepton
+            # beams, so `info.sigmaTot` would dereference a null pointer
+            # and crash. Cross sections for lepton-induced processes are
+            # defined only for a specific subprocess, i.e. per generated
+            # event (see `pythia.info.sigmaGen()`).
+            return CrossSectionData()
+        st = self._pythia.info.sigmaTot
         return CrossSectionData(
             total=st.sigmaTot,
             inelastic=st.sigmaTot - st.sigmaEl,
@@ -335,6 +377,30 @@ class Pythia8(MCRun):
         )
 
     def _set_kinematics(self, kin):
+        # Pythia8 can never generate photon-lepton events: init() "succeeds"
+        # but all events are rejected, so reject the beam combination up
+        # front, also for custom configs
+        if (kin.p1.is_lepton and abs(kin.p2) == lp.photon.pdgid) or (
+            kin.p2.is_lepton and abs(kin.p1) == lp.photon.pdgid
+        ):
+            msg = (
+                f"{pdg2name(kin.p1)} {pdg2name(kin.p2)} collision is not "
+                "supported: Pythia8 does not generate photon-lepton events"
+            )
+            raise ValueError(msg)
+        if self._beam_dependent_config:
+            # re-derive process switches for the new beams and re-init
+            self._config = self._default_config(kin)
+        elif kin.p1.is_lepton or kin.p2.is_lepton:
+            # beams switched to leptons, but the process config is fixed;
+            # SoftQCD with lepton beams crashes Pythia8 inside init()
+            if any(line.startswith("SoftQCD") for line in self._config):
+                msg = (
+                    "cannot switch to lepton beams while the configuration "
+                    "has SoftQCD processes enabled; construct the generator "
+                    "with a lepton-beam configuration instead"
+                )
+                raise ValueError(msg)
         config = self._config[:]
 
         # TODO use numpy PRNG instead of Pythia's
@@ -384,6 +450,18 @@ class Pythia8(MCRun):
 
     def _generate(self):
         return self._pythia.next()
+
+    @property
+    def sigma_gen(self) -> tuple[float, float]:
+        """Integrated cross section of the enabled processes (mb) + uncertainty.
+
+        The value is filled by Pythia8 during event generation and is zero
+        right after init(). It is the only normalization available for lepton
+        beams, where the hadronic `cross_section()` is NaN. For hadronic
+        beams it agrees with `cross_section().inelastic`.
+        """
+        info = self._pythia.info
+        return info.sigmaGen(), info.sigmaErr()
 
     @staticmethod
     def _parse_config(config) -> list[str]:

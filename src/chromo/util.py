@@ -103,6 +103,10 @@ class CompositeTarget:
     def is_hadron(self):
         return False
 
+    @property
+    def is_lepton(self):
+        return False
+
     def __int__(self):
         """Return PDGID for heaviest of elements."""
         return int(max((c.A, c) for c in self.components)[1])
