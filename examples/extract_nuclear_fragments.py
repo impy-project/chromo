@@ -1,12 +1,12 @@
 """
-Extract nuclear fragments and remnants from a DPMJET h+A run.
+Inspect nuclear remnants and placeholder records in a DPMJET h+A run.
 
 Nuclear fragments and beam remnants never pass ``event.final_state()``:
-that filter keeps only status 1 entries, and nuclei in the event stack
-carry other status codes. This script prints what is actually in the raw
-event stack for p + O at 100 TeV beam momentum and shows how to select
-the interesting entries with numpy masks. See doc/nuclear_fragments.md
-for the details.
+that filter keeps only status 1 entries, and everything nuclear in the
+event stack carries other status codes. This script prints what is
+actually in the raw event stack for p + O at 100 TeV beam momentum and
+how to select the relevant entries with numpy masks. See
+doc/nuclear_fragments.md for the details.
 
 Run with::
 
@@ -36,18 +36,21 @@ for event in run(1):
         print(f"  index {i}: pdgid={event.pid[i]}  status={event.status[i]}")
     print()
 
-    # DPMJET stores nuclear fragments as placeholder entries with PDG ID
-    # 99999. Entries with status 2 are hadronization chains that are
-    # already absorbed into the final state; the nuclear prefragments
-    # carry status codes >= 100 (DPMJET uses 103, 104, 106, and higher
-    # 5xx/6xx/7xx codes for these):
-    prefrag = (event.pid == 99999) & (event.status >= 100)
-    print(f"nuclear prefragments (pid 99999, status >= 100): {np.sum(prefrag)}")
-    for i in np.where(prefrag)[0]:
-        print(
-            f"  status={event.status[i]}  m={event.m[i]:.1f} GeV"
-            f"  E={event.en[i]:.1f} GeV"
-        )
+    # DPMJET leaves the records of hadronization chains/strings in the
+    # stack with PDG ID 99999 once their content has been converted into
+    # final-state hadrons (these are NOT nuclear fragments, see
+    # doc/nuclear_fragments.md). Those with status 2 stand for chains
+    # which were directly emitted as one hadron, the ones with status
+    # >= 100 are the fragmented strings:
+    chain = event.pid == 99999
+    direct = chain & (event.status == 2)
+    fragmented = chain & (event.status >= 100)
+    print(f"chain placeholders (pid 99999): {np.sum(chain)} total,")
+    print(f"  {np.sum(direct)} collapsed to single hadrons (status 2),")
+    print(
+        f"  {np.sum(fragmented)} fragmented strings "
+        f"(statuses {sorted({int(s) for s in event.status[fragmented]})})"
+    )
     print()
 
     # The final state contains no nuclei at all:
