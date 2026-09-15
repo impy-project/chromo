@@ -7,8 +7,9 @@ from particle import literals as lp
 
 from chromo.common import CrossSectionData
 from chromo.constants import GeV
-from chromo.kinematics import CenterOfMass
+from chromo.kinematics import CenterOfMass, CompositeTarget
 from chromo.models import QGSJet01d, QGSJetII03, QGSJetII04, QGSJetIII
+from chromo.util import get_all_models
 
 from .util import (
     reference_charge,
@@ -19,7 +20,7 @@ qgsII04_pp_cs_100 = CrossSectionData(
     total=68.21778094810318,
     inelastic=53.97816145792067,
     elastic=14.239619490182513,
-    prod=np.nan,
+    prod=53.97816145792067,
     quasielastic=np.nan,
     coherent=np.nan,
     diffractive_xb=2.331623335930477,
@@ -33,7 +34,7 @@ qgsII03_pp_cs_100 = CrossSectionData(
     total=69.86744771403204,
     inelastic=55.22878210676279,
     elastic=14.638665607269246,
-    prod=np.nan,
+    prod=55.22878210676279,
     quasielastic=np.nan,
     coherent=np.nan,
     diffractive_xb=1.3519578936441186,
@@ -47,7 +48,7 @@ qgsIII_pp_cs_100 = CrossSectionData(
     total=65.71870426215214,
     inelastic=52.532563800267894,
     elastic=13.18614046188425,
-    prod=np.nan,
+    prod=52.532563800267894,
     quasielastic=np.nan,
     coherent=np.nan,
     diffractive_xb=2.31753487999351,
@@ -61,7 +62,7 @@ qgs01d_pp_cs_100 = CrossSectionData(
     total=68.03887906922947,
     inelastic=54.24937934684394,
     elastic=13.789499722385532,
-    prod=np.nan,
+    prod=54.24937934684394,
     quasielastic=np.nan,
     coherent=np.nan,
     diffractive_xb=3.099119341661887,
@@ -133,6 +134,33 @@ def run_cross_section(Model, p1, p2):
 def test_cross_section(Model, reference_cross_section):
     c = run_in_separate_process(run_cross_section, Model, "p", "p")
     assert c.__eq__(reference_cross_section, rtol=1e-3)
+
+
+def run_cross_section_prod(Model, kin):
+    m = Model(kin, seed=1)
+    return m.cross_section().prod
+
+
+def get_qgsjets():
+    """Get the list of all QGSJet model classes present in this build."""
+    return [cl for cl in get_all_models() if cl.pyname.startswith("QGSJet")]
+
+
+@pytest.mark.parametrize("Model", get_qgsjets())
+@pytest.mark.parametrize("energy", [1e3 * GeV, 1e4 * GeV])
+def test_prod_cross_section_finite(Model, energy):
+    # regression test for issue #241: production cross section must be
+    # finite for h-N and for composite targets containing a proton
+    c_p = run_in_separate_process(
+        run_cross_section_prod, Model, CenterOfMass(energy, "p", "p")
+    )
+    assert np.isfinite(c_p) and c_p > 0
+
+    p_air = CompositeTarget([("p", 0.01), ("N", 0.77), ("O", 0.22)])
+    c_air = run_in_separate_process(
+        run_cross_section_prod, Model, CenterOfMass(energy, "p", p_air)
+    )
+    assert np.isfinite(c_air) and c_air > 0
 
 
 def test_charge(event):

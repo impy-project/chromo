@@ -3,8 +3,8 @@ import pytest
 from numpy.testing import assert_allclose, assert_equal
 
 from chromo.common import CrossSectionData
-from chromo.constants import TeV
-from chromo.kinematics import CenterOfMass
+from chromo.constants import GeV, TeV
+from chromo.kinematics import CenterOfMass, CompositeTarget
 from chromo.util import get_all_models
 
 from .util import reference_charge, run_in_separate_process
@@ -13,7 +13,7 @@ cs_sibyll21 = CrossSectionData(
     total=117.90274047851562,
     inelastic=85.13753509521484,
     elastic=32.76520538330078,
-    prod=np.nan,
+    prod=85.13753509521484,
     quasielastic=np.nan,
     coherent=np.nan,
     diffractive_xb=6.198373,
@@ -28,7 +28,7 @@ cs_sibyll23 = CrossSectionData(
     total=105.7269966641395,
     inelastic=76.78422435244065,
     elastic=28.94277231169886,
-    prod=np.nan,
+    prod=76.78422435244065,
     quasielastic=np.nan,
     coherent=np.nan,
     diffractive_xb=5.985736090273257,
@@ -119,6 +119,28 @@ def test_cross_section(model):
         c.non_diffractive,
         c.inelastic - c.diffractive_xb - c.diffractive_ax - c.diffractive_xx,
     )
+
+
+def run_cross_section_prod(model, kin):
+    m = model(kin, seed=1)
+    return m.cross_section().prod
+
+
+@pytest.mark.parametrize("model", get_sibylls())
+@pytest.mark.parametrize("energy", [100 * GeV, 1e4 * GeV])
+def test_prod_cross_section_finite(model, energy):
+    # regression test for issue #241: production cross section must be
+    # finite for h-N and for composite targets containing a proton
+    c_p = run_in_separate_process(
+        run_cross_section_prod, model, CenterOfMass(energy, "p", "p")
+    )
+    assert np.isfinite(c_p) and c_p > 0
+
+    p_air = CompositeTarget([("p", 0.01), ("N", 0.77), ("O", 0.22)])
+    c_air = run_in_separate_process(
+        run_cross_section_prod, model, CenterOfMass(energy, "p", p_air)
+    )
+    assert np.isfinite(c_air) and c_air > 0
 
 
 def run_with_runtime_warning(model, p1, p2):

@@ -163,6 +163,7 @@ class QGSJet1Run(QGSJetRun):
         return CrossSectionData(
             total=gtot,
             inelastic=gin,
+            prod=gin,
             elastic=gel,
             diffractive_xb=gdp,
             diffractive_ax=gdt,
@@ -278,6 +279,7 @@ class QGSJet2Run(QGSJetRun):
         return CrossSectionData(
             total=gtot,
             inelastic=gin,
+            prod=gin,
             elastic=gel,
             diffractive_xb=gdp,
             diffractive_ax=gdt,
