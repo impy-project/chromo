@@ -73,6 +73,15 @@ def run_batch_pythia8():
     dup_stack = [states[i] for i in (4, 2, 1, 0, 2, 0, 3)]
     events4 = gen.generate_batch(dup_stack, seed=7)
     check_association(events4, dup_stack)
+
+    # the seed reaches Pythia: the same batch with a different seed gives
+    # different events (without re-reading Random:seed in _set_kinematics,
+    # Pythia would always restart from the seed given in the constructor)
+    events5 = gen.generate_batch(states, seed=99)
+    assert any(
+        not np.array_equal(a.pid, b.pid) or not np.array_equal(a.en, b.en)
+        for a, b in zip(events, events5)
+    )
     return True
 
 

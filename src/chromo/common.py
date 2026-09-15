@@ -687,10 +687,7 @@ class MCRun(ABC):
         except ModuleNotFoundError:
             self._lib = importlib.import_module(f"{self._library_name}")
 
-        self._rng = np.random.default_rng(seed)
-        if hasattr(self._lib, "npy"):
-            self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
-            self._lib.npy.gen_id = self._get_bitgen_id(self._rng.bit_generator)
+        self._set_seed(seed)
 
     def __call__(self, nevents):
         """Generator function (in python sence)
@@ -779,22 +776,24 @@ class MCRun(ABC):
             self._set_seed(seed)
         events = [None] * len(states)
 
-        # Sort indices by hash so that equal states are consecutive. The
-        # equality check below guards against hash collisions and makes the
-        # grouping correct even though hashes provide no meaningful order.
-        # Python's sort is stable, so ties keep the input order.
-        order = sorted(range(len(states)), key=lambda i: hash(states[i]))
-        start = 0
-        while start < len(states):
-            stop = start + 1
-            while stop < len(order) and states[order[stop]] == states[order[start]]:
-                stop += 1
-            idx = order[start:stop]
+        # Group equal states so that they run consecutively ("sorted input
+        # stack"), in first-appearance order. A dict keyed by the states
+        # themselves is deterministic across processes, unlike sorting by
+        # hash. Dict equality lookups first compare hashes and then values,
+        # so hash collisions cannot merge different states.
+        groups: dict = {}
+        for i, kin in enumerate(states):
+            groups.setdefault(kin, []).append(i)
+
+        for kin, idx in groups.items():
             # single switch of the initial state for the whole run
-            self.kinematics = states[idx[0]]
-            for j, event in zip(idx, self(len(idx))):
-                events[j] = event.copy()
-            start = stop
+            self.kinematics = kin
+            it = self(len(idx))
+            for j in idx:
+                events[j] = next(it).copy()
+            # drain the generator so that cleanup in __call__ runs, e.g.
+            # restoring composite-target kinematics after sampling
+            next(it, None)
         return events
 
     @classproperty

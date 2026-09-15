@@ -23,7 +23,8 @@ per model:
 - Output is `list[EventData]` in input order (picklable, same element type
   as the loop API; awkward arrays are a possible later optimisation but not
   required for correctness).
-- States are grouped by hash+equality so that *equal states run consecutively*
+- States are grouped by value into first-appearance order (dict grouping,
+  deterministic across processes) so that *equal states run consecutively*
   ("sorted input stack"); the generator state is switched once per group via
   the ordinary `generator.kinematics = ...` setter, then the group is drained
   with the ordinary `generator(n)` call. Rejection, composite-target sampling
