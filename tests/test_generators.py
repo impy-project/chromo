@@ -186,6 +186,7 @@ def test_generator(projectile, target, frame, Model):
             abs(kin.p1) not in Model.projectiles
             or abs(kin.p2) not in Model.targets
             or kin.ecm < getattr(Model, "_ecm_min", 0)
+            or not Model._pair_allowed(abs(kin.p1), abs(kin.p2))
         )
         return
 
@@ -339,6 +340,7 @@ def test_generator_gg(frame, Model):
             abs(kin.p1) not in Model.projectiles
             or abs(kin.p2) not in Model.targets
             or kin.ecm < getattr(Model, "_ecm_min", 0)
+            or not Model._pair_allowed(abs(kin.p1), abs(kin.p2))
         )
         return
 
