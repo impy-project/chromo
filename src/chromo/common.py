@@ -307,6 +307,9 @@ class EventData:
         produce Omega- and its antiparticle, so the final state never contains them.
         The QGSJet family does not produce Omega-, Xi-, Xi0, Sigma-, Sigma+ and their
         antiparticles.
+
+        Nuclear fragments and beam remnants carry status codes != 1 and are
+        therefore not part of the final state, see doc/nuclear_fragments.md.
         """
         return self._select(self.status == 1, False)
 

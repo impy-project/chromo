@@ -40,7 +40,7 @@ average_pt = average_pt / nevents
 print("Average pT for charged pions {0:4.3f}".format(average_pt))
 ```
 
-Further examples, such as [this](examples/compare_models.ipynb) can be found in the examples folder.
+Further examples, such as [this](examples/compare_models.ipynb) can be found in the examples folder. Nuclear fragments and beam remnants and how to select them are explained [here](doc/nuclear_fragments.md), with a runnable example [here](examples/extract_nuclear_fragments.py).
 
 ### Command line user interface (CLI) 
 
