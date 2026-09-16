@@ -16,8 +16,6 @@ Run with::
 
 from collections import Counter
 
-import numpy as np
-
 from chromo.kinematics import FixedTarget
 from chromo.models import DpmjetIII307
 
@@ -53,15 +51,3 @@ for event in run(1):
         else:
             print(f"  pdgid={pid}  (beam nucleon)")
     print(f"remnant nucleons (status 5): {Counter(int(p) for p in remnants.pid)}")
-    print()
-
-    # DPMJET also leaves records of hadronization chains (strings) in the
-    # stack with PDG ID 99999 once fragmented. These are NOT nuclear
-    # fragments; the new filter discards them along with the rest of the
-    # parton-level history:
-    chain = event.pid == 99999
-    print(f"chain placeholders (pid 99999): {np.sum(chain)},")
-    print(
-        "  in final_state_with_nucl_frag(): "
-        f"{np.sum(chain & np.isin(event.status, (1, 4, 5)))}"
-    )

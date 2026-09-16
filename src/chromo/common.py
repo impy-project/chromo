@@ -339,18 +339,13 @@ class EventData:
         * status 5: nucleon-level remnants (spectator, wounded, and
           potential-bound nucleons)
 
-        The normalization is model-specific and not all generators provide
-        all information: QGSJet and SIBYLL only yield the status 4 beam
-        records, EPOS-LHC reports nucleon-level remnants as status 5, and
-        DPMJET additionally resolves the spectator content of the beam
-        nuclei. See doc/nuclear_fragments.md for details.
+        The mapping of native generator codes is documented in
+        doc/nuclear_fragments.md, together with the per-model availability.
 
-        Caveat: the returned remnant records are not necessarily physical
-        final-state fragments. They often miss the last stage of the
-        nuclear de-excitation (evaporation, fission, gamma emission), and
-        spectator nucleons carry Fermi-motion kinematics instead of the
-        kinematics of a fragment nucleus. The amount of missing nuclear
-        physics depends on the generator, see doc/nuclear_fragments.md.
+        Note: the remnant records are the bookkeeping of the intranuclear
+        cascade. The de-excitation stage (evaporation, fission, gamma
+        emission) is missing or truncated in most generators, so A, Z, and
+        kinematics can differ from physical fragments.
         """
         return self._select(np.isin(self.status, (1, 4, 5)), False)
 
