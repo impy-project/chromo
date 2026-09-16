@@ -346,6 +346,21 @@ class SIBYLLRun(MCRun):
         self._lib.sibhep()
         return True
 
+    def print_native_event(self):
+        """Print the event summary using SIBYLL's native SIB_LIST routine.
+
+        The listing contains the event content as stored in the SIBYLL
+        internal common blocks, before chromo applies any transformations
+        or filtering. The output is written by Fortran to the log unit
+        (stdout by default).
+        """
+        try:
+            # SIBYLL 2.3 variants take the output unit as an argument
+            self._lib.sib_list(self._lib.s_debug.lun)
+        except TypeError:
+            # SIBYLL 2.1 takes no argument and reads the unit from /S_DEBUG/
+            self._lib.sib_list()
+
 
 class Sibyll21(SIBYLLRun):
     _version = "2.1"

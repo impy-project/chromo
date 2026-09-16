@@ -801,6 +801,22 @@ class MCRun(ABC):
     def random_state(self, rng_state):
         self._rng.bit_generator.state = rng_state
 
+    def print_native_event(self):
+        """Print the current event using the generator's native printout.
+
+        The listing is written directly to stdout by the generator itself
+        and shows the event as stored internally in the generator, i.e.
+        without any frame transformations or filtering applied by chromo
+        to the returned ``EventData``. This is useful for debugging.
+
+        Generators which provide a native event listing (DPMJET, Phojet,
+        EPOS, SIBYLL, Pythia6, Pythia8) override this method, possibly
+        accepting additional model-specific arguments. This default
+        implementation raises `NotImplementedError`.
+        """
+        msg = f"{self.pyname} does not support native event printout"
+        raise NotImplementedError(msg)
+
     def _check_kinematics(self, kin):
         """Check if kinematics are allowed for this generator."""
 
