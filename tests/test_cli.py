@@ -402,10 +402,13 @@ def test_estimate_final_size():
     assert estimate_final_size(500, 100, 100) == 500
 
 
+@pytest.mark.skipif(
+    platform.system() == "Windows", reason="Pythia-8 not available on Windows"
+)
 def test_size_column_in_progress():
     run(
         "-m",
-        "Pythia-8.317",
+        im.Pythia8.label,
         "-S",
         "100",
         "-s",
