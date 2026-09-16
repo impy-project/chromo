@@ -390,3 +390,30 @@ def test_filename_option():
         file="foobar",
         checks=(),
     )
+
+
+def test_estimate_final_size():
+    from chromo.cli import estimate_final_size
+
+    assert estimate_final_size(0, 0, 100) is None
+    assert estimate_final_size(500, 0, 100) is None
+    assert estimate_final_size(50, -1, 100) is None
+    assert estimate_final_size(500, 10, 100) == 5000
+    assert estimate_final_size(500, 100, 100) == 500
+
+
+def test_size_column_in_progress():
+    run(
+        "-m",
+        "Pythia-8.317",
+        "-S",
+        "100",
+        "-s",
+        "1",
+        "-n",
+        "20",
+        "-f",
+        "size_column.hepmc",
+        stdout=r"~[0-9.]+\s*(bytes|k(B|B)?|M(B|B)?)",
+        file="size_column.hepmc",
+    )
