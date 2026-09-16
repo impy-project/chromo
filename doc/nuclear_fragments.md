@@ -56,15 +56,22 @@ keeps them so the string history is complete.
 
 ## Caveats on the remnant records
 
-The status 5 records are the nucleon bookkeeping of the cascade. The
-residual nucleus, if reported, is the cascade output: the de-excitation
-stage is missing or truncated depending on the generator (the DPMJET
-steering card in chromo prints "No evaporation performed since evaporation
-modules not available"), so A, Z, and kinematics of the remnants can differ
-from physical fragments. Spectator nucleons carry Fermi motion, and wounded
-nucleons carry their cascade kinematics. Use the records as bookkeeping for
-what the cascade consumed, and model evaporation/fragmentation on top if
-your observable needs fragment nuclei.
+The status 5 records are the nucleon bookkeeping of the cascade, not final
+state particles (DPMJET's manual defines the event final state as its
+status 1 only, and chromo keeps that distinction). Most of them are passive
+spectators: the cascade decomposes the whole target nucleus into single
+nucleon records, only a dozen of which actually interact. The records are
+kinematically bound (momenta of order the Fermi momentum), they include
+nucleons which DPMJET marks as unable to escape the nuclear potential, and
+re-scattered nucleons are listed as additional records — so the status 5 set
+by construction over-counts the incoming nucleons (up to ~10 % in tests)
+and does not balance baryon number or charge. Use it to see which nucleons
+the cascade used, not for conservation sums or kinematic closure.
+Furthermore the de-excitation stage (evaporation, fission, gamma emission)
+is missing or truncated in most generators (the DPMJET steering card in
+chromo prints "No evaporation performed since evaporation modules not
+available"), so A, Z, and kinematics of the remnants can differ from
+physical fragments.
 
 ## Runnable example
 
