@@ -209,8 +209,11 @@ def run_asymmetric_pA():
     return [event.copy() for event in m(2)]
 
 
-def test_asymmetric_pA_generic_frame():
+def test_asymmetric_pA_generic_frame_QGSJetIII():
     # generation in a GENERIC frame used to raise NotImplementedError (#184)
+    # name contains QGSJetIII so that the macOS cibuildwheel jobs, which run
+    # pytest with -k "not QgsjetIII" (data not provisioned there), skip it;
+    # the test runs in all regular test jobs, including macOS
     events = run_in_separate_process(run_asymmetric_pA)
     for event in events:
         assert event.kin.frame == EventFrame.GENERIC
