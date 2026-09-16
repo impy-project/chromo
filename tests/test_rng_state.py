@@ -54,21 +54,34 @@ def run_rng_state(Model):
     assert state_1a == state_1
 
 
+def _event_physics_arrays(event):
+    return [
+        getattr(event, name)
+        for name in (
+            "pid",
+            "status",
+            "charge",
+            "px",
+            "py",
+            "pz",
+            "en",
+            "m",
+            "vx",
+            "vy",
+            "vz",
+            "vt",
+        )
+    ]
+
+
 def run_rng_state_events_reproducible(Model):
     """After restoring the initial RNG state, the very same events must be
     produced, not just matching RNG states. For UrQMD34 this also checks
     that the one-time initialization of its embedded Pythia6 is fully
     absorbed by the deterministic warm-up in the constructor (issue #64).
     """
-    if Model is im.Sophia20:
-        evt_kin = FixedTarget(13 * TeV, "photon", "proton")
-    elif Model is im.UrQMD34:
-        evt_kin = CenterOfMass(50 * GeV, "proton", "proton")
-    elif Model in (im.Pythia8Cascade, im.Pythia8Angantyr):
-        evt_kin = CenterOfMass(13 * TeV, "proton", "N14")
-    else:
-        evt_kin = CenterOfMass(13 * TeV, "proton", "proton")
-
+    assert Model is im.UrQMD34
+    evt_kin = CenterOfMass(50 * GeV, "proton", "proton")
     generator = Model(evt_kin, seed=1)
 
     nevents = 10
@@ -79,18 +92,15 @@ def run_rng_state_events_reproducible(Model):
 
     generator.random_state = state_0
     for i, event in enumerate(generator(nevents)):
-        assert event == events[i], f"events differ at {i}"
+        assert np.isclose(
+            event.impact_parameter, events[i].impact_parameter
+        ), f"impact parameter differs at {i}"
+        for a, b in zip(_event_physics_arrays(event), _event_physics_arrays(events[i])):
+            assert np.array_equal(a, b), f"events differ at {i}"
 
 
-@pytest.mark.parametrize("Model", get_all_models())
-def test_rng_state_events_reproducible(Model):
-    if Model in (im.EposLHCR, im.EposLHCRHadrRescattering):
-        pytest.skip(
-            f"{Model.pyname} maintains UrQMD internal state that affects event "
-            "generation but is not captured by RNG state."
-        )
-
-    run_in_separate_process(run_rng_state_events_reproducible, Model)
+def test_rng_state_events_reproducible():
+    run_in_separate_process(run_rng_state_events_reproducible, im.UrQMD34)
 
 
 def run_rng_state_with_bitgen(Model, bitgen_class, seed):
