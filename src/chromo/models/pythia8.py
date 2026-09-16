@@ -510,6 +510,33 @@ class Pythia8(MCRun):
         """
         return self._pythia.info.weightSum()
 
+    def print_native_event(
+        self,
+        show_scale_and_vertex=False,
+        show_mothers_and_daughters=False,
+        precision=3,
+    ):
+        """Print the event record using Pythia8's native event listing.
+
+        This calls Pythia8's ``Event::list()`` (the mechanism behind
+        ``pythia.printEvent()`` in older Pythia8 versions), which prints
+        the event as stored internally in Pythia8, before chromo applies
+        any transformations or filtering. The output is written to
+        Python's ``sys.stdout``.
+
+        Parameters
+        ----------
+        show_scale_and_vertex : bool
+            Additionally print scales, polarizations and vertices.
+        show_mothers_and_daughters : bool
+            Additionally print mother and daughter indices.
+        precision : int
+            Number of significant digits for the momenta.
+        """
+        self._pythia.printEvent(
+            show_scale_and_vertex, show_mothers_and_daughters, precision
+        )
+
 
 class PYTHIA8CascadeEvent(EventData):
     """Event from a single hadron+nucleus inelastic collision via PythiaCascade."""
