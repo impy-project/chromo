@@ -293,6 +293,7 @@ def test_print_native_event(model):
     else:
         assert "SIBYLL EVENT SUMMARY" in output
 
+
 def run_with_kin(kin):
     from chromo.models import Sibyll23d
 

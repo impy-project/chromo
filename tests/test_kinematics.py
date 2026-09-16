@@ -20,6 +20,7 @@ from chromo.kinematics import (
     TotalEnergy,
     boost_event,
     boost_vector,
+    rotate_event,
 )
 from chromo.util import (
     AZ2pdg,
@@ -399,3 +400,44 @@ def test_apply_boost_generic_inverse_roundtrip():
     assert ev.px == approx(ref[1])
     assert ev.py == approx(ref[2])
     assert ev.pz == approx(ref[3])
+
+
+def test_rotate_event_analytic():
+    # +90 degrees around z: (px, py, pz) -> (-py, px, pz), energy untouched
+    ev = SimpleNamespace(
+        en=np.array([2.0, 5.0]),
+        px=np.array([1.0, 2.0]),
+        py=np.array([3.0, 4.0]),
+        pz=np.array([5.0, 6.0]),
+    )
+    rotate_event(ev, np.pi / 2)
+    assert ev.px == approx([-3.0, -4.0], abs=1e-15)
+    assert ev.py == approx([1.0, 2.0], abs=1e-15)
+    assert ev.pz == approx([5.0, 6.0])
+    assert ev.en == approx([2.0, 5.0])
+
+
+def test_rotate_event_preserves_invariants():
+    rng = np.random.default_rng(11)
+    m = rng.uniform(0.1, 5, 100)
+    px, py, pz = (rng.normal(0, 3, 100) for _ in range(3))
+    en = np.sqrt(m**2 + px**2 + py**2 + pz**2)
+    ev = SimpleNamespace(en=en.copy(), px=px.copy(), py=py.copy(), pz=pz.copy())
+    rotate_event(ev, 1.7)
+    inv2 = ev.en**2 - ev.px**2 - ev.py**2 - ev.pz**2
+    assert inv2 == approx(m**2, rel=1e-12)
+    assert ev.en == approx(en)
+    assert ev.pz == approx(pz)
+    # rotating by 2*pi is the identity, and a rotation commutes with a
+    # boost along the rotation axis
+    b = (0.0, 0.0, 0.4)
+    ev1 = SimpleNamespace(en=en.copy(), px=px.copy(), py=py.copy(), pz=pz.copy())
+    rotate_event(ev1, 1.7)
+    boost_event(ev1, b)
+    ev2 = SimpleNamespace(en=en.copy(), px=px.copy(), py=py.copy(), pz=pz.copy())
+    boost_event(ev2, b)
+    rotate_event(ev2, 1.7)
+    assert ev1.en == approx(ev2.en)
+    assert ev1.px == approx(ev2.px)
+    assert ev1.py == approx(ev2.py)
+    assert ev1.pz == approx(ev2.pz)

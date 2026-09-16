@@ -200,3 +200,62 @@ def get_model_projectile_combinations():
 @pytest.mark.parametrize("model,p1", get_model_projectile_combinations())
 def test_projectile_list(model, p1):
     run_in_separate_process(run_three_events, p1, model)
+
+
+def run_first_event_rotate(model, rotate):
+    gen = model(chromo.kinematics.CenterOfMass(100 * GeV, "O", "O16"), seed=1)
+    gen.rotate_cms = rotate
+    return next(gen(1)).copy()
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+def test_rotate_cms_is_rigid_rotation(model):
+    # DPMJET fixes the Glauber collision plane to the x-z plane (DT_DIAGR);
+    # rotate_cms=True (default for DPMJET) must undo this by a rigid rotation
+    # around the beam axis. The first event of two runs with the same seed
+    # shares the identical Fortran stream, so the events may only differ by
+    # the rotation: same pid/status/mass/energy/pz and per-particle pt.
+    with_rotation = run_in_separate_process(run_first_event_rotate, model, True)
+    without_rotation = run_in_separate_process(run_first_event_rotate, model, False)
+    assert with_rotation.pid == pytest.approx(without_rotation.pid)
+    assert with_rotation.status == pytest.approx(without_rotation.status)
+    assert_allclose(with_rotation.en, without_rotation.en, rtol=1e-8)
+    assert_allclose(with_rotation.pz, without_rotation.pz, rtol=1e-8)
+    assert_allclose(with_rotation.m, without_rotation.m, rtol=1e-8)
+    pt_rot = np.hypot(with_rotation.px, with_rotation.py)
+    pt_ref = np.hypot(without_rotation.px, without_rotation.py)
+    assert_allclose(pt_rot, pt_ref, rtol=1e-8)
+    # the rotation angle is the same for all particles (mod pi where signs
+    # of both components flip is not distinguishable from pt/pz alone)
+    dphi = np.arctan2(with_rotation.py, with_rotation.px) - np.arctan2(
+        without_rotation.py, without_rotation.px
+    )
+    dphi = (dphi + np.pi) % (2 * np.pi) - np.pi
+    sel = pt_ref > 1e-6
+    assert_allclose(dphi[sel], dphi[sel][0], atol=1e-6)
+    # and the event was actually rotated (angle is uniform, so check that
+    # the transverse components changed, avoiding unlucky cos/sin wrap points)
+    assert np.max(np.abs(with_rotation.px[sel] - without_rotation.px[sel])) > 1e-6
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+def test_rotate_cms_on_by_default(model):
+    assert model.rotate_cms is True
+
+
+def run_hN_first_event(model, rotate):
+    # rotation must only apply to collisions with a nuclear participant
+    gen = model(chromo.kinematics.CenterOfMass(100 * GeV, "p", "p"), seed=1)
+    gen.rotate_cms = rotate
+    return next(gen(1)).copy()
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+def test_rotate_cms_skips_hadron_nucleon(model):
+    # p+p has no nuclear participant, so with the same seed the first event
+    # must be identical whether or not rotate_cms is enabled
+    a = run_in_separate_process(run_hN_first_event, model, True)
+    b = run_in_separate_process(run_hN_first_event, model, False)
+    assert a.pid == pytest.approx(b.pid)
+    assert_allclose(a.en, b.en, rtol=1e-8)
+    assert_allclose(a.px, b.px, rtol=1e-8)

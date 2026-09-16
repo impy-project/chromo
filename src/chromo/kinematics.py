@@ -40,6 +40,7 @@ __all__ = (
     "TotalEnergy",
     "boost_event",
     "boost_vector",
+    "rotate_event",
 )
 
 
@@ -106,6 +107,23 @@ def boost_event(event, b):
     event.px[:] = px + f * b[0]
     event.py[:] = py + f * b[1]
     event.pz[:] = pz + f * b[2]
+
+
+def rotate_event(event, angle):
+    """Rotate the particles of an event in-place around the z-axis (beam axis).
+
+    Parameters
+    ----------
+    event: object
+        Object with writable 1D ndarray attributes ``px``, ``py``, ``pz``,
+        e.g. :class:`chromo.common.EventData` or an MCEvent.
+    angle: float
+        Rotation angle around the z-axis in radians.
+    """
+    c, s = np.cos(angle), np.sin(angle)
+    px, py = event.px.copy(), event.py.copy()
+    event.px[:] = c * px - s * py
+    event.py[:] = s * px + c * py
 
 
 @dataclasses.dataclass

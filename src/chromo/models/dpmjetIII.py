@@ -113,11 +113,18 @@ class DpmjetIIIRun(MCRun):
     For cross-section tabulation use a fresh instance per point: the
     Glauber sigma drifts over many kinematics switches (19.3, p-air
     100 GeV: sigma_prod 278 mb on first query, ~258 mb late in a loop).
+
+    DPMJET applies the Glauber impact parameter always along the x-axis
+    (see DT_DIAGR), which fixes the collision plane to the x-z plane and
+    breaks rotational invariance in the azimuth. This is corrected here by
+    rotating each nuclear event around the beam axis by a random angle
+    (see ``MCRun.rotate_cms``).
     """
 
     _name = "DPMJET-III"
     _event_class = DpmjetIIIEvent
     _frame = None
+    rotate_cms = True
     # TODO: DPMJet supports photons as projectiles
     _projectiles = dpmjet_extended_projectiles | Nuclei(a_max=280)
     _targets = Nuclei()
