@@ -234,6 +234,13 @@ def parse_arguments():
         help="configuration file for generator; configuration is Python code which "
         "interacts with the variable `model` that represents the model instance",
     )
+    parser.add_argument(
+        "--filter",
+        metavar="PATH",
+        help="Python file defining a function filter(event) -> EventData or None; "
+        "called for each generated event, the returned event is written and None "
+        "discards the event",
+    )
     parser.add_argument("--log-file", help="also write log to this file")
     parser.add_argument(
         "--log-level",
@@ -378,11 +385,38 @@ def parse_arguments():
     return args, configuration
 
 
+def load_filter(path):
+    import importlib.util
+    import sys
+
+    fn = Path(path)
+    if not fn.exists():
+        msg = f"Error: filter file {path} does not exist"
+        raise SystemExit(msg)
+    spec = importlib.util.spec_from_file_location("chromo_user_filter", fn)
+    if spec is None or spec.loader is None:
+        msg = f"Error: cannot import filter file {path}"
+        raise SystemExit(msg)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    sys.path.insert(0, str(fn.parent))
+    try:
+        spec.loader.exec_module(module)
+    except Exception as e:
+        msg = f"Error in filter file {path}:\n{e}"
+        raise SystemExit(msg) from e
+    if not callable(getattr(module, "filter", None)):
+        msg = f"Error: filter file {path} must define a function filter(event)"
+        raise SystemExit(msg)
+    return module.filter
+
+
 def main():
     from rich.console import Console
     from rich.panel import Panel
 
     args, configuration = parse_arguments()
+    event_filter = load_filter(args.filter) if args.filter else None
 
     p1 = Particle.from_pdgid(args.projectile_id)
     p2 = Particle.from_pdgid(args.target_id)
@@ -409,6 +443,8 @@ def main():
 """
     if args.config:
         msg += f"\n  [repr.str]Configuration[/repr.str]\t{args.config}"
+    if args.filter:
+        msg += f"\n  [repr.str]Filter[/repr.str]\t\t{args.filter}"
 
     console = Console()
     console.print(
@@ -450,7 +486,19 @@ def main():
                 SizeColumn(args.out),
             ) as bar:
                 for event in model(args.number):
-                    ofile.write(event)
+                    if event_filter is not None:
+                        try:
+                            event = event_filter(event)
+                        except Exception as e:
+                            import traceback
+
+                            msg = (
+                                f"Error in filter file {args.filter}:\n"
+                                f"{traceback.format_exc()}"
+                            )
+                            raise RuntimeError(msg) from e
+                    if event is not None:
+                        ofile.write(event)
                     if task_id is None:
                         task_id = bar.add_task("", total=args.number)
                     bar.advance(task_id, 1)

@@ -50,6 +50,16 @@ Installing `chromo` also makes a command-line interface available. If your Pytho
 
 To see the help of the command-line interface. If that does not work, just replace `chromo` with `python -m chromo`. The command-line interface was designed to feel familiar for users of [CRMC](https://gitlab.iap.kit.edu/AirShowerPhysics/crmc). The CLI can write events in a variety of output formats, as detailed below. HepMC output can be piped into RIVET and many other tools supporting the format.
 
+The `--filter=PATH` option applies a user-defined Python filter to each generated event before it is written. The file must define a function `filter(event)` which receives the `EventData` object and returns a (possibly modified) event to be written, or `None` to discard the event completely. `-n` still counts generated collisions, so the number of written events can be smaller when events are discarded. When writing ROOT output, select particles with boolean masks such as `event[mask]` (which preserves the particle history) instead of `event.final_state()`. Example:
+
+```py
+# discard events with 30 or fewer final-state particles
+def filter(event):
+    if len(event.final_state()) <= 30:
+        return None
+    return event
+```
+
 ## Output formats
 
 - HepMC (via pyhepmc, optionally gzip compressed)

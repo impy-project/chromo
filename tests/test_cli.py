@@ -47,6 +47,7 @@ def run(
     stderr=None,
     file=None,
     config=None,
+    filter_src=None,
     checks=(format_matches_extension,),
 ):
     with tempfile.TemporaryDirectory() as cwd:
@@ -56,6 +57,11 @@ def run(
                 f.write(config)
 
             cmd += ("-c", "config.cfg")
+        if filter_src is not None:
+            with open(cwd / "filter.py", "w") as f:
+                f.write(filter_src)
+
+            cmd += ("--filter", "filter.py")
         r = subp.run(("chromo", *cmd), cwd=cwd, capture_output=True, check=False)
         assert r.returncode == returncode, r.stderr.decode()
         match = None
@@ -419,4 +425,115 @@ def test_size_column_in_progress():
         "size_column.hepmc",
         stdout=r"~[0-9.]+\s*(bytes|k(B|B)?|M(B|B)?)",
         file="size_column.hepmc",
+    )
+
+
+def _count_hepmc_events(path, expected):
+    with open(path) as f:
+        n = sum(1 for line in f if line.startswith("E "))
+    assert n == expected, f"{n} events written, expected {expected}"
+
+
+def test_filter_keeps_events():
+    run(
+        "-m",
+        "6",
+        "-S",
+        "100",
+        "-s",
+        "1",
+        "-n",
+        "3",
+        "-f",
+        "filt_keep.hepmc",
+        file="filt_keep.hepmc",
+        filter_src="def filter(event):\n    return event\n",
+        stdout="Filter[ \t]*filter.py",
+        checks=(lambda p: _count_hepmc_events(p, 3),),
+    )
+
+
+def test_filter_rejects_all_events():
+    run(
+        "-m",
+        "6",
+        "-S",
+        "100",
+        "-s",
+        "1",
+        "-n",
+        "3",
+        "-f",
+        "filt_rej.hepmc",
+        file="filt_rej.hepmc",
+        checks=(lambda p: _count_hepmc_events(p, 0),),
+        filter_src="def filter(event):\n    return None\n",
+    )
+
+
+def test_filter_selects_particles():
+    """A filter that masks the particle list must write fewer particles."""
+    run(
+        "-m",
+        "6",
+        "-S",
+        "100",
+        "-s",
+        "1",
+        "-n",
+        "3",
+        "-f",
+        "filt_mask.hepmc",
+        file="filt_mask.hepmc",
+        checks=(lambda p: _count_hepmc_events(p, 3),),
+        filter_src=(
+            "import numpy as np\n"
+            "from chromo.constants import long_lived\n"
+            "\n"
+            "def filter(event):\n"
+            "    apid = np.abs(event.pid)\n"
+            "    ma = np.zeros_like(apid, dtype=bool)\n"
+            "    for llpid in long_lived:\n"
+            "        ma |= apid == llpid\n"
+            "    return event[ma]\n"
+        ),
+    )
+
+
+def test_filter_file_missing():
+    run(
+        "-m",
+        "6",
+        "-S",
+        "100",
+        "--filter",
+        "does_not_exist.py",
+        returncode=1,
+        stderr="Error: filter file does_not_exist.py does not exist",
+    )
+
+
+def test_filter_function_missing():
+    run(
+        "-m",
+        "6",
+        "-S",
+        "100",
+        returncode=1,
+        stderr="must define a function filter(event)",
+        filter_src="x = 1\n",
+    )
+
+
+def test_filter_raises():
+    run(
+        "-m",
+        "6",
+        "-S",
+        "100",
+        "-n",
+        "2",
+        returncode=1,
+        stderr="Error in filter file filter.py",
+        filter_src="def filter(event):\n    raise ValueError('boom')\n",
     )
