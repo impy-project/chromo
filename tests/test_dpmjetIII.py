@@ -200,3 +200,50 @@ def get_model_projectile_combinations():
 @pytest.mark.parametrize("model,p1", get_model_projectile_combinations())
 def test_projectile_list(model, p1):
     run_in_separate_process(run_three_events, p1, model)
+
+
+def _baryon_number(pid):
+    """Baryon number of a stack record via the particle package.
+
+    Baryons get +-1 via the is_baryon/anti_flag chain, nuclei contribute
+    their mass number, everything else zero. Slow; tests only.
+    """
+    from particle import Particle
+    from particle.pdgid import PDGID
+
+    pid = int(pid)
+    pg = PDGID(pid)
+    if pg == 99999:  # DPMJET hadronization chain placeholder
+        return 0
+    if pg.is_nucleus:
+        return -pg.A if pid < 0 else pg.A
+    if pg.is_baryon:
+        barred = Particle.from_pdgid(pid).anti_flag.name == "Barred"
+        return -1 if (pid < 0 and barred) else 1
+    return 0
+
+
+def run_baryon_doublecount(model):
+    import numpy as np
+
+    from chromo.kinematics import FixedTarget
+    from chromo.util import pdg2AZ
+
+    kin = FixedTarget(1e5, "p", "O16")
+    a1 = pdg2AZ(kin.p1)[0]
+    a2 = pdg2AZ(kin.p2)[0]
+    generator = model(kin, seed=1)
+    for event in generator(2):
+        baryon = np.array([_baryon_number(pid) for pid in event.pid])
+        st = event.status
+        # final state alone stays below the incoming baryon number
+        assert baryon[st == 1].sum() < a1 + a2
+        # status 5 re-lists the beam nucleon-by-nucleon, so the remnant
+        # filter counts the incoming baryons a second time
+        assert baryon[st == 5].sum() >= a2
+        assert baryon[np.isin(st, (1, 4, 5))].sum() > a1 + a2
+
+
+@pytest.mark.parametrize("model", get_dpmjets(no307=False))
+def test_baryon_doublecount(model):
+    run_in_separate_process(run_baryon_doublecount, model)

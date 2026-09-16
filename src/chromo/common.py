@@ -343,11 +343,12 @@ class EventData:
         doc/nuclear_fragments.md, together with the per-model availability.
 
         Note: the remnant records are the bookkeeping of the intranuclear
-        cascade, not final state particles. The set includes re-listed
-        nucleons and over-counts the incoming nucleons, and the
-        de-excitation stage (evaporation, fission, gamma emission) is
-        missing or truncated in most generators, so A, Z, and kinematics
-        can differ from physical fragments.
+        cascade, not final state particles. The nucleon records re-list the
+        beam nuclei from status 4 nucleon-by-nucleon, so summing baryon
+        number or charge over the returned event double-counts the beam.
+        The de-excitation stage (evaporation, fission, gamma emission) is
+        also missing or truncated in most generators, so A, Z, and
+        kinematics can differ from physical fragments.
         """
         return self._select(np.isin(self.status, (1, 4, 5)), False)
 
