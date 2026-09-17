@@ -149,19 +149,15 @@ def _merge_cascade_results(results):
     return tuple(np.concatenate(parts[i]) for i in range(13))
 
 
-def _normalize_pythia8_remnants(event):
-    # Chromo-wide remnant convention (see doc/nuclear_fragments.md):
-    # status 4 marks nucleus records, nucleon-level remnants get status 5.
-    # Pythia status codes 11/13/15/16 are beam remnants, spectators, and
-    # excited beam nucleons (see Event.h in the Pythia8 source). Records
-    # that are neither a nucleon nor a nucleus (e.g. diffractive systems
-    # with PDG code 990 or excited beams 9902xxx) keep their Pythia code.
-    st = event.status
-    codes = np.isin(st, (11, 13, 15, 16))
-    nucleon = np.isin(np.abs(event.pid), (2112, 2212))
-    nucleus = np.abs(event.pid) > 1000000000
-    st[codes & nucleon] = 5
-    st[codes & nucleus] = 4
+def _fix_nucrem_pdg(event):
+    # Pythia8 Angantyr appends the residual nuclei ("NucRem", see
+    # HeavyIons.cc) with a PDG code that uses the isomer digit I=9 to
+    # mark them as remnants (10LZZZAA9). The records are final state and
+    # are already selected with status 1; only the PDG code is made
+    # standard (I=0) so that particle lookups and HepMC accept it.
+    pid = event.pid
+    is_nucrem = (np.abs(pid) > 1000000000) & (np.abs(pid) % 10 == 9)
+    pid[is_nucrem] -= 9 * np.sign(pid[is_nucrem])
 
 
 class PYTHIA8Event(EventData):
@@ -193,7 +189,8 @@ class PYTHIA8Event(EventData):
             np.maximum(event.daughters() - 1, -1),
             weight=pythia.info.weight(),
         )
-        _normalize_pythia8_remnants(self)
+        if pythia.info.hiInfo is not None:
+            _fix_nucrem_pdg(self)
 
     @staticmethod
     def _get_impact_parameter(pythia):
@@ -584,7 +581,8 @@ class PYTHIA8CascadeEvent(EventData):
             np.maximum(mothers - 1, -1),
             np.maximum(daughters - 1, -1),
         )
-        _normalize_pythia8_remnants(self)
+        # Pythia8Cascade exports final state only: there are no remnant
+        # records to normalize in this mode (see doc/nuclear_fragments.md).
 
 
 class Pythia8Cascade(MCRun):

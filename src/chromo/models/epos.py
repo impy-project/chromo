@@ -180,16 +180,6 @@ class EPOSEvent(MCEvent):
             self.mothers[(self.status != 4) & (self.mothers[:, 0] == 0)] = [0, -1]
 
         self.mothers[(self.status[:, np.newaxis] != 4) & (self.mothers > 0)] += shift
-        # Chromo-wide remnant convention (see doc/nuclear_fragments.md):
-        # status 4 marks nucleus records and the incoming beam, nucleons of
-        # the cascade remnants get status 5. These are the nucleon records
-        # attached to a nucleus record by _beam_mother_daughters_fix.
-        is_nucleus_record = (np.abs(self.pid) > 1000000000) & (self.status == 4)
-        mo = np.clip(self.mothers[:, 0], 0, None)
-        nucleon_remnants = (
-            (self.status == 4) & (np.abs(self.pid) < 1000000000) & is_nucleus_record[mo]
-        )
-        self.status[nucleon_remnants] = 5
 
 
 class EposLHC(MCRun):

@@ -74,8 +74,10 @@ class DpmjetIIIEvent(MCEvent):
         # Normalize the DPMJET cascade bookkeeping to the chromo-wide
         # remnant codes (see doc/nuclear_fragments.md): residual nucleus
         # records become status 4 with a nucleus PDG code (PDG 10LZZZAAAI
-        # vectorized), and all nucleon-level remnant records (wounded,
-        # spectator, and potential-bound nucleons) become status 5.
+        # vectorized). Only terminal nucleon records of the cascade
+        # (spectator/bound codes 13-16 without daughters) get status 5;
+        # wounded and re-scattered nucleons (9-12, 17/18) have daughters
+        # and are intermediate, they keep their native codes.
         n = len(self.status)
         idres = self._lib.dtevt2.idres[:n]
         idxres = self._lib.dtevt2.idxres[:n]
@@ -87,7 +89,9 @@ class DpmjetIIIEvent(MCEvent):
                 1000000000 + 10000 * idxres[is_residual] + 10 * idres[is_residual]
             )
             self.status[is_residual] = 4
-        self.status[np.isin(self.status, (9, 10, 11, 12, 13, 14, 15, 16, 17, 18))] = 5
+        terminal = self.daughters[:, 0] == -1
+        nucleon = np.isin(np.abs(self.pid), (2112, 2212))
+        self.status[np.isin(self.status, (13, 14, 15, 16)) & nucleon & terminal] = 5
 
     def _prepare_for_hepmc(self):
         model, version = self.generator

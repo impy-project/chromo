@@ -1,12 +1,14 @@
 """
 Extract nuclear beam records and nucleon-level remnants from a DPMJET h+A run.
 
-Nuclear fragments and beam remnants never pass ``event.final_state()``: that
-filter keeps only status 1 entries. ``event.final_state_with_nucl_frag()``
-additionally returns the nucleus records (chromo status 4, proper 10LZZZAAAI
-PDG codes) and the nucleon-level remnants of the intranuclear cascade
-(chromo status 5). This script shows the selection on p + Pb events, where
-the cascade bookkeeping is abundant. See doc/nuclear_fragments.md for the
+Nuclear remnants never pass ``event.final_state()``: that filter keeps only
+status 1 entries. ``event.final_state_with_nucl_frag()`` adds the terminal
+remnant records: nucleon remnants of the intranuclear cascade (chromo status
+5) and residual nuclei if the generator reports them (chromo status 4, PDG
+code 10LZZZAAAI). All returned records are physical; the incoming beam
+records stay excluded so that baryon number and charge cannot be
+double-counted. This script shows the selection on p + Pb events, where the
+cascade bookkeeping is abundant. See doc/nuclear_fragments.md for the
 generator-by-generator details and the caveats.
 
 Run with::
@@ -29,9 +31,12 @@ for event in run(1):
         print(f"  status {c:5d}: {n} entries")
     print()
 
-    # chromo normalizes every generator: the incoming beam particles are
-    # records 0 and 1 with status 4 (for a nuclear target this is the beam
-    # nucleus with a proper PDG code), nucleon-level remnants get status 5.
+    # In the raw stack, chromo marks the incoming beam with status 4 at
+    # records 0 and 1 and the terminal cascade nucleons with status 5; the
+    # wounded nucleons (statuses 9-12, 17-18 here) have daughters and are
+    # intermediate, so the remnant filter leaves them out, and so it leaves
+    # out the beam records themselves (the nucleons of the target are
+    # already counted once as status 5 records):
     with_frags = event.final_state_with_nucl_frag()
     nuclei = with_frags[with_frags.status == 4]
     remnants = with_frags[with_frags.status == 5]

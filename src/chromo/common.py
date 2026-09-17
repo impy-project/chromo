@@ -330,27 +330,42 @@ class EventData:
         """
         Return filtered event with final state particles and nuclear remnants.
 
-        The event is selected with ``status in (1, 4, 5)``, where chromo
-        normalizes the generator-specific particle stacks:
+        All returned records are physical, terminal records of the event;
+        the selection contains no incoming-beam or intermediate bookkeeping
+        records, so summing baryon number, charge, or energy over it cannot
+        double-count the initial state:
 
         * status 1: final state particles, same as :meth:`final_state`
-        * status 4: nucleus records, i.e. the incoming beam nuclei and
-          residual/fragment nuclei when the generator reports them
-        * status 5: nucleon-level remnants (spectator, wounded, and
-          potential-bound nucleons)
+        * status 4: residual/fragment nuclei reported by the generator
+          (terminal nucleus records with a PDG code 10LZZZAAAI)
+        * status 5: terminal nucleon remnants of the intranuclear cascade
+          (spectators and bound nucleons that left the cascade unhit)
 
-        The mapping of native generator codes is documented in
-        doc/nuclear_fragments.md, together with the per-model availability.
-
-        Note: the remnant records are the bookkeeping of the intranuclear
-        cascade, not final state particles. The nucleon records re-list the
-        beam nuclei from status 4 nucleon-by-nucleon, so summing baryon
-        number or charge over the returned event double-counts the beam.
-        The de-excitation stage (evaporation, fission, gamma emission) is
-        also missing or truncated in most generators, so A, Z, and
-        kinematics can differ from physical fragments.
+        Availability is generator-dependent and documented in
+        doc/nuclear_fragments.md: DPMJET provides status 5, EPOS-LHC and
+        Pythia8Angantyr write their nuclear fragments at status 1 (so the
+        selection equals :meth:`final_state`), and QGSJet/SIBYLL/UrQMD
+        provide no fragment records at all. Remnant kinematics can differ
+        from physical fragments where the generator's de-excitation stage
+        (evaporation, fission) is skipped or truncated.
         """
-        return self._select(np.isin(self.status, (1, 4, 5)), False)
+        st = self.status
+        mask = np.isin(st, (1, 4, 5))
+        # The incoming beam nucleus is a status 4 record at index 0/1; it
+        # is incoming, not a fragment, and it would double-count against
+        # the status 5 nucleons which re-list the same nucleons.
+        mask &= ~((st == 4) & (np.arange(len(st)) < 2))
+        # Status 4 only labels nucleus records; reject nucleon records
+        # mislabelled as 4 by a generator, and non-terminal records
+        # (a nucleus record with daughters is the incoming beam carrier).
+        nucleon_like = np.isin(np.abs(self.pid), (2112, 2212))
+        non_terminal = (
+            np.zeros(len(st), dtype=bool)
+            if self.daughters is None
+            else self.daughters[:, 0] != -1
+        )
+        mask &= ~((st == 4) & (nucleon_like | non_terminal))
+        return self._select(mask, False)
 
     def without_parton_shower(self):
         """

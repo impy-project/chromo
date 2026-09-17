@@ -7,44 +7,53 @@ and are selected with `event.final_state_with_nucl_frag()`:
 
 ```python
 event.final_state()                 # status == 1
-event.final_state_with_nucl_frag()  # status in (1, 4, 5)
+event.final_state_with_nucl_frag()  # physical final state + remnants
 ```
 
-The return value is an `EventData` with the usual arrays (`pid`, `status`,
-`charge`, kinematics, ...). Nucleus records carry the standard PDG code
-`10LZZZAAAI`. The default `final_state()`, `final_state_charged()`, and the
-HepMC3 export keep their existing behavior.
+The returned event contains physical, terminal records only, and the
+incoming beam records (always raw indices 0 and 1 with status 4) are
+excluded. This means summing baryon number, charge, or energy over the
+selection cannot double-count the initial state. The selection is a superset
+of `final_state()`, and the default filters and the HepMC3 export keep their
+existing behavior.
 
 ## Status assignment
 
-chromo normalizes the generator stacks to three codes:
+chromo normalizes the generator stacks as follows:
 
-* **1** — final state particles, as returned by `final_state()`.
-* **4** — nucleus records: the incoming beam particles (always records 0 and
-  1, nuclear beams and targets get their `10LZZZAAAI` PDG code), plus
-  residual nuclei if the generator writes them to the stack.
-* **5** — nucleon remnants of the cascade: spectator, wounded, and
-  potential-bound nucleons, as protons and neutrons.
+* **1** — final state particles, as returned by `final_state()`. Some
+  generators already write their nuclear fragments here (see table).
+* **4** — residual/fragment nucleus records reported by the generator, with
+  the standard PDG code `10LZZZAAAI`. Nucleon records and records with
+  daughters are filtered out of the remnant selection.
+* **5** — terminal nucleon remnants of the cascade: spectator and
+  potential-bound nucleons that left the cascade unhit, at Fermi momentum.
+  Never any record with daughters.
 
-Since remnants and beam records have status != 1, `final_state()` contains
-only hadrons (issue #183).
+The mapping from native codes per generator, and what it implies for the
+remnant selection:
 
-The mapping from native codes per generator:
+| generator | native codes → chromo status | remnant content |
+| --- | --- | --- |
+| DpmjetIII 1.9.3 / 3.0.7 | terminal nucleons of 13/14/15/16 → 5; wounded 9–12/17/18 keep native code; residual nuclei (PDG 80000 with `IDRES`/`IDXRES`) → 4 + PDG code | status 5 nucleons; no residual nuclei (evaporation disabled, see below) |
+| EposLHC / EposLHCR | nothing relabelled — nuclear fragments are already written at status 1 | status 1 fragments; selection = `final_state()` |
+| Pythia8Angantyr | residual nuclei ("NucRem") are appended at status 1 with the isomer digit I=9; chromo rewrites them to a standard PDG code (I=0) | status 1 nuclei; selection = `final_state()` |
+| Pythia8Cascade | final state only (`listFinalOnly`) | none |
+| QGSJet (all), SIBYLL (all), UrQMD | beam records status 4 only; spectator production exists in the model (`qgfrgm`, `sibnuc`), the HEPEVT interface omits those records | none; selection = `final_state()` |
 
-| generator | native codes → chromo status |
-| --- | --- |
-| DPMJET-III 1.9.3 / 3.0.7 | wounded 9/10/11/12/17/18, spectators 13/14, potential-bound 15/16 (`DT_COORDI`, `DT_RESNCL`, `DT_SCN4BA`) → 5; residual nuclei (PDG 80000, A/Z in `IDRES`/`IDXRES`) → 4 + PDG code |
-| EPOS-LHC / EPOS-LHC(R) | cascade nucleons attached to the beam nucleus records → 5 |
-| Pythia8Angantyr | spectators/excited beams 13/15/16 (11 for beam remnants) with nucleon PDG → 5; partonic remnants (21–73) and the diffractive Pomeron (990) keep their Pythia code |
-| Pythia8Cascade | final state only, no remnant records |
-| QGSJet (all), SIBYLL (all), UrQMD | beam records status 4 only; spectator production exists in the model (`qgfrgm`, `sibnuc`), the HEPEVT interface omits those records |
-
-This matches what the interfaces expose: CORSIKA's DPMJET interface counts
-the same nucleon records as projectile/target spectators, and CORSIKA's
-SIBYLL interface keeps that generator's spectators in its own `/S_PLNUC/`
-bookkeeping. A yield like $\sigma(p + C \to \mathrm{Be} + X)$ (issue #218)
-therefore requires coalescence over the status 5 nucleons, since none of the
-currently built generators writes a Be record.
+Conservation has been checked event-by-event over
+`final_state_with_nucl_frag()` for all built models (see
+`tests/test_common.py::test_final_state_with_frags` and
+`tests/test_dpmjetIII.py::test_baryon_conservation`). EPOS-LHC, UrQMD, and
+Pythia8Angantyr close exactly for baryon number and charge. DPMJET closes up
+to the wounded nucleons absorbed into the residual nucleus: its de-excitation
+stage is switched off in the chromo build (the banner prints "No evaporation
+performed since evaporation modules not available"), so those nucleons are
+not reported by any record; the DPMJET manual itself defines the event final
+state as its status 1 only. The wounded nucleon records (native codes
+9–12/17/18) are kept with their native status so they can be found in the
+raw stack; they are intermediate records — they have daughters — and are
+deliberately excluded from the remnant selection.
 
 The records with PDG ID 99999 in DPMJET events (issue #218) are the
 hadronization chains of the dual parton model after fragmentation:
@@ -54,24 +63,20 @@ their status codes (`jstrg = 100 * IPROCE + NCODE` in `DT_GETPJE`, e.g. 103,
 bookkeeping; `final_state_with_nucl_frag()` discards them, the HepMC3 export
 keeps them so the string history is complete.
 
-## Caveats on the remnant records
+## Caveats
 
-The status 5 records are the nucleon bookkeeping of the cascade, not final
-state particles (DPMJET's manual defines the event final state as its
-status 1 only, and chromo keeps that distinction). Most of them are passive
-spectators: the cascade decomposes the whole target nucleus into single
-nucleon records, only a dozen of which actually interact. The records are
-kinematically bound (momenta of order the Fermi momentum), they include
-nucleons which DPMJET marks as unable to escape the nuclear potential, and
-re-scattered nucleons are listed as additional records — so the status 5 set
-by construction over-counts the incoming nucleons (up to ~10 % in tests)
-and does not balance baryon number or charge. Use it to see which nucleons
-the cascade used, not for conservation sums or kinematic closure.
-Furthermore the de-excitation stage (evaporation, fission, gamma emission)
-is missing or truncated in most generators (the DPMJET steering card in
-chromo prints "No evaporation performed since evaporation modules not
-available"), so A, Z, and kinematics of the remnants can differ from
-physical fragments.
+Status 5 kinematics are those of the cascade: nucleons are at rest in the
+residual-nucleus frame up to Fermi motion and are not boosted, so
+four-momentum closure over the remnant selection requires transforming the
+remnants to the event frame. Where the generator's de-excitation stage is
+skipped or truncated, A, Z, and kinematics of the remnants can differ from
+physical fragments: DPMJET keeps the beam nucleus records nominal (A = 208
+for Pb) while its nucleons are listed at status 5, and the fragment
+distributions that evaporation or fission would produce are absent. For a
+fragment yield like $\sigma(p + C \to \mathrm{Be} + X)$ (issue #218),
+none of the currently built generators writes a Be record; it must be
+reconstructed by coalescence over the status 5 nucleons (or the status 1
+fragments of EPOS/Angantyr/UrQMD).
 
 ## Runnable example
 
@@ -86,17 +91,20 @@ status codes in the raw event stack:
   status     1: 14 entries
   status     2: 21 entries
   status     4: 2 entries
-  status     5: 223 entries
+  status     5: 206 entries
+  status     9: 1 entries
+  status    10: 1 entries
+  status    12: 1 entries
+  status    18: 14 entries
   status   104: 1 entries
   status   106: 1 entries
 
 final_state(): 14 hadrons
-final_state_with_nucl_frag(): 239 records = 14 hadrons + 2 nucleus records + 223 remnant nucleons
+final_state_with_nucl_frag(): 220 records = 14 hadrons + 0 nucleus records + 206 remnant nucleons
 nucleus records (status 4):
-  pdgid=2212  (beam nucleon)
-  pdgid=1000822080  A=208  Z=82
-remnant nucleons (status 5): Counter({2112: 135, 2212: 88})
+remnant nucleons (status 5): Counter({2112: 123, 2212: 83})
 ```
 
-The beam Pb keeps its nominal A = 208 while 223 nucleons are recorded as
-status 5, a consequence of the caveats above.
+The wounded records with native codes and the status 4 beam records are
+visible in the raw stack and absent from the remnant selection, which is the
+point: the 123 n + 83 p are the physical breakup products of the target.

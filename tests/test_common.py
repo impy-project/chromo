@@ -187,9 +187,15 @@ def test_EventData_select(evt):
 
 
 def test_final_state_with_nucl_frag():
-    # beam p, beam O16, decay pi0, spectator n, residual C12, raw-code n, pi0
-    n = 7
+    # beam p and O16 (status 4, excluded), pi0, status-4 nucleon
+    # (mislabelled, excluded), terminal C12 residual (status 4), a second
+    # C12 that has daughters (excluded), raw-code spectator, terminal
+    # spectator proton (status 5), photon
+    n = 9
     e = np.ones(n)
+    daughters = np.full((n, 2), -1)
+    daughters[5] = [7, -1]
+    mothers = np.full((n, 2), -1)
     evt = EventData(
         ("gen", "v"),
         CenterOfMass(10, "p", "p"),
@@ -197,9 +203,9 @@ def test_final_state_with_nucl_frag():
         np.nan,
         (0, 0),
         1.0,
-        np.array([2212, 1000080160, 211, 2112, 1000060120, 2112, 22]),
-        np.array([4, 4, 1, 5, 4, 13, 2]),
-        np.array([1, 8, 0, 0, 4, 0, 0]),
+        np.array([2212, 1000080160, 211, 2212, 1000060120, 1000060120, 2112, 2112, 22]),
+        np.array([4, 4, 1, 4, 4, 4, 13, 5, 2]),
+        np.array([1, 8, 0, 1, 6, 6, 0, 1, 0]),
         e,
         e,
         e,
@@ -209,22 +215,59 @@ def test_final_state_with_nucl_frag():
         e,
         e,
         e,
-        e,
-        np.array([[1, 2], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [1, -1]]),
-        np.array([[-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [6, -1]]),
+        mothers,
+        daughters,
     )
 
     fs = evt.final_state()
     assert_equal(fs.pid, [211])
 
     nfrag = evt.final_state_with_nucl_frag()
-    assert_equal(nfrag.pid, [2212, 1000080160, 211, 2112, 1000060120])
+    assert_equal(nfrag.pid, [211, 1000060120, 2112])
     assert set(nfrag.status) == {1, 4, 5}
 
     # raw model codes must not leak into the final state, with or without
     # the new filter: status 13 and 2 are not part of either selection
     assert not np.any(nfrag.status == 13)
     assert not np.any(fs.status == 2)
+
+
+def run_final_state_with_frags(Model, evt_kin):
+    """Checks that final_state_with_nucl_frag only contains terminal,
+    physical records and cannot double-count the incoming state."""
+    import numpy as np
+
+    from .util import baryon_number, charge_number
+
+    generator = Model(evt_kin, seed=1)
+    a1, z1 = generator.kinematics.p1.A, generator.kinematics.p1.Z
+    a2, z2 = generator.kinematics.p2.A, generator.kinematics.p2.Z
+    for event in generator(2):
+        frags = event.final_state_with_nucl_frag()
+        assert set(frags.status) <= {1, 4, 5}
+        assert len(frags) >= len(event.final_state())
+        if event.daughters is not None:
+            assert not np.any((event.status == 5) & (event.daughters[:, 0] != -1))
+        b = sum(baryon_number(pid) for pid in frags.pid)
+        q = sum(charge_number(pid) for pid in frags.pid)
+        assert b <= a1 + a2
+        assert q <= z1 + z2
+
+
+@pytest.mark.parametrize("Model", get_all_models())
+def test_final_state_with_frags(Model):
+    if Model.name == "SOPHIA":
+        pytest.skip("photoproduction, no nuclear baryon number bookkeeping")
+    evt_kin = CenterOfMass(100, "proton", "proton")
+    if Model.name in ["DPMJET-III", "EPOS"]:
+        evt_kin = CenterOfMass(100, "N", "O")
+    elif Model.name == "SIBYLL":
+        evt_kin = CenterOfMass(100, "p", "O")
+    elif Model is im.Pythia8Angantyr:
+        evt_kin = CenterOfMass(100, "p", "N14")
+    elif Model is im.Pythia8Cascade:
+        evt_kin = CenterOfMass(100, "p", "O")
+    run_in_separate_process(run_final_state_with_frags, Model, evt_kin)
 
 
 def run_model(Model, evt_kin, n_events=10):

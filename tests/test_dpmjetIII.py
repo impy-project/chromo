@@ -8,6 +8,7 @@ import chromo
 from chromo.constants import GeV
 from chromo.util import get_all_models, naneq
 
+from .util import baryon_number as _baryon_number
 from .util import run_in_separate_process
 
 pytestmark = pytest.mark.skipif(
@@ -202,28 +203,7 @@ def test_projectile_list(model, p1):
     run_in_separate_process(run_three_events, p1, model)
 
 
-def _baryon_number(pid):
-    """Baryon number of a stack record via the particle package.
-
-    Baryons get +-1 via the is_baryon/anti_flag chain, nuclei contribute
-    their mass number, everything else zero. Slow; tests only.
-    """
-    from particle import Particle
-    from particle.pdgid import PDGID
-
-    pid = int(pid)
-    pg = PDGID(pid)
-    if pg == 99999:  # DPMJET hadronization chain placeholder
-        return 0
-    if pg.is_nucleus:
-        return -pg.A if pid < 0 else pg.A
-    if pg.is_baryon:
-        barred = Particle.from_pdgid(pid).anti_flag.name == "Barred"
-        return -1 if (pid < 0 and barred) else 1
-    return 0
-
-
-def run_baryon_doublecount(model):
+def run_baryon_conservation(model):
     import numpy as np
 
     from chromo.kinematics import FixedTarget
@@ -234,16 +214,20 @@ def run_baryon_doublecount(model):
     a2 = pdg2AZ(kin.p2)[0]
     generator = model(kin, seed=1)
     for event in generator(2):
-        baryon = np.array([_baryon_number(pid) for pid in event.pid])
         st = event.status
-        # final state alone stays below the incoming baryon number
-        assert baryon[st == 1].sum() < a1 + a2
-        # status 5 re-lists the beam nucleon-by-nucleon, so the remnant
-        # filter counts the incoming baryons a second time
-        assert baryon[st == 5].sum() >= a2
-        assert baryon[np.isin(st, (1, 4, 5))].sum() > a1 + a2
+        # status 5 holds only terminal records (no daughters)
+        daughters = np.array(event.daughters)
+        assert not np.any((st == 5) & (daughters[:, 0] != -1))
+        # the remnant selection is physical: it never counts the beam in
+        # twice and stays at or below the incoming baryon number
+        nfrag = event.final_state_with_nucl_frag()
+        b_frag = sum(_baryon_number(pid) for pid in nfrag.pid)
+        assert b_frag <= a1 + a2
+        # closure holds up to the wounded nucleons absorbed into the
+        # residual nucleus, which evaporation would report if enabled
+        assert b_frag >= a1 + a2 - 4
 
 
 @pytest.mark.parametrize("model", get_dpmjets(no307=False))
-def test_baryon_doublecount(model):
-    run_in_separate_process(run_baryon_doublecount, model)
+def test_baryon_conservation(model):
+    run_in_separate_process(run_baryon_conservation, model)
