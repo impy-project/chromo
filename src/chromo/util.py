@@ -957,6 +957,44 @@ def get_all_models(only_names=False):
     return active_class_names if only_names else active_classes
 
 
+def find_models(projectile, target, only_names=False):
+    """
+    Find models that support a given projectile and target combination.
+
+    This is a class-level check: it inspects the ``projectiles`` and
+    ``targets`` attributes of all available models and does not
+    instantiate them.
+
+    Args:
+        projectile: The projectile specification. Can be an integer PDG
+            ID, a particle name, a PDGID, or an (A, Z) tuple
+            (see :func:`process_particle`).
+        target: The target specification, same formats as ``projectile``,
+            plus :class:`CompositeTarget`.
+        only_names: If True, return a list of class names instead of
+            the classes themselves.
+
+    Returns:
+        list: Classes (or names) of the models that accept the given
+        projectile-target combination.
+    """
+
+    p1 = abs(process_particle(projectile))
+    p2 = process_particle(target)
+    p2_components = p2.components if isinstance(p2, CompositeTarget) else [p2]
+    p2_components = [abs(c) for c in p2_components]
+    active_classes = []
+    for cls in get_all_models():
+        if p1 not in cls.projectiles:
+            continue
+        if not all(c in cls.targets for c in p2_components):
+            continue
+        if not all(cls._pair_allowed(p1, c) for c in p2_components):
+            continue
+        active_classes.append(cls)
+    return [cls.__name__ for cls in active_classes] if only_names else active_classes
+
+
 def naneq(a, b, rtol=None):
     """
     Return True if a == b or if a and b are both NaN.

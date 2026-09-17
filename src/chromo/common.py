@@ -756,6 +756,17 @@ class MCRun(ABC):
         """Supported targets (positive PDGIDs only, c.c. implied)."""
         return cls._targets
 
+    @classmethod
+    def _pair_allowed(cls, p1: int, p2: int) -> bool:
+        """Check a specific projectile-target pair beyond the set membership.
+
+        Used by :func:`chromo.util.find_models` to filter out combinations
+        that a model rejects although both species are individually listed
+        in its projectiles and targets. Model implementations may override
+        this. Both arguments are positive PDGIDs.
+        """
+        return True
+
     @abstractmethod
     def _generate(self):
         """The method to generate a new event.
