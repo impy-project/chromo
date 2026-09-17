@@ -10,6 +10,7 @@ from math import sqrt
 from pathlib import Path
 
 from particle import Particle
+from rich.filesize import decimal
 from rich.progress import (
     BarColumn,
     MofNCompleteColumn,
@@ -38,6 +39,36 @@ class SpeedColumn(ProgressColumn):
         if speed is None:
             return Text("?", style="progress.data.speed")
         return Text(f"{speed:.0f}/s", style="progress.data.speed")
+
+
+def estimate_final_size(nbytes, n_done, n_total):
+    """Estimate the final file size from bytes written so far.
+
+    Scales the current file size by n_total / n_done. Returns None
+    if the estimate is not well-defined yet (no events written).
+    """
+    if n_done <= 0 or n_total <= 0:
+        return None
+    return nbytes * n_total / n_done
+
+
+class SizeColumn(ProgressColumn):
+    """Renders an estimate of the final output file size."""
+
+    def __init__(self, path):
+        self._path = Path(path)
+        super().__init__()
+
+    def render(self, task: "Task") -> Text:
+        """Show final file size estimate extrapolated from current size."""
+        try:
+            nbytes = self._path.stat().st_size
+        except OSError:
+            return Text("?", style="dim")
+        estimated = estimate_final_size(nbytes, task.completed, task.total)
+        if estimated is None:
+            return Text("?", style="dim")
+        return Text(f"~{decimal(estimated)}", style="dim")
 
 
 # Only add numbers here for backward-compatibility with CRMC.
@@ -416,6 +447,7 @@ def main():
                 "ETA",
                 TimeRemainingColumn(elapsed_when_finished=True),
                 SpeedColumn(),
+                SizeColumn(args.out),
             ) as bar:
                 for event in model(args.number):
                     ofile.write(event)
