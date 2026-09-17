@@ -8,6 +8,7 @@ import chromo
 from chromo.constants import GeV
 from chromo.util import get_all_models, naneq
 
+from .util import baryon_number as _baryon_number
 from .util import run_in_separate_process
 
 pytestmark = pytest.mark.skipif(
@@ -200,3 +201,33 @@ def get_model_projectile_combinations():
 @pytest.mark.parametrize("model,p1", get_model_projectile_combinations())
 def test_projectile_list(model, p1):
     run_in_separate_process(run_three_events, p1, model)
+
+
+def run_baryon_conservation(model):
+    import numpy as np
+
+    from chromo.kinematics import FixedTarget
+    from chromo.util import pdg2AZ
+
+    kin = FixedTarget(1e5, "p", "O16")
+    a1 = pdg2AZ(kin.p1)[0]
+    a2 = pdg2AZ(kin.p2)[0]
+    generator = model(kin, seed=1)
+    for event in generator(2):
+        st = event.status
+        # status 5 holds only terminal records (no daughters)
+        daughters = np.array(event.daughters)
+        assert not np.any((st == 5) & (daughters[:, 0] != -1))
+        # the remnant selection is physical: it never counts the beam in
+        # twice and stays at or below the incoming baryon number
+        nfrag = event.final_state_with_nucl_frag()
+        b_frag = sum(_baryon_number(pid) for pid in nfrag.pid)
+        assert b_frag <= a1 + a2
+        # closure holds up to the wounded nucleons absorbed into the
+        # residual nucleus, which evaporation would report if enabled
+        assert b_frag >= a1 + a2 - 4
+
+
+@pytest.mark.parametrize("model", get_dpmjets(no307=False))
+def test_baryon_conservation(model):
+    run_in_separate_process(run_baryon_conservation, model)

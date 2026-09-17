@@ -1,5 +1,6 @@
 import warnings
 
+import numpy as np
 from particle import Particle
 
 from chromo.common import CrossSectionData, MCEvent, MCRun
@@ -70,6 +71,27 @@ class DpmjetIIIEvent(MCEvent):
         for field in ["pid", "status", "charge", "px", "py", "pz", "en", "m"]:
             event_field = getattr(self, field)
             event_field[0:2] = beam[field]
+        # Normalize the DPMJET cascade bookkeeping to the chromo-wide
+        # remnant codes (see doc/nuclear_fragments.md): residual nucleus
+        # records become status 4 with a nucleus PDG code (PDG 10LZZZAAAI
+        # vectorized). Only terminal nucleon records of the cascade
+        # (spectator/bound codes 13-16 without daughters) get status 5;
+        # wounded and re-scattered nucleons (9-12, 17/18) have daughters
+        # and are intermediate, they keep their native codes.
+        n = len(self.status)
+        idres = self._lib.dtevt2.idres[:n]
+        idxres = self._lib.dtevt2.idxres[:n]
+        is_residual = np.isin(self.status, (1001, 3003)) | (
+            (self.pid == 80000) & (np.abs(self.status) == 3) & (idres > 0)
+        )
+        if np.any(is_residual):
+            self.pid[is_residual] = (
+                1000000000 + 10000 * idxres[is_residual] + 10 * idres[is_residual]
+            )
+            self.status[is_residual] = 4
+        terminal = self.daughters[:, 0] == -1
+        nucleon = np.isin(np.abs(self.pid), (2112, 2212))
+        self.status[np.isin(self.status, (13, 14, 15, 16)) & nucleon & terminal] = 5
 
     def _prepare_for_hepmc(self):
         model, version = self.generator

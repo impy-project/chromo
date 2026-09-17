@@ -81,3 +81,40 @@ sys.stdout.flush()
     )
     assert proc.returncode == 0, proc.stderr.decode(errors="replace")[-2000:]
     return proc.stdout.decode(errors="replace")
+
+
+def baryon_number(pid):
+    """Baryon number of a stack record via the particle package.
+
+    Baryons get +-1 via the is_baryon/anti_flag chain, nuclei contribute
+    their mass number, everything else zero. Slow; tests only.
+    """
+    from particle import Particle
+    from particle.pdgid import PDGID
+
+    pid = int(pid)
+    pg = PDGID(pid)
+    if pg == 99999:  # DPMJET hadronization chain placeholder
+        return 0
+    if pg.is_nucleus:
+        return -pg.A if pid < 0 else pg.A
+    if pg.is_baryon:
+        barred = Particle.from_pdgid(pid).anti_flag.name == "Barred"
+        return -1 if (pid < 0 and barred) else 1
+    return 0
+
+
+def charge_number(pdgid):
+    """Charge of a stack record in units of e, nuclei handled via pdg2AZ."""
+    from particle import Particle
+
+    from chromo.util import pdg2AZ
+
+    pdgid = int(pdgid)
+    a, z = pdg2AZ(abs(pdgid))
+    if a == 0:
+        try:
+            return int(Particle.from_pdgid(pdgid).charge)
+        except Exception:
+            return 0
+    return -z if pdgid < 0 else z
