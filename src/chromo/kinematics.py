@@ -125,17 +125,17 @@ class EventKinematicsBase:
         return all(eq(a, b) for (a, b) in zip(at, bt))
 
     def __hash__(self):
-        li = []
-        for k in dataclasses.astuple(self):
-            if (
-                isinstance(k, tuple)
-                and isinstance(k[0], np.ndarray)
-                and isinstance(k[1], np.ndarray)
-            ):
-                li.append((tuple(k[0]), tuple(k[1])))
-            else:
-                li.append(k)
-        return hash(tuple(li))
+        def conv(x):
+            # dataclasses.astuple turns nested dataclasses such as
+            # CompositeTarget into tuples that contain numpy arrays, which
+            # are unhashable; convert all arrays to tuples of their items
+            if isinstance(x, tuple):
+                return tuple(conv(i) for i in x)
+            if isinstance(x, np.ndarray):
+                return tuple(x.flat)
+            return x
+
+        return hash(conv(dataclasses.astuple(self)))
 
     def copy(self):
         return EventKinematicsBase(

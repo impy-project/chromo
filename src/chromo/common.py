@@ -687,10 +687,7 @@ class MCRun(ABC):
         except ModuleNotFoundError:
             self._lib = importlib.import_module(f"{self._library_name}")
 
-        self._rng = np.random.default_rng(seed)
-        if hasattr(self._lib, "npy"):
-            self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
-            self._lib.npy.gen_id = self._get_bitgen_id(self._rng.bit_generator)
+        self._set_seed(seed)
 
     def __call__(self, nevents):
         """Generator function (in python sence)
@@ -725,6 +722,79 @@ class MCRun(ABC):
         # This is using private interface to get the seed. This may be brittle.
         # I did not find a way to get the seed using the public API.
         return self._rng._bit_generator._seed_seq.entropy
+
+    def _set_seed(self, seed):
+        """Reset the NumPy random number generator that drives the model."""
+        self._rng = np.random.default_rng(seed)
+        if hasattr(self._lib, "npy"):
+            self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
+            self._lib.npy.gen_id = self._get_bitgen_id(self._rng.bit_generator)
+
+    def generate_batch(self, states, *, seed=None):
+        """
+        Generate one event for each initial state in a batch (issue #188).
+
+        This is the minimal API for the air-shower-like use case where the
+        initial state changes for every event instead of running many events
+        with a fixed initial state. Instead of building a model instance or
+        switching the initial state once per event, equal states in *states*
+        are grouped into consecutive runs and the initial state is only
+        switched once per run ("sorted input stack", as suggested by the
+        maintainers in issue #188). Models where switching the initial state
+        is expensive benefit the most.
+
+        Parameters
+        ----------
+        states : sequence of EventKinematicsBase
+            Initial states, one event per state. Duplicate or equal states
+            do not have to be adjacent, they are grouped internally.
+            A state given as (pid, px, py, pz) pairs can be constructed with
+            ``EventKinematicsWithRestframe(pid1, pid2, beam=(pz1, pz2))``.
+        seed : int, optional
+            If given, reset the random number generator before generating.
+
+        Returns
+        -------
+        list of EventData
+            One event per input state, in the same order as *states*. For
+            states with a CompositeTarget, ``event.kin`` reports the sampled
+            target component, as in :meth:`__call__`.
+
+        Notes
+        -----
+        Works for every model for which switching ``generator.kinematics``
+        after construction works today. This includes Pythia8 (hN/gammaN,
+        no nuclear targets), DPMJET-III and PHOJET (all energies must be
+        below the initialization energy, see the class docstrings), and
+        UrQMD. Models that cannot change their initial state after
+        construction raise the same error as assigning to
+        ``generator.kinematics``. Event rejection and the handling of
+        composite targets follow :meth:`__call__`.
+        """
+        states = list(states)
+        if seed is not None:
+            self._set_seed(seed)
+        events = [None] * len(states)
+
+        # Group equal states so that they run consecutively ("sorted input
+        # stack"), in first-appearance order. A dict keyed by the states
+        # themselves is deterministic across processes, unlike sorting by
+        # hash. Dict equality lookups first compare hashes and then values,
+        # so hash collisions cannot merge different states.
+        groups: dict = {}
+        for i, kin in enumerate(states):
+            groups.setdefault(kin, []).append(i)
+
+        for kin, idx in groups.items():
+            # single switch of the initial state for the whole run
+            self.kinematics = kin
+            it = self(len(idx))
+            for j in idx:
+                events[j] = next(it).copy()
+            # drain the generator so that cleanup in __call__ runs, e.g.
+            # restoring composite-target kinematics after sampling
+            next(it, None)
+        return events
 
     @classproperty
     def name(cls):
