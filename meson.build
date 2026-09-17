@@ -83,7 +83,8 @@ sibyll_syms_base  = [
 qgs_syms_base     = ['cqgsini','qgsect','qgini','qgconf','qgreg','chepevt','qgcrossc','cqgshh_ha_cs']
 urqmd_syms        = [
   'urqmd','init','uinit','set0','params','uounit','strini','loginit','loadwtab',
-  'norm_init','output','cascinit','nucrad','urqini','partname','chepevt','ptsigtot']
+  'norm_init','output','cascinit','nucrad','urqini','partname','chepevt','ptsigtot',
+  'upyth']
 pythia6_syms      = [
   'pyinit','pyexec','pytune','pylist','pyevnt','pyevnw','pystat','pyedit',
   'pyhepc','pychge','pycomp','pyk']

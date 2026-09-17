@@ -54,6 +54,55 @@ def run_rng_state(Model):
     assert state_1a == state_1
 
 
+def _event_physics_arrays(event):
+    return [
+        getattr(event, name)
+        for name in (
+            "pid",
+            "status",
+            "charge",
+            "px",
+            "py",
+            "pz",
+            "en",
+            "m",
+            "vx",
+            "vy",
+            "vz",
+            "vt",
+        )
+    ]
+
+
+def run_rng_state_events_reproducible(Model):
+    """After restoring the initial RNG state, the very same events must be
+    produced, not just matching RNG states. For UrQMD34 this also checks
+    that the one-time initialization of its embedded Pythia6 is fully
+    absorbed by the deterministic warm-up in the constructor (issue #64).
+    """
+    assert Model is im.UrQMD34
+    evt_kin = CenterOfMass(50 * GeV, "proton", "proton")
+    generator = Model(evt_kin, seed=1)
+
+    nevents = 10
+    state_0 = deepcopy(generator.random_state)
+    # deepcopy because events are views into the Fortran event record
+    # for some models, and the record is overwritten by the next event
+    events = [deepcopy(event) for event in generator(nevents)]
+
+    generator.random_state = state_0
+    for i, event in enumerate(generator(nevents)):
+        assert np.isclose(
+            event.impact_parameter, events[i].impact_parameter
+        ), f"impact parameter differs at {i}"
+        for a, b in zip(_event_physics_arrays(event), _event_physics_arrays(events[i])):
+            assert np.array_equal(a, b), f"events differ at {i}"
+
+
+def test_rng_state_events_reproducible():
+    run_in_separate_process(run_rng_state_events_reproducible, im.UrQMD34)
+
+
 def run_rng_state_with_bitgen(Model, bitgen_class, seed):
     """Test RNG state save/restore with specific bit generator."""
     if Model is im.Sophia20:
@@ -85,19 +134,6 @@ def run_rng_state_with_bitgen(Model, bitgen_class, seed):
 
 @pytest.mark.parametrize("Model", get_all_models())
 def test_rng_state(Model):
-    if Model == im.UrQMD34:
-        #       UrQMD has internal state that affects event
-        #       generation but is not captured by RNG state
-        #       There are several places where it can occur:
-        #        - Commong blocks: I tried to save and restore all commong blocks
-        #        with help of Copilot. It doesn't work, meaning that answer buried deep
-        #       - Save statements: they are not reset and might influence rng
-        #       - Pythia internal rng: it might be but, it seems pythia uses correct rng
-        #       Noticed: there are kind of "warm-up" that calculates some variables
-        #       that at later stages is not called. There are many different rng in the code
-        #       it might be that connecting all of them to one rng merge different rng branches
-        #       that must be independent: event and variable sequencies
-        pytest.xfail(f"{Model.pyname} fails this test, needs investigation")
     if Model in (im.EposLHCR, im.EposLHCRHadrRescattering):
         pytest.skip(
             f"{Model.pyname} maintains UrQMD internal state that affects event "
@@ -120,8 +156,6 @@ def test_rng_state(Model):
 )
 def test_rng_state_bitgens(Model, bitgen_class, seed):
     """Test different NumPy bit generators with all models."""
-    if Model == im.UrQMD34:
-        pytest.xfail(f"{Model.pyname} fails this test, needs investigation")
     if Model in (im.EposLHCR, im.EposLHCRHadrRescattering):
         pytest.skip(
             f"{Model.pyname} maintains UrQMD internal state that affects event "
