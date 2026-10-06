@@ -232,7 +232,7 @@ def test_final_state_with_nucl_frag():
     assert not np.any(fs.status == 2)
 
 
-def run_final_state_with_frags(Model, evt_kin, check_charge):
+def run_final_state_with_frags(Model, evt_kin):
     import numpy as np
 
     from .util import baryon_number, charge_number
@@ -248,12 +248,18 @@ def run_final_state_with_frags(Model, evt_kin, check_charge):
         if event.daughters is not None:
             assert not np.any((event.status == 5) & (event.daughters[:, 0] != -1))
         assert sum(baryon_number(pid) for pid in frags.pid) <= a_max
-        if check_charge:
-            assert sum(charge_number(pid) for pid in frags.pid) <= z_max
+        assert sum(charge_number(pid) for pid in frags.pid) <= z_max
 
 
 @pytest.mark.parametrize("Model", get_all_models())
-def test_final_state_with_frags(Model):
+def test_final_state_with_frags(Model, request):
+    if Model in (im.QGSJetII03, im.QGSJetII04):
+        request.applymarker(
+            pytest.mark.xfail(
+                reason="QGSJet-II does not conserve charge event-by-event",
+                strict=False,
+            )
+        )
     evt_kin = CenterOfMass(100, "proton", "proton")
     if Model is im.Sophia20:
         evt_kin = CenterOfMass(100, "photon", "proton")
@@ -265,9 +271,7 @@ def test_final_state_with_frags(Model):
         evt_kin = CenterOfMass(100, "p", "N14")
     elif Model is im.Pythia8Cascade:
         evt_kin = CenterOfMass(100, "p", "O")
-    # QGSJet-II does not conserve charge event-by-event
-    check_charge = not Model.pyname.startswith("QGSJetII")
-    run_in_separate_process(run_final_state_with_frags, Model, evt_kin, check_charge)
+    run_in_separate_process(run_final_state_with_frags, Model, evt_kin)
 
 
 def run_model(Model, evt_kin, n_events=10):
