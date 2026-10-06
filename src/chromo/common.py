@@ -23,6 +23,7 @@ from particle import Particle
 from chromo.constants import (
     GeV,
     long_lived,
+    nucleon_mass,
     quarks_and_diquarks_and_gluons,
     standard_projectiles,
 )
@@ -668,6 +669,55 @@ class MCEvent(EventData, ABC):
             else:
                 res = np.concatenate((beam_field, event_field))
             setattr(self, field, res)
+
+    def _append_projectile_fragments(self, mass_numbers, rng):
+        """
+        Append spectator fragments of a nuclear projectile as status 1 records.
+
+        Generators that report only fragment mass numbers get Z = A // 2 for
+        A > 1; single nucleons are protons with probability Z/A of the
+        projectile. Fragments move with the projectile momentum per nucleon.
+
+        Parameters
+        ----------
+        mass_numbers : array-like of int
+            Mass numbers of the fragments.
+        rng : numpy.random.Generator
+            Generator for the nucleon isospin.
+        """
+        a = np.asarray(mass_numbers, dtype=np.int64)
+        if len(a) == 0:
+            return
+        p1 = self.kin.p1
+        z = a // 2
+        single = a == 1
+        z[single] = rng.random(np.sum(single)) < p1.Z / p1.A
+        pid = np.where(z == 1, 2212, 2112)
+        pid = np.where(single, pid, 1000000000 + 10000 * z + 10 * a)
+        m = a * nucleon_mass
+        pz = a * self.kin._get_beam_data(self._generator_frame)["pz"][0]
+        zero = np.zeros(len(a))
+        new = {
+            "pid": pid,
+            "status": np.ones(len(a), dtype=self.status.dtype),
+            "charge": z.astype(self.charge.dtype),
+            "px": zero,
+            "py": zero,
+            "pz": pz,
+            "en": np.sqrt(pz**2 + m**2),
+            "m": m,
+            "vx": zero,
+            "vy": zero,
+            "vz": zero,
+            "vt": zero,
+            "mothers": np.tile(np.array([0, -1], dtype=np.int32), (len(a), 1)),
+            "daughters": np.full((len(a), 2), -1, dtype=np.int32),
+        }
+        for field, value in new.items():
+            old = getattr(self, field)
+            if old is None:
+                continue
+            setattr(self, field, np.concatenate((old, value.astype(old.dtype))))
 
 
 # =========================================================================

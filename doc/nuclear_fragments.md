@@ -24,17 +24,25 @@ number or charge over the selection do not double-count the initial state.
 
 | generator | remnant records |
 | --- | --- |
-| DpmjetIII | residual-nucleus records (native 13–16) → 5; residual nuclei (PDG 80000 with `IDRES`/`IDXRES`) → 4; wounded nucleons (9–12, 17, 18) keep native codes |
+| DpmjetIII | residual nucleons (native 13–16) → 5, boosted from the rest frame of their nucleus; residual nuclei (PDG 80000 with `IDRES`/`IDXRES`) → 4 |
 | EposLHC, EposLHCR | fragments at status 1 |
 | Pythia8Angantyr | residual nuclei at status 1; isomer digit `I=9` reset to `0` |
 | Pythia8Cascade | none (final state only) |
-| QGSJet, SIBYLL, UrQMD | none |
+| QGSJet | projectile fragments at status 1 |
+| SIBYLL | projectile fragments at status 1 (A+A only) |
+| UrQMD | spectator nucleons at status 1 |
+
+QGSJet and SIBYLL report only the mass number A of a fragment. chromo assigns
+Z = A // 2 for A > 1, protons with probability Z/A of the projectile for
+A = 1, and the projectile momentum per nucleon times A.
 
 ## Caveats
 
-- DPMJET is built without evaporation. Its residual nuclei are given as
-  status 5 nucleons; baryon number and charge of the selection are exact.
-- Status 5 nucleons carry cascade kinematics; light fragments (e.g. Be)
+- DPMJET is built without evaporation; its residual nuclei are given as
+  status 5 nucleons with Fermi motion. Baryon number and charge of the
+  selection are exact.
+- QGSJet and SIBYLL do not report target spectators.
+- Light fragments not produced by a generator (e.g. Be from DPMJET)
   require coalescence.
 
 ## Example

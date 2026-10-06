@@ -9,7 +9,7 @@ from numpy.testing import assert_equal
 import chromo.models as im
 from chromo.common import CrossSectionData, EventData, MCEvent
 from chromo.kinematics import CenterOfMass, EventFrame
-from chromo.util import get_all_models
+from chromo.util import get_all_models, name2pdg
 
 from .util import run_in_separate_process
 
@@ -272,6 +272,28 @@ def test_final_state_with_frags(Model, request):
     elif Model is im.Pythia8Cascade:
         evt_kin = CenterOfMass(100, "p", "O")
     run_in_separate_process(run_final_state_with_frags, Model, evt_kin)
+
+
+def run_projectile_fragments(Model):
+    import numpy as np
+
+    from .util import baryon_number
+
+    kin = CenterOfMass(100, "O16", "N14")
+    generator = Model(kin, seed=1)
+    a1 = kin.p1.A
+    for event in generator(3):
+        frags = event.final_state_with_nucl_frag()
+        # projectile spectators are reported, not dropped
+        assert sum(baryon_number(pid) for pid in frags.pid) >= a1
+        assert np.sum(frags.en) >= a1 * kin.ecm / 2 * (1 - 1e-3)
+
+
+@pytest.mark.parametrize("Model", get_all_models())
+def test_projectile_fragments(Model):
+    if name2pdg("O16") not in Model.projectiles:
+        pytest.skip("no nuclear projectiles")
+    run_in_separate_process(run_projectile_fragments, Model)
 
 
 def run_model(Model, evt_kin, n_events=10):

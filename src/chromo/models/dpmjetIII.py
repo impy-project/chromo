@@ -92,6 +92,16 @@ class DpmjetIIIEvent(MCEvent):
             )
             self.status[is_residual] = 4
         terminal = self.daughters[:, 0] == -1
+        # Residual nucleons are given in the rest frame of their nucleus
+        # (13, 15: projectile; 14, 16: target); boost them along z into
+        # the generator frame with the beam momentum per nucleon.
+        for side, codes in enumerate(((13, 15), (14, 16))):
+            sel = np.isin(self.status, codes) & terminal
+            gamma = beam["en"][side] / beam["m"][side]
+            betagamma = beam["pz"][side] / beam["m"][side]
+            en, pz = self.en[sel], self.pz[sel]
+            self.en[sel] = gamma * en + betagamma * pz
+            self.pz[sel] = betagamma * en + gamma * pz
         self.status[np.isin(self.status, (13, 14, 15, 16)) & terminal] = 5
 
     def _prepare_for_hepmc(self):
