@@ -89,7 +89,7 @@ Please note that `chromo` only provides a user interface for the following model
 ### Supported platforms
 
 - Python 3.9+
-- Linux, Mac OS X (x86 and M1/M2), Windows
+- Linux (x86_64, aarch64), macOS (arm64), Windows
 
 The recommended way to install `chromo` is by using the pre-compiled binary wheel, which is available for most common architectures and Python versions
 
