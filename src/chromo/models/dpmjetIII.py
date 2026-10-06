@@ -44,6 +44,13 @@ dpmjet_extended_projectiles = {Particle.from_pdgid(p).pdgid for p in dpmjet_exte
 # fmt: on
 
 
+# Common block fields overwritten by DT_XSGLAU and read by event generation
+_GLAUBER_STATE = {
+    "dtglam": ("sigsh", "rosh", "gsh", "bsite"),
+    "dtglxs": ("ecmnn", "xspro", "xepro", "bslope"),
+}
+
+
 class DpmjetIIIEvent(MCEvent):
     """Wrapper class around DPMJET-III HEPEVT-style particle stack."""
 
@@ -277,16 +284,23 @@ class DpmjetIIIRun(MCRun):
             # valid only at the initialization kinematics, so it must not
             # be returned for arbitrary queries (issue #242). Run the
             # production-only Glauber MC for the requested kinematics,
-            # saving and restoring the RNG state (all Fortran draws go
-            # through the numpy bit generator) so that event generation
+            # saving and restoring the RNG state and the Glauber tables
+            # sampled during event generation, so that event generation
             # streams stay untouched.
             rng_state = self.random_state
             saved_lprod = self._lib.dtglgp.lprod
+            saved_glauber = {
+                (block, field): np.copy(getattr(getattr(self._lib, block), field))
+                for block, fields in _GLAUBER_STATE.items()
+                for field in fields
+            }
             try:
                 self._run_glauber(kin, photon_x, prod_only=True)
                 prod = self._lib.dtglxs.xspro[0, 0, 0]
             finally:
                 self._lib.dtglgp.lprod = saved_lprod
+                for (block, field), value in saved_glauber.items():
+                    setattr(getattr(self._lib, block), field, value)
                 self.random_state = rng_state
             return CrossSectionData(
                 prod=prod,

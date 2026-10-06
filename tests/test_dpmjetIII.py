@@ -174,7 +174,7 @@ def run_prod_cs_event_stream(model, prod_queries):
     if prod_queries:
         for plab in (1e2, 1e4):
             gen.cross_section(chromo.kinematics.FixedTarget(plab, "proton", "O16"))
-    return [(len(evt.final_state()), np.sum(evt.final_state().en)) for evt in gen(3)]
+    return [(len(evt.final_state()), np.sum(evt.final_state().en)) for evt in gen(6)]
 
 
 @pytest.mark.parametrize("model", get_dpmjets())
