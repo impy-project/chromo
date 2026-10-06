@@ -32,15 +32,10 @@ number or charge over the selection do not double-count the initial state.
 
 ## Caveats
 
-- DPMJET is built without evaporation. Wounded nucleons absorbed into the
-  residual nucleus are not reported, so baryon number over the selection
-  is below the incoming value by up to a few units.
-- Status 5 nucleons carry the cascade kinematics (Fermi motion), not the
-  kinematics of de-excited fragments. Light fragments such as Be are not
-  produced by any built generator and need a coalescence step.
-- DPMJET records with PDG ID 99999 are hadronization chains
-  (`DT_EVTFRG`). They are excluded from the selection and kept in the
-  HepMC3 export.
+- DPMJET is built without evaporation: baryon number of the selection can
+  fall short of the incoming value by a few units.
+- Status 5 nucleons carry cascade kinematics; light fragments (e.g. Be)
+  require coalescence.
 
 ## Example
 
