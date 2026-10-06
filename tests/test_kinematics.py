@@ -376,10 +376,25 @@ def test_apply_boost_generic_symmetric_is_cms():
     assert ev.px[0] == approx(0.1, abs=1e-12)
     assert ev.py[0] == approx(0.5, abs=1e-12)
     assert ev.pz[0] == approx(0.2, abs=1e-12)
-    # boosting from the generic frame is not supported
-    kft = EventKinematicsWithRestframe("proton", "neutron", elab=1000)
-    with pytest.raises(NotImplementedError):
-        kft.apply_boost(ev, EventFrame.GENERIC)
+
+
+def test_apply_boost_generic_uhe_matches_fixed_target():
+    # generic frame equal to the fixed target frame at UHECR energies
+    kft = EventKinematicsWithRestframe("proton", "neutron", elab=1e11)
+    kgen = EventKinematicsWithRestframe("proton", "neutron", beam=(kft.plab, 0))
+    ev1 = SimpleNamespace(
+        en=np.array([1.0, 3.0]),
+        px=np.array([0.1, -2.0]),
+        py=np.array([0.5, 1.0]),
+        pz=np.array([0.2, -2.0]),
+    )
+    ev2 = SimpleNamespace(
+        en=ev1.en.copy(), px=ev1.px.copy(), py=ev1.py.copy(), pz=ev1.pz.copy()
+    )
+    kft.apply_boost(ev1, EventFrame.CENTER_OF_MASS)
+    kgen.apply_boost(ev2, EventFrame.CENTER_OF_MASS)
+    assert ev2.en == approx(ev1.en, rel=1e-12)
+    assert ev2.pz == approx(ev1.pz, rel=1e-12)
 
 
 def test_apply_boost_generic_inverse_roundtrip():

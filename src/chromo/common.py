@@ -31,7 +31,6 @@ from chromo.decay_handler import Pythia8DecayHandler
 from chromo.kinematics import (
     CompositeTarget,
     EventKinematicsBase,
-    boost_vector,
     rotate_event,
 )
 from chromo.util import (
@@ -451,13 +450,8 @@ class EventData:
         if kin.frame == EventFrame.FIXED_TARGET:
             return self.en
         if kin.frame == EventFrame.GENERIC:
-            # collinear boost along z to the fixed target frame
-            b = boost_vector(
-                kin.beams[0] + kin.beams[1],
-                kin._total_beam_momentum(EventFrame.FIXED_TARGET),
-            )
-            gamma = 1 / np.sqrt(1 - b @ b)
-            return gamma * (self.en - b[2] * self.pz)
+            dy = kin._rapidity(EventFrame.FIXED_TARGET) - kin._rapidity(kin.frame)
+            return np.cosh(dy) * self.en + np.sinh(dy) * self.pz
         return kin._gamma_cm * self.en + kin._betagamma_cm * self.pz
 
     @property

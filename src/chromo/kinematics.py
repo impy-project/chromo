@@ -174,53 +174,36 @@ class EventKinematicsBase:
         """
         Boost event in-place from ``generator_frame`` to ``self.frame``.
 
-        Boosts to ``EventFrame.GENERIC`` are derived from the total beam
-        four-momentum in both frames. ``inverse=True`` reverses the boost.
+        All frames share the beam axis, so the boost is along z.
+        ``inverse=True`` reverses the boost.
         """
         if generator_frame == self.frame:
             return
         CMS = EventFrame.CENTER_OF_MASS
         FT = EventFrame.FIXED_TARGET
-        GENERIC = EventFrame.GENERIC
-        if self.frame == GENERIC or generator_frame == GENERIC:
-            if generator_frame == GENERIC:
-                msg = f"Boosts from {generator_frame} are not supported"
-                raise NotImplementedError(msg)
-            b = boost_vector(
-                self._total_beam_momentum(generator_frame),
-                self._total_beam_momentum(GENERIC),
-            )
-            if inverse:
-                b = -b
-            boost_event(event, b)
-            return
-        # Collinear CMS <-> FT boost, exact in (gamma, betagamma)
         if generator_frame == FT and self.frame == CMS:
-            bg = -self._betagamma_cm
+            g, bg = self._gamma_cm, -self._betagamma_cm
         elif generator_frame == CMS and self.frame == FT:
-            bg = self._betagamma_cm
+            g, bg = self._gamma_cm, self._betagamma_cm
         else:
-            msg = f"Boosts from {generator_frame} to {self.frame} are not yet supported"
-            raise NotImplementedError(msg)
+            dy = self._rapidity(self.frame) - self._rapidity(generator_frame)
+            g, bg = np.cosh(dy), np.sinh(dy)
         if inverse:
             bg = -bg
-        g = self._gamma_cm
         en = g * event.en + bg * event.pz
         pz = bg * event.en + g * event.pz
         event.en[:] = en
         event.pz[:] = pz
 
-    def _total_beam_momentum(self, frame):
-        """Return total beam four-momentum (px, py, pz, E) in the given frame."""
+    def _rapidity(self, frame):
+        """Return rapidity of the total beam momentum in the given frame."""
         if frame == EventFrame.CENTER_OF_MASS:
-            return np.array((0.0, 0.0, 0.0, self.ecm))
+            return 0.0
         if frame == EventFrame.FIXED_TARGET:
-            return np.array(
-                (0.0, 0.0, self._betagamma_cm * self.ecm, self._gamma_cm * self.ecm)
-            )
+            return np.arcsinh(self._betagamma_cm)
         if frame == EventFrame.GENERIC:
-            return self.beams[0] + self.beams[1]
-        msg = f"Beam four-momentum in frame {frame} is not defined"
+            return np.arcsinh((self.beams[0][2] + self.beams[1][2]) / self.ecm)
+        msg = f"Boosts involving frame {frame} are not supported"
         raise NotImplementedError(msg)
 
     def __eq__(self, other):
@@ -269,8 +252,6 @@ class EventKinematicsBase:
             return self._beam_data
 
         event_like = SimpleNamespace(
-            px=np.zeros((2,)),
-            py=np.zeros((2,)),
             pz=np.array([self.beams[0][2], self.beams[1][2]]),
             en=np.array([self.beams[0][3], self.beams[1][3]]),
         )
@@ -280,8 +261,8 @@ class EventKinematicsBase:
             "pid": np.array([int(self.p1), int(self.p2)]),
             "status": np.array([4, 4]),
             "charge": np.array([self.p1.charge, self.p2.charge], dtype=np.float64),
-            "px": event_like.px,
-            "py": event_like.py,
+            "px": np.zeros((2,), dtype=np.float64),
+            "py": np.zeros((2,), dtype=np.float64),
             "pz": event_like.pz,
             "en": event_like.en,
             # Note that the masses are from `particle` module:
@@ -381,12 +362,16 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
             beams[1][2] = p2
             beams[0][3] = momentum2energy(p1, m1)
             beams[1][3] = momentum2energy(p2, m2)
-            s = np.sum(beams, axis=0)
-            # We compute ecm with energy2momentum. It is not really energy to momentum,
-            # but energy2momentum(x, y) computes x^2 - y^2, which is what we need. Here,
-            # I use that px and py are always zero, if we ever change this, many formulas
-            # have to change in this class, like all the boosts
-            ecm = energy2momentum(s[3], s[2])
+            # s = m1^2 + m2^2 + 2 (E1 E2 - p1 p2), with the difference rewritten
+            # for parallel beams to avoid cancellation at high energies
+            e1e2 = beams[0][3] * beams[1][3]
+            if p1 * p2 > 0:
+                d = ((m1 * p2) ** 2 + (m2 * p1) ** 2 + (m1 * m2) ** 2) / (
+                    e1e2 + p1 * p2
+                )
+            else:
+                d = e1e2 - p1 * p2
+            ecm = np.sqrt(m1**2 + m2**2 + 2 * d)
             elab = ecm2elab(ecm, m1, m2)
             ekin = elab - m1
             plab = energy2momentum(elab, m1)
@@ -451,14 +436,14 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
 class EventKinematicsMassless(EventKinematicsBase):
     """EventKinematics for massless particles."""
 
-    def _total_beam_momentum(self, frame):
+    def _rapidity(self, frame):
         if frame == EventFrame.FIXED_TARGET:
             msg = (
                 "Massless systems have no rest frame, "
                 "boosts involving the fixed target frame are undefined"
             )
             raise NotImplementedError(msg)
-        return super()._total_beam_momentum(frame)
+        return super()._rapidity(frame)
 
     def __init__(
         self,
