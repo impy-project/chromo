@@ -149,6 +149,14 @@ def _merge_cascade_results(results):
     return tuple(np.concatenate(parts[i]) for i in range(13))
 
 
+def _fix_nucrem_pdg(event):
+    # Angantyr marks residual nuclei with isomer digit I=9 (10LZZZAAA9);
+    # reset to I=0 so that the PDG code is standard.
+    pid = event.pid
+    is_nucrem = (np.abs(pid) > 1000000000) & (np.abs(pid) % 10 == 9)
+    pid[is_nucrem] -= 9 * np.sign(pid[is_nucrem])
+
+
 class PYTHIA8Event(EventData):
     """Wrapper for Pythia8 event stack."""
 
@@ -178,6 +186,8 @@ class PYTHIA8Event(EventData):
             np.maximum(event.daughters() - 1, -1),
             weight=pythia.info.weight(),
         )
+        if pythia.info.hiInfo is not None:
+            _fix_nucrem_pdg(self)
 
     @staticmethod
     def _get_impact_parameter(pythia):

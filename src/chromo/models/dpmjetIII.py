@@ -74,10 +74,42 @@ class DpmjetIIIEvent(MCEvent):
         return self._lib.dtglcp.nwasam, self._lib.dtglcp.nwbsam
 
     def _repair_initial_beam(self):
+        # The DPMJET stack starts with the projectile and target nucleons,
+        # so the beam records are prepended instead of overwriting them.
         beam = self.kin._get_beam_data(self._generator_frame)
-        for field in ["pid", "status", "charge", "px", "py", "pz", "en", "m"]:
-            event_field = getattr(self, field)
-            event_field[0:2] = beam[field]
+        for field, beam_field in beam.items():
+            value = getattr(self, field)
+            if value is None:
+                continue
+            if field in ("mothers", "daughters"):
+                value = np.where(value >= 0, value + 2, value)
+            setattr(self, field, np.concatenate((beam_field, value)))
+        # Map remnants to chromo status codes: residual nuclei -> 4 with
+        # PDG 10LZZZAAAI, terminal records of the residual nuclei (13-16)
+        # -> 5. Wounded nucleons (9-12, 17, 18) keep native codes.
+        n = len(self.status) - 2
+        idres = np.concatenate(([0, 0], self._lib.dtevt2.idres[:n]))
+        idxres = np.concatenate(([0, 0], self._lib.dtevt2.idxres[:n]))
+        is_residual = np.isin(self.status, (1001, 3003)) | (
+            (self.pid == 80000) & (np.abs(self.status) == 3) & (idres > 0)
+        )
+        if np.any(is_residual):
+            self.pid[is_residual] = (
+                1000000000 + 10000 * idxres[is_residual] + 10 * idres[is_residual]
+            )
+            self.status[is_residual] = 4
+        terminal = self.daughters[:, 0] == -1
+        # Residual nucleons are given in the rest frame of their nucleus
+        # (13, 15: projectile; 14, 16: target); boost them along z into
+        # the generator frame with the beam momentum per nucleon.
+        for side, codes in enumerate(((13, 15), (14, 16))):
+            sel = np.isin(self.status, codes) & terminal
+            gamma = beam["en"][side] / beam["m"][side]
+            betagamma = beam["pz"][side] / beam["m"][side]
+            en, pz = self.en[sel], self.pz[sel]
+            self.en[sel] = gamma * en + betagamma * pz
+            self.pz[sel] = betagamma * en + gamma * pz
+        self.status[np.isin(self.status, (13, 14, 15, 16)) & terminal] = 5
 
     def _prepare_for_hepmc(self):
         model, version = self.generator

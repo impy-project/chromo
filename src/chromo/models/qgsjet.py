@@ -4,11 +4,20 @@ from particle import literals as lp
 from chromo.common import CrossSectionData, MCEvent, MCRun
 from chromo.constants import standard_projectiles
 from chromo.kinematics import EventFrame
-from chromo.util import Nuclei, _cached_data_dir
+from chromo.util import Nuclei, _cached_data_dir, is_real_nucleus
 
 
 class QGSJET1Event(MCEvent):
     """Wrapper class around QGSJet HEPEVT converter."""
+
+    def __init__(self, generator):
+        super().__init__(generator)
+        if is_real_nucleus(self.kin.p1):
+            self._append_projectile_fragments(self._fragment_masses(), generator._rng)
+
+    def _fragment_masses(self):
+        n = int(self._lib.area13.nsf)
+        return self._lib.area13.iaf[:n]
 
     def _get_charge(self, npart):
         return self._lib.qgchg.ichg[:npart]
@@ -30,6 +39,10 @@ class QGSJET1Event(MCEvent):
 
 
 class QGSJET2Event(QGSJET1Event):
+    def _fragment_masses(self):
+        n = int(self._lib.qgarr13.nsf)
+        return self._lib.qgarr13.iaf[:n]
+
     def _get_impact_parameter(self):
         return self._lib.qgarr7.b
 
