@@ -84,11 +84,7 @@ sys.stdout.flush()
 
 
 def baryon_number(pid):
-    """Baryon number of a stack record via the particle package.
-
-    Baryons get +-1 via the is_baryon/anti_flag chain, nuclei contribute
-    their mass number, everything else zero. Slow; tests only.
-    """
+    """Return baryon number of a PDG ID; nuclei contribute A."""
     from particle import Particle
     from particle.pdgid import PDGID
 
@@ -105,7 +101,7 @@ def baryon_number(pid):
 
 
 def charge_number(pdgid):
-    """Charge of a stack record in units of e, nuclei handled via pdg2AZ."""
+    """Return charge of a PDG ID in units of e; nuclei contribute Z."""
     from particle import Particle
 
     from chromo.util import pdg2AZ

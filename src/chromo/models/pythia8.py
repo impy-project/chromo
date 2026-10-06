@@ -150,11 +150,8 @@ def _merge_cascade_results(results):
 
 
 def _fix_nucrem_pdg(event):
-    # Pythia8 Angantyr appends the residual nuclei ("NucRem", see
-    # HeavyIons.cc) with a PDG code that uses the isomer digit I=9 to
-    # mark them as remnants (10LZZZAA9). The records are final state and
-    # are already selected with status 1; only the PDG code is made
-    # standard (I=0) so that particle lookups and HepMC accept it.
+    # Angantyr marks residual nuclei with isomer digit I=9 (10LZZZAAA9);
+    # reset to I=0 so that the PDG code is standard.
     pid = event.pid
     is_nucrem = (np.abs(pid) > 1000000000) & (np.abs(pid) % 10 == 9)
     pid[is_nucrem] -= 9 * np.sign(pid[is_nucrem])
@@ -581,8 +578,6 @@ class PYTHIA8CascadeEvent(EventData):
             np.maximum(mothers - 1, -1),
             np.maximum(daughters - 1, -1),
         )
-        # Pythia8Cascade exports final state only: there are no remnant
-        # records to normalize in this mode (see doc/nuclear_fragments.md).
 
 
 class Pythia8Cascade(MCRun):

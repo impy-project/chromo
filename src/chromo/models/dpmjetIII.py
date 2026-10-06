@@ -71,13 +71,9 @@ class DpmjetIIIEvent(MCEvent):
         for field in ["pid", "status", "charge", "px", "py", "pz", "en", "m"]:
             event_field = getattr(self, field)
             event_field[0:2] = beam[field]
-        # Normalize the DPMJET cascade bookkeeping to the chromo-wide
-        # remnant codes (see doc/nuclear_fragments.md): residual nucleus
-        # records become status 4 with a nucleus PDG code (PDG 10LZZZAAAI
-        # vectorized). Only terminal nucleon records of the cascade
-        # (spectator/bound codes 13-16 without daughters) get status 5;
-        # wounded and re-scattered nucleons (9-12, 17/18) have daughters
-        # and are intermediate, they keep their native codes.
+        # Map remnants to chromo status codes: residual nuclei -> 4 with
+        # PDG 10LZZZAAAI, terminal spectator nucleons (13-16) -> 5. Wounded
+        # nucleons (9-12, 17, 18) have daughters and keep native codes.
         n = len(self.status)
         idres = self._lib.dtevt2.idres[:n]
         idxres = self._lib.dtevt2.idxres[:n]

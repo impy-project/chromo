@@ -232,34 +232,32 @@ def test_final_state_with_nucl_frag():
     assert not np.any(fs.status == 2)
 
 
-def run_final_state_with_frags(Model, evt_kin):
-    """Checks that final_state_with_nucl_frag only contains terminal,
-    physical records and cannot double-count the incoming state."""
+def run_final_state_with_frags(Model, evt_kin, check_charge):
     import numpy as np
 
     from .util import baryon_number, charge_number
 
     generator = Model(evt_kin, seed=1)
-    a1, z1 = generator.kinematics.p1.A, generator.kinematics.p1.Z
-    a2, z2 = generator.kinematics.p2.A, generator.kinematics.p2.Z
+    p1, p2 = generator.kinematics.p1, generator.kinematics.p2
+    a_max = (p1.A or 0) + (p2.A or 0)
+    z_max = (p1.Z or 0) + (p2.Z or 0)
     for event in generator(2):
         frags = event.final_state_with_nucl_frag()
         assert set(frags.status) <= {1, 4, 5}
         assert len(frags) >= len(event.final_state())
         if event.daughters is not None:
             assert not np.any((event.status == 5) & (event.daughters[:, 0] != -1))
-        b = sum(baryon_number(pid) for pid in frags.pid)
-        q = sum(charge_number(pid) for pid in frags.pid)
-        assert b <= a1 + a2
-        assert q <= z1 + z2
+        assert sum(baryon_number(pid) for pid in frags.pid) <= a_max
+        if check_charge:
+            assert sum(charge_number(pid) for pid in frags.pid) <= z_max
 
 
 @pytest.mark.parametrize("Model", get_all_models())
 def test_final_state_with_frags(Model):
-    if Model.name == "SOPHIA":
-        pytest.skip("photoproduction, no nuclear baryon number bookkeeping")
     evt_kin = CenterOfMass(100, "proton", "proton")
-    if Model.name in ["DPMJET-III", "EPOS"]:
+    if Model is im.Sophia20:
+        evt_kin = CenterOfMass(100, "photon", "proton")
+    elif Model.name in ["DPMJET-III", "EPOS"]:
         evt_kin = CenterOfMass(100, "N", "O")
     elif Model.name == "SIBYLL":
         evt_kin = CenterOfMass(100, "p", "O")
@@ -267,7 +265,9 @@ def test_final_state_with_frags(Model):
         evt_kin = CenterOfMass(100, "p", "N14")
     elif Model is im.Pythia8Cascade:
         evt_kin = CenterOfMass(100, "p", "O")
-    run_in_separate_process(run_final_state_with_frags, Model, evt_kin)
+    # QGSJet-II does not conserve charge event-by-event
+    check_charge = not Model.pyname.startswith("QGSJetII")
+    run_in_separate_process(run_final_state_with_frags, Model, evt_kin, check_charge)
 
 
 def run_model(Model, evt_kin, n_events=10):

@@ -311,8 +311,8 @@ class EventData:
         The QGSJet family does not produce Omega-, Xi-, Xi0, Sigma-, Sigma+ and their
         antiparticles.
 
-        Nuclear fragments and beam remnants carry status codes != 1 and are
-        therefore not part of the final state, see doc/nuclear_fragments.md.
+        Nuclear remnants with status 4 or 5 are not included, see
+        :meth:`final_state_with_nucl_frag`.
         """
         return self._select(self.status == 1, False)
 
@@ -330,34 +330,17 @@ class EventData:
         """
         Return filtered event with final state particles and nuclear remnants.
 
-        All returned records are physical, terminal records of the event;
-        the selection contains no incoming-beam or intermediate bookkeeping
-        records, so summing baryon number, charge, or energy over it cannot
-        double-count the initial state:
-
-        * status 1: final state particles, same as :meth:`final_state`
-        * status 4: residual/fragment nuclei reported by the generator
-          (terminal nucleus records with a PDG code 10LZZZAAAI)
-        * status 5: terminal nucleon remnants of the intranuclear cascade
-          (spectators and bound nucleons that left the cascade unhit)
-
-        Availability is generator-dependent and documented in
-        doc/nuclear_fragments.md: DPMJET provides status 5, EPOS-LHC and
-        Pythia8Angantyr write their nuclear fragments at status 1 (so the
-        selection equals :meth:`final_state`), and QGSJet/SIBYLL/UrQMD
-        provide no fragment records at all. Remnant kinematics can differ
-        from physical fragments where the generator's de-excitation stage
-        (evaporation, fission) is skipped or truncated.
+        Selects terminal records with status 1 (final state), 4 (residual
+        nuclei, PDG code 10LZZZAAAI) and 5 (spectator nucleons). Incoming
+        beam records and records with daughters are excluded, so baryon
+        number and charge of the initial state are not double-counted.
+        Generator support differs, see ``doc/nuclear_fragments.md``.
         """
         st = self.status
         mask = np.isin(st, (1, 4, 5))
-        # The incoming beam nucleus is a status 4 record at index 0/1; it
-        # is incoming, not a fragment, and it would double-count against
-        # the status 5 nucleons which re-list the same nucleons.
+        # beam records at index 0 and 1 carry status 4
         mask &= ~((st == 4) & (np.arange(len(st)) < 2))
-        # Status 4 only labels nucleus records; reject nucleon records
-        # mislabelled as 4 by a generator, and non-terminal records
-        # (a nucleus record with daughters is the incoming beam carrier).
+        # status 4 must be a terminal nucleus record
         nucleon_like = np.isin(np.abs(self.pid), (2112, 2212))
         non_terminal = (
             np.zeros(len(st), dtype=bool)
@@ -382,9 +365,8 @@ class EventData:
             mask &= apid != pid
         return self[mask]
 
-    def _select(
-        self, arg, update_mothers
-    ):  # This selection is faster than __getitem__, because we skip
+    def _select(self, arg, update_mothers):
+        # This selection is faster than __getitem__, because we skip
         # parent selection, which is just wasting time if we select only
         # final state particles.
         return EventData(
