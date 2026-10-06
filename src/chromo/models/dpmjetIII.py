@@ -67,16 +67,22 @@ class DpmjetIIIEvent(MCEvent):
         return self._lib.dtglcp.nwasam, self._lib.dtglcp.nwbsam
 
     def _repair_initial_beam(self):
+        # The DPMJET stack starts with the projectile and target nucleons,
+        # so the beam records are prepended instead of overwriting them.
         beam = self.kin._get_beam_data(self._generator_frame)
-        for field in ["pid", "status", "charge", "px", "py", "pz", "en", "m"]:
-            event_field = getattr(self, field)
-            event_field[0:2] = beam[field]
+        for field, beam_field in beam.items():
+            value = getattr(self, field)
+            if value is None:
+                continue
+            if field in ("mothers", "daughters"):
+                value = np.where(value >= 0, value + 2, value)
+            setattr(self, field, np.concatenate((beam_field, value)))
         # Map remnants to chromo status codes: residual nuclei -> 4 with
-        # PDG 10LZZZAAAI, terminal spectator nucleons (13-16) -> 5. Wounded
-        # nucleons (9-12, 17, 18) have daughters and keep native codes.
-        n = len(self.status)
-        idres = self._lib.dtevt2.idres[:n]
-        idxres = self._lib.dtevt2.idxres[:n]
+        # PDG 10LZZZAAAI, terminal records of the residual nuclei (13-16)
+        # -> 5. Wounded nucleons (9-12, 17, 18) keep native codes.
+        n = len(self.status) - 2
+        idres = np.concatenate(([0, 0], self._lib.dtevt2.idres[:n]))
+        idxres = np.concatenate(([0, 0], self._lib.dtevt2.idxres[:n]))
         is_residual = np.isin(self.status, (1001, 3003)) | (
             (self.pid == 80000) & (np.abs(self.status) == 3) & (idres > 0)
         )
@@ -86,8 +92,7 @@ class DpmjetIIIEvent(MCEvent):
             )
             self.status[is_residual] = 4
         terminal = self.daughters[:, 0] == -1
-        nucleon = np.isin(np.abs(self.pid), (2112, 2212))
-        self.status[np.isin(self.status, (13, 14, 15, 16)) & nucleon & terminal] = 5
+        self.status[np.isin(self.status, (13, 14, 15, 16)) & terminal] = 5
 
     def _prepare_for_hepmc(self):
         model, version = self.generator

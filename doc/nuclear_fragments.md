@@ -24,7 +24,7 @@ number or charge over the selection do not double-count the initial state.
 
 | generator | remnant records |
 | --- | --- |
-| DpmjetIII | spectator nucleons (native 13–16) → 5; residual nuclei (PDG 80000 with `IDRES`/`IDXRES`) → 4; wounded nucleons (9–12, 17, 18) keep native codes |
+| DpmjetIII | residual-nucleus records (native 13–16) → 5; residual nuclei (PDG 80000 with `IDRES`/`IDXRES`) → 4; wounded nucleons (9–12, 17, 18) keep native codes |
 | EposLHC, EposLHCR | fragments at status 1 |
 | Pythia8Angantyr | residual nuclei at status 1; isomer digit `I=9` reset to `0` |
 | Pythia8Cascade | none (final state only) |
@@ -32,8 +32,8 @@ number or charge over the selection do not double-count the initial state.
 
 ## Caveats
 
-- DPMJET is built without evaporation: baryon number of the selection can
-  fall short of the incoming value by a few units.
+- DPMJET is built without evaporation. Its residual nuclei are given as
+  status 5 nucleons; baryon number and charge of the selection are exact.
 - Status 5 nucleons carry cascade kinematics; light fragments (e.g. Be)
   require coalescence.
 
