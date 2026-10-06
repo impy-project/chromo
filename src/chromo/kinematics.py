@@ -45,29 +45,23 @@ __all__ = (
 
 
 def boost_vector(p_from, p_to):
-    """Return the boost velocity vector connecting two Lorentz frames.
+    """
+    Return the velocity of the pure boost that maps ``p_from`` onto ``p_to``.
 
     Parameters
     ----------
-    p_from, p_to : 4-element sequences
-        The total four-momentum of the system (px, py, pz, E) as measured
-        in the initial frame (``p_from``) and in the target frame
-        (``p_to``). Both must refer to the same physical system, i.e. have
-        the same invariant mass squared.
+    p_from, p_to : array-like
+        Four-momentum (px, py, pz, E) of the same system in the initial and
+        the target frame.
 
     Returns
     -------
     ndarray
-        The velocity in units of c such that :func:`boost_event` applied to
-        four-vectors expressed in the ``p_from`` frame re-expresses them in
-        the ``p_to`` frame, i.e. ``boost_event(p_from, b) == p_to``.
+        Velocity ``b`` in units of c, for use with :func:`boost_event`.
 
     Notes
     -----
-    For two four-vectors P and P' (same invariant mass, positive energy)
-    of the same system, the unique pure boost (px, py, pz, E) -> (px', py',
-    pz', E') = boost(P, b) is given by
-    b = -2 (E + E') (p' - p) / ((E + E')**2 + (p' - p)**2) .
+    ``b = -2 (E + E') (p' - p) / ((E + E')^2 + |p' - p|^2)``
     """
     p_from = np.asarray(p_from, dtype=np.float64)
     p_to = np.asarray(p_to, dtype=np.float64)
@@ -80,17 +74,15 @@ def boost_vector(p_from, p_to):
 
 
 def boost_event(event, b):
-    """Boost the particles of an event in-place by the velocity vector b.
+    """
+    Lorentz-boost the momenta of an event in-place.
 
     Parameters
     ----------
-    event: object
-        Object with writable 1D ndarray attributes ``en``, ``px``, ``py``,
-        ``pz``, e.g. :class:`chromo.common.EventData` or an MCEvent.
-    b: 3-element array-like
-        Boost velocity in units of c. The direction of b is the direction
-        in which the frame of the event moves; the particles are transformed
-        into that frame.
+    event : EventData
+        Event, or any object with array attributes ``en``, ``px``, ``py``, ``pz``.
+    b : array-like
+        Velocity of the target frame in units of c.
     """
     b = np.asarray(b, dtype=np.float64)
     b2 = np.dot(b, b)
@@ -110,20 +102,25 @@ def boost_event(event, b):
 
 
 def rotate_event(event, angle):
-    """Rotate the particles of an event in-place around the z-axis (beam axis).
+    """
+    Rotate momenta and vertices of an event in-place around the z-axis.
 
     Parameters
     ----------
-    event: object
-        Object with writable 1D ndarray attributes ``px``, ``py``, ``pz``,
-        e.g. :class:`chromo.common.EventData` or an MCEvent.
-    angle: float
-        Rotation angle around the z-axis in radians.
+    event : EventData
+        Event, or any object with array attributes ``px``, ``py``, and
+        optionally ``vx``, ``vy``.
+    angle : float
+        Rotation angle in radians.
     """
     c, s = np.cos(angle), np.sin(angle)
-    px, py = event.px.copy(), event.py.copy()
-    event.px[:] = c * px - s * py
-    event.py[:] = s * px + c * py
+    for xname, yname in (("px", "py"), ("vx", "vy")):
+        x, y = getattr(event, xname, None), getattr(event, yname, None)
+        if x is None or y is None:
+            continue
+        x0 = x.copy()
+        x[:] = c * x0 - s * y
+        y[:] = s * x0 + c * y
 
 
 @dataclasses.dataclass
@@ -174,12 +171,11 @@ class EventKinematicsBase:
     _betagamma_cm: float
 
     def apply_boost(self, event, generator_frame, inverse=False):
-        """Boost event in-place from the generator frame to ``self.frame``.
+        """
+        Boost event in-place from ``generator_frame`` to ``self.frame``.
 
-        The boost is computed from the total four-momentum of the two beams
-        in both frames, which makes it well-defined for any frame, including
-        EventFrame.GENERIC, where the beams are given as two arbitrary momenta
-        along the z-axis (e.g. asymmetric p-A collisions).
+        Boosts to ``EventFrame.GENERIC`` are derived from the total beam
+        four-momentum in both frames. ``inverse=True`` reverses the boost.
         """
         if generator_frame == self.frame:
             return

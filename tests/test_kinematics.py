@@ -403,16 +403,20 @@ def test_apply_boost_generic_inverse_roundtrip():
 
 
 def test_rotate_event_analytic():
-    # +90 degrees around z: (px, py, pz) -> (-py, px, pz), energy untouched
+    # +90 degrees around z: (x, y) -> (-y, x) for momenta and vertices
     ev = SimpleNamespace(
         en=np.array([2.0, 5.0]),
         px=np.array([1.0, 2.0]),
         py=np.array([3.0, 4.0]),
         pz=np.array([5.0, 6.0]),
+        vx=np.array([0.5, 1.0]),
+        vy=np.array([0.0, -2.0]),
     )
     rotate_event(ev, np.pi / 2)
     assert ev.px == approx([-3.0, -4.0], abs=1e-15)
     assert ev.py == approx([1.0, 2.0], abs=1e-15)
+    assert ev.vx == approx([0.0, 2.0], abs=1e-15)
+    assert ev.vy == approx([0.5, 1.0], abs=1e-15)
     assert ev.pz == approx([5.0, 6.0])
     assert ev.en == approx([2.0, 5.0])
 

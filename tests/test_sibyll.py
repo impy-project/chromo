@@ -302,10 +302,7 @@ def run_with_kin(kin):
 
 
 def test_generic_frame_matches_cms():
-    # generic frame with symmetric beams equals the CMS frame (issue #184);
-    # generation with a GENERIC frame used to raise NotImplementedError.
-    # Same seed and same ecm produce identical events in the two runs, since
-    # the boost from CMS to the symmetric generic frame is the identity.
+    # symmetric generic frame is the CMS frame
     kin_generic = EventKinematicsWithRestframe("p", "O", beam=(1e3, -1e3))
     assert kin_generic.frame == EventFrame.GENERIC
     kin_cms = EventKinematicsWithRestframe("p", "O", ecm=kin_generic.ecm)

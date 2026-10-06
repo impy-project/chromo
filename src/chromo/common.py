@@ -27,7 +27,12 @@ from chromo.constants import (
     standard_projectiles,
 )
 from chromo.decay_handler import Pythia8DecayHandler
-from chromo.kinematics import CompositeTarget, EventKinematicsBase, rotate_event
+from chromo.kinematics import (
+    CompositeTarget,
+    EventKinematicsBase,
+    boost_vector,
+    rotate_event,
+)
 from chromo.util import (
     Nuclei,
     classproperty,
@@ -418,11 +423,7 @@ class EventData:
         if kin.frame == EventFrame.FIXED_TARGET:
             return self.en
         if kin.frame == EventFrame.GENERIC:
-            # the event is in the generic frame, boost to the fixed target
-            # frame; both total beam momenta are along z, so the boost is
-            # collinear and can be applied without modifying the arrays
-            from chromo.kinematics import boost_vector
-
+            # collinear boost along z to the fixed target frame
             b = boost_vector(
                 kin.beams[0] + kin.beams[1],
                 kin._total_beam_momentum(EventFrame.FIXED_TARGET),
@@ -701,22 +702,13 @@ class MCRun(ABC):
             self._lib = importlib.import_module(f"{self._library_name}")
 
         self._rng = np.random.default_rng(seed)
-        # independent RNG for the cms rotations (see MCRun.rotate_cms): it
-        # must not share the bit generator with the backends, since rotating
-        # must not consume nor disturb the event generation stream
-        self._rot_rng = np.random.default_rng(seed)
         if hasattr(self._lib, "npy"):
             self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
             self._lib.npy.gen_id = self._get_bitgen_id(self._rng.bit_generator)
 
-    #: Rotate each event with a nuclear participant around the beam axis by
-    #: a random angle drawn from the generator RNG (in the generator frame,
-    #: before boosting). This restores rotational invariance in the azimuth
-    #: for generators that fix the collision plane, such as DPMJET, where the
-    #: Glauber impact parameter is always applied along the x-axis. Enabled
-    #: by default for DPMJET-III; users can enable it for other generators
-    #: by setting ``generator.rotate_cms = True``.
-    rotate_cms = False
+    #: Rotate events with a nuclear participant by a random azimuthal angle
+    #: around the beam axis. Enable for generators with a fixed reaction plane.
+    randomize_azimuth = False
 
     def __call__(self, nevents):
         """Generator function (in python sence)
@@ -731,14 +723,11 @@ class MCRun(ABC):
                     self.nevents += 1
                     nev -= 1
                     event = self._event_class(self)
-                    # rotate nuclear collisions around beam axis (see
-                    # MCRun.rotate_cms); applied in the generator frame
-                    # before the boost, which is along the same axis
-                    if self.rotate_cms and (
+                    if self.randomize_azimuth and (
                         is_real_nucleus(self.kinematics.p1)
                         or is_real_nucleus(self.kinematics.p2)
                     ):
-                        rotate_event(event, self._rot_rng.uniform(0.0, 2 * np.pi))
+                        rotate_event(event, self._rng.uniform(0.0, 2 * np.pi))
                     # boost into frame requested by user
                     self.kinematics.apply_boost(event, self._frame)
                     self._validate_decay(event)
