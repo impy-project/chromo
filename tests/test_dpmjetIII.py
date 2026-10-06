@@ -8,6 +8,7 @@ import chromo
 from chromo.constants import GeV
 from chromo.util import get_all_models, naneq
 
+from .util import baryon_number as _baryon_number
 from .util import run_in_separate_process
 
 pytestmark = pytest.mark.skipif(
@@ -200,3 +201,27 @@ def get_model_projectile_combinations():
 @pytest.mark.parametrize("model,p1", get_model_projectile_combinations())
 def test_projectile_list(model, p1):
     run_in_separate_process(run_three_events, p1, model)
+
+
+def run_remnant_conservation(model, p1, p2):
+    import numpy as np
+
+    from chromo.kinematics import FixedTarget
+
+    from .util import charge_number
+
+    kin = FixedTarget(1e4, p1, p2)
+    a = (kin.p1.A or 0) + (kin.p2.A or 0)
+    z = (kin.p1.Z or 0) + (kin.p2.Z or 0)
+    generator = model(kin, seed=1)
+    for event in generator(3):
+        assert not np.any((event.status == 5) & (event.daughters[:, 0] != -1))
+        frags = event.final_state_with_nucl_frag()
+        assert sum(_baryon_number(pid) for pid in frags.pid) == a
+        assert sum(charge_number(pid) for pid in frags.pid) == z
+
+
+@pytest.mark.parametrize("model", get_dpmjets(no307=False))
+@pytest.mark.parametrize("p1,p2", [("p", "O16"), ("p", "Pb208"), ("O16", "O16")])
+def test_remnant_conservation(model, p1, p2):
+    run_in_separate_process(run_remnant_conservation, model, p1, p2)

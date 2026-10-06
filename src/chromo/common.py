@@ -23,6 +23,7 @@ from particle import Particle
 from chromo.constants import (
     GeV,
     long_lived,
+    nucleon_mass,
     quarks_and_diquarks_and_gluons,
     standard_projectiles,
 )
@@ -310,6 +311,9 @@ class EventData:
         produce Omega- and its antiparticle, so the final state never contains them.
         The QGSJet family does not produce Omega-, Xi-, Xi0, Sigma-, Sigma+ and their
         antiparticles.
+
+        Nuclear remnants with status 4 or 5 are not included, see
+        :meth:`final_state_with_nucl_frag`.
         """
         return self._select(self.status == 1, False)
 
@@ -322,6 +326,30 @@ class EventData:
         seen by a tracking detector.
         """
         return self._select((self.status == 1) & (self.charge != 0), False)
+
+    def final_state_with_nucl_frag(self):
+        """
+        Return filtered event with final state particles and nuclear remnants.
+
+        Selects terminal records with status 1 (final state), 4 (residual
+        nuclei, PDG code 10LZZZAAAI) and 5 (spectator nucleons). Incoming
+        beam records and records with daughters are excluded, so baryon
+        number and charge of the initial state are not double-counted.
+        Generator support differs, see ``doc/nuclear_fragments.md``.
+        """
+        st = self.status
+        mask = np.isin(st, (1, 4, 5))
+        # beam records at index 0 and 1 carry status 4
+        mask &= ~((st == 4) & (np.arange(len(st)) < 2))
+        # status 4 must be a terminal nucleus record
+        nucleon_like = np.isin(np.abs(self.pid), (2112, 2212))
+        non_terminal = (
+            np.zeros(len(st), dtype=bool)
+            if self.daughters is None
+            else self.daughters[:, 0] != -1
+        )
+        mask &= ~((st == 4) & (nucleon_like | non_terminal))
+        return self._select(mask, False)
 
     def without_parton_shower(self):
         """
@@ -641,6 +669,55 @@ class MCEvent(EventData, ABC):
             else:
                 res = np.concatenate((beam_field, event_field))
             setattr(self, field, res)
+
+    def _append_projectile_fragments(self, mass_numbers, rng):
+        """
+        Append spectator fragments of a nuclear projectile as status 1 records.
+
+        Generators that report only fragment mass numbers get Z = A // 2 for
+        A > 1; single nucleons are protons with probability Z/A of the
+        projectile. Fragments move with the projectile momentum per nucleon.
+
+        Parameters
+        ----------
+        mass_numbers : array-like of int
+            Mass numbers of the fragments.
+        rng : numpy.random.Generator
+            Generator for the nucleon isospin.
+        """
+        a = np.asarray(mass_numbers, dtype=np.int64)
+        if len(a) == 0:
+            return
+        p1 = self.kin.p1
+        z = a // 2
+        single = a == 1
+        z[single] = rng.random(np.sum(single)) < p1.Z / p1.A
+        pid = np.where(z == 1, 2212, 2112)
+        pid = np.where(single, pid, 1000000000 + 10000 * z + 10 * a)
+        m = a * nucleon_mass
+        pz = a * self.kin._get_beam_data(self._generator_frame)["pz"][0]
+        zero = np.zeros(len(a))
+        new = {
+            "pid": pid,
+            "status": np.ones(len(a), dtype=self.status.dtype),
+            "charge": z.astype(self.charge.dtype),
+            "px": zero,
+            "py": zero,
+            "pz": pz,
+            "en": np.sqrt(pz**2 + m**2),
+            "m": m,
+            "vx": zero,
+            "vy": zero,
+            "vz": zero,
+            "vt": zero,
+            "mothers": np.tile(np.array([0, -1], dtype=np.int32), (len(a), 1)),
+            "daughters": np.full((len(a), 2), -1, dtype=np.int32),
+        }
+        for field, value in new.items():
+            old = getattr(self, field)
+            if old is None:
+                continue
+            setattr(self, field, np.concatenate((old, value.astype(old.dtype))))
 
 
 # =========================================================================

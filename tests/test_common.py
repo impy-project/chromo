@@ -9,7 +9,7 @@ from numpy.testing import assert_equal
 import chromo.models as im
 from chromo.common import CrossSectionData, EventData, MCEvent
 from chromo.kinematics import CenterOfMass, EventFrame
-from chromo.util import get_all_models
+from chromo.util import get_all_models, name2pdg
 
 from .util import run_in_separate_process
 
@@ -184,6 +184,116 @@ def test_EventData_select(evt):
 
     x = evt[[True, False, True]]
     assert_equal(x.pid, [1, 3])
+
+
+def test_final_state_with_nucl_frag():
+    # beam p and O16 (status 4, excluded), pi0, status-4 nucleon
+    # (mislabelled, excluded), terminal C12 residual (status 4), a second
+    # C12 that has daughters (excluded), raw-code spectator, terminal
+    # spectator proton (status 5), photon
+    n = 9
+    e = np.ones(n)
+    daughters = np.full((n, 2), -1)
+    daughters[5] = [7, -1]
+    mothers = np.full((n, 2), -1)
+    evt = EventData(
+        ("gen", "v"),
+        CenterOfMass(10, "p", "p"),
+        1,
+        np.nan,
+        (0, 0),
+        1.0,
+        np.array([2212, 1000080160, 211, 2212, 1000060120, 1000060120, 2112, 2112, 22]),
+        np.array([4, 4, 1, 4, 4, 4, 13, 5, 2]),
+        np.array([1, 8, 0, 1, 6, 6, 0, 1, 0]),
+        e,
+        e,
+        e,
+        e,
+        e,
+        e,
+        e,
+        e,
+        e,
+        mothers,
+        daughters,
+    )
+
+    fs = evt.final_state()
+    assert_equal(fs.pid, [211])
+
+    nfrag = evt.final_state_with_nucl_frag()
+    assert_equal(nfrag.pid, [211, 1000060120, 2112])
+    assert set(nfrag.status) == {1, 4, 5}
+
+    # raw model codes must not leak into the final state, with or without
+    # the new filter: status 13 and 2 are not part of either selection
+    assert not np.any(nfrag.status == 13)
+    assert not np.any(fs.status == 2)
+
+
+def run_final_state_with_frags(Model, evt_kin):
+    import numpy as np
+
+    from .util import baryon_number, charge_number
+
+    generator = Model(evt_kin, seed=1)
+    p1, p2 = generator.kinematics.p1, generator.kinematics.p2
+    a_max = (p1.A or 0) + (p2.A or 0)
+    z_max = (p1.Z or 0) + (p2.Z or 0)
+    for event in generator(2):
+        frags = event.final_state_with_nucl_frag()
+        assert set(frags.status) <= {1, 4, 5}
+        assert len(frags) >= len(event.final_state())
+        if event.daughters is not None:
+            assert not np.any((event.status == 5) & (event.daughters[:, 0] != -1))
+        assert sum(baryon_number(pid) for pid in frags.pid) <= a_max
+        assert sum(charge_number(pid) for pid in frags.pid) <= z_max
+
+
+@pytest.mark.parametrize("Model", get_all_models())
+def test_final_state_with_frags(Model, request):
+    if Model in (im.QGSJetII03, im.QGSJetII04):
+        request.applymarker(
+            pytest.mark.xfail(
+                reason="QGSJet-II does not conserve charge event-by-event",
+                strict=False,
+            )
+        )
+    evt_kin = CenterOfMass(100, "proton", "proton")
+    if Model is im.Sophia20:
+        evt_kin = CenterOfMass(100, "photon", "proton")
+    elif Model.name in ["DPMJET-III", "EPOS"]:
+        evt_kin = CenterOfMass(100, "N", "O")
+    elif Model.name == "SIBYLL":
+        evt_kin = CenterOfMass(100, "p", "O")
+    elif Model is im.Pythia8Angantyr:
+        evt_kin = CenterOfMass(100, "p", "N14")
+    elif Model is im.Pythia8Cascade:
+        evt_kin = CenterOfMass(100, "p", "O")
+    run_in_separate_process(run_final_state_with_frags, Model, evt_kin)
+
+
+def run_projectile_fragments(Model):
+    import numpy as np
+
+    from .util import baryon_number
+
+    kin = CenterOfMass(100, "O16", "N14")
+    generator = Model(kin, seed=1)
+    a1 = kin.p1.A
+    for event in generator(3):
+        frags = event.final_state_with_nucl_frag()
+        # projectile spectators are reported, not dropped
+        assert sum(baryon_number(pid) for pid in frags.pid) >= a1
+        assert np.sum(frags.en) >= a1 * kin.ecm / 2 * (1 - 1e-3)
+
+
+@pytest.mark.parametrize("Model", get_all_models())
+def test_projectile_fragments(Model):
+    if name2pdg("O16") not in Model.projectiles:
+        pytest.skip("no nuclear projectiles")
+    run_in_separate_process(run_projectile_fragments, Model)
 
 
 def run_model(Model, evt_kin, n_events=10):
