@@ -164,8 +164,7 @@ class DpmjetIIIRun(MCRun):
     _event_class = DpmjetIIIEvent
     _frame = None
     randomize_azimuth = True
-    # Photon projectiles on nuclear targets are enabled in DpmjetIII307.
-    _projectiles = dpmjet_extended_projectiles | Nuclei(a_max=280)
+    _projectiles = dpmjet_extended_projectiles | {PDGID(22)} | Nuclei(a_max=280)
     _targets = Nuclei()
     _param_file_name = "dpmjpar.dat"
     _evap_file_name = "dpmjet.dat"
@@ -316,7 +315,11 @@ class DpmjetIIIRun(MCRun):
             return CrossSectionData(
                 prod=prod,
             )
-        if kin.p1 == 22 and kin.p2.A == 1:
+        if abs(kin.p1) == 22 and (kin.p2.A or 1) == 1:
+            # select the photon-nucleon combination in PHOJET
+            self._lib.dt_phoxs(
+                self._lib.idt_icihad(22), self._lib.idt_icihad(kin.p2), kin.ecm, 0, 0
+            )
             stot, sine, _ = self._lib.dt_siggp(photon_x, kin.virt_p1, kin.ecm, 0)
             return CrossSectionData(total=stot, inelastic=sine, elastic=stot - sine)
         stot, sela = self._lib.dt_xshn(
