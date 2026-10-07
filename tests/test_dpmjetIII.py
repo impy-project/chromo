@@ -228,11 +228,28 @@ def run_photon_on_nucleus(model, target, elab):
     return True
 
 
+@pytest.mark.parametrize("model", get_dpmjets())
 @pytest.mark.parametrize("target", ["O16", "Fe56"])
-def test_dpmjet307_photon_nucleus(target):
-    from chromo.models import DpmjetIII307
+def test_photon_nucleus(model, target):
+    assert run_in_separate_process(run_photon_on_nucleus, model, target, 1e4)
 
-    assert run_in_separate_process(run_photon_on_nucleus, DpmjetIII307, target, 1e4)
+
+def run_photon_on_nucleon(model, target):
+    m = model(chromo.kinematics.FixedTarget(1e4 * GeV, "gamma", target), seed=1)
+    xs = m.cross_section()
+    for evt in m(3):
+        assert evt.pid[0] == 22
+        assert len(evt.final_state().en) > 0
+    return xs.inelastic
+
+
+@pytest.mark.parametrize("target", ["p", "n"])
+def test_dpmjet193_photon_nucleon(target):
+    from chromo.models import DpmjetIII193
+
+    sine = run_in_separate_process(run_photon_on_nucleon, DpmjetIII193, target)
+    # PHOJET sigma_inel(gamma p) at sqrt(s) = 137 GeV
+    assert_allclose(sine, 0.1516, rtol=0.01)
 
 
 def run_photon_on_nucleon_rejected(model, target):

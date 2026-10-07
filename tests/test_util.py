@@ -161,6 +161,7 @@ def test_find_models_photon_on_nucleus():
     models = util.find_models(22, "O16")
     names = {m.pyname for m in models}
     assert "DpmjetIII307" in names
+    assert "DpmjetIII193" in names
     # QGSJet is hadron-only and must not show up for photon projectiles
     assert "QGSJetIII" not in names
     # the same as a name lookup and only_names
@@ -173,8 +174,10 @@ def test_find_models_photon_on_nucleus():
 def test_find_models_photon_on_nucleon():
     # DPMJET 3.0-7 refuses photons on nucleon targets even though the
     # photon is in its projectile list
-    assert "DpmjetIII307" not in util.find_models(22, "p", only_names=True)
-    assert "DpmjetIII307" not in util.find_models(22, "n", only_names=True)
+    for target in ("p", "n"):
+        names = util.find_models(22, target, only_names=True)
+        assert "DpmjetIII307" not in names
+        assert "DpmjetIII193" in names
 
 
 def test_find_models_hadron():
@@ -192,7 +195,7 @@ def test_find_models_composite_and_tuple():
     assert "DpmjetIII307" in {m.pyname for m in util.find_models(22, air)}
     # a composite with a nucleon component must not match for photons
     water = CompositeTarget([("H1", 2), ("O16", 1)])
-    assert util.find_models(22, water) == []
+    assert "DpmjetIII307" not in {m.pyname for m in util.find_models(22, water)}
     # (A, Z) tuple specification
     assert "DpmjetIII307" in {
         m.pyname for m in util.find_models(22, util.AZ2pdg(16, 8))
