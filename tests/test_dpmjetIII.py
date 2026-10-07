@@ -2,7 +2,7 @@ import sys
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 import chromo
 from chromo.constants import GeV
@@ -201,6 +201,47 @@ def get_model_projectile_combinations():
 @pytest.mark.parametrize("model,p1", get_model_projectile_combinations())
 def test_projectile_list(model, p1):
     run_in_separate_process(run_three_events, p1, model)
+
+
+def run_first_event(model, kin, randomize):
+    gen = model(kin, seed=1)
+    gen.randomize_azimuth = randomize
+    return next(gen(1)).copy()
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+def test_randomize_azimuth_is_rigid_rotation(model):
+    # same seed: first events differ only by a rotation around the beam axis
+    kin = chromo.kinematics.CenterOfMass(100 * GeV, "O", "O16")
+    rot = run_in_separate_process(run_first_event, model, kin, True)
+    ref = run_in_separate_process(run_first_event, model, kin, False)
+    assert_equal(rot.pid, ref.pid)
+    assert_equal(rot.status, ref.status)
+    for attr in ("en", "pz", "m", "vz"):
+        assert_allclose(getattr(rot, attr), getattr(ref, attr), rtol=1e-8)
+    pt_ref = np.hypot(ref.px, ref.py)
+    assert_allclose(np.hypot(rot.px, rot.py), pt_ref, rtol=1e-8)
+    assert_allclose(np.hypot(rot.vx, rot.vy), np.hypot(ref.vx, ref.vy), rtol=1e-8)
+    dphi = np.arctan2(rot.py, rot.px) - np.arctan2(ref.py, ref.px)
+    dphi = (dphi + np.pi) % (2 * np.pi) - np.pi
+    sel = pt_ref > 1e-6
+    assert_allclose(dphi[sel], dphi[sel][0], atol=1e-6)
+    assert np.max(np.abs(rot.px[sel] - ref.px[sel])) > 1e-6
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+def test_randomize_azimuth_on_by_default(model):
+    assert model.randomize_azimuth is True
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+def test_randomize_azimuth_skips_hadron_nucleon(model):
+    kin = chromo.kinematics.CenterOfMass(100 * GeV, "p", "p")
+    a = run_in_separate_process(run_first_event, model, kin, True)
+    b = run_in_separate_process(run_first_event, model, kin, False)
+    assert_equal(a.pid, b.pid)
+    assert_allclose(a.en, b.en, rtol=1e-8)
+    assert_allclose(a.px, b.px, rtol=1e-8)
 
 
 def run_remnant_conservation(model, p1, p2):

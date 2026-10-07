@@ -28,10 +28,15 @@ from chromo.constants import (
     standard_projectiles,
 )
 from chromo.decay_handler import Pythia8DecayHandler
-from chromo.kinematics import CompositeTarget, EventKinematicsBase
+from chromo.kinematics import (
+    CompositeTarget,
+    EventKinematicsBase,
+    rotate_event,
+)
 from chromo.util import (
     Nuclei,
     classproperty,
+    is_real_nucleus,
     naneq,
     pdg2name,
     select_long_lived,
@@ -444,6 +449,9 @@ class EventData:
         kin = self.kin
         if kin.frame == EventFrame.FIXED_TARGET:
             return self.en
+        if kin.frame == EventFrame.GENERIC:
+            dy = kin._rapidity(EventFrame.FIXED_TARGET) - kin._rapidity(kin.frame)
+            return np.cosh(dy) * self.en + np.sinh(dy) * self.pz
         return kin._gamma_cm * self.en + kin._betagamma_cm * self.pz
 
     @property
@@ -769,6 +777,10 @@ class MCRun(ABC):
             self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
             self._lib.npy.gen_id = self._get_bitgen_id(self._rng.bit_generator)
 
+    #: Rotate events with a nuclear participant by a random azimuthal angle
+    #: around the beam axis. Enable for generators with a fixed reaction plane.
+    randomize_azimuth = False
+
     def __call__(self, nevents):
         """Generator function (in python sence)
         which launches the underlying event generator
@@ -782,6 +794,11 @@ class MCRun(ABC):
                     self.nevents += 1
                     nev -= 1
                     event = self._event_class(self)
+                    if self.randomize_azimuth and (
+                        is_real_nucleus(self.kinematics.p1)
+                        or is_real_nucleus(self.kinematics.p2)
+                    ):
+                        rotate_event(event, self._rng.uniform(0.0, 2 * np.pi))
                     # boost into frame requested by user
                     self.kinematics.apply_boost(event, self._frame)
                     self._validate_decay(event)
