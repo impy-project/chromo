@@ -2,12 +2,13 @@ import sys
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 import chromo
 from chromo.constants import GeV
 from chromo.util import get_all_models, naneq
 
+from .util import baryon_number as _baryon_number
 from .util import run_in_separate_process
 
 pytestmark = pytest.mark.skipif(
@@ -173,7 +174,7 @@ def run_prod_cs_event_stream(model, prod_queries):
     if prod_queries:
         for plab in (1e2, 1e4):
             gen.cross_section(chromo.kinematics.FixedTarget(plab, "proton", "O16"))
-    return [(len(evt.final_state()), np.sum(evt.final_state().en)) for evt in gen(3)]
+    return [(len(evt.final_state()), np.sum(evt.final_state().en)) for evt in gen(6)]
 
 
 @pytest.mark.parametrize("model", get_dpmjets())
@@ -247,3 +248,68 @@ def test_dpmjet307_photon_nucleon_rejected(target):
     from chromo.models import DpmjetIII307
 
     assert run_in_separate_process(run_photon_on_nucleon_rejected, DpmjetIII307, target)
+
+
+def run_first_event(model, kin, randomize):
+    gen = model(kin, seed=1)
+    gen.randomize_azimuth = randomize
+    return next(gen(1)).copy()
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+def test_randomize_azimuth_is_rigid_rotation(model):
+    # same seed: first events differ only by a rotation around the beam axis
+    kin = chromo.kinematics.CenterOfMass(100 * GeV, "O", "O16")
+    rot = run_in_separate_process(run_first_event, model, kin, True)
+    ref = run_in_separate_process(run_first_event, model, kin, False)
+    assert_equal(rot.pid, ref.pid)
+    assert_equal(rot.status, ref.status)
+    for attr in ("en", "pz", "m", "vz"):
+        assert_allclose(getattr(rot, attr), getattr(ref, attr), rtol=1e-8)
+    pt_ref = np.hypot(ref.px, ref.py)
+    assert_allclose(np.hypot(rot.px, rot.py), pt_ref, rtol=1e-8)
+    assert_allclose(np.hypot(rot.vx, rot.vy), np.hypot(ref.vx, ref.vy), rtol=1e-8)
+    dphi = np.arctan2(rot.py, rot.px) - np.arctan2(ref.py, ref.px)
+    dphi = (dphi + np.pi) % (2 * np.pi) - np.pi
+    sel = pt_ref > 1e-6
+    assert_allclose(dphi[sel], dphi[sel][0], atol=1e-6)
+    assert np.max(np.abs(rot.px[sel] - ref.px[sel])) > 1e-6
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+def test_randomize_azimuth_on_by_default(model):
+    assert model.randomize_azimuth is True
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+def test_randomize_azimuth_skips_hadron_nucleon(model):
+    kin = chromo.kinematics.CenterOfMass(100 * GeV, "p", "p")
+    a = run_in_separate_process(run_first_event, model, kin, True)
+    b = run_in_separate_process(run_first_event, model, kin, False)
+    assert_equal(a.pid, b.pid)
+    assert_allclose(a.en, b.en, rtol=1e-8)
+    assert_allclose(a.px, b.px, rtol=1e-8)
+
+
+def run_remnant_conservation(model, p1, p2):
+    import numpy as np
+
+    from chromo.kinematics import FixedTarget
+
+    from .util import charge_number
+
+    kin = FixedTarget(1e4, p1, p2)
+    a = (kin.p1.A or 0) + (kin.p2.A or 0)
+    z = (kin.p1.Z or 0) + (kin.p2.Z or 0)
+    generator = model(kin, seed=1)
+    for event in generator(3):
+        assert not np.any((event.status == 5) & (event.daughters[:, 0] != -1))
+        frags = event.final_state_with_nucl_frag()
+        assert sum(_baryon_number(pid) for pid in frags.pid) == a
+        assert sum(charge_number(pid) for pid in frags.pid) == z
+
+
+@pytest.mark.parametrize("model", get_dpmjets(no307=False))
+@pytest.mark.parametrize("p1,p2", [("p", "O16"), ("p", "Pb208"), ("O16", "O16")])
+def test_remnant_conservation(model, p1, p2):
+    run_in_separate_process(run_remnant_conservation, model, p1, p2)

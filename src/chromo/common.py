@@ -23,14 +23,20 @@ from particle import Particle
 from chromo.constants import (
     GeV,
     long_lived,
+    nucleon_mass,
     quarks_and_diquarks_and_gluons,
     standard_projectiles,
 )
 from chromo.decay_handler import Pythia8DecayHandler
-from chromo.kinematics import CompositeTarget, EventKinematicsBase
+from chromo.kinematics import (
+    CompositeTarget,
+    EventKinematicsBase,
+    rotate_event,
+)
 from chromo.util import (
     Nuclei,
     classproperty,
+    is_real_nucleus,
     naneq,
     pdg2name,
     select_long_lived,
@@ -128,12 +134,15 @@ class CrossSectionData:
         return not self == other
 
     def _mul_radd(self, factor, other):
+        # NaN-safe combine used for composite targets: NaN in `other` means
+        # "not provided by this component" and is skipped; a field stays NaN
+        # only if no component provided it (np.nansum-like semantics).
         for field in dataclasses.fields(self):
-            setattr(
-                self,
-                field.name,
-                getattr(self, field.name) + factor * getattr(other, field.name),
-            )
+            a = getattr(self, field.name)
+            b = getattr(other, field.name)
+            if bool(np.isnan(b)):
+                continue
+            setattr(self, field.name, (0.0 if bool(np.isnan(a)) else a) + factor * b)
 
 
 # Do we need EventData.n_spectators in addition to EventData.n_wounded?
@@ -307,6 +316,9 @@ class EventData:
         produce Omega- and its antiparticle, so the final state never contains them.
         The QGSJet family does not produce Omega-, Xi-, Xi0, Sigma-, Sigma+ and their
         antiparticles.
+
+        Nuclear remnants with status 4 or 5 are not included, see
+        :meth:`final_state_with_nucl_frag`.
         """
         return self._select(self.status == 1, False)
 
@@ -319,6 +331,30 @@ class EventData:
         seen by a tracking detector.
         """
         return self._select((self.status == 1) & (self.charge != 0), False)
+
+    def final_state_with_nucl_frag(self):
+        """
+        Return filtered event with final state particles and nuclear remnants.
+
+        Selects terminal records with status 1 (final state), 4 (residual
+        nuclei, PDG code 10LZZZAAAI) and 5 (spectator nucleons). Incoming
+        beam records and records with daughters are excluded, so baryon
+        number and charge of the initial state are not double-counted.
+        Generator support differs, see ``doc/nuclear_fragments.md``.
+        """
+        st = self.status
+        mask = np.isin(st, (1, 4, 5))
+        # beam records at index 0 and 1 carry status 4
+        mask &= ~((st == 4) & (np.arange(len(st)) < 2))
+        # status 4 must be a terminal nucleus record
+        nucleon_like = np.isin(np.abs(self.pid), (2112, 2212))
+        non_terminal = (
+            np.zeros(len(st), dtype=bool)
+            if self.daughters is None
+            else self.daughters[:, 0] != -1
+        )
+        mask &= ~((st == 4) & (nucleon_like | non_terminal))
+        return self._select(mask, False)
 
     def without_parton_shower(self):
         """
@@ -413,6 +449,9 @@ class EventData:
         kin = self.kin
         if kin.frame == EventFrame.FIXED_TARGET:
             return self.en
+        if kin.frame == EventFrame.GENERIC:
+            dy = kin._rapidity(EventFrame.FIXED_TARGET) - kin._rapidity(kin.frame)
+            return np.cosh(dy) * self.en + np.sinh(dy) * self.pz
         return kin._gamma_cm * self.en + kin._betagamma_cm * self.pz
 
     @property
@@ -639,6 +678,55 @@ class MCEvent(EventData, ABC):
                 res = np.concatenate((beam_field, event_field))
             setattr(self, field, res)
 
+    def _append_projectile_fragments(self, mass_numbers, rng):
+        """
+        Append spectator fragments of a nuclear projectile as status 1 records.
+
+        Generators that report only fragment mass numbers get Z = A // 2 for
+        A > 1; single nucleons are protons with probability Z/A of the
+        projectile. Fragments move with the projectile momentum per nucleon.
+
+        Parameters
+        ----------
+        mass_numbers : array-like of int
+            Mass numbers of the fragments.
+        rng : numpy.random.Generator
+            Generator for the nucleon isospin.
+        """
+        a = np.asarray(mass_numbers, dtype=np.int64)
+        if len(a) == 0:
+            return
+        p1 = self.kin.p1
+        z = a // 2
+        single = a == 1
+        z[single] = rng.random(np.sum(single)) < p1.Z / p1.A
+        pid = np.where(z == 1, 2212, 2112)
+        pid = np.where(single, pid, 1000000000 + 10000 * z + 10 * a)
+        m = a * nucleon_mass
+        pz = a * self.kin._get_beam_data(self._generator_frame)["pz"][0]
+        zero = np.zeros(len(a))
+        new = {
+            "pid": pid,
+            "status": np.ones(len(a), dtype=self.status.dtype),
+            "charge": z.astype(self.charge.dtype),
+            "px": zero,
+            "py": zero,
+            "pz": pz,
+            "en": np.sqrt(pz**2 + m**2),
+            "m": m,
+            "vx": zero,
+            "vy": zero,
+            "vz": zero,
+            "vt": zero,
+            "mothers": np.tile(np.array([0, -1], dtype=np.int32), (len(a), 1)),
+            "daughters": np.full((len(a), 2), -1, dtype=np.int32),
+        }
+        for field, value in new.items():
+            old = getattr(self, field)
+            if old is None:
+                continue
+            setattr(self, field, np.concatenate((old, value.astype(old.dtype))))
+
 
 # =========================================================================
 # MCRun
@@ -689,6 +777,10 @@ class MCRun(ABC):
             self._lib.npy.bitgen = self._rng.bit_generator.ctypes.bit_generator.value
             self._lib.npy.gen_id = self._get_bitgen_id(self._rng.bit_generator)
 
+    #: Rotate events with a nuclear participant by a random azimuthal angle
+    #: around the beam axis. Enable for generators with a fixed reaction plane.
+    randomize_azimuth = False
+
     def __call__(self, nevents):
         """Generator function (in python sence)
         which launches the underlying event generator
@@ -702,6 +794,11 @@ class MCRun(ABC):
                     self.nevents += 1
                     nev -= 1
                     event = self._event_class(self)
+                    if self.randomize_azimuth and (
+                        is_real_nucleus(self.kinematics.p1)
+                        or is_real_nucleus(self.kinematics.p2)
+                    ):
+                        rotate_event(event, self._rng.uniform(0.0, 2 * np.pi))
                     # boost into frame requested by user
                     self.kinematics.apply_boost(event, self._frame)
                     self._validate_decay(event)
@@ -809,6 +906,22 @@ class MCRun(ABC):
     def random_state(self, rng_state):
         self._rng.bit_generator.state = rng_state
 
+    def print_native_event(self):
+        """Print the current event using the generator's native printout.
+
+        The listing is written directly to stdout by the generator itself
+        and shows the event as stored internally in the generator, i.e.
+        without any frame transformations or filtering applied by chromo
+        to the returned ``EventData``. This is useful for debugging.
+
+        Generators which provide a native event listing (DPMJET, Phojet,
+        EPOS, SIBYLL, Pythia6, Pythia8) override this method, possibly
+        accepting additional model-specific arguments. This default
+        implementation raises `NotImplementedError`.
+        """
+        msg = f"{self.pyname} does not support native event printout"
+        raise NotImplementedError(msg)
+
     def _check_kinematics(self, kin):
         """Check if kinematics are allowed for this generator."""
 
@@ -862,7 +975,7 @@ class MCRun(ABC):
         with self._temporary_kinematics(kin):
             kin2 = self.kinematics
             if isinstance(kin2.p2, CompositeTarget):
-                cross_section = CrossSectionData(0, 0, 0, 0, 0, 0, 0)
+                cross_section = CrossSectionData()
                 kin3 = copy.copy(kin2)
                 for component, fraction in zip(kin2.p2.components, kin2.p2.fractions):
                     kin3.p2 = component

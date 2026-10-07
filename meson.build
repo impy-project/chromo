@@ -83,7 +83,8 @@ sibyll_syms_base  = [
 qgs_syms_base     = ['cqgsini','qgsect','qgini','qgconf','qgreg','chepevt','qgcrossc','cqgshh_ha_cs']
 urqmd_syms        = [
   'urqmd','init','uinit','set0','params','uounit','strini','loginit','loadwtab',
-  'norm_init','output','cascinit','nucrad','urqini','partname','chepevt','ptsigtot']
+  'norm_init','output','cascinit','nucrad','urqini','partname','chepevt','ptsigtot',
+  'upyth']
 pythia6_syms      = [
   'pyinit','pyexec','pytune','pylist','pyevnt','pyevnw','pystat','pyedit',
   'pyhepc','pychge','pycomp','pyk']
@@ -132,7 +133,7 @@ models = {
 
   '_qgs01' : { 'src':[f/'qgsjet/qgsjet01d.f',f/'qgsjet/chromo_qgs1.f'],
                'funcs':['cqgsini','sectnu','xxaini','psconf','xxreg','psaini',
-                        'chepevt','xxfz','cqgshh_ha_cs','crossc']+common_syms },
+                        'chepevt','xxfz','cqgshh_ha_cs','crossc','xxfragm']+common_syms },
   '_qgs2_03':{ 'src':[f/'qgsjet/qgsjet-II-03.f',f/'qgsjet/chromo_qgsII.f'],
                'funcs':qgs_syms_base+common_syms },
   '_qgs2_04':{ 'src':[f/'qgsjet/qgsjet-II-04.f',f/'qgsjet/chromo_qgsII.f'],

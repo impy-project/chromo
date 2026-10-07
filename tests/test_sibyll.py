@@ -3,17 +3,26 @@ import pytest
 from numpy.testing import assert_allclose, assert_equal
 
 from chromo.common import CrossSectionData
-from chromo.constants import TeV
-from chromo.kinematics import CenterOfMass
+from chromo.constants import GeV, TeV
+from chromo.kinematics import (
+    CenterOfMass,
+    CompositeTarget,
+    EventFrame,
+    EventKinematicsWithRestframe,
+)
 from chromo.util import get_all_models
 
-from .util import reference_charge, run_in_separate_process
+from .util import (
+    capture_native_printout,
+    reference_charge,
+    run_in_separate_process,
+)
 
 cs_sibyll21 = CrossSectionData(
     total=117.90274047851562,
     inelastic=85.13753509521484,
     elastic=32.76520538330078,
-    prod=np.nan,
+    prod=85.13753509521484,
     quasielastic=np.nan,
     coherent=np.nan,
     diffractive_xb=6.198373,
@@ -28,7 +37,7 @@ cs_sibyll23 = CrossSectionData(
     total=105.7269966641395,
     inelastic=76.78422435244065,
     elastic=28.94277231169886,
-    prod=np.nan,
+    prod=76.78422435244065,
     quasielastic=np.nan,
     coherent=np.nan,
     diffractive_xb=5.985736090273257,
@@ -119,6 +128,28 @@ def test_cross_section(model):
         c.non_diffractive,
         c.inelastic - c.diffractive_xb - c.diffractive_ax - c.diffractive_xx,
     )
+
+
+def run_cross_section_prod(model, kin):
+    m = model(kin, seed=1)
+    return m.cross_section().prod
+
+
+@pytest.mark.parametrize("model", get_sibylls())
+@pytest.mark.parametrize("energy", [100 * GeV, 1e4 * GeV])
+def test_prod_cross_section_finite(model, energy):
+    # regression test for issue #241: production cross section must be
+    # finite for h-N and for composite targets containing a proton
+    c_p = run_in_separate_process(
+        run_cross_section_prod, model, CenterOfMass(energy, "p", "p")
+    )
+    assert np.isfinite(c_p) and c_p > 0
+
+    p_air = CompositeTarget([("p", 0.01), ("N", 0.77), ("O", 0.22)])
+    c_air = run_in_separate_process(
+        run_cross_section_prod, model, CenterOfMass(energy, "p", p_air)
+    )
+    assert np.isfinite(c_air) and c_air > 0
 
 
 def run_with_runtime_warning(model, p1, p2):
@@ -252,3 +283,39 @@ def test_wounded_no_stale_blocks(model):
     assert all(b > 0 for na, nb, b in results[2])
     # and switching back to p + O must sample /S_CNCM0/ again
     assert all(na == 1 and nb >= 1 and b > 0 for na, nb, b in results[3])
+
+
+@pytest.mark.parametrize("model", get_sibylls())
+def test_print_native_event(model):
+    output = capture_native_printout(model, 10 * TeV, "p", "p")
+    if model.pyname == "Sibyll21":
+        assert "Event record" in output
+    else:
+        assert "SIBYLL EVENT SUMMARY" in output
+
+
+def run_with_kin(kin):
+    from chromo.models import Sibyll23d
+
+    m = Sibyll23d(kin, seed=1)
+    return [event.copy() for event in m(1)]
+
+
+def test_generic_frame_matches_cms():
+    # symmetric generic frame is the CMS frame
+    kin_generic = EventKinematicsWithRestframe("p", "O", beam=(1e3, -1e3))
+    assert kin_generic.frame == EventFrame.GENERIC
+    kin_cms = EventKinematicsWithRestframe("p", "O", ecm=kin_generic.ecm)
+    events_generic = run_in_separate_process(run_with_kin, kin_generic)
+    events_cms = run_in_separate_process(run_with_kin, kin_cms)
+    for event_generic, event_cms in zip(events_generic, events_cms):
+        fs_g = event_generic.final_state()
+        fs_c = event_cms.final_state()
+        assert fs_g.pid == pytest.approx(fs_c.pid)
+        assert_allclose(fs_g.px, fs_c.px, rtol=1e-12, atol=1e-12)
+        assert_allclose(fs_g.py, fs_c.py, rtol=1e-12, atol=1e-12)
+        assert_allclose(fs_g.pz, fs_c.pz, rtol=1e-12, atol=1e-12)
+        assert_allclose(fs_g.en, fs_c.en, rtol=1e-12, atol=1e-12)
+        # mass shell is preserved
+        inv_mass2 = fs_g.en**2 - fs_g.px**2 - fs_g.py**2 - fs_g.pz**2
+        assert_allclose(inv_mass2, fs_g.m**2, atol=0.005)

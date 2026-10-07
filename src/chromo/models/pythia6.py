@@ -110,3 +110,14 @@ class Pythia6(MCRun):
         self._event_call()
         self._lib.pyhepc(1)
         return True
+
+    def print_native_event(self, mode=2):
+        """Print the event record using Pythia6's native PYLIST routine.
+
+        The listing contains the event as stored internally in Pythia6,
+        before chromo applies any transformations or filtering.
+        *mode* selects the level of detail (1 - summary, 2 - standard,
+        3 - with vertices, 4 - no momenta). The output is written by
+        Fortran to the printout unit, which chromo sets to stdout.
+        """
+        self._lib.pylist(mode)

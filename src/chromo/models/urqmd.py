@@ -221,7 +221,9 @@ class UrQMD34(MCRun):
         # Use bdb weighting for impact parameter selection
         self._lib.options.ctoption[5 - 1] = 1
 
-        # Disable elastic collision
+        # Disable elastic collisions of initial nucleon-nucleon pairs
+        # (see scatter.f; elastic scattering of other beams, e.g. pi+p,
+        # is still possible and filtered in _generate())
         self._lib.options.ctoption[7 - 1] = 1
 
         # Change CTParams and/or CTOptions if needed
@@ -241,7 +243,32 @@ class UrQMD34(MCRun):
         self._lib.inputs.outsteps = int(0.01 + caltim / self._lib.pots.dtimestep)
         self.kinematics = evt_kin
 
+        # Absorb the one-time initialization of the embedded Pythia6, which
+        # is otherwise lazily triggered by the first hard scattering
+        # (make22.f -> upyth -> PYINIT) and draws heavily from the RNG
+        # stream. Without this, saving the RNG state and restoring it later
+        # could not reproduce the first events (issue #64).
+        self._warm_up()
+
         self._set_final_state_particles()
+
+    def _warm_up(self):
+        """Trigger the lazy Pythia6 initialization inside UrQMD.
+
+        UrQMD routes hard scatterings through an embedded Pythia6. Its
+        PYINIT (called from upyth) runs PYMULT/PYMIGN, which adapt the
+        multiple-interaction cutoff (PARP(82)) with a Monte Carlo loop that
+        is repeated until the parton-parton cross section passes a
+        threshold and is then cached forever. This consumes a one-time
+        chunk of draws from the common RNG stream. A real event would
+        consume an unpredictable number of draws to trigger it, so one
+        fixed dummy upyth call is made at construction, making the draws
+        consumed during construction deterministic. upyth applies its own
+        fixed subprocess list and suppresses Pythia output (MSTP(122)),
+        so the warm-up is identical for every beam combination.
+        """
+        # UrQMD projectile/target codes (p, pbar) at 50 GeV CMS
+        self._lib.upyth(1, 1, -1, 1, 50.0)
 
     def _cross_section(self, kin=None, max_info=False):
         tot = self._lib.ptsigtot()
@@ -310,6 +337,18 @@ class UrQMD34(MCRun):
                 self._lib.cascinit(self._lib.sys.zt, self._lib.sys.at, 2)
 
         self._lib.urqmd(0)
+        # UrQMD accepts events where the only interaction was elastic
+        # scattering. For meson projectiles (pions, kaons) these events
+        # contain just the two beam particles in the final state,
+        # see issue #45. Reject events without any inelastic collision,
+        # consistent with UrQMD's own inelastic-collision counter
+        # (iinelcoll = ctag - dectag - NElColl - NBlColl in output.f):
+        # ctag counts all interactions, dectag decays, nelcoll elastic
+        # and nblcoll Pauli-blocked collisions.
+        sysb = self._lib.sys
+        n_inelastic = sysb.ctag - sysb.dectag - sysb.nelcoll - sysb.nblcoll
+        if n_inelastic <= 0:
+            return False
         # Convert URQMD event to HEPEVT
         self._lib.chepevt()
         return True

@@ -118,7 +118,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
     steps:
       - name: Restore chromo data cache
         uses: actions/cache@v5
@@ -148,8 +148,7 @@ jobs:
           EXPECTED_MACOS_TARGET: '15.0'
         run: bash scripts/ci/macos_wheel_preflight.sh
 
-      - if: ${{ matrix.os != 'macos-15-intel' }}
-        uses: ts-graphviz/setup-graphviz@v2.0.2
+      - uses: ts-graphviz/setup-graphviz@v2.0.2
         name: Install Graphviz
 
       - if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm' }}
@@ -166,16 +165,6 @@ jobs:
           delay=$((RANDOM % 14 + 2))
           echo "Sleeping $delay seconds to stagger cibuildwheel downloads..."
           sleep $delay
-
-      - if: ${{ matrix.os == 'macos-15-intel' }}
-        name: cibuildwheel on macOS Intel
-        uses: pypa/cibuildwheel@v4.2.1
-        env:
-          CIBW_BUILD: cp314-*
-          CIBW_ARCHS: auto
-          no_proxy: '*'
-          CHROMO_SKIP_GRAPHVIZ: 1
-          CIBW_TEST_COMMAND: 'pytest -n auto -vv -k "not QgsjetIII" {project}/tests'
 
       - if: ${{ matrix.os == 'macos-latest' }}
         name: cibuildwheel on macOS

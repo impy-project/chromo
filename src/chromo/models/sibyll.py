@@ -110,14 +110,6 @@ class SibyllEvent(MCEvent):
     def _get_charge(self, npart):
         return self._lib.schg.ichg[:npart]
 
-    def __init__(self, generator):
-        # Geometry is in /CNUCMS/ for A + A and /S_CNCM0/ for h + A;
-        # Fortran never clears them, so select by kinematics, not content.
-        kin = generator.kinematics
-        self._is_aa = is_real_nucleus(kin.p1)
-        self._is_ha = not self._is_aa and kin.p2.A > 1
-        super().__init__(generator)
-
     def _get_impact_parameter(self):
         if self._is_aa:
             return self._lib.cnucms.b
@@ -138,7 +130,41 @@ class SibyllEvent(MCEvent):
         # Sibyll has only mothers
         self.mothers = self.mothers - 1
 
+    def __init__(self, generator):
+        # Geometry is in /CNUCMS/ for A + A and /S_CNCM0/ for h + A;
+        # Fortran never clears them, so select by kinematics, not content.
+        kin = generator.kinematics
+        self._is_aa = is_real_nucleus(kin.p1)
+        self._is_ha = not self._is_aa and kin.p2.A > 1
+        super().__init__(generator)
+        if self._is_aa:
+            self._append_projectile_fragments(self._fragments, generator._rng)
+
+    def _load_nucleus_nucleus(self):
+        # SIBNUC accumulates all sub-collisions and the projectile
+        # fragments (code 1000 + A) in /S_PLNUC/; /S_PLIST/ holds only
+        # the last sub-collision.
+        lib = self._lib
+        n = int(lib.s_plnuc.npa)
+        code = lib.s_plnuc.lla[:n]
+        pa = lib.s_plnuc.pa[:, :n]
+        is_frag = (np.abs(code) > 1000) & (np.abs(code) < 2000)
+        self._fragments = np.abs(code[is_frag]) - 1000
+        code, pa = code[~is_frag], pa[:, ~is_frag]
+        pdg = {c: lib.isib_pid2pdg(c) for c in np.unique(code)}
+        k = len(code)
+        self.pid = np.array([pdg[c] for c in code], dtype=self.pid.dtype)
+        self.status = np.ones(k, dtype=self.status.dtype)
+        self.charge = (np.sign(code) * lib.s_chp.ichp[np.abs(code) - 1]).astype(
+            self.charge.dtype
+        )
+        self.px, self.py, self.pz, self.en, self.m = (np.array(x) for x in pa)
+        self.vx, self.vy, self.vz, self.vt = (np.zeros(k) for _ in range(4))
+        self.mothers = np.full((k, 2), -1, dtype=self.mothers.dtype)
+
     def _repair_initial_beam(self):
+        if self._is_aa:
+            self._load_nucleus_nucleus()
         self._prepend_initial_beam()
         # Repair history
         self.mothers[(self.mothers == [1, 1]).all(axis=1)] = [0, 1]
@@ -275,6 +301,7 @@ class SIBYLLRun(MCRun):
             total=tot,
             elastic=el,
             inelastic=inel,
+            prod=inel,
             diffractive_xb=diff[0],
             diffractive_ax=diff[1],
             diffractive_xx=diff[2],
@@ -344,6 +371,21 @@ class SIBYLLRun(MCRun):
         self._lib.decsib()
         self._lib.sibhep()
         return True
+
+    def print_native_event(self):
+        """Print the event summary using SIBYLL's native SIB_LIST routine.
+
+        The listing contains the event content as stored in the SIBYLL
+        internal common blocks, before chromo applies any transformations
+        or filtering. The output is written by Fortran to the log unit
+        (stdout by default).
+        """
+        try:
+            # SIBYLL 2.3 variants take the output unit as an argument
+            self._lib.sib_list(self._lib.s_debug.lun)
+        except TypeError:
+            # SIBYLL 2.1 takes no argument and reads the unit from /S_DEBUG/
+            self._lib.sib_list()
 
 
 class Sibyll21(SIBYLLRun):

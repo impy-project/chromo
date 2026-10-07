@@ -12,7 +12,11 @@ from chromo.constants import GeV, TeV
 from chromo.kinematics import CenterOfMass
 from chromo.models import Pythia6
 
-from .util import reference_charge, run_in_separate_process
+from .util import (
+    capture_native_printout,
+    reference_charge,
+    run_in_separate_process,
+)
 
 
 def test_name():
@@ -180,3 +184,8 @@ def run_pp_collision_copy():
 
 def test_event_copy():
     run_in_separate_process(run_pp_collision_copy)
+
+
+def test_print_native_event():
+    output = capture_native_printout(Pythia6, 100 * GeV, "p", "p")
+    assert "Event listing" in output

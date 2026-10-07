@@ -38,7 +38,89 @@ __all__ = (
     "PeV",
     "TeV",
     "TotalEnergy",
+    "boost_event",
+    "boost_vector",
+    "rotate_event",
 )
+
+
+def boost_vector(p_from, p_to):
+    """
+    Return the velocity of the pure boost that maps ``p_from`` onto ``p_to``.
+
+    Parameters
+    ----------
+    p_from, p_to : array-like
+        Four-momentum (px, py, pz, E) of the same system in the initial and
+        the target frame.
+
+    Returns
+    -------
+    ndarray
+        Velocity ``b`` in units of c, for use with :func:`boost_event`.
+
+    Notes
+    -----
+    ``b = -2 (E + E') (p' - p) / ((E + E')^2 + |p' - p|^2)``
+    """
+    p_from = np.asarray(p_from, dtype=np.float64)
+    p_to = np.asarray(p_to, dtype=np.float64)
+    dp = p_to[:3] - p_from[:3]
+    de = p_to[3] + p_from[3]
+    denom = de**2 + dp @ dp
+    if denom == 0:
+        return np.zeros(3)
+    return -2 * de * dp / denom
+
+
+def boost_event(event, b):
+    """
+    Lorentz-boost the momenta of an event in-place.
+
+    Parameters
+    ----------
+    event : EventData
+        Event, or any object with array attributes ``en``, ``px``, ``py``, ``pz``.
+    b : array-like
+        Velocity of the target frame in units of c.
+    """
+    b = np.asarray(b, dtype=np.float64)
+    b2 = np.dot(b, b)
+    if b2 == 0:
+        return
+    if b2 >= 1:
+        msg = "Boost velocity must be smaller than the speed of light"
+        raise ValueError(msg)
+    gamma = 1 / np.sqrt(1 - b2)
+    en, px, py, pz = event.en, event.px, event.py, event.pz
+    bp = b[0] * px + b[1] * py + b[2] * pz
+    f = (gamma - 1) / b2 * bp - gamma * en
+    event.en[:] = gamma * (en - bp)
+    event.px[:] = px + f * b[0]
+    event.py[:] = py + f * b[1]
+    event.pz[:] = pz + f * b[2]
+
+
+def rotate_event(event, angle):
+    """
+    Rotate momenta and vertices of an event in-place around the z-axis.
+
+    Parameters
+    ----------
+    event : EventData
+        Event, or any object with array attributes ``px``, ``py``, and
+        optionally ``vx``, ``vy``.
+    angle : float
+        Rotation angle in radians.
+    """
+    c, s = np.cos(angle), np.sin(angle)
+    for xname, yname in (("px", "py"), ("vx", "vy")):
+        x, y = getattr(event, xname, None), getattr(event, yname, None)
+        if x is None or y is None:
+            continue
+        x0 = x.copy()
+        x[:] = c * x0 - s * y
+        y[:] = s * x0 + c * y
 
 
 @dataclasses.dataclass
@@ -89,27 +171,40 @@ class EventKinematicsBase:
     _betagamma_cm: float
 
     def apply_boost(self, event, generator_frame, inverse=False):
+        """
+        Boost event in-place from ``generator_frame`` to ``self.frame``.
+
+        All frames share the beam axis, so the boost is along z.
+        ``inverse=True`` reverses the boost.
+        """
         if generator_frame == self.frame:
             return
         CMS = EventFrame.CENTER_OF_MASS
         FT = EventFrame.FIXED_TARGET
         if generator_frame == FT and self.frame == CMS:
-            bg = -self._betagamma_cm
+            g, bg = self._gamma_cm, -self._betagamma_cm
         elif generator_frame == CMS and self.frame == FT:
-            bg = self._betagamma_cm
+            g, bg = self._gamma_cm, self._betagamma_cm
         else:
-            msg = f"Boosts from {generator_frame} to {self.frame} are not yet supported"
-            raise NotImplementedError(msg)
-
-        # Inverse transformation
+            dy = self._rapidity(self.frame) - self._rapidity(generator_frame)
+            g, bg = np.cosh(dy), np.sinh(dy)
         if inverse:
             bg = -bg
-
-        g = self._gamma_cm
         en = g * event.en + bg * event.pz
         pz = bg * event.en + g * event.pz
         event.en[:] = en
         event.pz[:] = pz
+
+    def _rapidity(self, frame):
+        """Return rapidity of the total beam momentum in the given frame."""
+        if frame == EventFrame.CENTER_OF_MASS:
+            return 0.0
+        if frame == EventFrame.FIXED_TARGET:
+            return np.arcsinh(self._betagamma_cm)
+        if frame == EventFrame.GENERIC:
+            return np.arcsinh((self.beams[0][2] + self.beams[1][2]) / self.ecm)
+        msg = f"Boosts involving frame {frame} are not supported"
+        raise NotImplementedError(msg)
 
     def __eq__(self, other):
         at = dataclasses.astuple(self)
@@ -267,12 +362,16 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
             beams[1][2] = p2
             beams[0][3] = momentum2energy(p1, m1)
             beams[1][3] = momentum2energy(p2, m2)
-            s = np.sum(beams, axis=0)
-            # We compute ecm with energy2momentum. It is not really energy to momentum,
-            # but energy2momentum(x, y) computes x^2 - y^2, which is what we need. Here,
-            # I use that px and py are always zero, if we ever change this, many formulas
-            # have to change in this class, like all the boosts
-            ecm = energy2momentum(s[3], s[2])
+            # s = m1^2 + m2^2 + 2 (E1 E2 - p1 p2), with the difference rewritten
+            # for parallel beams to avoid cancellation at high energies
+            e1e2 = beams[0][3] * beams[1][3]
+            if p1 * p2 > 0:
+                d = ((m1 * p2) ** 2 + (m2 * p1) ** 2 + (m1 * m2) ** 2) / (
+                    e1e2 + p1 * p2
+                )
+            else:
+                d = e1e2 - p1 * p2
+            ecm = np.sqrt(m1**2 + m2**2 + 2 * d)
             elab = ecm2elab(ecm, m1, m2)
             ekin = elab - m1
             plab = energy2momentum(elab, m1)
@@ -336,6 +435,15 @@ class EventKinematicsWithRestframe(EventKinematicsBase):
 
 class EventKinematicsMassless(EventKinematicsBase):
     """EventKinematics for massless particles."""
+
+    def _rapidity(self, frame):
+        if frame == EventFrame.FIXED_TARGET:
+            msg = (
+                "Massless systems have no rest frame, "
+                "boosts involving the fixed target frame are undefined"
+            )
+            raise NotImplementedError(msg)
+        return super()._rapidity(frame)
 
     def __init__(
         self,

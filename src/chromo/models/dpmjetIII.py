@@ -1,5 +1,6 @@
 import warnings
 
+import numpy as np
 from particle import PDGID, Particle
 
 from chromo.common import CrossSectionData, MCEvent, MCRun
@@ -44,6 +45,13 @@ dpmjet_extended_projectiles = {Particle.from_pdgid(p).pdgid for p in dpmjet_exte
 # fmt: on
 
 
+# Common block fields overwritten by DT_XSGLAU and read by event generation
+_GLAUBER_STATE = {
+    "dtglam": ("sigsh", "rosh", "gsh", "bsite"),
+    "dtglxs": ("ecmnn", "xspro", "xepro", "bslope"),
+}
+
+
 class DpmjetIIIEvent(MCEvent):
     """Wrapper class around DPMJET-III HEPEVT-style particle stack."""
 
@@ -67,10 +75,42 @@ class DpmjetIIIEvent(MCEvent):
         return self._lib.dtglcp.nwasam, self._lib.dtglcp.nwbsam
 
     def _repair_initial_beam(self):
+        # The DPMJET stack starts with the projectile and target nucleons,
+        # so the beam records are prepended instead of overwriting them.
         beam = self.kin._get_beam_data(self._generator_frame)
-        for field in ["pid", "status", "charge", "px", "py", "pz", "en", "m"]:
-            event_field = getattr(self, field)
-            event_field[0:2] = beam[field]
+        for field, beam_field in beam.items():
+            value = getattr(self, field)
+            if value is None:
+                continue
+            if field in ("mothers", "daughters"):
+                value = np.where(value >= 0, value + 2, value)
+            setattr(self, field, np.concatenate((beam_field, value)))
+        # Map remnants to chromo status codes: residual nuclei -> 4 with
+        # PDG 10LZZZAAAI, terminal records of the residual nuclei (13-16)
+        # -> 5. Wounded nucleons (9-12, 17, 18) keep native codes.
+        n = len(self.status) - 2
+        idres = np.concatenate(([0, 0], self._lib.dtevt2.idres[:n]))
+        idxres = np.concatenate(([0, 0], self._lib.dtevt2.idxres[:n]))
+        is_residual = np.isin(self.status, (1001, 3003)) | (
+            (self.pid == 80000) & (np.abs(self.status) == 3) & (idres > 0)
+        )
+        if np.any(is_residual):
+            self.pid[is_residual] = (
+                1000000000 + 10000 * idxres[is_residual] + 10 * idres[is_residual]
+            )
+            self.status[is_residual] = 4
+        terminal = self.daughters[:, 0] == -1
+        # Residual nucleons are given in the rest frame of their nucleus
+        # (13, 15: projectile; 14, 16: target); boost them along z into
+        # the generator frame with the beam momentum per nucleon.
+        for side, codes in enumerate(((13, 15), (14, 16))):
+            sel = np.isin(self.status, codes) & terminal
+            gamma = beam["en"][side] / beam["m"][side]
+            betagamma = beam["pz"][side] / beam["m"][side]
+            en, pz = self.en[sel], self.pz[sel]
+            self.en[sel] = gamma * en + betagamma * pz
+            self.pz[sel] = betagamma * en + gamma * pz
+        self.status[np.isin(self.status, (13, 14, 15, 16)) & terminal] = 5
 
     def _prepare_for_hepmc(self):
         model, version = self.generator
@@ -114,11 +154,16 @@ class DpmjetIIIRun(MCRun):
     For cross-section tabulation use a fresh instance per point: the
     Glauber sigma drifts over many kinematics switches (19.3, p-air
     100 GeV: sigma_prod 278 mb on first query, ~258 mb late in a loop).
+
+    DPMJET places the impact parameter along x (DT_DIAGR). Nuclear events
+    are therefore rotated by a random azimuthal angle, see
+    ``MCRun.randomize_azimuth``.
     """
 
     _name = "DPMJET-III"
     _event_class = DpmjetIIIEvent
     _frame = None
+    randomize_azimuth = True
     # Photon projectiles on nuclear targets are enabled in DpmjetIII307.
     _projectiles = dpmjet_extended_projectiles | Nuclei(a_max=280)
     _targets = Nuclei()
@@ -245,16 +290,23 @@ class DpmjetIIIRun(MCRun):
             # valid only at the initialization kinematics, so it must not
             # be returned for arbitrary queries (issue #242). Run the
             # production-only Glauber MC for the requested kinematics,
-            # saving and restoring the RNG state (all Fortran draws go
-            # through the numpy bit generator) so that event generation
+            # saving and restoring the RNG state and the Glauber tables
+            # sampled during event generation, so that event generation
             # streams stay untouched.
             rng_state = self.random_state
             saved_lprod = self._lib.dtglgp.lprod
+            saved_glauber = {
+                (block, field): np.copy(getattr(getattr(self._lib, block), field))
+                for block, fields in _GLAUBER_STATE.items()
+                for field in fields
+            }
             try:
                 self._run_glauber(kin, photon_x, prod_only=True)
                 prod = self._lib.dtglxs.xspro[0, 0, 0]
             finally:
                 self._lib.dtglgp.lprod = saved_lprod
+                for (block, field), value in saved_glauber.items():
+                    setattr(getattr(self._lib, block), field, value)
                 self.random_state = rng_state
             return CrossSectionData(
                 prod=prod,
