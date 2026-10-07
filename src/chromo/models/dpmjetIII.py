@@ -258,8 +258,13 @@ class DpmjetIIIRun(MCRun):
             1,
         )
 
+    def _glauber_slot(self, kin):
+        """Return the DTGLXS target slot (1-based) holding results for kin."""
+        return 1
+
     def _cross_section(self, kin=None, photon_x=0, max_info=False):
         kin = self.kinematics if kin is None else kin
+        i = self._glauber_slot(kin) - 1
         # we override to set precision
         if (
             (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1)
@@ -276,14 +281,14 @@ class DpmjetIIIRun(MCRun):
 
             self._generate = _generate
             return CrossSectionData(
-                total=glxs.xstot[0, 0, 0],
-                elastic=glxs.xsela[0, 0, 0],
-                inelastic=glxs.xstot[0, 0, 0] - glxs.xsela[0, 0, 0],
-                prod=glxs.xspro[0, 0, 0],
-                quasielastic=glxs.xsqep[0, 0, 0]
-                + glxs.xsqet[0, 0, 0]
-                + glxs.xsqe2[0, 0, 0]
-                + glxs.xsela[0, 0, 0],
+                total=glxs.xstot[0, 0, i],
+                elastic=glxs.xsela[0, 0, i],
+                inelastic=glxs.xstot[0, 0, i] - glxs.xsela[0, 0, i],
+                prod=glxs.xspro[0, 0, i],
+                quasielastic=glxs.xsqep[0, 0, i]
+                + glxs.xsqet[0, 0, i]
+                + glxs.xsqe2[0, 0, i]
+                + glxs.xsela[0, 0, i],
             )
         if (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1):
             # The value cached in dtglxs.xspro during initialisation is
@@ -302,7 +307,7 @@ class DpmjetIIIRun(MCRun):
             }
             try:
                 self._run_glauber(kin, photon_x, prod_only=True)
-                prod = self._lib.dtglxs.xspro[0, 0, 0]
+                prod = self._lib.dtglxs.xspro[0, 0, i]
             finally:
                 self._lib.dtglgp.lprod = saved_lprod
                 for (block, field), value in saved_glauber.items():
@@ -420,26 +425,9 @@ class DpmjetIII193(DpmjetIIIRun):
 
 
 class DpmjetIII307(DpmjetIIIRun):
-    """DPMJET 3.0-7 with PHOJET 1.12 as the hadron/photon-nucleon engine.
+    """DPMJET 3.0-7 with PHOJET 1.12.
 
-    In addition to the standard hadronic projectiles and nuclei, DPMJET
-    supports photons (PDG 22) as projectiles on nuclear targets
-    (photon-induced interactions, VDM + Glauber). The Fortran code of
-    DPMJET 3.0-7 selects the projectile identity (``IJPROJ``) from the
-    ``/DTPRTA/`` common block instead of the ``IDP`` argument of
-    ``DT_INIT``, and the photon cross-section tables in the Glauber
-    module are only initialized if ``IJPROJ = 7`` (the BAMJET index of
-    the photon) is already set when the Glauber initialization runs.
-    Therefore, the first call to ``DT_INIT`` (triggered by setting the
-    kinematics) is transparently redone here with ``IJPROJ = 7`` when a
-    photon projectile is requested.
-
-    Photons on nucleon targets (gamma + p / n) are not enabled, since
-    then no Glauber initialization is performed and the production
-    cross section that the interface caches when the kinematics is set
-    would be meaningless. Note that PHOJET 1.12 alone
-    (``Phojet112`` via :mod:`chromo.models.phojet`) supports photons
-    on nucleon targets.
+    Photon projectiles are supported on nuclei (A > 1).
     """
 
     _version = "3.0-7"
@@ -471,24 +459,9 @@ class DpmjetIII307(DpmjetIIIRun):
         super()._set_kinematics(kin)
         if abs(kin.p1) != 22:
             return
-        # DPMJET 3.0-7 reads the projectile identity for the Glauber
-        # initialization from the /DTPRTA/ common block (IJPROJ),
-        # ignoring the IDP argument of DT_INIT, and the very first DT_INIT
-        # resets IJPROJ to 1 (via DT_DEFAUL). Photon-nucleus cross
-        # sections are only tabulated when IJPROJ = 7 (the BAMJET index
-        # of the photon) while DT_SHMAKI/DT_XSGLAU run, so repeat the
-        # initialization with the photon index set. EPN is kept at the
-        # maximal lab momentum of the run (self._max_plab) so that the
-        # hadronic path is not degraded, and /DTPRTA/ is restored
-        # afterwards.
-        # Every DT_SHMAKI call allocates a new target slot (NTARG=NTARG+1)
-        # in tables dimensioned NCOMPX=20, so the re-initialization must
-        # run exactly once per unique target nucleus. Repeating it per
-        # kinematics switch (e.g. for composite targets cycling over their
-        # components between batches) overflows the slot table and
-        # corrupts memory. Slots are therefore cached per target; slot 1
-        # holds the hadronic results initialized by the base class, so
-        # photon slots start at 2.
+        # DT_INIT takes the projectile from /DTPRTA/, not from IDP; repeat it
+        # with IJPROJ=7 (photon) once per target. Each call fills a new
+        # DTGLXS slot (at most NCOMPX=20); slot 1 holds the hadronic tables.
         target_key = (kin.p2.A or 1, kin.p2.Z or 0)
         slots = getattr(self, "_photon_slots", None)
         if slots is None:
@@ -515,66 +488,28 @@ class DpmjetIII307(DpmjetIIIRun):
             self._lib.dtprta.ibproj = 1
         slots[target_key] = len(slots) + 2
 
-    def _run_glauber(self, kin, photon_x, prod_only):
+    def _glauber_slot(self, kin):
         if abs(kin.p1) == 22:
-            # Photon results live in the slot assigned to this target
-            # during its one-time photon initialization, so that the
-            # hadronic results in slot 1, which are tabulated once during
-            # DT_INIT and reused by the base class, remain intact.
-            self._lib.dtglgp.lprod = prod_only
-            self._lib.dt_xsglau(
-                1,  # photon has no nucleons
-                kin.p2.A or 1,
-                7,  # BAMJET index of the photon projectile
-                photon_x,
-                kin.virt_p1,
-                kin.ecm,
-                1,
-                1,
-                getattr(self, "_photon_slots", {}).get(
-                    (kin.p2.A or 1, kin.p2.Z or 0), 2
-                ),
-            )
+            target_key = (kin.p2.A or 1, kin.p2.Z or 0)
+            return getattr(self, "_photon_slots", {}).get(target_key, 2)
+        return 1
+
+    def _run_glauber(self, kin, photon_x, prod_only):
+        if abs(kin.p1) != 22:
+            super()._run_glauber(kin, photon_x, prod_only)
             return
-        super()._run_glauber(kin, photon_x, prod_only)
-
-    def _cross_section(self, kin=None, photon_x=0, max_info=False):
-        kin = self.kinematics if kin is None else kin
-        if abs(kin.p1) == 22 and kin.p2.A and kin.p2.A > 1:
-            # Photon-nucleus cross sections are computed with the Glauber
-            # module (DT_XSGLAU with IJPROJ=7, VDM) into the DTGLXS slot
-            # assigned to this target by the photon initialization.
-            nidx = (
-                getattr(self, "_photon_slots", {}).get(
-                    (kin.p2.A or 1, kin.p2.Z or 0), 2
-                )
-                - 1
-            )
-            self._run_glauber(kin, photon_x, prod_only=not max_info)
-            if max_info:
-                # mirror the base class: the Glauber MC consumed Fortran
-                # RNG draws, so subsequent events are not reproducible
-                def _generate():
-                    raise RuntimeError(
-                        "Do not generate events with DPMJET after "
-                        "calculations of nuclear cross sections."
-                    )
-
-                self._generate = _generate
-            glxs = self._lib.dtglxs
-            stot = glxs.xstot[0, 0, nidx]
-            sela = glxs.xsela[0, 0, nidx]
-            return CrossSectionData(
-                total=stot,
-                elastic=sela,
-                inelastic=stot - sela,
-                prod=glxs.xspro[0, 0, nidx],
-                quasielastic=glxs.xsqep[0, 0, nidx]
-                + glxs.xsqet[0, 0, nidx]
-                + glxs.xsqe2[0, 0, nidx]
-                + sela,
-            )
-        return super()._cross_section(kin, photon_x=photon_x, max_info=max_info)
+        self._lib.dtglgp.lprod = prod_only
+        self._lib.dt_xsglau(
+            1,
+            kin.p2.A or 1,
+            7,  # BAMJET index of the photon
+            photon_x,
+            kin.virt_p1,
+            kin.ecm,
+            1,
+            1,
+            self._glauber_slot(kin),
+        )
 
 
 class DpmjetIII193_DEV(DpmjetIIIRun):
