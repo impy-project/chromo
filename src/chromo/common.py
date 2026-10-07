@@ -229,6 +229,15 @@ class EventData:
     daughters: Optional[np.ndarray]
     weight: Optional[float] = None
 
+    def __post_init__(self):
+        # generators may return 0-d views into their common blocks
+        self.impact_parameter = float(self.impact_parameter)
+        self.n_wounded = tuple(int(n) for n in self.n_wounded)
+        if self.production_cross_section is not None:
+            self.production_cross_section = float(self.production_cross_section)
+        if self.weight is not None:
+            self.weight = float(self.weight)
+
     def __getitem__(self, arg):
         """
         Return masked event.
@@ -262,29 +271,13 @@ class EventData:
         return all(eq(a, b) for (a, b) in zip(at, bt))
 
     def __getstate__(self):
-        return [
-            self.generator,
-            self.kin.copy(),
-            self.nevent,
-            self.impact_parameter,
-            self.n_wounded,
-            self.production_cross_section,
-            self.pid.copy(),
-            self.status.copy(),
-            self.charge.copy(),
-            self.px.copy(),
-            self.py.copy(),
-            self.pz.copy(),
-            self.en.copy(),
-            self.m.copy(),
-            self.vx.copy(),
-            self.vy.copy(),
-            self.vz.copy(),
-            self.vt.copy(),
-            self.mothers.copy() if self.mothers is not None else None,
-            self.daughters.copy() if self.daughters is not None else None,
-            self.weight,
-        ]
+        state = []
+        for f in dataclasses.fields(self):
+            v = getattr(self, f.name)
+            if isinstance(v, (np.ndarray, EventKinematicsBase)):
+                v = v.copy()
+            state.append(v)
+        return state
 
     def __setstate__(self, state):
         for f, v in zip(dataclasses.fields(self), state):
