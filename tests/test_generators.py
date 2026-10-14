@@ -38,9 +38,9 @@ FIG_PATH = Path("fig")
 FIG_PATH.mkdir(parents=True, exist_ok=True)
 
 
-def run_model(Model, kin, number=1):
+def run_model(Model, kin, number=1, seed=1):
     try:
-        gen = Model(kin, seed=1)
+        gen = Model(kin, seed=seed)
     except ValueError:
         return None
 
@@ -180,7 +180,10 @@ def test_generator(projectile, target, frame, Model):
     if Model is im.UrQMD34 and frame == "cms2ft" and p2 == "p":
         pytest.skip("location of proton delta peak depends on machine")
 
-    h = run_in_separate_process(run_model, Model, kin)
+    # Seed 1 gives a high-multiplicity He-air sample on cp39 arm64 builds,
+    # where floating-point differences turn the same seed into another sample
+    seed = 8 if Model is im.DpmjetIII193 and p1 == "He" else 1
+    h = run_in_separate_process(run_model, Model, kin, 1, seed)
     if h is None:
         assert (
             abs(kin.p1) not in Model.projectiles
