@@ -74,13 +74,37 @@ def run_model(Model, kin, number=1):
 
 
 def compute_p_value(got, expected, cov):
-    delta = got - expected
-    var = np.diag(cov) + 0.1  # prevent singularity
-    # we ignore correlations, since including them
-    # leads to implausible results
-    v = np.sum(delta**2 / var)
-    ndof = np.sum(delta != 0)
-    return 1 - chi2(ndof).cdf(v)
+    # We ignore bin-to-bin correlations, since including them leads to
+    # implausible results. Event-by-event multiplicity fluctuations shift all
+    # bins coherently, however, and would then enter the chi2 once per bin.
+    # Therefore, we test the shape (histogram scaled to the reference total)
+    # and the normalization separately and combine both with a Bonferroni
+    # correction. The histogram sometimes contains extreme spikes not reflected
+    # in cov; averaging the variance with the bin content protects against
+    # these false negatives.
+    n_got = np.sum(got)
+    n_exp = np.sum(expected)
+    if n_got <= 0 or n_exp <= 0:
+        var = 0.5 * (np.diag(cov) + got) + 0.1  # prevent singularity
+        delta = got - expected
+        return 1 - chi2(np.sum(delta != 0)).cdf(np.sum(delta**2 / var))
+
+    cov_with_total = np.sum(cov, axis=1)
+    var_total = np.sum(cov_with_total)
+    if var_total <= 0:
+        var_total = n_exp
+    p_norm = 1 - chi2(1).cdf((n_got - n_exp) ** 2 / var_total)
+
+    # linearized variance of expected * n_exp / n_total, coherent part removed
+    w = expected / n_exp
+    var = np.diag(cov) - 2 * w * cov_with_total + w**2 * np.sum(cov_with_total)
+    scaled = got * (n_exp / n_got)
+    var = 0.5 * (np.maximum(var, 0) + scaled) + 0.1  # prevent singularity
+    delta = scaled - expected
+    ndof = np.sum(delta != 0) - 1  # the scaling fixes the total
+    p_shape = 1 - chi2(ndof).cdf(np.sum(delta**2 / var)) if ndof > 0 else 1.0
+
+    return min(1.0, 2 * min(p_shape, p_norm))
 
 
 def draw_comparison(fn, p_value, axes, values, val_ref, cov_ref):
@@ -206,12 +230,7 @@ def test_generator(projectile, target, frame, Model):
     with gzip.open(path_ref) as f:
         val_ref, cov_ref = pickle.load(f)
 
-    # histogram sometimes contains extreme spikes
-    # not reflected in cov, this murky formula
-    # protects against these false negatives
     values = np.reshape(h.values(), -1)
-    for i, v in enumerate(values):
-        cov_ref[i, i] = 0.5 * (cov_ref[i, i] + v)
 
     p_value = compute_p_value(values, val_ref, cov_ref)
 
@@ -255,8 +274,6 @@ def test_generator_cascade(projectile, target):
         val_ref, cov_ref = pickle.load(f)
 
     values = np.reshape(h.values(), -1)
-    for i, v in enumerate(values):
-        cov_ref[i, i] = 0.5 * (cov_ref[i, i] + v)
 
     p_value = compute_p_value(values, val_ref, cov_ref)
     threshold = 1e-6
@@ -299,8 +316,6 @@ def test_generator_angantyr(projectile, target):
         val_ref, cov_ref = pickle.load(f)
 
     values = np.reshape(h.values(), -1)
-    for i, v in enumerate(values):
-        cov_ref[i, i] = 0.5 * (cov_ref[i, i] + v)
 
     p_value = compute_p_value(values, val_ref, cov_ref)
     threshold = 1e-6
@@ -359,12 +374,7 @@ def test_generator_gg(frame, Model):
     with gzip.open(path_ref) as f:
         val_ref, cov_ref = pickle.load(f)
 
-    # histogram sometimes contains extreme spikes
-    # not reflected in cov, this murky formula
-    # protects against these false negatives
     values = np.reshape(h.values(), -1)
-    for i, v in enumerate(values):
-        cov_ref[i, i] = 0.5 * (cov_ref[i, i] + v)
 
     p_value = compute_p_value(values, val_ref, cov_ref)
 
