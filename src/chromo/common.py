@@ -740,6 +740,8 @@ class MCRun(ABC):
     _ecm_min = 10 * GeV  # default for many models
     # Corresponds to current cross section in mb, updated when kinematics is set
     _inel_or_prod_cross_section = None
+    # Event fractions for a CompositeTarget, cached as (kinematics, fractions)
+    _composite_event_fractions = None
     _restore_beam_and_history = True
     nevents = 0  # number of generated events so far
     _unstable_pids = set(all_unstable_pids)
@@ -878,7 +880,7 @@ class MCRun(ABC):
     def _composite_plan(self, nevents):
         kin = self.kinematics
         if isinstance(kin.p2, CompositeTarget):
-            nevents = self._rng.multinomial(nevents, kin.p2.fractions)
+            nevents = self._rng.multinomial(nevents, self._composite_fractions(kin))
             ek = copy.deepcopy(kin)
             for c, k in zip(kin.p2.components, nevents):
                 ek.p2 = c
@@ -943,10 +945,84 @@ class MCRun(ABC):
         self._kinematics = kin
         self._set_kinematics(kin)
 
-        if (kin.p1.is_nucleus and kin.p1.A > 1) or (kin.p2.is_nucleus and kin.p2.A > 1):
-            self._inel_or_prod_cross_section = self.cross_section().prod
+        if isinstance(kin.p2, CompositeTarget):
+            sigma = self._component_generation_cross_sections(kin)
+            valid = ~np.isnan(sigma)
+            self._inel_or_prod_cross_section = (
+                float(np.dot(kin.p2.fractions[valid], sigma[valid]))
+                if np.any(valid)
+                else np.nan
+            )
+            self._composite_event_fractions = (
+                kin.copy(),
+                self._composite_fractions_from(kin.p2, sigma),
+            )
         else:
-            self._inel_or_prod_cross_section = self.cross_section().inelastic
+            self._inel_or_prod_cross_section = self._generation_cross_section(
+                kin.p1, kin.p2, self.cross_section()
+            )
+
+    @staticmethod
+    def _generation_cross_section(p1, p2, cs):
+        """Return the cross section according to which events are generated.
+
+        This is the production cross section if a nucleus with A > 1 is
+        involved and the inelastic cross section otherwise.
+        """
+        if (p1.is_nucleus and p1.A > 1) or (p2.is_nucleus and p2.A > 1):
+            return cs.prod
+        return cs.inelastic
+
+    def _component_cross_sections(self, kin, max_info=False):
+        """Return list of cross sections for each component of a CompositeTarget."""
+        result = []
+        kin3 = copy.copy(kin)
+        for component in kin.p2.components:
+            kin3.p2 = component
+            # this calls cross_section recursively, which is fine
+            result.append(self.cross_section(kin3, max_info=max_info))
+        return result
+
+    def _component_generation_cross_sections(self, kin):
+        return np.array(
+            [
+                self._generation_cross_section(kin.p1, c, cs)
+                for (c, cs) in zip(
+                    kin.p2.components, self._component_cross_sections(kin)
+                )
+            ],
+            dtype=float,
+        )
+
+    def _composite_fractions_from(self, target, sigma):
+        if target.weighting == "number":
+            return target.fractions
+        try:
+            return target.event_fractions(sigma)
+        except ValueError:
+            warnings.warn(
+                f"{self.pyname}: cannot weight CompositeTarget components by cross "
+                f"section (got {sigma} mb), falling back to number fractions",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+            return target.fractions
+
+    def _composite_fractions(self, kin):
+        """Return event fractions for the CompositeTarget in kin.
+
+        Fractions are computed when the kinematics are set and cached.
+        The cache is keyed by value, since kinematics may be copied internally.
+        """
+        cached = self._composite_event_fractions
+        if cached is not None and cached[0] == kin:
+            return cached[1]
+        if kin.p2.weighting == "number":
+            return kin.p2.fractions
+        sigma = self._component_generation_cross_sections(kin)
+        fractions = self._composite_fractions_from(kin.p2, sigma)
+        self._composite_event_fractions = (kin.copy(), fractions)
+        return fractions
 
     def cross_section(self, kin=None, max_info=False):
         """Cross sections according to current setup.
@@ -964,14 +1040,16 @@ class MCRun(ABC):
         with self._temporary_kinematics(kin):
             kin2 = self.kinematics
             if isinstance(kin2.p2, CompositeTarget):
+                # Cross section per target atom: sum_i f_i sigma_i with number
+                # fractions f_i, independent of CompositeTarget.weighting. The
+                # event fractions f_i sigma_i / sum_j f_j sigma_j are consistent
+                # with this normalization.
                 cross_section = CrossSectionData()
-                kin3 = copy.copy(kin2)
-                for component, fraction in zip(kin2.p2.components, kin2.p2.fractions):
-                    kin3.p2 = component
-                    # this calls cross_section recursively, which is fine
-                    cross_section._mul_radd(
-                        fraction, self.cross_section(kin3, max_info=max_info)
-                    )
+                for fraction, cs in zip(
+                    kin2.p2.fractions,
+                    self._component_cross_sections(kin2, max_info=max_info),
+                ):
+                    cross_section._mul_radd(fraction, cs)
                 return cross_section
             return self._cross_section(kin, max_info=max_info)
 

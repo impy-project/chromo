@@ -37,9 +37,15 @@ class CompositeTarget:
     label: str
     components: tuple[PDGID]
     fractions: np.ndarray
+    weighting: str
+
+    _weightings = ("cross_section", "number")
 
     def __init__(
-        self, components: Collection[tuple[Union[str, int], float]], label: str = ""
+        self,
+        components: Collection[tuple[Union[str, int], float]],
+        label: str = "",
+        weighting: str = "cross_section",
     ):
         """
         Parameters
@@ -50,7 +56,25 @@ class CompositeTarget:
             Amounts do not have to add up to 1, fractions are computed automatically.
         label : str, optional
             Give the target a name. This is purely cosmetic.
+        weighting : {"cross_section", "number"}, optional
+            How events are distributed over the components. With "cross_section"
+            (default), the probability to interact with component i is
+            proportional to ``fractions[i] * sigma_i``, where ``sigma_i`` is the
+            cross section of the generator for that component (production cross
+            section for nuclei, inelastic for nucleons). This is the physical
+            composition of the interactions in the material. With "number",
+            events are distributed according to ``fractions`` alone.
+
+        Notes
+        -----
+        ``fractions`` always holds the number (abundance) fractions of the
+        material. The cross section of the composite target is
+        ``sum_i fractions[i] * sigma_i`` (cross section per target atom) in both
+        weighting modes.
         """
+        if weighting not in self._weightings:
+            msg = f"weighting must be one of {self._weightings}, got {weighting!r}"
+            raise ValueError(msg)
 
         if len(components) == 0:
             raise ValueError("components cannot be empty")
@@ -67,6 +91,31 @@ class CompositeTarget:
         self.components = tuple(c)
         self.fractions = fractions / np.sum(fractions)
         self.fractions.flags["WRITEABLE"] = False
+        self.weighting = weighting
+
+    def event_fractions(self, cross_sections=None):
+        """Return the probabilities to generate an event on each component.
+
+        Parameters
+        ----------
+        cross_sections : array-like, optional
+            Cross section of each component. Required for weighting
+            "cross_section" and ignored for weighting "number".
+        """
+        if self.weighting == "number":
+            return self.fractions
+        if cross_sections is None:
+            msg = "cross_sections are required for weighting 'cross_section'"
+            raise ValueError(msg)
+        sigma = np.asarray(cross_sections, dtype=float)
+        if sigma.shape != self.fractions.shape:
+            msg = f"expected {len(self.fractions)} cross sections, got {sigma.shape}"
+            raise ValueError(msg)
+        if not np.all(np.isfinite(sigma) & (sigma >= 0)) or not np.any(sigma > 0):
+            msg = f"invalid component cross sections {sigma}"
+            raise ValueError(msg)
+        w = self.fractions * sigma
+        return w / np.sum(w)
 
     def copy(self):
         new_target = CompositeTarget([("N", 1)])
@@ -81,6 +130,7 @@ class CompositeTarget:
             (self.label == other.label)
             & (self.components == other.components)
             & (np.allclose(self.fractions, other.fractions))
+            & (self.weighting == other.weighting)
         )
 
     @property
@@ -131,19 +181,26 @@ class CompositeTarget:
         args = f"{components}"
         if self.label:
             args += f", label={self.label!r}"
+        if self.weighting != "cross_section":
+            args += f", weighting={self.weighting!r}"
         return f"CompositeTarget({args})"
 
 
-def dry_air(label: str = "Dry air (N2/O2/Ar)") -> CompositeTarget:
+def dry_air(
+    label: str = "Dry air (N2/O2/Ar)", weighting: str = "cross_section"
+) -> CompositeTarget:
     """Dry air composite target: N14/O16/Ar40 at 78.084/20.946/0.934 % by volume
     (mass fractions 75.56/23.15/1.29 %).
 
     Matches CORSIKA-7's FLUINI air material. Some models reject Ar40
     (e.g. the SIBYLL family) and need an explicit override.
+
+    See `CompositeTarget` for the meaning of ``weighting``.
     """
     return CompositeTarget(
         [("N14", 2 * 0.78084), ("O16", 2 * 0.20946), ("Ar40", 0.00934)],
         label,
+        weighting,
     )
 
 
