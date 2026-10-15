@@ -203,6 +203,70 @@ def test_projectile_list(model, p1):
     run_in_separate_process(run_three_events, p1, model)
 
 
+def run_photon_on_nucleus(model, target, elab):
+    chromo.debug_level = 1
+    evt_kin = chromo.kinematics.FixedTarget(elab * GeV, "gamma", target)
+    m = model(evt_kin, seed=1)
+    assert 22 in model.projectiles
+    xs = m.cross_section()
+    assert 0 < xs.prod < 100, f"photon production xs out of range: {xs.prod}"
+    for evt in m(3):
+        assert evt.pid[0] == 22
+        assert len(evt.final_state().en) > 0
+    # max_info runs the Glauber MC and consumes the Fortran RNG state,
+    # so it must come last and forbid further event generation
+    xs = m.cross_section(max_info=True)
+    assert 0 < xs.total < 100
+    assert xs.elastic < xs.total
+    assert np.isclose(xs.inelastic, xs.total - xs.elastic)
+    try:
+        next(iter(m(1)))
+    except RuntimeError:
+        pass
+    else:
+        return False
+    return True
+
+
+@pytest.mark.parametrize("model", get_dpmjets())
+@pytest.mark.parametrize("target", ["O16", "Fe56"])
+def test_photon_nucleus(model, target):
+    assert run_in_separate_process(run_photon_on_nucleus, model, target, 1e4)
+
+
+def run_photon_on_nucleon(model, target):
+    m = model(chromo.kinematics.FixedTarget(1e4 * GeV, "gamma", target), seed=1)
+    xs = m.cross_section()
+    for evt in m(3):
+        assert evt.pid[0] == 22
+        assert len(evt.final_state().en) > 0
+    return xs.inelastic
+
+
+@pytest.mark.parametrize("target", ["p", "n"])
+def test_dpmjet193_photon_nucleon(target):
+    from chromo.models import DpmjetIII193
+
+    sine = run_in_separate_process(run_photon_on_nucleon, DpmjetIII193, target)
+    # PHOJET sigma_inel(gamma p) at sqrt(s) = 137 GeV
+    assert_allclose(sine, 0.1516, rtol=0.01)
+
+
+def run_photon_on_nucleon_rejected(model, target):
+    try:
+        model(chromo.kinematics.FixedTarget(1e3 * GeV, "gamma", target), seed=1)
+    except ValueError:
+        return True
+    return False
+
+
+@pytest.mark.parametrize("target", ["p", "n"])
+def test_dpmjet307_photon_nucleon_rejected(target):
+    from chromo.models import DpmjetIII307
+
+    assert run_in_separate_process(run_photon_on_nucleon_rejected, DpmjetIII307, target)
+
+
 def run_first_event(model, kin, randomize):
     gen = model(kin, seed=1)
     gen.randomize_azimuth = randomize

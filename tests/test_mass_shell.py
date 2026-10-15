@@ -68,6 +68,7 @@ def test_final_state_mass_shell(Model, frame, target, projectile):
             abs(kin.p1) not in Model.projectiles
             or abs(kin.p2) not in Model.targets
             or kin.ecm < getattr(Model, "_ecm_min", 0)
+            or not Model._pair_allowed(abs(kin.p1), abs(kin.p2))
         )
         return
     inv_mass2 = event.en**2 - event.p_tot**2
@@ -102,6 +103,7 @@ def test_mass_shell_gg(frame, Model):
             abs(kin.p1) not in Model.projectiles
             or abs(kin.p2) not in Model.targets
             or kin.ecm < getattr(Model, "_ecm_min", 0)
+            or not Model._pair_allowed(abs(kin.p1), abs(kin.p2))
         )
         return
     inv_mass2 = event.en**2 - event.p_tot**2
