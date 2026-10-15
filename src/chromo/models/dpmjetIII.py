@@ -366,7 +366,10 @@ class DpmjetIIIRun(MCRun):
                 kin.p1.Z or 0,
                 kin.p2.A or 1,
                 kin.p2.Z or 0,
-                kin.p1,
+                # BAMJET index for the Glauber tables (19.3 only): photon
+                # tables differ from hadronic ones, other hadrons use the
+                # proton tables as before
+                7 if abs(kin.p1) == 22 else 1,
                 iglau=0,
             )
 
