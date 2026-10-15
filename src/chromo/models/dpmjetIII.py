@@ -105,6 +105,9 @@ class DpmjetIIIEvent(MCEvent):
         # the generator frame with the beam momentum per nucleon.
         for side, codes in enumerate(((13, 15), (14, 16))):
             sel = np.isin(self.status, codes) & terminal
+            if not np.any(sel):
+                # no remnant on this side, e.g. a photon projectile (m = 0)
+                continue
             gamma = beam["en"][side] / beam["m"][side]
             betagamma = beam["pz"][side] / beam["m"][side]
             en, pz = self.en[sel], self.pz[sel]
