@@ -45,10 +45,24 @@ dpmjet_extended_projectiles = {Particle.from_pdgid(p).pdgid for p in dpmjet_exte
 # fmt: on
 
 
+def _glauber_projectile(p1):
+    """Return the BAMJET index of the projectile for the Glauber tables.
+
+    As in DT_GLBSET, profiles are tabulated for proton-, pi+- and K+-like
+    projectiles; photons (7) have their own profiles.
+    """
+    if p1.is_nucleus or abs(p1) == 22:
+        return 7 if abs(p1) == 22 else 1
+    pdg = PDGID(abs(int(p1)))
+    if not pdg.is_meson:
+        return 1
+    return 15 if pdg.has_strange else 13
+
+
 # Common block fields overwritten by DT_XSGLAU and read by event generation
 _GLAUBER_STATE = {
-    "dtglam": ("sigsh", "rosh", "gsh", "bsite"),
-    "dtglxs": ("ecmnn", "xspro", "xepro", "bslope"),
+    "dtglam": ("rash", "rbsh", "bmax", "bstep", "sigsh", "rosh", "gsh", "bsite"),
+    "dtglxs": ("ecmnn", "q2g", "xspro", "xepro", "bslope", "nebini", "nqbini"),
 }
 
 
@@ -176,6 +190,8 @@ class DpmjetIIIRun(MCRun):
         "/releases/download/zipped_data_v1.0/dpm3191_v001.zip"
     )
     _ecm_min = 1 * GeV
+    # Glauber tables per projectile class and target (DPMJET >= 19.4)
+    _glauber_tables = None
     _max_A1 = 0
     _max_A2 = 0
     _max_plab = 0.0
@@ -366,12 +382,15 @@ class DpmjetIIIRun(MCRun):
                 kin.p1.Z or 0,
                 kin.p2.A or 1,
                 kin.p2.Z or 0,
-                # BAMJET index for the Glauber tables (19.3 only): photon
-                # tables differ from hadronic ones, other hadrons use the
-                # proton tables as before
-                7 if abs(kin.p1) == 22 else 1,
+                # BAMJET index for the Glauber tables (used from 19.4)
+                _glauber_projectile(kin.p1),
                 iglau=0,
             )
+            if self._glauber_tables is not None:
+                # DT_INIT filled slot 1 for this projectile and target
+                self._glauber_tables = {
+                    self._glauber_key(kin): (1, float(self._lib.dtglam.rash[0]))
+                }
 
         if (kin.p1.A or 1) > self._max_A1 or (kin.p2.A or 1) > self._max_A2:
             msg = (
@@ -402,8 +421,40 @@ class DpmjetIIIRun(MCRun):
         kc = self._lib.pycomp(pdgid)
         self._lib.pydat3.mdcy[kc - 1, 0] = not stable
 
+    @staticmethod
+    def _glauber_key(kin):
+        return (_glauber_projectile(kin.p1), kin.p1.A or 1, kin.p2.A or 1)
+
+    def _glauber_event_slot(self, kin):
+        """Return the Glauber slot for kin, tabulating it on first use.
+
+        DT_KKINC samples impact parameters from the tables of one slot
+        (KKMAT); DT_INIT fills only slot 1. Tables for other projectile
+        classes or targets are tabulated on the init energy grid.
+        """
+        if self._glauber_tables is None:
+            return 1
+        key = self._glauber_key(kin)
+        if key not in self._glauber_tables:
+            # KKMAT = -2 is reserved for FLUKA (FL_MODB), skip slot 2
+            slot = len(self._glauber_tables) + 2
+            if slot > 20:
+                msg = "DPMJET Glauber slot table (NCOMPX=20) exhausted"
+                raise RuntimeError(msg)
+            g = self._lib.dtglxs
+            for i in range(int(g.nebini)):
+                self._lib.dt_xsglau(
+                    *key[1:], key[0], 0.0, 0.0, g.ecmnn[i], i + 1, 1, -slot
+                )
+            self._glauber_tables[key] = (slot, float(self._lib.dtglam.rash[0]))
+        slot, rash = self._glauber_tables[key]
+        # the projectile radius is shared by all slots
+        self._lib.dtglam.rash[0] = rash
+        return slot
+
     def _generate(self):
         k = self.kinematics
+        slot = self._glauber_event_slot(k)
         reject = self._lib.dt_kkinc(
             k.p1.A or 1,
             k.p1.Z or 0,
@@ -415,7 +466,7 @@ class DpmjetIIIRun(MCRun):
                 else self._lib.idt_icihad(k.p1)
             ),
             k.elab,
-            kkmat=-1,
+            kkmat=-slot,
         )
         self._lib.dtevno.nevent += 1
         return not reject
@@ -429,8 +480,9 @@ class DpmjetIIIRun(MCRun):
 
 
 class DpmjetIII193(DpmjetIIIRun):
-    _version = "19.3"
+    _version = "19.4"
     _library_name = "_dpmjet193"
+    _glauber_tables = {}
 
 
 class DpmjetIII307(DpmjetIIIRun):
@@ -524,3 +576,4 @@ class DpmjetIII307(DpmjetIIIRun):
 class DpmjetIII193_DEV(DpmjetIIIRun):
     _version = "19.3-dev"
     _library_name = "_dev_dpmjet193"
+    _glauber_tables = {}

@@ -242,7 +242,7 @@ class Phojet112(PHOJETRun):
 
 
 class Phojet193(PHOJETRun):
-    _version = "19.3"
+    _version = "19.4"
     _library_name = "_phojet193"
     _projectiles = standard_projectiles | {lp.photon.pdgid}
     _targets = {lp.proton.pdgid, lp.neutron.pdgid, lp.photon.pdgid}
