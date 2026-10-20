@@ -24,8 +24,8 @@ def evt():
         CenterOfMass(10, "p", "p"),
         1,
         0.5,
-        1.0,
         (1, 1),
+        1.0,
         i,
         i,
         f,
@@ -119,6 +119,27 @@ def test_EventData_copy_and_pickle(evt):
     evt3 = pickle.loads(s)
 
     assert evt3 == evt
+
+
+def test_EventData_scalars_detached_from_generator(evt):
+    # generators may pass 0-d views into their common blocks
+    b = np.array(1.5)
+    nw = np.array([2, 3], dtype=np.int32)
+    xs = np.array(30.0)
+    fields = [getattr(evt, f.name) for f in dataclasses.fields(evt)]
+    evt = EventData(
+        *fields[:3], b, tuple(nw[i, ...] for i in range(2)), xs, *fields[6:]
+    )
+    copied = evt.copy()
+    b[...] = 2.5
+    nw[:] = 0
+    xs[...] = 0.0
+    for e in (evt, copied):
+        assert e.impact_parameter == 1.5
+        assert e.n_wounded == (2, 3)
+        assert e.production_cross_section == 30.0
+        assert type(e.impact_parameter) is float
+        assert all(type(n) is int for n in e.n_wounded)
 
 
 def test_EventData_weight_default_and_roundtrip(evt):

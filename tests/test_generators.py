@@ -182,13 +182,14 @@ def test_generator(projectile, target, frame, Model):
 
     # Seed 1 gives a high-multiplicity He-air sample on cp39 arm64 builds,
     # where floating-point differences turn the same seed into another sample
-    seed = 8 if Model is im.DpmjetIII193 and p1 == "He" else 1
+    seed = 8 if Model is im.DpmjetIII19 and p1 == "He" else 1
     h = run_in_separate_process(run_model, Model, kin, 1, seed)
     if h is None:
         assert (
             abs(kin.p1) not in Model.projectiles
             or abs(kin.p2) not in Model.targets
             or kin.ecm < getattr(Model, "_ecm_min", 0)
+            or not Model._pair_allowed(abs(kin.p1), abs(kin.p2))
         )
         return
 
@@ -322,7 +323,7 @@ def test_generator_angantyr(projectile, target):
     reason="skip since none of the models currently works on Windows",
 )
 @pytest.mark.parametrize("frame", ("cms", "generic"))
-@pytest.mark.parametrize("Model", (im.Pythia8, im.Phojet112, im.Phojet193))
+@pytest.mark.parametrize("Model", (im.Pythia8, im.Phojet112, im.Phojet19))
 def test_generator_gg(frame, Model):
     p1 = "gamma"
     p2 = "gamma"
@@ -342,6 +343,7 @@ def test_generator_gg(frame, Model):
             abs(kin.p1) not in Model.projectiles
             or abs(kin.p2) not in Model.targets
             or kin.ecm < getattr(Model, "_ecm_min", 0)
+            or not Model._pair_allowed(abs(kin.p1), abs(kin.p2))
         )
         return
 

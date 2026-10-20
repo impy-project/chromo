@@ -1,4 +1,4 @@
-from chromo.models.dpmjetIII import DpmjetIII193_DEV
+from chromo.models.dpmjetIII import DpmjetIII19_DEV
 from chromo.models.sibyll import (
     Sibyll23c00,
     Sibyll23c01,
@@ -13,9 +13,10 @@ from chromo.models.sibyll import (
     Sibyll23eStarRho,
     Sibyll23eStarStrange,
 )
+from chromo.util import deprecated_aliases
 
 __all__ = (
-    "DpmjetIII193_DEV",
+    "DpmjetIII19_DEV",
     "Sibyll23c00",
     "Sibyll23c01",
     "Sibyll23c02",
@@ -29,3 +30,5 @@ __all__ = (
     "Sibyll23eStarRho",
     "Sibyll23eStarStrange",
 )
+
+__getattr__ = deprecated_aliases(__name__, {"DpmjetIII193_DEV": "DpmjetIII19_DEV"})

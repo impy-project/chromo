@@ -1,10 +1,23 @@
 import argparse
 import pathlib
+import sys
 
 try:
     import tomllib  # Python 3.11+
 except ImportError:
     import tomli as tomllib  # For older Python with 'tomli' installed
+
+
+# deprecated model names -> current names
+RENAMED = {"dpmjet_phojet193": "dpmjet_phojet19"}
+
+
+def _rename(models):
+    for old in set(models) & RENAMED.keys():
+        print(  # noqa: T201
+            f"{old} is deprecated, use {RENAMED[old]} instead", file=sys.stderr
+        )
+    return [RENAMED.get(m, m) for m in models]
 
 
 def get_models(enabled):
@@ -13,8 +26,8 @@ def get_models(enabled):
     with pyproject.open("rb") as f:
         data = tomllib.load(f)
 
-    enabled_models = data["tool"]["chromo"]["enabled-models"]
-    disabled_models = data["tool"]["chromo"]["disabled-models"]
+    enabled_models = _rename(data["tool"]["chromo"]["enabled-models"])
+    disabled_models = _rename(data["tool"]["chromo"]["disabled-models"])
     if enabled:
         return enabled_models
     return disabled_models
