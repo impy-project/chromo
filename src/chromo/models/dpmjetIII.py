@@ -482,7 +482,7 @@ class DpmjetIIIRun(MCRun):
 
 class DpmjetIII19(DpmjetIIIRun):
     _version = "19.4"
-    _library_name = "_dpmjet193"
+    _library_name = "_dpmjet19"
     _glauber_tables = {}
 
 
@@ -576,7 +576,7 @@ class DpmjetIII307(DpmjetIIIRun):
 
 class DpmjetIII19_DEV(DpmjetIIIRun):
     _version = "19.3-dev"
-    _library_name = "_dev_dpmjet193"
+    _library_name = "_dev_dpmjet19"
     _glauber_tables = {}
 
 
