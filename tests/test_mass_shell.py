@@ -83,7 +83,7 @@ def test_final_state_mass_shell(Model, frame, target, projectile):
 
 
 @pytest.mark.parametrize("frame", ("cms", "generic"))
-@pytest.mark.parametrize("Model", (im.Pythia8, im.Phojet112, im.Phojet193))
+@pytest.mark.parametrize("Model", (im.Pythia8, im.Phojet112, im.Phojet19))
 def test_mass_shell_gg(frame, Model):
     p1 = "gamma"
     p2 = "gamma"

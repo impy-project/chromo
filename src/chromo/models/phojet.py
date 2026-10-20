@@ -4,7 +4,7 @@ from particle import literals as lp
 
 from chromo.common import CrossSectionData, MCEvent, MCRun
 from chromo.constants import standard_projectiles
-from chromo.util import _cached_data_dir, fortran_chars
+from chromo.util import _cached_data_dir, deprecated_aliases, fortran_chars
 
 
 class PhojetEvent(MCEvent):
@@ -241,8 +241,11 @@ class Phojet112(PHOJETRun):
     )
 
 
-class Phojet193(PHOJETRun):
+class Phojet19(PHOJETRun):
     _version = "19.4"
     _library_name = "_phojet193"
     _projectiles = standard_projectiles | {lp.photon.pdgid}
     _targets = {lp.proton.pdgid, lp.neutron.pdgid, lp.photon.pdgid}
+
+
+__getattr__ = deprecated_aliases(__name__, {"Phojet193": "Phojet19"})

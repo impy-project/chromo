@@ -1,8 +1,10 @@
+import importlib
 import threading
 import time
 import zipfile
 
 import numpy as np
+import pytest
 from numpy.testing import assert_equal
 from particle import literals as lp
 from pytest import approx
@@ -161,7 +163,7 @@ def test_find_models_photon_on_nucleus():
     models = util.find_models(22, "O16")
     names = {m.pyname for m in models}
     assert "DpmjetIII307" in names
-    assert "DpmjetIII193" in names
+    assert "DpmjetIII19" in names
     # QGSJet is hadron-only and must not show up for photon projectiles
     assert "QGSJetIII" not in names
     # the same as a name lookup and only_names
@@ -177,7 +179,7 @@ def test_find_models_photon_on_nucleon():
     for target in ("p", "n"):
         names = util.find_models(22, target, only_names=True)
         assert "DpmjetIII307" not in names
-        assert "DpmjetIII193" in names
+        assert "DpmjetIII19" in names
 
 
 def test_find_models_hadron():
@@ -201,3 +203,19 @@ def test_find_models_composite_and_tuple():
         m.pyname for m in util.find_models(22, util.AZ2pdg(16, 8))
     }
     assert util.find_models(22, (56, 26)) == util.find_models(22, "Fe56")
+
+
+@pytest.mark.parametrize(
+    ("module", "old", "new"),
+    (
+        ("chromo.models", "DpmjetIII193", "DpmjetIII19"),
+        ("chromo.models", "Phojet193", "Phojet19"),
+        ("chromo.models.dpmjetIII", "DpmjetIII193_DEV", "DpmjetIII19_DEV"),
+    ),
+)
+def test_deprecated_model_aliases(module, old, new):
+    mod = importlib.import_module(module)
+    with pytest.warns(DeprecationWarning, match=f"use {new}"):
+        assert getattr(mod, old) is getattr(mod, new)
+    with pytest.raises(AttributeError):
+        mod.NoSuchModel

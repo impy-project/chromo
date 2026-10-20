@@ -245,9 +245,9 @@ def run_photon_on_nucleon(model, target):
 
 @pytest.mark.parametrize("target", ["p", "n"])
 def test_dpmjet193_photon_nucleon(target):
-    from chromo.models import DpmjetIII193
+    from chromo.models import DpmjetIII19
 
-    sine = run_in_separate_process(run_photon_on_nucleon, DpmjetIII193, target)
+    sine = run_in_separate_process(run_photon_on_nucleon, DpmjetIII19, target)
     # PHOJET sigma_inel(gamma p) at sqrt(s) = 137 GeV
     assert_allclose(sine, 0.1516, rtol=0.01)
 

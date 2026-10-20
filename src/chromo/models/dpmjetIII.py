@@ -9,6 +9,7 @@ from chromo.kinematics import EventFrame
 from chromo.util import (
     Nuclei,
     _cached_data_dir,
+    deprecated_aliases,
     fortran_chars,
     info,
     pdg2AZ,
@@ -479,7 +480,7 @@ class DpmjetIIIRun(MCRun):
         self._lib.dtflka.lpri = saved_lpri
 
 
-class DpmjetIII193(DpmjetIIIRun):
+class DpmjetIII19(DpmjetIIIRun):
     _version = "19.4"
     _library_name = "_dpmjet193"
     _glauber_tables = {}
@@ -573,7 +574,12 @@ class DpmjetIII307(DpmjetIIIRun):
         )
 
 
-class DpmjetIII193_DEV(DpmjetIIIRun):
+class DpmjetIII19_DEV(DpmjetIIIRun):
     _version = "19.3-dev"
     _library_name = "_dev_dpmjet193"
     _glauber_tables = {}
+
+
+__getattr__ = deprecated_aliases(
+    __name__, {"DpmjetIII193": "DpmjetIII19", "DpmjetIII193_DEV": "DpmjetIII19_DEV"}
+)

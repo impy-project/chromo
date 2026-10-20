@@ -8,6 +8,7 @@ import math
 import os
 import pkgutil
 import shutil
+import sys
 import time
 import urllib.request
 import warnings
@@ -941,6 +942,28 @@ def select_mothers(arg, mothers):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")  # ignore numba warnings if any
         return _select_mothers(mask, mothers)
+
+
+def deprecated_aliases(module, aliases):
+    """Return a module ``__getattr__`` that maps deprecated names to new ones.
+
+    Accessing an old name emits a DeprecationWarning and returns the object
+    bound to the new name in ``module``.
+    """
+
+    def __getattr__(name):
+        if name not in aliases:
+            msg = f"module {module!r} has no attribute {name!r}"
+            raise AttributeError(msg)
+        new = aliases[name]
+        warnings.warn(
+            f"{name} is deprecated, use {new} instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return getattr(sys.modules[module], new)
+
+    return __getattr__
 
 
 def tolerant_string_match(a, b):

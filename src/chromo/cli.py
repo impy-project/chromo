@@ -82,7 +82,7 @@ MODELS = {
     # 5: models.Hijing138,
     6: models.Sibyll23d,
     7: models.QGSJetII04,
-    8: models.Phojet193,
+    8: models.Phojet19,
     11: models.QGSJetII03,
     # 12 refers to different DPMJet versions in CRMC
     12: models.DpmjetIII307,
