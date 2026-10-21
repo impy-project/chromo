@@ -461,36 +461,24 @@ class Sibyll23e_DEV(Sibyll23e):
     _library_name = "_sib23e_dev"
 
 
-class SibyllRS_DEV(Sibyll23e):
-    """SIBYLL 2.3e-dev re-implemented in Rust, for development and validation.
-
-    Uses the module ``_sibyll_rs`` of the sibyll-rs project, which offers the
-    interface of the Fortran f2py module on top of the Rust port, so that the
-    SIBYLL logic of this file is shared with the Fortran builds. The port
-    reproduces ``Sibyll23e_DEV`` event by event when both draw the same random
-    numbers; here it uses its own random generator, seeded from chromo's.
-    """
-
-    _version = "2.3e-rs.10"
-    _library_name = "_sibyll_rs"
-
-    def __init__(self, evt_kin, *, seed=None):
-        super().__init__(evt_kin, seed=seed)
-        self._lib.seed(int(self._rng.integers(0, 2**63 - 1)))
-
-
-class SibyllNext(SibyllRS_DEV):
+class SibyllNext(Sibyll23e):
     """SIBYLL 2.3e-dev redesigned from the ground up in Rust (crate ``sibyll``).
 
-    Same physics as ``SibyllRS_DEV`` and ``Sibyll23e_DEV``, new code
-    structure, with three bugs of 2.3e fixed: string axis (inverse
-    rotation), antibaryon diquark-x weight (on the antiquark) and the
-    quark-merge table. Uses the module ``_sibyll_next`` of the sibyll-rs
-    project.
+    Same physics as ``Sibyll23e_DEV``, new code structure, with three bugs
+    of 2.3e fixed: string axis (inverse rotation), antibaryon diquark-x
+    weight (on the antiquark) and the quark-merge table. Uses the module
+    ``_sibyll_next`` of the sibyll-rs project, which offers the interface
+    of the Fortran f2py module, so the SIBYLL logic of this file is shared
+    with the Fortran builds. It has its own random generator, seeded from
+    chromo's.
     """
 
     _version = "2.3e-next.2"
     _library_name = "_sibyll_next"
+
+    def __init__(self, evt_kin, *, seed=None):
+        super().__init__(evt_kin, seed=seed)
+        self._lib.seed(int(self._rng.integers(0, 2**63 - 1)))
 
 
 class SibyllNextFullyResolvedHMD(SibyllNext):
