@@ -61,6 +61,8 @@ C             - parton stack 4x larger, overflow stops explicitly
 C             - CUT_PRO: above the table use the last energy point
 C               (NSOFR was left unset)
 C             - SIBYLL, DIFDEC: retry loops capped
+C     rev 2 : SIB_SIG reads sigma_hard by energy index instead of a
+C             call counter (identical tables)
 C-----------------------------------------------------------------------
 C=======================================================================
 
@@ -4445,7 +4447,10 @@ c     K = 2 , pion
 
       PTCUT = XI(10)+XI(21)*dEXP(XI(22)*DSQRT(2.D0*dLOG(ECM)))
       INDX = abs(JINT)
-      IHAR(INDX) = IHAR(INDX)+1
+c     2.3e-dev: table index from the energy (was a call counter that is
+c     only correct for 61 calls in the order of JET_INI)
+      IHAR(INDX) = NINT((LOG10(ECM)-1.D0)*10.D0) + 1
+      IHAR(INDX) = MAX(1,MIN(61,IHAR(INDX)))
       SIGHAR = SIGQCD(IHAR(INDX),INDX)
 
       S = ECM**2
