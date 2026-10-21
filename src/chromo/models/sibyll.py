@@ -457,7 +457,7 @@ class Sibyll23e_DEV(Sibyll23e):
     The list of changes relative to 2.3e is kept in the header of that file.
     """
 
-    _version = "2.3e-dev.6"
+    _version = "2.3e-dev.7"
     _library_name = "_sib23e_dev"
 
 
@@ -471,7 +471,7 @@ class SibyllRS_DEV(Sibyll23e):
     numbers; here it uses its own random generator, seeded from chromo's.
     """
 
-    _version = "2.3e-rs.0"
+    _version = "2.3e-rs.7"
     _library_name = "_sibyll_rs"
 
     def __init__(self, evt_kin, *, seed=None):
