@@ -75,6 +75,13 @@ C             with equal probability (were all protons); spectator
 C             fragments and elastic nucleons on mass shell
 C     rev 7 : SIB_DIFF resets IDBAD for every attempt (after one failed
 C             DIFDEC all later attempts were rejected)
+C     rev 8 : FIREBALL_4FLV restores PAR(5) on its early return (meson
+C             beams left PAR(5)=PAR(34) in force for the rest of the run)
+C     rev 9 : HSPLI splits n/Delta0 with the weight PAR(53) like p/Delta+
+C             (was a hard-coded 6, so PAR(53) overrides missed neutrons)
+C     rev 10: GG_FRAG_4FLV keeps rank IDM=5 for its hadrons (SIB_ICFLAV
+C             wrote its sign output into IDM, which switched on rank-1
+C             rules such as the pi0 rejection inside gluon strings)
 C-----------------------------------------------------------------------
 C=======================================================================
 
@@ -8354,7 +8361,9 @@ c     form first hadron from new flavor
 C...Generate the 'backward' leading particle.
       I = I+1
       IF( IPAR(87).eq.3 )THEN
-         CALL SIB_ICFLAV(E0S,-I0,IDM,IFL3)
+c     2.3e-dev: the sign output goes to a dummy; IDM is the rank (5) of the
+c     gluon-string hadrons and was overwritten with +-1 here
+         CALL SIB_ICFLAV(E0S,-I0,IDUMGG,IFL3)
       ELSE
          CALL SIB_I4FLAV(-I0,0,IDM,IFL3, LDUM)
       ENDIF
@@ -10181,6 +10190,8 @@ c         RETURN
 c         xa=-1.
 c         xa=log(xa)
 c         stop        
+c     2.3e-dev: restore the vector-meson rate set for meson beams above
+         PAR(5)=PAR5def
          RETURN
       ENDIF
       AV = 2.D0*SQRT(DELTAE)
@@ -17868,7 +17879,8 @@ c     internal types
             KP2 = 11
          ENDIF
       ELSEIF(IABS(KF).eq.14.or.IABS(KF).eq.42)THEN             ! n/nbar,delta0
-         R = 6.D0*S_RNDM(0)                  
+c     2.3e-dev: same weights as the proton (was a hard-coded 6)
+         R = PAR(53)*S_RNDM(0)                  
          IF (R .LT.3.D0)       THEN
             KP1 = 2
             KP2 = 12
