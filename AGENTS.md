@@ -175,9 +175,11 @@ for event in gen(10):
   target. Use `targets=["Si28", ...]` to swap elements; exceeding 10
   raises `ValueError`.
 - **Energy ceiling at 300 TeV CMS** (`_ecm_max`). `PPTMAX` is set to
-  the construction-kinematics `plab`, so DPMJET Glauber tables cover
-  the full requested range. `cross_section()` works at all energies
-  below the ceiling.
+  the construction-kinematics momentum of the whole projectile. As for
+  DPMJET, later kinematics (including `cross_section(kin)`) raise
+  `ValueError` above that momentum or above the projectile mass number
+  of the construction kinematics: initialize at the highest energy and
+  with the heaviest projectile of the simulation.
 - **DPMJET-3 silent abort on Mac — fixed by linking `_fluka` with
   `-Wl,-ld_classic`.**  Apple's new linker (ld-prime, Xcode 15+) handles
   overlapping COMMON-block / weak symbols across the FLUKA archives

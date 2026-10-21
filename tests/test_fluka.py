@@ -591,3 +591,51 @@ def test_composite_generation_xsec_sums_enabled_channels(interaction_type):
     expected = sum(f * np.nansum(p) for f, p in zip(fractions, parts))
     assert np.isfinite(sigma)
     assert sigma == pytest.approx(expected)
+
+
+def _set_kinematics_after_init(init, later):
+    from chromo.models import Fluka
+
+    gen = Fluka(FixedTarget(*init), seed=1)
+    try:
+        gen.kinematics = FixedTarget(*later)
+    except ValueError as exc:
+        return str(exc)
+    return None
+
+
+@pytest.mark.parametrize(
+    "later,match",
+    [
+        ((101.0, "He4", "O16"), "initialization momentum"),
+        ((30.0, "He4", "O16"), None),
+        # same whole-projectile momentum as the He4 initialization
+        ((399.0, "p", "O16"), None),
+        ((401.0, "p", "O16"), "initialization momentum"),
+    ],
+)
+def test_energy_above_initialization_raises(later, match):
+    msg = run_in_separate_process(
+        _set_kinematics_after_init, (100.0, "He4", "O16"), later
+    )
+    if match is None:
+        assert msg is None
+    else:
+        assert msg is not None and match in msg
+
+
+@pytest.mark.parametrize(
+    "later,match",
+    [
+        ((10.0, "He4", "O16"), "Maximal initialization mass exceeded"),
+        ((10.0, "p", "Pb208"), None),
+    ],
+)
+def test_mass_above_initialization_raises(later, match):
+    msg = run_in_separate_process(
+        _set_kinematics_after_init, (100.0, "p", "O16"), later
+    )
+    if match is None:
+        assert msg is None
+    else:
+        assert msg is not None and match in msg

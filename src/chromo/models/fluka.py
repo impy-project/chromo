@@ -226,6 +226,8 @@ class Fluka(MCRun):
     # DPMJET has a chance to misbehave.
     _ecm_max = 300 * TeV
     _ecm_min = 0.0
+    _max_A1 = 0
+    _max_pptmax = 0.0
 
     def __init__(
         self,
@@ -424,6 +426,9 @@ class Fluka(MCRun):
         # Like EKIN in EVTXYZ/SGMXYZ, it refers to the whole projectile,
         # so nuclei need A times chromo's per-nucleon plab.
         pptmax = self._nucleon_number(evt_kin.p1) * evt_kin.plab
+        # Save the initialized limits, checked in _set_kinematics
+        self._max_A1 = self._nucleon_number(evt_kin.p1)
+        self._max_pptmax = pptmax
 
         mt = self._lib.chromo_stpxyz(
             nelmfl,
@@ -515,6 +520,27 @@ class Fluka(MCRun):
             raise ValueError(msg)
 
     def _set_kinematics(self, kin):
+        a1 = self._nucleon_number(kin.p1)
+        if a1 > self._max_A1:
+            msg = (
+                "Maximal initialization mass exceeded "
+                f"{kin.p1.A}/{self._max_A1}; initialize with the heaviest "
+                "projectile of the simulation"
+            )
+            raise ValueError(msg)
+
+        # STPXYZ tabulates up to the initialization momentum and cannot be
+        # called again
+        if a1 * kin.plab > self._max_pptmax * (1.0 + 1e-9):
+            msg = (
+                f"projectile momentum {a1 * kin.plab:.6g} GeV/c exceeds the "
+                f"initialization momentum {self._max_pptmax:.6g} GeV/c. "
+                "Initialize at the highest energy of the simulation and "
+                "set lower-energy kinematics afterwards via "
+                "generator.kinematics = ..."
+            )
+            raise ValueError(msg)
+
         # Resolve the target material index (required before _generate).
         # For CompositeTarget, use the first component as the default;
         # _composite_plan will call _set_kinematics again with each component
