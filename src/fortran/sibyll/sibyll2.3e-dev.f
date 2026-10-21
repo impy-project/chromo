@@ -73,6 +73,8 @@ C             third branch repeated the q + ss split)
 C     rev 6 : SIBNUC: wounded projectile nucleons are protons or neutrons
 C             with equal probability (were all protons); spectator
 C             fragments and elastic nucleons on mass shell
+C     rev 7 : SIB_DIFF resets IDBAD for every attempt (after one failed
+C             DIFDEC all later attempts were rejected)
 C-----------------------------------------------------------------------
 C=======================================================================
 
@@ -2415,6 +2417,9 @@ c     add interactions
       IDBAD = 0
       NTRY = 0
  20   IREJ = 1
+c     2.3e-dev: reset the decay status for every attempt (DIFDEC does not
+c     set IBAD on success, so one failure used to reject all later attempts)
+      IDBAD = 0
       CALL INI_PRTN_STCK(NPP_0,NPP0_0)
 
       IF(NTRY.gt.20*Irec) RETURN ! zero tolerance for recursive calls 
