@@ -450,6 +450,17 @@ class Sibyll23e(Sibyll23c):
     _library_name = "_sib23e"
 
 
+class Sibyll23e_DEV(Sibyll23e):
+    """SIBYLL 2.3e with bug fixes, for development and validation only.
+
+    Built from ``sibyll2.3e-dev.f``, a patched copy of ``sibyll2.3e.f``.
+    The list of changes relative to 2.3e is kept in the header of that file.
+    """
+
+    _version = "2.3e-dev.0"
+    _library_name = "_sib23e_dev"
+
+
 class Sibyll23dStarNoEnh(Sibyll23d):
     _version = "2.3dStar-noenh"
     _library_name = "_sib23d_star"
