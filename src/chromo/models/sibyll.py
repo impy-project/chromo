@@ -479,6 +479,41 @@ class SibyllRS_DEV(Sibyll23e):
         self._lib.seed(int(self._rng.integers(0, 2**63 - 1)))
 
 
+class SibyllNext(SibyllRS_DEV):
+    """SIBYLL 2.3e-dev redesigned from the ground up in Rust (crate ``sibyll``).
+
+    Same physics as ``SibyllRS_DEV`` and ``Sibyll23e_DEV`` (validated to
+    agree within statistics), new code structure. Uses the module
+    ``_sibyll_next`` of the sibyll-rs project.
+    """
+
+    _version = "2.3e-next.1"
+    _library_name = "_sibyll_next"
+
+
+class SibyllNextAxis(SibyllNext):
+    """``SibyllNext`` with strings oriented along their end parton."""
+
+    _version = "2.3e-next.1-axis"
+    _library_name = "_sibyll_next_axis"
+
+
+class SibyllNextPomeron(SibyllNext):
+    """``SibyllNext`` with the full eikonal interaction structure in the
+    pomeron-hadron collision of high-mass diffraction."""
+
+    _version = "2.3e-next.1-pomeron"
+    _library_name = "_sibyll_next_pomeron"
+
+
+class SibyllNextCompounding(SibyllNext):
+    """``SibyllNext`` without compounding of the target-remnant probability
+    over wounded nucleons."""
+
+    _version = "2.3e-next.1-compounding"
+    _library_name = "_sibyll_next_compounding"
+
+
 class Sibyll23dStarNoEnh(Sibyll23d):
     _version = "2.3dStar-noenh"
     _library_name = "_sib23d_star"
