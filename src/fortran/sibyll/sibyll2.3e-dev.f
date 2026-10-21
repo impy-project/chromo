@@ -70,6 +70,9 @@ C     rev 4 : STRING_FRAG_4FLV restores the caller's vector-meson rate
 C             PAR(5) after each hadron (was reset to 0.3)
 C     rev 5 : HSPLI: Xi0/Xi- valence split s + (us)/(ds) restored (the
 C             third branch repeated the q + ss split)
+C     rev 6 : SIBNUC: wounded projectile nucleons are protons or neutrons
+C             with equal probability (were all protons); spectator
+C             fragments and elastic nucleons on mass shell
 C-----------------------------------------------------------------------
 C=======================================================================
 
@@ -415,6 +418,12 @@ C...fragment spectator nucleons
       ENDIF
      
 C...Spectator fragments
+c     2.3e-dev: fragments and elastically scattered nucleons on mass shell,
+c     each nucleon with the energy ECM/2 of the nucleon-nucleon frame
+c     (was E = pz = A*ECM/2)
+      EN1 = ECM/2.D0
+      XMN = 0.5D0*(AM(13)+AM(14))
+      PZ1 = SQRT(MAX(EN1**2-XMN**2,0.D0))
       NPA = 0
       DO J=1,NF
          NPA = NPA+1
@@ -427,9 +436,9 @@ C...Spectator fragments
          LLA(NPA) = 1000+IAF(J)
          PA(1,NPA) = 0.D0
          PA(2,NPA) = 0.D0
-         PA(3,NPA) = IAF(J)*ECM/2.D0
-         PA(4,NPA) = IAF(J)*ECM/2.D0
-         PA(5,NPA) = DBLE(IAF(J))*0.5D0*(AM(13)+AM(14))
+         PA(3,NPA) = DBLE(IAF(J))*PZ1
+         PA(4,NPA) = DBLE(IAF(J))*EN1
+         PA(5,NPA) = DBLE(IAF(J))*XMN
       ENDDO
 
 C...Elastically scattered fragments
@@ -444,14 +453,18 @@ C...Elastically scattered fragments
          LLA(NPA) = 1001
          PA(1,NPA) = 0.D0
          PA(2,NPA) = 0.D0
-         PA(3,NPA) = ECM/2.D0
-         PA(4,NPA) = ECM/2.D0
-         PA(5,NPA) = 0.5D0*(AM(13)+AM(14))
+         PA(3,NPA) = PZ1
+         PA(4,NPA) = EN1
+         PA(5,NPA) = XMN
       ENDDO
 
 C...Superimpose NB  nucleon interactions
+c     2.3e-dev: each wounded projectile nucleon is a proton or a neutron
+c     with equal probability, as for target nucleons in INI_EVENT (was
+c     always a proton)
       DO JJ=1,NB
-          CALL SIBYLL (13,IATARGET, ECM)
+          KNUC = 13 + INT((2.D0-EPS8)*S_RNDM(JJ))
+          CALL SIBYLL (KNUC,IATARGET, ECM)
           CALL DECSIB
           DO J=1,NP
              LA = IABS(LLIST(J))
