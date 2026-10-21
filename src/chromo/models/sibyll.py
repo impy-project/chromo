@@ -461,41 +461,41 @@ class Sibyll23e_DEV(Sibyll23e):
     _library_name = "_sib23e_dev"
 
 
-class SibyllNext(Sibyll23e):
+class SibyllRS(Sibyll23e):
     """SIBYLL 2.3e-dev redesigned from the ground up in Rust (crate ``sibyll``).
 
     Same physics as ``Sibyll23e_DEV``, new code structure, with three bugs
     of 2.3e fixed: string axis (inverse rotation), antibaryon diquark-x
     weight (on the antiquark) and the quark-merge table. Uses the module
-    ``_sibyll_next`` of the sibyll-rs project, which offers the interface
+    ``_sibyll_rs`` of the sibyll-rs project, which offers the interface
     of the Fortran f2py module, so the SIBYLL logic of this file is shared
     with the Fortran builds. It has its own random generator, seeded from
     chromo's.
     """
 
-    _version = "2.3e-next.2"
-    _library_name = "_sibyll_next"
+    _version = "2.3e-rs.11"
+    _library_name = "_sibyll_rs"
 
     def __init__(self, evt_kin, *, seed=None):
         super().__init__(evt_kin, seed=seed)
         self._lib.seed(int(self._rng.integers(0, 2**63 - 1)))
 
 
-class SibyllNextFullyResolvedHMD(SibyllNext):
-    """``SibyllNext`` with fully resolved high-mass diffraction: the
+class SibyllRSFullyResolvedHMD(SibyllRS):
+    """``SibyllRS`` with fully resolved high-mass diffraction: the
     pomeron-hadron collision gets the full eikonal structure (multiple soft
     and hard interactions, remnants) instead of one soft interaction."""
 
-    _version = "2.3e-next.2-fully_resolved_hmd"
-    _library_name = "_sibyll_next_fully_resolved_hmd"
+    _version = "2.3e-rs.11-fully_resolved_hmd"
+    _library_name = "_sibyll_rs_fully_resolved_hmd"
 
 
-class SibyllNextNoExcitationNucleonScaling(SibyllNext):
-    """``SibyllNext`` without excitation-nucleon scaling: every wounded
+class SibyllRSNoExcitationNucleonScaling(SibyllRS):
+    """``SibyllRS`` without excitation-nucleon scaling: every wounded
     target nucleon gets the same remnant-excitation probability."""
 
-    _version = "2.3e-next.2-no_excitation_nucleon_scaling"
-    _library_name = "_sibyll_next_no_excitation_nucleon_scaling"
+    _version = "2.3e-rs.11-no_excitation_nucleon_scaling"
+    _library_name = "_sibyll_rs_no_excitation_nucleon_scaling"
 
 
 class Sibyll23dStarNoEnh(Sibyll23d):
