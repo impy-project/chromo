@@ -134,15 +134,10 @@ def run_rng_state_with_bitgen(Model, bitgen_class, seed):
         evt_kin = CenterOfMass(13 * TeV, "proton", "proton")
 
     rng = np.random.Generator(bitgen_class(seed=seed))
+    generator = Model(evt_kin, seed=rng)
     if Model is im.Fluka:
-        # Fluka._init_rng expects an int seed (it does int(seed));
-        # numpy Generator doesn't convert.  Draw a deterministic int
-        # from the bitgen so the test is still bitgen-parametric.
-        fluka_seed = int(rng.integers(1, 2**31 - 1))
-        generator = Model(evt_kin, seed=fluka_seed)
+        # See run_rng_state.
         generator._activate_decay_handler(on=False)
-    else:
-        generator = Model(evt_kin, seed=rng)
 
     nevents = 10 if Model is not im.EposLHC else 50
 

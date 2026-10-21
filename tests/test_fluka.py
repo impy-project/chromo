@@ -10,6 +10,7 @@ from functools import lru_cache
 
 import numpy as np
 import pytest
+from numpy.testing import assert_allclose
 
 from chromo.kinematics import CenterOfMass, FixedTarget
 from chromo.util import CompositeTarget
@@ -497,3 +498,96 @@ def test_rng_state_roundtrip(tmp_path):
     pid2, en2 = run_in_separate_process(_rng_replay, state)
     np.testing.assert_array_equal(pid1, pid2)
     np.testing.assert_allclose(en1, en2, rtol=0, atol=0)
+
+
+# ---------------------------------------------------------------------------
+# Beam records, seeding, RNG state file, composite weighting
+# ---------------------------------------------------------------------------
+
+
+def _event_and_beam(elab, p1, p2):
+    from chromo.models import Fluka
+
+    kin = FixedTarget(elab, p1, p2)
+    gen = Fluka(kin, seed=1)
+    for event in gen(1):
+        pass
+    return event, kin._get_beam_data(gen._frame)
+
+
+@pytest.mark.parametrize("p1,p2", [("p", "O16"), ("He4", "O16")])
+def test_beam_records_per_nucleon(p1, p2):
+    # FLLHEP stores whole-nucleus beams; chromo's records are per nucleon
+    event, beam = run_in_separate_process(_event_and_beam, 100.0, p1, p2)
+    for field in ("pid", "status", "pz", "en", "m"):
+        assert_allclose(getattr(event, field)[:2], beam[field], err_msg=field)
+    # FLUKA products hang on both beams, decay products on their parent
+    mothers = event.mothers[2:]
+    assert np.all(mothers[:, 0] >= 0)
+    assert np.any(np.all(mothers == [0, 1], axis=1))
+
+
+def _first_event_pz(seed):
+    from chromo.models import Fluka
+
+    gen = Fluka(FixedTarget(100.0, "p", "O16"), seed=seed)
+    gen._activate_decay_handler(on=False)
+    for event in gen(1):
+        pass
+    return event.final_state().pz
+
+
+def test_seed_none_is_not_fixed():
+    a = run_in_separate_process(_first_event_pz, None)
+    b = run_in_separate_process(_first_event_pz, None)
+    assert len(a) != len(b) or not np.allclose(a, b)
+
+
+def test_seed_numpy_generator():
+    a = run_in_separate_process(_first_event_pz, np.random.default_rng(3))
+    b = run_in_separate_process(_first_event_pz, np.random.default_rng(3))
+    assert_allclose(a, b)
+
+
+def _ranmar_state(seed, stale_state=None):
+    import tempfile
+
+    from chromo.models import Fluka
+
+    if stale_state is not None:
+        # file name used by earlier versions for the temporary state
+        path = os.path.join(tempfile.gettempdir(), f"fluka_rng_state_{os.getpid()}.dat")
+        with open(path, "wb") as f:
+            f.write(stale_state)
+    gen = Fluka(FixedTarget(100.0, "p", "O16"), seed=seed)
+    return gen.random_state[0]
+
+
+def test_stale_rng_state_file_is_ignored():
+    stale = run_in_separate_process(_ranmar_state, 1)
+    fresh = run_in_separate_process(_ranmar_state, 2, stale)
+    assert fresh != stale
+
+
+def _composite_generation_xsec(interaction_type):
+    from chromo.models import Fluka
+    from chromo.models.fluka import InteractionType
+
+    air = CompositeTarget([("N14", 0.78), ("O16", 0.21), ("Ar40", 0.01)])
+    kin = FixedTarget(100.0, "p", air)
+    gen = Fluka(kin, seed=1, interaction_type=InteractionType[interaction_type])
+    parts = []
+    for c in air.components:
+        cs = gen.cross_section(FixedTarget(100.0, "p", c))
+        parts.append((cs.inelastic, cs.elastic))
+    return gen._inel_or_prod_cross_section, parts, air.fractions
+
+
+@pytest.mark.parametrize("interaction_type", ["INELASTIC", "ELASTIC", "INELA_ELA"])
+def test_composite_generation_xsec_sums_enabled_channels(interaction_type):
+    sigma, parts, fractions = run_in_separate_process(
+        _composite_generation_xsec, interaction_type
+    )
+    expected = sum(f * np.nansum(p) for f, p in zip(fractions, parts))
+    assert np.isfinite(sigma)
+    assert sigma == pytest.approx(expected)

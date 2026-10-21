@@ -203,10 +203,22 @@ for event in gen(10):
   `INELA_EMD` (101) or `INELA_ELA_EMD` (111).
 - **EMD cross section is zero for single-proton projectiles** (physics:
   needs a Z²-enhanced field, so meaningful EMD only appears for AA).
-- **No beam records in HEPEVT.** FLUKA's `FLLHEP` populates HEPEVT with
-  GENSTK ejectiles and RESNUC residuals. `FlukaEvent._prepend_initial_beam`
-  is intentionally a no-op. The generic `test_models_beam[Fluka]` is
-  xfailed for this reason (see `tests/test_common.py`).
+- **Energies of nuclear projectiles.** chromo kinematics are per nucleon,
+  FLUKA's `EKIN` (EVTXYZ/SGMXYZ) and `PPTMAX` (STPXYZ) refer to the whole
+  projectile; `Fluka` multiplies by A.
+- **Beam records.** `FLLHEP` writes both beams at rows 0-1 (status 4), for
+  nuclei with whole-nucleus momenta, and no mother links.
+  `FlukaEvent._repair_initial_beam` replaces them by chromo's per-nucleon
+  beam records and attaches the products to both beams.
+- **Elastic hadron-nucleus events abort above 1 GeV** (`STOP OLD EL. SCATT.
+  ABOVE 1 GeV!`, `FLUKA_QUESTIONS.md` #9). Elastic cross sections work, and
+  hadron-proton elastic events work.
+- **CompositeTarget weighting** uses the sum of the enabled channels
+  (inelastic, elastic, EMD), since EVTXYZ samples among them.
+- **Seeds.** The Ranmar seed is drawn from the MCRun numpy generator, so
+  `seed` may be an int, a `numpy.random.Generator` or None. A temporary,
+  per-instance state file is used unless `rng_state_file` is given; an
+  existing non-empty `rng_state_file` is loaded and `seed` is ignored.
 - **`_set_stable` is a no-op.** FLUKA's decay model is global and not
   runtime-configurable.
 - **`e+/e-` projectiles are not yet supported** (SGMXYZ returns xsec

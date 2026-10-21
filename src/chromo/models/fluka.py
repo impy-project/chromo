@@ -78,27 +78,22 @@ class FlukaEvent(MCEvent):
         z = ((absp // 10000) % 1000).astype(float)
         return np.where(nucleus, np.sign(pids) * z, result)
 
-    def _history_zero_indexing(self):
-        # FLUKA's FLLHEP writes standard HEPEVT: one-based indices with
-        # (0, 0) meaning "no mother". Convert to chromo's / pyhepmc's
-        # zero-based convention ((-1, -1) = no mother, (N, -1) = single
-        # mother), like the base class and Epos do. The no-op override
-        # previously here left 1-based indices with (0, 0) sentinels,
-        # which pyhepmc's from_hepevt(fortran=False) interprets as
-        # self-referential links (particle 0 is its own mother),
-        # producing a corrupt GenEvent that segfaults on traversal/equality.
-        for name in ("mothers", "daughters"):
-            arr = getattr(self, name).copy()
-            no_mother = (arr[:, 0] == 0) & (arr[:, 1] == 0)
-            arr[arr > 0] -= 1
-            arr[no_mother] = -1
-            setattr(self, name, arr)
-
-    def _prepend_initial_beam(self):
-        pass
+    # FLLHEP writes standard 1-based HEPEVT history with (0, 0) for "none",
+    # so the base class's zero-indexing (subtract one) applies unchanged.
 
     def _repair_initial_beam(self):
-        pass
+        # FLLHEP writes both beams at rows 0-1 (status 4), but nuclei carry
+        # the momentum of the whole nucleus there and no particle has a
+        # mother. Replace the rows by chromo's per-nucleon beam records and
+        # attach the products to both beams, as for the other models.
+        beam = self.kin._get_beam_data(self._generator_frame)
+        for field, beam_field in beam.items():
+            event_field = getattr(self, field)
+            if event_field is None:
+                continue
+            setattr(self, field, np.concatenate((beam_field, event_field[2:])))
+        orphan = (self.mothers[2:] == -1).all(axis=1)
+        self.mothers[2:][orphan] = [0, 1]
 
 
 class Fluka(MCRun):
@@ -135,8 +130,8 @@ class Fluka(MCRun):
     ----------
     evt_kin : EventKinematicsBase
         Initial kinematics. Target must be registered (see ``targets``).
-    seed : int or None
-        Random seed for FLUKA's Ranmar generator.
+    seed : int, numpy.random.Generator or None
+        Random seed. FLUKA's Ranmar seed is drawn from it.
     targets : iterable of (str|int|PDGID), optional
         Extra nuclei to register beyond ``_DEFAULT_MATERIALS``. Required
         if you plan to shoot at a nucleus outside the default list.
@@ -157,7 +152,8 @@ class Fluka(MCRun):
     enable_quasielastic : bool
         Enable quasi-elastic scattering. Default False.
     rng_state_file : pathlib.Path or str, optional
-        File used to persist Ranmar state across runs.
+        File used to persist Ranmar state across runs. If it exists and is
+        not empty, the state is loaded from it and ``seed`` is ignored.
     post_event : callable, optional
         Hook invoked on every generated event after frame boost and
         decay-handler validation. Signature: ``f(event) -> event``. The
@@ -312,19 +308,27 @@ class Fluka(MCRun):
     # ------------------------------------------------------------------
 
     def _init_rng(self, rng_state_file, seed):
+        # Ranmar seeds are 0 <= seed < 2e9. Draw one from the generator that
+        # MCRun built from `seed`, so that int, None (fresh entropy) and
+        # numpy Generator seeds all follow the usual MCRun conventions.
+        seed_int = int(self._rng.integers(0, 2**30))
         self._rng_state_is_temp = rng_state_file is None
         if rng_state_file is None:
-            rng_state_file = (
-                pathlib.Path(tempfile.gettempdir())
-                / f"fluka_rng_state_{os.getpid()}.dat"
-            )
+            # unique per instance: never pick up a state file left behind by
+            # an earlier process that ended in a FLUKA STOP
+            fd, rng_state_file = tempfile.mkstemp(prefix="fluka_rng_", suffix=".dat")
+            os.close(fd)
         self._rng_state_file = pathlib.Path(rng_state_file)
         self._logical_unit = 888
 
-        if self._rng_state_file.exists() and self._rng_state_file.stat().st_size > 0:
+        if (
+            not self._rng_state_is_temp
+            and self._rng_state_file.exists()
+            and self._rng_state_file.stat().st_size > 0
+        ):
+            # continue a persisted sequence; `seed` is ignored
             self._load_rng(self._rng_state_file)
         else:
-            seed_int = 0 if seed is None else int(seed)
             self._lib.init_rng_state(
                 str(self._rng_state_file),
                 self._logical_unit,
@@ -543,6 +547,16 @@ class Fluka(MCRun):
         prod = inel if (is_real_nucleus(kin.p1) or is_real_nucleus(kin.p2)) else np.nan
         return CrossSectionData(inelastic=inel, elastic=el, emd=emd, prod=prod)
 
+    def _generation_cross_section(self, p1, p2, cs):
+        # EVTXYZ samples among all enabled channels (inelastic, elastic,
+        # EMD) in proportion to their cross sections, so events are
+        # generated according to the sum; disabled channels are NaN. This
+        # also weights CompositeTarget components correctly, e.g. the Z^2
+        # growth of EMD.
+        sigma = np.array([cs.inelastic, cs.elastic, cs.emd])
+        valid = ~np.isnan(sigma)
+        return float(sigma[valid].sum()) if valid.any() else np.nan
+
     def _set_stable(self, pdgid, stable):
         info(
             2,
@@ -616,15 +630,20 @@ class Fluka(MCRun):
 
     @property
     def random_state(self):
-        """Get FLUKA's Ranmar RNG state as bytes."""
+        """Get FLUKA's Ranmar state (bytes) and chromo's numpy RNG state.
+
+        The numpy state covers the CompositeTarget component sampling.
+        """
         self._lib.save_rng_state(str(self._rng_state_file), self._logical_unit)
-        return self._rng_state_file.read_bytes()
+        return self._rng_state_file.read_bytes(), self._rng.bit_generator.state
 
     @random_state.setter
     def random_state(self, state):
-        """Restore FLUKA's Ranmar RNG state from bytes."""
-        self._rng_state_file.write_bytes(state)
+        """Restore the state returned by `random_state`."""
+        ranmar, bitgen = state
+        self._rng_state_file.write_bytes(ranmar)
         self._load_rng(self._rng_state_file)
+        self._rng.bit_generator.state = bitgen
 
     def fluka_rand(self):
         return float(self._lib.fluka_rand())

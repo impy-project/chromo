@@ -443,6 +443,20 @@ bound up to `EPN`?
 
 ---
 
+## 9. Elastic hadron-nucleus events abort above 1 GeV
+
+`EVTXYZ` with `IFLXYZ=11` (inelastic + elastic) stops on the first
+elastic interaction for p+O16 and p+Pb208 at 100 GeV with
+`STOP OLD EL. SCATT. ABOVE 1 GeV!`. `SGMXYZ` returns sensible elastic
+cross sections for the same kinematics, and p+p elastic events work
+(elastic fraction 0.180 +- 0.022 for an expected 0.185 at 100 GeV).
+
+**Question.** Which elastic model should library-mode callers enable for
+hadron-nucleus elastic scattering above 1 GeV, and is there a flag that
+`STPXYZ` leaves unset?
+
+---
+
 ## Build environment
 
 - FLUKA 2025.1, DPMVERS=3.19.3.2
