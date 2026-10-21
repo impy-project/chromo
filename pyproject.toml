@@ -86,6 +86,7 @@ enabled-models = [
     "sib23d_star",
     "sib23e",
     "sib23e_star",
+    "sib23e_dev",
     "sib23c01",
     "sophia",
     "pythia6",
