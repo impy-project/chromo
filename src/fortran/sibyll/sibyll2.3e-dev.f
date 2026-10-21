@@ -66,6 +66,8 @@ C             call counter (identical tables)
 C     rev 3 : kaon beams use the kaon cross sections (class 3) for the
 C             number of wounded nucleons, diffraction and the diffractive
 C             minimum mass; they used the pion class
+C     rev 4 : STRING_FRAG_4FLV restores the caller's vector-meson rate
+C             PAR(5) after each hadron (was reset to 0.3)
 C-----------------------------------------------------------------------
 C=======================================================================
 
@@ -7777,7 +7779,9 @@ c     replace for string diff.
       ENDIF
 
 c     reset vec.meson ratio
-      PAR(5) = 0.3D0
+c     2.3e-dev: restore the caller's value (was a hard-coded 0.3, so a
+c     caller's vector-meson rate reached only the first hadron of a string)
+      PAR(5) = PAR5_def
       IF(IABS(IFQRK).eq.1) ILEAD(JT) = 0
       
       PMQ(3) = QMASS(IFL(3))
