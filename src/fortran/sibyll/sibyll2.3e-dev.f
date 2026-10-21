@@ -63,6 +63,9 @@ C               (NSOFR was left unset)
 C             - SIBYLL, DIFDEC: retry loops capped
 C     rev 2 : SIB_SIG reads sigma_hard by energy index instead of a
 C             call counter (identical tables)
+C     rev 3 : kaon beams use the kaon cross sections (class 3) for the
+C             number of wounded nucleons, diffraction and the diffractive
+C             minimum mass; they used the pion class
 C-----------------------------------------------------------------------
 C=======================================================================
 
@@ -173,7 +176,9 @@ c     internal type declarations
       INTEGER LL,IATARGET,IAIR,KBM,L,NW,IREJ,NF,J
       DIMENSION LL(99)
       SAVE
-      DATA LL /5*0,7*2,2*1,12*0,2,6*0,6*1,19*0,2,2,10*0,
+c     2.3e-dev: kaons (9-12) use their own cross-section class 3 (was 2,
+c     the pion class); the kaon tables are filled in JET_INI/SIG_AIR_INI
+      DATA LL /5*0,3*2,4*3,2*1,12*0,2,6*0,6*1,19*0,2,2,10*0,
      &     2,2,0,2,2,11*0,1,1,1,9*0,1/
 c     2.3e-dev: counters that turn endless event retries into a stop
       INTEGER NREJEV,NREJDF
