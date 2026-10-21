@@ -53,6 +53,14 @@ C     a re-implementation. Each change is listed here with its revision
 C     (chromo class Sibyll23e_DEV, version 2.3e-dev.<revision>).
 C
 C     rev 0 : identical to 2.3e01
+C     rev 1 : safety fixes, no change for events that never hit them
+C             - INI_EVENT: KT(1..A) wrote past KT(NW_max) for A > 20
+C             - INT_H_NUC: NA=0 after 1000 trials now redraws the
+C               nucleus; NA > NW_max is resampled
+C             - parton stack 4x larger, overflow stops explicitly
+C             - CUT_PRO: above the table use the last energy point
+C               (NSOFR was left unset)
+C             - SIBYLL, DIFDEC: retry loops capped
 C-----------------------------------------------------------------------
 C=======================================================================
 
@@ -165,7 +173,10 @@ c     internal type declarations
       SAVE
       DATA LL /5*0,7*2,2*1,12*0,2,6*0,6*1,19*0,2,2,10*0,
      &     2,2,0,2,2,11*0,1,1,1,9*0,1/
+c     2.3e-dev: counters that turn endless event retries into a stop
+      INTEGER NREJEV,NREJDF
 
+      NREJEV = 0
       if(Ndebug.gt.0)then
         WRITE(LUN,'(A42,I3,I3,1X,F10.2)')
      &     '  SIBYLL: called with (K_beam,IATARG,Ecm):',
@@ -174,6 +185,13 @@ c     internal type declarations
       endif
 
  100  CONTINUE
+      NREJEV = NREJEV + 1
+      IF(NREJEV.GT.100000) THEN
+         WRITE(LUN,*) ' SIBYLL: 1e5 rejected attempts (K_beam,IATARG,',
+     &        'Ecm):',K_beam,IATARG,Ecm
+         CALL SIB_REJECT('SIBYLL          ')
+      ENDIF
+      NREJDF = 0
       
       Ncall = Ncall+1
 
@@ -193,6 +211,12 @@ c     internal type declarations
 C...Generate number NW wounded nucleons, and diffraction code.
 
 1000  continue  
+      NREJDF = NREJDF + 1
+      IF(NREJDF.GT.1000000) THEN
+         WRITE(LUN,*) ' SIBYLL: no event of type LDIFF=',LDIFF,
+     &        ' in 1e6 attempts'
+         CALL SIB_REJECT('SIBYLL          ')
+      ENDIF
       CALL SIB_START_EV (Ecm, L, IATARGET, IAIR, NWD, JDIF)
       NW = NWD
 C...limits on simulation of pure diffraction dissociation
@@ -5886,7 +5910,8 @@ C...  Generate an 'air' interaction by choosing Nitrogen or Oxygen
                if (NDEBUG.gt.0) 
      *           WRITE(lun,*)'fox,rndm,iatarg,eps:',fox,r,iatarg,eps8
             ENDIF
-            DO JN=1,IATARG
+c     2.3e-dev: KT has NW_max entries (one per wounded nucleon)
+            DO JN=1,MIN(IATARG,NW_max)
 c     for nuclear target: proton (13) or neutron (14)
                KT(JN) = 13 + INT((2.D0-EPS8)*S_RNDM(JN))
             ENDDO
@@ -5947,11 +5972,16 @@ C-------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       SAVE
 
+c     2.3e-dev: explicit stop instead of writing past the stack
+      IF(NPP+1.GT.NPP_max.OR.(LVL.EQ.0.AND.NPP0+1.GT.NPP0_max))THEN
+         WRITE(LUN,*) ' ADD_PRTN: parton stack full (NPP,NPP0):',NPP,NPP0
+         CALL SIB_REJECT('ADD_PRTN        ')
+      ENDIF
       PP(NPP+1,1) = PX
       PP(NPP+1,2) = PY
       PP(NPP+1,3) = PZ
@@ -6007,7 +6037,7 @@ C-------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       SAVE
@@ -6033,7 +6063,7 @@ C-------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       SAVE
@@ -6056,7 +6086,7 @@ C-------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       SAVE
@@ -6079,7 +6109,7 @@ C-------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       SAVE
@@ -6102,7 +6132,7 @@ C-------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       SAVE
@@ -6135,7 +6165,7 @@ C-------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       SAVE
@@ -6167,7 +6197,7 @@ C-------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
 
@@ -6220,7 +6250,7 @@ C-------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       SAVE
@@ -6249,7 +6279,7 @@ C-------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       SAVE
@@ -6274,7 +6304,7 @@ C-----------------------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       SAVE
@@ -6293,7 +6323,7 @@ C-----------------------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       DIMENSION IDXLIST(NPP0_max)
@@ -6321,7 +6351,7 @@ C-------------------------------------------------------
 
       INTEGER NCALL, NDEBUG, LUN
       COMMON /S_DEBUG/ NCALL, NDEBUG, LUN
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       CHARACTER*5 CDE
@@ -6407,7 +6437,7 @@ C     in the list between N1 and N2
 C-------------------------------------------------------
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       IMPLICIT INTEGER(I-N)
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
 
@@ -6485,7 +6515,7 @@ C     on the stack                                \FR'14
 C-------------------------------------------------------
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       IMPLICIT INTEGER(I-N)
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       SAVE
@@ -6502,7 +6532,7 @@ C     on the stack  (+---)                        \FR'14
 C-------------------------------------------------------
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       IMPLICIT INTEGER(I-N)
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       SAVE
@@ -6520,7 +6550,7 @@ C     read mass of parton on stack                \FR'14
 C-------------------------------------------------------
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       IMPLICIT INTEGER(I-N)
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
 
@@ -6553,7 +6583,7 @@ C     read mass of parton on stack                \FR'14
 C-------------------------------------------------------
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       IMPLICIT INTEGER(I-N)
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
 
@@ -6588,7 +6618,7 @@ C     = on-shell mass - inv. mass
 C-------------------------------------------------------
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       IMPLICIT INTEGER(I-N)
-      PARAMETER (NPP_max = 1000, NPP0_max = 500)
+      PARAMETER (NPP_max = 4000, NPP0_max = 2000)
       COMMON /S_PRTNS/ PP(NPP_max,5), LPID(NPP_max,4), LVL0IDX(NPP0_max)
      &     ,NPP,NPP0
       COMMON /SIB_EPS/ EPS3,EPS5,EPS8,EPS10
@@ -8482,6 +8512,7 @@ C.   - intermediate energy: one-string decay (longitudinal phase space)
 C.   - high energy: pomeron-hadron scattering (multi-string model) 
 C-----------------------------------------------------------------------
       IMPLICIT NONE
+      INTEGER NTRY50
 
 c     external types
       INTEGER L0, Irec, IBAD
@@ -8626,7 +8657,17 @@ C...  pomeron-hadron scattering (pi0 is used instead of pomeron)
      &        L0,DELTAE,NP,XI2
          N1 = NP+1
          if(irec.gt.0.and.IPAR(5).eq.1) par(1)= par(15)
+         NTRY50 = 0
  50      CONTINUE
+c     2.3e-dev: give up after 100 failed sub-events and let the caller
+c     resample the diffractive mass (was an endless loop)
+         NTRY50 = NTRY50 + 1
+         IF(NTRY50.GT.100) THEN
+            NP = N1-1
+            IBAD = 1
+            PAR(1) = PAR1_def
+            RETURN
+         ENDIF
          IPFLAG= IPFLAG*100
 c     create subevent
          SQS_0   = SQS
@@ -10889,6 +10930,8 @@ C---------------------------------------------------------------------------
       PARAMETER (IAMAX=56)
       COMMON /S_CNCM0/ B, BMAX, NTRY, NA
       DIMENSION XA(IAMAX), YA(IAMAX)
+      INTEGER NW_max
+      PARAMETER (NW_max = 20)
 
 C--------------------------------------------------------------------
 C     SIBYLL utility common blocks containing constants       \FR'14
@@ -10929,7 +10972,13 @@ C--------------------------------------------------------------------
             NA = NA + 1
          ENDIF
       ENDDO
-      IF (NA .EQ. 0 .and. NTRY .lt. 1000)  GOTO 1000
+c     2.3e-dev: never return NA=0; after 1000 empty trials draw a new
+c     nucleon configuration. Reject NA above the event-record limit.
+      IF (NA .EQ. 0) THEN
+         IF (MOD(NTRY,1000) .EQ. 0) CALL NUC_CONF (IA, XA, YA)
+         GOTO 1000
+      ENDIF
+      IF (NA .GT. NW_max) GOTO 1000
 
       RETURN
       END
@@ -11057,9 +11106,9 @@ c     choose nucleon or meson table
           RETURN
       ENDIF
       IF (AL .GT. ASQSMAX)  THEN
+c     2.3e-dev: sample from the highest tabulated energy (NSOFR was unset)
           WRITE(LUN,*)  ' CUT_PRO:  sqrt(s) out of bounds ', SQS
-          NJETR = 0
-          RETURN
+          AL = ASQSMAX
       ENDIF
 
       J1 = INT((AL - ASQSMIN)/DASQS + 1)
