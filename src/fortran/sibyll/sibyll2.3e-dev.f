@@ -68,6 +68,8 @@ C             number of wounded nucleons, diffraction and the diffractive
 C             minimum mass; they used the pion class
 C     rev 4 : STRING_FRAG_4FLV restores the caller's vector-meson rate
 C             PAR(5) after each hadron (was reset to 0.3)
+C     rev 5 : HSPLI: Xi0/Xi- valence split s + (us)/(ds) restored (the
+C             third branch repeated the q + ss split)
 C-----------------------------------------------------------------------
 C=======================================================================
 
@@ -17903,8 +17905,9 @@ c     setup quarks: u,d,s
             KP1 = 3
             KP2 = 13
          ELSE
-            KP1 = 1
-            KP2 = 33
+c     2.3e-dev: was a second copy of the first split; mirrors Sigma+-
+            KP1 = 3
+            KP2 = 31
          ENDIF
       ELSEIF(IABS(KF).eq.38)THEN                !Xi-
          R = 6.D0*S_RNDM(0)                  
@@ -17915,8 +17918,9 @@ c     setup quarks: u,d,s
             KP1 = 3
             KP2 = 23
          ELSE
-            KP1 = 2
-            KP2 = 33
+c     2.3e-dev: was a second copy of the first split; mirrors Sigma+-
+            KP1 = 3
+            KP2 = 32
          ENDIF
       ELSEIF(IABS(KF).eq.49)THEN                 ! Omega-
          KP1 = 3

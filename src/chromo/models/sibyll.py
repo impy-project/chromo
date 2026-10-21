@@ -457,7 +457,7 @@ class Sibyll23e_DEV(Sibyll23e):
     The list of changes relative to 2.3e is kept in the header of that file.
     """
 
-    _version = "2.3e-dev.4"
+    _version = "2.3e-dev.5"
     _library_name = "_sib23e_dev"
 
 
