@@ -1,12 +1,12 @@
-import os
+import importlib
 import pickle
-import platform
 from copy import deepcopy
 
 import numpy as np
 import pytest
 
 import chromo.models as im
+from chromo.common import MCRun
 from chromo.constants import GeV, TeV
 from chromo.kinematics import CenterOfMass, FixedTarget
 from chromo.util import get_all_models
@@ -168,39 +168,42 @@ def test_rng_state_bitgens(Model, bitgen_class, seed):
             "Pythia6 has unknown issues with MT19937 bit generator, needs investigation"
         )
 
-    if (
-        (Model is im.EposLHC)
-        and (platform.machine() in ["aarch64", "arm64"])
-        and (bitgen_class == np.random.Philox)
-    ):
-        pytest.xfail(
-            "test_rng_state_bitgens[Philox-33333-EposLHC] fails with "
-            "AssertionError: 'states differ after 16 generation with Philox' "
-            "on ARM64 architecture (ubuntu-24.04-arm, 3.13), "
-            "while passes on all other systems. "
-            "It needs further investigation."
-        )
-
-    if (
-        (Model is im.EposLHC)
-        and (bitgen_class == np.random.Philox)
-        and platform.system() == "Darwin"
-    ):
-        pytest.xfail(
-            "test_rng_state_bitgens[Philox-33333-EposLHC] fails with "
-            "AssertionError: 'states differ after N generation with Philox' "
-            "on macOS (both arm64 and x86_64). "
-            "It needs further investigation."
-        )
-
-    if (
-        (Model is im.EposLHC)
-        and (bitgen_class in (np.random.MT19937, np.random.Philox))
-        and os.environ.get("CI")
-        and platform.system() == "Linux"
-    ):
-        pytest.xfail(
-            f"EposLHC with {bitgen_class.__name__} does not pass this test on CI"
-        )
-
     run_in_separate_process(run_rng_state_with_bitgen, Model, bitgen_class, seed)
+
+
+def run_bitgen_save_restore_roundtrip(bitgen_class):
+    # EPOS saves and restores the RNG state through ranfgt/ranfst,
+    # which copy the NumPy bit generator state in C (rangen.c).
+    lib = importlib.import_module("chromo.models._eposlhc")
+
+    def draw(n):
+        out = np.zeros(max(n, 1))
+        if n:
+            lib.rmmard(out, n, 0)
+        return out[:n]
+
+    # vary the position inside the buffered output (Philox) and key (MT19937)
+    for nskip in range(9):
+        rng = np.random.Generator(bitgen_class(seed=1234))
+        lib.npy.bitgen = rng.bit_generator.ctypes.bit_generator.value
+        lib.npy.gen_id = MCRun._get_bitgen_id(rng.bit_generator)
+        draw(nskip)
+        lib.ranfgt(0.0)
+        expected = draw(6)
+        lib.ranfst(0.0)
+        assert np.array_equal(draw(6), expected), f"differs after {nskip} draws"
+
+
+@pytest.mark.skipif(not hasattr(im, "EposLHC"), reason="EPOS-LHC not built")
+@pytest.mark.parametrize(
+    "bitgen_class",
+    [
+        np.random.PCG64,
+        np.random.PCG64DXSM,
+        np.random.MT19937,
+        np.random.Philox,
+        np.random.SFC64,
+    ],
+)
+def test_bitgen_save_restore_roundtrip(bitgen_class):
+    run_in_separate_process(run_bitgen_save_restore_roundtrip, bitgen_class)

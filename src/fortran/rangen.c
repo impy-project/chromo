@@ -29,22 +29,29 @@ typedef struct {
      uint32_t uinteger;   
 } pcg64_state;
 
-// MT19937 structure
+// MT19937 structure (numpy/random/src/mt19937/mt19937.h)
 typedef struct {
-    uint64_t key[624];
+    uint32_t key[624];
     int pos;
-    int has_uint32;  
-    uint32_t uinteger; 
 } mt19937_state;
 
-// Philox structure
+// Philox structure (numpy/random/src/philox/philox.h): counter and key
+// are pointers into the Cython object, not inline arrays
 typedef struct {
-    uint64_t counter[4];
-    uint64_t key[2];
+    uint64_t v[4];
+} philox4x64_ctr_t;
+
+typedef struct {
+    uint64_t v[2];
+} philox4x64_key_t;
+
+typedef struct {
+    philox4x64_ctr_t *ctr;
+    philox4x64_key_t *key;
     int buffer_pos;
     uint64_t buffer[4];
-    int has_uint32;        
-    uint32_t uinteger;     
+    int has_uint32;
+    uint32_t uinteger;
 } philox_state;
 
 // SFC64 structure
@@ -91,16 +98,14 @@ void npynxt_get_state_(uint64_t* state_arr, int64_t* ptr, int* gen_id)
             mt19937_state *mt_state = (mt19937_state *)bg->state;
             memcpy(state_arr, mt_state->key, sizeof(mt_state->key));
             state_arr[624] = (uint64_t)mt_state->pos;
-            state_arr[625] = (uint64_t)mt_state->has_uint32;
-            state_arr[626] = (uint64_t)mt_state->uinteger;
             memcpy(&state_arr[627], "MT19937\0", 8);
             break;
         }
         
         case GEN_ID_PHILOX: {
             philox_state *philox = (philox_state *)bg->state;
-            memcpy(state_arr, philox->counter, sizeof(philox->counter));
-            memcpy(&state_arr[4], philox->key, sizeof(philox->key));
+            memcpy(state_arr, philox->ctr->v, sizeof(philox->ctr->v));
+            memcpy(&state_arr[4], philox->key->v, sizeof(philox->key->v));
             state_arr[6] = (uint64_t)philox->buffer_pos;
             memcpy(&state_arr[7], philox->buffer, sizeof(philox->buffer));
             state_arr[11] = (uint64_t)philox->has_uint32;
@@ -161,8 +166,6 @@ void npynxt_set_state_(uint64_t* state_arr, int64_t* ptr)
         mt19937_state *mt_state = (mt19937_state *)bg->state;
         memcpy(mt_state->key, state_arr, sizeof(mt_state->key));
         mt_state->pos = (int)state_arr[624];
-        mt_state->has_uint32 = (int)state_arr[625];
-        mt_state->uinteger = (uint32_t)state_arr[626];
         return;
     }
     
@@ -170,8 +173,8 @@ void npynxt_set_state_(uint64_t* state_arr, int64_t* ptr)
     memcpy(gen_type, &state_arr[13], 8);
     if (memcmp(gen_type, "PHILOX", 6) == 0) {
         philox_state *philox = (philox_state *)bg->state;
-        memcpy(philox->counter, state_arr, sizeof(philox->counter));
-        memcpy(philox->key, &state_arr[4], sizeof(philox->key));
+        memcpy(philox->ctr->v, state_arr, sizeof(philox->ctr->v));
+        memcpy(philox->key->v, &state_arr[4], sizeof(philox->key->v));
         philox->buffer_pos = (int)state_arr[6];
         memcpy(philox->buffer, &state_arr[7], sizeof(philox->buffer));
         philox->has_uint32 = (int)state_arr[11];
