@@ -289,6 +289,29 @@ def test_conservation_baryon(p1, p2, elab):
     assert b_in == b_out, f"baryon number not conserved: {b_in} != {b_out}"
 
 
+@pytest.mark.parametrize(
+    "p1,p2,elab",
+    [
+        ("p", "O16", 100.0),
+        ("He4", "O16", 10.0),
+        ("He4", "O16", 100.0),
+        # above the Peanut->DPMJET transition and the 20 TeV/n pptmax scale
+        ("He4", "N14", 15_000.0),
+    ],
+)
+def test_conservation_pz_nuclear_projectile(p1, p2, elab):
+    # chromo energies are per nucleon; the event must carry A times the
+    # per-nucleon momentum (regression: FLUKA got the per-nucleon EKIN
+    # as the energy of the whole nucleus).
+    from chromo.util import is_real_nucleus, pdg2AZ
+
+    event = run_in_separate_process(_run_one_event, elab, p1, p2)
+    kin = event.kin
+    a1 = pdg2AZ(int(kin.p1))[0] if is_real_nucleus(kin.p1) else 1
+    pz = event.final_state().pz.sum()
+    assert pz == pytest.approx(a1 * kin.plab, rel=2e-3)
+
+
 def test_remnant_present_p_Pb208():
     event = run_in_separate_process(_run_one_event, 10.0, "p", "Pb208")
     big_pids = np.abs(event.pid)

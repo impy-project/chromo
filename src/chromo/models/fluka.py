@@ -417,7 +417,9 @@ class Fluka(MCRun):
         # must match the construction kinematics — if the user later
         # switches to higher energies via the kinematics setter, the
         # tables won't cover that range (STPXYZ cannot be called twice).
-        pptmax = evt_kin.plab
+        # Like EKIN in EVTXYZ/SGMXYZ, it refers to the whole projectile,
+        # so nuclei need A times chromo's per-nucleon plab.
+        pptmax = self._nucleon_number(evt_kin.p1) * evt_kin.plab
 
         mt = self._lib.chromo_stpxyz(
             nelmfl,
@@ -465,6 +467,16 @@ class Fluka(MCRun):
 
     def _fluka_projectile_code(self, pdg_id):
         return int(self._lib.pdg_to_proj_code(int(pdg_id)))
+
+    @staticmethod
+    def _nucleon_number(particle):
+        return pdg2AZ(int(particle))[0] if is_real_nucleus(particle) else 1
+
+    def _fluka_ekin(self, kin):
+        # chromo kinematics are per nucleon, while FLUKA's EKIN is the
+        # kinetic energy of the whole projectile (an He4 beam record has
+        # E = EKIN + M(He4)).
+        return self._nucleon_number(kin.p1) * kin.ekin
 
     def _get_material_index(self, particle):
         p = process_particle(particle)
@@ -514,7 +526,7 @@ class Fluka(MCRun):
         kin = self.kinematics if kin is None else kin
         proj_code = self._fluka_projectile_code(int(kin.p1))
         mat_idx = self._current_target_idx
-        ekin = kin.ekin
+        ekin = self._fluka_ekin(kin)
         # Three channels at most; route by interaction_type flag.
         flag = int(self._interaction_type)
         inel = el = emd = np.nan
@@ -542,7 +554,7 @@ class Fluka(MCRun):
         k = self.kinematics
         proj_code = int(self._lib.pdg_to_evt_code(int(k.p1)))
         mat_idx = self._current_target_idx
-        ekin = k.ekin
+        ekin = self._fluka_ekin(k)
         self._lib.chromo_evtxyz(
             proj_code,
             mat_idx,
