@@ -87,7 +87,7 @@ urqmd_syms        = [
   'upyth']
 pythia6_syms      = [
   'pyinit','pyexec','pytune','pylist','pyevnt','pyevnw','pystat','pyedit',
-  'pyhepc','pychge','pycomp','pyk']
+  'pyhepc','pychge','pycomp','pyk','pymult','pymign']
 sophia_syms       = ['eventgen','print_event','crossection','initial','icon_pdg_sib','toevt']
 dpm_syms          = [
   'dt_evtout','dt_eventb','dt_ficonf','dt_flahad','dt_init','dt_initjs','dt_kkinc',

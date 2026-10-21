@@ -19589,8 +19589,12 @@ C...Commonblocks.
       SAVE /PYJETS/,/PYDAT1/,/PYDAT2/,/PYSUBS/,/PYPARS/,/PYINT1/,
      &/PYINT2/,/PYINT3/,/PYINT5/,/PYINT7/
 C...Local arrays and saved variables.
-      DIMENSION NMUL(20),SIGM(20),KSTR(500,2),VINTSV(80)
-      SAVE XT2,XT2FAC,XC2,XTS,IRBIN,RBIN,NMUL,SIGM,P83A,P83B,P83C,
+C...chromo: running MPI averages in a common block (not SAVE locals)
+C...so that they can be saved and restored with the RNG state.
+      COMMON/PYMULS/SIGM(20),NMUL(20)
+      SAVE /PYMULS/
+      DIMENSION KSTR(500,2),VINTSV(80)
+      SAVE XT2,XT2FAC,XC2,XTS,IRBIN,RBIN,P83A,P83B,P83C,
      &CQ2I,CQ2R,PIK,BDIV,B,PLOWB,PHIGHB,PALLB,S4A,S4B,S4C,POWIP,
      &RPWIP,B2RPDV,B2RPMX,BAVG,VNT145,VNT146,VNT147
  
@@ -20944,9 +20948,13 @@ C...Commonblocks.
       SAVE /PYJETS/,/PYDAT1/,/PYDAT2/,/PYDAT3/,/PYSUBS/,/PYPARS/,
      &/PYINT1/,/PYINT2/,/PYINT3/,/PYINT5/,/PYINT7/,/PYINTM/
 C...Local arrays and saved variables.
-      DIMENSION NMUL(20),SIGM(20),KSTR(500,2),VINTSV(80),
+C...chromo: running MPI averages in a common block (not SAVE locals)
+C...so that they can be saved and restored with the RNG state.
+      COMMON/PYMIGS/SIGM(20),NMUL(20)
+      SAVE /PYMIGS/
+      DIMENSION KSTR(500,2),VINTSV(80),
      &WDTP(0:400),WDTE(0:400,0:5),XPQ(-25:25),KSAV(4,5),PSAV(4,5)
-      SAVE XT2,XT2FAC,XC2,XTS,IRBIN,RBIN,NMUL,SIGM,P83A,P83B,P83C,
+      SAVE XT2,XT2FAC,XC2,XTS,IRBIN,RBIN,P83A,P83B,P83C,
      &CQ2I,CQ2R,PIK,BDIV,B,PLOWB,PHIGHB,PALLB,S4A,S4B,S4C,POWIP,
      &RPWIP,B2RPDV,B2RPMX,BAVG,VNT145,VNT146,VNT147
  

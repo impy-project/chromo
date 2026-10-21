@@ -111,6 +111,31 @@ class Pythia6(MCRun):
         self._lib.pyhepc(1)
         return True
 
+    @property
+    def random_state(self):
+        """RNG state plus the running MPI averages of PYMULT/PYMIGN.
+
+        Every semihard event updates these averages, and later events use
+        them to sample the multiple-interaction enhancement, so restoring
+        the RNG state alone does not reproduce the events.
+        """
+        return {
+            "rng": self._rng.bit_generator.state,
+            "mpi": {
+                name: (block.sigm.tolist(), block.nmul.tolist())
+                for name, block in (
+                    ("pymult", self._lib.pymuls),
+                    ("pymign", self._lib.pymigs),
+                )
+            },
+        }
+
+    @random_state.setter
+    def random_state(self, rng_state):
+        self._rng.bit_generator.state = rng_state["rng"]
+        for name, block in (("pymult", self._lib.pymuls), ("pymign", self._lib.pymigs)):
+            block.sigm[:], block.nmul[:] = rng_state["mpi"][name]
+
     def print_native_event(self, mode=2):
         """Print the event record using Pythia6's native PYLIST routine.
 

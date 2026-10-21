@@ -103,6 +103,13 @@ def test_rng_state_events_reproducible():
     run_in_separate_process(run_rng_state_events_reproducible, im.UrQMD34)
 
 
+@pytest.mark.skipif(not hasattr(im, "Pythia6"), reason="Pythia6 not built")
+def test_rng_state_pythia6_mpi_averages():
+    # With PCG64(101), event 10 updates the running MPI averages of PYMULT
+    # enough to change event 4 on replay unless they are part of the state.
+    run_in_separate_process(run_rng_state_with_bitgen, im.Pythia6, np.random.PCG64, 101)
+
+
 def run_rng_state_with_bitgen(Model, bitgen_class, seed):
     """Test RNG state save/restore with specific bit generator."""
     if Model is im.Sophia20:
@@ -160,12 +167,6 @@ def test_rng_state_bitgens(Model, bitgen_class, seed):
         pytest.skip(
             f"{Model.pyname} maintains UrQMD internal state that affects event "
             "generation but is not captured by RNG state."
-        )
-
-    # Skip Pythia6 + MT19937 combination - model-specific interaction issue
-    if Model is im.Pythia6 and bitgen_class == np.random.MT19937:
-        pytest.skip(
-            "Pythia6 has unknown issues with MT19937 bit generator, needs investigation"
         )
 
     run_in_separate_process(run_rng_state_with_bitgen, Model, bitgen_class, seed)
