@@ -1,0 +1,33 @@
+# Start one job per fresh container (see fluka-runner.service):
+#   FLUKA_DIR=/path/to/FLUKA docker compose run --rm fluka-runner
+services:
+  fluka-runner:
+    build:
+      context: .
+      args:
+        # owner of the FLUKA copy (FLUKA data files have mode 600)
+        RUNNER_UID: ${RUNNER_UID:-1001}
+    image: chromo-fluka-runner:2.338.0
+    environment:
+      GH_REPOSITORY: impy-project/chromo
+      RUNNER_LABELS: fluka
+    secrets:
+      - gh_token
+    volumes:
+      - ${FLUKA_DIR:?set FLUKA_DIR to the FLUKA installation}:/opt/fluka:ro
+      # chromo model data and uv downloads, kept between jobs
+      - cache:/home/runner/.cache
+    cap_drop: [ALL]
+    # root drops to `runner` (SETUID/SETGID) after reading the token file
+    cap_add: [SETUID, SETGID, DAC_READ_SEARCH]
+    security_opt: [no-new-privileges:true]
+    cpus: 16
+    mem_limit: 32g
+    pids_limit: 8192
+
+secrets:
+  gh_token:
+    file: ./gh_token
+
+volumes:
+  cache:

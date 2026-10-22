@@ -21,10 +21,19 @@ def run_rng_state(Model):
         evt_kin = CenterOfMass(50 * GeV, "proton", "proton")
     elif Model in (im.Pythia8Cascade, im.Pythia8Angantyr):
         evt_kin = CenterOfMass(13 * TeV, "proton", "N14")
+    elif Model is im.Fluka:
+        # Fluka p+p event generation is unstable above ~200 GeV CMS, so
+        # use 100 GeV here instead of 13 TeV.
+        evt_kin = CenterOfMass(100 * GeV, "proton", "proton")
     else:
         evt_kin = CenterOfMass(13 * TeV, "proton", "proton")
 
     generator = Model(evt_kin, seed=1)
+    if Model is im.Fluka:
+        # Pythia8 decay handler's RNG is independent from FLUKA's Ranmar
+        # state and would diverge across the two passes; disable it for
+        # this reproducibility check.
+        generator._activate_decay_handler(on=False)
 
     nevents = 10
     # EposLHC needs more events to fail
@@ -118,11 +127,17 @@ def run_rng_state_with_bitgen(Model, bitgen_class, seed):
         evt_kin = CenterOfMass(50 * GeV, "proton", "proton")
     elif Model in (im.Pythia8Cascade, im.Pythia8Angantyr):
         evt_kin = CenterOfMass(13 * TeV, "proton", "N14")
+    elif Model is im.Fluka:
+        # See run_rng_state — same Fluka caveats apply.
+        evt_kin = CenterOfMass(100 * GeV, "proton", "proton")
     else:
         evt_kin = CenterOfMass(13 * TeV, "proton", "proton")
 
     rng = np.random.Generator(bitgen_class(seed=seed))
     generator = Model(evt_kin, seed=rng)
+    if Model is im.Fluka:
+        # See run_rng_state.
+        generator._activate_decay_handler(on=False)
 
     nevents = 10 if Model is not im.EposLHC else 50
 
