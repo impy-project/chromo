@@ -466,11 +466,11 @@ class SibyllRS(Sibyll23e):
 
     Same physics as ``Sibyll23e_DEV``, new code structure, with three bugs
     of 2.3e fixed: string axis (inverse rotation), antibaryon diquark-x
-    weight (on the antiquark) and the quark-merge table. Uses the module
-    ``_sibyll_rs`` of the sibyll-rs project, which offers the interface
-    of the Fortran f2py module, so the SIBYLL logic of this file is shared
-    with the Fortran builds. It has its own random generator, seeded from
-    chromo's.
+    weight (on the antiquark) and the quark-merge table. An optional second
+    model of the DPMJET-rs project (see ``DpmjetRS``), whose module
+    ``_sibyll_rs`` offers the interface of the Fortran f2py module, so the
+    SIBYLL logic of this file is shared with the Fortran builds. It has its
+    own random generator, seeded from chromo's.
     """
 
     _version = "2.3e-rs.11"
