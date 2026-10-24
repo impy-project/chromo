@@ -5,6 +5,7 @@ installs the Python module ``_dpmjet_rs`` (``tools/install_python.sh``
 there); it is not built with chromo.
 """
 
+import numpy as np
 from particle import literals as lp
 
 from chromo.common import CrossSectionData, MCEvent, MCRun
@@ -131,8 +132,18 @@ class DpmjetRS(MCRun):
 
     def _set_stable(self, pdgid, stable):
         # decays before the intranuclear cascade, as DPMJET's MDCY; species
-        # with partonic decays (charm, bottom) are left to the decay handler
+        # with partonic decays (charm, bottom) are left to the decay handler,
+        # which must then follow direct calls of _set_stable too
         self._lib.set_stable(pdgid, stable)
+        if self._decay_handler is None:
+            return
+        fsp = np.asarray(self._final_state_particles, dtype=np.int64)
+        if stable:
+            fsp = np.unique(np.append(fsp, pdgid))
+        else:
+            fsp = fsp[fsp != pdgid]
+        self._final_state_particles = fsp
+        self._sync_decay_handler()
 
     def _generate(self):
         self._lib.event()

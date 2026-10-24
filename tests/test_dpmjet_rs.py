@@ -74,3 +74,12 @@ def test_decays_before_cascade(model):
     pids = np.concatenate([ev.final_state().pid for ev in model(50)])
     assert np.isin(pids, [223]).any()
     model.set_stable(223, False)
+
+
+def test_direct_set_stable_reaches_decay_handler():
+    # MCVD sets stable particles through _set_stable
+    m = DpmjetRS(CenterOfMass(7000, "p", "p"), seed=3)
+    for pid in (421, -421, 411, -411):
+        m._set_stable(pid, True)
+    pids = np.concatenate([ev.final_state().pid for ev in m(300)])
+    assert np.isin(np.abs(pids), [411, 421]).any()
