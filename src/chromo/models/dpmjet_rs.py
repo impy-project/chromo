@@ -9,6 +9,7 @@ import numpy as np
 from particle import literals as lp
 
 from chromo.common import CrossSectionData, MCEvent, MCRun
+from chromo.constants import GeV
 from chromo.kinematics import EventFrame
 from chromo.util import Nuclei, is_real_nucleus
 
@@ -87,6 +88,10 @@ class DpmjetRS(MCRun):
     _frame = EventFrame.CENTER_OF_MASS
     _projectiles = _hadrons | Nuclei(a_max=280)
     _targets = Nuclei()
+    # validated down to sqrt(s) = 4.9 GeV (p-C); below a total energy of
+    # 5 GeV DPMJET samples the collision with HADRIN, which is not
+    # implemented
+    _ecm_min = 4.5 * GeV
     _restartable = True
     _restore_beam_and_history = False
     randomize_azimuth = True
