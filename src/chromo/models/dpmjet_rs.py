@@ -85,7 +85,7 @@ class DpmjetRS(MCRun):
     """
 
     _name = "DPMJET-rs"
-    _version = "19.4-rs.3"
+    _version = "19.4-rs.4"
     _library_name = "_dpmjet_rs"
     _event_class = DpmjetRSEvent
     _frame = EventFrame.CENTER_OF_MASS
@@ -124,7 +124,13 @@ class DpmjetRS(MCRun):
         kin = self.kinematics if kin is None else kin
         xs = self._lib.cross_section(_beam(kin.p1), _beam(kin.p2), kin.ecm)
         if "prod" in xs:
-            return CrossSectionData(prod=xs["prod"])
+            # with quasi-elastic events (tune nucleus.quasi_elastic > 0) the
+            # generated events are production plus quasi-elastic
+            return CrossSectionData(
+                prod=xs["prod"],
+                quasielastic=xs.get("quasi_elastic", np.nan),
+                inelastic=xs.get("inelastic", np.nan),
+            )
         sd = xs["sd_proj"] + xs["sd_targ"]
         return CrossSectionData(
             total=xs["total"],
