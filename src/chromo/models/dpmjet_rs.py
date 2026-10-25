@@ -73,8 +73,8 @@ class DpmjetRS(MCRun):
     unstable hadrons before the formation-zone intranuclear cascade (as
     DPMJET, following ``set_stable``), the cascade and the nuclear
     potential. Below 4-6 GeV/c hadron projectiles make their first
-    collision with a low-energy hadron-nucleon model (resonances, two-body
-    channels, strings) and cascade with it. Validated statistically
+    collision with HADRES, a low-energy hadron-nucleon model (resonances,
+    two-body channels, strings), and cascade with it. Validated statistically
     against DPMJET 19.4 above that window. Photon beams
     and the evaporation of residual nuclei are not implemented: residual
     nuclei carry the baryon number and charge the hadrons do not. Decays
@@ -91,8 +91,8 @@ class DpmjetRS(MCRun):
     _frame = EventFrame.CENTER_OF_MASS
     _projectiles = _hadrons | Nuclei(a_max=280)
     _targets = Nuclei()
-    # hadron projectiles below p_lab = 4-6 GeV/c take the low-energy path
-    # (one collision of the low-energy hadron-nucleon model, then the
+    # hadron projectiles below p_lab = 4-6 GeV/c take the HADRES path
+    # (one collision of the low-energy hadron-nucleon model HADRES, then the
     # cascade with it; DPMJET's HADRIN regime written anew); nucleus
     # projectiles keep the DPM path there
     _ecm_min = 2 * GeV
@@ -162,10 +162,14 @@ class DpmjetRS(MCRun):
         """Switch the intranuclear cascade on (default) or off."""
         self._lib.set_cascade(on)
 
-    def set_low_energy(self, on=True):
-        """Low-energy path for hadron projectiles below ``hn.primary_window``
+    def set_hadres(self, on=True):
+        """HADRES path for hadron projectiles below ``hadres.primary_window``
         (default on): off, every event takes the DPM path."""
-        self._lib.set_low_energy(on)
+        self._lib.set_hadres(on)
+
+    def set_low_energy(self, on=True):
+        """Former name of :meth:`set_hadres`."""
+        self.set_hadres(on)
 
     def set_decays(self, on=True):
         """Decays before the cascade on (default) or off: with off, the
