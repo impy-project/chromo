@@ -85,7 +85,7 @@ class DpmjetRS(MCRun):
     """
 
     _name = "DPMJET-rs"
-    _version = "19.4-rs.2"
+    _version = "19.4-rs.3"
     _library_name = "_dpmjet_rs"
     _event_class = DpmjetRSEvent
     _frame = EventFrame.CENTER_OF_MASS
