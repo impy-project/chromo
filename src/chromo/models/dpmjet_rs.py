@@ -72,7 +72,10 @@ class DpmjetRS(MCRun):
     Lund string fragmentation with PYTHIA 6.4 physics, PYTHIA's decays of
     unstable hadrons before the formation-zone intranuclear cascade (as
     DPMJET, following ``set_stable``), the cascade and the nuclear
-    potential. Validated statistically against DPMJET 19.4. Photon beams
+    potential. Below 4-6 GeV/c hadron projectiles make their first
+    collision with a low-energy hadron-nucleon model (resonances, two-body
+    channels, strings) and cascade with it. Validated statistically
+    against DPMJET 19.4 above that window. Photon beams
     and the evaporation of residual nuclei are not implemented: residual
     nuclei carry the baryon number and charge the hadrons do not. Decays
     of charm and bottom hadrons are left to chromo's decay handler. Uses
@@ -82,16 +85,17 @@ class DpmjetRS(MCRun):
     """
 
     _name = "DPMJET-rs"
-    _version = "19.4-rs.1"
+    _version = "19.4-rs.2"
     _library_name = "_dpmjet_rs"
     _event_class = DpmjetRSEvent
     _frame = EventFrame.CENTER_OF_MASS
     _projectiles = _hadrons | Nuclei(a_max=280)
     _targets = Nuclei()
-    # validated down to sqrt(s) = 4.9 GeV (p-C); below a total energy of
-    # 5 GeV DPMJET samples the collision with HADRIN, which is not
-    # implemented
-    _ecm_min = 4.5 * GeV
+    # hadron projectiles below p_lab = 4-6 GeV/c take the low-energy path
+    # (one collision of the low-energy hadron-nucleon model, then the
+    # cascade with it; DPMJET's HADRIN regime written anew); nucleus
+    # projectiles keep the DPM path there
+    _ecm_min = 2 * GeV
     _restartable = True
     _restore_beam_and_history = False
     randomize_azimuth = True
@@ -157,6 +161,11 @@ class DpmjetRS(MCRun):
     def set_cascade(self, on=True):
         """Switch the intranuclear cascade on (default) or off."""
         self._lib.set_cascade(on)
+
+    def set_low_energy(self, on=True):
+        """Low-energy path for hadron projectiles below ``hn.primary_window``
+        (default on): off, every event takes the DPM path."""
+        self._lib.set_low_energy(on)
 
     def set_decays(self, on=True):
         """Decays before the cascade on (default) or off: with off, the
