@@ -30,7 +30,8 @@ cs_sibyll21 = CrossSectionData(
     diffractive_xx=1.8042221,
     diffractive_axb=0,
     diffractive_sum=np.nan,
-    b_elastic=np.nan,
+    b_elastic=20.378448486328125,
+    rho=0.12451478093862534,
 )
 
 cs_sibyll23 = CrossSectionData(
@@ -45,7 +46,8 @@ cs_sibyll23 = CrossSectionData(
     diffractive_xx=1.662186514630767,
     diffractive_axb=0,
     diffractive_sum=np.nan,
-    b_elastic=np.nan,
+    b_elastic=18.59588705542018,
+    rho=0.1245147099218613,
 )
 
 

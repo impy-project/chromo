@@ -296,7 +296,7 @@ class SIBYLLRun(MCRun):
         if sib_id is None:
             msg = f"Variable sib_id expected to be set for {kin.p1}."
             raise ValueError(msg)
-        tot, el, inel, diff, _, _ = self._lib.sib_sigma_hp(sib_id, kin.ecm)
+        tot, el, inel, diff, slope, rho = self._lib.sib_sigma_hp(sib_id, kin.ecm)
         return CrossSectionData(
             total=tot,
             elastic=el,
@@ -306,6 +306,8 @@ class SIBYLLRun(MCRun):
             diffractive_ax=diff[1],
             diffractive_xx=diff[2],
             diffractive_axb=0,
+            b_elastic=float(slope),
+            rho=float(rho),
         )
 
     def sigma_inel_air(self):

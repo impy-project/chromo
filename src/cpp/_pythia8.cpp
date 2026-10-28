@@ -432,6 +432,7 @@ PYBIND11_MODULE(_pythia8, m)
         .def_property_readonly("sigmaAXB", &SigmaTotal::sigmaAXB)
         .def_property_readonly("sigmaND", &SigmaTotal::sigmaND)
         .def_property_readonly("rho", &SigmaTotal::rho)
+        .def_property_readonly("bSlopeEl", &SigmaTotal::bSlopeEl)
 
         ;
 

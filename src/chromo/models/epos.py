@@ -238,7 +238,7 @@ class EposLHC(MCRun):
 
     def _cross_section(self, kin=None, max_info=False):
         kin = self.kinematics if kin is None else kin
-        total, inel, el, dd, sd, _, qel = self._lib.xsection()
+        total, inel, el, dd, sd, slope, qel = self._lib.xsection()
         if (kin.p1.A or 1) > 1 or (kin.p2.A or 1) > 1:
             # epocrossc sigma; the common-block sd/dd are h-p values,
             # not reported here. inelastic (ionudi=1, all diffraction
@@ -270,6 +270,8 @@ class EposLHC(MCRun):
             diffractive_ax=sd / 2,  # this is an approximation
             diffractive_xx=dd,
             diffractive_axb=0,
+            # elastic slope from the hadron-proton amplitude (GeV^-2)
+            b_elastic=slope,
         )
 
     def _check_init_protection(self, kin):

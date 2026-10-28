@@ -342,10 +342,18 @@ class DpmjetIIIRun(MCRun):
             )
             stot, sine, _ = self._lib.dt_siggp(photon_x, kin.virt_p1, kin.ecm, 0)
             return CrossSectionData(total=stot, inelastic=sine, elastic=stot - sine)
-        stot, sela = self._lib.dt_xshn(
-            self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2), 0.0, kin.ecm
+        ip, it = self._lib.idt_icihad(kin.p1), self._lib.idt_icihad(kin.p2)
+        stot, sela = self._lib.dt_xshn(ip, it, 0.0, kin.ecm)
+        # Elastic slope (GeV^-2) from the PHOJET tables, the value DPMJET uses
+        # as hadron-nucleon input of its Glauber calculation (DT_XSGLAU).
+        # DT_XSHN calls DT_PHOXS itself above 5 GeV lab momentum. The 3.0-7
+        # wrapper of DT_PHOXS has no output arguments.
+        bel = np.nan
+        if self._version != "3.0-7":
+            _, _, _, bel = self._lib.dt_phoxs(ip, it, kin.ecm, 0.0, 0)
+        return CrossSectionData(
+            total=stot, elastic=sela, inelastic=stot - sela, b_elastic=bel
         )
-        return CrossSectionData(total=stot, elastic=sela, inelastic=stot - sela)
 
     @property
     def glauber_trials(self):

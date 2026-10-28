@@ -384,6 +384,8 @@ class Pythia8(MCRun):
             diffractive_xb=st.sigmaXB,
             diffractive_xx=st.sigmaXX,
             diffractive_axb=st.sigmaAXB,
+            b_elastic=st.bSlopeEl,
+            rho=st.rho,
         )
 
     def _set_kinematics(self, kin):
