@@ -26,6 +26,7 @@ number or charge over the selection do not double-count the initial state.
 | --- | --- |
 | DpmjetIII | residual nucleons (native 13–16) → 5, boosted from the rest frame of their nucleus; residual nuclei (PDG 80000 with `IDRES`/`IDXRES`) → 4 |
 | EposLHC, EposLHCR | fragments at status 1 |
+| Fluka | residual nuclei and evaporation fragments at status 1 (full evaporation and de-excitation); isomer digit `I` kept |
 | Pythia8Angantyr | residual nuclei at status 1; isomer digit `I=9` reset to `0` |
 | Pythia8Cascade | none (final state only) |
 | QGSJet | projectile fragments at status 1 |

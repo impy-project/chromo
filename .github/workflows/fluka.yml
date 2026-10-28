@@ -1,0 +1,45 @@
+name: FLUKA
+
+# Runs only on the private self-hosted runner in ci/fluka-runner, which holds
+# the license-restricted FLUKA installation. That runner accepts only this
+# workflow file, from a branch, triggered by push or workflow_dispatch (see
+# ci/fluka-runner/job-started.sh). To test a pull request branch:
+#   gh workflow run fluka.yml --ref <branch>
+
+on:
+  push:
+    branches: [main, feature_fluka]
+    paths-ignore:
+      - 'doc/**'
+      - 'README.*'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  fluka:
+    runs-on: [self-hosted, fluka]
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.0.1
+      - name: Build chromo with FLUKA
+        run: |
+          uv venv -p 3.13
+          uv pip install -v .[test]
+      # the FLUKA tests skip silently when the extension was not built
+      - name: Require the FLUKA extension
+        run: .venv/bin/python -c "import chromo.models._fluka"
+      - run: .venv/bin/python scripts/download_data.py
+      - name: FLUKA tests
+        run: .venv/bin/python -m pytest -vv -n 8 -rs -k "Fluka or fluka" tests
+      # No artifacts and no caches: the build tree and _fluka*.so contain
+      # FLUKA object code and must not leave the runner.

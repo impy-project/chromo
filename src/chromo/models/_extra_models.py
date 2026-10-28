@@ -1,4 +1,5 @@
 from chromo.models.dpmjetIII import DpmjetIII19_DEV
+from chromo.models.fluka import Fluka
 from chromo.models.sibyll import (
     Sibyll23c00,
     Sibyll23c01,
@@ -17,6 +18,7 @@ from chromo.util import deprecated_aliases
 
 __all__ = (
     "DpmjetIII19_DEV",
+    "Fluka",
     "Sibyll23c00",
     "Sibyll23c01",
     "Sibyll23c02",
