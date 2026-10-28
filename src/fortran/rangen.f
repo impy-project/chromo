@@ -52,11 +52,14 @@ c=======================================================================
       function rangen()
 c-----------------------------------------------------------------------
 c  Random number in (0,1) for EPOS
+c  The test is made on the single-precision result: sngl() rounds every
+c  rval > 1-2**-25 to 1.0 (about once in 3e7 calls), and EPOS relies on
+c  rangen < 1 (e.g. 1+int(rangen()*n) as an index in 1..n, log(1-r)).
 c-----------------------------------------------------------------------
       double precision rval
  20   call npyrng(rval)
-      if(rval.le.0.or.rval.ge.1) goto 20
       rangen=sngl(rval)
+      if(rangen.le.0.or.rangen.ge.1) goto 20
       end
 
 c=======================================================================
@@ -158,9 +161,10 @@ c-----------------------------------------------------------------------
 #ifdef SIBYLLSP
       real s_rndm
       double precision rval
+c     test after the conversion: sngl() can round rval < 1 up to 1.0
 555   call npyrng(rval)
-      if ((rval.le.0e0).or.(rval.ge.1e0)) goto 555
       s_rndm = sngl(rval)
+      if ((s_rndm.le.0e0).or.(s_rndm.ge.1e0)) goto 555
 #else
       double precision s_rndm
       call npyrng(s_rndm)
