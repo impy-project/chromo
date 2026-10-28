@@ -310,15 +310,44 @@ class SIBYLLRun(MCRun):
             rho=float(rho),
         )
 
-    def sigma_inel_air(self):
-        """Inelastic cross section according to current
-        event setup (energy, projectile, target)"""
-        kin = self.kinematics
-        sib_id = self._cross_section_projectiles[abs(kin.p1)]
+    def sigma_prod_air(self, kin=None):
+        """Hadron-air particle production cross section in mb.
+
+        Interpolated from the hadron-air table that SIBYLL computes at
+        initialization (``SIB_SIGMA_HAIR``) and that it uses itself for air
+        targets: a Glauber calculation for a fixed nitrogen-oxygen mixture
+        (mean mass number 14.514, no argon) with inelastic screening. The
+        production cross section is total minus quasi-elastic.
+
+        Parameters
+        ----------
+        kin : EventKinematics, optional
+            Projectile and energy (``kin.ecm``, the hadron-nucleon c.m.
+            energy) to evaluate. The target of `kin` is ignored. If omitted,
+            the current kinematics are used.
+
+        Returns
+        -------
+        float
+            Production cross section in mb.
+        """
+        kin = self.kinematics if kin is None else kin
+        sib_id = self._cross_section_projectiles.get(abs(kin.p1), None)
+        if sib_id is None:
+            msg = f"{self.label} has no hadron-air cross section for {kin.p1}"
+            raise ValueError(msg)
         sigma = self._lib.sib_sigma_hair(sib_id, kin.ecm)
         if isinstance(sigma, tuple):
-            return sigma[0]
-        return sigma
+            return float(sigma[0])
+        return float(sigma)
+
+    def sigma_inel_air(self):
+        """Hadron-air production cross section for the current setup in mb.
+
+        Kept for backward compatibility; see `sigma_prod_air`. Despite the
+        name, the returned value is the production cross section.
+        """
+        return self.sigma_prod_air()
 
     @property
     def glauber_trials(self):

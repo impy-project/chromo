@@ -154,6 +154,40 @@ def test_prod_cross_section_finite(model, energy):
     assert np.isfinite(c_air) and c_air > 0
 
 
+def run_sigma_prod_air(model, kins):
+    m = model(kins[0], seed=1)
+    air = CompositeTarget((("N", 0.78), ("O", 0.22)))
+    out = []
+    for kin in kins:
+        kin_air = CenterOfMass(kin.ecm, kin.p1, air)
+        out.append((m.sigma_prod_air(kin), m.cross_section(kin_air).prod))
+    # without argument: current kinematics
+    out.append((m.sigma_prod_air(), m.sigma_inel_air()))
+    return out
+
+
+@pytest.mark.parametrize("model", get_sibylls())
+def test_sigma_prod_air(model):
+    kins = [
+        CenterOfMass(100 * GeV, "p", "p"),
+        CenterOfMass(10 * TeV, "p", "p"),
+        CenterOfMass(10 * TeV, "pi+", "p"),
+        CenterOfMass(10 * TeV, "K+", "p"),
+    ]
+    res = run_in_separate_process(run_sigma_prod_air, model, kins)
+    (p_lo, p_lo_glauber), (p_hi, p_hi_glauber), (pi_hi, _), (k_hi, _) = res[:4]
+    # the internal hadron-air table (fixed N-O mixture) agrees with the
+    # N and O Glauber cross sections combined by chromo
+    assert p_lo == pytest.approx(p_lo_glauber, rel=0.05)
+    assert p_hi == pytest.approx(p_hi_glauber, rel=0.05)
+    # p-air sigma_prod at sqrt(s) = 10 TeV is about 450-500 mb
+    assert 400 < p_hi < 550
+    assert p_lo < p_hi
+    assert k_hi < pi_hi < p_hi
+    # default kinematics is the initial kinematics; old name is an alias
+    assert res[4][0] == res[4][1] == p_lo
+
+
 def run_with_runtime_warning(model, p1, p2):
     evt_kin = CenterOfMass(10 * TeV, p1, p2)
     with pytest.warns(RuntimeWarning) as record:
