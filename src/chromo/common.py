@@ -60,7 +60,11 @@ class CrossSectionData:
     some generators may provide only the total cross section or only the inelastic
     cross section.
 
-    All cross sections are in millibarn.
+    All cross sections are in millibarn. The elastic slope and the rho
+    parameter characterize the forward elastic amplitude of a two-body
+    (hadron-nucleon or hadron-hadron) collision. They are only filled for such
+    collisions and only by generators that compute them internally; they are
+    NaN otherwise, in particular for nuclear and composite targets.
 
     Attributes
     ----------
@@ -92,7 +96,11 @@ class CrossSectionData:
     diffractive_sum : float
         Sum of diffractive cross sections.
     b_elastic : float
-        Slope of elastic cross section in mb/GeV^2.
+        Forward slope B of the elastic cross section in GeV^-2, as in
+        dsigma_el/dt ~ exp(B t).
+    rho : float
+        Ratio of the real to the imaginary part of the forward (t = 0)
+        elastic scattering amplitude.
     """
 
     total: float = np.nan
@@ -107,6 +115,11 @@ class CrossSectionData:
     diffractive_axb: float = np.nan
     diffractive_sum: float = np.nan
     b_elastic: float = np.nan
+    rho: float = np.nan
+
+    # Properties of a single two-body amplitude; they are not additive and are
+    # therefore not combined for composite targets.
+    _non_additive = ("b_elastic", "rho")
 
     @property
     def non_diffractive(self):
@@ -137,7 +150,10 @@ class CrossSectionData:
         # NaN-safe combine used for composite targets: NaN in `other` means
         # "not provided by this component" and is skipped; a field stays NaN
         # only if no component provided it (np.nansum-like semantics).
+        # Amplitude properties (slope, rho) are not additive and stay NaN.
         for field in dataclasses.fields(self):
+            if field.name in self._non_additive:
+                continue
             a = getattr(self, field.name)
             b = getattr(other, field.name)
             if bool(np.isnan(b)):
