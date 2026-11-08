@@ -294,7 +294,10 @@ def mass(pdgid):
 
 
 def _make_name2pdg_db():
-    all_particles = Particle.findall()
+    # particle>=1.1 lists some states twice under one name (PDG-2024 code without
+    # mass and the legacy code with mass, e.g. psi(4160): 130443, 9010443); keep
+    # the legacy code, which is the one the generators emit.
+    all_particles = sorted(Particle.findall(), key=lambda p: p.mass is not None)
     db = {p.name: p.pdgid for p in all_particles}
     db.update({p.programmatic_name: p.pdgid for p in all_particles})
     db["p"] = PDGID(2212)
