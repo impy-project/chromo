@@ -8,8 +8,11 @@ def test_name2pdg():
     for p in Particle.findall():
         if p.name in ("n", "n~", "p", "p~"):  # special cases, treated below
             continue
+        if p.mass is None and len(Particle.findall(name=p.name)) > 1:
+            continue  # name shared with a legacy code, treated below
         assert name2pdg(p.name) == p.pdgid
         assert name2pdg(p.programmatic_name) == p.pdgid
+    assert name2pdg("psi(4160)") == 9010443
     assert name2pdg("proton") == lp.proton.pdgid
     assert name2pdg("neutron") == lp.neutron.pdgid
     assert name2pdg("p") == lp.proton.pdgid
