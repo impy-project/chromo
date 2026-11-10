@@ -197,6 +197,20 @@ class DpmjetIIIRun(MCRun):
     _max_A2 = 0
     _max_plab = 0.0
 
+    def _check_kinematics(self, kin):
+        """Reject antibaryon targets (DT_XSHN stops); use them as projectile.
+
+        MCRun's check compares ``abs(kin.p2)``, so an antiproton target would
+        pass as a proton. Called unbound by beam-order logic, hence no super().
+        """
+        MCRun._check_kinematics(self, kin)
+        if isinstance(kin.p2, PDGID) and int(kin.p2) < 0:
+            msg = (
+                f"DPMJET-III does not take an antibaryon target "
+                f"({int(kin.p2)}); exchange projectile and target"
+            )
+            raise ValueError(msg)
+
     def __init__(self, evt_kin, *, seed=None):
         import chromo
 
