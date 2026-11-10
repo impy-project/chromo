@@ -70,7 +70,10 @@ jobs:
           for file in qgsjet_v002 Pythia8_v007 eposlhcr_v001 eposlhc_v001 dpm3191_v001 dpm3_v001 ; do
             if [ ! -f ~/.cache/chromo/$file.zip ]; then
               echo "Downloading $file.zip..."
-              curl -L -o ~/.cache/chromo/$file.zip "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip"
+              curl -fL --retry 5 --retry-all-errors --retry-delay 5 \
+                -o ~/.cache/chromo/$file.zip \
+                "https://github.com/impy-project/chromo/releases/download/zipped_data_v1.0/$file.zip" \
+                || { rm -f ~/.cache/chromo/$file.zip; exit 1; }
             else
               echo "$file.zip already exists, skipping."
             fi
