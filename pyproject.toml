@@ -122,6 +122,10 @@ manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
 musllinux-x86_64-image = "musllinux_1_2"
 musllinux-aarch64-image = "musllinux_1_2"
+# Tests run in a container whose HOME is /root; copy the data cache that
+# actions/cache restored on the runner (mounted under /host) to where
+# chromo.util._cached_data_dir looks for it.
+before-test = "if [ -d /host/home/runner/.cache/chromo ]; then mkdir -p ~/.cache && cp -r /host/home/runner/.cache/chromo ~/.cache/; fi"
 
 [tool.cibuildwheel.environment]
 # this makes sure that we build only on platforms that have a corresponding numpy wheel
