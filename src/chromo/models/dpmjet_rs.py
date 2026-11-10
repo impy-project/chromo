@@ -110,7 +110,15 @@ class DpmjetRS(MCRun):
         )
 
     def _check_kinematics(self, kin):
-        super()._check_kinematics(kin)
+        # explicit MCRun call: beam-order logic calls this unbound on the class
+        MCRun._check_kinematics(self, kin)
+        if int(getattr(kin.p2, "pdgid", kin.p2)) < 0:
+            # MCRun compares abs(kin.p2); the core panics on an antibaryon
+            # target, so callers exchange the beams (p-bar on p)
+            msg = f"{self.pyname}: no antibaryon target ({int(kin.p2)}); exchange the beams"
+            raise ValueError(msg)
+        if isinstance(self, type):
+            return
         targets = getattr(kin.p2, "components", [kin.p2])
         for t in targets:
             if not self._lib.supports(_beam(kin.p1), _beam(t)):
