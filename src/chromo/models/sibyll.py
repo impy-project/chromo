@@ -481,6 +481,54 @@ class Sibyll23e(Sibyll23c):
     _library_name = "_sib23e"
 
 
+class Sibyll23e_DEV(Sibyll23e):
+    """SIBYLL 2.3e with bug fixes, for development and validation only.
+
+    Built from ``sibyll2.3e-dev.f``, a patched copy of ``sibyll2.3e.f``.
+    The list of changes relative to 2.3e is kept in the header of that file.
+    """
+
+    _version = "2.3e-dev.10"
+    _library_name = "_sib23e_dev"
+
+
+class SibyllRS(Sibyll23e):
+    """SIBYLL 2.3e-dev redesigned from the ground up in Rust (crate ``sibyll``).
+
+    Same physics as ``Sibyll23e_DEV``, new code structure, with three bugs
+    of 2.3e fixed: string axis (inverse rotation), antibaryon diquark-x
+    weight (on the antiquark) and the quark-merge table. An optional second
+    model of the DPMJET-rs project (see ``DpmjetRS``), whose module
+    ``_sibyll_rs`` offers the interface of the Fortran f2py module, so the
+    SIBYLL logic of this file is shared with the Fortran builds. It has its
+    own random generator, seeded from chromo's.
+    """
+
+    _version = "2.3e-rs.11"
+    _library_name = "_sibyll_rs"
+
+    def __init__(self, evt_kin, *, seed=None):
+        super().__init__(evt_kin, seed=seed)
+        self._lib.seed(int(self._rng.integers(0, 2**63 - 1)))
+
+
+class SibyllRSFullyResolvedHMD(SibyllRS):
+    """``SibyllRS`` with fully resolved high-mass diffraction: the
+    pomeron-hadron collision gets the full eikonal structure (multiple soft
+    and hard interactions, remnants) instead of one soft interaction."""
+
+    _version = "2.3e-rs.11-fully_resolved_hmd"
+    _library_name = "_sibyll_rs_fully_resolved_hmd"
+
+
+class SibyllRSNoExcitationNucleonScaling(SibyllRS):
+    """``SibyllRS`` without excitation-nucleon scaling: every wounded
+    target nucleon gets the same remnant-excitation probability."""
+
+    _version = "2.3e-rs.11-no_excitation_nucleon_scaling"
+    _library_name = "_sibyll_rs_no_excitation_nucleon_scaling"
+
+
 class Sibyll23dStarNoEnh(Sibyll23d):
     _version = "2.3dStar-noenh"
     _library_name = "_sib23d_star"

@@ -130,6 +130,8 @@ models = {
                   'funcs':sibyll_syms_base+['gasdev','sig_had_nuc']+common_syms },
   '_sib23e_star':{ 'src':[f/'sibyll/sibyll2.3e-star.f',f/'sibyll/sibyll_init.f'],
                    'funcs':sibyll_syms_base+['gasdev','sig_had_nuc']+common_syms },
+  '_sib23e_dev' : { 'src':[f/'sibyll/sibyll2.3e-dev.f',f/'sibyll/sibyll_init.f'],
+                    'funcs':sibyll_syms_base+['gasdev','sig_had_nuc']+common_syms },
 
   '_qgs01' : { 'src':[f/'qgsjet/qgsjet01d.f',f/'qgsjet/chromo_qgs1.f'],
                'funcs':['cqgsini','sectnu','xxaini','psconf','xxreg','psaini',
