@@ -45,3 +45,6 @@ bench/timing.pkl
 config
 Untitled*.ipynb
 .venv*
+# MkDocs build output
+site/
+program_structure.pdf
