@@ -104,6 +104,20 @@ def test_cross_section_hA():
     naneq(c.diffractive_axb, np.nan)
 
 
+def run_cross_section_tab_mc(p1, p2):
+    m = EposLHC(CenterOfMass(1000 * GeV, p1, p2), seed=1)
+    return m.cross_section(), m.cross_section(max_info=True)
+
+
+@pytest.mark.parametrize("p1", ("pi+", "p", "He4"))
+def test_cross_section_tabulated_vs_glauber_mc(p1):
+    tab, mc = run_in_separate_process(run_cross_section_tab_mc, p1, "N14")
+    assert_allclose(tab.inelastic, mc.inelastic, rtol=0.03)
+    # the analytic quasi-elastic part is smaller than in the Glauber MC, so
+    # prod is up to 8 % high for nucleons and 5 % for pions (EPOS LHC)
+    assert 0.97 < tab.prod / mc.prod < 1.1
+
+
 def test_charge(event):
     expected = reference_charge(event.pid)
     # skip internal particles unknown to reference_charge

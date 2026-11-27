@@ -29,6 +29,7 @@ from chromo.constants import (
 )
 from chromo.decay_handler import Pythia8DecayHandler
 from chromo.kinematics import (
+    CenterOfMass,
     CompositeTarget,
     EventKinematicsBase,
     rotate_event,
@@ -747,10 +748,17 @@ class MCRun(ABC):
     _projectiles = standard_projectiles
     _targets = Nuclei()
     _ecm_min = 10 * GeV  # default for many models
-    # Corresponds to current cross section in mb, updated when kinematics is set
-    _inel_or_prod_cross_section = None
+    # Generation cross section in mb of the current kinematics; for a
+    # CompositeTarget computed on first use
+    _generation_cross_section_cache = None
     # Event fractions for a CompositeTarget, cached as (kinematics, fractions)
     _composite_event_fractions = None
+    #: Nodes per decade of sqrt(s) on which the component cross sections of a
+    #: CompositeTarget are tabulated for the event fractions; 0 computes them
+    #: at every kinematics.
+    composite_nodes_per_decade = 10
+    # Generation cross sections at the nodes, keyed by (projectile, component, node)
+    _composite_node_cache = None
     _restore_beam_and_history = True
     nevents = 0  # number of generated events so far
     _unstable_pids = set(all_unstable_pids)
@@ -893,15 +901,23 @@ class MCRun(ABC):
 
     def _composite_plan(self, nevents):
         kin = self.kinematics
-        if isinstance(kin.p2, CompositeTarget):
-            nevents = self._rng.multinomial(nevents, self._composite_fractions(kin))
-            ek = copy.deepcopy(kin)
-            for c, k in zip(kin.p2.components, nevents):
-                ek.p2 = c
-                with self._temporary_kinematics(ek):
-                    yield k
-        else:
+        if not isinstance(kin.p2, CompositeTarget):
             yield nevents
+            return
+        nevents = self._rng.multinomial(nevents, self._composite_fractions(kin))
+        try:
+            for c, k in zip(kin.p2.components, nevents):
+                if k == 0:
+                    continue
+                ek = copy.copy(kin)
+                ek.p2 = c
+                self._kinematics = ek
+                self._set_kinematics(ek)
+                yield k
+        finally:
+            # The generator stays set up for the last component; every plan and
+            # every cross-section query sets it up again before use.
+            self._kinematics = kin
 
     @property
     def random_state(self):
@@ -958,23 +974,30 @@ class MCRun(ABC):
         self._check_kinematics(kin)
         self._kinematics = kin
         self._set_kinematics(kin)
+        self._generation_cross_section_cache = None
+        if not isinstance(kin.p2, CompositeTarget):
+            # some generators (QGSJet) set up event generation in this call
+            self._inel_or_prod_cross_section
 
-        if isinstance(kin.p2, CompositeTarget):
-            sigma = self._component_generation_cross_sections(kin)
-            valid = ~np.isnan(sigma)
-            self._inel_or_prod_cross_section = (
-                float(np.dot(kin.p2.fractions[valid], sigma[valid]))
-                if np.any(valid)
-                else np.nan
-            )
-            self._composite_event_fractions = (
-                kin.copy(),
-                self._composite_fractions_from(kin.p2, sigma),
-            )
-        else:
-            self._inel_or_prod_cross_section = self._generation_cross_section(
-                kin.p1, kin.p2, self.cross_section()
-            )
+    @property
+    def _inel_or_prod_cross_section(self):
+        """Generation cross section in mb of the current kinematics."""
+        if self._generation_cross_section_cache is None:
+            kin = self.kinematics
+            if isinstance(kin.p2, CompositeTarget):
+                sigma = self._component_generation_cross_sections(kin)
+                valid = ~np.isnan(sigma)
+                value = (
+                    float(np.dot(kin.p2.fractions[valid], sigma[valid]))
+                    if np.any(valid)
+                    else np.nan
+                )
+            else:
+                value = self._generation_cross_section(
+                    kin.p1, kin.p2, self.cross_section()
+                )
+            self._generation_cross_section_cache = value
+        return self._generation_cross_section_cache
 
     @staticmethod
     def _generation_cross_section(p1, p2, cs):
@@ -1025,18 +1048,56 @@ class MCRun(ABC):
     def _composite_fractions(self, kin):
         """Return event fractions for the CompositeTarget in kin.
 
-        Fractions are computed when the kinematics are set and cached.
-        The cache is keyed by value, since kinematics may be copied internally.
+        Computed on first use for the kinematics object, from tabulated component
+        cross sections (see `composite_nodes_per_decade`).
         """
-        cached = self._composite_event_fractions
-        if cached is not None and cached[0] == kin:
-            return cached[1]
         if kin.p2.weighting == "number":
             return kin.p2.fractions
-        sigma = self._component_generation_cross_sections(kin)
+        cached = self._composite_event_fractions
+        if cached is not None and cached[0] is kin:
+            return cached[1]
+        sigma = self._tabulated_component_cross_sections(kin)
+        if sigma is None:
+            sigma = self._component_generation_cross_sections(kin)
         fractions = self._composite_fractions_from(kin.p2, sigma)
-        self._composite_event_fractions = (kin.copy(), fractions)
+        self._composite_event_fractions = (kin, fractions)
         return fractions
+
+    def _tabulated_component_cross_sections(self, kin):
+        """Component generation cross sections interpolated in log sqrt(s).
+
+        The nodes are computed on first use and kept per projectile and
+        component. Returns None if tabulation is off or a node is outside the
+        range the generator accepts; NaN where the generator has no cross section.
+        """
+        n = self.composite_nodes_per_decade
+        if not n:
+            return None
+        x = np.log10(kin.ecm) * n
+        i0 = int(np.floor(x))
+        w = x - i0
+        if self._composite_node_cache is None:
+            self._composite_node_cache = {}
+        cache = self._composite_node_cache
+        p1 = int(kin.p1)
+        sigma = np.empty(len(kin.p2.components))
+        for j, c in enumerate(kin.p2.components):
+            s = []
+            for i in (i0, i0 + 1):
+                key = (p1, int(c), i)
+                if key not in cache:
+                    try:
+                        node = CenterOfMass(10 ** (i / n), kin.p1, c)
+                        cs = self.cross_section(node)
+                    except ValueError:
+                        return None
+                    cache[key] = self._generation_cross_section(kin.p1, c, cs)
+                s.append(cache[key])
+            if s[0] > 0 and s[1] > 0:
+                sigma[j] = np.exp((1 - w) * np.log(s[0]) + w * np.log(s[1]))
+            else:  # no cross section: _composite_fractions_from falls back
+                sigma[j] = np.nan
+        return sigma
 
     def cross_section(self, kin=None, max_info=False):
         """Cross sections according to current setup.
@@ -1263,9 +1324,11 @@ class MCRun(ABC):
         else:
             prev = copy.copy(self.kinematics)
             self._check_kinematics(kin)
-            self._kinematics = kin
-            self._set_kinematics(kin)
-            yield
-            # _check_kinematics not necessary because it's the old kinematics
-            self._kinematics = prev
-            self._set_kinematics(prev)
+            try:
+                self._kinematics = kin
+                self._set_kinematics(kin)
+                yield
+            finally:
+                # _check_kinematics not necessary because it's the old kinematics
+                self._kinematics = prev
+                self._set_kinematics(prev)

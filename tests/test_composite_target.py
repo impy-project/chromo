@@ -133,10 +133,35 @@ def test_composite_plan_sampling(weighting):
 
 def test_composite_fractions_cached():
     gen = ToyRun(CenterOfMass(100, "p", CompositeTarget(COMPONENTS)))
+    assert gen.n_cross_section_calls == 0  # nothing computed on kinematics change
+    gen.plan(10)
     n = gen.n_cross_section_calls
     gen.plan(10)
-    gen.plan(10)
+    gen.kinematics = CenterOfMass(101, "p", CompositeTarget(COMPONENTS))
+    gen.plan(10)  # same nodes
     assert gen.n_cross_section_calls == n
+
+
+class EnergyToyRun(ToyRun):
+    """Toy with energy-dependent cross sections."""
+
+    def _cross_section(self, kin=None, max_info=False):
+        self.n_cross_section_calls += 1
+        kin = kin or self.kinematics
+        inel = 40.0 * kin.p2.A**0.7 * (kin.ecm / 10) ** (0.08 + 0.01 * kin.p2.A**0.3)
+        return CrossSectionData(inelastic=inel, prod=inel)
+
+
+@pytest.mark.parametrize("ecm", (12.3, 99.0, 1234.5, 3e5))
+def test_composite_fractions_tabulated(ecm):
+    t = CompositeTarget(COMPONENTS)
+    gen = EnergyToyRun(CenterOfMass(ecm, "p", t))
+    tab = gen._composite_fractions(gen.kinematics)
+    gen.composite_nodes_per_decade = 0
+    gen.kinematics = CenterOfMass(ecm, "p", t)
+    exact = gen._composite_fractions(gen.kinematics)
+    assert np.allclose(tab, exact, rtol=1e-4, atol=0)
+    assert not np.allclose(tab, t.fractions)
 
 
 def test_composite_fractions_fallback_on_invalid_cross_section():
@@ -145,9 +170,10 @@ def test_composite_fractions_fallback_on_invalid_cross_section():
             return CrossSectionData()
 
     t = CompositeTarget(COMPONENTS)
+    gen = NanRun(CenterOfMass(100, "p", t))
     with pytest.warns(RuntimeWarning, match="number fractions"):
-        gen = NanRun(CenterOfMass(100, "p", t))
-    assert np.allclose(gen._composite_fractions(gen.kinematics), t.fractions)
+        f = gen._composite_fractions(gen.kinematics)
+    assert np.allclose(f, t.fractions)
     assert np.isnan(gen._inel_or_prod_cross_section)
 
 
