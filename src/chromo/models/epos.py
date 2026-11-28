@@ -236,6 +236,16 @@ class EposLHC(MCRun):
         self._init_protection_E_A1_A2 = (evt_kin.ecm, evt_kin.p1.A, evt_kin.p2.A)
         self.kinematics = evt_kin
 
+    @staticmethod
+    def _generation_cross_section(p1, p2, cs):
+        """Return the inelastic cross section, also for nuclei.
+
+        EPOS runs with ionudi=1: its events include the quasi-elastic ones, so
+        they are generated according to the inelastic cross section, as in
+        CORSIKA 7 (NEXSIG, epos.inics asect21).
+        """
+        return cs.inelastic
+
     def _cross_section(self, kin=None, max_info=False):
         kin = self.kinematics if kin is None else kin
         # Nuclear cross sections come from the EPOS tables (epos.inics); with

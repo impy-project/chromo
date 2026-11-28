@@ -118,6 +118,20 @@ def test_cross_section_tabulated_vs_glauber_mc(p1):
     assert 0.97 < tab.prod / mc.prod < 1.1
 
 
+def run_generation_cross_section(p1, p2):
+    m = EposLHC(CenterOfMass(1000 * GeV, p1, p2), seed=1)
+    ev = next(m(1))
+    return m.cross_section(), ev.production_cross_section
+
+
+@pytest.mark.parametrize("p1", ("p", "He4"))
+def test_generation_cross_section_is_inelastic(p1):
+    # events include quasi-elastic collisions (ionudi=1)
+    cs, sigma = run_in_separate_process(run_generation_cross_section, p1, "N14")
+    assert_allclose(sigma, cs.inelastic)
+    assert sigma > cs.prod
+
+
 def test_charge(event):
     expected = reference_charge(event.pid)
     # skip internal particles unknown to reference_charge
