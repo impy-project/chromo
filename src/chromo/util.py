@@ -283,7 +283,10 @@ def mass(pdgid):
     Raises:
         ValueError: If the mass cannot be determined for the given PDG ID.
     """
-    m = Particle.from_pdgid(pdgid).mass
+    try:
+        m = Particle.from_pdgid(pdgid).mass
+    except ParticleNotFound:  # nuclei missing from the table, e.g. unbound B6
+        m = None
     if m is None:
         a = pdg2AZ(pdgid)[0]
         if a == 0:
