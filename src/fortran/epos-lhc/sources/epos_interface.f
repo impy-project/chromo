@@ -155,10 +155,13 @@ C anfe This is a workaround for nuclear fragments in particle history
       End
 
 c-----------------------------------------------------------------------
-      subroutine xsection(xsigtot,xsigine,xsigela,xsigdd,xsigsd
+      subroutine xsection(imc,xsigtot,xsigine,xsigela,xsigdd,xsigsd
      &    ,xsloela,xsigqel)
 c-----------------------------------------------------------------------
 c     cross section function
+c     imc = 0: nuclear cross sections from the EPOS tables (epos.inics),
+c              as used for transport; imc = 1: Glauber Monte Carlo
+c              (epocrossc), slow.
 c     xsigqel = quasi-elastic (non-excited projectile diffraction)
 c     part of xsigine; sigma_prod = xsigine - xsigqel.
 c     0 for hadron-proton, -1 if unavailable (crseaaModel path).
@@ -166,10 +169,12 @@ c-----------------------------------------------------------------------
 
          implicit none
          include 'epos.inc'
+         integer imc
          double precision xsigtot,xsigine,xsigela,xsigdd,xsigsd
      &                   ,xsloela,xsigqel
-         real sigqelaa
+         real sigqelaa,eposcrse,eposelacrse,eposprodratio,tine,tela
 
+Cf2py intent(in) imc
 Cf2py intent(out) xsigtot,xsigine,xsigela,xsigdd,xsigsd,xsloela,xsigqel
 
          xsigtot   = dble( sigtot   )
@@ -183,7 +188,16 @@ c Nuclear cross section only if needed
          ! xsigtot = 0d0
          ! xsigine = 0d0
          ! xsigela = 0d0
-         if(maproj.gt.1.or.matarg.gt.1)then
+         if((maproj.gt.1.or.matarg.gt.1).and.model.eq.1
+     &      .and.imc.eq.0)then
+            tine = eposcrse(ekin,maproj,matarg,idtargin)
+            tela = eposelacrse(ekin,maproj,matarg,idtargin)
+            xsigine = dble( tine )
+            xsigela = dble( tela )
+            xsigtot = dble( tine + tela )
+            xsigqel = dble( tine
+     &        * (1. - eposprodratio(ekin,maproj,matarg)) )
+         elseif(maproj.gt.1.or.matarg.gt.1)then
             if(model.eq.1)then
                call crseaaeposqel(sigtotaa,sigineaa,sigcutaa,sigelaaa
      &                           ,sigqelaa)
@@ -250,4 +264,75 @@ c-----------------------------------------------------------------------
                                 !which "looks like" non excited (approximation)
         endif
       endif
+      end
+
+c-----------------------------------------------------------------------
+      function eposprodratio(ek,mapr,matg)
+c-----------------------------------------------------------------------
+c production/inelastic ratio of EPOS (production = inelastic without
+c non-excited projectile diffraction) from the analytic tables read in
+c psaini (asect13/asect11 for h-A, asect33/asect31 for A-A),
+c interpolated as pscrse interpolates the inelastic tables
+c ek - kinetic energy per nucleon, mapr/matg - projectile/target A
+c-----------------------------------------------------------------------
+      include 'epos.inc'
+      dimension wk(3),wa(3),wb(3)
+      common /psar33p/ asect11(7,4,7),asect13(7,4,7)
+     *,asect31(7,7,7),asect33(7,7,7)
+
+      eposprodratio=0.
+      call idmass(1120,amt1)
+      call idmass(1220,amt2)
+      amtar=0.5*(amt1+amt2)
+      if(matg.eq.1)amtar=amt1
+      if(mapr.eq.1)then
+        call idmass(idproj,ampro)
+      else
+        ampro=amtar
+      endif
+      egy=ek+ampro
+      egy=sqrt( 2*egy*amtar+amtar**2+ampro**2 )
+
+      ye=log10(max(1.,egy/1.5))+1.
+      je=min(5,int(ye))
+      wk(2)=ye-je
+      wk(3)=wk(2)*(wk(2)-1.)*.5
+      wk(1)=1.-wk(2)+wk(3)
+      wk(2)=wk(2)-2.*wk(3)
+
+      ya=matg
+      ya=log(ya)/.69315+1.
+      ja=min(int(ya),4)
+      wa(2)=ya-ja
+      wa(3)=wa(2)*(wa(2)-1.)*.5
+      wa(1)=1.-wa(2)+wa(3)
+      wa(2)=wa(2)-2.*wa(3)
+
+      if(mapr.eq.1)then
+        do i=1,3
+          do m=1,3
+            eposprodratio=eposprodratio
+     &                   +(asect13(je+i-1,iclpro,ja+m-1)
+     &                   -asect11(je+i-1,iclpro,ja+m-1))*wk(i)*wa(m)
+          enddo
+        enddo
+      else
+        yb=mapr
+        yb=log(yb)/.69315+1.
+        jb=min(int(yb),4)
+        wb(2)=yb-jb
+        wb(3)=wb(2)*(wb(2)-1.)*.5
+        wb(1)=1.-wb(2)+wb(3)
+        wb(2)=wb(2)-2.*wb(3)
+        do i=1,3
+          do m=1,3
+            do n=1,3
+              eposprodratio=eposprodratio
+     &          +(asect33(je+i-1,jb+n-1,ja+m-1)
+     &          -asect31(je+i-1,jb+n-1,ja+m-1))*wk(i)*wa(m)*wb(n)
+            enddo
+          enddo
+        enddo
+      endif
+      eposprodratio=exp(eposprodratio)
       end

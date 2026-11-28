@@ -6065,9 +6065,12 @@ c-----------------------------------------------------------------------
       logical lcalc!,lcalc2
 c      double precision om5p,xh,yh,v3pom(4),om2p
       dimension gamhad0(nclha),r2had0(nclha),chad0(nclha)
-     *,alplea0(nclha),asect11(7,4,7),asect13(7,4,7),asect21(7,4,7)
-     *,asect23(7,4,7),asect31(7,7,7),asect33(7,7,7)
+     *,alplea0(nclha),asect21(7,4,7),asect23(7,4,7)
      *,asect41(7,7,7),asect43(7,7,7)!,cgam(idxD)
+c chromo: analytic inelastic (11, 31) and production (13, 33) tables
+c kept for eposprodcrse (epos_interface.f)
+      common /psar33p/ asect11(7,4,7),asect13(7,4,7)
+     *,asect31(7,7,7),asect33(7,7,7)
       common /psar2/  edmax,epmax
       common /psar4/  fhgg(11,10,8),fhqg(11,10,80)
      *,fhgq(11,10,80),fhqq(11,10,80),fhgg0(11,10),fhgg1(11,10,4)

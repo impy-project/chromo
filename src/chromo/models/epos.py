@@ -236,15 +236,30 @@ class EposLHC(MCRun):
         self._init_protection_E_A1_A2 = (evt_kin.ecm, evt_kin.p1.A, evt_kin.p2.A)
         self.kinematics = evt_kin
 
+    @staticmethod
+    def _generation_cross_section(p1, p2, cs):
+        """Return the inelastic cross section, also for nuclei.
+
+        EPOS runs with ionudi=1: its events include the quasi-elastic ones, so
+        they are generated according to the inelastic cross section, as in
+        CORSIKA 7 (NEXSIG, epos.inics asect21).
+        """
+        return cs.inelastic
+
     def _cross_section(self, kin=None, max_info=False):
         kin = self.kinematics if kin is None else kin
-        total, inel, el, dd, sd, slope, qel = self._lib.xsection()
+        # Nuclear cross sections come from the EPOS tables (epos.inics); with
+        # max_info the Glauber Monte Carlo (epocrossc) is run instead (~2 s per call).
+        total, inel, el, dd, sd, slope, qel = self._lib.xsection(int(max_info))
         if (kin.p1.A or 1) > 1 or (kin.p2.A or 1) > 1:
-            # epocrossc sigma; the common-block sd/dd are h-p values,
-            # not reported here. inelastic (ionudi=1, all diffraction
-            # included) is CORSIKA's EPOS transport sigma (CORSIKA
-            # 7.8050 corsika.F: NEXINI/NEXSIG, epos.inics asect21).
-            # qel = non-excited projectile diffraction.
+            # the common-block sd/dd are h-p values, not reported here.
+            # inelastic (ionudi=1, all diffraction included) is CORSIKA's
+            # EPOS transport sigma (CORSIKA 7.8050 corsika.F: NEXINI/NEXSIG,
+            # epos.inics asect21). qel = non-excited projectile diffraction;
+            # from the tables it is inelastic x (1 - asect13/asect11), the
+            # analytic estimate. It is smaller than in the Glauber MC: prod is
+            # up to 8 % high for nucleons (both versions) and up to 5 % for
+            # pions (EPOS LHC); max_info gives the MC value.
             if qel < 0:
                 # crseaaModel path: qel unavailable
                 prod = np.nan

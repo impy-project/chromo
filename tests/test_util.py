@@ -219,3 +219,9 @@ def test_deprecated_model_aliases(module, old, new):
         assert getattr(mod, old) is getattr(mod, new)
     with pytest.raises(AttributeError):
         mod.NoSuchModel
+
+
+def test_mass_of_nucleus_missing_from_particle_table():
+    from chromo.util import mass, nucleon_mass
+
+    assert mass(1000050060) == pytest.approx(6 * nucleon_mass)  # unbound B6
